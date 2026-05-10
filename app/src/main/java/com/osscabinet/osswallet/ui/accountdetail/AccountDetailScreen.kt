@@ -51,7 +51,6 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
@@ -86,7 +85,7 @@ fun AccountDetailScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, Int?, Long?) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit
+    onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -291,7 +290,7 @@ fun AccountDetailScreen(
                                     allTransactions = transactionsWithBalanceList,
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
-                                    onRecordsClick = { _ -> navigate { onRecordsClick(RecordsFilterContext.ByAccount(accountId)) } },
+                                    onRecordsClick = { _ -> navigate { onRecordsClick(TransactionFilter(accountIds = listOf(accountId))) } },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
                                     exchangeRates = state.exchangeRates,
@@ -309,7 +308,7 @@ fun AccountDetailScreen(
                                     excludeFuture = !state.showPlannedPayments,
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
-                                    filterContext = RecordsFilterContext.ByAccount(accountId)
+                                    filter = TransactionFilter(accountIds = listOf(accountId))
                                 )
                             }
                         }
@@ -355,7 +354,7 @@ fun DynamicAccountDetailCards(
     cardsConfig: DashboardCardsConfig,
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
-    onRecordsClick: (RecordsFilterContext) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
     accountId: String,
     currentTheme: String,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,

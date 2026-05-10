@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -43,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,17 +77,11 @@ fun AeonPeriodSelector(
     filter: TransactionFilter,
     onSetDateRange: (TimelineRange) -> Unit,
     onClick: () -> Unit,
-    isExpanded: Boolean = false,
     showArcTab: Boolean = true,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     modifier: Modifier = Modifier
 ) {
     val accentColor = MaterialTheme.colorScheme.primary
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "tab_rotation"
-    )
 
     // Mode handling
     val initialTimelineRange =
@@ -101,37 +96,36 @@ fun AeonPeriodSelector(
         }
     }
 
-    val pagerState = remember {
-        object : PagerState(currentPage = currentModePage) {
-            override val pageCount: Int get() = 4
-        }
-    }
+    val pagerState = rememberPagerState(initialPage = currentModePage) { 4 }
 
-    // Sync Pager -> Filter (on swipe)
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage != currentModePage) {
-            val newRange = when (pagerState.currentPage) {
-                0 -> TimelineRange.AllTime
-                1 -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-                2 -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-                3 -> {
-                    if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange
-                    else {
-                        val now = System.currentTimeMillis()
-                        TimelineRange.CustomRange(now - 86400000 * 7, now)
+    // Sync Pager -> Filter (only on settled page to avoid intermediate updates)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            if (page != currentModePage) {
+                val newRange = when (page) {
+                    0 -> TimelineRange.AllTime
+                    1 -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                    2 -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+                    3 -> {
+                        if (filter.timelineRange is TimelineRange.CustomRange && 
+                            (filter.timelineRange.start != null || filter.timelineRange.end != null)) {
+                            filter.timelineRange
+                        } else {
+                            val now = System.currentTimeMillis()
+                            TimelineRange.CustomRange(now - (86400000L * 7L), now)
+                        }
                     }
+                    else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
                 }
-
-                else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                onSetDateRange(newRange)
             }
-            onSetDateRange(newRange)
         }
     }
 
-    // Sync Filter -> Pager (on external change)
+    // Sync Filter -> Pager (External source of truth should instantly align the UI)
     LaunchedEffect(currentModePage) {
         if (pagerState.currentPage != currentModePage && !pagerState.isScrollInProgress) {
-            pagerState.animateScrollToPage(currentModePage)
+            pagerState.scrollToPage(currentModePage)
         }
     }
 
@@ -140,24 +134,6 @@ fun AeonPeriodSelector(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-//        // The Pull Tab "Hump"
-//        if (showArcTab) {
-//            Box(
-//                modifier = Modifier
-//                    .align(Alignment.TopCenter)
-//                    .size(width = 72.dp, height = 38.dp)
-//                    .background(
-//                        backgroundColor,
-//                        RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
-//                    )
-//                    .clickable(
-//                        interactionSource = remember { MutableInteractionSource() },
-//                        indication = null,
-//                        onClick = onClick
-//                    )
-//            )
-//        }
-
         // Main Content Container
         Column(
             modifier = Modifier
@@ -185,31 +161,6 @@ fun AeonPeriodSelector(
             
             Spacer(modifier = Modifier.height(4.dp))
         }
-
-//        // The Arrow Icon - Drawn last (on top)
-//        if (showArcTab) {
-//            Box(
-//                modifier = Modifier
-//                    .align(Alignment.TopCenter)
-//                    .size(width = 72.dp, height = 24.dp)
-//                    .clickable(
-//                        interactionSource = remember { MutableInteractionSource() },
-//                        indication = null,
-//                        onClick = onClick
-//                    ),
-//                contentAlignment = Alignment.TopCenter
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.KeyboardArrowUp,
-//                    contentDescription = null,
-//                    modifier = Modifier
-//                        .padding(top = 8.dp)
-//                        .size(20.dp)
-//                        .graphicsLayer { rotationZ = rotation },
-//                    tint = accentColor.copy(alpha = 0.7f)
-//                )
-//            }
-//        }
     }
 }
 
@@ -223,7 +174,7 @@ private fun PillNavigationRow(
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var boxWidth by remember { mutableStateOf(0) }
+    var boxWidth by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val density = LocalDensity.current
 
     Row(
@@ -445,11 +396,11 @@ private fun getPeriodTextForPage(page: Int, filter: TransactionFilter): String {
     
     // Check for "Today"
     val todayRange = TimelineService.getRangeForThis(ThisPeriodType.TODAY)
-    if (Math.abs(todayRange.first - start) < 2000) return "Today"
+    if (kotlin.math.abs(todayRange.first - start) < 2000) return "Today"
     
     // Check for "This Month"
     val monthRange = TimelineService.getRangeForThis(ThisPeriodType.MONTH)
-    if (Math.abs(monthRange.first - start) < 2000 && Math.abs(monthRange.second - end) < 2000) return "This month"
+    if (kotlin.math.abs(monthRange.first - start) < 2000 && kotlin.math.abs(monthRange.second - end) < 2000) return "This month"
 
     val startCal = Calendar.getInstance().apply { timeInMillis = start }
     val endCal = Calendar.getInstance().apply { timeInMillis = end }
@@ -480,7 +431,6 @@ fun AeonPeriodSelectorPreview() {
             filter = filter,
             onSetDateRange = { },
             onClick = { },
-            isExpanded = false,
             showArcTab = true
         )
     }
@@ -495,7 +445,6 @@ fun AeonPeriodSelectorExpandedPreview() {
             filter = filter,
             onSetDateRange = { },
             onClick = { },
-            isExpanded = true,
             showArcTab = true
         )
     }

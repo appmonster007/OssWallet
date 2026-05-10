@@ -205,7 +205,9 @@ fun AeonAccountCardLarge(
     modifier: Modifier = Modifier,
     precision: Int = 2,
     cardNumber: String? = null,
-    extraLabel: String? = null
+    extraLabel: String? = null,
+    onClickIncome: (() -> Unit)? = null,
+    onClickExpense: (() -> Unit)? = null
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
@@ -268,13 +270,15 @@ fun AeonAccountCardLarge(
                             amount = incomeInAccountCurrency,
                             type = CashFlowType.INCOME,
                             currency = account.currencyCode,
-                            precision = precision
+                            precision = precision,
+                            onClick = onClickIncome
                         )
                         AeonFlowBadge(
                             amount = expenseInAccountCurrency,
                             type = CashFlowType.EXPENSE,
                             currency = account.currencyCode,
-                            precision = precision
+                            precision = precision,
+                            onClick = onClickExpense
                         )
                     }
                 }

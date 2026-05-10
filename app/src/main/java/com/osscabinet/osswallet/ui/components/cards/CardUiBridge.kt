@@ -23,7 +23,8 @@ import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.merge
 
 /**
  * Bridge that maps CardConfig to CardWithCallbacks.
@@ -36,7 +37,7 @@ fun rememberCardWithCallbacks(
     registry: CardComputerRegistry,
     updateHandler: CardUpdateHandler,
     onDelete: (String) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
     onManageAccountsClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
@@ -116,8 +117,16 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
-                        onClickIncome = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
-                        onClickExpense = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
+                        onClickIncome = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
+                        onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -148,15 +157,12 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onCurrencyClick = { currency, range ->
-                            val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(
-                                range
+                            val drillDown = TransactionFilter(
+                                currencies = listOf(currency),
+                                timelineRange = range
                             )
                             onRecordsClick(
-                                RecordsFilterContext.Custom(
-                                    currencies = listOf(currency),
-                                    startDate = start,
-                                    endDate = end
-                                )
+                                input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
                         onDelete = { onDelete(config.cardId) }
@@ -182,8 +188,16 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
-                        onClickIncome = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
-                        onClickExpense = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
+                        onClickIncome = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
+                        onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -221,7 +235,11 @@ fun rememberCardWithCallbacks(
                         },
                         onManageClick = onManageAccountsClick,
                         onAccountClick = onAccountClick,
-                        onRecordsClick = onRecordsClick,
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -242,7 +260,11 @@ fun rememberCardWithCallbacks(
                             }
                         },
                         onDelete = { onDelete(config.cardId) },
-                        onRecordsClick = onRecordsClick
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        }
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter
@@ -262,7 +284,11 @@ fun rememberCardWithCallbacks(
                             }
                         },
                         onDelete = { onDelete(config.cardId) },
-                        onRecordsClick = onRecordsClick
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        }
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter
@@ -283,6 +309,16 @@ fun rememberCardWithCallbacks(
                             updateHandler.updateCardHeroFilter(
                                 id,
                                 filter
+                            )
+                        },
+                        onClickIncome = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
+                        onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
                         onDelete = { onDelete(config.cardId) }
@@ -359,7 +395,11 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onTransactionClick = onTransactionClick,
-                        onRecordsClick = onRecordsClick,
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
                         onDelete = { onDelete(config.cardId) },
                         onItemExpanded = onItemExpanded,
                         onItemCollapsed = onItemCollapsed,
@@ -379,20 +419,3 @@ fun rememberCardWithCallbacks(
     }
 }
 
-private fun com.osscabinet.ossWallet.domain.model.TransactionFilter.toRecordsFilterContext(): RecordsFilterContext.Custom {
-    val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(this.timelineRange)
-    return RecordsFilterContext.Custom(
-        accountIds = this.accountIds,
-        transactionType = this.transactionType,
-        startDate = start,
-        endDate = end,
-        categoryIds = this.categoryIds.map { it.toString() },
-        currencies = this.currencies,
-        paymentMethods = this.paymentMethods,
-        queryNote = this.queryNote,
-        minAmount = this.minAmount?.toDouble(),
-        maxAmount = this.maxAmount?.toDouble(),
-        queryPayee = this.queryPayee,
-        tags = this.tags
-    )
-}

@@ -64,8 +64,8 @@ import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
@@ -94,7 +94,7 @@ fun LoanDetailScreen(
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit
+    onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val loan = remember(loanId, loans) { loans.find { it.id == loanId } } ?: return
@@ -225,11 +225,11 @@ fun LoanDetailScreen(
                                 categoryMap = categoryMap,
                                 onRecordsClick = { _ ->
                                     onRecordsClick(
-                                        RecordsFilterContext.Custom(
+                                        TransactionFilter(
                                             accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(
                                                 loan.linkedAccountId
                                             ),
-                                            categoryIds = loan.categoryIds.map { it.toString() },
+                                            categoryIds = loan.categoryIds,
                                             tags = loan.tags
                                         )
                                     )

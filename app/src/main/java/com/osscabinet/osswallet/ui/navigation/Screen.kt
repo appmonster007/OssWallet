@@ -10,10 +10,10 @@ sealed class Screen(val route: String) {
         }
     }
     object Settings : Screen("settings")
-    object TransactionList : Screen("list?filterContext={filterContext}&topLevel={topLevel}") {
-        fun createRoute(filterContext: String? = null, topLevel: Boolean = true): String {
+    object TransactionList : Screen("list?filter={filter}&topLevel={topLevel}") {
+        fun createRoute(filter: String? = null, topLevel: Boolean = true): String {
             val params = mutableListOf<String>()
-            filterContext?.let { params.add("filterContext=$it") }
+            filter?.let { params.add("filter=$it") }
             params.add("topLevel=$topLevel")
             return "list?${params.joinToString("&")}"
         }

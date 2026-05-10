@@ -67,6 +67,8 @@ fun AccountHeroCard(
     filter: TransactionFilter = TransactionFilter(),
     onShowCurrencyBadgesChange: (Boolean) -> Unit = {},
     onFilterChange: (TransactionFilter) -> Unit = {},
+    onClickIncome: (TransactionFilter) -> Unit = {},
+    onClickExpense: (TransactionFilter) -> Unit = {},
     onClick: (() -> Unit)? = null,
     onDelete: () -> Unit = {},
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
@@ -185,7 +187,8 @@ fun AccountHeroCard(
                     currency = account.currencyCode,
                     icon = Icons.Rounded.TrendingUp,
                     color = Color(0xFF00695C),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickIncome(filter.copy(transactionType = "income")) }
                 )
                 FlowSummaryItem(
                     label = "Expense",
@@ -193,7 +196,8 @@ fun AccountHeroCard(
                     currency = account.currencyCode,
                     icon = Icons.Rounded.TrendingDown,
                     color = Color(0xFFC62828),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickExpense(filter.copy(transactionType = "expense")) }
                 )
             }
 
@@ -301,13 +305,14 @@ private fun FlowSummaryItem(
     currency: String,
     icon: ImageVector,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         color = color.copy(alpha = 0.05f),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
-        modifier = modifier
+        modifier = modifier.clickable { onClick() }
     ) {
         Column(
             modifier = Modifier.padding(8.dp),

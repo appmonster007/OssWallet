@@ -143,7 +143,6 @@ fun TransactionListContent(
                     }
                 },
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 accountNames = accountNames,
                 onResetToInitial = onResetToInitial

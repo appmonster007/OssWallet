@@ -34,7 +34,7 @@ fun AnalyticsScreen(
     transactionViewModel: TransactionViewModel,
     templateViewModel: TemplateViewModel,
     settingsViewModel: SettingsViewModel,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onAddClick: (Int?, Long?) -> Unit,

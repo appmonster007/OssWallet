@@ -57,7 +57,7 @@ Manual DI via `di/AppContainer.kt` — **no Hilt or Dagger**. `AppContainer` is 
 
 ### Navigation
 
-Single-activity (`MainActivity`). All navigation is in `ui/navigation/OssWalletNavGraph.kt` using Jetpack Compose Navigation. Routes are defined in `ui/navigation/Screen.kt`. Context objects (`DashboardViewContext`, `RecordsFilterContext`, `AccountsFilterContext`) are passed through the nav graph for screen-to-screen state sharing.
+Single-activity (`MainActivity`). All navigation is in `ui/navigation/OssWalletNavGraph.kt` using Jetpack Compose Navigation. Routes are defined in `ui/navigation/Screen.kt`. Context objects (`DashboardViewContext`, `TransactionFilter`, `AccountsFilterContext`) are passed through the nav graph for screen-to-screen state sharing.
 
 ### Database
 

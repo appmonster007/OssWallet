@@ -19,7 +19,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.viewmodel.MainViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.navigation.navigateToDashboard
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
@@ -82,7 +82,7 @@ class MainActivity : FragmentActivity() {
                     pendingWidgetRoute?.let { route ->
                         when (route) {
                             "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None, topLevel = true)
-                            "records" -> navController.navigateToRecords(RecordsFilterContext.None, topLevel = true)
+                            "records" -> navController.navigateToRecords(TransactionFilter(), topLevel = true)
                             "analytics" -> navController.navigate(Screen.Analytics.createRoute(topLevel = true))
                             "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true))
                         }
@@ -116,7 +116,7 @@ class MainActivity : FragmentActivity() {
                             },
                             onRecordsClick = {
                                 navController.navigateToRecords(
-                                    context = RecordsFilterContext.None,
+                                    filter = TransactionFilter(),
                                     topLevel = true
                                 ) {
                                     popUpTo(navController.graph.findStartDestination().id) {

@@ -214,6 +214,8 @@ fun UnifiedCardRenderer(
                 filter = renderData.config.filter,
                 onShowCurrencyBadgesChange = { show -> cb.onShowCurrencyBadgesChange(renderData.config.cardId, show) },
                 onFilterChange = { filter -> cb.onFilterChange(renderData.config.cardId, filter) },
+                onClickIncome = { drillDown -> cb.onClickIncome?.invoke(drillDown) },
+                onClickExpense = { drillDown -> cb.onClickExpense?.invoke(drillDown) },
                 onClick = cb.onClick,
                 onDelete = { cb.onDelete() },
                 filterRules = renderData.config.filterRules,

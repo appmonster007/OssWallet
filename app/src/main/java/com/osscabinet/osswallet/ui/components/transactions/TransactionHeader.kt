@@ -33,16 +33,21 @@ fun TransactionHeader(
     subtitle: String,
     incomeByCurrency: Map<String, BigDecimal>,
     expenseByCurrency: Map<String, BigDecimal>,
+    openingBalancesByCurrency: Map<String, BigDecimal>,
     closingBalancesByCurrency: Map<String, BigDecimal>,
     allCurrencies: List<String>,
     incomeBase: BigDecimal,
     expenseBase: BigDecimal,
     netBase: BigDecimal,
+    totalOpeningBalanceBase: BigDecimal,
     totalClosingBalanceBase: BigDecimal,
     baseCurrency: String,
-    precision: Int
+    precision: Int,
+    showOpeningBalance: Boolean = false,
+    showClosingBalance: Boolean = true,
+    initiallyExpanded: Boolean = false
 ) {
-    var isExpanded by remember { mutableStateOf(true) }
+    var isExpanded by remember { mutableStateOf(initiallyExpanded) }
     val positiveColor = Color(0xFF4CAF50)
     val negativeColor = MaterialTheme.colorScheme.error
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
@@ -107,21 +112,29 @@ fun TransactionHeader(
                             )
                         }
                     }
-                    Text(
-                        "BALANCE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 7.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = outlineColor.copy(alpha = 0.5f),
-                        modifier = Modifier.width(70.dp),
-                        textAlign = TextAlign.End
-                    )
+                    if (showOpeningBalance || showClosingBalance) {
+                        Text(
+                            "BALANCE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 7.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = outlineColor.copy(alpha = 0.5f),
+                            modifier = Modifier.width(70.dp),
+                            textAlign = TextAlign.End
+                        )
+                    }
                 }
 
                 // Row 3: Aggregate (Clickable)
                 val canExpand = allCurrencies.isNotEmpty()
+//                val activeCurrencies = allCurrencies.filter { curr ->
+//                    val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
+//                    val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
+//                    inc.signum() != 0 || exp.signum() != 0
+//                }
+//                val canExpand = activeCurrencies.isNotEmpty()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -173,23 +186,38 @@ fun TransactionHeader(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    Text(
-                        formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                        modifier = Modifier.width(70.dp),
-                        textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, precision, shorten = true)
+                    val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true)
+
+                    if (showOpeningBalance || showClosingBalance) {
+                        val balanceText = when {
+                            showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
+                            showOpeningBalance -> openingBaseText
+                            else -> closingBaseText
+                        }
+                        Text(
+                            text = balanceText,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp
+                            ),
+                            modifier = Modifier.width(70.dp),
+                            textAlign = TextAlign.End,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
                 // Row 4+: Breakdown (Expandable)
                 AnimatedVisibility(visible = isExpanded) {
                     Column(modifier = Modifier.padding(top = 2.dp)) {
+//                        activeCurrencies.forEach { curr ->
                         allCurrencies.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
                             val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
                             val net = inc.add(exp)
-                            val bal = closingBalancesByCurrency[curr]
+                            val balAfter = closingBalancesByCurrency[curr]
+                            val balBefore = openingBalancesByCurrency[curr] ?: BigDecimal.ZERO
 
                             Row(
                                 modifier = Modifier
@@ -234,16 +262,27 @@ fun TransactionHeader(
                                     )
                                 }
 
-                                Text(
-                                    if (bal != null) formatCurrencyRight(bal, curr, precision, shorten = true) else "0.00 $curr",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 9.sp
-                                    ),
-                                    modifier = Modifier.width(70.dp),
-                                    textAlign = TextAlign.End,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
+                                if (showOpeningBalance || showClosingBalance) {
+                                    val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, precision, shorten = true) else "0.00 $curr"
+                                    val balBeforeText = formatCurrencyRight(balBefore, curr, precision, shorten = true)
+
+                                    val balanceText = when {
+                                        showOpeningBalance && showClosingBalance -> "$balBeforeText → $balAfterText"
+                                        showOpeningBalance -> balBeforeText
+                                        else -> balAfterText
+                                    }
+
+                                    Text(
+                                        text = balanceText,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp
+                                        ),
+                                        modifier = Modifier.width(70.dp),
+                                        textAlign = TextAlign.End,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
                             }
                         }
                     }
@@ -262,11 +301,13 @@ fun TransactionHeaderPreview() {
             subtitle = "Jan 1 - Jan 7",
             incomeByCurrency = mapOf("USD" to BigDecimal("5000.00"), "EUR" to BigDecimal("2500.00")),
             expenseByCurrency = mapOf("USD" to BigDecimal("3200.00"), "EUR" to BigDecimal("1800.00")),
+            openingBalancesByCurrency = mapOf("USD" to BigDecimal("10000.00"), "EUR" to BigDecimal("7300.00")),
             closingBalancesByCurrency = mapOf("USD" to BigDecimal("15000.00"), "EUR" to BigDecimal("8000.00")),
             allCurrencies = listOf("EUR", "USD"),
             incomeBase = BigDecimal("7500.00"),
             expenseBase = BigDecimal("5000.00"),
             netBase = BigDecimal("2500.00"),
+            totalOpeningBalanceBase = BigDecimal("17300.00"),
             totalClosingBalanceBase = BigDecimal("23000.00"),
             baseCurrency = "USD",
             precision = 2

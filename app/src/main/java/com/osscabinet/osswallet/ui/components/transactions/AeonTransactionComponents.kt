@@ -87,14 +87,18 @@ fun AeonTransactionList(
                     subtitle = group.headerData.subtitle,
                     incomeByCurrency = group.headerData.incomeByCurrency,
                     expenseByCurrency = group.headerData.expenseByCurrency,
+                    openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
                     closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
                     allCurrencies = group.headerData.allCurrencies,
                     incomeBase = group.headerData.incomeBase,
                     expenseBase = group.headerData.expenseBase,
                     netBase = group.headerData.netBase,
+                    totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
                     totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                     baseCurrency = baseCurrency,
-                    precision = precision
+                    precision = precision,
+                    showOpeningBalance = showOpeningBalance,
+                    showClosingBalance = showClosingBalance
                 )
             }
 

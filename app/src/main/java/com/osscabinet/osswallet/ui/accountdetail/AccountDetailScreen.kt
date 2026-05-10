@@ -328,8 +328,8 @@ fun AccountDetailScreen(
                                     allTransactions = transactionsWithBalanceList,
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
-                                    onRecordsClick = { drillDown -> 
-                                        accountDetailViewModel.updateFilter(state.currentFilter.merge(drillDown))
+                                    onRecordsClick = { drillDown ->
+                                        onRecordsClick(state.currentFilter.merge(drillDown))
                                     },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,

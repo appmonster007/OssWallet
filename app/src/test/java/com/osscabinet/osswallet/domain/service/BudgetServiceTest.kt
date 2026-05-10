@@ -51,13 +51,12 @@ class BudgetServiceTest {
         transactionType: String = "expense",
         currency: String = "USD",
         accountId: String = "acc1",
-        categoryId: Long? = null,
+        categoryId: Long = 1001L,
         timestamp: Long = System.currentTimeMillis()
     ) = Transaction(
         id = 0L,
         title = "Test",
         amount = amount,
-        category = "Food",
         timestamp = timestamp,
         currency = currency,
         transactionType = transactionType,

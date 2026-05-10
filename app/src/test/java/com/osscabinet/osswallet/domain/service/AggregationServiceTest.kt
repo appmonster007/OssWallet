@@ -22,12 +22,11 @@ class AggregationServiceTest {
         amount: BigDecimal,
         currency: String,
         accountId: String = "acc1",
-        categoryId: Long? = null
+        categoryId: Long = 1001L
     ) = Transaction(
         id = id,
         title = "Test",
         amount = amount,
-        category = "Food",
         timestamp = System.currentTimeMillis(),
         currency = currency,
         transactionType = if (amount.signum() >= 0) "income" else "expense",
@@ -106,9 +105,9 @@ class AggregationServiceTest {
     @Test
     fun `breakdownByCategory correctly aggregates multi-currency data`() {
         val transactions = listOf(
-            createTransaction(amount = BigDecimal("100"), currency = "USD").copy(category = "Food"),
-            createTransaction(amount = BigDecimal("85"), currency = "EUR").copy(category = "Food"), // 100 USD
-            createTransaction(amount = BigDecimal("50"), currency = "USD").copy(category = "Transport")
+            createTransaction(amount = BigDecimal("100"), currency = "USD", categoryId = 1L),
+            createTransaction(amount = BigDecimal("85"), currency = "EUR", categoryId = 1L), // 100 USD
+            createTransaction(amount = BigDecimal("50"), currency = "USD", categoryId = 2L)
         )
 
         val breakdown = transactions.breakdownByCategory(
@@ -116,8 +115,8 @@ class AggregationServiceTest {
             baseCurrency = "USD"
         )
 
-        val food = breakdown.find { it.key == "Food" }
-        val transport = breakdown.find { it.key == "Transport" }
+        val food = breakdown.find { it.key == "1" }
+        val transport = breakdown.find { it.key == "2" }
 
         assertEquals(0, BigDecimal("200").compareTo(food?.totalAmount))
         assertEquals(0, BigDecimal("50").compareTo(transport?.totalAmount))
@@ -152,8 +151,8 @@ class AggregationServiceTest {
         )
 
         val transactions = listOf(
-            createTransaction(amount = BigDecimal("-50"), currency = "USD", categoryId = 1).copy(category = "Food"),
-            createTransaction(amount = BigDecimal("-85"), currency = "EUR", categoryId = 2).copy(category = "Groceries") // -100 USD
+            createTransaction(amount = BigDecimal("-50"), currency = "USD", categoryId = 1),
+            createTransaction(amount = BigDecimal("-85"), currency = "EUR", categoryId = 2) // -100 USD
         )
 
         val tree = AggregationService.buildCategoryTree(

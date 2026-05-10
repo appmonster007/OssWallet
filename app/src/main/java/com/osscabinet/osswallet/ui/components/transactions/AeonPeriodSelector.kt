@@ -101,7 +101,7 @@ fun AeonPeriodSelector(
     // Sync Pager -> Filter (only on settled page to avoid intermediate updates)
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
-            if (page != currentModePage) {
+//            if (page != currentModePage) {
                 val newRange = when (page) {
                     0 -> TimelineRange.AllTime
                     1 -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
@@ -118,7 +118,7 @@ fun AeonPeriodSelector(
                     else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
                 }
                 onSetDateRange(newRange)
-            }
+//            }
         }
     }
 

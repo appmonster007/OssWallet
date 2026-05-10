@@ -244,7 +244,8 @@ object TimelineService {
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): GroupHeaderData {
-        val (title, subtitle, endTimestamp) = when (groupingType) {
+        data class RangeInfo(val title: String, val subtitle: String, val start: Long, val end: Long)
+        val info = when (groupingType) {
             TransactionGroupingType.BY_DAY -> {
                 val firstTx = groupTransactions.first()
                 val date =
@@ -253,11 +254,13 @@ object TimelineService {
                 val formattedDate = date.format(dateFormatter)
                 val isToday = formattedDate == LocalDate.now(systemZoneId).format(dateFormatter)
                 val titleText = if (isToday) "Today" else formattedDate
+                val startOfDay = date.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
                 val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
                     .toInstant().toEpochMilli()
-                Triple(
+                RangeInfo(
                     titleText,
                     "${groupTransactions.size} transaction${if (groupTransactions.size > 1) "s" else ""}",
+                    startOfDay,
                     endOfDay
                 )
             }
@@ -268,15 +271,19 @@ object TimelineService {
                     .with(weekFields.weekOfWeekBasedYear(), week.toLong())
                     .with(weekFields.dayOfWeek(), 1)
                 val weekEndDate = weekStartDate.plusDays(6)
+                val startOfWeek = weekStartDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
                 val endOfWeek = weekEndDate.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
                     .toInstant().toEpochMilli()
-                Triple(
+                RangeInfo(
                     "WEEK $week",
                     "${weekStartDate.format(shortDateFormatter)} - ${weekEndDate.format(dateFormatter)}",
+                    startOfWeek,
                     endOfWeek
                 )
             }
         }
+        val (title, subtitle, startTimestamp, endTimestamp) = info
+
 
         val summaryByCurrency =
             AggregationService.calculateSummaryByCurrency(groupTransactions.map { it.transaction })
@@ -296,20 +303,31 @@ object TimelineService {
             precision
         )
 
-        // Optimized closing balance calculation: find the latest transaction for each account BEFORE endTimestamp
+        // Optimized opening balance calculation
+        val openingBalancesByCurrency = absoluteHistory
+            .asSequence()
+            .filter { it.transaction.timestamp < startTimestamp }
+            .groupBy { it.transaction.currency }
+            .mapValues { (_, txs) ->
+                txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
+            }
+
+        val totalOpeningBalanceBase = CurrencyService.calculateTotalInCurrency(
+            openingBalancesByCurrency,
+            baseCurrency,
+            exchangeRates,
+            precision
+        )
+
+        // Optimized closing balance calculation: group by transaction currency and sum amounts
+        // This provides a breakdown of all currencies held/used in the current scope
         val closingBalancesByCurrency = absoluteHistory
             .asSequence()
             .filter { it.transaction.timestamp <= endTimestamp }
-            .groupBy { it.transaction.accountId }
-            .mapValues { (_, txs) ->
-                // Since transactions are already sorted (descending by timestamp in absoluteHistory usually),
-                // but for balance calculation they might be ascending.
-                // Let's ensure we get the latest one.
-                txs.maxBy { it.transaction.timestamp }
-            }
-            .values
             .groupBy { it.transaction.currency }
-            .mapValues { it.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } }
+            .mapValues { (_, txs) ->
+                txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
+            }
 
         val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
             closingBalancesByCurrency,
@@ -323,11 +341,13 @@ object TimelineService {
             subtitle = subtitle,
             incomeByCurrency = incomeByCurrency,
             expenseByCurrency = expenseByCurrency,
+            openingBalancesByCurrency = openingBalancesByCurrency,
             closingBalancesByCurrency = closingBalancesByCurrency,
-            allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys).distinct().sorted(),
+            allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys + closingBalancesByCurrency.keys + openingBalancesByCurrency.keys).distinct().sorted(),
             incomeBase = incomeBase,
             expenseBase = expenseBase,
             netBase = incomeBase.add(expenseBase),
+            totalOpeningBalanceBase = totalOpeningBalanceBase,
             totalClosingBalanceBase = totalClosingBalanceBase
         )
     }
@@ -395,11 +415,13 @@ object TimelineService {
         val subtitle: String,
         val incomeByCurrency: Map<String, BigDecimal>,
         val expenseByCurrency: Map<String, BigDecimal>,
+        val openingBalancesByCurrency: Map<String, BigDecimal>,
         val closingBalancesByCurrency: Map<String, BigDecimal>,
         val allCurrencies: List<String>,
         val incomeBase: BigDecimal,
         val expenseBase: BigDecimal,
         val netBase: BigDecimal,
+        val totalOpeningBalanceBase: BigDecimal,
         val totalClosingBalanceBase: BigDecimal
     )
 }

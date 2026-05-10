@@ -13,20 +13,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.core.graphics.toColorInt
+import androidx.compose.material.icons.automirrored.rounded.TrendingDown
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.TrendingDown
-import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,15 +32,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -65,22 +55,14 @@ fun AccountHeroCard(
     precision: Int = 2,
     showCurrencyBadges: Boolean = true,
     filter: TransactionFilter = TransactionFilter(),
-    onShowCurrencyBadgesChange: (Boolean) -> Unit = {},
-    onFilterChange: (TransactionFilter) -> Unit = {},
     onClickIncome: (TransactionFilter) -> Unit = {},
     onClickExpense: (TransactionFilter) -> Unit = {},
-    onClick: (() -> Unit)? = null,
-    onDelete: () -> Unit = {},
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
-    baseFilter: TransactionFilter = TransactionFilter(),
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList(),
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System"
+    onClickCurrency: (String) -> Unit = {},
+    onClick: (() -> Unit)? = null
 ) {
     val accountColor = try {
-        Color(android.graphics.Color.parseColor(account.colorHex))
-    } catch (e: Exception) {
+        Color(account.colorHex.toColorInt())
+    } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
     }
 
@@ -94,8 +76,6 @@ fun AccountHeroCard(
         precision = precision
     )
 
-    var showSettingsSheet by remember { mutableStateOf(false) }
-
     AeonExpressiveCard(
         title = account.name,
         subtitle = account.structureType,
@@ -105,14 +85,7 @@ fun AccountHeroCard(
         modifier = modifier.clickable { onClick?.invoke() },
         headerModifier = headerModifier,
         filter = filter,
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showSettingsSheet = true },
-                activeFilterCount = activeCount,
-                icon = Icons.Rounded.Settings,
-                activeIcon = Icons.Rounded.Settings
-            )
-        }
+        headerTrailing = null
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -185,7 +158,7 @@ fun AccountHeroCard(
                     label = "Income",
                     amount = income,
                     currency = account.currencyCode,
-                    icon = Icons.Rounded.TrendingUp,
+                    icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = Color(0xFF00695C),
                     modifier = Modifier.weight(1f),
                     onClick = { onClickIncome(filter.copy(transactionType = "income")) }
@@ -194,7 +167,7 @@ fun AccountHeroCard(
                     label = "Expense",
                     amount = expense,
                     currency = account.currencyCode,
-                    icon = Icons.Rounded.TrendingDown,
+                    icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = Color(0xFFC62828),
                     modifier = Modifier.weight(1f),
                     onClick = { onClickExpense(filter.copy(transactionType = "expense")) }
@@ -224,7 +197,8 @@ fun AccountHeroCard(
                                 border = BorderStroke(
                                     1.dp,
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                                )
+                                ),
+                                modifier = Modifier.clickable { onClickCurrency(curr) }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(
@@ -255,46 +229,6 @@ fun AccountHeroCard(
                 }
             }
         }
-    }
-
-    if (showSettingsSheet) {
-        AeonCardSettingsSheet(
-            title = "Account Details",
-            filter = filter,
-            onFilterChange = { onFilterChange(it) },
-            onDismiss = { showSettingsSheet = false },
-            onDelete = onDelete,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters,
-            filterRules = filterRules,
-            baseFilter = baseFilter,
-            settingsContent = {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Multi-Currency",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                        Text(
-                            "Show breakdown of holdings",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                    }
-                    Switch(
-                        checked = showCurrencyBadges,
-                        onCheckedChange = { onShowCurrencyBadgesChange(it) }
-                    )
-                }
-            }
-        )
     }
 }
 

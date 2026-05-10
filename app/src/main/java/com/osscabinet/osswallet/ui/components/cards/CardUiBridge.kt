@@ -299,18 +299,6 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.AccountHero(
                     renderData = renderData,
                     callbacks = CardCallbacks.AccountHero(
-                        onShowCurrencyBadgesChange = { id, show ->
-                            updateHandler.updateCardHeroShowCurrencyBadges(
-                                id,
-                                show
-                            )
-                        },
-                        onFilterChange = { id, filter ->
-                            updateHandler.updateCardHeroFilter(
-                                id,
-                                filter
-                            )
-                        },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
@@ -321,7 +309,13 @@ fun rememberCardWithCallbacks(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
-                        onDelete = { onDelete(config.cardId) }
+                        onClickCurrency = { currency ->
+                            val drillDown = TransactionFilter(currencies = listOf(currency))
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
+                        onClick = { onAccountClick(renderData.account.id) }
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter

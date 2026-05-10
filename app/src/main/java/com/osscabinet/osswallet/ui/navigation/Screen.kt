@@ -48,8 +48,11 @@ sealed class Screen(val route: String) {
         fun createRoute(transactionId: Long) = "edit_transaction/$transactionId"
     }
     
-    object AccountDetail : Screen("account_detail/{accountId}") {
-        fun createRoute(accountId: String) = "account_detail/$accountId"
+    object AccountDetail : Screen("account_detail/{accountId}?filter={filter}") {
+        fun createRoute(accountId: String, filter: String? = null): String {
+            val base = "account_detail/$accountId"
+            return if (filter != null) "$base?filter=$filter" else base
+        }
     }
     
 

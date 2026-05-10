@@ -507,13 +507,17 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.AccountDetail.route,
-                arguments = listOf(navArgument("accountId") { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument("accountId") { type = NavType.StringType },
+                    navArgument("filter") { type = NavType.StringType; nullable = true; defaultValue = null }
+                ),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                val filterJson = backStackEntry.arguments?.getString("filter")
                 val accountDetailViewModel: AccountDetailViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         AccountDetailViewModel(
@@ -530,6 +534,7 @@ fun OssWalletNavGraph(
                 )
                 AccountDetailScreen(
                     accountId = accountId,
+                    filterJson = filterJson,
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     settingsViewModel = settingsViewModel,
@@ -553,7 +558,7 @@ fun OssWalletNavGraph(
                             navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type))
                         }
                     },
-                    onRecordsClick = { context -> navController.navigateToRecords(context) }
+                    onRecordsClick = { filter -> navController.navigateToRecords(filter) }
                 )
             }
 

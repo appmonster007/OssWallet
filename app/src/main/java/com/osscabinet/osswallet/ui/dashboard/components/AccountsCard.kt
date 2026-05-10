@@ -56,7 +56,6 @@ import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
@@ -67,7 +66,7 @@ import java.time.format.DateTimeFormatter
 fun AccountsCard(
     onManageClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
+    onRecordsClick: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
     onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
@@ -158,7 +157,7 @@ fun AccountsCard(
                         gridColumns = gridColumns,
                         onAccountClick = onAccountClick,
                         onRecordsClick = onRecordsClick,
-                        timelineRange = filter.timelineRange,
+                        filter = filter,
                         precision = precision,
                         modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                     )
@@ -193,7 +192,7 @@ fun AccountsCard(
                         gridColumns = 2,
                         onAccountClick = onAccountClick,
                         onRecordsClick = onRecordsClick,
-                        timelineRange = filter.timelineRange,
+                        filter = filter,
                         precision = precision,
                         modifier = Modifier.width(180.dp)
                     )
@@ -349,8 +348,8 @@ private fun FlowRowScope.AccountItemWrapper(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    onRecordsClick: ((TransactionFilter) -> Unit)? = null,
+    filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
@@ -362,7 +361,7 @@ private fun FlowRowScope.AccountItemWrapper(
         precision = precision,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
-        timelineRange = timelineRange,
+        filter = filter,
         modifier = modifier
     )
 }
@@ -376,8 +375,8 @@ private fun AccountItemWrapper(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    onRecordsClick: ((TransactionFilter) -> Unit)? = null,
+    filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
@@ -389,7 +388,7 @@ private fun AccountItemWrapper(
         precision = precision,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
-        timelineRange = timelineRange,
+        filter = filter,
         modifier = modifier
     )
 }
@@ -403,8 +402,8 @@ private fun AccountItemContent(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    onRecordsClick: ((TransactionFilter) -> Unit)? = null,
+    filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
     val stats = accountStats[account.id]
@@ -435,7 +434,23 @@ private fun AccountItemContent(
             isAmoled = isAmoled,
             onClick = handleAccountClick,
             modifier = modifier,
-            precision = precision
+            precision = precision,
+            onClickIncome = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = listOf(account.id),
+                        transactionType = "income"
+                    )
+                )
+            },
+            onClickExpense = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = listOf(account.id),
+                        transactionType = "expense"
+                    )
+                )
+            }
         )
         2 -> AeonAccountCardMedium(
             account = account,

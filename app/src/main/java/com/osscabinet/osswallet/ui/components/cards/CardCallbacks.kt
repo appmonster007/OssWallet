@@ -59,7 +59,7 @@ sealed class CardCallbacks {
     data class Analytics(
         val onUpdate: (Any) -> Unit = {},
         val onDelete: () -> Unit = {},
-        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {}
+        val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
     
     /**
@@ -67,7 +67,9 @@ sealed class CardCallbacks {
      */
     data class AccountHero(
         val onShowCurrencyBadgesChange: (String, Boolean) -> Unit,
-        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
+        val onFilterChange: (String, com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = { _, _ -> },
+        val onClickIncome: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
+        val onClickExpense: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
         val onClick: (() -> Unit)? = null,
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
@@ -78,11 +80,11 @@ sealed class CardCallbacks {
     data class Accounts(
         val onGridColumnsChange: (String, Int) -> Unit,
         val onLayoutChange: (String, String) -> Unit,
-        val onFilterChange: (String, TransactionFilter) -> Unit,
+        val onFilterChange: (String, com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
         val onShowAddAccountCardChange: (String, Boolean) -> Unit,
         val onManageClick: () -> Unit = {},
         val onAccountClick: (String) -> Unit = {},
-        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
 
@@ -121,7 +123,7 @@ sealed class CardCallbacks {
     data class RecentActivities(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig) -> Unit = {},
         val onTransactionClick: (Long) -> Unit = {},
-        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},
         val onDelete: () -> Unit = {},
         val onItemExpanded: (Long) -> Unit = {},
         val onItemCollapsed: (Long) -> Unit = {},

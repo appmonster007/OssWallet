@@ -50,7 +50,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import java.math.BigDecimal
 
 @Composable
@@ -61,7 +61,7 @@ fun RecentActivitiesCard(
     config: RecentActivitiesCardConfig,
     onUpdate: (RecentActivitiesCardConfig) -> Unit,
     onTransactionClick: (Long) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -82,18 +82,6 @@ fun RecentActivitiesCard(
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
 
-    val recordsFilterContext = remember(config.filter) {
-        val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(config.filter.timelineRange)
-        RecordsFilterContext.Custom(
-            accountIds = config.filter.accountIds,
-            transactionType = config.filter.transactionType,
-            startDate = start,
-            endDate = end,
-            categoryIds = config.filter.categoryIds.map { it.toString() },
-            tags = config.filter.tags
-        )
-    }
-
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.History,
@@ -101,7 +89,7 @@ fun RecentActivitiesCard(
         headerModifier = headerModifier,
         filter = config.filter,
         filterRules = config.filterRules,
-        onClick = { onRecordsClick(recordsFilterContext) },
+        onClick = { onRecordsClick(config.filter) },
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

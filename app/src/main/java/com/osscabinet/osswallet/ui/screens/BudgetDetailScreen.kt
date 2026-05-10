@@ -57,7 +57,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
@@ -79,7 +80,7 @@ fun BudgetDetailScreen(
     onEditClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit
+    onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
@@ -313,12 +314,11 @@ fun BudgetDetailScreen(
                                         now
                                     )
                                     onRecordsClick(
-                                        RecordsFilterContext.Custom(
+                                        TransactionFilter(
                                             accountIds = budget.accountIds,
-                                            categoryIds = budget.categoryIds.map { it.toString() },
+                                            categoryIds = budget.categoryIds,
                                             tags = budget.tags,
-                                            startDate = start,
-                                            endDate = end,
+                                            timelineRange = TimelineRange.CustomRange(start, end),
                                             transactionType = transactionType
                                         )
                                     )

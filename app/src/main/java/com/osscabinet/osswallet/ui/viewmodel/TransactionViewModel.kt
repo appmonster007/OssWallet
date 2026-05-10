@@ -25,7 +25,6 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,10 +62,9 @@ class TransactionViewModel(
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
 
-    // Track the initial filter context from navigation (for backward compatibility)
-    private val _initialFilterContext =
-        MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
-    val initialFilterContext = _initialFilterContext.asStateFlow()
+    // Track the initial filter from navigation (for resetting)
+    private val _initialFilter = MutableStateFlow(TransactionFilter())
+    val initialFilter = _initialFilter.asStateFlow()
 
     // Track if records filter has been manually initialized (to prevent reinitialization from navigation)
     private val _recordsFilterInitialized = MutableStateFlow(false)
@@ -244,61 +242,29 @@ class TransactionViewModel(
     }
 
     /**
-     * Converts RecordsFilterContext to TransactionFilter
-     */
-    private fun RecordsFilterContext.toTransactionFilter(): TransactionFilter = when (this) {
-        is RecordsFilterContext.None -> TransactionFilter()
-        is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(accountId))
-        is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
-            accountIds = listOf(accountId),
-            transactionType = if (isIncome) "income" else "expense"
-        )
-
-        is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
-            accountIds = listOf(accountId),
-            currencies = listOf(currency)
-        )
-
-        is RecordsFilterContext.Custom -> TransactionFilter(
-            accountIds = accountIds,
-            transactionType = transactionType,
-            timelineRange = TimelineRange.CustomRange(startDate, endDate),
-            categoryIds = categoryIds.map { it.toLong() },
-            currencies = currencies,
-            paymentMethods = paymentMethods,
-            queryNote = queryNote,
-            minAmount = minAmount?.let { BigDecimal(it) },
-            maxAmount = maxAmount?.let { BigDecimal(it) },
-            queryPayee = queryPayee,
-            tags = tags
-        )
-    }
-
-    /**
      * Initialize the filter from a navigation context
-     * This should be called when the screen opens with a context parameter
-     * Converts RecordsFilterContext to TransactionFilter and sets it in FilterManager
+     * This should be called when the screen opens with a filter parameter
+     * Sets the initial filter in FilterManager
      */
-    fun initializeRecordsFilter(context: RecordsFilterContext) {
-        _initialFilterContext.value = context
+    fun initializeRecordsFilter(filter: TransactionFilter) {
+        _initialFilter.value = filter
         recordsFilterManager.clear()
-        recordsFilterManager.setFilter("initial", context.toTransactionFilter())
+        recordsFilterManager.setFilter("initial", filter)
         _recordsFilterInitialized.value = true
     }
 
     /**
-     * Check if the current filter has been modified from the initial context
+     * Check if the current filter has been modified from the initial filter
      */
     fun hasModifiedFilter(): Boolean {
-        val initialFilter = _initialFilterContext.value.toTransactionFilter()
-        return recordsFilter.value != initialFilter
+        return recordsFilter.value != _initialFilter.value
     }
 
     /**
-     * Reset the filter to the initial context
+     * Reset the filter to the initial state
      */
     fun resetToInitialFilter() {
-        initializeRecordsFilter(_initialFilterContext.value)
+        initializeRecordsFilter(_initialFilter.value)
     }
 
     fun addTransaction(

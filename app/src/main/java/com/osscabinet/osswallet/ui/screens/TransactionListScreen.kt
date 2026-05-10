@@ -19,7 +19,6 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterShee
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
@@ -42,7 +41,7 @@ fun TransactionListScreen(
     onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel,
     // Context-aware parameters
-    filterContext: String? = null
+    filterJson: String? = null
 ) {
     val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
@@ -72,14 +71,14 @@ fun TransactionListScreen(
         }
     }
 
-    // Initialize filter from context when screen opens
-    LaunchedEffect(filterContext) {
-        if (filterContext != null) {
+    // Initialize filter from navigation parameter when screen opens
+    LaunchedEffect(filterJson) {
+        if (filterJson != null) {
             try {
-                val context = Json.decodeFromString<RecordsFilterContext>(
-                    java.net.URLDecoder.decode(filterContext, "UTF-8")
+                val filter = Json.decodeFromString<TransactionFilter>(
+                    java.net.URLDecoder.decode(filterJson, "UTF-8")
                 )
-                viewModel.initializeRecordsFilter(context)
+                viewModel.initializeRecordsFilter(filter)
             } catch (e: Exception) {
                 // Handle error silently
             }

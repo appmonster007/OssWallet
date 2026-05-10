@@ -7,30 +7,32 @@ import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+
 /**
  * Extension functions for context-aware navigation
  * Provides type-safe navigation with filter/view context parameters
  */
 
 /**
- * Navigate to TransactionListScreen with a filter context
- * @param context The filter context to apply (encoded as JSON)
+ * Navigate to TransactionListScreen with a filter
+ * @param filter The filter to apply (encoded as JSON)
  * @param topLevel Whether to treat this as a top-level navigation (hamburger menu instead of back)
  * @param builder Optional navigation options builder
  */
 fun NavHostController.navigateToRecords(
-    context: RecordsFilterContext,
+    filter: TransactionFilter,
     topLevel: Boolean = false,
     builder: (NavOptionsBuilder.() -> Unit)? = null
 ) {
-    val encodedContext = URLEncoder.encode(
-        Json.encodeToString(context),
+    val encodedFilter = URLEncoder.encode(
+        Json.encodeToString(filter),
         StandardCharsets.UTF_8.toString()
     )
     if (builder != null) {
-        navigate(Screen.TransactionList.createRoute(encodedContext, topLevel), builder)
+        navigate(Screen.TransactionList.createRoute(encodedFilter, topLevel), builder)
     } else {
-        navigate(Screen.TransactionList.createRoute(encodedContext, topLevel))
+        navigate(Screen.TransactionList.createRoute(encodedFilter, topLevel))
     }
 }
 

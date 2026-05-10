@@ -63,7 +63,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
 fun CategoryTreemapCard(
@@ -73,7 +72,7 @@ fun CategoryTreemapCard(
     headerModifier: Modifier = Modifier,
     onUpdate: (CategoryTreemapCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
-    onRecordsClick: (RecordsFilterContext) -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
@@ -244,17 +243,11 @@ fun CategoryTreemapCard(
                         val clickedItem = groupedData.find { it.category == node.name }
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
-                        val currentType = config.filter.transactionType ?: "expense"
-                        val (start, end) = TimelineService.getDateRange(config.filter.timelineRange)
-
                         onRecordsClick(
-                            RecordsFilterContext.Custom(
-                            categoryIds = categoryIds,
-                            accountIds = config.filter.accountIds,
-                            startDate = start,
-                            endDate = end,
-                            transactionType = currentType
-                        ))
+                            config.filter.copy(
+                                categoryIds = categoryIds.map { it.toLong() }
+                            )
+                        )
                     }
                 )
             } else {

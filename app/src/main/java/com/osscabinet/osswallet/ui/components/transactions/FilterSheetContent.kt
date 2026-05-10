@@ -44,7 +44,6 @@ fun FilterSheetContent(
     onApplyFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
-    isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
@@ -128,7 +127,6 @@ fun FilterSheetContent(
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
             onClick = onToggleExpand,
-            isExpanded = isExpanded,
             showArcTab = false,
             backgroundColor = backgroundColor
         )
@@ -340,8 +338,7 @@ fun FilterSheetContentPreview() {
                 onUpdateTimelineRange = { },
                 onApplyFilter = {},
                 onToggleExpand = {},
-                onClose = {},
-                isExpanded = false
+                onClose = {}
             )
         }
     }

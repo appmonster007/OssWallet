@@ -13,7 +13,7 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.CardReorderableList
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
 /**
  * Robust, unified card list component for all analytical screens.
@@ -27,7 +27,7 @@ fun AeonCardList(
     cardUpdateHandler: CardUpdateHandler,
     onReorder: (List<CardConfig>) -> Unit,
     onDelete: (String) -> Unit,
-    onRecordsClick: (RecordsFilterContext) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(12.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),

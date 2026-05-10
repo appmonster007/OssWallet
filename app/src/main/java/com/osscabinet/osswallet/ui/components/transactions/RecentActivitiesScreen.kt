@@ -30,10 +30,10 @@ import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -46,7 +46,7 @@ fun RecentActivitiesScreen(
     allTransactions: List<TransactionWithBalance>,
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, Category>,
-    onRecordsClick: (RecordsFilterContext) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
@@ -65,7 +65,7 @@ fun RecentActivitiesScreen(
     applyFilter: Boolean = true,
     excludeFuture: Boolean = true,
     precision: Int = 2,
-    filterContext: RecordsFilterContext = RecordsFilterContext.None,
+    filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
     is24Hour: Boolean = false,
@@ -115,7 +115,7 @@ fun RecentActivitiesScreen(
                     )
                 }
                 TextButton(
-                    onClick = { onRecordsClick(filterContext) },
+                    onClick = { onRecordsClick(filter) },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     modifier = Modifier.height(32.dp)
                 ) {

@@ -40,7 +40,6 @@ fun TransactionFilterSheet(
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
-    isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
@@ -58,7 +57,6 @@ fun TransactionFilterSheet(
             onApplyFilter = onUpdateFilter,
             onToggleExpand = onToggleExpand,
             onClose = onClose,
-            isExpanded = isExpanded,
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
             accountNames = accountNames,
@@ -115,8 +113,7 @@ fun TransactionFilterSheetPreview() {
                     onUpdateTimelineRange = { },
                     onUpdateFilter = {},
                     onToggleExpand = {},
-                    onClose = {},
-                    isExpanded = false
+                    onClose = {}
                 )
 
                 // Theme Switcher

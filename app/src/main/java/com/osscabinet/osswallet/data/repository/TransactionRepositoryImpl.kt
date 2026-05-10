@@ -63,6 +63,10 @@ class TransactionRepositoryImpl(
             queryBuilder.append(" AND timestamp <= ?")
             args.add(endTime)
         }
+        if (filter.excludeFuture) {
+            queryBuilder.append(" AND timestamp <= ?")
+            args.add(System.currentTimeMillis())
+        }
         if (filter.accountIds.isNotEmpty()) {
             val placeholders = filter.accountIds.joinByComma { "?" }
             queryBuilder.append(" AND accountId IN ($placeholders)")

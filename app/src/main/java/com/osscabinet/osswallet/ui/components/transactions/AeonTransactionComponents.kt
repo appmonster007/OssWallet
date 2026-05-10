@@ -38,9 +38,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -54,22 +56,15 @@ import java.util.Locale
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AeonTransactionList(
-    transactions: List<TransactionWithBalance>,
-    accountMap: Map<String, String>,
-    categoryMap: Map<Long, Category>,
+    listState: TransactionListState,
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    showDailyHeader: Boolean = true,
     precision: Int = 2,
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
-    groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    accountCurrencyMap: Map<String, String> = emptyMap(),
-    filterAccountId: String? = null,
     revealedCardIds: List<Long> = emptyList(),
     onItemExpanded: (Long) -> Unit = {},
     onItemCollapsed: (Long) -> Unit = {},
@@ -80,104 +75,81 @@ fun AeonTransactionList(
     onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
-    val groupedTransactions = TimelineService.groupTransactions(transactions, groupBy)
-
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        groupedTransactions.forEach { (key, groupTransactions) ->
-            val headerData = TimelineService.getHeaderData(
-                groupKey = key,
-                groupTransactions = groupTransactions,
-                allTransactions = transactions,
-                groupingType = groupBy,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
-            )
-
+        listState.groups.forEach { group ->
             stickyHeader {
                 TransactionHeader(
-                    title = headerData.title,
-                    subtitle = headerData.subtitle,
-                    incomeByCurrency = headerData.incomeByCurrency,
-                    expenseByCurrency = headerData.expenseByCurrency,
-                    closingBalancesByCurrency = headerData.closingBalancesByCurrency,
-                    allCurrencies = headerData.allCurrencies,
-                    incomeBase = headerData.incomeBase,
-                    expenseBase = headerData.expenseBase,
-                    netBase = headerData.netBase,
-                    totalClosingBalanceBase = headerData.totalClosingBalanceBase,
+                    title = group.headerData.title,
+                    subtitle = group.headerData.subtitle,
+                    incomeByCurrency = group.headerData.incomeByCurrency,
+                    expenseByCurrency = group.headerData.expenseByCurrency,
+                    closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
+                    allCurrencies = group.headerData.allCurrencies,
+                    incomeBase = group.headerData.incomeBase,
+                    expenseBase = group.headerData.expenseBase,
+                    netBase = group.headerData.netBase,
+                    totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                     baseCurrency = baseCurrency,
                     precision = precision
                 )
             }
 
-            items(groupTransactions, key = { it.transaction.id }) { item ->
-                val category = categoryMap[item.transaction.categoryId]
-                val icon = getIconByName(category?.iconName)
-                val iconBg = category?.colorHex?.let { Color(it) }
-                    ?: MaterialTheme.colorScheme.primaryContainer
-
-                val amountInBase = CurrencyService.convertAmount(
-                    item.transaction.amount,
-                    item.transaction.currency,
-                    baseCurrency,
-                    exchangeRates,
-                    precision
-                )
+            items(group.transactions, key = { it.item.transaction.id }) { enriched ->
+                val tx = enriched.item.transaction
+                val icon = getIconByName(enriched.categoryIcon)
+                val iconBg = Color(enriched.categoryColor)
 
                 SwipeableTransactionItem(
-                    transaction = item.transaction,
-                    isRevealed = revealedCardIds.contains(item.transaction.id),
-                    onExpandLeft = { onItemExpanded(item.transaction.id) },
-                    onExpandRight = { onItemExpanded(item.transaction.id) },
-                    onCollapse = { onItemCollapsed(item.transaction.id) },
-                    onFullSwipeRight = { onFullSwipeRight(item.transaction.id) },
-                    onStatusChange = { onStatusChange(item.transaction.id, it) },
-                    onClone = { onClone(item.transaction.id) },
-                    onDelete = { onDelete(item.transaction.id) },
-                    onSplit = { onSplit(item.transaction.id) }
+                    transaction = tx,
+                    isRevealed = revealedCardIds.contains(tx.id),
+                    onExpandLeft = { onItemExpanded(tx.id) },
+                    onExpandRight = { onItemExpanded(tx.id) },
+                    onCollapse = { onItemCollapsed(tx.id) },
+                    onFullSwipeRight = { onFullSwipeRight(tx.id) },
+                    onStatusChange = { onStatusChange(tx.id, it) },
+                    onClone = { onClone(tx.id) },
+                    onDelete = { onDelete(tx.id) },
+                    onSplit = { onSplit(tx.id) }
                 ) {
                     AeonTransactionItem(
-                        category = category?.name ?: "Uncategorized",
-                        account = accountMap[item.transaction.accountId] ?: "Unknown Account",
+                        category = enriched.categoryName,
+                        account = enriched.accountName,
                         amount = formatCurrencyRight(
-                            item.transaction.amount,
-                            item.transaction.currency,
+                            tx.amount,
+                            tx.currency,
                             precision
                         ),
-                        convertedAmount = if (item.transaction.currency != baseCurrency) {
-                            formatCurrencyRight(amountInBase, baseCurrency, precision)
+                        convertedAmount = if ((tx.currency != baseCurrency) && (enriched.amountInBase != null)) {
+                            formatCurrencyRight(enriched.amountInBase, baseCurrency, precision)
                         } else null,
                         balanceBefore = formatCurrencyRight(
-                            item.balanceBefore,
-                            item.transaction.currency,
+                            enriched.item.balanceBefore,
+                            enriched.accountCurrency,
                             precision
                         ),
                         balanceAfter = formatCurrencyRight(
-                            item.balanceAfter,
-                            item.transaction.currency,
+                            enriched.item.balanceAfter,
+                            enriched.accountCurrency,
                             precision
                         ),
-                        type = if (item.transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                         timestamp = SimpleDateFormat(
                             if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a",
                             Locale.getDefault()
-                        ).format(Date(item.transaction.timestamp)),
-                        note = item.transaction.note,
-                        tags = item.transaction.tags,
+                        ).format(Date(tx.timestamp)),
+                        note = tx.note,
+                        tags = tx.tags,
                         icon = icon,
                         iconBg = iconBg,
-                        precision = precision,
                         useNoteAsHeader = useNoteAsHeader,
                         showOpeningBalance = showOpeningBalance,
                         showClosingBalance = showClosingBalance,
-                        status = item.transaction.status,
-                        onClick = { onTransactionClick(item.transaction) }
-                    )
+                        status = tx.status
+                    ) { onTransactionClick(tx) }
                 }
             }
         }
@@ -206,7 +178,6 @@ fun AeonTransactionItem(
     tags: List<String> = emptyList(),
     icon: ImageVector? = null,
     iconBg: Color? = null,
-    precision: Int = 2,
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
@@ -215,7 +186,6 @@ fun AeonTransactionItem(
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
     val headerText = if (isNoteHeader) note else category
-    val subHeaderText = account
     val bottomText = if (isNoteHeader) category else note
 
     Surface(
@@ -277,8 +247,7 @@ fun AeonTransactionItem(
                                     Icon(
                                         imageVector = when (status) {
                                             com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Icons.Rounded.Check
-                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Icons.Rounded.Sync
-                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Icons.Rounded.Check
+                                            else -> Icons.Rounded.Sync
                                         },
                                         contentDescription = null,
                                         tint = Color.White,
@@ -306,7 +275,7 @@ fun AeonTransactionItem(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                subHeaderText,
+                                account,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp
                                 ),

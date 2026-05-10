@@ -100,7 +100,6 @@ fun LinkedTransactionSelection(
                                     tags = tx.tags,
                                     icon = icon,
                                     iconBg = iconBg,
-                                    precision = 2,
                                     showOpeningBalance = false,
                                     showClosingBalance = false,
                                     status = tx.status,

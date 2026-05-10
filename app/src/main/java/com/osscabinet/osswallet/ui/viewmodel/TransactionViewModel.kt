@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -107,31 +109,32 @@ class TransactionViewModel(
                 com.osscabinet.ossWallet.data.local.TransactionSectionSettings()
             )
 
-    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
+    val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> = settingsRepository.currentProfileId
+        .flatMapLatest { accountRepository.getAllAccounts(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val baseCurrency: StateFlow<String> = computationRepository.selectedCurrency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
+
+    val absoluteTransactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         settingsRepository.currentProfileId
             .flatMapLatest { profileId ->
                 combine(
-                    recordsFilter.flatMapLatest {
-                        transactionUseCases.getFilteredTransactions(
-                            profileId,
-                            it
-                        )
-                    },
-                    accountRepository.getAllAccounts(profileId),
-                    computationRepository.exchangeRates,
-                    computationRepository.hasLoadedExchangeRates,
-                    recordsFilter
-                ) { filteredTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
+                    transactionUseCases.getTransactions(profileId),
+                    accounts,
+                    exchangeRates,
+                    computationRepository.hasLoadedExchangeRates
+                ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
                     if (!hasLoadedExchangeRates) return@combine emptyList<TransactionWithBalance>()
 
                     val precision = decimalPrecision.value
 
                     transactionUseCases.getRecentTransactions(
-                        allTransactions = filteredTransactions,
+                        allTransactions = allTransactions,
                         accounts = accounts,
                         exchangeRates = rates,
                         precision = precision,
-                        limit = Int.MAX_VALUE // Use MAX_VALUE for the full list with balances
+                        limit = Int.MAX_VALUE
                     )
                 }
             }.stateIn(
@@ -139,6 +142,81 @@ class TransactionViewModel(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+
+    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
+        combine(
+            absoluteTransactionsWithBalance,
+            recordsFilter
+        ) { absoluteTxs, currentFilter ->
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, currentFilter)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val scopedHistoryWithBalance: StateFlow<List<TransactionWithBalance>> =
+        combine(
+            absoluteTransactionsWithBalance,
+            recordsFilter
+        ) { absoluteTxs, currentFilter ->
+            absoluteTxs.filter { item ->
+                val tx = item.transaction
+                val matchesAccount =
+                    currentFilter.accountIds.isEmpty() || tx.accountId in currentFilter.accountIds
+                val matchesFuture =
+                    !currentFilter.excludeFuture || tx.timestamp <= System.currentTimeMillis()
+                matchesAccount && matchesFuture
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val listState: StateFlow<TransactionListState> =
+        combine(
+            transactionsWithBalance,
+            scopedHistoryWithBalance,
+            accounts,
+            categories,
+            baseCurrency,
+            exchangeRates,
+            decimalPrecision,
+            recordsSettings
+        ) { args: Array<*> ->
+            @Suppress("UNCHECKED_CAST")
+            val filtered = args[0] as List<TransactionWithBalance>
+            @Suppress("UNCHECKED_CAST")
+            val absolute = args[1] as List<TransactionWithBalance>
+            @Suppress("UNCHECKED_CAST")
+            val accounts = args[2] as List<com.osscabinet.ossWallet.domain.model.Account>
+            @Suppress("UNCHECKED_CAST")
+            val categories = args[3] as List<com.osscabinet.ossWallet.domain.model.Category>
+            val base = args[4] as String
+            @Suppress("UNCHECKED_CAST")
+            val rates = args[5] as Map<String, BigDecimal>
+            val precision = args[6] as Int
+            val settings = args[7] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+
+            if (filtered.isEmpty()) return@combine TransactionListState()
+
+            val groups = TimelineService.getGroupedData(
+                transactions = filtered,
+                absoluteHistory = absolute,
+                groupingType = settings.groupBy,
+                accounts = accounts,
+                categories = categories,
+                baseCurrency = base,
+                exchangeRates = rates,
+                precision = precision
+            )
+            TransactionListState(groups = groups, isEmpty = false)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = TransactionListState()
+        )
 
     val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
         .map { list -> list.map { it.transaction } }

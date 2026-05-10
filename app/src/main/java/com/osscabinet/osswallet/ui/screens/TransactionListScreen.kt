@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -34,21 +35,16 @@ fun TransactionListScreen(
     accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
-    onAddTransactionClick: (Int?, Long?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onBackClick: () -> Unit,
-    onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel,
     // Context-aware parameters
     filterJson: String? = null
 ) {
-    val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
+    val listState by viewModel.listState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val accountMap = accounts.associate { it.id to it.name }
-    val accountCurrencyMap = accounts.associate { it.id to it.currencyCode }
     val categories by viewModel.categories.collectAsStateWithLifecycle()
-    val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
@@ -91,18 +87,14 @@ fun TransactionListScreen(
     val isTopLevel = isTopLevelParam
 
     TransactionListContent(
-        transactionsWithBalance = transactionsWithBalance,
+        listState = listState,
         accounts = accounts,
-        accountMap = accountMap,
-        accountCurrencyMap = accountCurrencyMap,
         categories = categories,
-        categoryMap = categoryMap,
         decimalPrecision = decimalPrecision,
         analyticsState = analyticsState,
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
-        onAddTransactionClick = { type, templateId -> navigate { onAddTransactionClick(type, templateId) } },
         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
         onBackClick = {
             navigate {
@@ -112,11 +104,9 @@ fun TransactionListScreen(
         },
         onMenuClick = onMenuClick,
         isTopLevel = isTopLevel,
-        onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
         onUpdateTimelineRange = { viewModel.updateRecordsTimelineRange(it) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
-        accountNames = accountMap,
         onResetToInitial = { viewModel.resetToInitialFilter() },
         revealedCardIds = revealedCardIds,
         onItemExpanded = { viewModel.onItemExpanded(it) },

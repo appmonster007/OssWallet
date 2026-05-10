@@ -42,7 +42,7 @@ fun TransactionHeader(
     baseCurrency: String,
     precision: Int
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(true) }
     val positiveColor = Color(0xFF4CAF50)
     val negativeColor = MaterialTheme.colorScheme.error
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer

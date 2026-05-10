@@ -1,6 +1,10 @@
 package com.osscabinet.ossWallet.domain.service.timeline
 
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.TransactionGroup
+import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
@@ -234,7 +238,7 @@ object TimelineService {
     fun getHeaderData(
         groupKey: String,
         groupTransactions: List<TransactionWithBalance>,
-        allTransactions: List<TransactionWithBalance>,
+        absoluteHistory: List<TransactionWithBalance>,
         groupingType: TransactionGroupingType,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
@@ -243,38 +247,76 @@ object TimelineService {
         val (title, subtitle, endTimestamp) = when (groupingType) {
             TransactionGroupingType.BY_DAY -> {
                 val firstTx = groupTransactions.first()
-                val date = Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+                val date =
+                    Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId)
+                        .toLocalDate()
                 val formattedDate = date.format(dateFormatter)
                 val isToday = formattedDate == LocalDate.now(systemZoneId).format(dateFormatter)
                 val titleText = if (isToday) "Today" else formattedDate
-                val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId).toInstant().toEpochMilli()
-                Triple(titleText, "${groupTransactions.size} transaction${if (groupTransactions.size > 1) "s" else ""}", endOfDay)
+                val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
+                    .toInstant().toEpochMilli()
+                Triple(
+                    titleText,
+                    "${groupTransactions.size} transaction${if (groupTransactions.size > 1) "s" else ""}",
+                    endOfDay
+                )
             }
+
             TransactionGroupingType.BY_WEEK -> {
                 val (year, week) = groupKey.split("-W").map { it.toInt() }
-                val weekStartDate = LocalDate.now(systemZoneId).withYear(year).with(weekFields.weekOfWeekBasedYear(), week.toLong()).with(weekFields.dayOfWeek(), 1)
+                val weekStartDate = LocalDate.now(systemZoneId).withYear(year)
+                    .with(weekFields.weekOfWeekBasedYear(), week.toLong())
+                    .with(weekFields.dayOfWeek(), 1)
                 val weekEndDate = weekStartDate.plusDays(6)
-                val endOfWeek = weekEndDate.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId).toInstant().toEpochMilli()
-                Triple("WEEK $week", "${weekStartDate.format(shortDateFormatter)} - ${weekEndDate.format(dateFormatter)}", endOfWeek)
+                val endOfWeek = weekEndDate.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
+                    .toInstant().toEpochMilli()
+                Triple(
+                    "WEEK $week",
+                    "${weekStartDate.format(shortDateFormatter)} - ${weekEndDate.format(dateFormatter)}",
+                    endOfWeek
+                )
             }
         }
 
-        val summaryByCurrency = AggregationService.calculateSummaryByCurrency(groupTransactions.map { it.transaction })
+        val summaryByCurrency =
+            AggregationService.calculateSummaryByCurrency(groupTransactions.map { it.transaction })
         val incomeByCurrency = summaryByCurrency.mapValues { it.value.income }
-        val incomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
+        val incomeBase = CurrencyService.calculateTotalInCurrency(
+            incomeByCurrency,
+            baseCurrency,
+            exchangeRates,
+            precision
+        )
 
         val expenseByCurrency = summaryByCurrency.mapValues { it.value.expense }
-        val expenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
+        val expenseBase = CurrencyService.calculateTotalInCurrency(
+            expenseByCurrency,
+            baseCurrency,
+            exchangeRates,
+            precision
+        )
 
-        val closingBalancesByCurrency = allTransactions
+        // Optimized closing balance calculation: find the latest transaction for each account BEFORE endTimestamp
+        val closingBalancesByCurrency = absoluteHistory
+            .asSequence()
             .filter { it.transaction.timestamp <= endTimestamp }
             .groupBy { it.transaction.accountId }
-            .mapValues { (_, txs) -> txs.maxBy { it.transaction.timestamp } }
+            .mapValues { (_, txs) ->
+                // Since transactions are already sorted (descending by timestamp in absoluteHistory usually),
+                // but for balance calculation they might be ascending.
+                // Let's ensure we get the latest one.
+                txs.maxBy { it.transaction.timestamp }
+            }
             .values
             .groupBy { it.transaction.currency }
             .mapValues { it.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } }
 
-        val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(closingBalancesByCurrency, baseCurrency, exchangeRates, precision)
+        val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
+            closingBalancesByCurrency,
+            baseCurrency,
+            exchangeRates,
+            precision
+        )
 
         return GroupHeaderData(
             title = title,
@@ -288,6 +330,64 @@ object TimelineService {
             netBase = incomeBase.add(expenseBase),
             totalClosingBalanceBase = totalClosingBalanceBase
         )
+    }
+
+    /**
+     * Pre-computes grouped transactions with their corresponding header data and enriched UI models.
+     */
+    fun getGroupedData(
+        transactions: List<TransactionWithBalance>,
+        absoluteHistory: List<TransactionWithBalance>,
+        groupingType: TransactionGroupingType,
+        accounts: List<Account>,
+        categories: List<Category>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<TransactionGroup> {
+        val groups = groupTransactions(transactions, groupingType)
+        val sortedKeys = groups.keys.sortedDescending()
+
+        val accountMap = accounts.associateBy { it.id }
+        val categoryMap = categories.associateBy { it.id }
+
+        return sortedKeys.map { key ->
+            val groupItems = groups[key] ?: emptyList()
+            
+            val enrichedTransactions = groupItems.map { txWithBalance ->
+                val tx = txWithBalance.transaction
+                val account = accountMap[tx.accountId]
+                val category = categoryMap[tx.categoryId]
+                
+                val amountInBase = if (tx.currency != baseCurrency) {
+                    CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                } else tx.amount
+
+                TransactionUiModel(
+                    item = txWithBalance,
+                    accountName = account?.name ?: "Unknown",
+                    accountCurrency = account?.currencyCode ?: tx.currency,
+                    categoryName = category?.name ?: "Uncategorized",
+                    categoryIcon = category?.iconName,
+                    categoryColor = category?.colorHex ?: 0,
+                    amountInBase = amountInBase
+                )
+            }
+
+            TransactionGroup(
+                key = key,
+                headerData = getHeaderData(
+                    groupKey = key,
+                    groupTransactions = groupItems,
+                    absoluteHistory = absoluteHistory,
+                    groupingType = groupingType,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                ),
+                transactions = enrichedTransactions
+            )
+        }
     }
 
     data class GroupHeaderData(

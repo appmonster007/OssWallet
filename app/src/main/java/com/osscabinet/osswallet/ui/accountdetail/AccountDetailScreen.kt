@@ -91,6 +91,7 @@ fun AccountDetailScreen(
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, Int?, Long?) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
@@ -284,6 +285,7 @@ fun AccountDetailScreen(
                                 transactionViewModel = transactionViewModel,
                                 onCloneTransactionClick = onCloneTransactionClick,
                                 onEditTransactionClick = onEditTransactionClick,
+                                onSplitTransactionClick = onSplitTransactionClick,
                                 onAccountClick = onAccountClick,
                                 navigate = navigate,
                                 modifier = Modifier
@@ -336,7 +338,7 @@ fun AccountDetailScreen(
                                     onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
                                     onClone = { onCloneTransactionClick(it) },
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                    onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                                    onSplit = { onSplitTransactionClick(it) },
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
@@ -393,6 +395,7 @@ fun DynamicAccountDetailCards(
     transactionViewModel: TransactionViewModel,
     onCloneTransactionClick: (Long) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onSplitTransactionClick: (Long) -> Unit = {},
     onAccountClick: (String) -> Unit,
     navigate: (() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
@@ -454,7 +457,7 @@ fun DynamicAccountDetailCards(
         },
         onClone = { onCloneTransactionClick(it) },
         onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-        onSplit = { transactionViewModel.quickSplitTransaction(it) },
+        onSplit = { onSplitTransactionClick(it) },
         onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
         currentTheme = currentTheme
     )
@@ -495,7 +498,7 @@ fun DynamicAccountDetailCards(
             },
             onClone = { onCloneTransactionClick(it) },
             onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-            onSplit = { transactionViewModel.quickSplitTransaction(it) },
+            onSplit = { onSplitTransactionClick(it) },
             onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
             baseFilter = accountScopeFilter,
             forceDisableAccountSelection = true,

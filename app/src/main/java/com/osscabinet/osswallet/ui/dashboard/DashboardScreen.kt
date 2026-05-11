@@ -257,6 +257,7 @@ fun DashboardScreen(
                         onRecordsClick = { context -> navigate { onRecordsClick(context) } },
                         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                         onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
+                        onSplitTransactionClick = { id -> navigate { onSplitTransactionClick(id) } },
                         transactionViewModel = transactionViewModel,
                         dashboardViewModel = dashboardViewModel,
                         cardComputerRegistry = cardComputerRegistry,
@@ -319,6 +320,7 @@ fun DashboardContent(
     onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     transactionViewModel: TransactionViewModel,
     dashboardViewModel: DashboardViewModel,
     cardComputerRegistry: CardComputerRegistry,
@@ -416,7 +418,7 @@ fun DashboardContent(
                         },
                         onClone = { onCloneTransactionClick(it) },
                         onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                        onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                        onSplit = { onSplitTransactionClick(it) },
                         onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
                     )
                 }
@@ -443,7 +445,7 @@ fun DashboardContent(
                     },
                     onClone = { onCloneTransactionClick(it) },
                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                    onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                    onSplit = { onSplitTransactionClick(it) },
                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                     precision = state.decimalPrecision,
                     is24Hour = state.use24HourFormat

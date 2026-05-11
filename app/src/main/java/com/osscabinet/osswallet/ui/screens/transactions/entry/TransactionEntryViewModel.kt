@@ -224,6 +224,7 @@ class TransactionEntryViewModel(
             selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.title else currentState.selectedTemplateName,
             prefillDto = prefill,
             isSplitMode = prefill.isSplitMode,
+            showSplitSheet = prefill.isSplitMode,
             splits = if (prefill.isSplitMode) {
                 listOf(
                     TransactionSplit(categoryId = prefill.categoryId, amount = prefill.amount, note = prefill.note),
@@ -362,6 +363,7 @@ class TransactionEntryViewModel(
             }
 
             is TransactionEntryEvent.ApplyTemplate -> applyPrefill(TransactionPrefillDTO.fromTemplate(event.template))
+            is TransactionEntryEvent.ApplyPrefill -> applyPrefill(event.prefill)
 
             // Splitting
             is TransactionEntryEvent.ToggleSplitMode -> update {

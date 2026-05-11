@@ -81,6 +81,8 @@ fun BudgetDetailScreen(
     onEditClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
@@ -352,9 +354,9 @@ fun BudgetDetailScreen(
                                         status
                                     )
                                 },
-                                onClone = { },
+                                onClone = { onCloneTransactionClick(it) },
                                 onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { },
+                                onSplit = { onSplitTransactionClick(it) },
                                 onFullSwipeRight = {
                                     transactionViewModel.toggleStatusClearedUncleared(
                                         it

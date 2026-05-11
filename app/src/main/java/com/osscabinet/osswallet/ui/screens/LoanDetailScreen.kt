@@ -95,6 +95,8 @@ fun LoanDetailScreen(
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
@@ -266,9 +268,9 @@ fun LoanDetailScreen(
                                         status
                                     )
                                 },
-                                onClone = { },
+                                onClone = { onCloneTransactionClick(it) },
                                 onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { },
+                                onSplit = { onSplitTransactionClick(it) },
                                 onFullSwipeRight = {
                                     transactionViewModel.toggleStatusClearedUncleared(
                                         it

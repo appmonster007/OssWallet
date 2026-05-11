@@ -121,7 +121,7 @@ fun TransactionHeaderCard(
                     )
 
                     if (!state.isTransfer) {
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         IconButton(
                             onClick = {
                                 if (!state.isSplitMode) {
@@ -129,21 +129,26 @@ fun TransactionHeaderCard(
                                 }
                                 onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                             },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (state.isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    else Color.Transparent
-                                )
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.CallSplit,
-                                contentDescription = "Split Transaction",
-                                modifier = Modifier.size(20.dp),
-                                tint = if (state.isSplitMode) MaterialTheme.colorScheme.primary 
-                                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (state.isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else Color.Transparent
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.CallSplit,
+                                    contentDescription = "Split Transaction",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = if (state.isSplitMode) MaterialTheme.colorScheme.primary 
+                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
                         }
                     }
                 }

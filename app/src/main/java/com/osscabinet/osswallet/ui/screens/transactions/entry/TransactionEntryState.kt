@@ -156,6 +156,7 @@ sealed class TransactionEntryEvent {
     data class SetExchangeRate(val rate: BigDecimal) : TransactionEntryEvent()
     data class SetTemplate(val templateName: String?) : TransactionEntryEvent()
     data class ApplyTemplate(val template: Template) : TransactionEntryEvent()
+    data class ApplyPrefill(val prefill: TransactionPrefillDTO) : TransactionEntryEvent()
 
     // Splitting
     data class ToggleSplitMode(val enabled: Boolean) : TransactionEntryEvent()

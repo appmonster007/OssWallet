@@ -128,6 +128,19 @@ fun TransactionListTopAppBar(
                             showMoreMenu = false
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Show Only Active Currencies") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showOnlyActiveCurrencies,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showOnlyActiveCurrencies = !recordsSettings.showOnlyActiveCurrencies))
+                            showMoreMenu = false
+                        }
+                    )
                 }
             }
         }

@@ -64,6 +64,7 @@ fun AeonTransactionList(
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
+    showOnlyActiveCurrencies: Boolean = false,
     baseCurrency: String,
     revealedCardIds: List<Long> = emptyList(),
     onItemExpanded: (Long) -> Unit = {},
@@ -98,7 +99,8 @@ fun AeonTransactionList(
                     baseCurrency = baseCurrency,
                     precision = precision,
                     showOpeningBalance = showOpeningBalance,
-                    showClosingBalance = showClosingBalance
+                    showClosingBalance = showClosingBalance,
+                    showOnlyActiveCurrencies = showOnlyActiveCurrencies
                 )
             }
 

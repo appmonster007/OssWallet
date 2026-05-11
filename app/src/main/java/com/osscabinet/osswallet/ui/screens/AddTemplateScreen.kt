@@ -156,10 +156,23 @@ fun AddTemplateScreen(
                         }
                     },
                     actions = {
-                        Surface(
-                            modifier = Modifier.padding(end = 16.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.primary,
+                        if (templateId != null) {
+                            IconButton(
+                                onClick = {
+                                    template?.let {
+                                        templateViewModel.deleteTemplate(it)
+                                        onBackClick()
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = "Delete",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        IconButton(
                             onClick = {
                                 if (name.isNotBlank()) {
                                     navigate {
@@ -199,15 +212,13 @@ fun AddTemplateScreen(
                                         onBackClick()
                                     }
                                 }
-                            }
+                            },
+                            enabled = name.isNotBlank()
                         ) {
-                            Text(
-                                "Save",
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
+                            Icon(
+                                Icons.Rounded.Done,
+                                contentDescription = "Save",
+                                tint = if (name.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                             )
                         }
                     }

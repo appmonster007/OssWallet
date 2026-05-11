@@ -119,7 +119,23 @@ fun AccountEntryScreen(
                     }
                 },
                 actions = {
-                    TextButton(
+                    if (isEditMode) {
+                        IconButton(
+                            onClick = {
+                                navigate {
+                                    viewModel.deleteAccount(accountId!!)
+                                    onBackClick()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    IconButton(
                         onClick = {
                             navigate {
                                 if (isEditMode && account != null) {
@@ -148,12 +164,12 @@ fun AccountEntryScreen(
                                 }
                             }
                         },
-                        enabled = canSave,
-                        modifier = Modifier.padding(end = 8.dp)
+                        enabled = canSave
                     ) {
-                        Text(
-                            if (isEditMode) "Save" else "Create",
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = "Save",
+                            tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                         )
                     }
                 },

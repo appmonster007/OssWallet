@@ -32,6 +32,8 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import java.io.File
 
@@ -161,18 +163,19 @@ fun AeonOSMMap(
                         overlays.add(marker)
                     }
                     
-                    setOnTouchListener { v, event ->
-                        if (event.action == android.view.MotionEvent.ACTION_UP) {
-                            v.performClick()
-                            val projection = currentMapView.projection
-                            val geoPoint = projection.fromPixels(event.x.toInt(), event.y.toInt()) as GeoPoint
-                            marker.position = geoPoint
-                            currentMapView.invalidate()
-                            onLocationSelected(geoPoint)
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+                        override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                            p?.let {
+                                marker.position = it
+                                invalidate()
+                                onLocationSelected(it)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            return true
                         }
-                        false // Allow MapView to handle other gestures
-                    }
+                        override fun longPressHelper(p: GeoPoint?): Boolean = false
+                    })
+                    overlays.add(0, eventsOverlay) // Add at bottom so marker can still be dragged
                 }
             },
             modifier = Modifier

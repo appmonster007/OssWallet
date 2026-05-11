@@ -9,6 +9,12 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.LocationServices
+import android.Manifest
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -128,10 +134,47 @@ fun TransactionEntryScreen(
             )
         }
     ) { innerPadding ->
+        if (!state.isEditMode && state.mapsAccessEnabled && state.locationCoords == null) {
+            LocationAutoFiller(
+                onLocationDetected = { coords ->
+                    viewModel.onEvent(TransactionEntryEvent.SetLocation(coords))
+                }
+            )
+        }
+
         TransactionFormBody(
             state = state,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun LocationAutoFiller(
+    onLocationDetected: (Pair<Double, Double>) -> Unit
+) {
+    val context = LocalContext.current
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var hasAttempted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(locationPermissionState.status.isGranted) {
+        if (!hasAttempted) {
+            if (locationPermissionState.status.isGranted) {
+                hasAttempted = true
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            onLocationDetected(it.latitude to it.longitude)
+                        }
+                    }
+                } catch (_: SecurityException) {
+                }
+            } else {
+                locationPermissionState.launchPermissionRequest()
+            }
+        }
     }
 }

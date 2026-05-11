@@ -78,6 +78,7 @@ data class TransactionEntryState(
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val decimalPrecision: Int = 2,
     val use24HourFormat: Boolean = false,
+    val mapsAccessEnabled: Boolean = false,
 
     // Edit mode data
     val transactionId: Long? = null,

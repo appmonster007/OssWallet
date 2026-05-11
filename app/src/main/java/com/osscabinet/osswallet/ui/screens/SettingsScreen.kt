@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.LocationOff
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,6 +56,7 @@ fun SettingsScreen(
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
+    val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -406,6 +409,25 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                SettingsItem(
+                    title = "Location Auto-fill",
+                    subtitle = if (mapsAccessEnabled) "Auto-fill current location for new transactions" else "Disabled location auto-fill",
+                    icon = if (mapsAccessEnabled) Icons.Rounded.LocationOn else Icons.Rounded.LocationOff,
+                    trailingContent = {
+                        Switch(
+                            checked = mapsAccessEnabled,
+                            onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        )
                     }
                 )
             }

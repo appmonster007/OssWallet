@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
 
 import android.Manifest
+import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -50,6 +51,7 @@ fun LocationSelection(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var selectedCoords by remember { mutableStateOf(currentCoords) }
+    var selectedAddress by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf(emptyList<SearchResult>()) }
     var searchHistory by remember { mutableStateOf(emptyList<SearchResult>()) }
@@ -152,6 +154,49 @@ fun LocationSelection(
         }
     }
 
+    suspend fun reverseGeocode(lat: Double, lon: Double) {
+        withContext(Dispatchers.IO) {
+            try {
+                val client = OkHttpClient()
+                val request = Request.Builder()
+                    .url("https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&addressdetails=1")
+                    .header("User-Agent", "OssWallet-Android-App")
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: ""
+                        val json = org.json.JSONObject(body)
+                        val displayName = json.optString("display_name", "")
+                        withContext(Dispatchers.Main) {
+                            selectedAddress = displayName
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    // Auto-fetch location on start if no location is provided
+    LaunchedEffect(locationPermissionState.status.isGranted) {
+        if (selectedCoords == null) {
+            if (locationPermissionState.status.isGranted) {
+                getCurrentLocation()
+            } else {
+                locationPermissionState.launchPermissionRequest()
+            }
+        }
+    }
+
+    // Reverse geocode when coords change
+    LaunchedEffect(selectedCoords) {
+        selectedCoords?.let { (lat, lon) ->
+            reverseGeocode(lat, lon)
+        } ?: run {
+            selectedAddress = null
+        }
+    }
+
     // Debounce search
     LaunchedEffect(searchQuery) {
         if (searchQuery.length > 2) {
@@ -167,6 +212,7 @@ fun LocationSelection(
         LocationSelectionContent(
             title = "Location",
             selectedCoords = selectedCoords,
+            selectedAddress = selectedAddress,
             searchQuery = searchQuery,
             searchResults = searchResults,
             searchHistory = searchHistory,
@@ -201,6 +247,7 @@ fun LocationSelection(
 fun LocationSelectionContent(
     title: String,
     selectedCoords: Pair<Double, Double>?,
+    selectedAddress: String?,
     searchQuery: String,
     searchResults: List<SearchResult>,
     searchHistory: List<SearchResult>,
@@ -411,105 +458,113 @@ fun LocationSelectionContent(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
-                    .padding(bottom = 160.dp), // Increased padding to clear the higher bottom bar
+                    .padding(bottom = if (selectedCoords != null) 210.dp else 24.dp), // Dynamic padding
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp, pressedElevation = 12.dp)
             ) {
                 Icon(Icons.Rounded.MyLocation, contentDescription = "My Location")
             }
 
             // Bottom Confirmation Bar
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                shadowElevation = 20.dp,
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            AnimatedVisibility(
+                visible = selectedCoords != null,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp, vertical = 28.dp)
-                        .windowInsetsPadding(WindowInsets.navigationBars),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 24.dp,
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 ) {
                     Column(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp, vertical = 24.dp)
+                            .windowInsetsPadding(WindowInsets.navigationBars),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
                         if (selectedCoords != null) {
-                            Text(
-                                text = "SELECTED COORDINATES",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.8.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                text = "%.6f,  %.6f".format(selectedCoords.first, selectedCoords.second),
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Text(
-                                text = "Tap on map or search to select location",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (selectedCoords != null) {
-                            Surface(
-                                onClick = onClear,
-                                modifier = Modifier.size(64.dp),
-                                shape = RoundedCornerShape(18.dp),
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f),
-                                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Rounded.DeleteOutline,
-                                        contentDescription = "Clear",
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(26.dp)
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.Place,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = selectedAddress?.split(",")?.firstOrNull() ?: "Selected Location",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords.first, selectedCoords.second),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
 
-                        Button(
-                            onClick = onConfirm,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(64.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                "Confirm Location",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
-                            )
+                            OutlinedIconButton(
+                                onClick = onClear,
+                                modifier = Modifier.size(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                colors = IconButtonDefaults.outlinedIconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Clear")
+                            }
+
+                            Button(
+                                onClick = onConfirm,
+                                enabled = selectedCoords != null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 8.dp)
+                            ) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    "Confirm Location",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
                     }
                 }
@@ -533,6 +588,7 @@ fun LocationSelectionPreview() {
         LocationSelectionContent(
             title = "Location",
             selectedCoords = 37.7749 to -122.4194,
+            selectedAddress = "San Francisco, CA, USA",
             searchQuery = "San Francisco",
             searchResults = listOf(
                 SearchResult("San Francisco, CA, USA", "San Francisco", "CA, USA", 37.7749, -122.4194),

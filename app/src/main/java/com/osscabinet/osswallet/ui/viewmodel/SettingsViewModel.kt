@@ -87,6 +87,9 @@ class SettingsViewModel(
     val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val mapsAccessEnabled: StateFlow<Boolean> = settingsRepository.mapsAccessEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -203,6 +206,12 @@ class SettingsViewModel(
     fun setUse24HourFormat(use24Hour: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveUse24HourFormat(use24Hour)
+        }
+    }
+
+    fun setMapsAccessEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveMapsAccessEnabled(enabled)
         }
     }
 

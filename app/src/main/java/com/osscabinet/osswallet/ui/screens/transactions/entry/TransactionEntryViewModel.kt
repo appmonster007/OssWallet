@@ -73,6 +73,7 @@ class TransactionEntryViewModel(
             val templates = templateRepository.getAllTemplates().first()
             val precision = settingsRepository.decimalPrecision.first()
             val use24Hour = settingsRepository.use24HourFormat.first()
+            val mapsAccess = settingsRepository.mapsAccessEnabled.first()
             val transactions = if (transactionId != null) {
                 transactionUseCases.getTransactions(profileId).first()
             } else emptyList()
@@ -104,6 +105,7 @@ class TransactionEntryViewModel(
                 templates = templates,
                 decimalPrecision = precision,
                 use24HourFormat = use24Hour,
+                mapsAccessEnabled = mapsAccess,
                 transactions = transactions,
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",

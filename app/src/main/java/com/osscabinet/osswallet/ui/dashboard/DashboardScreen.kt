@@ -101,6 +101,7 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,

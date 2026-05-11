@@ -179,6 +179,10 @@ fun OssWalletNavGraph(
                         transactionViewModel.setCloneTransactionId(id)
                         navController.navigate(Screen.AddTransaction.route)
                     },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     settingsViewModel = settingsViewModel,
@@ -254,6 +258,10 @@ fun OssWalletNavGraph(
                     onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
                         navController.navigate(Screen.AddTransaction.route)
                     },
                     onBackClick = { navController.popBackStack() },

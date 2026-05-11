@@ -551,15 +551,27 @@ class TransactionViewModel(
         }
     }
 
+    /**
+     * Set the split transaction ID and fetch the prefill DTO.
+     * This allows the UI to navigate to the entry screen with split mode prefilled.
+     */
+    fun setSplitTransactionId(transactionId: Long) {
+        viewModelScope.launch {
+            val transaction = transactionUseCases.getTransactionById(transactionId)
+            if (transaction != null) {
+                _prefillDto.value = TransactionPrefillDTO.fromTransaction(
+                    transaction,
+                    clonedFromId = transactionId,
+                    isSplitMode = true
+                )
+            } else {
+                _prefillDto.value = null
+            }
+        }
+    }
+
     fun quickSplitTransaction(transactionId: Long) {
-        // Note: Split transaction logic requires additional UI for split configuration
-        // To implement properly, you would need:
-        // 1. A split transaction dialog to configure how to split the transaction
-        // 2. A data model for split transactions (e.g., TransactionSplit with amount, category, etc.)
-        // 3. Logic to create multiple child transactions from the parent
-        // 4. Update the original transaction to mark it as split
-        // For now, this function collapses the item as a placeholder
-        onItemCollapsed(transactionId)
+        // Now handled by navigation in the UI layer
     }
 
     fun toggleStatusClearedUncleared(transactionId: Long) {

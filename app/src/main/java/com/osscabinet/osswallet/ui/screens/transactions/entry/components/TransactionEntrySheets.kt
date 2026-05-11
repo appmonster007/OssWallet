@@ -170,6 +170,28 @@ fun TransactionEntrySheets(
         )
     }
 
+    // Split Transaction Screen
+    if (state.showSplitSheet) {
+        TransactionSplitSheet(
+            state = state,
+            onEvent = onEvent,
+            onDismiss = { onEvent(TransactionEntryEvent.ShowSplitSheet(false)) }
+        )
+    }
+
+    // Split Category Selection
+    state.showSplitCategorySheet?.let { index ->
+        TransactionCategorySelection(
+            categories = state.categories,
+            selectedCategoryId = state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId,
+            onCategorySelected = { _, id ->
+                onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId = id))
+                onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null))
+            },
+            onDismiss = { onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null)) }
+        )
+    }
+
     // Numpad (Calculator)
     if (state.isNumpadVisible) {
         CalculatorSheet(

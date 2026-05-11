@@ -48,6 +48,10 @@ data class TransactionEntryState(
     // Template
     val selectedTemplateName: String? = null,
 
+    // Splitting
+    val isSplitMode: Boolean = false,
+    val splits: List<TransactionSplit> = emptyList(),
+
     // Sheet visibility flags
     val showDatePicker: Boolean = false,
     val showCategorySheet: Boolean = false,
@@ -61,6 +65,8 @@ data class TransactionEntryState(
     val showStatusSheet: Boolean = false,
     val showWarrantyDatePicker: Boolean = false,
     val showLocationSheet: Boolean = false,
+    val showSplitSheet: Boolean = false,
+    val showSplitCategorySheet: Int? = null,
     val isNumpadVisible: Boolean = false,
 
     // External data (populated from repositories)
@@ -99,8 +105,26 @@ data class TransactionEntryState(
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
     val canSave: Boolean
-        get() = amountValue > BigDecimal.ZERO && selectedAccount != null
+        get() {
+            if (isSplitMode) {
+                val totalSplitAmount = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
+                return amountValue > BigDecimal.ZERO && 
+                       totalSplitAmount == amountValue && 
+                       selectedAccount != null && 
+                       splits.all { it.categoryId != null }
+            }
+            return amountValue > BigDecimal.ZERO && selectedAccount != null
+        }
 }
+
+/**
+ * Data class representing a single split of a transaction.
+ */
+data class TransactionSplit(
+    val categoryId: Long? = null,
+    val amount: String = "",
+    val note: String = ""
+)
 
 /**
  * Sealed class representing events that can modify the transaction entry state.
@@ -133,6 +157,12 @@ sealed class TransactionEntryEvent {
     data class SetTemplate(val templateName: String?) : TransactionEntryEvent()
     data class ApplyTemplate(val template: Template) : TransactionEntryEvent()
 
+    // Splitting
+    data class ToggleSplitMode(val enabled: Boolean) : TransactionEntryEvent()
+    data object AddSplit : TransactionEntryEvent()
+    data class RemoveSplit(val index: Int) : TransactionEntryEvent()
+    data class UpdateSplit(val index: Int, val categoryId: Long? = null, val amount: String? = null, val note: String? = null) : TransactionEntryEvent()
+
     // Sheet visibility
     data class ShowDatePicker(val show: Boolean) : TransactionEntryEvent()
     data class ShowCategorySheet(val show: Boolean) : TransactionEntryEvent()
@@ -146,6 +176,8 @@ sealed class TransactionEntryEvent {
     data class ShowStatusSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowWarrantyDatePicker(val show: Boolean) : TransactionEntryEvent()
     data class ShowLocationSheet(val show: Boolean) : TransactionEntryEvent()
+    data class ShowSplitSheet(val show: Boolean) : TransactionEntryEvent()
+    data class ShowSplitCategorySheet(val splitIndex: Int?) : TransactionEntryEvent()
     data class ShowNumpad(val show: Boolean) : TransactionEntryEvent()
 
     // Navigation

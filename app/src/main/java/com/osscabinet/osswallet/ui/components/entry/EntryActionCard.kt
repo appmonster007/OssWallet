@@ -39,7 +39,9 @@ fun EntryActionCard(
     isSelected: Boolean = false,
     iconContainerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
     iconTint: Color = MaterialTheme.colorScheme.primary,
-    selectedColor: Color = MaterialTheme.colorScheme.primary
+    selectedColor: Color = MaterialTheme.colorScheme.primary,
+    trailingIcon: ImageVector? = null,
+    onTrailingIconClick: (() -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -94,7 +96,10 @@ fun EntryActionCard(
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Column(verticalArrangement = Arrangement.Center) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -113,6 +118,23 @@ fun EntryActionCard(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
+            }
+
+            if (trailingIcon != null) {
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onTrailingIconClick?.invoke()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        trailingIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    )
+                }
             }
         }
     }

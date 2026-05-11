@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.CallSplit
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -118,6 +119,33 @@ fun TransactionHeaderCard(
                         },
                         modifier = Modifier.weight(1f, fill = false)
                     )
+
+                    if (!state.isTransfer) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                if (!state.isSplitMode) {
+                                    onEvent(TransactionEntryEvent.ToggleSplitMode(true))
+                                }
+                                onEvent(TransactionEntryEvent.ShowSplitSheet(true))
+                            },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (state.isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else Color.Transparent
+                                )
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.CallSplit,
+                                contentDescription = "Split Transaction",
+                                modifier = Modifier.size(20.dp),
+                                tint = if (state.isSplitMode) MaterialTheme.colorScheme.primary 
+                                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
                 }
 
                 // Transfer-specific

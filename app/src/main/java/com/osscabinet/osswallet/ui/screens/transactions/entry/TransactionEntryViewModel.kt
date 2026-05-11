@@ -380,7 +380,16 @@ class TransactionEntryViewModel(
                 it.copy(splits = it.splits + TransactionSplit(categoryId = it.selectedCategoryId))
             }
             is TransactionEntryEvent.RemoveSplit -> update {
-                it.copy(splits = it.splits.filterIndexed { index, _ -> index != event.index })
+                val newSplits = it.splits.filterIndexed { index, _ -> index != event.index }
+                if (newSplits.size <= 1) {
+                    it.copy(
+                        isSplitMode = false,
+                        showSplitSheet = false,
+                        splits = emptyList()
+                    )
+                } else {
+                    it.copy(splits = newSplits)
+                }
             }
             is TransactionEntryEvent.UpdateSplit -> update {
                 val newSplits = it.splits.toMutableList()

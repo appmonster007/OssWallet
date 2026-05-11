@@ -61,11 +61,15 @@ fun CategoryEditSheet(
                     }
                 }
                 
-                TextButton(
+                IconButton(
                     onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
                     enabled = name.isNotBlank() && !isMandatory
                 ) {
-                    Text("SAVE", fontWeight = FontWeight.Bold)
+                    Icon(
+                        Icons.Rounded.Done,
+                        contentDescription = "Save",
+                        tint = if (name.isNotBlank() && !isMandatory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    )
                 }
             }
         ) { padding ->

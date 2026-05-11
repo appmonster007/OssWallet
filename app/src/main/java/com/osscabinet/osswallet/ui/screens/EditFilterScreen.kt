@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,7 +60,7 @@ fun EditFilterScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
+                    IconButton(onClick = {
                         if (filterName.isNotBlank()) {
                             navigate {
                                 onSaveFilter(Filter(
@@ -70,7 +71,11 @@ fun EditFilterScreen(
                             }
                         }
                     }) {
-                        Text("Save", fontWeight = FontWeight.Bold)
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = "Save",
+                            tint = if (filterName.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
                     }
                 }
             )

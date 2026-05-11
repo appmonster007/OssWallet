@@ -164,7 +164,7 @@ fun LoanEntryScreen(
                             )
                         }
                     }
-                    Button(
+                    IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val principal = principalText.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -186,24 +186,12 @@ fun LoanEntryScreen(
                             viewModel.saveLoan(loan)
                             onBackClick()
                         },
-                        enabled = canSave,
-                        modifier = Modifier.padding(end = 8.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
-                        )
+                        enabled = canSave
                     ) {
                         Icon(
                             Icons.Rounded.Done,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Save",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            contentDescription = "Save",
+                            tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                         )
                     }
                 },

@@ -110,22 +110,17 @@ fun TransactionEntryScreen(
                             )
                         }
                     }
-                    Button(
+                    IconButton(
                         onClick = {
                             viewModel.saveTransaction { viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) }
                         },
-                        enabled = state.canSave && !state.navTriggered,
-                        modifier = Modifier.padding(end = 8.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
-                        )
+                        enabled = state.canSave && !state.navTriggered
                     ) {
-                        Icon(Icons.Rounded.Done, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = "Save",
+                            tint = if (state.canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

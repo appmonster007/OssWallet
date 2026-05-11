@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.CallSplit
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -96,18 +97,24 @@ fun TransactionActionCards(
                 )
             } else {
                 val categoryObj = state.categories.find { it.id == state.selectedCategoryId }
-                val displayCategoryName = categoryObj?.name ?: "Unknown"
+                val displayCategoryName = if (state.isSplitMode) "Split Transaction (${state.splits.size})" else categoryObj?.name ?: "Unknown"
 
-                val categoryIcon = getIconByName(categoryObj?.iconName)
+                val categoryIcon = if (state.isSplitMode) Icons.Rounded.Splitscreen else getIconByName(categoryObj?.iconName)
 
                 EntryActionCard(
                     icon = categoryIcon,
-                    label = "CATEGORY",
+                    label = if (state.isSplitMode) "TRANSACTION" else "CATEGORY",
                     value = displayCategoryName,
-                    onClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
+                    onClick = { 
+                        if (state.isSplitMode) {
+                            onEvent(TransactionEntryEvent.ShowSplitSheet(true))
+                        } else {
+                            onEvent(TransactionEntryEvent.ShowCategorySheet(true))
+                        }
+                    },
                     modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
+                    iconContainerColor = if (state.isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = if (state.isSplitMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
                 )
             }
         }

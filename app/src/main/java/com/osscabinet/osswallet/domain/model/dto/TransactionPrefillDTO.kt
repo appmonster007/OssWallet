@@ -34,16 +34,18 @@ data class TransactionPrefillDTO(
     // Source identifier
     val sourceTemplateId: Long? = null,
     val sourcePlannedPaymentId: Long? = null,
-    val timestamp: Long? = null
+    val timestamp: Long? = null,
+    val isSplitMode: Boolean = false
 ) {
     companion object {
         /**
          * Create a TransactionPrefillDTO from a Transaction domain model.
-         * Used for cloning existing transactions.
+         * Used for cloning or splitting existing transactions.
          */
         fun fromTransaction(
             transaction: com.osscabinet.ossWallet.domain.model.Transaction,
-            clonedFromId: Long? = null
+            clonedFromId: Long? = null,
+            isSplitMode: Boolean = false
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(
                 title = transaction.title,
@@ -61,7 +63,8 @@ data class TransactionPrefillDTO(
                 warrantyExpiration = transaction.warrantyExpiration,
                 status = transaction.status,
                 clonedFromTransactionId = clonedFromId ?: transaction.id,
-                timestamp = null // Clones default to 'now'
+                timestamp = transaction.timestamp, // Keep original timestamp for splits
+                isSplitMode = isSplitMode
             )
         }
 

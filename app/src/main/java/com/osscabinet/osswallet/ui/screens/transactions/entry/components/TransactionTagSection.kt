@@ -40,10 +40,11 @@ fun TransactionTagSection(
     ) {
         // Note input
         EntryEditorialInput(
-            value = state.note,
-            onValueChange = { onEvent(TransactionEntryEvent.SetNote(it)) },
+            value = if (state.isSplitMode) "Detail notes entered in splits" else state.note,
+            onValueChange = { if (!state.isSplitMode) onEvent(TransactionEntryEvent.SetNote(it)) },
             label = "NOTE",
-            icon = Icons.AutoMirrored.Rounded.Notes
+            icon = Icons.AutoMirrored.Rounded.Notes,
+            placeholder = if (state.isSplitMode) "Individual notes are in splits" else "Tap to enter..."
         )
 
         // Payee input

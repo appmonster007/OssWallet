@@ -222,7 +222,14 @@ class TransactionEntryViewModel(
             targetCurrency = prefill.targetCurrency ?: targetAcc?.currencyCode ?: "",
             exchangeRate = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE,
             selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.title else currentState.selectedTemplateName,
-            prefillDto = prefill
+            prefillDto = prefill,
+            isSplitMode = prefill.isSplitMode,
+            splits = if (prefill.isSplitMode) {
+                listOf(
+                    TransactionSplit(categoryId = prefill.categoryId, amount = prefill.amount, note = prefill.note),
+                    TransactionSplit(categoryId = null, amount = "", note = "")
+                )
+            } else emptyList()
         )
 
         // Post-prefill logic for transfers
@@ -356,6 +363,36 @@ class TransactionEntryViewModel(
 
             is TransactionEntryEvent.ApplyTemplate -> applyPrefill(TransactionPrefillDTO.fromTemplate(event.template))
 
+            // Splitting
+            is TransactionEntryEvent.ToggleSplitMode -> update {
+                val newState = it.copy(isSplitMode = event.enabled)
+                if (event.enabled && newState.splits.isEmpty()) {
+                    // Initialize with 2 splits: 1st with current amount/category, 2nd empty
+                    newState.copy(splits = listOf(
+                        TransactionSplit(categoryId = it.selectedCategoryId, amount = it.amount, note = it.note),
+                        TransactionSplit(categoryId = null, amount = "", note = "")
+                    ))
+                } else newState
+            }
+            is TransactionEntryEvent.AddSplit -> update {
+                it.copy(splits = it.splits + TransactionSplit(categoryId = it.selectedCategoryId))
+            }
+            is TransactionEntryEvent.RemoveSplit -> update {
+                it.copy(splits = it.splits.filterIndexed { index, _ -> index != event.index })
+            }
+            is TransactionEntryEvent.UpdateSplit -> update {
+                val newSplits = it.splits.toMutableList()
+                if (event.index in newSplits.indices) {
+                    val current = newSplits[event.index]
+                    newSplits[event.index] = current.copy(
+                        categoryId = event.categoryId ?: current.categoryId,
+                        amount = event.amount ?: current.amount,
+                        note = event.note ?: current.note
+                    )
+                }
+                it.copy(splits = newSplits)
+            }
+
             // Sheet visibility
             is TransactionEntryEvent.ShowDatePicker -> update { it.copy(showDatePicker = event.show) }
             is TransactionEntryEvent.ShowCategorySheet -> update { it.copy(showCategorySheet = event.show) }
@@ -384,6 +421,8 @@ class TransactionEntryViewModel(
             }
 
             is TransactionEntryEvent.ShowLocationSheet -> update { it.copy(showLocationSheet = event.show) }
+            is TransactionEntryEvent.ShowSplitSheet -> update { it.copy(showSplitSheet = event.show) }
+            is TransactionEntryEvent.ShowSplitCategorySheet -> update { it.copy(showSplitCategorySheet = event.splitIndex) }
             is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show) }
 
             // Navigation
@@ -495,59 +534,136 @@ class TransactionEntryViewModel(
         onSuccess: (transactionId: Long) -> Unit = {}
     ) {
         viewModelScope.launch {
-            val request = buildTransactionRequest() ?: return@launch
             val currentState = _state.value
+            if (!currentState.canSave) return@launch
+            
             val profileId = settingsRepository.currentProfileId.first()
 
-            if (currentState.isEditMode && currentState.transactionId != null) {
-                val existing = currentState.existingTransaction ?: return@launch
-                val id = transactionManager.handleSaveTransaction(existing, request, profileId)
-                updateLinkedTransactions(currentState.transactionId)
-                onSuccess(id)
-            } else {
-                val newId = transactionManager.handleSaveTransaction(null, request, profileId)
+            if (currentState.isSplitMode) {
+                // Handle Split Transactions
+                val splitTransactionIds = mutableListOf<Long>()
                 
-                // Add links for cloned transaction
-                currentState.prefillDto?.clonedFromTransactionId?.let {
-                    transactionUseCases.addTransactionLink(newId, it)
+                // If editing, delete original
+                if (currentState.isEditMode && currentState.transactionId != null) {
+                    transactionUseCases.deleteTransaction(currentState.transactionId)
                 }
 
-                // Handle Planned Payment side effects
-                currentState.prefillDto?.sourcePlannedPaymentId?.let { paymentId ->
-                    val payment = plannedPaymentRepository.getById(paymentId)
-                    if (payment != null) {
-                        // Mark occurrence as confirmed
-                        val occurrence = PlannedPaymentOccurrence(
-                            id = 0,
-                            plannedPaymentId = paymentId,
-                            scheduledDate = payment.nextDueDate, // Assume we are confirming the next one
-                            status = OccurrenceStatus.CONFIRMED,
-                            generatedTransactionId = newId
-                        )
-                        plannedPaymentRepository.upsertOccurrence(occurrence)
-
-                        // Update planned payment next due date
-                        val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.nextDueDate)
-                        if (nextDue == null) {
-                            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-                        } else {
-                            plannedPaymentRepository.update(
-                                payment.copy(
-                                    nextDueDate = nextDue,
-                                    lastTriggeredDate = payment.nextDueDate
-                                )
-                            )
+                currentState.splits.forEach { split ->
+                    val splitAmount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val request = buildBaseRequest().copy(
+                        amount = if (currentState.isIncome) splitAmount else splitAmount.negate(),
+                        categoryId = split.categoryId ?: currentState.selectedCategoryId,
+                        note = split.note,
+                        title = currentState.title.ifBlank {
+                            currentState.categories.find { it.id == (split.categoryId ?: currentState.selectedCategoryId) }?.name ?: "Transaction"
+                        }
+                    )
+                    
+                    val newId = transactionManager.handleSaveTransaction(null, request, profileId)
+                    splitTransactionIds.add(newId)
+                }
+                
+                // Link all split transactions together
+                if (splitTransactionIds.size > 1) {
+                    for (i in splitTransactionIds.indices) {
+                        for (j in i + 1 until splitTransactionIds.size) {
+                            transactionUseCases.addTransactionLink(splitTransactionIds[i], splitTransactionIds[j])
                         }
                     }
                 }
+                
+                onSuccess(splitTransactionIds.firstOrNull() ?: -1L)
+            } else {
+                val request = buildTransactionRequest() ?: return@launch
+                if (currentState.isEditMode && currentState.transactionId != null) {
+                    val existing = currentState.existingTransaction ?: return@launch
+                    val id = transactionManager.handleSaveTransaction(existing, request, profileId)
+                    updateLinkedTransactions(currentState.transactionId)
+                    onSuccess(id)
+                } else {
+                    val newId = transactionManager.handleSaveTransaction(null, request, profileId)
+                    
+                    // Add links for cloned transaction
+                    currentState.prefillDto?.clonedFromTransactionId?.let {
+                        transactionUseCases.addTransactionLink(newId, it)
+                    }
 
-                // Add any additional links
-                currentState.linkedTransactionIds.forEach { linkedId ->
-                    transactionUseCases.addTransactionLink(newId, linkedId)
+                    // Handle Planned Payment side effects
+                    currentState.prefillDto?.sourcePlannedPaymentId?.let { paymentId ->
+                        val payment = plannedPaymentRepository.getById(paymentId)
+                        if (payment != null) {
+                            // Mark occurrence as confirmed
+                            val occurrence = PlannedPaymentOccurrence(
+                                id = 0,
+                                plannedPaymentId = paymentId,
+                                scheduledDate = payment.nextDueDate, // Assume we are confirming the next one
+                                status = OccurrenceStatus.CONFIRMED,
+                                generatedTransactionId = newId
+                            )
+                            plannedPaymentRepository.upsertOccurrence(occurrence)
+
+                            // Update planned payment next due date
+                            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.nextDueDate)
+                            if (nextDue == null) {
+                                plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+                            } else {
+                                plannedPaymentRepository.update(
+                                    payment.copy(
+                                        nextDueDate = nextDue,
+                                        lastTriggeredDate = payment.nextDueDate
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // Add any additional links
+                    currentState.linkedTransactionIds.forEach { linkedId ->
+                        transactionUseCases.addTransactionLink(newId, linkedId)
+                    }
+                    onSuccess(newId)
                 }
-                onSuccess(newId)
             }
         }
+    }
+
+    private fun buildBaseRequest(): TransactionRequest {
+        val currentState = _state.value
+        val finalTimestamp = if (!currentState.isEditMode &&
+            currentState.selectedDateMillis == initialTimestamp
+        ) {
+            System.currentTimeMillis()
+        } else {
+            currentState.selectedDateMillis
+        }
+
+        return TransactionRequest(
+            title = currentState.title,
+            amount = BigDecimal.ZERO, // To be set by caller
+            transactionType = when {
+                currentState.isIncome -> "income"
+                currentState.isTransfer -> "expense"
+                else -> "expense"
+            },
+            accountId = currentState.selectedAccount?.id ?: "",
+            currency = currentState.selectedCurrency,
+            categoryId = currentState.selectedCategoryId,
+            tags = currentState.selectedTags,
+            paymentMethod = currentState.paymentMethod,
+            timestamp = finalTimestamp,
+            payee = currentState.payee,
+            note = currentState.note,
+            latitude = currentState.locationCoords?.first,
+            longitude = currentState.locationCoords?.second,
+            warrantyExpiration = if (currentState.isWarrantyEnabled) {
+                currentState.warrantyExpirationMillis
+            } else null,
+            status = currentState.status,
+            isTransfer = currentState.isTransfer,
+            targetAccountId = currentState.targetAccount?.id,
+            targetCurrency = currentState.targetCurrency,
+            transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
+        )
     }
 
     /**

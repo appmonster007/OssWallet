@@ -37,6 +37,7 @@ fun TransactionListScreen(
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     onBackClick: () -> Unit,
     templateViewModel: TemplateViewModel,
     // Context-aware parameters
@@ -114,7 +115,7 @@ fun TransactionListScreen(
         onStatusChange = { transactionId, status -> viewModel.quickUpdateStatus(transactionId, status) },
         onClone = { onCloneTransactionClick(it) },
         onDelete = { viewModel.quickDeleteTransaction(it) },
-        onSplit = { viewModel.quickSplitTransaction(it) },
+        onSplit = { onSplitTransactionClick(it) },
         onFullSwipeRight = { viewModel.toggleStatusClearedUncleared(it) },
         is24Hour = use24HourFormat
     )

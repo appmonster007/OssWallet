@@ -570,10 +570,6 @@ class TransactionViewModel(
         }
     }
 
-    fun quickSplitTransaction(transactionId: Long) {
-        // Now handled by navigation in the UI layer
-    }
-
     fun toggleStatusClearedUncleared(transactionId: Long) {
         viewModelScope.launch {
             withProfile { profileId ->

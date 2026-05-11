@@ -346,6 +346,14 @@ fun OssWalletNavGraph(
                     onRecordsClick = { filter -> navController.navigateToRecords(filter) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
                     onAddClick = { type, templateId ->
                         if (templateId != null) {
                             transactionViewModel.setTemplatePrefill(templateId)
@@ -547,6 +555,10 @@ fun OssWalletNavGraph(
                     onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
                         navController.navigate(Screen.AddTransaction.route)
                     },
                     onAddTransactionClick = { accId, type, templateId ->
@@ -849,6 +861,14 @@ fun OssWalletNavGraph(
                     onEditClick = { navController.navigate(Screen.LoanEntry.createRoute(loanId)) },
                     onBackClick = { navController.popBackStack() },
                     onTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
                     onRecordsClick = { filter -> navController.navigateToRecords(filter) }
                 )
             }
@@ -919,6 +939,14 @@ fun OssWalletNavGraph(
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
                     onBackClick = { navController.popBackStack() },
                     onTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onSplitTransactionClick = { id ->
+                        transactionViewModel.setSplitTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
                     onRecordsClick = { filter -> navController.navigateToRecords(filter) }
                 )
             }

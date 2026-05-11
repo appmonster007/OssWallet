@@ -37,6 +37,8 @@ fun AnalyticsScreen(
     onRecordsClick: (TransactionFilter) -> Unit,
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit = {},
+    onSplitTransactionClick: (Long) -> Unit = {},
     onAddClick: (Int?, Long?) -> Unit,
     cardComputerRegistry: CardComputerRegistry
 ) {
@@ -129,7 +131,11 @@ fun AnalyticsScreen(
                                 allCategories = state.allCategories,
                                 savedFilters = savedFilters,
                                 onAccountClick = onAccountClick,
-                                onTransactionClick = onEditTransactionClick
+                                onTransactionClick = onEditTransactionClick,
+                                onClone = { onCloneTransactionClick(it) },
+                                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { onSplitTransactionClick(it) },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
                             )
                         }
                     }

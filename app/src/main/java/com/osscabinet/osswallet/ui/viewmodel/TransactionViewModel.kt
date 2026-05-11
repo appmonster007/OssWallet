@@ -160,13 +160,17 @@ class TransactionViewModel(
             absoluteTransactionsWithBalance,
             recordsFilter
         ) { absoluteTxs, currentFilter ->
+            val (startTime, endTime) = TimelineService.getDateRange(currentFilter.timelineRange)
+            val now = System.currentTimeMillis()
+            
             absoluteTxs.filter { item ->
-                val tx = item.transaction
-                val matchesAccount =
-                    currentFilter.accountIds.isEmpty() || tx.accountId in currentFilter.accountIds
-                val matchesFuture =
-                    !currentFilter.excludeFuture || tx.timestamp <= System.currentTimeMillis()
-                matchesAccount && matchesFuture
+                TransactionFilterService.matches(
+                    tx = item.transaction,
+                    filter = currentFilter,
+                    startTime = startTime,
+                    endTime = endTime,
+                    now = now
+                )
             }
         }.stateIn(
             scope = viewModelScope,

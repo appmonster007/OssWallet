@@ -22,7 +22,6 @@ import androidx.compose.animation.slideOutHorizontally
 
 // Material 3 Expressive duration
 private const val EXPRESSIVE_DURATION = 350
-private const val FADE_DURATION = 200
 
 // Material 3 Expressive easing curves (no bounce)
 // Standard emphasized decelerate: cubic-bezier(0.2, 0.0, 0, 1.0) - smooth slow down
@@ -67,7 +66,7 @@ val ExitTransitionSpec: ExitTransition =
         )
     ) + fadeOut(
         animationSpec = tween(
-            durationMillis = FADE_DURATION,
+            durationMillis = EXPRESSIVE_DURATION,
             easing = emphasizedAccelerate
         )
     )
@@ -103,7 +102,7 @@ val PopExitTransitionSpec: ExitTransition =
         )
     ) + fadeOut(
         animationSpec = tween(
-            durationMillis = FADE_DURATION,
+            durationMillis = EXPRESSIVE_DURATION,
             easing = emphasizedAccelerate
         )
     ) + scaleOut(
@@ -126,7 +125,7 @@ val FadeEnterTransitionSpec: EnterTransition = fadeIn(
 
 val FadeExitTransitionSpec: ExitTransition = fadeOut(
     animationSpec = tween(
-        durationMillis = FADE_DURATION,
+        durationMillis = EXPRESSIVE_DURATION,
         easing = emphasizedAccelerate
     )
 )

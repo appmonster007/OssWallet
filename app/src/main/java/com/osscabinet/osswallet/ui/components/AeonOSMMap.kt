@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -31,6 +30,7 @@ import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.views.overlay.MapEventsOverlay
@@ -78,6 +78,7 @@ fun AeonOSMMap(
             if (mv.tileProvider != null) {
                 mv.setTileSource(TileSourceFactory.MAPNIK)
                 mv.setMultiTouchControls(true)
+                mv.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
                 mv.controller.setZoom(currentZoom)
                 mv.controller.setCenter(initialPoint)
                 mv.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
@@ -115,7 +116,7 @@ fun AeonOSMMap(
                 override fun onMarkerDragEnd(marker: Marker?) {
                     isDragging = false
                     marker?.position?.let {
-                        onLocationSelected(it as GeoPoint)
+                        onLocationSelected(it)
                     }
                 }
                 override fun onMarkerDragStart(marker: Marker?) {

@@ -42,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -98,27 +99,33 @@ fun AeonPeriodSelector(
 
     val pagerState = rememberPagerState(initialPage = currentModePage) { 4 }
 
+    val currentFilter by rememberUpdatedState(filter)
+
     // Sync Pager -> Filter (only on settled page to avoid intermediate updates)
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
-//            if (page != currentModePage) {
-                val newRange = when (page) {
-                    0 -> TimelineRange.AllTime
-                    1 -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-                    2 -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-                    3 -> {
-                        if (filter.timelineRange is TimelineRange.CustomRange && 
-                            (filter.timelineRange.start != null || filter.timelineRange.end != null)) {
-                            filter.timelineRange
-                        } else {
-                            val now = System.currentTimeMillis()
-                            TimelineRange.CustomRange(now - (86400000L * 7L), now)
-                        }
+            val currentRange = currentFilter.timelineRange
+            val newRange = when (page) {
+                0 -> TimelineRange.AllTime
+                1 -> if (currentRange is TimelineRange.ThisPeriod) currentRange
+                     else TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                2 -> if (currentRange is TimelineRange.LastPeriod) currentRange
+                     else TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+                3 -> {
+                    if (currentRange is TimelineRange.CustomRange &&
+                        (currentRange.start != null || currentRange.end != null)) {
+                        currentRange
+                    } else {
+                        val now = System.currentTimeMillis()
+                        TimelineRange.CustomRange(now - (86400000L * 7L), now)
                     }
-                    else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
                 }
+                else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+            }
+
+            if (newRange != currentRange) {
                 onSetDateRange(newRange)
-//            }
+            }
         }
     }
 
@@ -387,24 +394,21 @@ private fun getPeriodTextForPage(page: Int, filter: TransactionFilter): String {
         3 -> if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange else return "Custom"
         else -> filter.timelineRange
     }
-    
+
     val (resolvedStart, resolvedEnd) = TimelineService.getDateRange(currentRange)
     val start = resolvedStart
     val end = resolvedEnd
 
     if (start == null || end == null) return "All Time"
     
-    // Check for "Today"
+    // Check for "Today" (if not already covered by ThisPeriod check above)
     val todayRange = TimelineService.getRangeForThis(ThisPeriodType.TODAY)
     if (kotlin.math.abs(todayRange.first - start) < 2000) return "Today"
     
-    // Check for "This Month"
-    val monthRange = TimelineService.getRangeForThis(ThisPeriodType.MONTH)
-    if (kotlin.math.abs(monthRange.first - start) < 2000 && kotlin.math.abs(monthRange.second - end) < 2000) return "This month"
-
     val startCal = Calendar.getInstance().apply { timeInMillis = start }
     val endCal = Calendar.getInstance().apply { timeInMillis = end }
 
+    // Whole month format: "September 2024"
     return if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
         startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
         startCal.get(Calendar.DAY_OF_MONTH) == 1 &&

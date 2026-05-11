@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -69,109 +71,114 @@ class MainActivity : FragmentActivity() {
             val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
 
             OssWalletTheme(theme = theme) {
-                val navController = rememberNavController()
-                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                val scope = rememberCoroutineScope()
-                
-                val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
-                val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
-                val starredTemplates by mainViewModel.starredTemplates.collectAsStateWithLifecycle()
-                val currentBackStackEntry by navController.currentBackStackEntryAsState()
-                
-                LaunchedEffect(pendingWidgetRoute) {
-                    pendingWidgetRoute?.let { route ->
-                        when (route) {
-                            "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None, topLevel = true)
-                            "records" -> navController.navigateToRecords(TransactionFilter(), topLevel = true)
-                            "analytics" -> navController.navigate(Screen.Analytics.createRoute(topLevel = true))
-                            "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true))
-                        }
-                        pendingWidgetRoute = null
-                    }
-                }
-
-                // Extract base route from currentDestination to match drawer highlights
-                val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
-                    ?: Screen.Dashboard.route.substringBefore("?")
-
-                ModalNavigationDrawer(
-                    drawerState = drawerState,
-                    drawerContent = {
-                        AppDrawerContent(
-                            currentProfile = currentProfile,
-                            nonArchivedAccounts = nonArchivedAccounts,
-                            starredTemplates = starredTemplates,
-                            selectedDestination = currentDestination,
-                            onDashboardClick = {
-                                navController.navigateToDashboard(
-                                    context = DashboardViewContext.None,
-                                    topLevel = true
-                                ) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onRecordsClick = {
-                                navController.navigateToRecords(
-                                    filter = TransactionFilter(),
-                                    topLevel = true
-                                ) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onAnalyticsClick = {
-                                navController.navigate(Screen.Analytics.createRoute(topLevel = true)) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onExchangeRatesClick = {
-                                navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true)) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onSettingsClick = {
-                                navController.navigate(Screen.Settings.route)
-                            },
-                            onAccountClick = { id ->
-                                navController.navigate(Screen.AccountDetail.createRoute(id))
-                            },
-                            onTemplateClick = { template ->
-                                navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, templateId = template.id))
-                            },
-                            onCloseDrawer = { scope.launch { drawerState.close() } },
-                            onPlannedPaymentsClick = {
-                                navController.navigate(Screen.PlannedPayments.route)
-                            },
-                            onBudgetsClick = {
-                                navController.navigate(Screen.BudgetList.route)
-                            },
-                            onLoansClick = {
-                                navController.navigate(Screen.LoanList.route)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                    val scope = rememberCoroutineScope()
+                    
+                    val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
+                    val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
+                    val starredTemplates by mainViewModel.starredTemplates.collectAsStateWithLifecycle()
+                    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                    
+                    LaunchedEffect(pendingWidgetRoute) {
+                        pendingWidgetRoute?.let { route ->
+                            when (route) {
+                                "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None, topLevel = true)
+                                "records" -> navController.navigateToRecords(TransactionFilter(), topLevel = true)
+                                "analytics" -> navController.navigate(Screen.Analytics.createRoute(topLevel = true))
+                                "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true))
                             }
+                            pendingWidgetRoute = null
+                        }
+                    }
+
+                    // Extract base route from currentDestination to match drawer highlights
+                    val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
+                        ?: Screen.Dashboard.route.substringBefore("?")
+
+                    ModalNavigationDrawer(
+                        drawerState = drawerState,
+                        drawerContent = {
+                            AppDrawerContent(
+                                currentProfile = currentProfile,
+                                nonArchivedAccounts = nonArchivedAccounts,
+                                starredTemplates = starredTemplates,
+                                selectedDestination = currentDestination,
+                                onDashboardClick = {
+                                    navController.navigateToDashboard(
+                                        context = DashboardViewContext.None,
+                                        topLevel = true
+                                    ) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onRecordsClick = {
+                                    navController.navigateToRecords(
+                                        filter = TransactionFilter(),
+                                        topLevel = true
+                                    ) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onAnalyticsClick = {
+                                    navController.navigate(Screen.Analytics.createRoute(topLevel = true)) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onExchangeRatesClick = {
+                                    navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true)) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onSettingsClick = {
+                                    navController.navigate(Screen.Settings.route)
+                                },
+                                onAccountClick = { id ->
+                                    navController.navigate(Screen.AccountDetail.createRoute(id))
+                                },
+                                onTemplateClick = { template ->
+                                    navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, templateId = template.id))
+                                },
+                                onCloseDrawer = { scope.launch { drawerState.close() } },
+                                onPlannedPaymentsClick = {
+                                    navController.navigate(Screen.PlannedPayments.route)
+                                },
+                                onBudgetsClick = {
+                                    navController.navigate(Screen.BudgetList.route)
+                                },
+                                onLoansClick = {
+                                    navController.navigate(Screen.LoanList.route)
+                                }
+                            )
+                        }
+                    ) {
+                        OssWalletNavGraph(
+                            navController = navController,
+                            appContainer = appContainer,
+                            onSplashConditionChanged = { keepSplashOnScreen = it },
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
                         )
                     }
-                ) {
-                    OssWalletNavGraph(
-                        navController = navController,
-                        appContainer = appContainer,
-                        onSplashConditionChanged = { keepSplashOnScreen = it },
-                        onOpenDrawer = { scope.launch { drawerState.open() } }
-                    )
                 }
             }
         }

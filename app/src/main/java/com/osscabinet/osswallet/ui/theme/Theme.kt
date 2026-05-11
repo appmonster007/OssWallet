@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.theme
 
 import android.app.Activity
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -150,8 +151,17 @@ fun OssWalletTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            val backgroundColor = colorScheme.background.toArgb()
+            
+            window.statusBarColor = backgroundColor
+            window.navigationBarColor = backgroundColor
+            
+            // Set window background to avoid flash during transitions
+            window.setBackgroundDrawable(ColorDrawable(backgroundColor))
+            
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

@@ -5,6 +5,16 @@
     <string name="widget_preview_income_amount">5,000.00</string>
     <string name="widget_preview_expense_amount">3,200.00</string>
     <string name="recent_activities">Recent Activities</string>
+    <string name="recent_activities_header">RECENT ACTIVITIES</string>
+    <string name="widget_preview_period_this_month">THIS MONTH</string>
+    <string name="widget_preview_tx1_title">Food &amp; Drinks</string>
+    <string name="widget_preview_tx1_subtitle">Morning coffee • Visa Card</string>
+    <string name="widget_preview_tx1_amount">-5.50</string>
+    <string name="widget_preview_tx1_time">10:30 AM</string>
+    <string name="widget_preview_tx2_title">Salary</string>
+    <string name="widget_preview_tx2_subtitle">Monthly salary • Savings Account</string>
+    <string name="widget_preview_tx2_amount">+2,500.00</string>
+    <string name="widget_preview_tx2_time">Yesterday</string>
     <string name="loading">Loading…</string>
     <string name="no_recent_activities">No recent activities</string>
     </resources>

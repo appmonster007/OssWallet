@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Preview at 3x2 default size (~180×110dp).
+     Layout mirrors RecentTransactionsWidgetContent in RecentTransactionsGlanceWidget.kt -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -6,49 +8,181 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/recent_activities"
-        android:textColor="@color/widget_on_surface"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:background="#1F000000" />
-
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-        <View
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:baselineAligned="false">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/recent_activities_header"
+            android:textColor="@color/widget_subtle"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_preview_period_this_month"
+            android:textColor="@color/widget_subtle"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- Transaction 1 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="4dp"
+        android:gravity="center_vertical"
+        android:baselineAligned="false">
+
+        <!-- Icon Container -->
+        <FrameLayout
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="#1F000000" />
+            android:background="@drawable/widget_badge_expense">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_preview_restaurant"
+                android:tint="@color/widget_expense_color"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
             android:orientation="vertical">
-            <View
-                android:layout_width="100dp"
-                android:layout_height="12dp"
-                android:background="#1F000000" />
-            <View
-                android:layout_width="60dp"
-                android:layout_height="8dp"
-                android:layout_marginTop="4dp"
-                android:background="#1F000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx1_title"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx1_subtitle"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:maxLines="1" />
         </LinearLayout>
-        <View
-            android:layout_width="60dp"
-            android:layout_height="12dp"
-            android:background="#1F000000" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx1_amount"
+                android:textColor="@color/widget_expense_color"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx1_time"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="6dp" />
+
+    <!-- Transaction 2 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="4dp"
+        android:gravity="center_vertical"
+        android:baselineAligned="false">
+
+        <!-- Icon Container -->
+        <FrameLayout
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_badge_income">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_preview_payments"
+                android:tint="@color/widget_income_color"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx2_title"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx2_subtitle"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx2_amount"
+                android:textColor="@color/widget_income_color"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_tx2_time"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

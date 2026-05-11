@@ -56,7 +56,8 @@ data class TransactionSectionSettings(
     val useNoteAsHeader: Boolean = false,
     val showOpeningBalance: Boolean = false,
     val showClosingBalance: Boolean = true,
-    val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK
+    val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
+    val showOnlyActiveCurrencies: Boolean = false
 )
 
 @Serializable

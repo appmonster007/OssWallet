@@ -45,6 +45,7 @@ fun TransactionHeader(
     precision: Int,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
+    showOnlyActiveCurrencies: Boolean = false,
     initiallyExpanded: Boolean = false
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
@@ -55,6 +56,17 @@ fun TransactionHeader(
         showOpeningBalance || showClosingBalance -> 1f
         else -> 0f
     }
+
+    val activeCurrencies = remember(allCurrencies, incomeByCurrency, expenseByCurrency) {
+        allCurrencies.filter { curr ->
+            val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
+            val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
+            inc.signum() != 0 || exp.signum() != 0
+        }
+    }
+    
+    val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
+    val canExpand = currenciesToDisplay.isNotEmpty()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -110,13 +122,6 @@ fun TransactionHeader(
                 }
 
                 // Row 3: Aggregate (Clickable)
-                val canExpand = allCurrencies.isNotEmpty()
-//                val activeCurrencies = allCurrencies.filter { curr ->
-//                    val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
-//                    val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
-//                    inc.signum() != 0 || exp.signum() != 0
-//                }
-//                val canExpand = activeCurrencies.isNotEmpty()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -192,8 +197,7 @@ fun TransactionHeader(
                 // Row 4+: Breakdown (Expandable)
                 AnimatedVisibility(visible = isExpanded) {
                     Column(modifier = Modifier.padding(top = 2.dp)) {
-//                        activeCurrencies.forEach { curr ->
-                        allCurrencies.forEach { curr ->
+                        currenciesToDisplay.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
                             val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
                             val net = inc.add(exp)

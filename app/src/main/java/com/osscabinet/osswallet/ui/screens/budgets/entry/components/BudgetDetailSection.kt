@@ -24,7 +24,8 @@ fun BudgetDetailSection(
     onRolloverChange: (Boolean) -> Unit,
     selectedTags: Set<String>,
     onShowTagSheet: () -> Unit,
-    onRemoveTag: (String) -> Unit
+    onRemoveTag: (String) -> Unit,
+    noteSuggestions: List<String> = emptyList()
 ) {
     EntrySection(
         title = "ADDITIONAL DETAILS",
@@ -34,7 +35,8 @@ fun BudgetDetailSection(
             value = note,
             onValueChange = onNoteChange,
             label = "NOTES",
-            icon = Icons.AutoMirrored.Rounded.Notes
+            icon = Icons.AutoMirrored.Rounded.Notes,
+            suggestions = noteSuggestions
         )
 
         EntryTagSection(

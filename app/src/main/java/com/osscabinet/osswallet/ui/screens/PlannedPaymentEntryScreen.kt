@@ -88,6 +88,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
@@ -203,6 +204,7 @@ fun PlannedPaymentEntryScreen(
     var showScheduleBuilder by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var showAccountSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var showStatusSheet by remember { mutableStateOf(false) }
@@ -354,6 +356,17 @@ fun PlannedPaymentEntryScreen(
                 onDismiss = { showCategorySheet = false }
             )
         }
+        if (showAccountSheet) {
+            TransactionAccountSelection(
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onAccountSelected = { account ->
+                    account?.let { selectedAccountId = it.id }
+                    showAccountSheet = false
+                },
+                onDismiss = { showAccountSheet = false }
+            )
+        }
         if (showPaymentMethodSheet) {
             PaymentMethodSelection(
                 selectedMethod = paymentMethod,
@@ -494,38 +507,16 @@ fun PlannedPaymentEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                var accountExpanded by remember { mutableStateOf(false) }
                 val selectedAccount = accounts.find { it.id == selectedAccountId }
-                ExposedDropdownMenuBox(
-                    expanded = accountExpanded,
-                    onExpandedChange = { accountExpanded = it },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    EntryActionCard(
-                        icon = getAccountIconByName(selectedAccount?.icon),
-                        label = "ACCOUNT",
-                        value = selectedAccount?.name ?: "Select",
-                        onClick = { accountExpanded = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-                    ExposedDropdownMenu(
-                        expanded = accountExpanded,
-                        onDismissRequest = { accountExpanded = false }
-                    ) {
-                        accounts.forEach { account ->
-                            DropdownMenuItem(
-                                text = { Text(account.name) },
-                                onClick = {
-                                    selectedAccountId = account.id; accountExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                EntryActionCard(
+                    icon = getAccountIconByName(selectedAccount?.icon),
+                    label = "ACCOUNT",
+                    value = selectedAccount?.name ?: "Select",
+                    onClick = { showAccountSheet = true },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
 
                 val categoryObj = categories.find { it.id == selectedCategoryId }
                 EntryActionCard(

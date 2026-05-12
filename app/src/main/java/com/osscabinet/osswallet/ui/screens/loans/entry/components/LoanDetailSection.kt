@@ -26,7 +26,9 @@ fun LoanDetailSection(
     onHasSettlementDateChange: (Boolean) -> Unit,
     selectedTags: Set<String>,
     onShowTagSheet: () -> Unit,
-    onRemoveTag: (String) -> Unit
+    onRemoveTag: (String) -> Unit,
+    counterpartySuggestions: List<String> = emptyList(),
+    noteSuggestions: List<String> = emptyList()
 ) {
     EntrySection(
         title = "ADDITIONAL DETAILS",
@@ -36,14 +38,16 @@ fun LoanDetailSection(
             value = counterparty,
             onValueChange = onCounterpartyChange,
             label = if (loanType == LoanType.LENT) "LENT TO" else "BORROWED FROM",
-            icon = Icons.Rounded.Person
+            icon = Icons.Rounded.Person,
+            suggestions = counterpartySuggestions
         )
 
         EntryEditorialInput(
             value = note,
             onValueChange = onNoteChange,
             label = "EXTRA NOTES",
-            icon = Icons.AutoMirrored.Rounded.Notes
+            icon = Icons.AutoMirrored.Rounded.Notes,
+            suggestions = noteSuggestions
         )
 
         EntryTagSection(

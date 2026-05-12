@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 
 @Composable
 fun TransactionCategorySelection(
@@ -33,7 +34,7 @@ fun TransactionCategorySelection(
         if (query.isBlank()) {
             categories
         } else {
-            categories.filter { it.name.contains(query, ignoreCase = true) }
+            categories.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
                 .sortedBy { it.name }
         }
     }

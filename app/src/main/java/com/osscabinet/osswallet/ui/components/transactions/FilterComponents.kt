@@ -38,6 +38,7 @@ import java.util.Date
 import java.util.Locale
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -497,7 +498,7 @@ fun <T, ID> MultiSelectionDialog(
 
     val filteredItems = remember(items, searchQuery) {
         if (searchQuery.isBlank()) items
-        else items.filter { labelMapper(it).contains(searchQuery, ignoreCase = true) }
+        else items.filter { labelMapper(it).contains(searchQuery, ignoreCase = true) || labelMapper(it).fuzzyMatch(searchQuery) }
     }
 
     AeonFullScreenDialog(onDismissRequest = onDismissRequest) {

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 
 @Composable
 fun TransactionAccountSelection(
@@ -32,7 +33,7 @@ fun TransactionAccountSelection(
     
     val filteredAccounts = remember(query, accounts) {
         if (query.isBlank()) accounts
-        else accounts.filter { it.name.contains(query, ignoreCase = true) }
+        else accounts.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
     }
     
     AeonFullScreenDialog(onDismissRequest = onDismiss) {

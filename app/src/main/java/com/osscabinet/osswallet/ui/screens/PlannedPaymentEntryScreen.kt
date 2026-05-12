@@ -121,6 +121,8 @@ fun PlannedPaymentEntryScreen(
     }
     
     val prefill by transactionViewModel?.plannedPaymentPrefill?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+    val uniquePayees by transactionViewModel?.uniquePayees?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
+    val uniqueNotes by transactionViewModel?.uniqueNotes?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
 
     var title by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
@@ -546,13 +548,15 @@ fun PlannedPaymentEntryScreen(
                     value = payee,
                     onValueChange = { payee = it },
                     label = "PAYEE",
-                    icon = Icons.Rounded.Person
+                    icon = Icons.Rounded.Person,
+                    suggestions = uniquePayees
                 )
                 EntryEditorialInput(
                     value = noteUserPart,
                     onValueChange = { noteUserPart = it },
                     label = "NOTES",
                     icon = Icons.AutoMirrored.Rounded.Notes,
+                    suggestions = uniqueNotes,
                     maxLines = 4
                 )
 

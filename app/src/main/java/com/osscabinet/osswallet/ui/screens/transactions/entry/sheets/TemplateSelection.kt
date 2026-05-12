@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 
 @Composable
 fun TemplateSelection(
@@ -36,7 +37,7 @@ fun TemplateSelection(
 
     val filtered = remember(query, templates) {
         if (query.isBlank()) templates
-        else templates.filter { it.name.contains(query, ignoreCase = true) }
+        else templates.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
     }
 
     LaunchedEffect(Unit) {

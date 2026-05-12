@@ -4,11 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
@@ -27,7 +29,8 @@ fun TemplateEntrySheets(
     isNumpadVisible: Boolean,
     onDismissNumpad: () -> Unit,
     amount: String,
-    onAmountChange: (String, String) -> Unit,
+    onAmountChange: (String) -> Unit,
+    onTypeChangedFromNumpad: (String) -> Unit = {},
     transactionType: Int,
     decimalPrecision: Int,
     showAccountSheet: Boolean,
@@ -55,58 +58,28 @@ fun TemplateEntrySheets(
     onTagsSelected: (List<String>) -> Unit,
     onAddTag: (String, Int) -> Unit,
     onEditTag: (Tag) -> Unit,
-    onDeleteTag: (Tag) -> Unit
+    onDeleteTag: (Tag) -> Unit,
+    showCurrencySheet: Boolean = false,
+    onDismissCurrencySheet: () -> Unit = {},
+    currency: String = "USD",
+    onCurrencySelected: (String) -> Unit = {},
+    showTargetCurrencySheet: Boolean = false,
+    onDismissTargetCurrencySheet: () -> Unit = {},
+    targetCurrency: String = "USD",
+    onTargetCurrencySelected: (String) -> Unit = {},
+    showExchangeRateDialog: Boolean = false,
+    onDismissExchangeRateDialog: () -> Unit = {},
+    exchangeRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
+    onExchangeRateChanged: (java.math.BigDecimal) -> Unit = {}
 ) {
     if (isNumpadVisible) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { onDismissNumpad() }
-        )
-        
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
-            shadowElevation = 8.dp
-        ) {
-            CalculatorNumpad(
-                amount = amount,
-                onAmountChange = onAmountChange,
-                transactionType = when (transactionType) {
-                    1 -> "income"
-                    2 -> "transfer"
-                    else -> "expense"
-                },
-                decimalPrecision = decimalPrecision,
-                onDone = onDismissNumpad,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-    }
-
-    if (showAccountSheet || showTargetAccountSheet || showCategorySheet || showPaymentMethodSheet || showTagSheet) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { 
-                    onDismissAccountSheet()
-                    onDismissTargetAccountSheet()
-                    onDismissCategorySheet()
-                    onDismissPaymentMethodSheet()
-                    onDismissTagSheet()
-                }
+        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet(
+            currentAmount = amount,
+            transactionType = transactionType,
+            decimalPrecision = decimalPrecision,
+            onAmountChanged = onAmountChange,
+            onTypeChanged = onTypeChangedFromNumpad,
+            onDismiss = onDismissNumpad
         )
     }
 
@@ -154,6 +127,96 @@ fun TemplateEntrySheets(
             onEditTag = onEditTag,
             onDeleteTag = onDeleteTag,
             onDismiss = onDismissTagSheet
+        )
+    }
+
+    if (showCurrencySheet) {
+        com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog(onDismissRequest = onDismissCurrencySheet) {
+            com.osscabinet.ossWallet.ui.components.AeonSelectionScreen(
+                title = "Select Currency",
+                onBack = onDismissCurrencySheet
+            ) { padding ->
+                val allCurrencies = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies()
+                var query by remember { mutableStateOf("") }
+                val filtered = remember(query) {
+                    if (query.isBlank()) allCurrencies
+                    else allCurrencies.filter { it.contains(query, ignoreCase = true) }
+                }
+
+                Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    com.osscabinet.ossWallet.ui.components.AeonSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = "Search currency..."
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            com.osscabinet.ossWallet.ui.components.AeonHybridSelector(
+                                items = filtered,
+                                mode = com.osscabinet.ossWallet.ui.components.AeonSelectMode.SINGLE,
+                                selectedIds = setOf(currency),
+                                onSelectionChange = { ids ->
+                                    ids.firstOrNull()?.let { onCurrencySelected(it) }
+                                    onDismissCurrencySheet()
+                                },
+                                idMapper = { it },
+                                labelMapper = { it },
+                                iconMapper = { Icons.Rounded.CurrencyExchange }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showTargetCurrencySheet) {
+        com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog(onDismissRequest = onDismissTargetCurrencySheet) {
+            com.osscabinet.ossWallet.ui.components.AeonSelectionScreen(
+                title = "Select Target Currency",
+                onBack = onDismissTargetCurrencySheet
+            ) { padding ->
+                val allCurrencies = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies()
+                var query by remember { mutableStateOf("") }
+                val filtered = remember(query) {
+                    if (query.isBlank()) allCurrencies
+                    else allCurrencies.filter { it.contains(query, ignoreCase = true) }
+                }
+
+                Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    com.osscabinet.ossWallet.ui.components.AeonSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = "Search currency..."
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            com.osscabinet.ossWallet.ui.components.AeonHybridSelector(
+                                items = filtered,
+                                mode = com.osscabinet.ossWallet.ui.components.AeonSelectMode.SINGLE,
+                                selectedIds = setOf(targetCurrency),
+                                onSelectionChange = { ids ->
+                                    ids.firstOrNull()?.let { onTargetCurrencySelected(it) }
+                                    onDismissTargetCurrencySheet()
+                                },
+                                idMapper = { it },
+                                labelMapper = { it },
+                                iconMapper = { Icons.Rounded.CurrencyExchange }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showExchangeRateDialog) {
+        com.osscabinet.ossWallet.ui.components.ExchangeRateDialog(
+            initialRate = exchangeRate,
+            onConfirm = onExchangeRateChanged,
+            onDismiss = onDismissExchangeRateDialog
         )
     }
 }

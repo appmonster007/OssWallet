@@ -84,15 +84,24 @@ fun PlannedPaymentEntrySheets(
     amountText: String,
     transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
     onAmountChanged: (String) -> Unit,
+    onTypeChangedFromNumpad: (String) -> Unit = {},
     showCurrencySheet: Boolean,
     onDismissCurrencySheet: () -> Unit,
     currency: String,
     onCurrencySelected: (String) -> Unit,
+    showTargetCurrencySheet: Boolean = false,
+    onDismissTargetCurrencySheet: () -> Unit = {},
+    targetCurrency: String = "USD",
+    onTargetCurrencySelected: (String) -> Unit = {},
     allCurrencies: List<String>,
     showTemplateSheet: Boolean = false,
     onDismissTemplateSheet: () -> Unit = {},
     templates: List<Template> = emptyList(),
-    onTemplateSelected: (Template?) -> Unit = {}
+    onTemplateSelected: (Template?) -> Unit = {},
+    showExchangeRateDialog: Boolean = false,
+    onDismissExchangeRateDialog: () -> Unit = {},
+    exchangeRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
+    onExchangeRateChanged: (java.math.BigDecimal) -> Unit = {}
 ) {
     if (showScheduleBuilder) {
         ScheduleBuilderSheet(
@@ -170,6 +179,7 @@ fun PlannedPaymentEntrySheets(
             transactionType = transactionType,
             decimalPrecision = 2,
             onAmountChanged = onAmountChanged,
+            onTypeChanged = onTypeChangedFromNumpad,
             onDismiss = onDismissNumpad
         )
     }
@@ -179,6 +189,13 @@ fun PlannedPaymentEntrySheets(
             onTemplateSelected = onTemplateSelected,
             onDismiss = onDismissTemplateSheet,
             categoryMap = categories.associateBy { it.id }
+        )
+    }
+    if (showExchangeRateDialog) {
+        ExchangeRateDialog(
+            initialRate = exchangeRate,
+            onConfirm = onExchangeRateChanged,
+            onDismiss = onDismissExchangeRateDialog
         )
     }
     if (showCurrencySheet) {
@@ -209,6 +226,45 @@ fun PlannedPaymentEntrySheets(
                                 onSelectionChange = { ids ->
                                     ids.firstOrNull()?.let { onCurrencySelected(it) }
                                     onDismissCurrencySheet()
+                                },
+                                idMapper = { it },
+                                labelMapper = { it },
+                                iconMapper = { Icons.Rounded.CurrencyExchange }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (showTargetCurrencySheet) {
+        AeonFullScreenDialog(onDismissRequest = onDismissTargetCurrencySheet) {
+            AeonSelectionScreen(
+                title = "Select Target Currency",
+                onBack = onDismissTargetCurrencySheet
+            ) { padding ->
+                var query by remember { mutableStateOf("") }
+                val filtered = remember(query) {
+                    if (query.isBlank()) allCurrencies
+                    else allCurrencies.filter { it.contains(query, ignoreCase = true) }
+                }
+
+                Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    AeonSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = "Search currency..."
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            AeonHybridSelector(
+                                items = filtered,
+                                mode = AeonSelectMode.SINGLE,
+                                selectedIds = setOf(targetCurrency),
+                                onSelectionChange = { ids ->
+                                    ids.firstOrNull()?.let { onTargetCurrencySelected(it) }
+                                    onDismissTargetCurrencySheet()
                                 },
                                 idMapper = { it },
                                 labelMapper = { it },

@@ -150,7 +150,9 @@ fun PlannedPaymentEntryScreen(
     var showStatusSheet by remember { mutableStateOf(false) }
     var showNumpad by remember { mutableStateOf(false) }
     var showCurrencySheet by remember { mutableStateOf(false) }
+    var showTargetCurrencySheet by remember { mutableStateOf(false) }
     var showTemplateSheet by remember { mutableStateOf(false) }
+    var showExchangeRateDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteTemplateWithPayment by remember { mutableStateOf(false) }
 
@@ -307,6 +309,10 @@ fun PlannedPaymentEntryScreen(
             autoConfirm = autoConfirm,
             onAutoConfirmChange = { autoConfirm = it },
             allCurrencies = allCurrencies,
+            transferRate = transferRate,
+            targetCurrency = targetCurrency,
+            onTargetCurrencyClick = { showTargetCurrencySheet = true },
+            onTransferRateClick = { showExchangeRateDialog = true },
             modifier = Modifier.padding(innerPadding)
         )
 
@@ -346,7 +352,12 @@ fun PlannedPaymentEntryScreen(
             accounts = accounts,
             selectedAccountId = selectedAccountId,
             onAccountSelected = { account ->
-                account?.let { selectedAccountId = it.id }
+                account?.let { 
+                    selectedAccountId = it.id
+                    if (currency.isBlank() || currency == "USD") {
+                        currency = it.currencyCode
+                    }
+                }
                 showAccountSheet = false
             },
             targetAccountId = targetAccountId,
@@ -375,11 +386,24 @@ fun PlannedPaymentEntryScreen(
             onDismissNumpad = { showNumpad = false },
             amountText = amountText,
             transactionType = transactionType,
-            onAmountChanged = { amountText = it },
+            onAmountChanged = { newAmount ->
+                amountText = newAmount
+            },
+            onTypeChangedFromNumpad = { newType ->
+                transactionType = when (newType) {
+                    "income" -> 1
+                    "transfer" -> 2
+                    else -> 0
+                }
+            },
             showCurrencySheet = showCurrencySheet,
             onDismissCurrencySheet = { showCurrencySheet = false },
             currency = currency,
             onCurrencySelected = { currency = it },
+            showTargetCurrencySheet = showTargetCurrencySheet,
+            onDismissTargetCurrencySheet = { showTargetCurrencySheet = false },
+            targetCurrency = targetCurrency ?: "USD",
+            onTargetCurrencySelected = { targetCurrency = it },
             allCurrencies = allCurrencies,
             showTemplateSheet = showTemplateSheet,
             onDismissTemplateSheet = { showTemplateSheet = false },
@@ -403,7 +427,11 @@ fun PlannedPaymentEntryScreen(
                 } else {
                     linkedTemplate = null
                 }
-            }
+            },
+            showExchangeRateDialog = showExchangeRateDialog,
+            onDismissExchangeRateDialog = { showExchangeRateDialog = false },
+            exchangeRate = transferRate,
+            onExchangeRateChanged = { transferRate = it }
         )
 
         AeonConfirmDeleteDialog(

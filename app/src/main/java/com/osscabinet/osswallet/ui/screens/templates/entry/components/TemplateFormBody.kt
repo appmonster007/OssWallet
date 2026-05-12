@@ -11,8 +11,10 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,8 +54,19 @@ fun TemplateFormBody(
     note: String,
     onNoteChange: (String) -> Unit,
     uniqueNotes: List<String>,
+    transferRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
+    targetCurrency: String? = null,
+    onTargetCurrencyClick: () -> Unit = {},
+    onTransferRateClick: () -> Unit = {},
+    onCurrencyClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val amountColor = when (transactionType) {
+        0 -> Color(0xFFB3261E)
+        1 -> Color(0xFF004D40)
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -82,33 +95,35 @@ fun TemplateFormBody(
                         Triple(Icons.Rounded.Add, "Income", 1),
                         Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
                     ),
-                    selectedColor = when (transactionType) {
-                        0 -> Color(0xFFB3261E)
-                        1 -> Color(0xFF004D40)
-                        else -> MaterialTheme.colorScheme.primary
-                    },
+                    selectedColor = amountColor,
                     itemWidth = 100.dp
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Amount Area
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onAmountClick)
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable(
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null
+                        ) { onAmountClick() }
                         .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = currency,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(modifier = Modifier.clickable { onCurrencyClick() }) {
+                            Text(
+                                text = currency,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = if (amount.isEmpty()) "0.00" else amount,
@@ -116,12 +131,66 @@ fun TemplateFormBody(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-1).sp
                             ),
-                            color = when (transactionType) {
-                                0 -> Color(0xFFB3261E)
-                                1 -> Color(0xFF004D40)
-                                else -> MaterialTheme.colorScheme.primary
-                            }
+                            color = if (amount.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor
                         )
+                    }
+
+                    // Transfer-specific secondary amount
+                    if (transactionType == 2 && targetAccount != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Surface(
+                            onClick = onTransferRateClick,
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.CurrencyExchange,
+                                    contentDescription = "Edit Exchange Rate",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "1:${transferRate.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString()}",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            val amountValue = amount.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+                            val convertedAmount = amountValue.multiply(transferRate)
+                            val convertedText = convertedAmount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
+
+                            Box(modifier = Modifier.clickable { onTargetCurrencyClick() }) {
+                                Text(
+                                    text = targetCurrency ?: currency,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = convertedText,
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.5).sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
 
@@ -161,8 +230,8 @@ fun TemplateFormBody(
                     value = targetAccount?.name ?: "Select",
                     onClick = onTargetAccountClick,
                     modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
                 )
             } else {
                 EntryActionCard(

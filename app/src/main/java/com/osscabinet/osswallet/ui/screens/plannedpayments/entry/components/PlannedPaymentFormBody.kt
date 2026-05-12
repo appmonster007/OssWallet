@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,10 @@ fun PlannedPaymentFormBody(
     autoConfirm: Boolean,
     onAutoConfirmChange: (Boolean) -> Unit,
     allCurrencies: List<String>,
+    transferRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
+    targetCurrency: String? = null,
+    onTargetCurrencyClick: () -> Unit = {},
+    onTransferRateClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val amountColor = when (transactionType) {
@@ -80,17 +85,6 @@ fun PlannedPaymentFormBody(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Template Selection Card
-        EntryActionCard(
-            icon = Icons.Rounded.AutoAwesome,
-            label = "LINKED TEMPLATE",
-            value = selectedTemplate?.name ?: "No template linked (click to pick/create)",
-            onClick = onTemplateClick,
-            modifier = Modifier.fillMaxWidth(),
-            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.primary
-        )
-
         // Header card: type selector + amount
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -128,55 +122,129 @@ fun PlannedPaymentFormBody(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Amount row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                // Amount Area
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onAmountClick() }
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(modifier = Modifier.clickable { onCurrencyClick() }) {
-                        Text(
-                            text = currency,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { onAmountClick() }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
+                        Box(modifier = Modifier.clickable { onCurrencyClick() }) {
+                            Text(
+                                text = currency,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = if (amountText.isEmpty()) "0.00" else amountText,
-                            style = MaterialTheme.typography.displaySmall.copy(
+                            style = MaterialTheme.typography.displayMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-1).sp
                             ),
                             color = if (amountText.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor
                         )
                     }
+
+                    // Transfer-specific secondary amount
+                    if (transactionType == 2 && targetAccount != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Surface(
+                            onClick = onTransferRateClick,
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.CurrencyExchange,
+                                    contentDescription = "Edit Exchange Rate",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "1:${transferRate.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString()}",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            val amountValue = amountText.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+                            val convertedAmount = amountValue.multiply(transferRate)
+                            val convertedText = convertedAmount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
+
+                            Box(modifier = Modifier.clickable { onTargetCurrencyClick() }) {
+                                Text(
+                                    text = targetCurrency ?: currency,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = convertedText,
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.5).sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        // Row 1: SCHEDULE card (full width)
-        EntryActionCard(
-            icon = Icons.Rounded.DateRange,
-            label = "SCHEDULE",
-            value = scheduleSummary,
-            onClick = onScheduleClick,
+        // Action Area: Template and Schedule (Side by side)
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.secondary
-        )
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            EntryActionCard(
+                icon = Icons.Rounded.Bookmark,
+                label = "TEMPLATE",
+                value = selectedTemplate?.name ?: "None",
+                onClick = onTemplateClick,
+                modifier = Modifier.weight(1f),
+                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.primary
+            )
 
-        // Row 2: Account + Category
+            EntryActionCard(
+                icon = Icons.Rounded.DateRange,
+                label = "SCHEDULE",
+                value = scheduleSummary,
+                onClick = onScheduleClick,
+                modifier = Modifier.weight(1f),
+                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.secondary
+            )
+        }
+
+        // Row 2: Account + Category (or Target Account)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -198,8 +266,8 @@ fun PlannedPaymentFormBody(
                     value = targetAccount?.name ?: "Select",
                     onClick = onTargetAccountClick,
                     modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
                 )
             } else {
                 EntryActionCard(

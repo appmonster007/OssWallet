@@ -102,6 +102,9 @@ fun AddTemplateScreen(
     var showCategorySheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
+    var showCurrencySheet by remember { mutableStateOf(false) }
+    var showTargetCurrencySheet by remember { mutableStateOf(false) }
+    var showExchangeRateDialog by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -234,6 +237,11 @@ fun AddTemplateScreen(
             note = note,
             onNoteChange = { note = it },
             uniqueNotes = uniqueNotes,
+            transferRate = transferRate,
+            targetCurrency = targetCurrency,
+            onTargetCurrencyClick = { showTargetCurrencySheet = true },
+            onTransferRateClick = { showExchangeRateDialog = true },
+            onCurrencyClick = { showCurrencySheet = true },
             modifier = Modifier.padding(innerPadding)
         )
 
@@ -241,8 +249,10 @@ fun AddTemplateScreen(
             isNumpadVisible = isNumpadVisible,
             onDismissNumpad = { isNumpadVisible = false },
             amount = amount,
-            onAmountChange = { newAmount, newType -> 
+            onAmountChange = { newAmount -> 
                 amount = newAmount
+            },
+            onTypeChangedFromNumpad = { newType ->
                 transactionType = when (newType) {
                     "income" -> 1
                     "transfer" -> 2
@@ -259,6 +269,9 @@ fun AddTemplateScreen(
             selectedAccount = selectedAccount,
             onAccountSelected = {
                 accountId = it.id
+                if (currency.isBlank() || currency == "USD") {
+                    currency = it.currencyCode
+                }
                 showAccountSheet = false
             },
             targetAccount = selectedTargetAccount,
@@ -290,7 +303,19 @@ fun AddTemplateScreen(
             onTagsSelected = { tags = it },
             onAddTag = { name, color -> tagViewModel.addTag(name, color) },
             onEditTag = { tagViewModel.updateTag(it.name, it) },
-            onDeleteTag = { tagViewModel.deleteTag(it) }
+            onDeleteTag = { tagViewModel.deleteTag(it) },
+            showCurrencySheet = showCurrencySheet,
+            onDismissCurrencySheet = { showCurrencySheet = false },
+            currency = currency,
+            onCurrencySelected = { currency = it },
+            showTargetCurrencySheet = showTargetCurrencySheet,
+            onDismissTargetCurrencySheet = { showTargetCurrencySheet = false },
+            targetCurrency = targetCurrency ?: "USD",
+            onTargetCurrencySelected = { targetCurrency = it },
+            showExchangeRateDialog = showExchangeRateDialog,
+            onDismissExchangeRateDialog = { showExchangeRateDialog = false },
+            exchangeRate = transferRate,
+            onExchangeRateChanged = { transferRate = it }
         )
     }
 }

@@ -19,6 +19,7 @@ fun CalculatorSheet(
     transactionType: Int, // 0=expense, 1=income, 2=transfer
     decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
+    onTypeChanged: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     // Map transaction type to string for CalculatorNumpad
@@ -49,8 +50,9 @@ fun CalculatorSheet(
         ) {
             CalculatorNumpad(
                 amount = currentAmount,
-                onAmountChange = { amount, _ ->
+                onAmountChange = { amount, type ->
                     onAmountChanged(amount)
+                    onTypeChanged(type)
                 },
                 transactionType = transactionTypeStr,
                 decimalPrecision = decimalPrecision,

@@ -112,7 +112,7 @@ fun PlannedPaymentEntryScreen(
             payee = template.payee
             noteUserPart = template.note.removePrefix("${template.title} - ")
             paymentMethod = template.paymentMethod
-            selectedTagNames = prefill!!.tags
+            selectedTagNames = template.tags
             status = PlannedPaymentStatus.ACTIVE
             transactionViewModel?.clearPlannedPaymentPrefill()
         } else {

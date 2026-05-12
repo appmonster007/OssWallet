@@ -610,21 +610,23 @@ class TransactionEntryViewModel(
                             val occurrence = PlannedPaymentOccurrence(
                                 id = 0,
                                 plannedPaymentId = paymentId,
-                                scheduledDate = payment.nextDueDate, // Assume we are confirming the next one
+                                scheduledDate = payment.schedule.nextDueDate, // Assume we are confirming the next one
                                 status = OccurrenceStatus.CONFIRMED,
                                 generatedTransactionId = newId
                             )
                             plannedPaymentRepository.upsertOccurrence(occurrence)
 
                             // Update planned payment next due date
-                            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.nextDueDate)
+                            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.schedule.nextDueDate)
                             if (nextDue == null) {
                                 plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
                             } else {
                                 plannedPaymentRepository.update(
                                     payment.copy(
-                                        nextDueDate = nextDue,
-                                        lastTriggeredDate = payment.nextDueDate
+                                        schedule = payment.schedule.copy(
+                                            nextDueDate = nextDue,
+                                            lastTriggeredDate = payment.schedule.nextDueDate
+                                        )
                                     )
                                 )
                             }

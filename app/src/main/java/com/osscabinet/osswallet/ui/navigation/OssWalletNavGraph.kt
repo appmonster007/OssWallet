@@ -8,10 +8,32 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.dashboard.*
 import com.osscabinet.ossWallet.ui.viewmodel.*
-import com.osscabinet.ossWallet.ui.screens.*
 import com.osscabinet.ossWallet.ui.analytics.AnalyticsScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.management.AccountManagementScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.list.BudgetListScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.BudgetDetailScreen
+import com.osscabinet.ossWallet.ui.screens.categories.management.CategoryManagementScreen
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryScreen
+import com.osscabinet.ossWallet.ui.screens.loans.list.LoansScreen
+import com.osscabinet.ossWallet.ui.screens.loans.detail.LoanDetailScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentsScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.PlannedPaymentDetailScreen
+import com.osscabinet.ossWallet.ui.screens.templates.entry.AddTemplateScreen
+import com.osscabinet.ossWallet.ui.screens.templates.list.TemplatesScreen
+import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
-import com.osscabinet.ossWallet.ui.accountdetail.*
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ManageTagsScreen
+import com.osscabinet.ossWallet.ui.screens.filters.EditFilterScreen
+import com.osscabinet.ossWallet.ui.screens.filters.FiltersSettingsScreen
+import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
+import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
+import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -607,9 +629,6 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
-                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
-
                 FiltersSettingsScreen(
                     viewModel = settingsViewModel,
                     onBackClick = { navController.popBackStack() },
@@ -660,15 +679,15 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
-                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                val plannedPaymentViewModel: PlannedPaymentViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                        PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
                             appContainer.settingsRepository
                         )
                     }
                 )
-                com.osscabinet.ossWallet.ui.screens.PlannedPaymentsScreen(
+                PlannedPaymentsScreen(
                     viewModel = plannedPaymentViewModel,
                     transactionManager = appContainer.transactionManager,
                     onAddClick = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
@@ -689,9 +708,9 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
-                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                val budgetViewModel: BudgetViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                        BudgetViewModel(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
@@ -702,7 +721,7 @@ fun OssWalletNavGraph(
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
                 val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.BudgetListScreen(
+                BudgetListScreen(
                     viewModel = budgetViewModel,
                     onAddClick = { navController.navigate(Screen.BudgetEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
@@ -725,9 +744,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: -1L
-                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                val budgetViewModel: BudgetViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                        BudgetViewModel(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
@@ -738,7 +757,7 @@ fun OssWalletNavGraph(
                 )
                 val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.BudgetEntryScreen(
+                BudgetEntryScreen(
                     budgetId = if (budgetId == -1L) null else budgetId,
                     viewModel = budgetViewModel,
                     accounts = accounts,
@@ -759,9 +778,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: -1L
-                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                val plannedPaymentViewModel: PlannedPaymentViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                        PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
                             appContainer.settingsRepository
                         )
@@ -769,7 +788,7 @@ fun OssWalletNavGraph(
                 )
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.PlannedPaymentEntryScreen(
+                PlannedPaymentEntryScreen(
                     plannedPaymentId = if (plannedPaymentId == -1L) null else plannedPaymentId,
                     viewModel = plannedPaymentViewModel,
                     accountViewModel = accountViewModel,
@@ -787,15 +806,15 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
-                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                val loanViewModel: LoanViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                        LoanViewModel(
                             appContainer.loanRepository,
                             appContainer.settingsRepository
                         )
                     }
                 )
-                com.osscabinet.ossWallet.ui.screens.LoansScreen(
+                LoansScreen(
                     viewModel = loanViewModel,
                     onAddClick = { navController.navigate(Screen.LoanEntry.createRoute()) },
                     onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
@@ -814,16 +833,16 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val loanId = backStackEntry.arguments?.getLong("loanId") ?: -1L
-                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                val loanViewModel: LoanViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                        LoanViewModel(
                             appContainer.loanRepository,
                             appContainer.settingsRepository
                         )
                     }
                 )
                 val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.LoanEntryScreen(
+                LoanEntryScreen(
                     loanId = if (loanId == -1L) null else loanId,
                     viewModel = loanViewModel,
                     accounts = accounts,
@@ -840,9 +859,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val loanId = backStackEntry.arguments?.getLong("loanId") ?: return@composable
-                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                val loanViewModel: LoanViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                        LoanViewModel(
                             appContainer.loanRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository
@@ -851,7 +870,7 @@ fun OssWalletNavGraph(
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
                 val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.LoanDetailScreen(
+                LoanDetailScreen(
                     loanId = loanId,
                     viewModel = loanViewModel,
                     accountViewModel = accountViewModel,
@@ -882,9 +901,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: return@composable
-                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                val plannedPaymentViewModel: PlannedPaymentViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                        PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
                             appContainer.settingsRepository
                         )
@@ -892,7 +911,7 @@ fun OssWalletNavGraph(
                 )
                 val detailAccounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                 val detailCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.PlannedPaymentDetailScreen(
+                PlannedPaymentDetailScreen(
                     plannedPaymentId = plannedPaymentId,
                     viewModel = plannedPaymentViewModel,
                     transactionManager = appContainer.transactionManager,
@@ -916,9 +935,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: return@composable
-                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                val budgetViewModel: BudgetViewModel = viewModel(
                     factory = GenericViewModelFactory {
-                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                        BudgetViewModel(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
@@ -929,7 +948,7 @@ fun OssWalletNavGraph(
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
                 val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
-                com.osscabinet.ossWallet.ui.screens.BudgetDetailScreen(
+                BudgetDetailScreen(
                     budgetId = budgetId,
                     viewModel = budgetViewModel,
                     accountViewModel = accountViewModel,

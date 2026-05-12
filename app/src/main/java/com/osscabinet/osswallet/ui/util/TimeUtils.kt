@@ -26,4 +26,19 @@ object TimeUtils {
             .withZone(ZoneId.systemDefault())
         return formatter.format(Instant.ofEpochMilli(millis))
     }
+
+    fun formatRelativeDate(dateMillis: Long, now: Long): String {
+        val zone = ZoneId.systemDefault()
+        val target = Instant.ofEpochMilli(dateMillis).atZone(zone).toLocalDate()
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        val diffDays = java.time.temporal.ChronoUnit.DAYS.between(target, today)
+        return when {
+            target == today -> "Today"
+            target == today.plusDays(1) -> "Tomorrow"
+            target.isAfter(today) -> DateTimeFormatter.ofPattern("MMM d").format(target)
+            diffDays == 1L -> "Yesterday"
+            diffDays < 7 -> "$diffDays days ago"
+            else -> DateTimeFormatter.ofPattern("MMM d").format(target)
+        }
+    }
 }

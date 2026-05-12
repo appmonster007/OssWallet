@@ -28,6 +28,8 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 
+import com.osscabinet.ossWallet.ui.components.entry.*
+
 @Composable
 fun CategoryEditSheet(
     category: Category?,
@@ -121,32 +123,24 @@ fun CategoryEditSheet(
                 )
 
                 // Identity Section
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "IDENTITY",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.outline,
-                        letterSpacing = 1.sp
-                    )
-                    
-                    EditorialInput(
+                EntrySection(title = "IDENTITY", icon = Icons.Rounded.Category) {
+                    EntryEditorialInput(
                         value = name,
                         onValueChange = { if (!isMandatory) name = it },
                         label = "CATEGORY NAME",
-                        icon = Icons.Rounded.Category,
-                        readOnly = isMandatory
+                        icon = Icons.Rounded.Category
                     )
 
                     val parentCategory = parentCategories.find { it.id == selectedParentId }
                     var showParentPicker by remember { mutableStateOf(false) }
 
-                    RecordFieldCard(
+                    EntryActionCard(
                         icon = Icons.Rounded.AccountTree,
                         label = "PARENT CATEGORY",
                         value = parentCategory?.name ?: "None",
                         onClick = { if (!isMandatory) showParentPicker = true },
-                        trailingIcon = if (!isMandatory) Icons.AutoMirrored.Rounded.KeyboardArrowRight else null,
-                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.secondary
                     )
 
                     if (showParentPicker && !isMandatory) {

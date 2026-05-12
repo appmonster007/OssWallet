@@ -442,27 +442,27 @@ private fun PlannedPaymentListItem(
     onPause: () -> Unit,
     onResume: () -> Unit
 ) {
-    val dateToShow = scheduledDate ?: payment.nextDueDate
+    val dateToShow = scheduledDate ?: payment.schedule.nextDueDate
     val relativeDateLabel = remember(dateToShow, now) { formatRelativeDate(dateToShow, now) }
 
     val typeColor = when {
         isOverdue -> RedWarning
-        payment.transactionType == "income" -> TealHealthy
+        payment.template.transactionType == "income" -> TealHealthy
         else -> RedWarning
     }
     val dateColor =
         if (isOverdue) RedWarning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
 
-    val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.recurrenceRule)
-    val formattedAmount = remember(payment.amount) {
-        payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
+    val formattedAmount = remember(payment.template.amount) {
+        payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
 
     ManagementListItem(
         onClick = onTap,
         icon = Icons.Rounded.Repeat,
         iconTint = typeColor,
-        title = payment.title,
+        title = payment.template.title,
         subtitle = recurrenceLabel,
         isWarning = isOverdue,
         trailingContent = {
@@ -472,7 +472,7 @@ private fun PlannedPaymentListItem(
                 color = typeColor
             )
             Text(
-                payment.currency,
+                payment.template.currency,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )

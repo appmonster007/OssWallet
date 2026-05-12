@@ -208,8 +208,12 @@ class BackupRepositoryImpl(
     )
 
     private suspend fun exportPlannedPayments() = CsvProcessor.buildCsv(
-        listOf("id", "title", "amount", "currency", "transactionType", "accountId", "targetAccountId", "categoryId", "paymentMethod", "tags", "note", "payee", "recurrenceType", "recurrenceInterval", "recurrenceDayOfWeek", "recurrenceDayOfMonth", "startDate", "endDate", "nextDueDate", "lastTriggeredDate", "autoConfirm", "status", "profileId"),
-        plannedPaymentDao.getAllPlannedPaymentsSync().map { listOf(it.id, it.title, it.amount, it.currency, it.transactionType, it.accountId, it.targetAccountId, it.categoryId, it.paymentMethod, it.tags, it.note, it.payee, it.recurrenceType, it.recurrenceInterval, it.recurrenceDayOfWeek, it.recurrenceDayOfMonth, it.startDate, it.endDate, it.nextDueDate, it.lastTriggeredDate, it.autoConfirm, it.status, it.profileId) }
+        listOf("id", "title", "amount", "currency", "transactionType", "accountId", "targetAccountId", "targetCurrency", "transferRate", "categoryId", "paymentMethod", "tags", "note", "payee", "recurrenceCronExpression", "startDate", "endDate", "nextDueDate", "lastTriggeredDate", "autoConfirm", "status", "profileId"),
+        plannedPaymentDao.getAllPlannedPaymentsSync().map { 
+            val t = it.template
+            val s = it.schedule
+            listOf(it.id, t.title, t.amount, t.currency, t.transactionType, t.accountId, t.targetAccountId, t.targetCurrency, t.transferRate, t.categoryId, t.paymentMethod, t.tags, t.note, t.payee, s.recurrenceCronExpression, s.startDate, s.endDate, s.nextDueDate, s.lastTriggeredDate, it.autoConfirm, it.status, it.profileId) 
+        }
     )
 
     private suspend fun exportPlannedPaymentOccurrences() = CsvProcessor.buildCsv(
@@ -363,14 +367,32 @@ class BackupRepositoryImpl(
     private suspend fun restorePlannedPayments(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
             plannedPaymentDao.insert(PlannedPaymentEntity(
-                id = p["id"]?.toLong() ?: 0, title = p["title"] ?: "", amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                currency = p["currency"] ?: "USD", transactionType = p["transactionType"] ?: "expense", accountId = p["accountId"] ?: "",
-                targetAccountId = p["targetAccountId"], categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, paymentMethod = p["paymentMethod"] ?: "Cash",
-                tags = p["tags"] ?: "", note = p["note"] ?: "", payee = p["payee"] ?: "", recurrenceType = p["recurrenceType"] ?: "MONTHLY",
-                recurrenceInterval = p["recurrenceInterval"]?.toIntOrNull() ?: 1, recurrenceDayOfWeek = p["recurrenceDayOfWeek"]?.toIntOrNull(),
-                recurrenceDayOfMonth = p["recurrenceDayOfMonth"]?.toIntOrNull(), startDate = p["startDate"]?.toLongOrNull() ?: 0,
-                endDate = p["endDate"]?.toLongOrNull(), nextDueDate = p["nextDueDate"]?.toLongOrNull() ?: 0, lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull(),
-                autoConfirm = p["autoConfirm"]?.toBoolean() ?: false, status = p["status"] ?: "ACTIVE", profileId = p["profileId"]?.toIntOrNull() ?: 1
+                id = p["id"]?.toLong() ?: 0,
+                template = TransactionTemplateEntity(
+                    title = p["title"] ?: "",
+                    amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                    currency = p["currency"] ?: "USD",
+                    transactionType = p["transactionType"] ?: "expense",
+                    accountId = p["accountId"] ?: "",
+                    targetAccountId = p["targetAccountId"],
+                    targetCurrency = p["targetCurrency"],
+                    transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
+                    categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
+                    paymentMethod = p["paymentMethod"] ?: "Cash",
+                    tags = p["tags"] ?: "",
+                    note = p["note"] ?: "",
+                    payee = p["payee"] ?: ""
+                ),
+                schedule = RecurrenceScheduleEntity(
+                    recurrenceCronExpression = p["recurrenceCronExpression"],
+                    startDate = p["startDate"]?.toLongOrNull() ?: 0,
+                    endDate = p["endDate"]?.toLongOrNull(),
+                    nextDueDate = p["nextDueDate"]?.toLongOrNull() ?: 0,
+                    lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull()
+                ),
+                autoConfirm = p["autoConfirm"]?.toBoolean() ?: false,
+                status = p["status"] ?: "ACTIVE",
+                profileId = p["profileId"]?.toIntOrNull() ?: 1
             ))
         }
     }

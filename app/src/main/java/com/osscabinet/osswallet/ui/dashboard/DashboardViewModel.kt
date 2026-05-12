@@ -312,20 +312,25 @@ class DashboardViewModel(
             val occurrence = PlannedPaymentOccurrence(
                 id = 0,
                 plannedPaymentId = payment.id,
-                scheduledDate = payment.nextDueDate
+                scheduledDate = payment.schedule.nextDueDate
             )
+            val template = payment.template
             val request = TransactionRequest(
-                title = payment.title,
-                amount = payment.amount,
-                transactionType = payment.transactionType,
-                accountId = payment.accountId,
-                currency = payment.currency,
-                categoryId = payment.categoryId,
-                tags = payment.tags,
-                paymentMethod = payment.paymentMethod,
+                title = template.title,
+                amount = template.amount,
+                transactionType = template.transactionType,
+                accountId = template.accountId,
+                currency = template.currency,
+                categoryId = template.categoryId,
+                tags = template.tags,
+                paymentMethod = template.paymentMethod,
                 timestamp = occurrence.scheduledDate,
-                payee = payment.payee,
-                note = payment.note
+                payee = template.payee,
+                note = template.note,
+                isTransfer = template.transactionType == "transfer",
+                targetAccountId = template.targetAccountId,
+                targetCurrency = template.targetCurrency,
+                transferRate = template.transferRate
             )
             val transactionId = manager.handleSaveTransaction(null, request, profileId)
             repo.upsertOccurrence(
@@ -341,8 +346,10 @@ class DashboardViewModel(
             } else {
                 repo.update(
                     payment.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = occurrence.scheduledDate
+                        schedule = payment.schedule.copy(
+                            nextDueDate = nextDue,
+                            lastTriggeredDate = occurrence.scheduledDate
+                        )
                     )
                 )
             }

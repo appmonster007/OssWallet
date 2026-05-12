@@ -29,7 +29,14 @@ class PlannedPaymentWorker(
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             val nextDate = PlannedPaymentService.calculateNextDueDate(payment, now)
             if (nextDate != null) {
-                repo.update(payment.copy(nextDueDate = nextDate, lastTriggeredDate = now))
+                repo.update(
+                    payment.copy(
+                        schedule = payment.schedule.copy(
+                            nextDueDate = nextDate,
+                            lastTriggeredDate = now
+                        )
+                    )
+                )
             } else {
                 repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             }

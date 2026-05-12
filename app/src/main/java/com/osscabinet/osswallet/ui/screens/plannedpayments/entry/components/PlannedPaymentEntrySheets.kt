@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,7 +41,8 @@ fun PlannedPaymentEntrySheets(
     recurrenceInterval: Int,
     dayOfWeek: Int?,
     dayOfMonth: Int?,
-    onScheduleConfirm: (Long, RecurrenceType, Int, Int?, Int?) -> Unit,
+    cronExpression: String?,
+    onScheduleConfirm: (Long, RecurrenceType, Int, Int?, Int?, String?) -> Unit,
     showEndDatePicker: Boolean,
     onDismissEndDatePicker: () -> Unit,
     endDateMillis: Long,
@@ -86,6 +88,7 @@ fun PlannedPaymentEntrySheets(
             initialInterval = recurrenceInterval,
             initialDayOfWeek = dayOfWeek,
             initialDayOfMonth = dayOfMonth,
+            initialCronExpression = cronExpression,
             onConfirm = onScheduleConfirm,
             onDismiss = onDismissScheduleBuilder
         )
@@ -198,7 +201,8 @@ private fun ScheduleBuilderSheet(
     initialInterval: Int,
     initialDayOfWeek: Int?,
     initialDayOfMonth: Int?,
-    onConfirm: (Long, RecurrenceType, Int, Int?, Int?) -> Unit,
+    initialCronExpression: String?,
+    onConfirm: (Long, RecurrenceType, Int, Int?, Int?, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     var stage by remember { mutableIntStateOf(1) }
@@ -207,6 +211,7 @@ private fun ScheduleBuilderSheet(
     var localInterval by remember { mutableIntStateOf(initialInterval) }
     var localDayOfWeek by remember { mutableStateOf(initialDayOfWeek) }
     var localDayOfMonth by remember { mutableStateOf(initialDayOfMonth) }
+    var cronText by remember { mutableStateOf(initialCronExpression ?: "") }
 
     if (stage == 1) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = localStart)
@@ -235,8 +240,19 @@ private fun ScheduleBuilderSheet(
             Preset("Semi-annually", RecurrenceType.EVERY_N_MONTHS, 6),
             Preset("Yearly", RecurrenceType.YEARLY, 1)
         )
-        var selectedTabIndex by remember { mutableIntStateOf(0) }
-        var cronText by remember { mutableStateOf("") }
+        var selectedTabIndex by remember { mutableIntStateOf(if (localType == RecurrenceType.CRON) 1 else 0) }
+
+        val parsedCronRule =
+            remember(cronText) { if (cronText.isNotBlank()) PlannedPaymentService.parseCronToRule(cronText) else null }
+
+        LaunchedEffect(parsedCronRule) {
+            parsedCronRule?.let { rule ->
+                localType = rule.type
+                localInterval = rule.interval
+                localDayOfWeek = rule.dayOfWeek
+                localDayOfMonth = rule.dayOfMonth
+            }
+        }
 
         val needsIntervalLocal = localType in listOf(
             RecurrenceType.EVERY_N_DAYS, RecurrenceType.EVERY_N_WEEKS, RecurrenceType.EVERY_N_MONTHS
@@ -286,6 +302,81 @@ private fun ScheduleBuilderSheet(
                             }
                         }
                     } else {
+                        var showCronHelp by remember { mutableStateOf(false) }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = cronText,
+                                    onValueChange = { cronText = it },
+                                    label = { Text("Cron Expression") },
+                                    placeholder = { Text("e.g. 0 0 * * *") },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true,
+                                    supportingText = {
+                                        Text("Unix format: Min Hour Day Month Weekday")
+                                    }
+                                )
+                                IconButton(
+                                    onClick = { showCronHelp = true },
+                                    modifier = Modifier.padding(top = 8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.HelpOutline,
+                                        contentDescription = "Cron Help",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            if (showCronHelp) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                "Cron Usage Guide",
+                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                            )
+                                            IconButton(
+                                                onClick = { showCronHelp = false },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Close, null, modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val helpText = """
+                                            Format: min hour day month weekday
+                                            • * : any value
+                                            • , : value list (1,3,5)
+                                            • - : range (1-5)
+                                            • / : step values (*/2)
+                                            
+                                            Examples:
+                                            • 0 0 * * * : Daily at midnight
+                                            • 0 0 1 * * : 1st of every month
+                                            • 0 12 * * 1-5 : Noon on weekdays
+                                            • 0 0 */2 * * : Every 2 days
+                                        """.trimIndent()
+                                        Text(helpText, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+                        
                         if (needsIntervalLocal) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -302,7 +393,6 @@ private fun ScheduleBuilderSheet(
                                 }
                             }
                         }
-                        // Add day of week / day of month selectors here if needed, omitted for brevity but should be similar to original
                     }
                 }
             },
@@ -312,14 +402,33 @@ private fun ScheduleBuilderSheet(
     }
 
     if (stage == 3) {
+        val rule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth)
+        val summary = PlannedPaymentService.buildScheduleSummary(localStart, rule)
+        
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Confirm Schedule") },
-            text = { Text("Verify your recurrence settings before saving.") },
+            text = { 
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Verify your recurrence settings before saving.")
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = summary,
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
             dismissButton = { TextButton(onClick = { stage = 2 }) { Text("BACK") } },
             confirmButton = {
                 TextButton(onClick = {
-                    onConfirm(localStart, localType, localInterval, localDayOfWeek, localDayOfMonth)
+                    onConfirm(localStart, localType, localInterval, localDayOfWeek, localDayOfMonth, if (localType == RecurrenceType.CRON) cronText else null)
                     onDismiss()
                 }) { Text("DONE") }
             }

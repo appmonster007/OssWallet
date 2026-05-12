@@ -34,7 +34,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -640,6 +640,60 @@ abstract class AppDatabase : RoomDatabase() {
                     }
                 }
 
+                val MIGRATION_17_18 = object : Migration(17, 18) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        database.execSQL("""
+                            CREATE TABLE planned_payments_v18 (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL,
+                                amount TEXT NOT NULL,
+                                currency TEXT NOT NULL,
+                                transactionType TEXT NOT NULL,
+                                accountId TEXT NOT NULL,
+                                targetAccountId TEXT,
+                                targetCurrency TEXT,
+                                transferRate TEXT NOT NULL DEFAULT '1.0',
+                                categoryId INTEGER NOT NULL,
+                                paymentMethod TEXT NOT NULL,
+                                tags TEXT NOT NULL,
+                                note TEXT NOT NULL,
+                                payee TEXT NOT NULL,
+                                recurrenceCronExpression TEXT,
+                                startDate INTEGER NOT NULL,
+                                endDate INTEGER,
+                                nextDueDate INTEGER NOT NULL,
+                                lastTriggeredDate INTEGER,
+                                autoConfirm INTEGER NOT NULL,
+                                status TEXT NOT NULL,
+                                profileId INTEGER NOT NULL,
+                                FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE,
+                                FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE RESTRICT
+                            )
+                        """.trimIndent())
+
+                        database.execSQL("""
+                            INSERT INTO planned_payments_v18 (
+                                id, title, amount, currency, transactionType, accountId, targetAccountId, 
+                                categoryId, paymentMethod, tags, note, payee, 
+                                startDate, endDate, nextDueDate, lastTriggeredDate, autoConfirm, status, profileId
+                            )
+                            SELECT 
+                                id, title, amount, currency, transactionType, accountId, targetAccountId, 
+                                categoryId, paymentMethod, tags, note, payee, 
+                                startDate, endDate, nextDueDate, lastTriggeredDate, autoConfirm, status, profileId
+                            FROM planned_payments
+                        """.trimIndent())
+
+                        database.execSQL("DROP TABLE planned_payments")
+                        database.execSQL("ALTER TABLE planned_payments_v18 RENAME TO planned_payments")
+
+                        database.execSQL("CREATE INDEX index_planned_payments_profileId ON planned_payments (profileId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_accountId ON planned_payments (accountId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_nextDueDate ON planned_payments (nextDueDate)")
+                        database.execSQL("CREATE INDEX index_planned_payments_status ON planned_payments (status)")
+                    }
+                }
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -750,7 +804,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Real Estate', 'Domain', -16711707, 1, 12)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
                     .build()
                 INSTANCE = instance
                 instance

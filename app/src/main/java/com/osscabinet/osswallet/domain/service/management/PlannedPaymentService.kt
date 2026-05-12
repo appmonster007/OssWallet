@@ -1,5 +1,9 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.cronutils.model.CronType
+import com.cronutils.model.definition.CronDefinitionBuilder
+import com.cronutils.model.time.ExecutionTime
+import com.cronutils.parser.CronParser
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
@@ -7,36 +11,62 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.Optional
 
 object PlannedPaymentService {
+
+    private val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX)
+    private val cronParser = CronParser(cronDefinition)
 
     /**
      * Calculates the next due date after [fromDate] according to the payment's recurrence rule.
      * Returns null when the payment has no further occurrences (ONE_TIME, or past endDate).
      */
     fun calculateNextDueDate(payment: PlannedPayment, fromDate: Long): Long? {
-        val rule = payment.recurrenceRule
+        val rule = payment.schedule.recurrenceRule
         if (rule.type == RecurrenceType.ONE_TIME) return null
 
-        val from = Instant.ofEpochMilli(fromDate).atZone(ZoneOffset.UTC).toLocalDate()
-        val next = when (rule.type) {
-            RecurrenceType.DAILY -> from.plusDays(rule.interval.toLong())
-            RecurrenceType.EVERY_N_DAYS -> from.plusDays(rule.interval.toLong())
-            RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS -> from.plusWeeks(rule.interval.toLong())
-            RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS -> {
-                val candidate = from.plusMonths(rule.interval.toLong())
-                rule.dayOfMonth?.let { day ->
-                    val clamped = day.coerceAtMost(candidate.lengthOfMonth())
-                    candidate.withDayOfMonth(clamped)
-                } ?: candidate
-            }
+        val fromInstant = Instant.ofEpochMilli(fromDate)
+        val fromZoned = fromInstant.atZone(ZoneOffset.UTC)
 
-            RecurrenceType.YEARLY -> from.plusYears(rule.interval.toLong())
-            RecurrenceType.ONE_TIME -> return null
+        val nextMillis = if (rule.type == RecurrenceType.CRON && rule.cronExpression != null) {
+            calculateNextFromCron(rule.cronExpression, fromDate)
+        } else {
+            val from = fromZoned.toLocalDate()
+            val next = when (rule.type) {
+                RecurrenceType.DAILY -> from.plusDays(rule.interval.toLong())
+                RecurrenceType.EVERY_N_DAYS -> from.plusDays(rule.interval.toLong())
+                RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS -> from.plusWeeks(rule.interval.toLong())
+                RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS -> {
+                    val candidate = from.plusMonths(rule.interval.toLong())
+                    rule.dayOfMonth?.let { day ->
+                        val clamped = day.coerceAtMost(candidate.lengthOfMonth())
+                        candidate.withDayOfMonth(clamped)
+                    } ?: candidate
+                }
+                RecurrenceType.YEARLY -> from.plusYears(rule.interval.toLong())
+                else -> null
+            }
+            next?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
         }
 
-        val nextMillis = next.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        return if (payment.endDate != null && nextMillis > payment.endDate) null else nextMillis
+        return if (nextMillis != null && payment.schedule.endDate != null && nextMillis > payment.schedule.endDate) null else nextMillis
+    }
+
+    private fun calculateNextFromCron(cronExpression: String, fromDate: Long): Long? {
+        return try {
+            val fromZoned = Instant.ofEpochMilli(fromDate).atZone(ZoneOffset.UTC)
+            val cron = cronParser.parse(cronExpression)
+            val executionTime = ExecutionTime.forCron(cron)
+            val nextExecution: Optional<java.time.ZonedDateTime> = executionTime.nextExecution(fromZoned)
+            if (nextExecution.isPresent) {
+                nextExecution.get().toInstant().toEpochMilli()
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
@@ -54,16 +84,17 @@ object PlannedPaymentService {
         for (payment in payments) {
             if (payment.status != PlannedPaymentStatus.ACTIVE) continue
 
-            var due = payment.nextDueDate
+            var due = payment.schedule.nextDueDate
             while (due <= windowEnd) {
-                if (due >= payment.startDate) {
+                if (due >= payment.schedule.startDate) {
                     result += UpcomingPaymentItem(
                         plannedPayment = payment,
                         scheduledDate = due,
                         isOverdue = due < fromDate
                     )
                 }
-                val next = calculateNextDueDate(payment.copy(nextDueDate = due), due) ?: break
+                val currentSchedule = payment.schedule.copy(nextDueDate = due)
+                val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
                 if (next == due) break  // guard against infinite loop
                 due = next
             }
@@ -73,20 +104,21 @@ object PlannedPaymentService {
     }
 
     /**
-     * Generates up to [n] future occurrences starting from [payment.nextDueDate].
+     * Generates up to [n] future occurrences starting from [payment.schedule.nextDueDate].
      * Respects endDate; stops early for ONE_TIME payments.
      */
     fun generateNextN(payment: PlannedPayment, now: Long, n: Int): List<UpcomingPaymentItem> {
         if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
         val result = mutableListOf<UpcomingPaymentItem>()
-        var due = payment.nextDueDate
+        var due = payment.schedule.nextDueDate
         while (result.size < n) {
             result += UpcomingPaymentItem(
                 plannedPayment = payment,
                 scheduledDate = due,
                 isOverdue = due < now
             )
-            val next = calculateNextDueDate(payment.copy(nextDueDate = due), due) ?: break
+            val currentSchedule = payment.schedule.copy(nextDueDate = due)
+            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
             if (next == due) break
             due = next
         }
@@ -97,17 +129,16 @@ object PlannedPaymentService {
      * Returns all ACTIVE payments whose [nextDueDate] is before [now].
      */
     fun getOverdue(payments: List<PlannedPayment>, now: Long): List<PlannedPayment> =
-        payments.filter { it.status == PlannedPaymentStatus.ACTIVE && it.nextDueDate < now }
+        payments.filter { it.status == PlannedPaymentStatus.ACTIVE && it.schedule.nextDueDate < now }
 
     /**
      * Returns true if this payment should be marked COMPLETED after one trigger.
      */
     fun shouldComplete(payment: PlannedPayment): Boolean =
-        payment.recurrenceRule.type == RecurrenceType.ONE_TIME
+        payment.schedule.recurrenceRule.type == RecurrenceType.ONE_TIME
 
     /**
      * Returns a human-readable description of a recurrence rule.
-     * E.g. "Every month on day 15", "Every 2 weeks on Mon", "Daily", "One time".
      */
     fun formatRecurrenceHuman(rule: RecurrenceRule): String {
         val dayOfWeekName: (Int?) -> String? = { dow ->
@@ -124,29 +155,64 @@ object PlannedPaymentService {
                 val day = dayOfWeekName(rule.dayOfWeek)
                 if (day != null) "Every week on $day" else "Weekly"
             }
-
             RecurrenceType.MONTHLY -> {
                 if (rule.dayOfMonth != null) "Every month on day ${rule.dayOfMonth}" else "Monthly"
             }
-
             RecurrenceType.YEARLY -> "Yearly"
             RecurrenceType.EVERY_N_DAYS -> {
                 val n = rule.interval
                 if (n == 1) "Daily" else "Every $n days"
             }
-
             RecurrenceType.EVERY_N_WEEKS -> {
                 val n = rule.interval
                 val day = dayOfWeekName(rule.dayOfWeek)
                 val base = if (n == 1) "Weekly" else "Every $n weeks"
                 if (day != null) "$base on $day" else base
             }
-
             RecurrenceType.EVERY_N_MONTHS -> {
                 val n = rule.interval
                 val base = if (n == 1) "Monthly" else "Every $n months"
                 if (rule.dayOfMonth != null) "$base on day ${rule.dayOfMonth}" else base
             }
+            RecurrenceType.CRON -> "Custom: ${rule.cronExpression ?: "Invalid"}"
+        }
+    }
+
+    fun buildScheduleSummary(
+        startDateMillis: Long,
+        rule: RecurrenceRule
+    ): String {
+        val recurrenceLabel = formatRecurrenceHuman(rule)
+        val startLabel = java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault()).format(java.util.Date(startDateMillis))
+        return "$recurrenceLabel · Starts $startLabel"
+    }
+
+    fun parseCronToRule(cron: String): RecurrenceRule? {
+        if (cron.isBlank()) return null
+        return try {
+            val cronParsed = cronParser.parse(cron)
+            cronParsed.validate()
+            RecurrenceRule(RecurrenceType.CRON, cronExpression = cron)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun ruleToCron(rule: RecurrenceRule): String? {
+        if (rule.type == RecurrenceType.ONE_TIME) return null
+        if (rule.type == RecurrenceType.CRON) return rule.cronExpression
+        
+        // Simple heuristic for UNIX cron: "min hour dom mon dow"
+        // Note: This is a simplified mapping. For production, consider a more robust converter.
+        return when (rule.type) {
+            RecurrenceType.DAILY -> "0 0 * * *"
+            RecurrenceType.EVERY_N_DAYS -> "0 0 */${rule.interval} * *"
+            RecurrenceType.WEEKLY -> "0 0 * * ${rule.dayOfWeek ?: "*"}"
+            RecurrenceType.EVERY_N_WEEKS -> "0 0 * * ${rule.dayOfWeek ?: "*"}" // UNIX cron doesn't support every N weeks easily
+            RecurrenceType.MONTHLY -> "0 0 ${rule.dayOfMonth ?: 1} * *"
+            RecurrenceType.EVERY_N_MONTHS -> "0 0 ${rule.dayOfMonth ?: 1} */${rule.interval} *"
+            RecurrenceType.YEARLY -> "0 0 1 1 *"
+            else -> null
         }
     }
 }

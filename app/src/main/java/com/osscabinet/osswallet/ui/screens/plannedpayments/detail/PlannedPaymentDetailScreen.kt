@@ -118,11 +118,11 @@ fun PlannedPaymentDetailScreen(
         occurrences.filter { it.scheduledDate < now }.sortedByDescending { it.scheduledDate }
     }
 
-    val accountName = remember(payment.accountId, accounts) {
-        accounts.find { it.id == payment.accountId }?.name ?: payment.accountId.take(8)
+    val accountName = remember(payment.template.accountId, accounts) {
+        accounts.find { it.id == payment.template.accountId }?.name ?: payment.template.accountId.take(8)
     }
-    val categoryName = remember(payment.categoryId, categories) {
-        categories.find { it.id == payment.categoryId }?.name ?: "Unknown"
+    val categoryName = remember(payment.template.categoryId, categories) {
+        categories.find { it.id == payment.template.categoryId }?.name ?: "Unknown"
     }
 
     Scaffold(
@@ -130,7 +130,7 @@ fun PlannedPaymentDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        payment.title,
+                        payment.template.title,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp,
                         maxLines = 1,
@@ -163,18 +163,18 @@ fun PlannedPaymentDetailScreen(
             // ─── Hero card ───────────────────────────────────────────────────
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == "income") TealHealthy else RedWarning
+                    PlannedPaymentStatus.ACTIVE -> if (payment.template.transactionType == "income") TealHealthy else RedWarning
                     PlannedPaymentStatus.PAUSED -> Color.Gray
                     else -> Color.Gray
                 }
                 val recurrenceText =
-                    PlannedPaymentService.formatRecurrenceHuman(payment.recurrenceRule)
+                    PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
                 val formattedAmount =
-                    payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
-                val nextRelative = formatRelativeDate(payment.nextDueDate, now)
+                    payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                val nextRelative = formatRelativeDate(payment.schedule.nextDueDate, now)
 
                 AeonExpressiveCard(
-                    title = payment.title,
+                    title = payment.template.title,
                     subtitle = recurrenceText,
                     accentColor = accentColor,
                     modifier = Modifier.fillMaxWidth()
@@ -189,7 +189,7 @@ fun PlannedPaymentDetailScreen(
                             color = accentColor
                         )
                         Text(
-                            payment.currency,
+                            payment.template.currency,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                             color = accentColor.copy(alpha = 0.7f),
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -218,7 +218,7 @@ fun PlannedPaymentDetailScreen(
                             )
                         }
                         val typeLabel =
-                            if (payment.transactionType == "income") "Income" else "Expense"
+                            if (payment.template.transactionType == "income") "Income" else "Expense"
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -269,7 +269,7 @@ fun PlannedPaymentDetailScreen(
                     }
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.startDate))}",
+                        "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.schedule.startDate))}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
@@ -278,11 +278,11 @@ fun PlannedPaymentDetailScreen(
 
             // ─── Metadata card ───────────────────────────────────────────────
             val hasMetadata = accounts.isNotEmpty() ||
-                    payment.payee.isNotBlank() ||
-                    payment.paymentMethod.isNotBlank() ||
+                    payment.template.payee.isNotBlank() ||
+                    payment.template.paymentMethod.isNotBlank() ||
                     categoryName != null ||
-                    payment.tags.isNotEmpty() ||
-                    payment.note.isNotBlank()
+                    payment.template.tags.isNotEmpty() ||
+                    payment.template.note.isNotBlank()
             if (hasMetadata) {
                 item {
                     Surface(
@@ -301,31 +301,31 @@ fun PlannedPaymentDetailScreen(
                             if (accounts.isNotEmpty()) {
                                 DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
                             }
-                            if (payment.payee.isNotBlank()) {
-                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.payee)
+                            if (payment.template.payee.isNotBlank()) {
+                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.template.payee)
                             }
                             if (categoryName != null) {
                                 DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
                             }
-                            if (payment.paymentMethod.isNotBlank()) {
+                            if (payment.template.paymentMethod.isNotBlank()) {
                                 DetailMetaRow(
                                     Icons.Rounded.Payments,
                                     "Payment method",
-                                    payment.paymentMethod
+                                    payment.template.paymentMethod
                                 )
                             }
-                            if (payment.tags.isNotEmpty()) {
+                            if (payment.template.tags.isNotEmpty()) {
                                 DetailMetaRow(
                                     Icons.Rounded.LocalOffer,
                                     "Tags",
-                                    payment.tags.joinToString(" · ")
+                                    payment.template.tags.joinToString(" · ")
                                 )
                             }
-                            if (payment.note.isNotBlank()) {
+                            if (payment.template.note.isNotBlank()) {
                                 DetailMetaRow(
                                     Icons.AutoMirrored.Rounded.Notes,
                                     "Note",
-                                    payment.note,
+                                    payment.template.note,
                                     singleLine = false
                                 )
                             }

@@ -18,17 +18,14 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
-import com.osscabinet.ossWallet.ui.components.EditorialInput
-import com.osscabinet.ossWallet.ui.components.RecordFieldCard
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-
-import com.osscabinet.ossWallet.ui.components.entry.*
 
 @Composable
 fun CategoryEditSheet(

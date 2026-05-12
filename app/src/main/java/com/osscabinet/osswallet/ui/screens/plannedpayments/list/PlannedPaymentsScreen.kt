@@ -296,7 +296,7 @@ fun PlannedPaymentsScreen(
                                 isOverdue = true,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id) },
+                                onDelete = { viewModel.delete(payment.id, false) },
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
@@ -337,7 +337,7 @@ fun PlannedPaymentsScreen(
                                     scheduledDate = item.scheduledDate,
                                     onTap = { onDetailClick(item.plannedPayment.id) },
                                     onEdit = { onEditClick(item.plannedPayment.id) },
-                                    onDelete = { viewModel.delete(item.plannedPayment.id) },
+                                    onDelete = { viewModel.delete(item.plannedPayment.id, false) },
                                     onPause = { viewModel.pause(item.plannedPayment) },
                                     onResume = { viewModel.resume(item.plannedPayment) },
                                     onConfirm = {
@@ -373,7 +373,7 @@ fun PlannedPaymentsScreen(
                                 scheduledDate = payment.schedule.nextDueDate,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id) },
+                                onDelete = { viewModel.delete(payment.id, false) },
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
@@ -407,7 +407,7 @@ fun PlannedPaymentsScreen(
                                 isOverdue = false,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id) },
+                                onDelete = { viewModel.delete(payment.id, false) },
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) }
                             )
@@ -447,7 +447,7 @@ private fun PlannedPaymentListItem(
 
     val typeColor = when {
         isOverdue -> RedWarning
-        payment.template.transactionType == "income" -> TealHealthy
+        payment.template.transactionType == 1 -> TealHealthy
         else -> RedWarning
     }
     val dateColor =
@@ -462,20 +462,22 @@ private fun PlannedPaymentListItem(
         onClick = onTap,
         icon = Icons.Rounded.Repeat,
         iconTint = typeColor,
-        title = payment.template.title,
+        title = payment.template.name,
         subtitle = recurrenceLabel,
         isWarning = isOverdue,
         trailingContent = {
-            Text(
-                formattedAmount,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = typeColor
-            )
-            Text(
-                payment.template.currency,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    formattedAmount,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = typeColor
+                )
+                Text(
+                    payment.template.currency ?: "USD",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
         },
         menuItems = { onDismiss ->
             DropdownMenuItem(

@@ -16,7 +16,7 @@ interface TemplateDao {
     suspend fun updateStarStatus(templateId: Long, isStarred: Boolean)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTemplate(template: TemplateEntity)
+    suspend fun insertTemplate(template: TemplateEntity): Long
 
     @Update
     suspend fun updateTemplate(template: TemplateEntity)

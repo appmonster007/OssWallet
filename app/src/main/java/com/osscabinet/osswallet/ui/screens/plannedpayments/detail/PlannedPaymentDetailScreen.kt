@@ -84,6 +84,7 @@ fun PlannedPaymentDetailScreen(
     plannedPaymentId: Long,
     viewModel: PlannedPaymentViewModel,
     transactionManager: TransactionManager,
+    templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel? = null,
     accounts: List<Account> = emptyList(),
     categories: List<Category> = emptyList(),
     onEditClick: (Long) -> Unit,
@@ -119,7 +120,7 @@ fun PlannedPaymentDetailScreen(
     }
 
     val accountName = remember(payment.template.accountId, accounts) {
-        accounts.find { it.id == payment.template.accountId }?.name ?: payment.template.accountId.take(8)
+        accounts.find { it.id == payment.template.accountId }?.name ?: payment.template.accountId?.take(8) ?: "Unknown"
     }
     val categoryName = remember(payment.template.categoryId, categories) {
         categories.find { it.id == payment.template.categoryId }?.name ?: "Unknown"
@@ -130,7 +131,7 @@ fun PlannedPaymentDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        payment.template.title,
+                        payment.template.name,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp,
                         maxLines = 1,
@@ -143,6 +144,30 @@ fun PlannedPaymentDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            val t = payment.template
+                            templateViewModel?.addTemplate(
+                                name = t.name,
+                                categoryId = t.categoryId,
+                                amount = t.amount,
+                                transactionType = t.transactionType,
+                                accountId = t.accountId,
+                                targetAccountId = t.targetAccountId,
+                                targetCurrency = t.targetCurrency,
+                                transferRate = t.transferRate,
+                                note = t.note,
+                                payee = t.payee,
+                                location = t.location,
+                                paymentMethod = t.paymentMethod,
+                                currency = t.currency,
+                                tags = t.tags,
+                                profileId = payment.profileId
+                            )
+                        }
+                    ) {
+                        Icon(Icons.Rounded.Schedule, contentDescription = "Save as Template")
+                    }
                     IconButton(onClick = { onEditClick(payment.id) }) {
                         Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                     }
@@ -163,7 +188,7 @@ fun PlannedPaymentDetailScreen(
             // ─── Hero card ───────────────────────────────────────────────────
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.template.transactionType == "income") TealHealthy else RedWarning
+                    PlannedPaymentStatus.ACTIVE -> if (payment.template.transactionType == 1) TealHealthy else RedWarning
                     PlannedPaymentStatus.PAUSED -> Color.Gray
                     else -> Color.Gray
                 }
@@ -174,7 +199,7 @@ fun PlannedPaymentDetailScreen(
                 val nextRelative = formatRelativeDate(payment.schedule.nextDueDate, now)
 
                 AeonExpressiveCard(
-                    title = payment.template.title,
+                    title = payment.template.name,
                     subtitle = recurrenceText,
                     accentColor = accentColor,
                     modifier = Modifier.fillMaxWidth()
@@ -188,12 +213,14 @@ fun PlannedPaymentDetailScreen(
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                             color = accentColor
                         )
+                    if (payment.template.currency != null) {
                         Text(
                             payment.template.currency,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                             color = accentColor.copy(alpha = 0.7f),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
+                    }
                     }
                     Spacer(Modifier.height(8.dp))
 
@@ -217,8 +244,11 @@ fun PlannedPaymentDetailScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
-                        val typeLabel =
-                            if (payment.template.transactionType == "income") "Income" else "Expense"
+                        val typeLabel = when (payment.template.transactionType) {
+                            1 -> "Income"
+                            2 -> "Transfer"
+                            else -> "Expense"
+                        }
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -278,11 +308,11 @@ fun PlannedPaymentDetailScreen(
 
             // ─── Metadata card ───────────────────────────────────────────────
             val hasMetadata = accounts.isNotEmpty() ||
-                    payment.template.payee.isNotBlank() ||
-                    payment.template.paymentMethod.isNotBlank() ||
-                    categoryName != null ||
+                    !payment.template.payee.isNullOrBlank() ||
+                    !payment.template.paymentMethod.isNullOrBlank() ||
+                    categoryName != "Unknown" ||
                     payment.template.tags.isNotEmpty() ||
-                    payment.template.note.isNotBlank()
+                    !payment.template.note.isNullOrBlank()
             if (hasMetadata) {
                 item {
                     Surface(
@@ -301,17 +331,17 @@ fun PlannedPaymentDetailScreen(
                             if (accounts.isNotEmpty()) {
                                 DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
                             }
-                            if (payment.template.payee.isNotBlank()) {
-                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.template.payee)
+                            if (!payment.template.payee.isNullOrBlank()) {
+                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.template.payee!!)
                             }
-                            if (categoryName != null) {
+                            if (categoryName != "Unknown") {
                                 DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
                             }
-                            if (payment.template.paymentMethod.isNotBlank()) {
+                            if (!payment.template.paymentMethod.isNullOrBlank()) {
                                 DetailMetaRow(
                                     Icons.Rounded.Payments,
                                     "Payment method",
-                                    payment.template.paymentMethod
+                                    payment.template.paymentMethod!!
                                 )
                             }
                             if (payment.template.tags.isNotEmpty()) {
@@ -321,11 +351,11 @@ fun PlannedPaymentDetailScreen(
                                     payment.template.tags.joinToString(" · ")
                                 )
                             }
-                            if (payment.template.note.isNotBlank()) {
+                            if (!payment.template.note.isNullOrBlank()) {
                                 DetailMetaRow(
                                     Icons.AutoMirrored.Rounded.Notes,
                                     "Note",
-                                    payment.template.note,
+                                    payment.template.note!!,
                                     singleLine = false
                                 )
                             }
@@ -481,7 +511,7 @@ private fun OccurrenceItem(
                     color = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "$formattedAmount ${item.plannedPayment.template.currency}",
+                    "$formattedAmount ${item.plannedPayment.template.currency ?: ""}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -661,7 +691,7 @@ private fun PastOccurrenceItem(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
                 Text(
-                    "$formattedAmount ${payment.template.currency}",
+                    "$formattedAmount ${payment.template.currency ?: ""}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )

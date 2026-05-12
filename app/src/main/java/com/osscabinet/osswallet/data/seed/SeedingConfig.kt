@@ -45,6 +45,7 @@ object SeedingConfig {
                 categoryDao = database.categoryDao(),
                 transactionDao = database.transactionDao(),
                 filterDao = database.filterDao(),
+                profileDao = database.profileDao(),
                 context = context,
                 settingsDataStore = settingsDataStore
             )

@@ -1,22 +1,28 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.cronutils.descriptor.CronDescriptor
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import com.cronutils.parser.CronParser
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.Locale
 import java.util.Optional
 
 object PlannedPaymentService {
 
     private val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX)
     private val cronParser = CronParser(cronDefinition)
+    private val descriptor = CronDescriptor.instance(Locale.getDefault())
 
     /**
      * Calculates the next due date after [fromDate] according to the payment's recurrence rule.
@@ -126,7 +132,39 @@ object PlannedPaymentService {
     }
 
     /**
-     * Returns all ACTIVE payments whose [nextDueDate] is before [now].
+     * Generates up to [n] future occurrences starting from [startDate] according to [rule].
+     * Stops at [endDate] if provided.
+     */
+    fun generateOccurrences(
+        startDate: Long,
+        rule: RecurrenceRule,
+        n: Int,
+        endDate: Long? = null
+    ): List<Long> {
+        val result = mutableListOf<Long>()
+        var current: Long? = startDate
+        
+        while (current != null && result.size < n) {
+            result.add(current)
+            if (rule.type == RecurrenceType.ONE_TIME) break
+            
+            // Temporary object to leverage existing calculation logic
+            val tempPayment = PlannedPayment(
+                templateId = 0L,
+                template = Template(name = "", categoryId = 0, amount = BigDecimal.ZERO, transactionType = 0),
+                schedule = PaymentSchedule(rule, startDate, endDate, current)
+            )
+            current = calculateNextDueDate(tempPayment, current)
+            
+            if (current != null && endDate != null && current > endDate) {
+                current = null
+            }
+        }
+        return result
+    }
+
+    /**
+     * Generates all ACTIVE payments whose [nextDueDate] is before [now].
      */
     fun getOverdue(payments: List<PlannedPayment>, now: Long): List<PlannedPayment> =
         payments.filter { it.status == PlannedPaymentStatus.ACTIVE && it.schedule.nextDueDate < now }
@@ -174,8 +212,28 @@ object PlannedPaymentService {
                 val base = if (n == 1) "Monthly" else "Every $n months"
                 if (rule.dayOfMonth != null) "$base on day ${rule.dayOfMonth}" else base
             }
-            RecurrenceType.CRON -> "Custom: ${rule.cronExpression ?: "Invalid"}"
+            RecurrenceType.CRON -> {
+                if (rule.cronExpression.isNullOrBlank()) "Custom: Invalid expression"
+                else {
+                    try {
+                        val cron = cronParser.parse(rule.cronExpression)
+                        "Custom: ${descriptor.describe(cron)}"
+                    } catch (_: Exception) {
+                        "Custom: ${rule.cronExpression}"
+                    }
+                }
+            }
         }
+    }
+
+    fun generateOccurrencesPreview(
+        startDate: Long,
+        rule: RecurrenceRule,
+        n: Int = 5
+    ): List<String> {
+        val occurrences = generateOccurrences(startDate, rule, n)
+        val sdf = java.text.SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
+        return occurrences.map { sdf.format(java.util.Date(it)) }
     }
 
     fun buildScheduleSummary(

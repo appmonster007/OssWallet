@@ -1,8 +1,7 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.TransactionTemplate
+import com.osscabinet.ossWallet.domain.model.Template
 import java.math.BigDecimal
 
 /**
@@ -26,6 +25,6 @@ data class TemplatePrefillDTO(
  * Data for pre-filling the Planned Payment creation screen from a smart suggestion.
  */
 data class PlannedPaymentPrefillDTO(
-    val template: TransactionTemplate,
+    val template: Template,
     val schedule: PaymentSchedule
 )

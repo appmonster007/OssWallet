@@ -27,10 +27,12 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 
 @Composable
 fun PlannedPaymentFormBody(
+    selectedTemplate: Template?,
+    onTemplateClick: () -> Unit,
     title: String,
     onTitleChange: (String) -> Unit,
-    transactionType: String,
-    onTypeSelected: (Boolean) -> Unit,
+    transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
+    onTypeSelected: (Int) -> Unit,
     amountText: String,
     currency: String,
     onCurrencyClick: () -> Unit,
@@ -39,6 +41,8 @@ fun PlannedPaymentFormBody(
     onScheduleClick: () -> Unit,
     selectedAccount: Account?,
     onAccountClick: () -> Unit,
+    targetAccount: Account? = null,
+    onTargetAccountClick: () -> Unit = {},
     categoryObj: Category?,
     onCategoryClick: () -> Unit,
     payee: String,
@@ -63,7 +67,11 @@ fun PlannedPaymentFormBody(
     allCurrencies: List<String>,
     modifier: Modifier = Modifier
 ) {
-    val amountColor = if (transactionType == "income") Color(0xFF004D40) else Color(0xFFB3261E)
+    val amountColor = when (transactionType) {
+        1 -> Color(0xFF004D40)
+        0 -> Color(0xFFB3261E)
+        else -> MaterialTheme.colorScheme.primary
+    }
 
     Column(
         modifier = modifier
@@ -72,6 +80,17 @@ fun PlannedPaymentFormBody(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Template Selection Card
+        EntryActionCard(
+            icon = Icons.Rounded.AutoAwesome,
+            label = "LINKED TEMPLATE",
+            value = selectedTemplate?.name ?: "No template linked (click to pick/create)",
+            onClick = onTemplateClick,
+            modifier = Modifier.fillMaxWidth(),
+            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            iconTint = MaterialTheme.colorScheme.primary
+        )
+
         // Header card: type selector + amount
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -96,14 +115,15 @@ fun PlannedPaymentFormBody(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                 )
                 EntryTypeSelector(
-                    selectedType = transactionType == "income",
+                    selectedType = transactionType,
                     onTypeSelected = onTypeSelected,
                     types = listOf(
-                        Triple(Icons.Rounded.Remove, "Expense", false),
-                        Triple(Icons.Rounded.Add, "Income", true)
+                        Triple(Icons.Rounded.Remove, "Expense", 0),
+                        Triple(Icons.Rounded.Add, "Income", 1),
+                        Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
                     ),
                     selectedColor = amountColor,
-                    itemWidth = 120.dp
+                    itemWidth = 100.dp
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -163,7 +183,7 @@ fun PlannedPaymentFormBody(
         ) {
             EntryActionCard(
                 icon = getAccountIconByName(selectedAccount?.icon),
-                label = "ACCOUNT",
+                label = if (transactionType == 2) "FROM" else "ACCOUNT",
                 value = selectedAccount?.name ?: "Select",
                 onClick = onAccountClick,
                 modifier = Modifier.weight(1f),
@@ -171,15 +191,27 @@ fun PlannedPaymentFormBody(
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            EntryActionCard(
-                icon = getIconByName(categoryObj?.iconName),
-                label = "CATEGORY",
-                value = categoryObj?.name ?: "None",
-                onClick = onCategoryClick,
-                modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.tertiary
-            )
+            if (transactionType == 2) {
+                EntryActionCard(
+                    icon = getAccountIconByName(targetAccount?.icon),
+                    label = "TO",
+                    value = targetAccount?.name ?: "Select",
+                    onClick = onTargetAccountClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                EntryActionCard(
+                    icon = getIconByName(categoryObj?.iconName),
+                    label = "CATEGORY",
+                    value = categoryObj?.name ?: "None",
+                    onClick = onCategoryClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+            }
         }
 
         // Details card

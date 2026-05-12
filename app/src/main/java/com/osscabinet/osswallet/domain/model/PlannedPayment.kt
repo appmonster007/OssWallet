@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.domain.model
 
-import java.math.BigDecimal
-
 enum class RecurrenceType {
     ONE_TIME,
     DAILY,
@@ -27,25 +25,6 @@ data class RecurrenceRule(
 )
 
 /**
- * Groups transaction-specific data to be used as a template for recurring instances.
- */
-data class TransactionTemplate(
-    val title: String,
-    val amount: BigDecimal,
-    val currency: String,
-    val transactionType: String,       // "income", "expense", or "transfer"
-    val accountId: String,
-    val targetAccountId: String? = null,
-    val targetCurrency: String? = null,
-    val transferRate: BigDecimal = BigDecimal.ONE,
-    val categoryId: Long,
-    val paymentMethod: String = "Cash",
-    val tags: List<String> = emptyList(),
-    val note: String = "",
-    val payee: String = ""
-)
-
-/**
  * Groups scheduling logic and state.
  */
 data class PaymentSchedule(
@@ -58,7 +37,8 @@ data class PaymentSchedule(
 
 data class PlannedPayment(
     val id: Long = 0,
-    val template: TransactionTemplate,
+    val templateId: Long,
+    val template: Template, // Fully populated when loaded from repo
     val schedule: PaymentSchedule,
     val autoConfirm: Boolean = false,
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,

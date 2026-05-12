@@ -103,17 +103,22 @@ data class TransactionPrefillDTO(
             scheduledDate: Long? = null
         ): TransactionPrefillDTO {
             val template = payment.template
+            val typeStr = when (template.transactionType) {
+                1 -> "income"
+                2 -> "transfer"
+                else -> "expense"
+            }
             return TransactionPrefillDTO(
-                title = template.title,
+                title = template.name,
                 amount = template.amount.abs().toPlainString(),
                 categoryId = template.categoryId,
-                transactionType = if (template.categoryId == 1003L) "transfer" else template.transactionType,
-                accountId = template.accountId,
-                currency = template.currency,
+                transactionType = typeStr,
+                accountId = template.accountId ?: "",
+                currency = template.currency ?: "USD",
                 tags = template.tags,
-                paymentMethod = template.paymentMethod,
-                payee = template.payee,
-                note = template.note,
+                paymentMethod = template.paymentMethod ?: "Cash",
+                payee = template.payee ?: "",
+                note = template.note ?: "",
                 targetAccountId = template.targetAccountId,
                 targetCurrency = template.targetCurrency,
                 exchangeRate = template.transferRate.toPlainString(),

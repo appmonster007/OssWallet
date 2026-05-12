@@ -32,10 +32,16 @@ class TemplateViewModel(
         icon: String? = null,
         colorHex: String? = null,
         accountId: String? = null,
+        targetAccountId: String? = null,
+        targetCurrency: String? = null,
+        transferRate: BigDecimal = BigDecimal.ONE,
         note: String? = null,
         payee: String? = null,
         location: String? = null,
-        tags: List<String> = emptyList()
+        paymentMethod: String? = null,
+        currency: String? = null,
+        tags: List<String> = emptyList(),
+        profileId: Int = 1
     ) {
         viewModelScope.launch {
             templateRepository.insertTemplate(
@@ -48,14 +54,18 @@ class TemplateViewModel(
                     icon = icon,
                     colorHex = colorHex,
                     accountId = accountId,
+                    targetAccountId = targetAccountId,
+                    targetCurrency = targetCurrency,
+                    transferRate = transferRate,
                     note = note,
                     payee = payee,
                     location = location,
-                    paymentMethod = null,
-                    currency = null,
+                    paymentMethod = paymentMethod,
+                    currency = currency,
                     tags = tags,
                     isStarred = false,
-                    displayOrder = templates.value.size
+                    displayOrder = templates.value.size,
+                    profileId = profileId
                 )
             )
         }

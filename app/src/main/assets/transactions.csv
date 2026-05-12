@@ -1,130 +1,130 @@
-title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
-Initial Balance,1000.00,Initial Balance,0,1735669800000,USD,true,acc_cash,Cash,Self,Opening balance,Personal,,1
-Initial Balance,5000.00,Initial Balance,0,1735669800000,USD,true,acc_bank,Bank Transfer,Self,Opening balance,Personal,,1
-Initial Balance,15000.00,Initial Balance,0,1735669800000,USD,true,acc_savings,Bank Transfer,Self,Opening balance,Personal,,1
-Initial Balance,0.00,Initial Balance,0,1735669800000,USD,true,acc_credit,Credit Card,Self,Opening balance,Personal,,1
-Initial Balance,10000.00,Initial Balance,0,1735669800000,USD,true,acc_invest,Bank Transfer,Self,Opening balance,Personal,,1
-Initial Balance,100000.00,Initial Balance,0,1735669800000,JPY,true,acc_jpy,Cash,Self,Opening balance JPY,Travel,,1
-Initial Balance,5000.00,Initial Balance,0,1735669800000,SGD,true,acc_sgd,Bank Transfer,Self,Opening balance SGD,Personal,,1
-Initial Balance,10000000.00,Initial Balance,0,1735669800000,IDR,true,acc_idr,E-Wallet,Self,Opening balance IDR,Personal,,1
-Monthly Salary,5250.00,Salary,8,1748688000000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1748774400000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent payment,Housing,monthly,1
-Whole Foods Groceries,-142.50,Groceries,1,1748860800000,USD,false,acc_cash,Debit Card,Whole Foods,Weekly groceries,Personal,,1
-Morning Coffee,-6.50,Coffee & Snacks,1,1748947200000,USD,false,acc_cash,Cash,Starbucks,Latte,Personal,,1
-Gas Station,-55.00,Fuel,2,1749033600000,USD,false,acc_bank,Credit Card,Shell,Full tank,Personal,,1
-Netflix Subscription,-15.99,Streaming,11,1749120000000,USD,false,acc_credit,Credit Card,Netflix,Monthly subscription,Subscription,monthly,1
-Phone Bill,-65.00,Phone,4,1749206400000,USD,false,acc_bank,Bank Transfer,Verizon,Monthly mobile bill,Housing,monthly,1
-Gym Membership,-49.99,Gym,6,1749292800000,USD,false,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,monthly,1
-Dinner with Friends,-85.00,Dining Out,1,1749379200000,USD,false,acc_cash,Credit Card,Italian Bistro,Weekend dinner,Social,,1
-Amazon Purchase,-45.99,Online Shopping,3,1749465600000,USD,false,acc_credit,Credit Card,Amazon,Books,Personal,,1
-Freelance Payment,1200.00,Freelance,8,1749552000000,USD,true,acc_bank,Bank Transfer,Client A,Web dev project,Work,,1
-Lunch at Work,-15.50,Dining Out,1,1749638400000,USD,false,acc_cash,Cash,Cafeteria,Daily lunch,Work,,1
-Gas Station,-52.00,Fuel,2,1749724800000,USD,false,acc_bank,Credit Card,Exxon,Weekly gas,Personal,,1
-Pharmacy,-35.00,Pharmacy,6,1749811200000,USD,false,acc_cash,Debit Card,CVS,Vitamins,Health,,1
-Weekend Getaway Hotel,-220.00,Hotels,9,1749897600000,USD,false,acc_credit,Credit Card,Marriott,One night stay,Travel,,1
-Uber Ride,-24.00,Rideshare,2,1749984000000,USD,false,acc_credit,Credit Card,Uber,Ride to hotel,Travel,,1
-Consulting Income,3500.00,Salary,8,1750070400000,USD,true,acc_bank,Bank Transfer,Consulting Group,Project milestone,Work,,1
-Electricity Bill,-135.00,Electricity,4,1750156800000,USD,false,acc_bank,Bank Transfer,Power Co,Monthly usage,Housing,monthly,1
-Internet Bill,-79.99,Internet,4,1750243200000,USD,false,acc_bank,Bank Transfer,ISP,Fiber internet,Housing,monthly,1
-Spotify,-10.99,Music,11,1750329600000,USD,false,acc_credit,Credit Card,Spotify,Music subscription,Subscription,monthly,1
-Weekly Groceries,-95.20,Groceries,1,1750416000000,USD,false,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1
-Coffee and Muffin,-8.50,Coffee & Snacks,1,1750502400000,USD,false,acc_cash,Cash,Local Cafe,Breakfast,Personal,,1
-INR Salary Deposit,125000.00,Salary,8,1751328000000,INR,true,acc_bank,Bank Transfer,India Corp,Monthly INR salary,Work,monthly,1
-Indian Grocery Store,-4500.00,Groceries,1,1751414400000,INR,false,acc_bank,UPI,Local Market,INR groceries,Personal,,1
-INR Savings Transfer,50000.00,Salary,8,1751500800000,INR,true,acc_savings,Bank Transfer,Self,Monthly INR savings,Personal,monthly,1
-European Client Payment,1500.00,Freelance,8,1751587200000,EUR,true,acc_bank,Bank Transfer,Client B,EUR project payment,Work,,1
-Paris Business Trip Lunch,-45.00,Dining Out,1,1751673600000,EUR,false,acc_bank,Debit Card,Le Bistro,Lunch in Paris,Travel,,1
-Paris Metro Pass,-25.00,Public Transit,2,1751760000000,EUR,false,acc_bank,Cash,RATP,Metro travel,Travel,,1
-Monthly Salary,5250.00,Salary,8,1751328000000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1751414400000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent payment,Housing,monthly,1
-Weekly Groceries,-128.40,Groceries,1,1751500800000,USD,false,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1
-Gas Station,-58.00,Fuel,2,1751587200000,USD,false,acc_bank,Credit Card,Shell,Full tank,Personal,,1
-Movie Tickets,-35.00,Movies & Theater,5,1751673600000,USD,false,acc_cash,Debit Card,AMC,Weekend movie,Entertainment,,1
-Dinner Date,-120.00,Dining Out,1,1751760000000,USD,false,acc_credit,Credit Card,Steakhouse,Nice dinner,Social,,1
-Adobe Creative Cloud,-54.99,Software Subscriptions,11,1751846400000,USD,false,acc_credit,Credit Card,Adobe,Subscription,Work,monthly,1
-Cloud Storage,-9.99,Cloud Storage,11,1751932800000,USD,false,acc_credit,Credit Card,Google,100GB plan,Work,monthly,1
-Haircut,-40.00,Haircut,10,1752019200000,USD,false,acc_cash,Cash,Barber,Monthly haircut,Personal,,1
-Amazon Household,-75.20,Online Shopping,3,1752105600000,USD,false,acc_credit,Credit Card,Amazon,Supplies,Personal,,1
-Water Bill,-42.00,Water,4,1752192000000,USD,false,acc_bank,Bank Transfer,Water Dept,Monthly bill,Housing,monthly,1
-Electricity Bill India,-3200.00,Electricity,4,1752278400000,INR,false,acc_bank,Bank Transfer,BESCOM,INR power bill,Housing,monthly,1
-INR Phone Recharge,-800.00,Phone,4,1752364800000,INR,false,acc_bank,UPI,Jio,INR phone,Housing,monthly,1
-Salary Deposit,5250.00,Salary,8,1753920000000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1754006400000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Costco Run,-310.00,Groceries,1,1754092800000,USD,false,acc_cash,Debit Card,Costco,Bulk groceries,Personal,,1
-Car Insurance,-120.00,Insurance,4,1754179200000,USD,false,acc_bank,Bank Transfer,Geico,Monthly premium,Housing,monthly,1
-Coffee,-5.50,Coffee & Snacks,1,1754265600000,USD,false,acc_cash,Cash,Starbucks,Latte,Personal,,1
-New Running Shoes,-130.00,Clothing,3,1754352000000,USD,false,acc_credit,Credit Card,Nike Store,Shoes,Personal,,1
-Gas Station,-48.00,Fuel,2,1754438400000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Dividend Payment,150.00,Dividends,8,1754524800000,USD,true,acc_invest,Bank Transfer,Vanguard,Quarterly dividends,Investments,,1
-Mutual Fund Contribution,-500.00,Mutual Funds,12,1754611200000,USD,false,acc_invest,Bank Transfer,Vanguard,Monthly invest,Investments,monthly,1
-Quarterly Bonus,2500.00,Salary,8,1756598400000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Q3 Performance Bonus,Work,,1
-Salary Deposit,5250.00,Salary,8,1756684800000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1756771200000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Weekly Groceries,-115.00,Groceries,1,1756857600000,USD,false,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1
-Dinner Out,-55.00,Dining Out,1,1756944000000,USD,false,acc_cash,Credit Card,Sushi Zen,Dinner,Social,,1
-Gas Station,-54.00,Fuel,2,1757030400000,USD,false,acc_bank,Credit Card,Exxon,Gas,Personal,,1
-INR Salary,125000.00,Salary,8,1757116800000,INR,true,acc_bank,Bank Transfer,India Client,INR Fee,Work,monthly,1
-INR Rent India,-25000.00,Rent,4,1757203200000,INR,false,acc_bank,Bank Transfer,India Landlord,INR Rent,Housing,monthly,1
-Stock Purchase,-1000.00,Stocks,12,1757289600000,USD,false,acc_invest,Bank Transfer,E-Trade,Apple Stock,Investments,,1
-Tokyo Dinner,-5500.00,Dining Out,1,1759276800000,JPY,false,acc_jpy,Cash,Sushi Ro,Dinner in Tokyo,Travel,,1
-Tokyo Subway,-800.00,Public Transit,2,1759363200000,JPY,false,acc_jpy,Payment,JR East,Metro travel,Travel,,1
-Salary Deposit,5250.00,Salary,8,1759276800000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1759363200000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Groceries,-98.00,Groceries,1,1759449600000,USD,false,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1
-Heating Bill,-145.00,Electricity,4,1759536000000,USD,false,acc_bank,Bank Transfer,Utility Co,Winter heating,Housing,monthly,1
-Holiday Gifts,-350.00,Gifts,8,1759622400000,USD,false,acc_credit,Credit Card,Target,Family gifts,Personal,,1
-Gas Station,-50.00,Fuel,2,1759708800000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Dining Out,-95.00,Dining Out,1,1759795200000,USD,false,acc_cash,Credit Card,The Grill,Dinner,Social,,1
-New Laptop,-1499.00,Electronics,3,1761868800000,USD,false,acc_credit,Credit Card,Apple Store,Work laptop,Work,,1
-Salary Deposit,5250.00,Salary,8,1761955200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1762041600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Groceries,-145.00,Groceries,1,1762128000000,USD,false,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1
-Coffee,-7.00,Coffee & Snacks,1,1762214400000,USD,false,acc_cash,Cash,Starbucks,Coffee,Personal,,1
-Gas Station,-52.00,Fuel,2,1762300800000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Singapore Chili Crab,-85.00,Dining Out,1,1764547200000,SGD,false,acc_sgd,Debit Card,Jumbo Seafood,Famous Chili Crab,Travel,,1
-Grab Ride Singapore,-18.50,Rideshare,2,1764633600000,SGD,false,acc_sgd,E-Wallet,Grab,Ride to Marina Bay,Travel,,1
-Salary Deposit,5250.00,Salary,8,1764547200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1764633600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Groceries,-112.00,Groceries,1,1764720000000,USD,false,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1
-Valentines Dinner,-180.00,Dining Out,1,1764806400000,USD,false,acc_credit,Credit Card,Fancy Place,Dinner,Social,,1
-Valentines Flowers,-65.00,Gifts,8,1764892800000,USD,false,acc_cash,Cash,Florist,Flowers,Personal,,1
-Gas Station,-55.00,Fuel,2,1764979200000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Salary Deposit,5250.00,Salary,8,1767139200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1767225600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Spring Break Flight,-450.00,Flights,9,1767312000000,USD,false,acc_credit,Credit Card,Delta,NYC to Miami,Travel,,1
-Spring Break Hotel,-850.00,Hotels,9,1767398400000,USD,false,acc_credit,Credit Card,Hilton,Miami stay,Travel,,1
-Miami Dinner,-125.00,Dining Out,1,1767484800000,USD,false,acc_cash,Credit Card,Ocean Drive,Dinner,Travel,,1
-Miami Activities,-100.00,Activities,9,1767571200000,USD,false,acc_cash,Cash,Boat Tour,Tour,Travel,,1
-Gas Station,-58.00,Fuel,2,1767657600000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Bali Beach Dinner,-450000.00,Dining Out,1,1769731200000,IDR,false,acc_idr,E-Wallet,Potato Head,Dinner in Bali,Travel,,1
-Gojek Ride Bali,-35000.00,Rideshare,2,1769817600000,IDR,false,acc_idr,E-Wallet,Gojek,Ride to temple,Travel,,1
-Salary Deposit,5250.00,Salary,8,1769731200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1769817600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Groceries,-138.00,Groceries,1,1769904000000,USD,false,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1
-Easter Lunch,-95.00,Dining Out,1,1769990400000,USD,false,acc_cash,Credit Card,Cafe,Easter lunch,Social,,1
-Gas Station,-53.00,Fuel,2,1770076800000,USD,false,acc_bank,Credit Card,Exxon,Gas,Personal,,1
-New Garden Supplies,-120.00,Home & Garden,3,1770163200000,USD,false,acc_credit,Credit Card,Home Depot,Garden tools,Personal,,1
-Salary Deposit,5250.00,Salary,8,1772323200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1772409600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Groceries,-118.00,Groceries,1,1772496000000,USD,false,acc_cash,Debit Card,Costco,Groceries,Personal,,1
-Mothers Day Gift,-85.00,Gifts,8,1772582400000,USD,false,acc_credit,Credit Card,Sephora,Gift,Personal,,1
-Gas Station,-55.00,Fuel,2,1772668800000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Tech Conference Entry,-600.00,Training,7,1772755200000,USD,false,acc_bank,Credit Card,Conf Center,Conference,Education,,1
-Salary Deposit,5250.00,Salary,8,1774915200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1775001600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Weekly Groceries,-142.00,Groceries,1,1775088000000,USD,false,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1
-Summer BBQ Supplies,-75.00,Groceries,1,1775174400000,USD,false,acc_cash,Cash,Local Market,BBQ stuff,Personal,,1
-Gas Station,-58.00,Fuel,2,1775260800000,USD,false,acc_bank,Credit Card,Shell,Gas,Personal,,1
-Dinner Out,-65.00,Dining Out,1,1775347200000,USD,false,acc_cash,Credit Card,Pizza Place,Dinner,Social,,1
-Adobe Subscription,-54.99,Software Subscriptions,11,1775433600000,USD,false,acc_credit,Credit Card,Adobe,Subscription,Work,monthly,1
-Google Cloud,-9.99,Cloud Storage,11,1775520000000,USD,false,acc_credit,Credit Card,Google,Storage,Work,monthly,1
-Netflix,-15.99,Streaming,11,1775606400000,USD,false,acc_credit,Credit Card,Netflix,Streaming,Subscription,monthly,1
-Spotify,-10.99,Music,11,1775692800000,USD,false,acc_credit,Credit Card,Spotify,Music,Subscription,monthly,1
-Gym Membership,-49.99,Gym,6,1775779200000,USD,false,acc_credit,Credit Card,LA Fitness,Gym,Health,monthly,1
-Phone Bill,-65.00,Phone,4,1775865600000,USD,false,acc_bank,Bank Transfer,Verizon,Phone,Housing,monthly,1
-Internet Bill,-79.99,Internet,4,1775952000000,USD,false,acc_bank,Bank Transfer,ISP,Internet,Housing,monthly,1
-Electricity Bill,-155.00,Electricity,4,1776038400000,USD,false,acc_bank,Bank Transfer,Power Co,Power,Housing,monthly,1
-Water Bill,-45.00,Water,4,1776124800000,USD,false,acc_bank,Bank Transfer,Water Dept,Water,Housing,monthly,1
-Salary Deposit,5250.00,Salary,8,1777507200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
-Rent Payment,-1850.00,Rent,4,1777593600000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
-Final Transaction in Range,-50.00,Misc,1,1780272000000,USD,false,acc_cash,Cash,Self,End of year test,Personal,,1
+title,amount,category,categoryId,timestamp,currency,transactionType,accountId,paymentMethod,payee,note,tags,recurring,profileId,latitude,longitude,warrantyExpiration,status
+Initial Balance,1000.00,Initial Balance,0,1735669800000,USD,income,acc_cash,Cash,Self,Opening balance,Personal,,1,,,,cleared
+Initial Balance,5000.00,Initial Balance,0,1735669800000,USD,income,acc_bank,Bank Transfer,Self,Opening balance,Personal,,1,,,,cleared
+Initial Balance,15000.00,Initial Balance,0,1735669800000,USD,income,acc_savings,Bank Transfer,Self,Opening balance,Personal,,1,,,,cleared
+Initial Balance,0.00,Initial Balance,0,1735669800000,USD,income,acc_credit,Credit Card,Self,Opening balance,Personal,,1,,,,cleared
+Initial Balance,10000.00,Initial Balance,0,1735669800000,USD,income,acc_invest,Bank Transfer,Self,Opening balance,Personal,,1,,,,cleared
+Initial Balance,100000.00,Initial Balance,0,1735669800000,JPY,income,acc_jpy,Cash,Self,Opening balance JPY,Travel,,1,,,,cleared
+Initial Balance,5000.00,Initial Balance,0,1735669800000,SGD,income,acc_sgd,Bank Transfer,Self,Opening balance SGD,Personal,,1,,,,cleared
+Initial Balance,10000000.00,Initial Balance,0,1735669800000,IDR,income,acc_idr,E-Wallet,Self,Opening balance IDR,Personal,,1,,,,cleared
+Monthly Salary,5250.00,Salary,8,1748688000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1748774400000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent payment,Housing,monthly,1,,,,cleared
+Whole Foods Groceries,-142.50,Groceries,1,1748860800000,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly groceries,Personal,,1,,,,cleared
+Morning Coffee,-6.50,Coffee & Snacks,1,1748947200000,USD,expense,acc_cash,Cash,Starbucks,Latte,Personal,,1,,,,cleared
+Gas Station,-55.00,Fuel,2,1749033600000,USD,expense,acc_bank,Credit Card,Shell,Full tank,Personal,,1,,,,cleared
+Netflix Subscription,-15.99,Streaming,11,1749120000000,USD,expense,acc_credit,Credit Card,Netflix,Monthly subscription,Subscription,monthly,1,,,,cleared
+Phone Bill,-65.00,Phone,4,1749206400000,USD,expense,acc_bank,Bank Transfer,Verizon,Monthly mobile bill,Housing,monthly,1,,,,cleared
+Gym Membership,-49.99,Gym,6,1749292800000,USD,expense,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,monthly,1,,,,cleared
+Dinner with Friends,-85.00,Dining Out,1,1749379200000,USD,expense,acc_cash,Credit Card,Italian Bistro,Weekend dinner,Social,,1,,,,cleared
+Amazon Purchase,-45.99,Online Shopping,3,1749465600000,USD,expense,acc_credit,Credit Card,Amazon,Books,Personal,,1,,,,cleared
+Freelance Payment,1200.00,Freelance,8,1749552000000,USD,income,acc_bank,Bank Transfer,Client A,Web dev project,Work,,1,,,,cleared
+Lunch at Work,-15.50,Dining Out,1,1749638400000,USD,expense,acc_cash,Cash,Cafeteria,Daily lunch,Work,,1,,,,cleared
+Gas Station,-52.00,Fuel,2,1749724800000,USD,expense,acc_bank,Credit Card,Exxon,Weekly gas,Personal,,1,,,,cleared
+Pharmacy,-35.00,Pharmacy,6,1749811200000,USD,expense,acc_cash,Debit Card,CVS,Vitamins,Health,,1,,,,cleared
+Weekend Getaway Hotel,-220.00,Hotels,9,1749897600000,USD,expense,acc_credit,Credit Card,Marriott,One night stay,Travel,,1,,,,cleared
+Uber Ride,-24.00,Rideshare,2,1749984000000,USD,expense,acc_credit,Credit Card,Uber,Ride to hotel,Travel,,1,,,,cleared
+Consulting Income,3500.00,Salary,8,1750070400000,USD,income,acc_bank,Bank Transfer,Consulting Group,Project milestone,Work,,1,,,,cleared
+Electricity Bill,-135.00,Electricity,4,1750156800000,USD,expense,acc_bank,Bank Transfer,Power Co,Monthly usage,Housing,monthly,1,,,,cleared
+Internet Bill,-79.99,Internet,4,1750243200000,USD,expense,acc_bank,Bank Transfer,ISP,Fiber internet,Housing,monthly,1,,,,cleared
+Spotify,-10.99,Music,11,1750329600000,USD,expense,acc_credit,Credit Card,Spotify,Music subscription,Subscription,monthly,1,,,,cleared
+Weekly Groceries,-95.20,Groceries,1,1750416000000,USD,expense,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1,,,,cleared
+Coffee and Muffin,-8.50,Coffee & Snacks,1,1750502400000,USD,expense,acc_cash,Cash,Local Cafe,Breakfast,Personal,,1,,,,cleared
+INR Salary Deposit,125000.00,Salary,8,1751328000000,INR,income,acc_bank,Bank Transfer,India Corp,Monthly INR salary,Work,monthly,1,,,,cleared
+Indian Grocery Store,-4500.00,Groceries,1,1751414400000,INR,expense,acc_bank,UPI,Local Market,INR groceries,Personal,,1,,,,cleared
+INR Savings Transfer,50000.00,Salary,8,1751500800000,INR,income,acc_savings,Bank Transfer,Self,Monthly INR savings,Personal,monthly,1,,,,cleared
+European Client Payment,1500.00,Freelance,8,1751587200000,EUR,income,acc_bank,Bank Transfer,Client B,EUR project payment,Work,,1,,,,cleared
+Paris Business Trip Lunch,-45.00,Dining Out,1,1751673600000,EUR,expense,acc_bank,Debit Card,Le Bistro,Lunch in Paris,Travel,,1,,,,cleared
+Paris Metro Pass,-25.00,Public Transit,2,1751760000000,EUR,expense,acc_bank,Cash,RATP,Metro travel,Travel,,1,,,,cleared
+Monthly Salary,5250.00,Salary,8,1751328000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1751414400000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent payment,Housing,monthly,1,,,,cleared
+Weekly Groceries,-128.40,Groceries,1,1751500800000,USD,expense,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1,,,,cleared
+Gas Station,-58.00,Fuel,2,1751587200000,USD,expense,acc_bank,Credit Card,Shell,Full tank,Personal,,1,,,,cleared
+Movie Tickets,-35.00,Movies & Theater,5,1751673600000,USD,expense,acc_cash,Debit Card,AMC,Weekend movie,Entertainment,,1,,,,cleared
+Dinner Date,-120.00,Dining Out,1,1751760000000,USD,expense,acc_credit,Credit Card,Steakhouse,Nice dinner,Social,,1,,,,cleared
+Adobe Creative Cloud,-54.99,Software Subscriptions,11,1751846400000,USD,expense,acc_credit,Credit Card,Adobe,Subscription,Work,monthly,1,,,,cleared
+Cloud Storage,-9.99,Cloud Storage,11,1751932800000,USD,expense,acc_credit,Credit Card,Google,100GB plan,Work,monthly,1,,,,cleared
+Haircut,-40.00,Haircut,10,1752019200000,USD,expense,acc_cash,Cash,Barber,Monthly haircut,Personal,,1,,,,cleared
+Amazon Household,-75.20,Online Shopping,3,1752105600000,USD,expense,acc_credit,Credit Card,Amazon,Supplies,Personal,,1,,,,cleared
+Water Bill,-42.00,Water,4,1752192000000,USD,expense,acc_bank,Bank Transfer,Water Dept,Monthly bill,Housing,monthly,1,,,,cleared
+Electricity Bill India,-3200.00,Electricity,4,1752278400000,INR,expense,acc_bank,Bank Transfer,BESCOM,INR power bill,Housing,monthly,1,,,,cleared
+INR Phone Recharge,-800.00,Phone,4,1752364800000,INR,expense,acc_bank,UPI,Jio,INR phone,Housing,monthly,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1753920000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1754006400000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Costco Run,-310.00,Groceries,1,1754092800000,USD,expense,acc_cash,Debit Card,Costco,Bulk groceries,Personal,,1,,,,cleared
+Car Insurance,-120.00,Insurance,4,1754179200000,USD,expense,acc_bank,Bank Transfer,Geico,Monthly premium,Housing,monthly,1,,,,cleared
+Coffee,-5.50,Coffee & Snacks,1,1754265600000,USD,expense,acc_cash,Cash,Starbucks,Latte,Personal,,1,,,,cleared
+New Running Shoes,-130.00,Clothing,3,1754352000000,USD,expense,acc_credit,Credit Card,Nike Store,Shoes,Personal,,1,,,,cleared
+Gas Station,-48.00,Fuel,2,1754438400000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Dividend Payment,150.00,Dividends,8,1754524800000,USD,income,acc_invest,Bank Transfer,Vanguard,Quarterly dividends,Investments,,1,,,,cleared
+Mutual Fund Contribution,-500.00,Mutual Funds,12,1754611200000,USD,expense,acc_invest,Bank Transfer,Vanguard,Monthly invest,Investments,monthly,1,,,,cleared
+Quarterly Bonus,2500.00,Salary,8,1756598400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Q3 Performance Bonus,Work,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1756684800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1756771200000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Weekly Groceries,-115.00,Groceries,1,1756857600000,USD,expense,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1,,,,cleared
+Dinner Out,-55.00,Dining Out,1,1756944000000,USD,expense,acc_cash,Credit Card,Sushi Zen,Dinner,Social,,1,,,,cleared
+Gas Station,-54.00,Fuel,2,1757030400000,USD,expense,acc_bank,Credit Card,Exxon,Gas,Personal,,1,,,,cleared
+INR Salary,125000.00,Salary,8,1757116800000,INR,income,acc_bank,Bank Transfer,India Client,INR Fee,Work,monthly,1,,,,cleared
+INR Rent India,-25000.00,Rent,4,1757203200000,INR,expense,acc_bank,Bank Transfer,India Landlord,INR Rent,Housing,monthly,1,,,,cleared
+Stock Purchase,-1000.00,Stocks,12,1757289600000,USD,expense,acc_invest,Bank Transfer,E-Trade,Apple Stock,Investments,,1,,,,cleared
+Tokyo Dinner,-5500.00,Dining Out,1,1759276800000,JPY,expense,acc_jpy,Cash,Sushi Ro,Dinner in Tokyo,Travel,,1,,,,cleared
+Tokyo Subway,-800.00,Public Transit,2,1759363200000,JPY,expense,acc_jpy,Payment,JR East,Metro travel,Travel,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1759276800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1759363200000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Groceries,-98.00,Groceries,1,1759449600000,USD,expense,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1,,,,cleared
+Heating Bill,-145.00,Electricity,4,1759536000000,USD,expense,acc_bank,Bank Transfer,Utility Co,Winter heating,Housing,monthly,1,,,,cleared
+Holiday Gifts,-350.00,Gifts,8,1759622400000,USD,expense,acc_credit,Credit Card,Target,Family gifts,Personal,,1,,,,cleared
+Gas Station,-50.00,Fuel,2,1759708800000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Dining Out,-95.00,Dining Out,1,1759795200000,USD,expense,acc_cash,Credit Card,The Grill,Dinner,Social,,1,,,,cleared
+New Laptop,-1499.00,Electronics,3,1761868800000,USD,expense,acc_credit,Credit Card,Apple Store,Work laptop,Work,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1761955200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1762041600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Groceries,-145.00,Groceries,1,1762128000000,USD,expense,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1,,,,cleared
+Coffee,-7.00,Coffee & Snacks,1,1762214400000,USD,expense,acc_cash,Cash,Starbucks,Coffee,Personal,,1,,,,cleared
+Gas Station,-52.00,Fuel,2,1762300800000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Singapore Chili Crab,-85.00,Dining Out,1,1764547200000,SGD,expense,acc_sgd,Debit Card,Jumbo Seafood,Famous Chili Crab,Travel,,1,,,,cleared
+Grab Ride Singapore,-18.50,Rideshare,2,1764633600000,SGD,expense,acc_sgd,E-Wallet,Grab,Ride to Marina Bay,Travel,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1764547200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1764633600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Groceries,-112.00,Groceries,1,1764720000000,USD,expense,acc_cash,Debit Card,Trader Joe's,Groceries,Personal,,1,,,,cleared
+Valentines Dinner,-180.00,Dining Out,1,1764806400000,USD,expense,acc_credit,Credit Card,Fancy Place,Dinner,Social,,1,,,,cleared
+Valentines Flowers,-65.00,Gifts,8,1764892800000,USD,expense,acc_cash,Cash,Florist,Flowers,Personal,,1,,,,cleared
+Gas Station,-55.00,Fuel,2,1764979200000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1767139200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1767225600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Spring Break Flight,-450.00,Flights,9,1767312000000,USD,expense,acc_credit,Credit Card,Delta,NYC to Miami,Travel,,1,,,,cleared
+Spring Break Hotel,-850.00,Hotels,9,1767398400000,USD,expense,acc_credit,Credit Card,Hilton,Miami stay,Travel,,1,,,,cleared
+Miami Dinner,-125.00,Dining Out,1,1767484800000,USD,expense,acc_cash,Credit Card,Ocean Drive,Dinner,Travel,,1,,,,cleared
+Miami Activities,-100.00,Activities,9,1767571200000,USD,expense,acc_cash,Cash,Boat Tour,Tour,Travel,,1,,,,cleared
+Gas Station,-58.00,Fuel,2,1767657600000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Bali Beach Dinner,-450000.00,Dining Out,1,1769731200000,IDR,expense,acc_idr,E-Wallet,Potato Head,Dinner in Bali,Travel,,1,,,,cleared
+Gojek Ride Bali,-35000.00,Rideshare,2,1769817600000,IDR,expense,acc_idr,E-Wallet,Gojek,Ride to temple,Travel,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1769731200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1769817600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Groceries,-138.00,Groceries,1,1769904000000,USD,expense,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1,,,,cleared
+Easter Lunch,-95.00,Dining Out,1,1769990400000,USD,expense,acc_cash,Credit Card,Cafe,Easter lunch,Social,,1,,,,cleared
+Gas Station,-53.00,Fuel,2,1770076800000,USD,expense,acc_bank,Credit Card,Exxon,Gas,Personal,,1,,,,cleared
+New Garden Supplies,-120.00,Home & Garden,3,1770163200000,USD,expense,acc_credit,Credit Card,Home Depot,Garden tools,Personal,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1772323200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1772409600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Groceries,-118.00,Groceries,1,1772496000000,USD,expense,acc_cash,Debit Card,Costco,Groceries,Personal,,1,,,,cleared
+Mothers Day Gift,-85.00,Gifts,8,1772582400000,USD,expense,acc_credit,Credit Card,Sephora,Gift,Personal,,1,,,,cleared
+Gas Station,-55.00,Fuel,2,1772668800000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Tech Conference Entry,-600.00,Training,7,1772755200000,USD,expense,acc_bank,Credit Card,Conf Center,Conference,Education,,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1774915200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1775001600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Weekly Groceries,-142.00,Groceries,1,1775088000000,USD,expense,acc_cash,Debit Card,Whole Foods,Groceries,Personal,,1,,,,cleared
+Summer BBQ Supplies,-75.00,Groceries,1,1775174400000,USD,expense,acc_cash,Cash,Local Market,BBQ stuff,Personal,,1,,,,cleared
+Gas Station,-58.00,Fuel,2,1775260800000,USD,expense,acc_bank,Credit Card,Shell,Gas,Personal,,1,,,,cleared
+Dinner Out,-65.00,Dining Out,1,1775347200000,USD,expense,acc_cash,Credit Card,Pizza Place,Dinner,Social,,1,,,,cleared
+Adobe Subscription,-54.99,Software Subscriptions,11,1775433600000,USD,expense,acc_credit,Credit Card,Adobe,Subscription,Work,monthly,1,,,,cleared
+Google Cloud,-9.99,Cloud Storage,11,1775520000000,USD,expense,acc_credit,Credit Card,Google,Storage,Work,monthly,1,,,,cleared
+Netflix,-15.99,Streaming,11,1775606400000,USD,expense,acc_credit,Credit Card,Netflix,Streaming,Subscription,monthly,1,,,,cleared
+Spotify,-10.99,Music,11,1775692800000,USD,expense,acc_credit,Credit Card,Spotify,Music,Subscription,monthly,1,,,,cleared
+Gym Membership,-49.99,Gym,6,1775779200000,USD,expense,acc_credit,Credit Card,LA Fitness,Gym,Health,monthly,1,,,,cleared
+Phone Bill,-65.00,Phone,4,1775865600000,USD,expense,acc_bank,Bank Transfer,Verizon,Phone,Housing,monthly,1,,,,cleared
+Internet Bill,-79.99,Internet,4,1775952000000,USD,expense,acc_bank,Bank Transfer,ISP,Internet,Housing,monthly,1,,,,cleared
+Electricity Bill,-155.00,Electricity,4,1776038400000,USD,expense,acc_bank,Bank Transfer,Power Co,Power,Housing,monthly,1,,,,cleared
+Water Bill,-45.00,Water,4,1776124800000,USD,expense,acc_bank,Bank Transfer,Water Dept,Water,Housing,monthly,1,,,,cleared
+Salary Deposit,5250.00,Salary,8,1777507200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1,,,,cleared
+Rent Payment,-1850.00,Rent,4,1777593600000,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1,,,,cleared
+Final Transaction in Range,-50.00,Misc,1,1780272000000,USD,expense,acc_cash,Cash,Self,End of year test,Personal,,1,,,,cleared

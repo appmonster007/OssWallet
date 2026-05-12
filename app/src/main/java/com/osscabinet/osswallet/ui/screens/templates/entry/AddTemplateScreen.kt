@@ -52,7 +52,10 @@ fun AddTemplateScreen(
         }
     }
     var accountId by remember { mutableStateOf<String?>(null) }
+    var targetAccountId by remember { mutableStateOf<String?>(null) }
     var currency by remember { mutableStateOf("USD") }
+    var targetCurrency by remember { mutableStateOf<String?>(null) }
+    var transferRate by remember { mutableStateOf(BigDecimal.ONE) }
     var note by remember { mutableStateOf("") }
     var payee by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
@@ -66,7 +69,10 @@ fun AddTemplateScreen(
             amount = template.amount.toPlainString()
             categoryId = template.categoryId
             accountId = template.accountId
+            targetAccountId = template.targetAccountId
             currency = template.currency ?: "USD"
+            targetCurrency = template.targetCurrency
+            transferRate = template.transferRate
             note = template.note ?: ""
             payee = template.payee ?: ""
             location = template.location ?: ""
@@ -89,8 +95,10 @@ fun AddTemplateScreen(
     }
 
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
+    val selectedTargetAccount = remember(targetAccountId, accounts) { accounts.find { it.id == targetAccountId } }
     
     var showAccountSheet by remember { mutableStateOf(false) }
+    var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
@@ -151,6 +159,9 @@ fun AddTemplateScreen(
                                         icon = template?.icon,
                                         colorHex = template?.colorHex,
                                         accountId = accountId,
+                                        targetAccountId = targetAccountId,
+                                        targetCurrency = targetCurrency,
+                                        transferRate = transferRate,
                                         note = note.ifBlank { null },
                                         payee = payee.ifBlank { null },
                                         location = location.ifBlank { null },
@@ -168,6 +179,9 @@ fun AddTemplateScreen(
                                             transactionType = domainTemplate.transactionType,
                                             note = domainTemplate.note,
                                             accountId = domainTemplate.accountId,
+                                            targetAccountId = domainTemplate.targetAccountId,
+                                            targetCurrency = domainTemplate.targetCurrency,
+                                            transferRate = domainTemplate.transferRate,
                                             payee = domainTemplate.payee,
                                             location = domainTemplate.location,
                                             tags = tags
@@ -202,6 +216,8 @@ fun AddTemplateScreen(
             onAmountClick = { isNumpadVisible = true },
             selectedAccount = selectedAccount,
             onAccountClick = { showAccountSheet = true },
+            targetAccount = selectedTargetAccount,
+            onTargetAccountClick = { showTargetAccountSheet = true },
             categoryName = categoryName,
             categoryObj = categoriesList.find { it.id == categoryId },
             onCategoryClick = { showCategorySheet = true },
@@ -227,17 +243,29 @@ fun AddTemplateScreen(
             amount = amount,
             onAmountChange = { newAmount, newType -> 
                 amount = newAmount
-                transactionType = if (newType == "income") 1 else 0
+                transactionType = when (newType) {
+                    "income" -> 1
+                    "transfer" -> 2
+                    else -> 0
+                }
             },
             transactionType = transactionType,
             decimalPrecision = decimalPrecision,
             showAccountSheet = showAccountSheet,
             onDismissAccountSheet = { showAccountSheet = false },
+            showTargetAccountSheet = showTargetAccountSheet,
+            onDismissTargetAccountSheet = { showTargetAccountSheet = false },
             accounts = accounts,
             selectedAccount = selectedAccount,
             onAccountSelected = {
                 accountId = it.id
                 showAccountSheet = false
+            },
+            targetAccount = selectedTargetAccount,
+            onTargetAccountSelected = {
+                targetAccountId = it.id
+                targetCurrency = it.currencyCode
+                showTargetAccountSheet = false
             },
             showCategorySheet = showCategorySheet,
             onDismissCategorySheet = { showCategorySheet = false },

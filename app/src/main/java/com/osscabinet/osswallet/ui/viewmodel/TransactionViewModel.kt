@@ -260,8 +260,8 @@ class TransactionViewModel(
                         it.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
                     val existsAsPlannedPayment = plannedPayments.any { 
-                        it.template.title.equals(pattern.title, ignoreCase = true) || 
-                        it.template.payee.equals(pattern.payee, ignoreCase = true)
+                        it.template.name.equals(pattern.title, ignoreCase = true) || 
+                        it.template.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
                     
                     pattern.copy(
@@ -647,6 +647,20 @@ class TransactionViewModel(
                 schedule = payment.schedule
             )
         }
+    }
+
+    fun setPlannedPaymentPrefillFromTemplate(template: com.osscabinet.ossWallet.domain.model.Template) {
+        val now = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
+        val startEpoch = now.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+        
+        _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
+            template = template,
+            schedule = com.osscabinet.ossWallet.domain.model.PaymentSchedule(
+                recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(type = com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY),
+                startDate = startEpoch,
+                nextDueDate = startEpoch
+            )
+        )
     }
 
     fun clearPlannedPaymentPrefill() {

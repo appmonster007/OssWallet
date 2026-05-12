@@ -5,10 +5,12 @@ import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.dao.ProfileDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
 import com.osscabinet.ossWallet.BuildConfig
 import android.content.Context
 import java.io.BufferedReader
@@ -49,6 +51,7 @@ class DatabaseSeeder @Inject constructor(
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
     private val filterDao: FilterDao,
+    private val profileDao: ProfileDao,
     private val context: Context,
     private val settingsDataStore: SettingsDataStore
 ) {
@@ -68,7 +71,13 @@ class DatabaseSeeder @Inject constructor(
         accountDao.clearAll()
         transactionDao.clearAll()
         categoryDao.clearAll()
+        filterDao.clearAll()
+        profileDao.clearAll()
         android.util.Log.d("DatabaseSeeder", "Cleared existing data")
+
+        // Insert default profile
+        profileDao.insertProfile(ProfileEntity(id = 1, name = "Default Profile", baseCurrency = "USD", type = "PERSONAL"))
+        android.util.Log.d("DatabaseSeeder", "Inserted default profile")
 
         // Re-insert mandatory categories
         categoryDao.insertCategory(CategoryEntity(id = 1000, name = "Others", iconName = "Menu", colorHex = -7829368, isDefault = true, parentId = null))
@@ -287,7 +296,9 @@ class DatabaseSeeder @Inject constructor(
         val colorHex: String,
         val icon: String,
         val allowedCurrencies: String,
-        val profileId: Int
+        val profileId: Int,
+        val isArchived: Boolean = false,
+        val displayOrder: Int = 0
     ) {
         fun toAccountEntity(): AccountEntity {
             return AccountEntity(
@@ -298,7 +309,9 @@ class DatabaseSeeder @Inject constructor(
                 colorHex = colorHex,
                 icon = icon,
                 allowedCurrencies = allowedCurrencies.removeSurrounding("\""),
-                profileId = profileId
+                profileId = profileId,
+                isArchived = isArchived,
+                displayOrder = displayOrder
             )
         }
 
@@ -313,7 +326,9 @@ class DatabaseSeeder @Inject constructor(
                     colorHex = parts.getOrNull(4) ?: "#000000",
                     icon = parts.getOrNull(5) ?: "",
                     allowedCurrencies = parts.getOrNull(6) ?: "USD",
-                    profileId = parts.getOrNull(7)?.toIntOrNull() ?: 1
+                    profileId = parts.getOrNull(7)?.toIntOrNull() ?: 1,
+                    isArchived = parts.getOrNull(8)?.toBoolean() ?: false,
+                    displayOrder = parts.getOrNull(9)?.toIntOrNull() ?: 0
                 )
             }
         }
@@ -391,6 +406,9 @@ class DatabaseSeeder @Inject constructor(
         val tags: String,
         val recurring: String?,
         val profileId: Int,
+        val latitude: Double? = null,
+        val longitude: Double? = null,
+        val warrantyExpiration: Long? = null,
         val status: String = "cleared"
     ) {
         fun toTransactionEntity(): TransactionEntity {
@@ -408,6 +426,9 @@ class DatabaseSeeder @Inject constructor(
                 tags = tags,
                 recurring = recurring,
                 profileId = profileId,
+                latitude = latitude,
+                longitude = longitude,
+                warrantyExpiration = warrantyExpiration,
                 status = status
             )
         }
@@ -422,7 +443,7 @@ class DatabaseSeeder @Inject constructor(
                     categoryId = parts.getOrNull(3)?.toLongOrNull(),
                     timestamp = parts.getOrNull(4)?.toLongOrNull(),
                     currency = parts.getOrNull(5) ?: "USD",
-                    transactionType = if (parts.getOrNull(6)?.toBoolean() == true) "income" else "expense",
+                    transactionType = parts.getOrNull(6) ?: "expense",
                     accountId = parts.getOrNull(7) ?: "",
                     paymentMethod = parts.getOrNull(8) ?: "Cash",
                     payee = parts.getOrNull(9) ?: "",
@@ -430,7 +451,10 @@ class DatabaseSeeder @Inject constructor(
                     tags = parts.getOrNull(11) ?: "",
                     recurring = parts.getOrNull(12),
                     profileId = parts.getOrNull(13)?.toIntOrNull() ?: 1,
-                    status = parts.getOrNull(14) ?: "cleared"
+                    latitude = parts.getOrNull(14)?.toDoubleOrNull(),
+                    longitude = parts.getOrNull(15)?.toDoubleOrNull(),
+                    warrantyExpiration = parts.getOrNull(16)?.toLongOrNull(),
+                    status = parts.getOrNull(17) ?: "cleared"
                 )
             }
         }

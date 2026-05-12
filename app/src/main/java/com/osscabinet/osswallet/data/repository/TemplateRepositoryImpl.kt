@@ -20,7 +20,7 @@ class TemplateRepositoryImpl(
     override suspend fun updateStarStatus(id: Long, isStarred: Boolean) = 
         templateDao.updateStarStatus(id, isStarred)
 
-    override suspend fun insertTemplate(template: Template) = 
+    override suspend fun insertTemplate(template: Template): Long =
         templateDao.insertTemplate(template.toEntity())
 
     override suspend fun updateTemplate(template: Template) = 

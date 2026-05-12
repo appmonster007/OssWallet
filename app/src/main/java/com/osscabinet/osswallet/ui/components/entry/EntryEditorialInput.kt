@@ -11,6 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -36,6 +39,8 @@ fun EntryEditorialInput(
     placeholder: String = "Tap to enter..."
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
 
     val filteredSuggestions = remember(value, suggestions) {
         if (value.isBlank()) emptyList()
@@ -44,8 +49,8 @@ fun EntryEditorialInput(
         }.take(5)
     }
 
-    LaunchedEffect(filteredSuggestions) {
-        expanded = filteredSuggestions.isNotEmpty()
+    LaunchedEffect(filteredSuggestions, isFocused) {
+        expanded = isFocused && filteredSuggestions.isNotEmpty()
     }
 
     ExposedDropdownMenuBox(
@@ -57,7 +62,8 @@ fun EntryEditorialInput(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+            onClick = { focusRequester.requestFocus() }
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -111,7 +117,10 @@ fun EntryEditorialInput(
                                 imeAction = ImeAction.Next
                             ),
                             maxLines = maxLines,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { isFocused = it.isFocused }
                         )
                     }
                 }

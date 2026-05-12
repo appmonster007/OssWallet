@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,8 +25,10 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,8 +49,26 @@ fun LinkedTransactionSelection(
     onDismiss: () -> Unit
 ) {
     var selectedIds by remember { mutableStateOf(linkedIds) }
+    var query by remember { mutableStateOf("") }
     val pattern = if (is24Hour) "MMM dd, HH:mm" else "MMM dd, hh:mm a"
     val sdf = remember(is24Hour) { SimpleDateFormat(pattern, Locale.getDefault()) }
+
+    val filteredTransactions = remember(query, transactions) {
+        val base = transactions.filter { it.id != currentTransactionId }
+        if (query.isBlank()) {
+            base.sortedByDescending { it.timestamp }
+        } else {
+            base.filter { 
+                val categoryName = categories.find { cat -> cat.id == it.categoryId }?.name ?: ""
+                it.note.contains(query, ignoreCase = true) || 
+                it.payee.contains(query, ignoreCase = true) ||
+                categoryName.contains(query, ignoreCase = true) ||
+                it.note.fuzzyMatch(query) ||
+                it.payee.fuzzyMatch(query) ||
+                categoryName.fuzzyMatch(query)
+            }.sortedByDescending { it.timestamp }
+        }
+    }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
@@ -68,6 +91,13 @@ fun LinkedTransactionSelection(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
                     
+                    AeonSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = "Search by note or payee...",
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    
                     Spacer(modifier = Modifier.height(8.dp))
 
                     LazyColumn(
@@ -76,9 +106,7 @@ fun LinkedTransactionSelection(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
-                            transactions
-                                .filter { it.id != currentTransactionId }
-                                .sortedByDescending { it.timestamp },
+                            filteredTransactions,
                             key = { it.id }
                         ) { tx ->
                             val isSelected = tx.id in selectedIds
@@ -87,46 +115,64 @@ fun LinkedTransactionSelection(
                             val icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category
                             val iconBg = category?.colorHex?.let { Color(it) }
 
-                            Box {
-                                AeonTransactionItem(
-                                    category = category?.name ?: "Unknown",
-                                    account = account?.name ?: "Unknown",
-                                    amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
-                                    balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),
-                                    balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
-                                    type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                    timestamp = sdf.format(Date(tx.timestamp)),
-                                    note = tx.note,
-                                    tags = tx.tags,
-                                    icon = icon,
-                                    iconBg = iconBg,
-                                    showOpeningBalance = false,
-                                    showClosingBalance = false,
-                                    status = tx.status,
-                                    onClick = {
-                                        selectedIds = if (isSelected) {
-                                            selectedIds - tx.id
-                                        } else {
-                                            selectedIds + tx.id
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                else MaterialTheme.colorScheme.surface,
+                                border = if (isSelected) BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                ) else null,
+                                shadowElevation = if (isSelected) 1.dp else 0.dp
+                            ) {
+                                Box {
+                                    AeonTransactionItem(
+                                        category = category?.name ?: "Unknown",
+                                        account = account?.name ?: "Unknown",
+                                        amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                                        balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),
+                                        balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                                        type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                        timestamp = sdf.format(Date(tx.timestamp)),
+                                        note = tx.note,
+                                        tags = tx.tags,
+                                        icon = icon,
+                                        iconBg = iconBg,
+                                        showOpeningBalance = false,
+                                        showClosingBalance = false,
+                                        showDividers = false,
+                                        status = tx.status,
+                                        containerColor = Color.Transparent,
+                                        modifier = Modifier.padding(end = if (isSelected) 48.dp else 0.dp),
+                                        onClick = {
+                                            selectedIds = if (isSelected) {
+                                                selectedIds - tx.id
+                                            } else {
+                                                selectedIds + tx.id
+                                            }
                                         }
-                                    }
-                                )
+                                    )
 
-                                if (isSelected) {
-                                    Surface(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .padding(12.dp),
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shadowElevation = 2.dp
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Check,
-                                            contentDescription = "Selected",
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(20.dp).padding(2.dp)
-                                        )
+                                    if (isSelected) {
+                                        Surface(
+                                            modifier = Modifier
+                                                .align(Alignment.CenterEnd)
+                                                .padding(end = 16.dp)
+                                                .size(24.dp),
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shadowElevation = 2.dp
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Check,
+                                                contentDescription = "Selected",
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.padding(4.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

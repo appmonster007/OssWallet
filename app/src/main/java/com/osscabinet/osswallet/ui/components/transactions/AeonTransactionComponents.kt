@@ -187,7 +187,9 @@ fun AeonTransactionItem(
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
+    showDividers: Boolean = true,
     status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -198,15 +200,17 @@ fun AeonTransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surface,
+        color = containerColor,
         shape = RectangleShape
     ) {
         Column {
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            )
+            if (showDividers) {
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            }
 
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Row(
@@ -375,11 +379,13 @@ fun AeonTransactionItem(
                 }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            )
+            if (showDividers) {
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }

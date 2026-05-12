@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,7 +66,7 @@ fun TransactionTagSection(
             is24Hour = state.use24HourFormat,
             onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
             onRemoveLink = { txId ->
-                state.transactionId?.let { onEvent(TransactionEntryEvent.RemoveLinkedTransaction(it, txId)) }
+                onEvent(TransactionEntryEvent.RemoveLinkedTransaction(state.transactionId ?: -1L, txId))
             }
         )
 
@@ -209,40 +210,51 @@ private fun LinkedTransactionItem(
         ?: Icons.Rounded.Category
     val iconBg = category?.colorHex?.let { Color(it) }
 
-    Box {
-        com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem(
-            category = categoryName,
-            account = account?.name ?: "Unknown",
-            amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
-            balanceBefore = java.math.BigDecimal.ZERO.toPlainString(),
-            balanceAfter = tx.amount.toPlainString(),
-            type = if (tx.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
-            timestamp = formatDateTime(tx.timestamp, is24Hour),
-            note = tx.note,
-            tags = tx.tags,
-            icon = icon,
-            iconBg = iconBg,
-            showOpeningBalance = false,
-            showClosingBalance = false,
-            status = tx.status,
-            onClick = { /* Linked transactions are read-only here */ }
-        )
-
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp)
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
-        ) {
-            Icon(
-                Icons.Rounded.Close,
-                contentDescription = "Remove link",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(12.dp)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    ) {
+        Box {
+            com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem(
+                category = categoryName,
+                account = account?.name ?: "Unknown",
+                amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                balanceBefore = java.math.BigDecimal.ZERO.toPlainString(),
+                balanceAfter = tx.amount.toPlainString(),
+                type = if (tx.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
+                timestamp = formatDateTime(tx.timestamp, is24Hour),
+                note = tx.note,
+                tags = tx.tags,
+                icon = icon,
+                iconBg = iconBg,
+                showOpeningBalance = false,
+                showClosingBalance = false,
+                showDividers = false,
+                status = tx.status,
+                containerColor = Color.Transparent,
+                onClick = { /* Linked transactions are read-only here */ },
+                modifier = Modifier.padding(end = 48.dp) // Leave space for remove button
             )
+
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 8.dp)
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Rounded.LinkOff,
+                    contentDescription = "Remove link",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }

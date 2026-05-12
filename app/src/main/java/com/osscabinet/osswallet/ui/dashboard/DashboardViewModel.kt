@@ -364,7 +364,7 @@ class DashboardViewModel(
             val occurrence = PlannedPaymentOccurrence(
                 id = 0,
                 plannedPaymentId = payment.id,
-                scheduledDate = payment.nextDueDate
+                scheduledDate = payment.schedule.nextDueDate
             )
             repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
             val nextDue =
@@ -374,8 +374,10 @@ class DashboardViewModel(
             } else {
                 repo.update(
                     payment.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = occurrence.scheduledDate
+                        schedule = payment.schedule.copy(
+                            nextDueDate = nextDue,
+                            lastTriggeredDate = occurrence.scheduledDate
+                        )
                     )
                 )
             }

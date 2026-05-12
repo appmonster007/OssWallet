@@ -260,8 +260,8 @@ class TransactionViewModel(
                         it.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
                     val existsAsPlannedPayment = plannedPayments.any { 
-                        it.title.equals(pattern.title, ignoreCase = true) || 
-                        it.payee.equals(pattern.payee, ignoreCase = true)
+                        it.template.title.equals(pattern.title, ignoreCase = true) || 
+                        it.template.payee.equals(pattern.payee, ignoreCase = true)
                     }
                     
                     pattern.copy(
@@ -643,18 +643,8 @@ class TransactionViewModel(
         val payment = PatternDiscoveryService.toPlannedPayment(pattern)
         if (payment != null) {
             _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
-                title = payment.title,
-                amount = payment.amount,
-                currency = payment.currency,
-                transactionType = payment.transactionType,
-                accountId = payment.accountId,
-                categoryId = payment.categoryId,
-                paymentMethod = payment.paymentMethod,
-                tags = payment.tags,
-                note = payment.note,
-                payee = payment.payee,
-                recurrenceRule = payment.recurrenceRule,
-                startDate = payment.startDate
+                template = payment.template,
+                schedule = payment.schedule
             )
         }
     }

@@ -206,7 +206,7 @@ fun PlannedPaymentsScreen(
         val overdueIds = overdue.map { it.id }.toSet()
         payments.filter { p ->
             p.status == PlannedPaymentStatus.ACTIVE &&
-                    p.nextDueDate > windowEnd &&
+                    p.schedule.nextDueDate > windowEnd &&
                     p.id !in upcomingIds &&
                     p.id !in overdueIds
         }
@@ -301,7 +301,7 @@ fun PlannedPaymentsScreen(
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
                                     if (onConfirmClick != null) {
-                                        onConfirmClick(payment.id, payment.nextDueDate)
+                                        onConfirmClick(payment.id, payment.schedule.nextDueDate)
                                     } else {
                                         viewModel.quickConfirm(
                                             payment,
@@ -370,7 +370,7 @@ fun PlannedPaymentsScreen(
                                 payment = payment,
                                 now = now,
                                 isOverdue = false,
-                                scheduledDate = payment.nextDueDate,
+                                scheduledDate = payment.schedule.nextDueDate,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
                                 onDelete = { viewModel.delete(payment.id) },
@@ -378,7 +378,7 @@ fun PlannedPaymentsScreen(
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
                                     if (onConfirmClick != null) {
-                                        onConfirmClick(payment.id, payment.nextDueDate)
+                                        onConfirmClick(payment.id, payment.schedule.nextDueDate)
                                     } else {
                                         viewModel.quickConfirm(
                                             payment,

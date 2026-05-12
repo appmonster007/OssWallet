@@ -438,7 +438,7 @@ private fun OccurrenceItem(
     val iconColor = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.secondary
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
     val formattedAmount =
-        item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+        item.plannedPayment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
 
     Surface(
         color = if (item.isOverdue)
@@ -481,7 +481,7 @@ private fun OccurrenceItem(
                     color = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "$formattedAmount ${item.plannedPayment.currency}",
+                    "$formattedAmount ${item.plannedPayment.template.currency}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -617,7 +617,7 @@ private fun PastOccurrenceItem(
     payment: PlannedPayment
 ) {
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
-    val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
         OccurrenceStatus.CONFIRMED -> Triple("Confirmed", TealHealthy, Icons.Rounded.CheckCircle)
         OccurrenceStatus.SKIPPED -> Triple("Skipped", Color.Gray, Icons.Rounded.Cancel)
@@ -661,7 +661,7 @@ private fun PastOccurrenceItem(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
                 Text(
-                    "$formattedAmount ${payment.currency}",
+                    "$formattedAmount ${payment.template.currency}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )

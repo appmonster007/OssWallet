@@ -55,6 +55,7 @@ fun PlannedPaymentEntryScreen(
     var recurrenceInterval by remember { mutableIntStateOf(1) }
     var dayOfWeek by remember { mutableStateOf<Int?>(null) }
     var dayOfMonth by remember { mutableStateOf<Int?>(null) }
+    var cronExpression by remember { mutableStateOf<String?>(null) }
     var autoConfirm by remember { mutableStateOf(false) }
     var startDateMillis by remember { mutableLongStateOf(0L) }
     var hasEndDate by remember { mutableStateOf(false) }
@@ -68,44 +69,49 @@ fun PlannedPaymentEntryScreen(
 
     LaunchedEffect(existing, prefill) {
         if (existing != null) {
-            title = existing.title
-            amountText = existing.amount.toPlainString()
-            currency = existing.currency
-            transactionType = existing.transactionType
-            selectedAccountId = existing.accountId
-            recurrenceType = existing.recurrenceRule.type
-            recurrenceInterval = existing.recurrenceRule.interval
-            dayOfWeek = existing.recurrenceRule.dayOfWeek
-            dayOfMonth = existing.recurrenceRule.dayOfMonth
+            val template = existing.template
+            val schedule = existing.schedule
+            title = template.title
+            amountText = template.amount.toPlainString()
+            currency = template.currency
+            transactionType = template.transactionType
+            selectedAccountId = template.accountId
+            recurrenceType = schedule.recurrenceRule.type
+            recurrenceInterval = schedule.recurrenceRule.interval
+            dayOfWeek = schedule.recurrenceRule.dayOfWeek
+            dayOfMonth = schedule.recurrenceRule.dayOfMonth
+            cronExpression = schedule.recurrenceRule.cronExpression
             autoConfirm = existing.autoConfirm
-            startDateMillis = existing.startDate
-            hasEndDate = existing.endDate != null
-            endDateMillis = existing.endDate ?: existing.startDate
-            selectedCategoryId = existing.categoryId
-            payee = existing.payee
-            val prefix = "${existing.title} - "
-            noteUserPart = if (existing.note.startsWith(prefix)) existing.note.removePrefix(prefix) else existing.note
-            paymentMethod = existing.paymentMethod
-            selectedTagNames = existing.tags
+            startDateMillis = schedule.startDate
+            hasEndDate = schedule.endDate != null
+            endDateMillis = schedule.endDate ?: schedule.startDate
+            selectedCategoryId = template.categoryId
+            payee = template.payee
+            val prefix = "${template.title} - "
+            noteUserPart = if (template.note.startsWith(prefix)) template.note.removePrefix(prefix) else template.note
+            paymentMethod = template.paymentMethod
+            selectedTagNames = template.tags
             status = existing.status
         } else if (prefill != null) {
-            title = prefill!!.title
-            amountText = prefill!!.amount.abs().toPlainString()
-            currency = prefill!!.currency
-            transactionType = prefill!!.transactionType
-            selectedAccountId = prefill!!.accountId
-            recurrenceType = prefill!!.recurrenceRule.type
-            recurrenceInterval = prefill!!.recurrenceRule.interval
-            dayOfWeek = prefill!!.recurrenceRule.dayOfWeek
-            dayOfMonth = prefill!!.recurrenceRule.dayOfMonth
+            val template = prefill!!.template
+            val schedule = prefill!!.schedule
+            title = template.title
+            amountText = template.amount.abs().toPlainString()
+            currency = template.currency
+            transactionType = template.transactionType
+            selectedAccountId = template.accountId
+            recurrenceType = schedule.recurrenceRule.type
+            recurrenceInterval = schedule.recurrenceRule.interval
+            dayOfWeek = schedule.recurrenceRule.dayOfWeek
+            dayOfMonth = schedule.recurrenceRule.dayOfMonth
             autoConfirm = true
-            startDateMillis = prefill!!.startDate
+            startDateMillis = schedule.startDate
             hasEndDate = false
-            endDateMillis = prefill!!.startDate
-            selectedCategoryId = prefill!!.categoryId
-            payee = prefill!!.payee
-            noteUserPart = prefill!!.note.removePrefix("${prefill!!.title} - ")
-            paymentMethod = prefill!!.paymentMethod
+            endDateMillis = schedule.startDate
+            selectedCategoryId = template.categoryId
+            payee = template.payee
+            noteUserPart = template.note.removePrefix("${template.title} - ")
+            paymentMethod = template.paymentMethod
             selectedTagNames = prefill!!.tags
             status = PlannedPaymentStatus.ACTIVE
             transactionViewModel?.clearPlannedPaymentPrefill()
@@ -172,7 +178,8 @@ fun PlannedPaymentEntryScreen(
                                 type = recurrenceType,
                                 interval = recurrenceInterval.coerceAtLeast(1),
                                 dayOfWeek = dayOfWeek,
-                                dayOfMonth = dayOfMonth
+                                dayOfMonth = dayOfMonth,
+                                cronExpression = cronExpression
                             )
                             val resolvedAccountId = selectedAccountId.ifBlank {
                                 accounts.firstOrNull()?.id ?: ""
@@ -181,21 +188,26 @@ fun PlannedPaymentEntryScreen(
                                 resolvedAccountId,
                                 profileId
                             )).copy(
-                                title = title,
-                                amount = amount,
-                                currency = currency,
-                                transactionType = transactionType,
-                                accountId = resolvedAccountId,
-                                categoryId = selectedCategoryId,
-                                paymentMethod = paymentMethod,
-                                tags = selectedTagNames,
-                                payee = payee,
-                                note = if (noteUserPart.isBlank()) title else "$title - $noteUserPart",
-                                recurrenceRule = rule,
+                                template = TransactionTemplate(
+                                    title = title,
+                                    amount = amount,
+                                    currency = currency,
+                                    transactionType = transactionType,
+                                    accountId = resolvedAccountId,
+                                    categoryId = selectedCategoryId,
+                                    paymentMethod = paymentMethod,
+                                    tags = selectedTagNames,
+                                    payee = payee,
+                                    note = if (noteUserPart.isBlank()) title else "$title - $noteUserPart"
+                                ),
+                                schedule = PaymentSchedule(
+                                    recurrenceRule = rule,
+                                    startDate = startDateMillis,
+                                    endDate = if (hasEndDate) endDateMillis else null,
+                                    nextDueDate = existing?.schedule?.nextDueDate ?: startDateMillis,
+                                    lastTriggeredDate = existing?.schedule?.lastTriggeredDate
+                                ),
                                 autoConfirm = autoConfirm,
-                                startDate = startDateMillis,
-                                endDate = if (hasEndDate) endDateMillis else null,
-                                nextDueDate = existing?.nextDueDate ?: startDateMillis,
                                 status = status
                             )
                             viewModel.save(payment)
@@ -227,7 +239,10 @@ fun PlannedPaymentEntryScreen(
             currency = currency,
             onCurrencyClick = { showCurrencySheet = true },
             onAmountClick = { showNumpad = true },
-            scheduleSummary = buildScheduleSummary(startDateMillis, recurrenceType, recurrenceInterval, dayOfWeek, dayOfMonth),
+            scheduleSummary = PlannedPaymentService.buildScheduleSummary(
+                startDateMillis,
+                RecurrenceRule(recurrenceType, recurrenceInterval, dayOfWeek, dayOfMonth, cronExpression)
+            ),
             onScheduleClick = { showScheduleBuilder = true },
             selectedAccount = accounts.find { it.id == selectedAccountId },
             onAccountClick = { showAccountSheet = true },
@@ -264,12 +279,14 @@ fun PlannedPaymentEntryScreen(
             recurrenceInterval = recurrenceInterval,
             dayOfWeek = dayOfWeek,
             dayOfMonth = dayOfMonth,
-            onScheduleConfirm = { start, type, interval, dow, dom ->
+            cronExpression = cronExpression,
+            onScheduleConfirm = { start, type, interval, dow, dom, cron ->
                 startDateMillis = start
                 recurrenceType = type
                 recurrenceInterval = interval
                 dayOfWeek = dow
                 dayOfMonth = dom
+                cronExpression = cron
             },
             showEndDatePicker = showEndDatePicker,
             onDismissEndDatePicker = { showEndDatePicker = false },
@@ -319,17 +336,4 @@ fun PlannedPaymentEntryScreen(
             allCurrencies = allCurrencies
         )
     }
-}
-
-private fun buildScheduleSummary(
-    startDateMillis: Long,
-    recurrenceType: RecurrenceType,
-    recurrenceInterval: Int,
-    dayOfWeek: Int?,
-    dayOfMonth: Int?
-): String {
-    val rule = RecurrenceRule(recurrenceType, recurrenceInterval, dayOfWeek, dayOfMonth)
-    val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(rule)
-    val startLabel = SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(startDateMillis))
-    return "$recurrenceLabel · Starts $startLabel"
 }

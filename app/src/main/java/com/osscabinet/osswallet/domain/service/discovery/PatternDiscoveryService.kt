@@ -1,14 +1,15 @@
 package com.osscabinet.ossWallet.domain.service.discovery
 
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionTemplate
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 /**
  * Result of the pattern discovery process.
@@ -207,19 +208,23 @@ object PatternDiscoveryService {
         val rule = pattern.recurrenceRule ?: return null
         
         return PlannedPayment(
-            title = pattern.title,
-            amount = pattern.averageAmount,
-            currency = pattern.currency,
-            transactionType = pattern.transactionType,
-            accountId = pattern.accountId,
-            categoryId = pattern.categoryId,
-            paymentMethod = pattern.paymentMethod,
-            recurrenceRule = rule,
-            startDate = pattern.lastDate, // Start from the last known occurrence
-            nextDueDate = calculateNextDueDate(pattern.lastDate, rule),
-            payee = pattern.payee,
-            note = pattern.note,
-            tags = pattern.tags,
+            template = TransactionTemplate(
+                title = pattern.title,
+                amount = pattern.averageAmount,
+                currency = pattern.currency,
+                transactionType = pattern.transactionType,
+                accountId = pattern.accountId,
+                categoryId = pattern.categoryId,
+                paymentMethod = pattern.paymentMethod,
+                tags = pattern.tags,
+                note = pattern.note,
+                payee = pattern.payee
+            ),
+            schedule = PaymentSchedule(
+                recurrenceRule = rule,
+                startDate = pattern.lastDate,
+                nextDueDate = calculateNextDueDate(pattern.lastDate, rule)
+            ),
             autoConfirm = autoConfirm
         )
     }

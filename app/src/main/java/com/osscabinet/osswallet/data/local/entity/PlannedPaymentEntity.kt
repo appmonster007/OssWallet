@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -31,26 +32,33 @@ import java.math.BigDecimal
 )
 data class PlannedPaymentEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @Embedded val template: TransactionTemplateEntity,
+    @Embedded val schedule: RecurrenceScheduleEntity,
+    val autoConfirm: Boolean = false,
+    val status: String = "ACTIVE",
+    val profileId: Int = 1
+)
+
+data class TransactionTemplateEntity(
     val title: String,
     val amount: BigDecimal,
     val currency: String,
     val transactionType: String,
     val accountId: String,
     val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: BigDecimal = BigDecimal.ONE,
     val categoryId: Long,
     val paymentMethod: String = "Cash",
     val tags: String = "",
     val note: String = "",
-    val payee: String = "",
-    val recurrenceType: String,
-    val recurrenceInterval: Int = 1,
-    val recurrenceDayOfWeek: Int? = null,
-    val recurrenceDayOfMonth: Int? = null,
+    val payee: String = ""
+)
+
+data class RecurrenceScheduleEntity(
+    val recurrenceCronExpression: String? = null,
     val startDate: Long,
     val endDate: Long? = null,
     val nextDueDate: Long,
-    val lastTriggeredDate: Long? = null,
-    val autoConfirm: Boolean = false,
-    val status: String = "ACTIVE",
-    val profileId: Int = 1
+    val lastTriggeredDate: Long? = null
 )

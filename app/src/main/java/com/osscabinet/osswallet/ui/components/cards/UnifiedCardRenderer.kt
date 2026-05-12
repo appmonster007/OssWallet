@@ -14,7 +14,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
-import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard

@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.cronutils)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.appwidget)

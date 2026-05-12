@@ -3,11 +3,13 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.TransactionTemplate
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -75,18 +77,23 @@ class PlannedPaymentViewModel(
         profileId: Int
     ) {
         viewModelScope.launch {
+            val template = payment.template
             val request = TransactionRequest(
-                title = payment.title,
-                amount = payment.amount,
-                transactionType = payment.transactionType,
-                accountId = payment.accountId,
-                currency = payment.currency,
-                categoryId = payment.categoryId,
-                tags = payment.tags,
-                paymentMethod = payment.paymentMethod,
+                title = template.title,
+                amount = template.amount,
+                transactionType = template.transactionType,
+                accountId = template.accountId,
+                currency = template.currency,
+                categoryId = template.categoryId,
+                tags = template.tags,
+                paymentMethod = template.paymentMethod,
                 timestamp = occurrence.scheduledDate,
-                payee = payment.payee,
-                note = payment.note
+                payee = template.payee,
+                note = template.note,
+                isTransfer = template.transactionType == "transfer",
+                targetAccountId = template.targetAccountId,
+                targetCurrency = template.targetCurrency,
+                transferRate = template.transferRate
             )
             val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
             plannedPaymentRepository.upsertOccurrence(
@@ -102,8 +109,10 @@ class PlannedPaymentViewModel(
             } else {
                 plannedPaymentRepository.update(
                     payment.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = occurrence.scheduledDate
+                        schedule = payment.schedule.copy(
+                            nextDueDate = nextDue,
+                            lastTriggeredDate = occurrence.scheduledDate
+                        )
                     )
                 )
             }
@@ -120,8 +129,10 @@ class PlannedPaymentViewModel(
             } else {
                 plannedPaymentRepository.update(
                     payment.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = occurrence.scheduledDate
+                        schedule = payment.schedule.copy(
+                            nextDueDate = nextDue,
+                            lastTriggeredDate = occurrence.scheduledDate
+                        )
                     )
                 )
             }
@@ -135,7 +146,7 @@ class PlannedPaymentViewModel(
         profileId: Int
     ) {
         val occurrence = PlannedPaymentOccurrence(
-            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate
+            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.schedule.nextDueDate
         )
         confirmOccurrence(occurrence, payment, transactionManager, profileId)
     }
@@ -143,7 +154,7 @@ class PlannedPaymentViewModel(
     /** Skip the current instance of a payment directly from the list view. */
     fun quickSkip(payment: PlannedPayment) {
         val occurrence = PlannedPaymentOccurrence(
-            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate
+            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.schedule.nextDueDate
         )
         skipOccurrence(occurrence, payment)
     }
@@ -166,22 +177,23 @@ class PlannedPaymentViewModel(
         val startEpoch = now.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         return PlannedPayment(
             id = 0L,
-            title = "",
-            amount = BigDecimal.ZERO,
-            currency = "USD",
-            transactionType = "expense",
-            accountId = accountId,
-            targetAccountId = null,
-            categoryId = 1002L,
-            paymentMethod = "Cash",
-            tags = emptyList(),
-            note = "",
-            payee = "",
-            recurrenceRule = RecurrenceRule(type = RecurrenceType.MONTHLY),
-            startDate = startEpoch,
-            endDate = null,
-            nextDueDate = startEpoch,
-            lastTriggeredDate = null,
+            template = TransactionTemplate(
+                title = "",
+                amount = BigDecimal.ZERO,
+                currency = "USD",
+                transactionType = "expense",
+                accountId = accountId,
+                categoryId = 1002L,
+                paymentMethod = "Cash",
+                tags = emptyList(),
+                note = "",
+                payee = ""
+            ),
+            schedule = PaymentSchedule(
+                recurrenceRule = RecurrenceRule(type = RecurrenceType.MONTHLY),
+                startDate = startEpoch,
+                nextDueDate = startEpoch
+            ),
             autoConfirm = false,
             status = PlannedPaymentStatus.ACTIVE,
             profileId = profileId

@@ -29,7 +29,7 @@ abstract class TransactionDao {
     @RawQuery
     abstract suspend fun getFilteredTransactionsSync(query: SupportSQLiteQuery): List<TransactionEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     abstract suspend fun _insertTransaction(transaction: TransactionEntity): Long
 
     @Transaction
@@ -84,7 +84,7 @@ abstract class TransactionDao {
     @Update
     abstract suspend fun updateTransactions(transactions: List<TransactionEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     abstract suspend fun insertTransaction(transaction: TransactionEntity)
 
     @Delete

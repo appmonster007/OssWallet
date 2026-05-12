@@ -97,12 +97,8 @@ data class TransactionEntryState(
     val isTransfer: Boolean get() = transactionType == 2
 
     val displayLinkedTxs: List<Transaction>
-        get() = if (isEditMode) {
-            linkedTxs.sortedByDescending { it.timestamp }
-        } else {
-            linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }
-                .sortedByDescending { it.timestamp }
-        }
+        get() = linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }
+            .sortedByDescending { it.timestamp }
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

@@ -76,9 +76,7 @@ class TransactionEntryViewModel(
             val precision = settingsRepository.decimalPrecision.first()
             val use24Hour = settingsRepository.use24HourFormat.first()
             val mapsAccess = settingsRepository.mapsAccessEnabled.first()
-            val transactions = if (transactionId != null) {
-                transactionUseCases.getTransactions(profileId).first()
-            } else emptyList()
+            val transactions = transactionUseCases.getTransactions(profileId).first()
 
             val isEditMode = transactionId != null && transactionId != -1L
             val existingTransaction = if (isEditMode) {
@@ -88,6 +86,9 @@ class TransactionEntryViewModel(
             val linkedTxs = if (isEditMode) {
                 transactionUseCases.getLinkedTransactions(transactionId!!).first()
             } else emptyList()
+
+            // Merge linkedTxs into transactions list to ensure they are available for display
+            val allRelevantTransactions = (transactions + linkedTxs).distinctBy { it.id }
 
             // Set default account if provided
             val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
@@ -100,6 +101,7 @@ class TransactionEntryViewModel(
                 isEditMode = isEditMode,
                 existingTransaction = existingTransaction,
                 linkedTxs = linkedTxs,
+                linkedTransactionIds = linkedTxs.map { it.id },
                 prefillDto = prefillDto,
                 accounts = accounts,
                 categories = categories,
@@ -110,7 +112,7 @@ class TransactionEntryViewModel(
                 decimalPrecision = precision,
                 use24HourFormat = use24Hour,
                 mapsAccessEnabled = mapsAccess,
-                transactions = transactions,
+                transactions = allRelevantTransactions,
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",
                 transactionType = initialType,
@@ -315,14 +317,9 @@ class TransactionEntryViewModel(
             }
 
             is TransactionEntryEvent.RemoveLinkedTransaction -> {
-                // Remove from local state for new transactions
-                update { it.copy(linkedTransactionIds = it.linkedTransactionIds - event.linkedTransactionId) }
-                // For edit mode, also remove from database
-                viewModelScope.launch {
-                    transactionUseCases.removeTransactionLink(
-                        event.transactionId,
-                        event.linkedTransactionId
-                    )
+                // Remove from local state. Database update happens on Save.
+                update { 
+                    it.copy(linkedTransactionIds = it.linkedTransactionIds.filter { id -> id != event.linkedTransactionId })
                 }
             }
 

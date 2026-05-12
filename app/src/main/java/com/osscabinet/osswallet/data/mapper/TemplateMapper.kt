@@ -13,6 +13,9 @@ fun TemplateEntity.toDomain(): Template {
         icon = icon,
         colorHex = colorHex,
         accountId = accountId,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate,
         note = note,
         payee = payee,
         location = location,
@@ -20,7 +23,8 @@ fun TemplateEntity.toDomain(): Template {
         currency = currency,
         tags = if (tags.isEmpty()) emptyList() else tags.split(","),
         isStarred = isStarred,
-        displayOrder = displayOrder
+        displayOrder = displayOrder,
+        profileId = profileId
     )
 }
 
@@ -34,6 +38,9 @@ fun Template.toEntity(): TemplateEntity {
         icon = icon,
         colorHex = colorHex,
         accountId = accountId,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate,
         note = note,
         payee = payee,
         location = location,
@@ -41,6 +48,7 @@ fun Template.toEntity(): TemplateEntity {
         currency = currency,
         tags = tags.joinToString(","),
         isStarred = isStarred,
-        displayOrder = displayOrder
+        displayOrder = displayOrder,
+        profileId = profileId
     )
 }

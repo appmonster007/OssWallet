@@ -112,9 +112,9 @@ fun PlannedPaymentsCard(
 
             overdue.forEach { payment ->
                 PlannedPaymentRow(
-                    title = payment.template.title,
+                    title = payment.template.name,
                     amount = payment.template.amount,
-                    currency = payment.template.currency,
+                    currency = payment.template.currency ?: "USD",
                     dateLabel = "OVERDUE",
                     isOverdue = true,
                     onClick = { onItemClick(payment.id) },
@@ -126,9 +126,9 @@ fun PlannedPaymentsCard(
 
             upcoming.forEach { item ->
                 PlannedPaymentRow(
-                    title = item.plannedPayment.template.title,
+                    title = item.plannedPayment.template.name,
                     amount = item.plannedPayment.template.amount,
-                    currency = item.plannedPayment.template.currency,
+                    currency = item.plannedPayment.template.currency ?: "USD",
                     dateLabel = formatDate(item.scheduledDate),
                     isOverdue = false,
                     onClick = { onItemClick(item.plannedPayment.id) },

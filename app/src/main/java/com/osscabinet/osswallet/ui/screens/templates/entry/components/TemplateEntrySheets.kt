@@ -32,9 +32,13 @@ fun TemplateEntrySheets(
     decimalPrecision: Int,
     showAccountSheet: Boolean,
     onDismissAccountSheet: () -> Unit,
+    showTargetAccountSheet: Boolean = false,
+    onDismissTargetAccountSheet: () -> Unit = {},
     accounts: List<Account>,
     selectedAccount: Account?,
     onAccountSelected: (Account) -> Unit,
+    targetAccount: Account? = null,
+    onTargetAccountSelected: (Account) -> Unit = {},
     showCategorySheet: Boolean,
     onDismissCategorySheet: () -> Unit,
     categories: List<Category>,
@@ -76,7 +80,11 @@ fun TemplateEntrySheets(
             CalculatorNumpad(
                 amount = amount,
                 onAmountChange = onAmountChange,
-                transactionType = if (transactionType == 1) "income" else "expense",
+                transactionType = when (transactionType) {
+                    1 -> "income"
+                    2 -> "transfer"
+                    else -> "expense"
+                },
                 decimalPrecision = decimalPrecision,
                 onDone = onDismissNumpad,
                 modifier = Modifier.padding(8.dp)
@@ -84,7 +92,7 @@ fun TemplateEntrySheets(
         }
     }
 
-    if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showTagSheet) {
+    if (showAccountSheet || showTargetAccountSheet || showCategorySheet || showPaymentMethodSheet || showTagSheet) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,6 +102,7 @@ fun TemplateEntrySheets(
                     indication = null
                 ) { 
                     onDismissAccountSheet()
+                    onDismissTargetAccountSheet()
                     onDismissCategorySheet()
                     onDismissPaymentMethodSheet()
                     onDismissTagSheet()
@@ -107,6 +116,15 @@ fun TemplateEntrySheets(
             selectedAccount = selectedAccount,
             onAccountSelected = onAccountSelected,
             onDismiss = onDismissAccountSheet
+        )
+    }
+
+    if (showTargetAccountSheet) {
+        AccountSelection(
+            accounts = accounts,
+            selectedAccount = targetAccount,
+            onAccountSelected = onTargetAccountSelected,
+            onDismiss = onDismissTargetAccountSheet
         )
     }
 

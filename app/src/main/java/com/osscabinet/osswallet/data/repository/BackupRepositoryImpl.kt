@@ -183,8 +183,8 @@ class BackupRepositoryImpl(
     )
 
     private suspend fun exportTemplates() = CsvProcessor.buildCsv(
-        listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder"),
-        templateDao.getAllTemplatesSync().map { listOf(it.id, it.name, it.categoryId, it.amount, it.transactionType, it.icon, it.colorHex, it.accountId, it.note, it.payee, it.location, it.paymentMethod, it.currency, it.tags, it.isStarred, it.displayOrder) }
+        listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "targetAccountId", "targetCurrency", "transferRate", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder", "profileId"),
+        templateDao.getAllTemplatesSync().map { listOf(it.id, it.name, it.categoryId, it.amount, it.transactionType, it.icon, it.colorHex, it.accountId, it.targetAccountId, it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.paymentMethod, it.currency, it.tags, it.isStarred, it.displayOrder, it.profileId) }
     )
 
     private suspend fun exportTransactionLinks() = CsvProcessor.buildCsv(
@@ -208,11 +208,11 @@ class BackupRepositoryImpl(
     )
 
     private suspend fun exportPlannedPayments() = CsvProcessor.buildCsv(
-        listOf("id", "title", "amount", "currency", "transactionType", "accountId", "targetAccountId", "targetCurrency", "transferRate", "categoryId", "paymentMethod", "tags", "note", "payee", "recurrenceCronExpression", "startDate", "endDate", "nextDueDate", "lastTriggeredDate", "autoConfirm", "status", "profileId"),
+        listOf("id", "templateId", "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression", "startDate", "endDate", "nextDueDate", "lastTriggeredDate", "autoConfirm", "status", "profileId"),
         plannedPaymentDao.getAllPlannedPaymentsSync().map { 
-            val t = it.template
-            val s = it.schedule
-            listOf(it.id, t.title, t.amount, t.currency, t.transactionType, t.accountId, t.targetAccountId, t.targetCurrency, t.transferRate, t.categoryId, t.paymentMethod, t.tags, t.note, t.payee, s.recurrenceCronExpression, s.startDate, s.endDate, s.nextDueDate, s.lastTriggeredDate, it.autoConfirm, it.status, it.profileId) 
+            val p = it.payment
+            val s = p.schedule
+            listOf(p.id, p.templateId, s.recurrenceType, s.interval, s.dayOfWeek, s.dayOfMonth, s.recurrenceCronExpression, s.startDate, s.endDate, s.nextDueDate, s.lastTriggeredDate, p.autoConfirm, p.status, p.profileId)
         }
     )
 
@@ -323,11 +323,26 @@ class BackupRepositoryImpl(
     private suspend fun restoreTemplates(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
             templateDao.insertTemplate(TemplateEntity(
-                id = p["id"]?.toLong() ?: 0, name = p["name"] ?: "", categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
-                amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, transactionType = p["transactionType"]?.toIntOrNull() ?: 0,
-                icon = p["icon"], colorHex = p["colorHex"], accountId = p["accountId"], note = p["note"], payee = p["payee"],
-                location = p["location"], paymentMethod = p["paymentMethod"], currency = p["currency"], tags = p["tags"] ?: "",
-                isStarred = p["isStarred"]?.toBoolean() ?: false, displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0
+                id = p["id"]?.toLong() ?: 0, 
+                name = p["name"] ?: "", 
+                categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
+                amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
+                transactionType = p["transactionType"]?.toIntOrNull() ?: 0,
+                icon = p["icon"], 
+                colorHex = p["colorHex"], 
+                accountId = p["accountId"],
+                targetAccountId = p["targetAccountId"],
+                targetCurrency = p["targetCurrency"],
+                transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
+                note = p["note"], 
+                payee = p["payee"],
+                location = p["location"], 
+                paymentMethod = p["paymentMethod"], 
+                currency = p["currency"], 
+                tags = p["tags"] ?: "",
+                isStarred = p["isStarred"]?.toBoolean() ?: false, 
+                displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0,
+                profileId = p["profileId"]?.toIntOrNull() ?: 1
             ))
         }
     }
@@ -368,22 +383,12 @@ class BackupRepositoryImpl(
         CsvProcessor.parseCsv(it).forEach { p ->
             plannedPaymentDao.insert(PlannedPaymentEntity(
                 id = p["id"]?.toLong() ?: 0,
-                template = TransactionTemplateEntity(
-                    title = p["title"] ?: "",
-                    amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                    currency = p["currency"] ?: "USD",
-                    transactionType = p["transactionType"] ?: "expense",
-                    accountId = p["accountId"] ?: "",
-                    targetAccountId = p["targetAccountId"],
-                    targetCurrency = p["targetCurrency"],
-                    transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
-                    categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
-                    paymentMethod = p["paymentMethod"] ?: "Cash",
-                    tags = p["tags"] ?: "",
-                    note = p["note"] ?: "",
-                    payee = p["payee"] ?: ""
-                ),
+                templateId = p["templateId"]?.toLongOrNull() ?: 0,
                 schedule = RecurrenceScheduleEntity(
+                    recurrenceType = p["recurrenceType"] ?: "MONTHLY",
+                    interval = p["interval"]?.toIntOrNull() ?: 1,
+                    dayOfWeek = p["dayOfWeek"]?.toIntOrNull(),
+                    dayOfMonth = p["dayOfMonth"]?.toIntOrNull(),
                     recurrenceCronExpression = p["recurrenceCronExpression"],
                     startDate = p["startDate"]?.toLongOrNull() ?: 0,
                     endDate = p["endDate"]?.toLongOrNull(),

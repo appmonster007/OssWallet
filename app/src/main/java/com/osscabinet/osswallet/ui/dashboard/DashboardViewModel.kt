@@ -315,19 +315,24 @@ class DashboardViewModel(
                 scheduledDate = payment.schedule.nextDueDate
             )
             val template = payment.template
+            val typeStr = when (template.transactionType) {
+                1 -> "income"
+                2 -> "transfer"
+                else -> "expense"
+            }
             val request = TransactionRequest(
-                title = template.title,
+                title = template.name,
                 amount = template.amount,
-                transactionType = template.transactionType,
-                accountId = template.accountId,
-                currency = template.currency,
+                transactionType = typeStr,
+                accountId = template.accountId ?: "",
+                currency = template.currency ?: "USD",
                 categoryId = template.categoryId,
                 tags = template.tags,
-                paymentMethod = template.paymentMethod,
+                paymentMethod = template.paymentMethod ?: "Cash",
                 timestamp = occurrence.scheduledDate,
-                payee = template.payee,
-                note = template.note,
-                isTransfer = template.transactionType == "transfer",
+                payee = template.payee ?: "",
+                note = template.note ?: "",
+                isTransfer = template.transactionType == 2,
                 targetAccountId = template.targetAccountId,
                 targetCurrency = template.targetCurrency,
                 transferRate = template.transferRate

@@ -7,7 +7,7 @@ interface TemplateRepository {
     fun getAllTemplates(): Flow<List<Template>>
     fun getStarredTemplates(): Flow<List<Template>>
     suspend fun updateStarStatus(id: Long, isStarred: Boolean)
-    suspend fun insertTemplate(template: Template)
+    suspend fun insertTemplate(template: Template): Long
     suspend fun updateTemplate(template: Template)
     suspend fun deleteTemplate(template: Template)
     suspend fun getTemplateByName(name: String): Template?

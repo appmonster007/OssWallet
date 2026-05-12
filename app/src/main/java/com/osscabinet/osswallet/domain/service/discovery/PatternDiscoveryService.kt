@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionTemplate
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Calendar
@@ -208,18 +207,8 @@ object PatternDiscoveryService {
         val rule = pattern.recurrenceRule ?: return null
         
         return PlannedPayment(
-            template = TransactionTemplate(
-                title = pattern.title,
-                amount = pattern.averageAmount,
-                currency = pattern.currency,
-                transactionType = pattern.transactionType,
-                accountId = pattern.accountId,
-                categoryId = pattern.categoryId,
-                paymentMethod = pattern.paymentMethod,
-                tags = pattern.tags,
-                note = pattern.note,
-                payee = pattern.payee
-            ),
+            templateId = 0L,
+            template = toTemplate(pattern),
             schedule = PaymentSchedule(
                 recurrenceRule = rule,
                 startDate = pattern.lastDate,

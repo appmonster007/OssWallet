@@ -25,6 +25,9 @@ data class TemplateEntity(
     val icon: String? = null,
     val colorHex: String? = null,
     val accountId: String? = null,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: BigDecimal = BigDecimal.ONE,
     val note: String? = null,
     val payee: String? = null,
     val location: String? = null,
@@ -32,5 +35,6 @@ data class TemplateEntity(
     val currency: String? = null,
     val tags: String = "", // Comma-separated tags
     val isStarred: Boolean = false,
-    val displayOrder: Int = 0
+    val displayOrder: Int = 0,
+    val profileId: Int = 1
 )

@@ -1,8 +1,12 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
@@ -54,9 +59,13 @@ fun PlannedPaymentEntrySheets(
     onCategorySelected: (Category) -> Unit,
     showAccountSheet: Boolean,
     onDismissAccountSheet: () -> Unit,
+    showTargetAccountSheet: Boolean = false,
+    onDismissTargetAccountSheet: () -> Unit = {},
     accounts: List<Account>,
     selectedAccountId: String,
     onAccountSelected: (Account?) -> Unit,
+    targetAccountId: String? = null,
+    onTargetAccountSelected: (Account?) -> Unit = {},
     showPaymentMethodSheet: Boolean,
     onDismissPaymentMethodSheet: () -> Unit,
     paymentMethod: String,
@@ -73,13 +82,17 @@ fun PlannedPaymentEntrySheets(
     showNumpad: Boolean,
     onDismissNumpad: () -> Unit,
     amountText: String,
-    transactionType: String,
+    transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
     onAmountChanged: (String) -> Unit,
     showCurrencySheet: Boolean,
     onDismissCurrencySheet: () -> Unit,
     currency: String,
     onCurrencySelected: (String) -> Unit,
-    allCurrencies: List<String>
+    allCurrencies: List<String>,
+    showTemplateSheet: Boolean = false,
+    onDismissTemplateSheet: () -> Unit = {},
+    templates: List<Template> = emptyList(),
+    onTemplateSelected: (Template?) -> Unit = {}
 ) {
     if (showScheduleBuilder) {
         ScheduleBuilderSheet(
@@ -118,6 +131,14 @@ fun PlannedPaymentEntrySheets(
             onDismiss = onDismissAccountSheet
         )
     }
+    if (showTargetAccountSheet) {
+        TransactionAccountSelection(
+            accounts = accounts,
+            selectedAccountId = targetAccountId ?: "",
+            onAccountSelected = onTargetAccountSelected,
+            onDismiss = onDismissTargetAccountSheet
+        )
+    }
     if (showPaymentMethodSheet) {
         PaymentMethodSelection(
             selectedMethod = paymentMethod,
@@ -146,10 +167,18 @@ fun PlannedPaymentEntrySheets(
     if (showNumpad) {
         CalculatorSheet(
             currentAmount = amountText,
-            transactionType = if (transactionType == "income") 1 else 0,
+            transactionType = transactionType,
             decimalPrecision = 2,
             onAmountChanged = onAmountChanged,
             onDismiss = onDismissNumpad
+        )
+    }
+    if (showTemplateSheet) {
+        TemplateSelectionSheet(
+            templates = templates,
+            onTemplateSelected = onTemplateSelected,
+            onDismiss = onDismissTemplateSheet,
+            categoryMap = categories.associateBy { it.id }
         )
     }
     if (showCurrencySheet) {
@@ -193,6 +222,112 @@ fun PlannedPaymentEntrySheets(
     }
 }
 
+@Composable
+fun TemplateSelectionSheet(
+    templates: List<Template>,
+    onTemplateSelected: (Template?) -> Unit,
+    onDismiss: () -> Unit,
+    categoryMap: Map<Long, Category>
+) {
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        AeonSelectionScreen(
+            title = "Link Template",
+            onBack = onDismiss
+        ) { padding ->
+            var query by remember { mutableStateOf("") }
+            val filtered = remember(query, templates) {
+                if (query.isBlank()) templates
+                else templates.filter { it.name.contains(query, ignoreCase = true) }
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+            ) {
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = "Search templates..."
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Surface(
+                    onClick = { onTemplateSelected(null); onDismiss() },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create New Template", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(filtered) { template ->
+                        val category = categoryMap[template.categoryId]
+                        Card(
+                            onClick = { onTemplateSelected(template); onDismiss() },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Surface(
+                                        modifier = Modifier.size(40.dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = getIconByName(category?.iconName),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(template.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(category?.name ?: "Unknown", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        "${if (template.transactionType == 1) "+" else "-"}${template.amount} ${template.currency ?: ""}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = if (template.transactionType == 1) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ... rest of the file (ScheduleBuilderSheet, PlannedPaymentStatusSelection)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ScheduleBuilderSheet(
@@ -211,7 +346,7 @@ private fun ScheduleBuilderSheet(
     var localInterval by remember { mutableIntStateOf(initialInterval) }
     var localDayOfWeek by remember { mutableStateOf(initialDayOfWeek) }
     var localDayOfMonth by remember { mutableStateOf(initialDayOfMonth) }
-    var cronText by remember { mutableStateOf(initialCronExpression ?: "") }
+    var cronText by remember { mutableStateOf(initialCronExpression ?: "0 0 * * *") }
 
     if (stage == 1) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = localStart)
@@ -257,8 +392,6 @@ private fun ScheduleBuilderSheet(
         val needsIntervalLocal = localType in listOf(
             RecurrenceType.EVERY_N_DAYS, RecurrenceType.EVERY_N_WEEKS, RecurrenceType.EVERY_N_MONTHS
         )
-        val needsDayOfWeekLocal = localType in listOf(RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS)
-        val needsDayOfMonthLocal = localType in listOf(RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS)
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -270,8 +403,22 @@ private fun ScheduleBuilderSheet(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     TabRow(selectedTabIndex = selectedTabIndex) {
-                        Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }, text = { Text("PRESETS") })
-                        Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }, text = { Text("CUSTOM") })
+                        Tab(
+                            selected = selectedTabIndex == 0,
+                            onClick = { 
+                                selectedTabIndex = 0 
+                                if (localType == RecurrenceType.CRON) localType = RecurrenceType.MONTHLY
+                            },
+                            text = { Text("PRESETS") }
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 1,
+                            onClick = { 
+                                selectedTabIndex = 1 
+                                localType = RecurrenceType.CRON
+                            },
+                            text = { Text("CUSTOM") }
+                        )
                     }
 
                     if (selectedTabIndex == 0) {
@@ -310,6 +457,7 @@ private fun ScheduleBuilderSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                val isError = cronText.isNotBlank() && parsedCronRule == null
                                 OutlinedTextField(
                                     value = cronText,
                                     onValueChange = { cronText = it },
@@ -318,8 +466,13 @@ private fun ScheduleBuilderSheet(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp),
                                     singleLine = true,
+                                    isError = isError,
                                     supportingText = {
-                                        Text("Unix format: Min Hour Day Month Weekday")
+                                        if (isError) {
+                                            Text("Invalid cron expression", color = MaterialTheme.colorScheme.error)
+                                        } else {
+                                            Text("Unix format: Min Hour Day Month Weekday")
+                                        }
                                     }
                                 )
                                 IconButton(
@@ -329,7 +482,7 @@ private fun ScheduleBuilderSheet(
                                     Icon(
                                         Icons.AutoMirrored.Rounded.HelpOutline,
                                         contentDescription = "Cron Help",
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -397,31 +550,67 @@ private fun ScheduleBuilderSheet(
                 }
             },
             dismissButton = { TextButton(onClick = { stage = 1 }) { Text("BACK") } },
-            confirmButton = { TextButton(onClick = { stage = 3 }) { Text("NEXT") } }
+            confirmButton = { 
+                TextButton(
+                    onClick = { stage = 3 },
+                    enabled = localType != RecurrenceType.CRON || (cronText.isNotBlank() && parsedCronRule != null)
+                ) { Text("NEXT") } 
+            }
         )
     }
 
     if (stage == 3) {
-        val rule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth)
+        val rule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth, if (localType == RecurrenceType.CRON) cronText else null)
         val summary = PlannedPaymentService.buildScheduleSummary(localStart, rule)
+        val previewDates = remember(localStart, rule) {
+            PlannedPaymentService.generateOccurrencesPreview(localStart, rule, 5)
+        }
         
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Confirm Schedule") },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("Confirm Schedule", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
             text = { 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Verify your recurrence settings before saving.")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Verify your recurrence settings before saving.", style = MaterialTheme.typography.bodyMedium)
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = summary,
                             modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+
+                    if (previewDates.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                "Next occurrences:",
+                                style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline)
+                            )
+                            previewDates.forEach { date ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Event,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.outline
+                                    )
+                                    Text(
+                                        date,
+                                        style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             },

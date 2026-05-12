@@ -475,6 +475,10 @@ fun OssWalletNavGraph(
                     accountViewModel = accountViewModel,
                     categoryMap = categoryMap,
                     onAddTemplateClick = { id -> navController.navigate(Screen.AddTemplate.createRoute(id)) },
+                    onCreatePlannedPayment = { template ->
+                        transactionViewModel.setPlannedPaymentPrefillFromTemplate(template)
+                        navController.navigate(Screen.PlannedPaymentEntry.route)
+                    },
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -683,6 +687,7 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
+                            appContainer.templateRepository,
                             appContainer.settingsRepository
                         )
                     }
@@ -782,6 +787,7 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
+                            appContainer.templateRepository,
                             appContainer.settingsRepository
                         )
                     }
@@ -905,6 +911,7 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
+                            appContainer.templateRepository,
                             appContainer.settingsRepository
                         )
                     }

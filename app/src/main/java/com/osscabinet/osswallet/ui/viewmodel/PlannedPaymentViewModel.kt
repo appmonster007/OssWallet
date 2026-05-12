@@ -9,10 +9,11 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.TransactionTemplate
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,9 +26,11 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.UUID
 
 class PlannedPaymentViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val templateRepository: TemplateRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -42,19 +45,44 @@ class PlannedPaymentViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun save(payment: PlannedPayment) {
+    val allTemplates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun save(payment: PlannedPayment, template: Template) {
         viewModelScope.launch {
-            if (payment.id == 0L) {
-                plannedPaymentRepository.insert(payment)
+            val profileId = currentProfileId.value
+            
+            // 1. Save or Update the template first
+            val templateToSave = template.copy(profileId = profileId)
+            val templateId = if (templateToSave.id == 0L) {
+                val finalTemplate = if (templateToSave.name.isBlank()) {
+                    templateToSave.copy(name = "Schedule: ${template.name.ifBlank { UUID.randomUUID().toString().take(8) }}")
+                } else templateToSave
+                templateRepository.insertTemplate(finalTemplate)
             } else {
-                plannedPaymentRepository.update(payment)
+                templateRepository.updateTemplate(templateToSave)
+                templateToSave.id
+            }
+
+            // 2. Save or Update the planned payment with the template ID
+            val finalPayment = payment.copy(templateId = templateId, profileId = profileId)
+            if (finalPayment.id == 0L) {
+                plannedPaymentRepository.insert(finalPayment)
+            } else {
+                plannedPaymentRepository.update(finalPayment)
             }
         }
     }
 
-    fun delete(paymentId: Long) {
+    fun delete(paymentId: Long, deleteTemplate: Boolean = false) {
         viewModelScope.launch {
-            plannedPaymentRepository.delete(paymentId)
+            val payment = plannedPaymentRepository.getById(paymentId)
+            if (payment != null) {
+                plannedPaymentRepository.delete(paymentId)
+                if (deleteTemplate) {
+                    templateRepository.deleteTemplate(payment.template)
+                }
+            }
         }
     }
 
@@ -79,18 +107,22 @@ class PlannedPaymentViewModel(
         viewModelScope.launch {
             val template = payment.template
             val request = TransactionRequest(
-                title = template.title,
+                title = template.name,
                 amount = template.amount,
-                transactionType = template.transactionType,
-                accountId = template.accountId,
-                currency = template.currency,
+                transactionType = when(template.transactionType) {
+                    1 -> "income"
+                    2 -> "transfer"
+                    else -> "expense"
+                },
+                accountId = template.accountId ?: "",
+                currency = template.currency ?: "USD",
                 categoryId = template.categoryId,
                 tags = template.tags,
-                paymentMethod = template.paymentMethod,
+                paymentMethod = template.paymentMethod ?: "Cash",
                 timestamp = occurrence.scheduledDate,
-                payee = template.payee,
-                note = template.note,
-                isTransfer = template.transactionType == "transfer",
+                payee = template.payee ?: "",
+                note = template.note ?: "",
+                isTransfer = template.transactionType == 2,
                 targetAccountId = template.targetAccountId,
                 targetCurrency = template.targetCurrency,
                 transferRate = template.transferRate
@@ -177,17 +209,14 @@ class PlannedPaymentViewModel(
         val startEpoch = now.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         return PlannedPayment(
             id = 0L,
-            template = TransactionTemplate(
-                title = "",
-                amount = BigDecimal.ZERO,
-                currency = "USD",
-                transactionType = "expense",
-                accountId = accountId,
+            templateId = 0L,
+            template = Template(
+                name = "",
                 categoryId = 1002L,
-                paymentMethod = "Cash",
-                tags = emptyList(),
-                note = "",
-                payee = ""
+                amount = BigDecimal.ZERO,
+                transactionType = 0,
+                accountId = accountId,
+                profileId = profileId
             ),
             schedule = PaymentSchedule(
                 recurrenceRule = RecurrenceRule(type = RecurrenceType.MONTHLY),

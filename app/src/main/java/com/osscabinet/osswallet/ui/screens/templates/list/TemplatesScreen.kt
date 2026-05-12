@@ -41,7 +41,8 @@ fun TemplatesScreen(
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
     categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
-    onAddTemplateClick: (Long?) -> Unit
+    onAddTemplateClick: (Long?) -> Unit,
+    onCreatePlannedPayment: (Template) -> Unit
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -54,7 +55,8 @@ fun TemplatesScreen(
         onAddTemplateClick = onAddTemplateClick,
         onDeleteTemplate = { viewModel.deleteTemplate(it) },
         onUpdateOrder = { viewModel.updateTemplatesOrder(it) },
-        onToggleStar = { viewModel.toggleStar(it) }
+        onToggleStar = { viewModel.toggleStar(it) },
+        onCreatePlannedPayment = onCreatePlannedPayment
     )
 }
 
@@ -68,7 +70,8 @@ fun TemplatesScreenContent(
     onAddTemplateClick: (Long?) -> Unit,
     onDeleteTemplate: (Template) -> Unit,
     onUpdateOrder: (List<Template>) -> Unit,
-    onToggleStar: (Template) -> Unit
+    onToggleStar: (Template) -> Unit,
+    onCreatePlannedPayment: (Template) -> Unit
 ) {
     var editList by remember { mutableStateOf(emptyList<Template>()) }
     var templateToDelete by remember { mutableStateOf<Template?>(null) }
@@ -173,7 +176,8 @@ fun TemplatesScreenContent(
                         categoryIconName = categoryMap[template.categoryId]?.iconName,
                         onEdit = { navigate { onAddTemplateClick(template.id) } },
                         onDelete = { templateToDelete = template },
-                        onToggleStar = { onToggleStar(template) }
+                        onToggleStar = { onToggleStar(template) },
+                        onCreatePlannedPayment = { onCreatePlannedPayment(template) }
                     )
                 }
             }
@@ -220,7 +224,8 @@ fun TemplateItem(
     categoryIconName: String?,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onToggleStar: () -> Unit
+    onToggleStar: () -> Unit,
+    onCreatePlannedPayment: () -> Unit
 ) {
     val (badgeColor, badgeIcon) = when (template.transactionType) {
         0 -> MaterialTheme.colorScheme.error to Icons.Rounded.ArrowDownward          // expense — red
@@ -276,6 +281,13 @@ fun TemplateItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(template.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 Text(categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+            IconButton(onClick = onCreatePlannedPayment) {
+                Icon(
+                    imageVector = Icons.Rounded.Schedule,
+                    contentDescription = "Create Planned Payment",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
             IconButton(onClick = onToggleStar) {
                 Icon(
@@ -513,7 +525,8 @@ fun TemplatesScreenPreview() {
             onAddTemplateClick = {},
             onDeleteTemplate = {},
             onUpdateOrder = {},
-            onToggleStar = {}
+            onToggleStar = {},
+            onCreatePlannedPayment = {}
         )
     }
 }
@@ -548,7 +561,8 @@ fun TemplateItemPreview() {
                 categoryIconName = "restaurant",
                 onEdit = {},
                 onDelete = {},
-                onToggleStar = {}
+                onToggleStar = {},
+                onCreatePlannedPayment = {}
             )
         }
     }

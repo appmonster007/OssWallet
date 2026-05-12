@@ -34,6 +34,8 @@ fun TemplateFormBody(
     onAmountClick: () -> Unit,
     selectedAccount: Account?,
     onAccountClick: () -> Unit,
+    targetAccount: Account? = null,
+    onTargetAccountClick: () -> Unit = {},
     categoryName: String,
     categoryObj: Category?,
     onCategoryClick: () -> Unit,
@@ -77,10 +79,15 @@ fun TemplateFormBody(
                     onTypeSelected = onTypeSelected,
                     types = listOf(
                         Triple(Icons.Rounded.Remove, "Expense", 0),
-                        Triple(Icons.Rounded.Add, "Income", 1)
+                        Triple(Icons.Rounded.Add, "Income", 1),
+                        Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
                     ),
-                    selectedColor = if (transactionType == 1) Color(0xFF004D40) else Color(0xFFB3261E),
-                    itemWidth = 120.dp
+                    selectedColor = when (transactionType) {
+                        0 -> Color(0xFFB3261E)
+                        1 -> Color(0xFF004D40)
+                        else -> MaterialTheme.colorScheme.primary
+                    },
+                    itemWidth = 100.dp
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -109,7 +116,11 @@ fun TemplateFormBody(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-1).sp
                             ),
-                            color = if (transactionType == 1) Color(0xFF004D40) else Color(0xFFB3261E)
+                            color = when (transactionType) {
+                                0 -> Color(0xFFB3261E)
+                                1 -> Color(0xFF004D40)
+                                else -> MaterialTheme.colorScheme.primary
+                            }
                         )
                     }
                 }
@@ -135,7 +146,7 @@ fun TemplateFormBody(
         ) {
             EntryActionCard(
                 icon = getAccountIconByName(selectedAccount?.icon),
-                label = "ACCOUNT",
+                label = if (transactionType == 2) "FROM" else "ACCOUNT",
                 value = selectedAccount?.name ?: "Select",
                 onClick = onAccountClick,
                 modifier = Modifier.weight(1f),
@@ -143,15 +154,27 @@ fun TemplateFormBody(
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            EntryActionCard(
-                icon = getIconByName(categoryObj?.iconName),
-                label = "CATEGORY",
-                value = categoryName,
-                onClick = onCategoryClick,
-                modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.tertiary
-            )
+            if (transactionType == 2) {
+                EntryActionCard(
+                    icon = getAccountIconByName(targetAccount?.icon),
+                    label = "TO",
+                    value = targetAccount?.name ?: "Select",
+                    onClick = onTargetAccountClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                EntryActionCard(
+                    icon = getIconByName(categoryObj?.iconName),
+                    label = "CATEGORY",
+                    value = categoryName,
+                    onClick = onCategoryClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+            }
         }
 
         EntrySection(

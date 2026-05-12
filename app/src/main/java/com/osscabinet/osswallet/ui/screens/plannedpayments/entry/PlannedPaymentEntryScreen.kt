@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
@@ -9,20 +9,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentFormBody
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
 import java.math.BigDecimal
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +37,9 @@ fun PlannedPaymentEntryScreen(
 ) {
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
+    val templates by viewModel.allTemplates.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
+    
     val existing = remember(plannedPaymentId, payments) {
         plannedPaymentId?.let { id -> payments.find { it.id == id } }
     }
@@ -46,11 +48,16 @@ fun PlannedPaymentEntryScreen(
     val uniquePayees by transactionViewModel?.uniquePayees?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
     val uniqueNotes by transactionViewModel?.uniqueNotes?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
 
+    var linkedTemplate by remember { mutableStateOf<Template?>(null) }
+    
     var title by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var currency by remember { mutableStateOf("USD") }
-    var transactionType by remember { mutableStateOf("expense") }
+    var transactionType by remember { mutableIntStateOf(0) }
     var selectedAccountId by remember { mutableStateOf("") }
+    var targetAccountId by remember { mutableStateOf<String?>(null) }
+    var targetCurrency by remember { mutableStateOf<String?>(null) }
+    var transferRate by remember { mutableStateOf(BigDecimal.ONE) }
     var recurrenceType by remember { mutableStateOf(RecurrenceType.MONTHLY) }
     var recurrenceInterval by remember { mutableIntStateOf(1) }
     var dayOfWeek by remember { mutableStateOf<Int?>(null) }
@@ -69,13 +76,17 @@ fun PlannedPaymentEntryScreen(
 
     LaunchedEffect(existing, prefill) {
         if (existing != null) {
+            linkedTemplate = existing.template
             val template = existing.template
             val schedule = existing.schedule
-            title = template.title
+            title = template.name
             amountText = template.amount.toPlainString()
-            currency = template.currency
+            currency = template.currency ?: "USD"
             transactionType = template.transactionType
-            selectedAccountId = template.accountId
+            selectedAccountId = template.accountId ?: ""
+            targetAccountId = template.targetAccountId
+            targetCurrency = template.targetCurrency
+            transferRate = template.transferRate
             recurrenceType = schedule.recurrenceRule.type
             recurrenceInterval = schedule.recurrenceRule.interval
             dayOfWeek = schedule.recurrenceRule.dayOfWeek
@@ -86,20 +97,24 @@ fun PlannedPaymentEntryScreen(
             hasEndDate = schedule.endDate != null
             endDateMillis = schedule.endDate ?: schedule.startDate
             selectedCategoryId = template.categoryId
-            payee = template.payee
-            val prefix = "${template.title} - "
-            noteUserPart = if (template.note.startsWith(prefix)) template.note.removePrefix(prefix) else template.note
-            paymentMethod = template.paymentMethod
+            payee = template.payee ?: ""
+            noteUserPart = template.note ?: ""
+            paymentMethod = template.paymentMethod ?: "Cash"
             selectedTagNames = template.tags
             status = existing.status
         } else if (prefill != null) {
+            // Prefill from template logic
             val template = prefill!!.template
             val schedule = prefill!!.schedule
-            title = template.title
+            linkedTemplate = null // It's a new prefill, might not be linked yet or we use it as base
+            title = template.name
             amountText = template.amount.abs().toPlainString()
-            currency = template.currency
+            currency = template.currency ?: "USD"
             transactionType = template.transactionType
-            selectedAccountId = template.accountId
+            selectedAccountId = template.accountId ?: ""
+            targetAccountId = template.targetAccountId
+            targetCurrency = template.targetCurrency
+            transferRate = template.transferRate
             recurrenceType = schedule.recurrenceRule.type
             recurrenceInterval = schedule.recurrenceRule.interval
             dayOfWeek = schedule.recurrenceRule.dayOfWeek
@@ -109,9 +124,9 @@ fun PlannedPaymentEntryScreen(
             hasEndDate = false
             endDateMillis = schedule.startDate
             selectedCategoryId = template.categoryId
-            payee = template.payee
-            noteUserPart = template.note.removePrefix("${template.title} - ")
-            paymentMethod = template.paymentMethod
+            payee = template.payee ?: ""
+            noteUserPart = template.note ?: ""
+            paymentMethod = template.paymentMethod ?: "Cash"
             selectedTagNames = template.tags
             status = PlannedPaymentStatus.ACTIVE
             transactionViewModel?.clearPlannedPaymentPrefill()
@@ -129,14 +144,18 @@ fun PlannedPaymentEntryScreen(
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
+    var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var showStatusSheet by remember { mutableStateOf(false) }
     var showNumpad by remember { mutableStateOf(false) }
     var showCurrencySheet by remember { mutableStateOf(false) }
+    var showTemplateSheet by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteTemplateWithPayment by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = title.isNotBlank() && amountText.toBigDecimalOrNull()?.signum() == 1
+    val canSave = title.isNotBlank() && (amountText.toBigDecimalOrNull()?.signum() == 1)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -158,12 +177,7 @@ fun PlannedPaymentEntryScreen(
                 },
                 actions = {
                     if (isEditing) {
-                        IconButton(
-                            onClick = {
-                                viewModel.delete(plannedPaymentId!!)
-                                onBackClick()
-                            }
-                        ) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Rounded.Delete,
                                 contentDescription = "Delete",
@@ -184,22 +198,42 @@ fun PlannedPaymentEntryScreen(
                             val resolvedAccountId = selectedAccountId.ifBlank {
                                 accounts.firstOrNull()?.id ?: ""
                             }
+                            
+                            val templateToSave = (linkedTemplate ?: Template(
+                                name = title,
+                                categoryId = selectedCategoryId,
+                                amount = amount,
+                                transactionType = transactionType,
+                                accountId = resolvedAccountId,
+                                targetAccountId = targetAccountId,
+                                targetCurrency = targetCurrency,
+                                transferRate = transferRate,
+                                currency = currency,
+                                payee = payee,
+                                note = noteUserPart,
+                                paymentMethod = paymentMethod,
+                                tags = selectedTagNames,
+                                profileId = profileId
+                            )).copy(
+                                name = title,
+                                categoryId = selectedCategoryId,
+                                amount = amount,
+                                transactionType = transactionType,
+                                accountId = resolvedAccountId,
+                                targetAccountId = targetAccountId,
+                                targetCurrency = targetCurrency,
+                                transferRate = transferRate,
+                                currency = currency,
+                                payee = payee,
+                                note = noteUserPart,
+                                paymentMethod = paymentMethod,
+                                tags = selectedTagNames
+                            )
+
                             val payment = (existing ?: viewModel.buildDefault(
                                 resolvedAccountId,
                                 profileId
                             )).copy(
-                                template = TransactionTemplate(
-                                    title = title,
-                                    amount = amount,
-                                    currency = currency,
-                                    transactionType = transactionType,
-                                    accountId = resolvedAccountId,
-                                    categoryId = selectedCategoryId,
-                                    paymentMethod = paymentMethod,
-                                    tags = selectedTagNames,
-                                    payee = payee,
-                                    note = if (noteUserPart.isBlank()) title else "$title - $noteUserPart"
-                                ),
                                 schedule = PaymentSchedule(
                                     recurrenceRule = rule,
                                     startDate = startDateMillis,
@@ -208,9 +242,10 @@ fun PlannedPaymentEntryScreen(
                                     lastTriggeredDate = existing?.schedule?.lastTriggeredDate
                                 ),
                                 autoConfirm = autoConfirm,
-                                status = status
+                                status = status,
+                                profileId = profileId
                             )
-                            viewModel.save(payment)
+                            viewModel.save(payment, templateToSave)
                             onBackClick()
                         },
                         enabled = canSave
@@ -229,11 +264,13 @@ fun PlannedPaymentEntryScreen(
         }
     ) { innerPadding ->
         PlannedPaymentFormBody(
+            selectedTemplate = linkedTemplate,
+            onTemplateClick = { showTemplateSheet = true },
             title = title,
             onTitleChange = { title = it },
             transactionType = transactionType,
-            onTypeSelected = { isIncome ->
-                transactionType = if (isIncome) "income" else "expense"
+            onTypeSelected = { type ->
+                transactionType = type
             },
             amountText = amountText,
             currency = currency,
@@ -246,6 +283,8 @@ fun PlannedPaymentEntryScreen(
             onScheduleClick = { showScheduleBuilder = true },
             selectedAccount = accounts.find { it.id == selectedAccountId },
             onAccountClick = { showAccountSheet = true },
+            targetAccount = accounts.find { it.id == targetAccountId },
+            onTargetAccountClick = { showTargetAccountSheet = true },
             categoryObj = categories.find { it.id == selectedCategoryId },
             onCategoryClick = { showCategorySheet = true },
             payee = payee,
@@ -256,7 +295,7 @@ fun PlannedPaymentEntryScreen(
             uniqueNotes = uniqueNotes,
             selectedTagNames = selectedTagNames,
             onShowTagSheet = { showTagSheet = true },
-            onRemoveTag = { tag -> selectedTagNames = selectedTagNames - tag },
+            onRemoveTag = { tag -> selectedTagNames -= tag },
             paymentMethod = paymentMethod,
             onPaymentMethodClick = { showPaymentMethodSheet = true },
             status = status,
@@ -302,11 +341,19 @@ fun PlannedPaymentEntryScreen(
             },
             showAccountSheet = showAccountSheet,
             onDismissAccountSheet = { showAccountSheet = false },
+            showTargetAccountSheet = showTargetAccountSheet,
+            onDismissTargetAccountSheet = { showTargetAccountSheet = false },
             accounts = accounts,
             selectedAccountId = selectedAccountId,
             onAccountSelected = { account ->
                 account?.let { selectedAccountId = it.id }
                 showAccountSheet = false
+            },
+            targetAccountId = targetAccountId,
+            onTargetAccountSelected = { account ->
+                targetAccountId = account?.id
+                targetCurrency = account?.currencyCode
+                showTargetAccountSheet = false
             },
             showPaymentMethodSheet = showPaymentMethodSheet,
             onDismissPaymentMethodSheet = { showPaymentMethodSheet = false },
@@ -333,7 +380,53 @@ fun PlannedPaymentEntryScreen(
             onDismissCurrencySheet = { showCurrencySheet = false },
             currency = currency,
             onCurrencySelected = { currency = it },
-            allCurrencies = allCurrencies
+            allCurrencies = allCurrencies,
+            showTemplateSheet = showTemplateSheet,
+            onDismissTemplateSheet = { showTemplateSheet = false },
+            templates = templates,
+            onTemplateSelected = { template ->
+                if (template != null) {
+                    linkedTemplate = template
+                    title = template.name
+                    amountText = template.amount.toPlainString()
+                    currency = template.currency ?: "USD"
+                    transactionType = template.transactionType
+                    selectedAccountId = template.accountId ?: ""
+                    targetAccountId = template.targetAccountId
+                    targetCurrency = template.targetCurrency
+                    transferRate = template.transferRate
+                    selectedCategoryId = template.categoryId
+                    payee = template.payee ?: ""
+                    noteUserPart = template.note ?: ""
+                    paymentMethod = template.paymentMethod ?: "Cash"
+                    selectedTagNames = template.tags
+                } else {
+                    linkedTemplate = null
+                }
+            }
+        )
+
+        AeonConfirmDeleteDialog(
+            show = showDeleteDialog,
+            title = "Delete Planned Payment",
+            message = "Are you sure you want to delete this planned payment?",
+            onConfirm = {
+                viewModel.delete(plannedPaymentId!!, deleteTemplateWithPayment)
+                onBackClick()
+            },
+            onDismiss = { showDeleteDialog = false },
+            extraContent = {
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Checkbox(
+                        checked = deleteTemplateWithPayment,
+                        onCheckedChange = { deleteTemplateWithPayment = it }
+                    )
+                    Text("Also delete linked template", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         )
     }
 }

@@ -25,7 +25,8 @@ fun CalculatorSheet(
     val transactionTypeStr = when (transactionType) {
         0 -> "expense"
         1 -> "income"
-        else -> "expense" // transfers show as expense (negative)
+        2 -> "transfer"
+        else -> "expense"
     }
 
     val sheetState = rememberModalBottomSheetState(

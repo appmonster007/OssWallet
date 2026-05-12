@@ -16,6 +16,12 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE profileId = :profileId AND isArchived = 0 ORDER BY name ASC")
     suspend fun getActiveBudgetsSync(profileId: Int): List<BudgetEntity>
 
+    @Query("SELECT * FROM budgets")
+    suspend fun getAllBudgetsSync(): List<BudgetEntity>
+
+    @Query("DELETE FROM budgets")
+    suspend fun clearAll()
+
     @Query("SELECT * FROM budgets WHERE id = :id")
     suspend fun getById(id: Long): BudgetEntity?
 

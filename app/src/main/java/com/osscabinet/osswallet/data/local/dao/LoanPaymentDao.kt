@@ -15,6 +15,12 @@ interface LoanPaymentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(payment: LoanPaymentEntity): Long
 
+    @Query("SELECT * FROM loan_payments")
+    suspend fun getAllPaymentsSync(): List<LoanPaymentEntity>
+
+    @Query("DELETE FROM loan_payments")
+    suspend fun clearAll()
+
     @Update
     suspend fun update(payment: LoanPaymentEntity)
 

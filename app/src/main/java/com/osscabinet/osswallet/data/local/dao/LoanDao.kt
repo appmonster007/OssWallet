@@ -15,6 +15,12 @@ interface LoanDao {
     @Query("SELECT * FROM loans WHERE profileId = :profileId AND status = 'ACTIVE' ORDER BY startDate DESC")
     suspend fun getActiveLoansSync(profileId: Int): List<LoanEntity>
 
+    @Query("SELECT * FROM loans")
+    suspend fun getAllLoansSync(): List<LoanEntity>
+
+    @Query("DELETE FROM loans")
+    suspend fun clearAll()
+
     @Query("SELECT * FROM loans WHERE id = :id")
     suspend fun getLoanById(id: Long): LoanEntity?
 

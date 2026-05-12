@@ -16,6 +16,12 @@ interface PlannedPaymentOccurrenceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PlannedPaymentOccurrenceEntity): Long
 
+    @Query("SELECT * FROM planned_payment_occurrences")
+    suspend fun getAllOccurrencesSync(): List<PlannedPaymentOccurrenceEntity>
+
+    @Query("DELETE FROM planned_payment_occurrences")
+    suspend fun clearAll()
+
     @Update
     suspend fun update(entity: PlannedPaymentOccurrenceEntity)
 

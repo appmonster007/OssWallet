@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
+import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.ui.util.*
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +63,8 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
     var navTriggered by remember { mutableStateOf(false) }
     
     // Reset navTriggered when returning to this screen
@@ -76,22 +79,103 @@ fun SettingsScreen(
         }
     }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        uri?.let { viewModel.exportBackup(it) }
-    }
+    val exportZipLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri -> uri?.let { viewModel.exportBackup(it, BackupType.CSV_ZIP) } }
 
+    val exportSqliteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/x-sqlite3")
+    ) { uri -> uri?.let { viewModel.exportBackup(it, BackupType.SQLITE) } }
+
+    var pendingImportType by remember { mutableStateOf<BackupType?>(null) }
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.importBackup(it) }
+    ) { uri -> 
+        uri?.let { u ->
+            pendingImportType?.let { type ->
+                viewModel.importBackup(u, type)
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
         viewModel.backupMessage.collect { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Export Data") },
+            text = { Text("Select the format you want to export your data in.") },
+            confirmButton = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            showExportDialog = false
+                            exportZipLauncher.launch("osswallet_backup_${System.currentTimeMillis()}.zip")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("ZIP of CSV Files")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showExportDialog = false
+                            exportSqliteLauncher.launch("osswallet_db_${System.currentTimeMillis()}.sqlite")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("SQLite Database File")
+                    }
+                    TextButton(
+                        onClick = { showExportDialog = false },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
+
+    if (showImportDialog) {
+        AlertDialog(
+            onDismissRequest = { showImportDialog = false },
+            title = { Text("Import Data") },
+            text = { Text("Select the format of the backup file you want to import.") },
+            confirmButton = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            showImportDialog = false
+                            pendingImportType = BackupType.CSV_ZIP
+                            importLauncher.launch("application/zip")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("ZIP of CSV Files")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showImportDialog = false
+                            pendingImportType = BackupType.SQLITE
+                            importLauncher.launch("*/*") // Some file managers don't recognize sqlite mime well
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("SQLite Database File")
+                    }
+                    TextButton(
+                        onClick = { showImportDialog = false },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
     }
 
     if (showCurrencyDialog) {
@@ -479,16 +563,16 @@ fun SettingsScreen(
             SettingsSection("DATA & SECURITY") {
                 SettingsItem(
                     title = "Import Backup",
-                    subtitle = "Restore your history from a JSON file",
+                    subtitle = "Restore your history from a file",
                     icon = Icons.Rounded.CloudSync,
-                    onClick = { importLauncher.launch("application/json") }
+                    onClick = { showImportDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Export Data",
-                    subtitle = "Download JSON of all records",
+                    subtitle = "Download all records and database",
                     icon = Icons.Rounded.FileDownload,
-                    onClick = { exportLauncher.launch("osswallet_backup_${System.currentTimeMillis()}.json") }
+                    onClick = { showExportDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(

@@ -178,6 +178,13 @@ class AppContainer(private val context: Context) {
             db.tagDao(),
             db.templateDao(),
             db.transactionLinkDao(),
+            db.budgetDao(),
+            db.loanDao(),
+            db.loanPaymentDao(),
+            db.plannedPaymentDao(),
+            db.plannedPaymentOccurrenceDao(),
+            db.filterDao(),
+            db,
             context,
             settingsDataStore
         )

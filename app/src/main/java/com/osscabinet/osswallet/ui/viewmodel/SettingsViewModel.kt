@@ -233,17 +233,17 @@ class SettingsViewModel(
         }
     }
 
-    fun exportBackup(uri: Uri) {
+    fun exportBackup(uri: Uri, type: BackupType) {
         viewModelScope.launch {
-            backupRepository.exportData(uri.toString())
+            backupRepository.exportData(uri.toString(), type)
                 .onSuccess { _backupMessage.send("Backup exported successfully") }
                 .onFailure { _backupMessage.send("Export failed: ${it.message}") }
         }
     }
 
-    fun importBackup(uri: Uri) {
+    fun importBackup(uri: Uri, type: BackupType) {
         viewModelScope.launch {
-            backupRepository.importData(uri.toString())
+            backupRepository.importData(uri.toString(), type)
                 .onSuccess { _backupMessage.send("Backup imported successfully") }
                 .onFailure { _backupMessage.send("Import failed: ${it.message}") }
         }

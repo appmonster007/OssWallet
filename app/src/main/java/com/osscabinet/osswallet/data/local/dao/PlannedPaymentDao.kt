@@ -19,6 +19,12 @@ interface PlannedPaymentDao {
     @Query("SELECT * FROM planned_payments WHERE profileId = :profileId AND status = 'ACTIVE' AND nextDueDate <= :untilDate ORDER BY nextDueDate ASC")
     suspend fun getDuePlannedPayments(profileId: Int, untilDate: Long): List<PlannedPaymentEntity>
 
+    @Query("SELECT * FROM planned_payments")
+    suspend fun getAllPlannedPaymentsSync(): List<PlannedPaymentEntity>
+
+    @Query("DELETE FROM planned_payments")
+    suspend fun clearAll()
+
     @Query("SELECT * FROM planned_payments WHERE id = :id")
     suspend fun getById(id: Long): PlannedPaymentEntity?
 

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
-import com.osscabinet.ossWallet.data.local.BigDecimalSerializer
+import com.osscabinet.ossWallet.data.local.util.BigDecimalSerializer
+import com.osscabinet.ossWallet.data.local.util.NullableBigDecimalSerializer
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.Serializable
 
@@ -17,9 +18,9 @@ data class TransactionFilter(
     val hasWarranty: Boolean? = null, // null = any, true = has warranty, false = no warranty
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
-    @Serializable(with = BigDecimalSerializer::class)
+    @Serializable(with = NullableBigDecimalSerializer::class)
     val minAmount: java.math.BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
+    @Serializable(with = NullableBigDecimalSerializer::class)
     val maxAmount: java.math.BigDecimal? = null,
     val transactionType: String? = null, // null = all, "income" = income only, "expense" = expense only
     val currencies: List<String> = emptyList(),

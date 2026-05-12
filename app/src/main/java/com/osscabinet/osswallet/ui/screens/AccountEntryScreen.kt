@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
@@ -75,6 +76,7 @@ fun AccountEntryScreen(
     var accountName by remember(account) { mutableStateOf(account?.name ?: "") }
     var structureType by remember(account) { mutableStateOf(account?.structureType ?: "Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
+    var structureQuery by remember { mutableStateOf("") }
     var primaryCurrency by remember(account, defaultCurrency) {
         mutableStateOf(account?.currencyCode ?: defaultCurrency)
     }
@@ -222,6 +224,11 @@ fun AccountEntryScreen(
                 )
 
                 if (isStructureMenuExpanded) {
+                    val filteredStructures = remember(structureQuery) {
+                        if (structureQuery.isBlank()) structureTypes
+                        else structureTypes.filter { it.contains(structureQuery, ignoreCase = true) }
+                    }
+
                     ModalBottomSheet(
                         onDismissRequest = { isStructureMenuExpanded = false },
                         containerColor = MaterialTheme.colorScheme.surface,
@@ -233,9 +240,17 @@ fun AccountEntryScreen(
                                 .padding(bottom = 32.dp)
                         ) {
                             AeonFlowSectionHeader(title = "STRUCTURE TYPE")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            AeonSearchField(
+                                query = structureQuery,
+                                onQueryChange = { structureQuery = it },
+                                placeholder = "Search types..."
+                            )
+
                             Spacer(modifier = Modifier.height(24.dp))
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(structureTypes) { type ->
+                                items(filteredStructures) { type ->
                                     Surface(
                                         modifier = Modifier
                                             .fillMaxWidth()

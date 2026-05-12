@@ -6,13 +6,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 
 /**
  * Full-screen selection for Payment Methods.
@@ -24,7 +26,9 @@ fun PaymentMethodSelection(
     onMethodSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val methods = listOf(
+    var query by remember { mutableStateOf("") }
+    
+    val baseMethods = listOf(
         "Cash" to Icons.Rounded.Payments,
         "Credit Card" to Icons.Rounded.CreditCard,
         "Debit Card" to Icons.Rounded.CreditCard,
@@ -35,6 +39,11 @@ fun PaymentMethodSelection(
         "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
         "Other" to Icons.Rounded.MoreHoriz
     )
+
+    val filteredMethods = remember(query) {
+        if (query.isBlank()) baseMethods
+        else baseMethods.filter { it.first.contains(query, ignoreCase = true) || it.first.fuzzyMatch(query) }
+    }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
@@ -52,12 +61,20 @@ fun PaymentMethodSelection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
                 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = "Search methods..."
+                )
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Box(modifier = Modifier.weight(1f, fill = false)) {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(
-                            items = methods,
+                            items = filteredMethods,
                             mode = AeonSelectMode.SINGLE,
                             selectedIds = setOf(selectedMethod),
                             onSelectionChange = { ids ->

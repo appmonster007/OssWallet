@@ -52,6 +52,7 @@ import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanActionCards
@@ -72,7 +73,15 @@ fun LoanEntryScreen(
     onBackClick: () -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
+    
+    val uniquePayees = remember(transactions) { 
+        transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted() 
+    }
+    val uniqueNotes = remember(transactions) {
+        transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
+    }
     val existing = remember(loanId, loans) {
         loanId?.let { id -> loans.find { it.id == id } }
     }
@@ -125,6 +134,9 @@ fun LoanEntryScreen(
     var showAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
+
+    var accountQuery by remember { mutableStateOf("") }
+    var categoryQuery by remember { mutableStateOf("") }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
     val canSave = name.isNotBlank() && 
@@ -237,6 +249,11 @@ fun LoanEntryScreen(
         }
 
         if (showAccountSheet) {
+            val filteredAccounts = remember(accountQuery, accounts) {
+                if (accountQuery.isBlank()) accounts
+                else accounts.filter { it.name.contains(accountQuery, ignoreCase = true) }
+            }
+
             AeonFullScreenDialog(onDismissRequest = { showAccountSheet = false }) {
                 AeonSelectionScreen(
                     title = "Select Account",
@@ -250,11 +267,19 @@ fun LoanEntryScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        AeonSearchField(
+                            query = accountQuery,
+                            onQueryChange = { accountQuery = it },
+                            placeholder = "Search accounts..."
+                        )
+
                         Spacer(modifier = Modifier.height(24.dp))
                         Box(modifier = Modifier.weight(1f, fill = false)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 AeonHybridSelector(
-                                    items = accounts,
+                                    items = filteredAccounts,
                                     mode = AeonSelectMode.SINGLE,
                                     selectedIds = setOf(linkedAccountId),
                                     onSelectionChange = { ids ->
@@ -275,6 +300,11 @@ fun LoanEntryScreen(
         }
 
         if (showCategorySheet) {
+            val filteredCategories = remember(categoryQuery, categories) {
+                if (categoryQuery.isBlank()) categories
+                else categories.filter { it.name.contains(categoryQuery, ignoreCase = true) }
+            }
+
             AeonFullScreenDialog(onDismissRequest = { showCategorySheet = false }) {
                 AeonSelectionScreen(
                     title = "Categories",
@@ -283,10 +313,19 @@ fun LoanEntryScreen(
                     Column(modifier = Modifier
                         .padding(padding)
                         .padding(24.dp)) {
+
+                        AeonSearchField(
+                            query = categoryQuery,
+                            onQueryChange = { categoryQuery = it },
+                            placeholder = "Search categories..."
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Box(modifier = Modifier.weight(1f, fill = false)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 AeonHierarchicalHybridSelector(
-                                    items = categories,
+                                    items = filteredCategories,
                                     mode = AeonSelectMode.MULTI,
                                     selectedIds = selectedCategoryIds,
                                     onSelectionChange = { selectedCategoryIds = it },
@@ -369,7 +408,9 @@ fun LoanEntryScreen(
                 onHasSettlementDateChange = { hasSettlementDate = it },
                 selectedTags = selectedTags,
                 onShowTagSheet = { showTagSheet = true },
-                onRemoveTag = { tag -> selectedTags = selectedTags - tag }
+                onRemoveTag = { tag -> selectedTags = selectedTags - tag },
+                counterpartySuggestions = uniquePayees,
+                noteSuggestions = uniqueNotes
             )
         }
     }

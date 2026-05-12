@@ -29,6 +29,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
@@ -380,23 +382,36 @@ fun AccountSelection(
     onAccountSelected: (Account) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sortedAccounts = remember(accounts) { accounts.sortedBy { it.name } }
+    var query by remember { mutableStateOf("") }
+    val filteredAccounts = remember(query, accounts) {
+        if (query.isBlank()) accounts.sortedBy { it.name }
+        else accounts.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
+            .sortedBy { it.name }
+    }
     
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = "Select Account",
             onBack = onDismiss
         ) { padding ->
-            Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+            Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp, vertical = 16.dp)) {
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = "Search accounts..."
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Box(modifier = Modifier.weight(1f, fill = false)) {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(
-                            items = sortedAccounts,
+                            items = filteredAccounts,
                             mode = AeonSelectMode.SINGLE,
                             selectedIds = if (selectedAccount != null) setOf(selectedAccount.id) else emptySet(),
                             onSelectionChange = { ids ->
                                 ids.firstOrNull()?.let { id ->
-                                    sortedAccounts.find { it.id == id }?.let { 
+                                    filteredAccounts.find { it.id == id }?.let {
                                         onAccountSelected(it)
                                         onDismiss()
                                     }

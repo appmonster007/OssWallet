@@ -2,9 +2,11 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.*
@@ -196,26 +198,46 @@ fun CurrencySelector(
         }
 
         if (showDialog) {
+            var query by remember { mutableStateOf("") }
+            val baseList = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
+            val filteredList = remember(query, baseList) {
+                if (query.isBlank()) baseList
+                else baseList.filter { it.contains(query, ignoreCase = true) }
+            }
+
             AeonFullScreenDialog(onDismissRequest = { showDialog = false }) {
                 AeonSelectionScreen(
                     title = "Select Currency",
                     onBack = { showDialog = false }
                 ) { padding ->
-                    Box(modifier = Modifier.padding(padding).padding(24.dp)) {
-                        val list = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
-                        AeonHybridSelector(
-                            items = list,
-                            mode = AeonSelectMode.SINGLE,
-                            selectedIds = if (selectedCurrency.isNotEmpty()) setOf(selectedCurrency) else emptySet(),
-                            onSelectionChange = { ids ->
-                                ids.firstOrNull()?.let { 
-                                    onCurrencySelected(it)
-                                    showDialog = false
-                                }
-                            },
-                            idMapper = { it },
-                            labelMapper = { it }
+                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp, vertical = 16.dp)) {
+                        AeonSearchField(
+                            query = query,
+                            onQueryChange = { query = it },
+                            placeholder = "Search currency code..."
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHybridSelector(
+                                    items = filteredList,
+                                    mode = AeonSelectMode.SINGLE,
+                                    selectedIds = if (selectedCurrency.isNotEmpty()) setOf(
+                                        selectedCurrency
+                                    ) else emptySet(),
+                                    onSelectionChange = { ids ->
+                                        ids.firstOrNull()?.let {
+                                            onCurrencySelected(it)
+                                            showDialog = false
+                                        }
+                                    },
+                                    idMapper = { it },
+                                    labelMapper = { it }
+                                )
+                            }
+                        }
                     }
                 }
             }

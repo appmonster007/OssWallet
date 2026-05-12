@@ -58,6 +58,8 @@ fun AddTemplateScreen(
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
     val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
+    val uniquePayees by transactionViewModel.uniquePayees.collectAsStateWithLifecycle()
+    val uniqueNotes by transactionViewModel.uniqueNotes.collectAsStateWithLifecycle()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
     val prefill by transactionViewModel.templatePrefill.collectAsStateWithLifecycle()
 
@@ -357,7 +359,8 @@ fun AddTemplateScreen(
                         value = payee,
                         onValueChange = { payee = it },
                         label = "PAYEE",
-                        icon = Icons.Rounded.Person
+                        icon = Icons.Rounded.Person,
+                        suggestions = uniquePayees
                     )
 
                     EntryTagSection(
@@ -402,7 +405,8 @@ fun AddTemplateScreen(
                         value = note,
                         onValueChange = { note = it },
                         label = "NOTE",
-                        icon = Icons.AutoMirrored.Rounded.Notes
+                        icon = Icons.AutoMirrored.Rounded.Notes,
+                        suggestions = uniqueNotes
                     )
                 }
 

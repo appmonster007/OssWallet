@@ -71,6 +71,8 @@ class TransactionEntryViewModel(
             val categories = categoryRepository.categories.first()
             val tags = tagRepository.getAllTags().first()
             val templates = templateRepository.getAllTemplates().first()
+            val payees = transactionUseCases.getUniquePayees(profileId)
+            val notes = transactionUseCases.getUniqueNotes(profileId)
             val precision = settingsRepository.decimalPrecision.first()
             val use24Hour = settingsRepository.use24HourFormat.first()
             val mapsAccess = settingsRepository.mapsAccessEnabled.first()
@@ -103,6 +105,8 @@ class TransactionEntryViewModel(
                 categories = categories,
                 allTags = tags,
                 templates = templates,
+                allPayees = payees,
+                allNotes = notes,
                 decimalPrecision = precision,
                 use24HourFormat = use24Hour,
                 mapsAccessEnabled = mapsAccess,

@@ -36,8 +36,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -115,6 +117,15 @@ class TransactionViewModel(
 
     val baseCurrency: StateFlow<String> = computationRepository.selectedCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
+
+    // Expose unique payees and notes for suggestions
+    val uniquePayees: StateFlow<List<String>> = settingsRepository.currentProfileId
+        .map { profileId -> transactionUseCases.getUniquePayees(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val uniqueNotes: StateFlow<List<String>> = settingsRepository.currentProfileId
+        .map { profileId -> transactionUseCases.getUniqueNotes(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val absoluteTransactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         settingsRepository.currentProfileId

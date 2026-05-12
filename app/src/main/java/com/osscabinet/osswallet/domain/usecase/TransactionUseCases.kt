@@ -135,4 +135,12 @@ class TransactionUseCases(
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
         return repository.getLinkedTransactions(transactionId)
     }
+
+    suspend fun getUniquePayees(profileId: Int): List<String> {
+        return repository.getUniquePayees(profileId)
+    }
+
+    suspend fun getUniqueNotes(profileId: Int): List<String> {
+        return repository.getUniqueNotes(profileId)
+    }
 }

@@ -24,6 +24,9 @@ interface TransactionRepository {
     fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>>
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>>
 
+    suspend fun getUniquePayees(profileId: Int): List<String>
+    suspend fun getUniqueNotes(profileId: Int): List<String>
+
     suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
     suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
 }

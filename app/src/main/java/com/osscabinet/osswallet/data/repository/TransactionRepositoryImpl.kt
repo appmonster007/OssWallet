@@ -246,4 +246,12 @@ class TransactionRepositoryImpl(
             entity.toDomain()
         }
     }
+
+    override suspend fun getUniquePayees(profileId: Int): List<String> {
+        return transactionDao.getUniquePayees(profileId)
+    }
+
+    override suspend fun getUniqueNotes(profileId: Int): List<String> {
+        return transactionDao.getUniqueNotes(profileId)
+    }
 }

@@ -44,6 +44,7 @@ fun TransactionTagSection(
             onValueChange = { if (!state.isSplitMode) onEvent(TransactionEntryEvent.SetNote(it)) },
             label = "NOTE",
             icon = Icons.AutoMirrored.Rounded.Notes,
+            suggestions = state.allNotes,
             placeholder = if (state.isSplitMode) "Individual notes are in splits" else "Tap to enter..."
         )
 
@@ -52,7 +53,8 @@ fun TransactionTagSection(
             value = state.payee,
             onValueChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
             label = "PAYEE",
-            icon = Icons.Rounded.Person
+            icon = Icons.Rounded.Person,
+            suggestions = state.allPayees
         )
 
         // Linked Transactions

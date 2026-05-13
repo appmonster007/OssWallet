@@ -51,4 +51,10 @@ class PlannedPaymentRepositoryImpl(
 
     override suspend fun getOccurrenceForDate(plannedPaymentId: Long, scheduledDate: Long): PlannedPaymentOccurrence? =
         occurrenceDao.getOccurrenceForDate(plannedPaymentId, scheduledDate)?.toDomain()
+
+    override suspend fun isTemplateUsedInPlannedPayments(templateId: Long): Boolean =
+        dao.getCountByTemplateId(templateId) > 0
+
+    override suspend fun getCountByTemplateId(templateId: Long): Int =
+        dao.getCountByTemplateId(templateId)
 }

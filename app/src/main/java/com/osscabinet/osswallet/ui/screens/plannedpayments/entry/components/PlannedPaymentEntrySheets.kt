@@ -145,7 +145,9 @@ fun PlannedPaymentEntrySheets(
             accounts = accounts,
             selectedAccountId = targetAccountId ?: "",
             onAccountSelected = onTargetAccountSelected,
-            onDismiss = onDismissTargetAccountSheet
+            onDismiss = onDismissTargetAccountSheet,
+            title = "Select Target Account",
+            allowOutsideWallet = true
         )
     }
     if (showPaymentMethodSheet) {

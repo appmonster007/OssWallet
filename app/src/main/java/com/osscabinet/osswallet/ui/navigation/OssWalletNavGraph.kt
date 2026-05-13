@@ -557,10 +557,12 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         TemplateEntryViewModel(
                             templateRepository = appContainer.templateRepository,
+                            plannedPaymentRepository = appContainer.plannedPaymentRepository,
                             accountRepository = appContainer.accountRepository,
                             categoryRepository = appContainer.categoryRepository,
                             tagRepository = appContainer.tagRepository,
                             transactionUseCases = appContainer.transactionUseCases,
+                            computationRepository = appContainer.computationRepository,
                             settingsRepository = appContainer.settingsRepository
                         )
                     }
@@ -834,6 +836,7 @@ fun OssWalletNavGraph(
                             categoryRepository = appContainer.categoryRepository,
                             tagRepository = appContainer.tagRepository,
                             transactionRepository = appContainer.transactionRepository,
+                            computationRepository = appContainer.computationRepository,
                             settingsRepository = appContainer.settingsRepository
                         )
                     }

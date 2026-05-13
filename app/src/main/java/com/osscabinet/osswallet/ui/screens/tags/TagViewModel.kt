@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class TagViewModel(
     private val repository: TagRepository,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
     val tags: StateFlow<List<Tag>> = repository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

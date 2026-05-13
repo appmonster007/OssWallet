@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class CategoryViewModel(
     private val categoryRepository: CategoryRepository,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
     val categories: StateFlow<List<Category>> = categoryRepository.categories

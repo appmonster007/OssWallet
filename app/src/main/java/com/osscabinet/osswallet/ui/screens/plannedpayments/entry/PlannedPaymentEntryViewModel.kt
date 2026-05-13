@@ -20,6 +20,7 @@ class PlannedPaymentEntryViewModel(
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
     private val transactionRepository: TransactionRepository,
+    private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -112,12 +113,14 @@ class PlannedPaymentEntryViewModel(
             plannedPaymentRepository.getById(plannedPaymentId)?.let { existing ->
                 val template = existing.template
                 val schedule = existing.schedule
+                val usageCount = plannedPaymentRepository.getCountByTemplateId(template.id)
                 _state.update {
                     it.copy(
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
                         existingPayment = existing,
                         linkedTemplate = template,
+                        templateUsageCount = usageCount,
                         title = template.name,
                         amountText = template.amount.toPlainString(),
                         currency = template.currency ?: "USD",
@@ -151,16 +154,25 @@ class PlannedPaymentEntryViewModel(
         when (event) {
             is PlannedPaymentEntryEvent.SetTitle -> _state.update { it.copy(title = event.title) }
             is PlannedPaymentEntryEvent.SetAmountText -> _state.update { it.copy(amountText = event.amount) }
-            is PlannedPaymentEntryEvent.SetCurrency -> _state.update { it.copy(currency = event.currency) }
-            is PlannedPaymentEntryEvent.SetTransactionType -> _state.update { it.copy(transactionType = event.type) }
+            is PlannedPaymentEntryEvent.SetTransactionType -> {
+                val oldType = _state.value.transactionType
+                _state.update { it.copy(transactionType = event.type) }
+                if (event.type == 2 && oldType != 2) {
+                    autoSelectTargetAccount()
+                }
+                if (event.type == 2) {
+                    recalculateExchangeRate()
+                }
+            }
             is PlannedPaymentEntryEvent.SetAccountId -> {
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.id }
                     state.copy(
                         selectedAccountId = event.id,
-                        currency = if (state.currency.isBlank() || state.currency == "USD") account?.currencyCode ?: state.currency else state.currency
+                        currency = account?.currencyCode ?: state.currency
                     )
                 }
+                recalculateExchangeRate()
             }
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
                 _state.update { state ->
@@ -170,9 +182,17 @@ class PlannedPaymentEntryViewModel(
                         targetCurrency = account?.currencyCode ?: state.targetCurrency
                     )
                 }
+                recalculateExchangeRate()
             }
-            is PlannedPaymentEntryEvent.SetTargetCurrency -> _state.update { it.copy(targetCurrency = event.currency) }
+            is PlannedPaymentEntryEvent.SetTargetCurrency -> {
+                _state.update { it.copy(targetCurrency = event.currency) }
+                recalculateExchangeRate()
+            }
             is PlannedPaymentEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
+            is PlannedPaymentEntryEvent.SetCurrency -> {
+                _state.update { it.copy(currency = event.currency) }
+                recalculateExchangeRate()
+            }
             is PlannedPaymentEntryEvent.SetRecurrence -> _state.update {
                 it.copy(
                     startDateMillis = event.startDate,
@@ -341,6 +361,46 @@ class PlannedPaymentEntryViewModel(
             }
             plannedPaymentRepository.delete(id)
             onSuccess()
+        }
+    }
+
+    private fun autoSelectTargetAccount() {
+        val currentState = _state.value
+        val selectedAccount = currentState.accounts.find { it.id == currentState.selectedAccountId }
+        val accounts = currentState.accounts
+
+        if (selectedAccount != null && accounts.size > 1) {
+            val targetAccount = accounts.find { it.id != selectedAccount.id }
+                ?: accounts.firstOrNull()
+
+            if (targetAccount != null && targetAccount.id != selectedAccount.id) {
+                _state.update {
+                    it.copy(
+                        targetAccountId = targetAccount.id,
+                        targetCurrency = targetAccount.currencyCode
+                    )
+                }
+                recalculateExchangeRate()
+            }
+        }
+    }
+
+    private fun recalculateExchangeRate() {
+        viewModelScope.launch {
+            val currentState = _state.value
+            if (currentState.transactionType == 2 &&
+                currentState.currency.isNotEmpty() &&
+                currentState.targetCurrency?.isNotEmpty() == true
+            ) {
+                val rates = computationRepository.exchangeRates.first()
+                val rate = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                    amount = BigDecimal.ONE,
+                    fromCurrency = currentState.currency,
+                    toCurrency = currentState.targetCurrency ?: currentState.currency,
+                    exchangeRates = rates
+                )
+                _state.update { it.copy(transferRate = rate) }
+            }
         }
     }
 }

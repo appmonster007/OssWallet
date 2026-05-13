@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
-import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -31,7 +30,7 @@ import java.util.UUID
 class PlannedPaymentViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,9 +42,6 @@ class PlannedPaymentViewModel(
         .flatMapLatest { profileId ->
             plannedPaymentRepository.getAllPlannedPayments(profileId)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val allTemplates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
@@ -168,15 +164,4 @@ class PlannedPaymentViewModel(
 
     fun getOccurrencesForPayment(paymentId: Long): Flow<List<PlannedPaymentOccurrence>> =
         plannedPaymentRepository.getOccurrences(paymentId)
-
-    fun buildDefaultOccurrence(
-        payment: PlannedPayment,
-        scheduledDate: Long
-    ): PlannedPaymentOccurrence =
-        PlannedPaymentOccurrence(
-            id = 0,
-            plannedPaymentId = payment.id,
-            scheduledDate = scheduledDate
-        )
-
 }

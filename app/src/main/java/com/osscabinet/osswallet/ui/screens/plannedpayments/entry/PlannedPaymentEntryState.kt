@@ -29,6 +29,7 @@ data class PlannedPaymentEntryState(
     val selectedTagNames: List<String> = emptyList(),
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
     val linkedTemplate: Template? = null,
+    val templateUsageCount: Int = 0,
 
     // UI State
     val showScheduleBuilder: Boolean = false,

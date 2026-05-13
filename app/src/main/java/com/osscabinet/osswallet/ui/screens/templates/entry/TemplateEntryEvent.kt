@@ -32,6 +32,7 @@ sealed class TemplateEntryEvent {
     data class ShowTargetCurrencySheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowExchangeRateDialog(val show: Boolean) : TemplateEntryEvent()
     data class ShowNumpad(val show: Boolean) : TemplateEntryEvent()
+    data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 
     // Navigation
     data object TriggerNavigation : TemplateEntryEvent()

@@ -14,10 +14,12 @@ import java.math.BigDecimal
 @OptIn(ExperimentalCoroutinesApi::class)
 class TemplateEntryViewModel(
     private val templateRepository: TemplateRepository,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
     private val transactionUseCases: TransactionUseCases,
+    private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -84,10 +86,12 @@ class TemplateEntryViewModel(
 
         viewModelScope.launch {
             templateRepository.getTemplateById(templateId)?.let { template ->
+                val isLinked = plannedPaymentRepository.isTemplateUsedInPlannedPayments(templateId)
                 _state.update {
                     it.copy(
                         templateId = templateId,
                         isEditMode = true,
+                        isLinkedToPlannedPayment = isLinked,
                         name = template.name,
                         amount = template.amount.toPlainString(),
                         transactionType = template.transactionType,
@@ -113,7 +117,16 @@ class TemplateEntryViewModel(
         when (event) {
             is TemplateEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
             is TemplateEntryEvent.SetAmount -> _state.update { it.copy(amount = event.amount) }
-            is TemplateEntryEvent.SetTransactionType -> _state.update { it.copy(transactionType = event.type) }
+            is TemplateEntryEvent.SetTransactionType -> {
+                val oldType = _state.value.transactionType
+                _state.update { it.copy(transactionType = event.type) }
+                if (event.type == 2 && oldType != 2) {
+                    autoSelectTargetAccount()
+                }
+                if (event.type == 2) {
+                    recalculateExchangeRate()
+                }
+            }
             is TemplateEntryEvent.SetCategory -> {
                 _state.update { it.copy(categoryId = event.categoryId) }
                 updateCategoryName()
@@ -126,6 +139,7 @@ class TemplateEntryViewModel(
                         currency = account?.currencyCode ?: state.currency
                     )
                 }
+                recalculateExchangeRate()
             }
             is TemplateEntryEvent.SetTargetAccount -> {
                 _state.update { state ->
@@ -135,9 +149,16 @@ class TemplateEntryViewModel(
                         targetCurrency = account?.currencyCode ?: state.targetCurrency
                     )
                 }
+                recalculateExchangeRate()
             }
-            is TemplateEntryEvent.SetCurrency -> _state.update { it.copy(currency = event.currency) }
-            is TemplateEntryEvent.SetTargetCurrency -> _state.update { it.copy(targetCurrency = event.currency) }
+            is TemplateEntryEvent.SetCurrency -> {
+                _state.update { it.copy(currency = event.currency) }
+                recalculateExchangeRate()
+            }
+            is TemplateEntryEvent.SetTargetCurrency -> {
+                _state.update { it.copy(targetCurrency = event.currency) }
+                recalculateExchangeRate()
+            }
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
@@ -168,7 +189,48 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
             is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
             is TemplateEntryEvent.ShowNumpad -> _state.update { it.copy(isNumpadVisible = event.show) }
+            is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
+        }
+    }
+
+    private fun autoSelectTargetAccount() {
+        val currentState = _state.value
+        val selectedAccount = currentState.selectedAccount
+        val accounts = currentState.accounts
+
+        if (selectedAccount != null && accounts.size > 1) {
+            val targetAccount = accounts.find { it.id != selectedAccount.id }
+                ?: accounts.firstOrNull()
+
+            if (targetAccount != null && targetAccount.id != selectedAccount.id) {
+                _state.update {
+                    it.copy(
+                        targetAccountId = targetAccount.id,
+                        targetCurrency = targetAccount.currencyCode
+                    )
+                }
+                recalculateExchangeRate()
+            }
+        }
+    }
+
+    private fun recalculateExchangeRate() {
+        viewModelScope.launch {
+            val currentState = _state.value
+            if (currentState.transactionType == 2 &&
+                currentState.currency.isNotEmpty() &&
+                currentState.targetCurrency?.isNotEmpty() == true
+            ) {
+                val rates = computationRepository.exchangeRates.first()
+                val rate = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                    amount = BigDecimal.ONE,
+                    fromCurrency = currentState.currency,
+                    toCurrency = currentState.targetCurrency ?: currentState.currency,
+                    exchangeRates = rates
+                )
+                _state.update { it.copy(transferRate = rate) }
+            }
         }
     }
 
@@ -186,7 +248,7 @@ class TemplateEntryViewModel(
             val template = Template(
                 id = s.templateId ?: 0,
                 name = s.name,
-                categoryId = s.categoryId,
+                categoryId = if (s.transactionType == 2) 1003L else s.categoryId,
                 amount = s.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                 transactionType = s.transactionType,
                 accountId = s.accountId,

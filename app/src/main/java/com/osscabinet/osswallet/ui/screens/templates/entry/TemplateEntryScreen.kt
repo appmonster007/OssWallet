@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateEntrySheets
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateFormBody
@@ -40,11 +41,7 @@ fun TemplateEntryScreen(
         canSave = state.canSave && !state.navTriggered,
         isEditMode = state.isEditMode,
         onDeleteClick = if (state.isEditMode) {
-            {
-                viewModel.deleteTemplate {
-                    onBackClick()
-                }
-            }
+            { viewModel.onEvent(TemplateEntryEvent.ShowDeleteDialog(true)) }
         } else null
     ) { innerPadding ->
         TemplateFormBody(
@@ -110,7 +107,7 @@ fun TemplateEntryScreen(
             },
             targetAccount = state.selectedTargetAccount,
             onTargetAccountSelected = {
-                viewModel.onEvent(TemplateEntryEvent.SetTargetAccount(it.id))
+                viewModel.onEvent(TemplateEntryEvent.SetTargetAccount(it?.id))
                 viewModel.onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false))
             },
             showCategorySheet = state.showCategorySheet,
@@ -154,6 +151,22 @@ fun TemplateEntryScreen(
             onDismissExchangeRateDialog = { viewModel.onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false)) },
             exchangeRate = state.transferRate,
             onExchangeRateChanged = { viewModel.onEvent(TemplateEntryEvent.SetTransferRate(it)) }
+        )
+
+        AeonConfirmDeleteDialog(
+            show = state.showDeleteDialog,
+            title = "Delete Template",
+            message = if (state.isLinkedToPlannedPayment) {
+                "This template is linked to one or more planned payments. Deleting it will also delete those planned payments. Are you sure?"
+            } else {
+                "Are you sure you want to delete this template?"
+            },
+            onConfirm = {
+                viewModel.deleteTemplate {
+                    onBackClick()
+                }
+            },
+            onDismiss = { viewModel.onEvent(TemplateEntryEvent.ShowDeleteDialog(false)) }
         )
     }
 }

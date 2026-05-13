@@ -7,20 +7,20 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartCard
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapCard
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
-import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
-import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
-import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
-import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
-import com.osscabinet.ossWallet.ui.dashboard.components.PlannedPaymentsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapData
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.LoansCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.PlannedPaymentsCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivitiesCard
 
 /**
  * Unified card renderer composable that handles all card types across all screens.

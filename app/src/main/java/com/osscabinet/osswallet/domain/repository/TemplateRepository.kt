@@ -11,6 +11,7 @@ interface TemplateRepository {
     suspend fun updateTemplate(template: Template)
     suspend fun deleteTemplate(template: Template)
     suspend fun getTemplateByName(name: String): Template?
+    suspend fun getTemplateById(id: Long): Template?
     suspend fun updateTemplates(templates: List<Template>)
     suspend fun getAllTemplatesSync(): List<Template>
     suspend fun clearAll()

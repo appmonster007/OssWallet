@@ -91,43 +91,12 @@ fun BudgetDetailSection(
         }
 
         // Rollover toggle
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.Autorenew,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Roll over balance",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
-                Text(
-                    text = "Carry unused budget forward",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-            }
-            Switch(
-                checked = rollover,
-                onCheckedChange = onRolloverChange,
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = Color(0xFF004D40)
-                )
-            )
-        }
+        EntrySwitchRow(
+            label = "Roll over balance",
+            checked = rollover,
+            onCheckedChange = onRolloverChange,
+            icon = Icons.Rounded.Autorenew,
+            subtitle = "Carry unused budget forward"
+        )
     }
 }

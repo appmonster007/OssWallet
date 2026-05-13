@@ -55,7 +55,7 @@ import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import java.math.BigDecimal
 
 private val TealHealthy = Color(0xFF004D40)

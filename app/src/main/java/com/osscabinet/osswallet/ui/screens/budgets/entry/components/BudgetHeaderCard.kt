@@ -15,8 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Title
 
@@ -46,53 +45,14 @@ fun BudgetHeaderCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Central Amount Area
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onAmountClick() }
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    CurrencySelector(
-                        selectedCurrency = currency,
-                        onCurrencySelected = onCurrencyChange,
-                        supportedCurrencies = supportedCurrencies
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    val amountDisplay = if (amount.isEmpty()) "0.00" else amount
-                    var multiplier by remember(amountDisplay) { mutableStateOf(1f) }
-
-                    Text(
-                        text = amountDisplay,
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-1).sp,
-                            fontSize = (MaterialTheme.typography.displayMedium.fontSize.value * multiplier).sp
-                        ),
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip,
-                        onTextLayout = { textLayoutResult ->
-                            if (textLayoutResult.didOverflowWidth && multiplier > 0.3f) {
-                                multiplier *= 0.8f
-                            }
-                        },
-                        color = Color(0xFF004D40), // Teal for budget healthy
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                }
-            }
+            EntryAmountDisplay(
+                amount = amount,
+                currency = currency,
+                onCurrencyClick = onCurrencyChange,
+                onAmountClick = onAmountClick,
+                amountColor = Color(0xFF004D40), // Teal for budget healthy
+                supportedCurrencies = supportedCurrencies
+            )
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),

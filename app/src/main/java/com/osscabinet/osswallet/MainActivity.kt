@@ -18,8 +18,8 @@ import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
 import com.osscabinet.ossWallet.ui.navigation.Screen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.viewmodel.MainViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
+import com.osscabinet.ossWallet.ui.screens.main.MainViewModel
+import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
@@ -157,11 +157,11 @@ class MainActivity : FragmentActivity() {
                                     navController.navigate(Screen.AccountDetail.createRoute(id))
                                 },
                                 onTemplateClick = { template ->
-                                    navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, templateId = template.id))
+                                    navController.navigate(Screen.TransactionEntry.createRoute(type = template.transactionType, templateId = template.id))
                                 },
                                 onCloseDrawer = { scope.launch { drawerState.close() } },
                                 onPlannedPaymentsClick = {
-                                    navController.navigate(Screen.PlannedPayments.route)
+                                    navController.navigate(Screen.PlannedPaymentList.route)
                                 },
                                 onBudgetsClick = {
                                     navController.navigate(Screen.BudgetList.route)

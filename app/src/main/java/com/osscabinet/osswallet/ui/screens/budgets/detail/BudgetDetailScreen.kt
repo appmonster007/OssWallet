@@ -63,9 +63,9 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 

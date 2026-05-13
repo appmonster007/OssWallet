@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.navigation
 
-import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardSection
 import kotlinx.serialization.Serializable
 
 /**

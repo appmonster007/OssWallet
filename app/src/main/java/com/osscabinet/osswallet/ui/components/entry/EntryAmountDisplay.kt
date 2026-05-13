@@ -1,0 +1,81 @@
+package com.osscabinet.ossWallet.ui.components.entry
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.CurrencySelector
+
+/**
+ * Standardized amount display with auto-resizing text and currency selector.
+ * Following the "Architect Slate" design specification.
+ */
+@Composable
+fun EntryAmountDisplay(
+    amount: String,
+    currency: String,
+    onCurrencyClick: (String) -> Unit,
+    onAmountClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    amountColor: Color = MaterialTheme.colorScheme.primary,
+    supportedCurrencies: List<String> = listOf("USD")
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onAmountClick() }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            CurrencySelector(
+                selectedCurrency = currency.ifEmpty { "USD" },
+                onCurrencySelected = onCurrencyClick,
+                supportedCurrencies = supportedCurrencies
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            val amountDisplay = if (amount.isEmpty()) "0.00" else amount
+            var multiplier by remember(amountDisplay) { mutableStateOf(1f) }
+
+            Text(
+                text = amountDisplay,
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-1).sp,
+                    fontSize = (MaterialTheme.typography.displayMedium.fontSize.value * multiplier).sp
+                ),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                onTextLayout = { textLayoutResult ->
+                    if (textLayoutResult.didOverflowWidth && multiplier > 0.3f) {
+                        multiplier *= 0.8f
+                    }
+                },
+                color = if (amount.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+        }
+    }
+}

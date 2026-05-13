@@ -24,6 +24,9 @@ class LoanRepositoryImpl(
     override suspend fun getActiveLoansSync(profileId: Int): List<Loan> =
         loanDao.getActiveLoansSync(profileId).map { it.toDomain() }
 
+    override suspend fun getLoanById(id: Long): Loan? =
+        loanDao.getLoanById(id)?.toDomain()
+
     override fun getPaymentsForLoan(loanId: Long): Flow<List<LoanPayment>> =
         loanPaymentDao.getPaymentsForLoan(loanId).map { list -> list.map { it.toDomain() } }
 

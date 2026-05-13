@@ -1,29 +1,25 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import android.Manifest
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
-import android.Manifest
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 
 /**
  * Main entry point for transaction entry screen.
@@ -34,18 +30,18 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEv
 fun TransactionEntryScreen(
     transactionId: Long? = null,
     accountId: String? = null,
-    initialType: Int = 0,
+    initialType: Int? = null,
     initialTemplateId: Long? = null,
     prefillDto: com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO? = null,
     viewModel: TransactionEntryViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onDispose: () -> Unit = {},
 ) {
-    // ... [existing logic remains the same]
     LaunchedEffect(Unit) {
         viewModel.initialize(
             transactionId = transactionId,
             accountId = accountId,
-            initialType = initialType,
+            initialType = initialType ?: 0,
             initialTemplateId = initialTemplateId,
             prefillDto = prefillDto
         )
@@ -54,7 +50,7 @@ fun TransactionEntryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(prefillDto) {
-        if (prefillDto != null && prefillDto != state.prefillDto) {
+        if (prefillDto != null && (prefillDto != state.prefillDto)) {
             viewModel.onEvent(TransactionEntryEvent.ApplyPrefill(prefillDto))
         }
     }
@@ -62,6 +58,7 @@ fun TransactionEntryScreen(
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearPrefillDto()
+            onDispose()
         }
     }
 
@@ -75,66 +72,26 @@ fun TransactionEntryScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = if (state.isEditMode) "Edit Transaction" else "New Transaction",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    if (state.isEditMode) {
-                        IconButton(
-                            onClick = {
-                                viewModel.deleteTransaction { onBackClick() }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = {
-                            viewModel.saveTransaction { viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) }
-                        },
-                        enabled = state.canSave && !state.navTriggered
-                    ) {
-                        Icon(
-                            Icons.Rounded.Done,
-                            contentDescription = "Save",
-                            tint = if (state.canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+    AeonEntryScaffold(
+        title = if (state.isEditMode) "Edit Transaction" else "New Transaction",
+        onBackClick = onBackClick,
+        onSaveClick = {
+            viewModel.saveTransaction { 
+                viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) 
+            }
+        },
+        canSave = state.canSave && !state.navTriggered,
+        isEditMode = state.isEditMode,
+        onDeleteClick = if (state.isEditMode) {
+            {
+                viewModel.deleteTransaction { onBackClick() }
+            }
+        } else null
     ) { innerPadding ->
         if (!state.isEditMode && state.mapsAccessEnabled && state.locationCoords == null) {
-            LocationAutoFiller(
-                onLocationDetected = { coords ->
-                    viewModel.onEvent(TransactionEntryEvent.SetLocation(coords))
-                }
-            )
+            LocationAutoFiller { coords ->
+                viewModel.onEvent(TransactionEntryEvent.SetLocation(coords))
+            }
         }
 
         TransactionFormBody(

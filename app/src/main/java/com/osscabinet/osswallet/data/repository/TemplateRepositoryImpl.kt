@@ -32,6 +32,9 @@ class TemplateRepositoryImpl(
     override suspend fun getTemplateByName(name: String): Template? = 
         templateDao.getTemplateByName(name)?.toDomain()
 
+    override suspend fun getTemplateById(id: Long): Template? =
+        templateDao.getTemplateById(id)?.toDomain()
+
     override suspend fun updateTemplates(templates: List<Template>) = 
         templateDao.updateTemplates(templates.map { it.toEntity() })
 

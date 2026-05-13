@@ -1,456 +1,230 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentFormBody
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
-import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentEntryScreen(
-    plannedPaymentId: Long?,
-    viewModel: PlannedPaymentViewModel,
-    accountViewModel: AccountViewModel,
-    transactionViewModel: com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel? = null,
-    categories: List<Category> = emptyList(),
-    availableTags: List<Tag> = emptyList(),
+    plannedPaymentId: Long? = null,
+    prefill: com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO? = null,
+    viewModel: PlannedPaymentEntryViewModel,
     onBackClick: () -> Unit
 ) {
-    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
-    val templates by viewModel.allTemplates.collectAsStateWithLifecycle()
-    val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
-    
-    val existing = remember(plannedPaymentId, payments) {
-        plannedPaymentId?.let { id -> payments.find { it.id == id } }
+    LaunchedEffect(plannedPaymentId, prefill) {
+        viewModel.initialize(plannedPaymentId, prefill)
     }
-    
-    val prefill by transactionViewModel?.plannedPaymentPrefill?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
-    val uniquePayees by transactionViewModel?.uniquePayees?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
-    val uniqueNotes by transactionViewModel?.uniqueNotes?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
 
-    var linkedTemplate by remember { mutableStateOf<Template?>(null) }
-    
-    var title by remember { mutableStateOf("") }
-    var amountText by remember { mutableStateOf("") }
-    var currency by remember { mutableStateOf("USD") }
-    var transactionType by remember { mutableIntStateOf(0) }
-    var selectedAccountId by remember { mutableStateOf("") }
-    var targetAccountId by remember { mutableStateOf<String?>(null) }
-    var targetCurrency by remember { mutableStateOf<String?>(null) }
-    var transferRate by remember { mutableStateOf(BigDecimal.ONE) }
-    var recurrenceType by remember { mutableStateOf(RecurrenceType.MONTHLY) }
-    var recurrenceInterval by remember { mutableIntStateOf(1) }
-    var dayOfWeek by remember { mutableStateOf<Int?>(null) }
-    var dayOfMonth by remember { mutableStateOf<Int?>(null) }
-    var cronExpression by remember { mutableStateOf<String?>(null) }
-    var autoConfirm by remember { mutableStateOf(false) }
-    var startDateMillis by remember { mutableLongStateOf(0L) }
-    var hasEndDate by remember { mutableStateOf(false) }
-    var endDateMillis by remember { mutableLongStateOf(0L) }
-    var selectedCategoryId by remember { mutableLongStateOf(1002L) }
-    var payee by remember { mutableStateOf("") }
-    var noteUserPart by remember { mutableStateOf("") }
-    var paymentMethod by remember { mutableStateOf("Cash") }
-    var selectedTagNames by remember { mutableStateOf(emptyList<String>()) }
-    var status by remember { mutableStateOf(PlannedPaymentStatus.ACTIVE) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(existing, prefill) {
-        if (existing != null) {
-            linkedTemplate = existing.template
-            val template = existing.template
-            val schedule = existing.schedule
-            title = template.name
-            amountText = template.amount.toPlainString()
-            currency = template.currency ?: "USD"
-            transactionType = template.transactionType
-            selectedAccountId = template.accountId ?: ""
-            targetAccountId = template.targetAccountId
-            targetCurrency = template.targetCurrency
-            transferRate = template.transferRate
-            recurrenceType = schedule.recurrenceRule.type
-            recurrenceInterval = schedule.recurrenceRule.interval
-            dayOfWeek = schedule.recurrenceRule.dayOfWeek
-            dayOfMonth = schedule.recurrenceRule.dayOfMonth
-            cronExpression = schedule.recurrenceRule.cronExpression
-            autoConfirm = existing.autoConfirm
-            startDateMillis = schedule.startDate
-            hasEndDate = schedule.endDate != null
-            endDateMillis = schedule.endDate ?: schedule.startDate
-            selectedCategoryId = template.categoryId
-            payee = template.payee ?: ""
-            noteUserPart = template.note ?: ""
-            paymentMethod = template.paymentMethod ?: "Cash"
-            selectedTagNames = template.tags
-            status = existing.status
-        } else if (prefill != null) {
-            // Prefill from template logic
-            val template = prefill!!.template
-            val schedule = prefill!!.schedule
-            linkedTemplate = null // It's a new prefill, might not be linked yet or we use it as base
-            title = template.name
-            amountText = template.amount.abs().toPlainString()
-            currency = template.currency ?: "USD"
-            transactionType = template.transactionType
-            selectedAccountId = template.accountId ?: ""
-            targetAccountId = template.targetAccountId
-            targetCurrency = template.targetCurrency
-            transferRate = template.transferRate
-            recurrenceType = schedule.recurrenceRule.type
-            recurrenceInterval = schedule.recurrenceRule.interval
-            dayOfWeek = schedule.recurrenceRule.dayOfWeek
-            dayOfMonth = schedule.recurrenceRule.dayOfMonth
-            autoConfirm = true
-            startDateMillis = schedule.startDate
-            hasEndDate = false
-            endDateMillis = schedule.startDate
-            selectedCategoryId = template.categoryId
-            payee = template.payee ?: ""
-            noteUserPart = template.note ?: ""
-            paymentMethod = template.paymentMethod ?: "Cash"
-            selectedTagNames = template.tags
-            status = PlannedPaymentStatus.ACTIVE
-            transactionViewModel?.clearPlannedPaymentPrefill()
-        } else {
-            val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            startDateMillis = now
-            endDateMillis = now
-            selectedAccountId = accounts.firstOrNull()?.id ?: ""
+    LaunchedEffect(state.navTriggered) {
+        if (state.navTriggered) {
+            onBackClick()
         }
     }
-
-    val isEditing = plannedPaymentId != null
-
-    var showScheduleBuilder by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
-    var showCategorySheet by remember { mutableStateOf(false) }
-    var showAccountSheet by remember { mutableStateOf(false) }
-    var showTargetAccountSheet by remember { mutableStateOf(false) }
-    var showPaymentMethodSheet by remember { mutableStateOf(false) }
-    var showTagSheet by remember { mutableStateOf(false) }
-    var showStatusSheet by remember { mutableStateOf(false) }
-    var showNumpad by remember { mutableStateOf(false) }
-    var showCurrencySheet by remember { mutableStateOf(false) }
-    var showTargetCurrencySheet by remember { mutableStateOf(false) }
-    var showTemplateSheet by remember { mutableStateOf(false) }
-    var showExchangeRateDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var deleteTemplateWithPayment by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = title.isNotBlank() && (amountText.toBigDecimalOrNull()?.signum() == 1)
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = if (isEditing) "Edit Payment" else "New Payment",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (isEditing) {
-                        IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = {
-                            val amount = amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                            val rule = RecurrenceRule(
-                                type = recurrenceType,
-                                interval = recurrenceInterval.coerceAtLeast(1),
-                                dayOfWeek = dayOfWeek,
-                                dayOfMonth = dayOfMonth,
-                                cronExpression = cronExpression
-                            )
-                            val resolvedAccountId = selectedAccountId.ifBlank {
-                                accounts.firstOrNull()?.id ?: ""
-                            }
-                            
-                            val templateToSave = (linkedTemplate ?: Template(
-                                name = title,
-                                categoryId = selectedCategoryId,
-                                amount = amount,
-                                transactionType = transactionType,
-                                accountId = resolvedAccountId,
-                                targetAccountId = targetAccountId,
-                                targetCurrency = targetCurrency,
-                                transferRate = transferRate,
-                                currency = currency,
-                                payee = payee,
-                                note = noteUserPart,
-                                paymentMethod = paymentMethod,
-                                tags = selectedTagNames,
-                                profileId = profileId
-                            )).copy(
-                                name = title,
-                                categoryId = selectedCategoryId,
-                                amount = amount,
-                                transactionType = transactionType,
-                                accountId = resolvedAccountId,
-                                targetAccountId = targetAccountId,
-                                targetCurrency = targetCurrency,
-                                transferRate = transferRate,
-                                currency = currency,
-                                payee = payee,
-                                note = noteUserPart,
-                                paymentMethod = paymentMethod,
-                                tags = selectedTagNames
-                            )
-
-                            val payment = (existing ?: viewModel.buildDefault(
-                                resolvedAccountId,
-                                profileId
-                            )).copy(
-                                schedule = PaymentSchedule(
-                                    recurrenceRule = rule,
-                                    startDate = startDateMillis,
-                                    endDate = if (hasEndDate) endDateMillis else null,
-                                    nextDueDate = existing?.schedule?.nextDueDate ?: startDateMillis,
-                                    lastTriggeredDate = existing?.schedule?.lastTriggeredDate
-                                ),
-                                autoConfirm = autoConfirm,
-                                status = status,
-                                profileId = profileId
-                            )
-                            viewModel.save(payment, templateToSave)
-                            onBackClick()
-                        },
-                        enabled = canSave
-                    ) {
-                        Icon(
-                            Icons.Rounded.Done,
-                            contentDescription = "Save",
-                            tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+    AeonEntryScaffold(
+        title = if (state.isEditMode) "Edit Payment" else "New Payment",
+        onBackClick = onBackClick,
+        onSaveClick = {
+            viewModel.savePlannedPayment {
+                viewModel.onEvent(PlannedPaymentEntryEvent.TriggerNavigation)
+            }
+        },
+        canSave = state.canSave && !state.navTriggered,
+        isEditMode = state.isEditMode,
+        onDeleteClick = if (state.isEditMode) {
+            { viewModel.onEvent(PlannedPaymentEntryEvent.ShowDeleteDialog(true)) }
+        } else null
     ) { innerPadding ->
         PlannedPaymentFormBody(
-            selectedTemplate = linkedTemplate,
-            onTemplateClick = { showTemplateSheet = true },
-            title = title,
-            onTitleChange = { title = it },
-            transactionType = transactionType,
-            onTypeSelected = { type ->
-                transactionType = type
-            },
-            amountText = amountText,
-            currency = currency,
-            onCurrencyClick = { showCurrencySheet = true },
-            onAmountClick = { showNumpad = true },
+            selectedTemplate = state.linkedTemplate,
+            onTemplateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(true)) },
+            title = state.title,
+            onTitleChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTitle(it)) },
+            transactionType = state.transactionType,
+            onTypeSelected = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTransactionType(it)) },
+            amountText = state.amountText,
+            currency = state.currency,
+            onCurrencyClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(true)) },
+            onAmountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowNumpad(true)) },
             scheduleSummary = PlannedPaymentService.buildScheduleSummary(
-                startDateMillis,
-                RecurrenceRule(recurrenceType, recurrenceInterval, dayOfWeek, dayOfMonth, cronExpression)
+                state.startDateMillis,
+                RecurrenceRule(state.recurrenceType, state.recurrenceInterval, state.dayOfWeek, state.dayOfMonth, state.cronExpression)
             ),
-            onScheduleClick = { showScheduleBuilder = true },
-            selectedAccount = accounts.find { it.id == selectedAccountId },
-            onAccountClick = { showAccountSheet = true },
-            targetAccount = accounts.find { it.id == targetAccountId },
-            onTargetAccountClick = { showTargetAccountSheet = true },
-            categoryObj = categories.find { it.id == selectedCategoryId },
-            onCategoryClick = { showCategorySheet = true },
-            payee = payee,
-            onPayeeChange = { payee = it },
-            uniquePayees = uniquePayees,
-            noteUserPart = noteUserPart,
-            onNoteUserPartChange = { noteUserPart = it },
-            uniqueNotes = uniqueNotes,
-            selectedTagNames = selectedTagNames,
-            onShowTagSheet = { showTagSheet = true },
-            onRemoveTag = { tag -> selectedTagNames -= tag },
-            paymentMethod = paymentMethod,
-            onPaymentMethodClick = { showPaymentMethodSheet = true },
-            status = status,
-            onStatusClick = { showStatusSheet = true },
-            hasEndDate = hasEndDate,
-            onHasEndDateChange = { hasEndDate = it },
-            endDateMillis = endDateMillis,
-            onEndDateClick = { showEndDatePicker = true },
-            autoConfirm = autoConfirm,
-            onAutoConfirmChange = { autoConfirm = it },
+            onScheduleClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(true)) },
+            selectedAccount = state.accounts.find { it.id == state.selectedAccountId },
+            onAccountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
+            targetAccount = state.accounts.find { it.id == state.targetAccountId },
+            onTargetAccountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },
+            categoryObj = state.categories.find { it.id == state.selectedCategoryId },
+            onCategoryClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
+            payee = state.payee,
+            onPayeeChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetPayee(it)) },
+            uniquePayees = state.uniquePayees,
+            noteUserPart = state.noteUserPart,
+            onNoteUserPartChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetNote(it)) },
+            uniqueNotes = state.uniqueNotes,
+            selectedTagNames = state.selectedTagNames,
+            onShowTagSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
+            onRemoveTag = { tag -> viewModel.onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
+            paymentMethod = state.paymentMethod,
+            onPaymentMethodClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
+            status = state.status,
+            onStatusClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
+            hasEndDate = state.hasEndDate,
+            onHasEndDateChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
+            endDateMillis = state.endDateMillis,
+            onEndDateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) },
+            autoConfirm = state.autoConfirm,
+            onAutoConfirmChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
             allCurrencies = allCurrencies,
-            transferRate = transferRate,
-            targetCurrency = targetCurrency,
-            onTargetCurrencyClick = { showTargetCurrencySheet = true },
-            onTransferRateClick = { showExchangeRateDialog = true },
+            transferRate = state.transferRate,
+            targetCurrency = state.targetCurrency,
+            onTargetCurrencyClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
+            onTransferRateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
             modifier = Modifier.padding(innerPadding)
         )
 
         PlannedPaymentEntrySheets(
-            showScheduleBuilder = showScheduleBuilder,
-            onDismissScheduleBuilder = { showScheduleBuilder = false },
-            startDateMillis = startDateMillis,
-            recurrenceType = recurrenceType,
-            recurrenceInterval = recurrenceInterval,
-            dayOfWeek = dayOfWeek,
-            dayOfMonth = dayOfMonth,
-            cronExpression = cronExpression,
+            showScheduleBuilder = state.showScheduleBuilder,
+            onDismissScheduleBuilder = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false)) },
+            startDateMillis = state.startDateMillis,
+            recurrenceType = state.recurrenceType,
+            recurrenceInterval = state.recurrenceInterval,
+            dayOfWeek = state.dayOfWeek,
+            dayOfMonth = state.dayOfMonth,
+            cronExpression = state.cronExpression,
             onScheduleConfirm = { start, type, interval, dow, dom, cron ->
-                startDateMillis = start
-                recurrenceType = type
-                recurrenceInterval = interval
-                dayOfWeek = dow
-                dayOfMonth = dom
-                cronExpression = cron
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetRecurrence(start, type, interval, dow, dom, cron))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false))
             },
-            showEndDatePicker = showEndDatePicker,
-            onDismissEndDatePicker = { showEndDatePicker = false },
-            endDateMillis = endDateMillis,
-            onEndDateSelected = { endDateMillis = it; showEndDatePicker = false },
-            showCategorySheet = showCategorySheet,
-            onDismissCategorySheet = { showCategorySheet = false },
-            categories = categories,
-            selectedCategoryId = selectedCategoryId,
+            showEndDatePicker = state.showEndDatePicker,
+            onDismissEndDatePicker = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false)) },
+            endDateMillis = state.endDateMillis,
+            onEndDateSelected = { 
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetEndDate(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false))
+            },
+            showCategorySheet = state.showCategorySheet,
+            onDismissCategorySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false)) },
+            categories = state.categories,
+            selectedCategoryId = state.selectedCategoryId,
             onCategorySelected = { category ->
-                selectedCategoryId = category.id
-                showCategorySheet = false
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetCategoryId(category.id))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
             },
-            showAccountSheet = showAccountSheet,
-            onDismissAccountSheet = { showAccountSheet = false },
-            showTargetAccountSheet = showTargetAccountSheet,
-            onDismissTargetAccountSheet = { showTargetAccountSheet = false },
-            accounts = accounts,
-            selectedAccountId = selectedAccountId,
+            showAccountSheet = state.showAccountSheet,
+            onDismissAccountSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
+            showTargetAccountSheet = state.showTargetAccountSheet,
+            onDismissTargetAccountSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
+            accounts = state.accounts,
+            selectedAccountId = state.selectedAccountId,
             onAccountSelected = { account ->
-                account?.let { 
-                    selectedAccountId = it.id
-                    if (currency.isBlank() || currency == "USD") {
-                        currency = it.currencyCode
-                    }
-                }
-                showAccountSheet = false
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetAccountId(account?.id ?: ""))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
             },
-            targetAccountId = targetAccountId,
+            targetAccountId = state.targetAccountId,
             onTargetAccountSelected = { account ->
-                targetAccountId = account?.id
-                targetCurrency = account?.currencyCode
-                showTargetAccountSheet = false
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(account?.id))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
             },
-            showPaymentMethodSheet = showPaymentMethodSheet,
-            onDismissPaymentMethodSheet = { showPaymentMethodSheet = false },
-            paymentMethod = paymentMethod,
+            showPaymentMethodSheet = state.showPaymentMethodSheet,
+            onDismissPaymentMethodSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false)) },
+            paymentMethod = state.paymentMethod,
             onPaymentMethodSelected = { 
-                paymentMethod = it
-                showPaymentMethodSheet = false
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetPaymentMethod(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false))
             },
-            showTagSheet = showTagSheet,
-            onDismissTagSheet = { showTagSheet = false },
-            availableTags = availableTags,
-            selectedTagNames = selectedTagNames,
-            onTagsSelected = { selectedTagNames = it; showTagSheet = false },
-            showStatusSheet = showStatusSheet,
-            onDismissStatusSheet = { showStatusSheet = false },
-            status = status,
-            onStatusSelected = { status = it; showStatusSheet = false },
-            showNumpad = showNumpad,
-            onDismissNumpad = { showNumpad = false },
-            amountText = amountText,
-            transactionType = transactionType,
+            showTagSheet = state.showTagSheet,
+            onDismissTagSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false)) },
+            availableTags = state.availableTags,
+            selectedTagNames = state.selectedTagNames,
+            onTagsSelected = { 
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetTags(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false))
+            },
+            showStatusSheet = state.showStatusSheet,
+            onDismissStatusSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false)) },
+            status = state.status,
+            onStatusSelected = { 
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetStatus(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
+            },
+            showNumpad = state.showNumpad,
+            onDismissNumpad = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) },
+            amountText = state.amountText,
+            transactionType = state.transactionType,
             onAmountChanged = { newAmount ->
-                amountText = newAmount
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetAmountText(newAmount))
             },
             onTypeChangedFromNumpad = { newType ->
-                transactionType = when (newType) {
+                val type = when (newType) {
                     "income" -> 1
                     "transfer" -> 2
                     else -> 0
                 }
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetTransactionType(type))
             },
-            showCurrencySheet = showCurrencySheet,
-            onDismissCurrencySheet = { showCurrencySheet = false },
-            currency = currency,
-            onCurrencySelected = { currency = it },
-            showTargetCurrencySheet = showTargetCurrencySheet,
-            onDismissTargetCurrencySheet = { showTargetCurrencySheet = false },
-            targetCurrency = targetCurrency ?: "USD",
-            onTargetCurrencySelected = { targetCurrency = it },
+            showCurrencySheet = state.showCurrencySheet,
+            onDismissCurrencySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false)) },
+            currency = state.currency,
+            onCurrencySelected = { 
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetCurrency(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false))
+            },
+            showTargetCurrencySheet = state.showTargetCurrencySheet,
+            onDismissTargetCurrencySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false)) },
+            targetCurrency = state.targetCurrency ?: "USD",
+            onTargetCurrencySelected = { 
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false))
+            },
             allCurrencies = allCurrencies,
-            showTemplateSheet = showTemplateSheet,
-            onDismissTemplateSheet = { showTemplateSheet = false },
-            templates = templates,
+            showTemplateSheet = state.showTemplateSheet,
+            onDismissTemplateSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false)) },
+            templates = state.templates,
             onTemplateSelected = { template ->
-                if (template != null) {
-                    linkedTemplate = template
-                    title = template.name
-                    amountText = template.amount.toPlainString()
-                    currency = template.currency ?: "USD"
-                    transactionType = template.transactionType
-                    selectedAccountId = template.accountId ?: ""
-                    targetAccountId = template.targetAccountId
-                    targetCurrency = template.targetCurrency
-                    transferRate = template.transferRate
-                    selectedCategoryId = template.categoryId
-                    payee = template.payee ?: ""
-                    noteUserPart = template.note ?: ""
-                    paymentMethod = template.paymentMethod ?: "Cash"
-                    selectedTagNames = template.tags
-                } else {
-                    linkedTemplate = null
-                }
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetLinkedTemplate(template))
+                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false))
             },
-            showExchangeRateDialog = showExchangeRateDialog,
-            onDismissExchangeRateDialog = { showExchangeRateDialog = false },
-            exchangeRate = transferRate,
-            onExchangeRateChanged = { transferRate = it }
+            showExchangeRateDialog = state.showExchangeRateDialog,
+            onDismissExchangeRateDialog = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false)) },
+            exchangeRate = state.transferRate,
+            onExchangeRateChanged = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTransferRate(it)) }
         )
 
         AeonConfirmDeleteDialog(
-            show = showDeleteDialog,
+            show = state.showDeleteDialog,
             title = "Delete Planned Payment",
             message = "Are you sure you want to delete this planned payment?",
             onConfirm = {
-                viewModel.delete(plannedPaymentId!!, deleteTemplateWithPayment)
-                onBackClick()
+                viewModel.deletePlannedPayment {
+                    onBackClick()
+                }
             },
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowDeleteDialog(false)) },
             extraContent = {
                 Row(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Checkbox(
-                        checked = deleteTemplateWithPayment,
-                        onCheckedChange = { deleteTemplateWithPayment = it }
+                        checked = state.deleteTemplateWithPayment,
+                        onCheckedChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(it)) }
                     )
                     Text("Also delete linked template", style = MaterialTheme.typography.bodyMedium)
                 }

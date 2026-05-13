@@ -22,6 +22,10 @@ class AccountRepositoryImpl(
         accountDao.upsertAccount(account.toEntity(profileId))
     }
 
+    override suspend fun updateAccount(account: Account, profileId: Int) {
+        accountDao.upsertAccount(account.toEntity(profileId))
+    }
+
     override suspend fun deleteAccount(accountId: String) {
         accountDao.getAccountById(accountId)?.let {
             accountDao.deleteAccount(it)

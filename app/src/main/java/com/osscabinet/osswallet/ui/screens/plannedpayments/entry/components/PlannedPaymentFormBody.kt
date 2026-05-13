@@ -123,106 +123,60 @@ fun PlannedPaymentFormBody(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Amount Area
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onAmountClick() }
-                        .padding(vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                EntryAmountDisplay(
+                    amount = amountText,
+                    currency = currency,
+                    onCurrencyClick = { onCurrencyClick() },
+                    onAmountClick = onAmountClick,
+                    amountColor = amountColor,
+                    supportedCurrencies = allCurrencies
+                )
+
+                // Transfer-specific secondary amount
+                if (transactionType == 2 && targetAccount != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        onClick = onTransferRateClick,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                     ) {
-                        Box(modifier = Modifier.clickable { onCurrencyClick() }) {
-                            Text(
-                                text = currency,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = if (amountText.isEmpty()) "0.00" else amountText,
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-1).sp
-                            ),
-                            color = if (amountText.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor
-                        )
-                    }
-
-                    // Transfer-specific secondary amount
-                    if (transactionType == 2 && targetAccount != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Surface(
-                            onClick = onTransferRateClick,
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.CurrencyExchange,
-                                    contentDescription = "Edit Exchange Rate",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "1:${transferRate.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString()}",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            val amountValue = amountText.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
-                            val convertedAmount = amountValue.multiply(transferRate)
-                            val convertedText = convertedAmount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
-
-                            Box(modifier = Modifier.clickable { onTargetCurrencyClick() }) {
-                                Text(
-                                    text = targetCurrency ?: currency,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Icon(
+                                Icons.Rounded.CurrencyExchange,
+                                contentDescription = "Edit Exchange Rate",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                             Text(
-                                text = convertedText,
-                                style = MaterialTheme.typography.headlineLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = (-0.5).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                text = "1:${transferRate.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString()}",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    EntryAmountDisplay(
+                        amount = (amountText.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO).multiply(transferRate).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+                        currency = targetCurrency ?: currency,
+                        onCurrencyClick = { onTargetCurrencyClick() },
+                        onAmountClick = onAmountClick,
+                        amountColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        supportedCurrencies = allCurrencies
+                    )
                 }
             }
         }
 
         // Action Area: Template and Schedule (Side by side)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        EntryActionRow {
             EntryActionCard(
                 icon = Icons.Rounded.Bookmark,
                 label = "TEMPLATE",
@@ -245,10 +199,7 @@ fun PlannedPaymentFormBody(
         }
 
         // Row 2: Account + Category (or Target Account)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        EntryActionRow {
             EntryActionCard(
                 icon = getAccountIconByName(selectedAccount?.icon),
                 label = if (transactionType == 2) "FROM" else "ACCOUNT",
@@ -354,38 +305,12 @@ fun PlannedPaymentFormBody(
             )
 
             // End date toggle row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Rounded.EventBusy,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-                Text(
-                    text = "Set end date",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = hasEndDate,
-                    onCheckedChange = onHasEndDateChange,
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = Color(0xFF004D40)
-                    )
-                )
-            }
+            EntrySwitchRow(
+                label = "Set end date",
+                checked = hasEndDate,
+                onCheckedChange = onHasEndDateChange,
+                icon = Icons.Rounded.EventBusy
+            )
 
             if (hasEndDate) {
                 EntryDateCard(
@@ -397,44 +322,15 @@ fun PlannedPaymentFormBody(
             }
 
             // Auto-confirm toggle row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Rounded.AutoMode,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Auto-confirm",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                    Text(
-                        text = "Automatically log when due",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
-                Switch(
-                    checked = autoConfirm,
-                    onCheckedChange = onAutoConfirmChange,
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = Color(0xFF004D40)
-                    )
-                )
-            }
+            EntrySwitchRow(
+                label = "Auto-confirm",
+                checked = autoConfirm,
+                onCheckedChange = onAutoConfirmChange,
+                icon = Icons.Rounded.AutoMode,
+                subtitle = "Automatically log when due",
+                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

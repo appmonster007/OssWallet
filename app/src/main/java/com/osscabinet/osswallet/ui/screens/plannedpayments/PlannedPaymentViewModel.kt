@@ -78,7 +78,7 @@ class PlannedPaymentViewModel(
         viewModelScope.launch {
             val template = payment.template
             val request = TransactionRequest(
-                title = template.name,
+                name = template.name,
                 amount = template.amount,
                 transactionType = when(template.transactionType) {
                     1 -> "income"

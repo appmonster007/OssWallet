@@ -280,11 +280,11 @@ class DashboardViewModel(
                 else -> "expense"
             }
             val request = TransactionRequest(
-                title = template.name,
+                name = template.name,
                 amount = template.amount,
                 transactionType = typeStr,
                 accountId = template.accountId ?: "",
-                currency = template.currency ?: "USD",
+                currency = template.currency,
                 categoryId = template.categoryId,
                 tags = template.tags,
                 paymentMethod = template.paymentMethod ?: "Cash",

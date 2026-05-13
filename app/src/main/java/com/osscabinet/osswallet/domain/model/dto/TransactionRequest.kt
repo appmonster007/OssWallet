@@ -8,7 +8,7 @@ import java.math.BigDecimal
  * Groups recurring parameters to optimize function signatures and improve maintainability.
  */
 data class TransactionRequest(
-    val title: String,
+    val name: String,
     val amount: BigDecimal,
     val transactionType: String,
     val accountId: String,
@@ -23,6 +23,7 @@ data class TransactionRequest(
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED,
+    val sourcePlannedPaymentId: Long? = null,
     
     // Transfer-specific fields
     val isTransfer: Boolean = false,

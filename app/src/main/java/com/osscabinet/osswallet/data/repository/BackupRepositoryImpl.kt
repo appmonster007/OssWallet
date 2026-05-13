@@ -168,8 +168,8 @@ class BackupRepositoryImpl(
     )
 
     private suspend fun exportTransactions() = CsvProcessor.buildCsv(
-        listOf("id", "title", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "recurring", "profileId", "latitude", "longitude", "warrantyExpiration", "status"),
-        transactionDao.getAllTransactionsSync().map { listOf(it.id, it.title, it.amount, it.timestamp, it.currency, it.transactionType, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.payee, it.note, it.recurring, it.profileId, it.latitude, it.longitude, it.warrantyExpiration, it.status) }
+        listOf("id", "name", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "sourcePlannedPaymentId", "profileId", "latitude", "longitude", "warrantyExpiration", "status"),
+        transactionDao.getAllTransactionsSync().map { listOf(it.id, it.name, it.amount, it.timestamp, it.currency, it.transactionType, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.payee, it.note, it.sourcePlannedPaymentId, it.profileId, it.latitude, it.longitude, it.warrantyExpiration, it.status) }
     )
 
     private suspend fun exportCategories() = CsvProcessor.buildCsv(
@@ -303,11 +303,11 @@ class BackupRepositoryImpl(
     private suspend fun restoreTransactions(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
             transactionDao.insertTransaction(TransactionEntity(
-                id = p["id"]?.toLong() ?: 0, title = p["title"] ?: "", 
+                id = p["id"]?.toLong() ?: 0, name = p["name"] ?: "", 
                 amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, timestamp = p["timestamp"]?.toLongOrNull() ?: 0, 
                 currency = p["currency"] ?: "USD", transactionType = p["transactionType"] ?: "expense", accountId = p["accountId"] ?: "", 
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, tags = p["tags"] ?: "", paymentMethod = p["paymentMethod"] ?: "Cash", 
-                payee = p["payee"] ?: "", note = p["note"] ?: "", recurring = p["recurring"], profileId = p["profileId"]?.toIntOrNull() ?: 1, 
+                payee = p["payee"] ?: "", note = p["note"] ?: "", sourcePlannedPaymentId = p["sourcePlannedPaymentId"]?.toLongOrNull(), profileId = p["profileId"]?.toIntOrNull() ?: 1,
                 latitude = p["latitude"]?.toDoubleOrNull(), longitude = p["longitude"]?.toDoubleOrNull(), 
                 warrantyExpiration = p["warrantyExpiration"]?.toLongOrNull(), status = p["status"] ?: "cleared"
             ))
@@ -338,7 +338,7 @@ class BackupRepositoryImpl(
                 payee = p["payee"],
                 location = p["location"], 
                 paymentMethod = p["paymentMethod"], 
-                currency = p["currency"], 
+                currency = p["currency"] ?: "USD",
                 tags = p["tags"] ?: "",
                 isStarred = p["isStarred"]?.toBoolean() ?: false, 
                 displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0,

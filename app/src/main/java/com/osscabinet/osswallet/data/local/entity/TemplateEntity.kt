@@ -31,8 +31,12 @@ data class TemplateEntity(
     val note: String? = null,
     val payee: String? = null,
     val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val warrantyExpiration: Long? = null,
+    val transactionStatus: String = "CLEARED",
     val paymentMethod: String? = null,
-    val currency: String? = null,
+    val currency: String,
     val tags: String = "", // Comma-separated tags
     val isStarred: Boolean = false,
     val displayOrder: Int = 0,

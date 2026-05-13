@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -25,6 +26,11 @@ data class TemplateEntryState(
     val note: String = "",
     val payee: String = "",
     val location: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val isWarrantyEnabled: Boolean = false,
+    val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
+    val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: String = "Cash",
     val tags: List<String> = emptyList(),
 
@@ -33,10 +39,13 @@ data class TemplateEntryState(
     val showTargetAccountSheet: Boolean = false,
     val showCategorySheet: Boolean = false,
     val showPaymentMethodSheet: Boolean = false,
+    val showStatusSheet: Boolean = false,
     val showTagSheet: Boolean = false,
     val showCurrencySheet: Boolean = false,
     val showTargetCurrencySheet: Boolean = false,
     val showExchangeRateDialog: Boolean = false,
+    val showWarrantyDatePicker: Boolean = false,
+    val showLocationSheet: Boolean = false,
     val isNumpadVisible: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val isLinkedToPlannedPayment: Boolean = false,

@@ -45,38 +45,8 @@ fun TemplateEntryScreen(
         } else null
     ) { innerPadding ->
         TemplateFormBody(
-            name = state.name,
-            onNameChange = { viewModel.onEvent(TemplateEntryEvent.SetName(it)) },
-            transactionType = state.transactionType,
-            onTypeSelected = { viewModel.onEvent(TemplateEntryEvent.SetTransactionType(it)) },
-            amount = state.amount,
-            currency = state.currency,
-            onAmountClick = { viewModel.onEvent(TemplateEntryEvent.ShowNumpad(true)) },
-            selectedAccount = state.selectedAccount,
-            onAccountClick = { viewModel.onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
-            targetAccount = state.selectedTargetAccount,
-            onTargetAccountClick = { viewModel.onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) },
-            categoryName = state.categoryName,
-            categoryObj = state.selectedCategory,
-            onCategoryClick = { viewModel.onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
-            payee = state.payee,
-            onPayeeChange = { viewModel.onEvent(TemplateEntryEvent.SetPayee(it)) },
-            uniquePayees = state.uniquePayees,
-            tags = state.tags,
-            onShowTagSheet = { viewModel.onEvent(TemplateEntryEvent.ShowTagSheet(true)) },
-            onRemoveTag = { tag -> viewModel.onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
-            paymentMethod = state.paymentMethod,
-            onPaymentMethodClick = { viewModel.onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(true)) },
-            location = state.location,
-            onLocationChange = { viewModel.onEvent(TemplateEntryEvent.SetLocation(it)) },
-            note = state.note,
-            onNoteChange = { viewModel.onEvent(TemplateEntryEvent.SetNote(it)) },
-            uniqueNotes = state.uniqueNotes,
-            transferRate = state.transferRate,
-            targetCurrency = state.targetCurrency,
-            onTargetCurrencyClick = { viewModel.onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
-            onTransferRateClick = { viewModel.onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
-            onCurrencyClick = { viewModel.onEvent(TemplateEntryEvent.ShowCurrencySheet(true)) },
+            state = state,
+            onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
 
@@ -102,7 +72,7 @@ fun TemplateEntryScreen(
             accounts = state.accounts,
             selectedAccount = state.selectedAccount,
             onAccountSelected = {
-                viewModel.onEvent(TemplateEntryEvent.SetAccount(it.id))
+                viewModel.onEvent(TemplateEntryEvent.SetAccount(it?.id))
                 viewModel.onEvent(TemplateEntryEvent.ShowAccountSheet(false))
             },
             targetAccount = state.selectedTargetAccount,

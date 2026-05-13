@@ -176,7 +176,7 @@ private fun SuggestionListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = pattern.payee.ifEmpty { pattern.title },
+                    text = pattern.payee.ifEmpty { pattern.name },
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f)
@@ -214,7 +214,7 @@ private fun SuggestionListItem(
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         val categoryName = categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
                         DetailItem("Category", categoryName, Modifier.weight(1f))
-                        DetailItem("Account", pattern.accountId, Modifier.weight(1f))
+                        DetailItem("Account", pattern.accountId ?: "Outside Wallet", Modifier.weight(1f))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -297,7 +297,7 @@ private fun DetailItem(label: String, value: String, modifier: Modifier = Modifi
 private fun SmartSuggestionsScreenPreview() {
     val patterns = listOf(
         DiscoveredPattern(
-            title = "Netflix Subscription",
+            name = "Netflix Subscription",
             payee = "Netflix",
             categoryId = 1,
             accountId = "Savings",
@@ -316,7 +316,7 @@ private fun SmartSuggestionsScreenPreview() {
             lastDate = System.currentTimeMillis()
         ),
         DiscoveredPattern(
-            title = "Weekly Groceries",
+            name = "Weekly Groceries",
             payee = "Whole Foods",
             categoryId = 2,
             accountId = "Checking",

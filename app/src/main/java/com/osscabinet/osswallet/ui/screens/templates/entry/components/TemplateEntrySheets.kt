@@ -23,7 +23,9 @@ import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.StatusSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 
 @Composable
 fun TemplateEntrySheets(
@@ -40,7 +42,7 @@ fun TemplateEntrySheets(
     onDismissTargetAccountSheet: () -> Unit = {},
     accounts: List<Account>,
     selectedAccount: Account?,
-    onAccountSelected: (Account) -> Unit,
+    onAccountSelected: (Account?) -> Unit,
     targetAccount: Account? = null,
     onTargetAccountSelected: (Account?) -> Unit = {},
     showCategorySheet: Boolean,
@@ -52,6 +54,10 @@ fun TemplateEntrySheets(
     onDismissPaymentMethodSheet: () -> Unit,
     paymentMethod: String,
     onPaymentMethodSelected: (String) -> Unit,
+    showStatusSheet: Boolean = false,
+    onDismissStatusSheet: () -> Unit = {},
+    transactionStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
+    onStatusSelected: (com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = {},
     showTagSheet: Boolean,
     onDismissTagSheet: () -> Unit,
     allTags: List<Tag>,
@@ -71,7 +77,16 @@ fun TemplateEntrySheets(
     showExchangeRateDialog: Boolean = false,
     onDismissExchangeRateDialog: () -> Unit = {},
     exchangeRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
-    onExchangeRateChanged: (java.math.BigDecimal) -> Unit = {}
+    onExchangeRateChanged: (java.math.BigDecimal) -> Unit = {},
+    showWarrantyDatePicker: Boolean = false,
+    onDismissWarrantyDatePicker: () -> Unit = {},
+    warrantyExpirationMillis: Long = System.currentTimeMillis(),
+    onWarrantyDateSelected: (Long) -> Unit = {},
+    showLocationSheet: Boolean = false,
+    onDismissLocationSheet: () -> Unit = {},
+    latitude: Double? = null,
+    longitude: Double? = null,
+    onLocationSelected: (String, Double?, Double?) -> Unit = { _, _, _ -> }
 ) {
     if (isNumpadVisible) {
         com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet(
@@ -87,17 +102,18 @@ fun TemplateEntrySheets(
     if (showAccountSheet) {
         TransactionAccountSelection(
             accounts = accounts,
-            selectedAccountId = selectedAccount?.id ?: "",
-            onAccountSelected = { it?.let { onAccountSelected(it) } },
+            selectedAccountId = selectedAccount?.id,
+            onAccountSelected = onAccountSelected,
             onDismiss = onDismissAccountSheet,
-            title = "Select Account"
+            title = "Select Account",
+            allowOutsideWallet = true
         )
     }
 
     if (showTargetAccountSheet) {
         TransactionAccountSelection(
             accounts = accounts,
-            selectedAccountId = targetAccount?.id ?: "",
+            selectedAccountId = targetAccount?.id,
             onAccountSelected = onTargetAccountSelected,
             onDismiss = onDismissTargetAccountSheet,
             title = "Select Target Account",
@@ -122,6 +138,14 @@ fun TemplateEntrySheets(
         )
     }
 
+    if (showStatusSheet) {
+        StatusSelection(
+            selectedStatus = transactionStatus,
+            onStatusSelected = onStatusSelected,
+            onDismiss = onDismissStatusSheet
+        )
+    }
+
     if (showTagSheet) {
         TagSelection(
             tags = allTags,
@@ -135,85 +159,20 @@ fun TemplateEntrySheets(
     }
 
     if (showCurrencySheet) {
-        com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog(onDismissRequest = onDismissCurrencySheet) {
-            com.osscabinet.ossWallet.ui.components.AeonSelectionScreen(
-                title = "Select Currency",
-                onBack = onDismissCurrencySheet
-            ) { padding ->
-                val allCurrencies = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies()
-                var query by remember { mutableStateOf("") }
-                val filtered = remember(query) {
-                    if (query.isBlank()) allCurrencies
-                    else allCurrencies.filter { it.contains(query, ignoreCase = true) }
-                }
-
-                Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
-                    com.osscabinet.ossWallet.ui.components.AeonSearchField(
-                        query = query,
-                        onQueryChange = { query = it },
-                        placeholder = "Search currency..."
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            com.osscabinet.ossWallet.ui.components.AeonHybridSelector(
-                                items = filtered,
-                                mode = com.osscabinet.ossWallet.ui.components.AeonSelectMode.SINGLE,
-                                selectedIds = setOf(currency),
-                                onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { onCurrencySelected(it) }
-                                    onDismissCurrencySheet()
-                                },
-                                idMapper = { it },
-                                labelMapper = { it },
-                                iconMapper = { Icons.Rounded.CurrencyExchange }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        AeonCurrencySelection(
+            selectedCurrency = currency,
+            onCurrencySelected = onCurrencySelected,
+            onDismiss = onDismissCurrencySheet
+        )
     }
 
     if (showTargetCurrencySheet) {
-        com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog(onDismissRequest = onDismissTargetCurrencySheet) {
-            com.osscabinet.ossWallet.ui.components.AeonSelectionScreen(
-                title = "Select Target Currency",
-                onBack = onDismissTargetCurrencySheet
-            ) { padding ->
-                val allCurrencies = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies()
-                var query by remember { mutableStateOf("") }
-                val filtered = remember(query) {
-                    if (query.isBlank()) allCurrencies
-                    else allCurrencies.filter { it.contains(query, ignoreCase = true) }
-                }
-
-                Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
-                    com.osscabinet.ossWallet.ui.components.AeonSearchField(
-                        query = query,
-                        onQueryChange = { query = it },
-                        placeholder = "Search currency..."
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            com.osscabinet.ossWallet.ui.components.AeonHybridSelector(
-                                items = filtered,
-                                mode = com.osscabinet.ossWallet.ui.components.AeonSelectMode.SINGLE,
-                                selectedIds = setOf(targetCurrency),
-                                onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { onTargetCurrencySelected(it) }
-                                    onDismissTargetCurrencySheet()
-                                },
-                                idMapper = { it },
-                                labelMapper = { it },
-                                iconMapper = { Icons.Rounded.CurrencyExchange }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        AeonCurrencySelection(
+            selectedCurrency = targetCurrency,
+            onCurrencySelected = onTargetCurrencySelected,
+            onDismiss = onDismissTargetCurrencySheet,
+            title = "Select Target Currency"
+        )
     }
 
     if (showExchangeRateDialog) {
@@ -221,6 +180,24 @@ fun TemplateEntrySheets(
             initialRate = exchangeRate,
             onConfirm = onExchangeRateChanged,
             onDismiss = onDismissExchangeRateDialog
+        )
+    }
+
+    if (showWarrantyDatePicker) {
+        com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog(
+            selectedDateMillis = warrantyExpirationMillis,
+            onDateSelected = onWarrantyDateSelected,
+            onDismiss = onDismissWarrantyDatePicker
+        )
+    }
+
+    if (showLocationSheet) {
+        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.LocationSelection(
+            currentCoords = if (latitude != null && longitude != null) latitude to longitude else null,
+            onLocationSelected = { coords ->
+                onLocationSelected("", coords?.first, coords?.second)
+            },
+            onDismiss = onDismissLocationSheet
         )
     }
 }

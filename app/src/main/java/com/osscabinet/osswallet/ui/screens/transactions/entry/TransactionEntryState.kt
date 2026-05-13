@@ -15,7 +15,7 @@ import java.math.BigDecimal
  */
 data class TransactionEntryState(
     // Core form fields
-    val title: String = "",
+    val name: String = "",
     val amount: String = "",
     val selectedCategoryId: Long = 1002L,
     val selectedTags: List<String> = emptyList(),
@@ -68,6 +68,8 @@ data class TransactionEntryState(
     val showSplitSheet: Boolean = false,
     val showSplitCategorySheet: Int? = null,
     val isNumpadVisible: Boolean = false,
+    val showCurrencySheet: Boolean = false,
+    val showTargetCurrencySheet: Boolean = false,
 
     // External data (populated from repositories)
     val transactions: List<Transaction> = emptyList(),

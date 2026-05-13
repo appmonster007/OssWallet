@@ -44,7 +44,7 @@ class AccountUseCases(
             if (amount != BigDecimal.ZERO) {
                 transactionRepository.insertTransaction(
                     Transaction(
-                        title = "Initial Balance",
+                        name = "Initial Balance",
                         accountId = accountId,
                         amount = amount,
                         currency = curr,

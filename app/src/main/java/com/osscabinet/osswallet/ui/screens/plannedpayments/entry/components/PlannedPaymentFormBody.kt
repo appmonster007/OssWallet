@@ -1,338 +1,53 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.ui.components.getAccountIconByName
-import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 
+/**
+ * Main content layout for planned payment entry screen.
+ * Following the structure and component reuse of TransactionFormBody.
+ */
 @Composable
 fun PlannedPaymentFormBody(
-    selectedTemplate: Template?,
-    onTemplateClick: () -> Unit,
-    title: String,
-    onTitleChange: (String) -> Unit,
-    transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
-    onTypeSelected: (Int) -> Unit,
-    amountText: String,
-    currency: String,
-    onCurrencyClick: () -> Unit,
-    onAmountClick: () -> Unit,
-    scheduleSummary: String,
-    onScheduleClick: () -> Unit,
-    selectedAccount: Account?,
-    onAccountClick: () -> Unit,
-    targetAccount: Account? = null,
-    onTargetAccountClick: () -> Unit = {},
-    categoryObj: Category?,
-    onCategoryClick: () -> Unit,
-    payee: String,
-    onPayeeChange: (String) -> Unit,
-    uniquePayees: List<String>,
-    noteUserPart: String,
-    onNoteUserPartChange: (String) -> Unit,
-    uniqueNotes: List<String>,
-    selectedTagNames: List<String>,
-    onShowTagSheet: () -> Unit,
-    onRemoveTag: (String) -> Unit,
-    paymentMethod: String,
-    onPaymentMethodClick: () -> Unit,
-    status: PlannedPaymentStatus,
-    onStatusClick: () -> Unit,
-    hasEndDate: Boolean,
-    onHasEndDateChange: (Boolean) -> Unit,
-    endDateMillis: Long,
-    onEndDateClick: () -> Unit,
-    autoConfirm: Boolean,
-    onAutoConfirmChange: (Boolean) -> Unit,
-    allCurrencies: List<String>,
-    transferRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
-    targetCurrency: String? = null,
-    onTargetCurrencyClick: () -> Unit = {},
-    onTransferRateClick: () -> Unit = {},
+    state: PlannedPaymentEntryState,
+    onEvent: (PlannedPaymentEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val amountColor = when (transactionType) {
-        1 -> Color(0xFF004D40)
-        0 -> Color(0xFFB3261E)
-        else -> MaterialTheme.colorScheme.primary
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Header card: type selector + amount
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-            shadowElevation = 0.dp
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                EntryTypeSelector(
-                    selectedType = transactionType,
-                    onTypeSelected = onTypeSelected,
-                    types = listOf(
-                        Triple(Icons.Rounded.Remove, "Expense", 0),
-                        Triple(Icons.Rounded.Add, "Income", 1),
-                        Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
-                    ),
-                    selectedColor = amountColor,
-                    itemWidth = 100.dp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Amount Area
-                EntryAmountDisplay(
-                    amount = amountText,
-                    currency = currency,
-                    onCurrencyClick = { onCurrencyClick() },
-                    onAmountClick = onAmountClick,
-                    amountColor = amountColor,
-                    supportedCurrencies = allCurrencies
-                )
-
-                // Transfer-specific secondary amount
-                if (transactionType == 2 && targetAccount != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Surface(
-                        onClick = onTransferRateClick,
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.CurrencyExchange,
-                                contentDescription = "Edit Exchange Rate",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "1:${transferRate.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString()}",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    EntryAmountDisplay(
-                        amount = (amountText.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO).multiply(transferRate).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
-                        currency = targetCurrency ?: currency,
-                        onCurrencyClick = { onTargetCurrencyClick() },
-                        onAmountClick = onAmountClick,
-                        amountColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        supportedCurrencies = allCurrencies
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-                )
-
-                EntryEditorialInput(
-                    value = title,
-                    onValueChange = onTitleChange,
-                    label = "PAYMENT NAME",
-                    icon = Icons.Rounded.Title
-                )
-            }
-        }
-
-        // Action Area: Template and Schedule (Side by side)
-        EntryActionRow {
-            EntryActionCard(
-                icon = Icons.Rounded.Bookmark,
-                label = "TEMPLATE",
-                value = selectedTemplate?.name ?: "None",
-                onClick = onTemplateClick,
-                modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
+            // Header: Type selector + Amount input + Title
+            PlannedPaymentHeaderCard(
+                state = state,
+                onEvent = onEvent
             )
 
-            EntryActionCard(
-                icon = Icons.Rounded.DateRange,
-                label = "SCHEDULE",
-                value = scheduleSummary,
-                onClick = onScheduleClick,
-                modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.secondary
+            // Action cards row: Template, Schedule, Account, Category
+            PlannedPaymentActionCards(
+                state = state,
+                onEvent = onEvent
+            )
+
+            // Metadata: Note, Payee, Location, Warranty, Tags
+            PlannedPaymentDetailSection(
+                state = state,
+                onEvent = onEvent
             )
         }
 
-        // Row 2: Account + Category (or Target Account)
-        EntryActionRow {
-            EntryActionCard(
-                icon = getAccountIconByName(selectedAccount?.icon),
-                label = if (transactionType == 2) "FROM" else "ACCOUNT",
-                value = selectedAccount?.name ?: "Select",
-                onClick = onAccountClick,
-                modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
-            )
-
-            if (transactionType == 2) {
-                EntryActionCard(
-                    icon = getAccountIconByName(targetAccount?.icon),
-                    label = "TO",
-                    value = targetAccount?.name ?: "Select",
-                    onClick = onTargetAccountClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
-            } else {
-                EntryActionCard(
-                    icon = getIconByName(categoryObj?.iconName),
-                    label = "CATEGORY",
-                    value = categoryObj?.name ?: "None",
-                    onClick = onCategoryClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
-            }
-        }
-
-        // Details card
-        EntrySection(
-            title = "PAYMENT DETAILS",
-            icon = Icons.Rounded.MoreHoriz
-        ) {
-            EntryEditorialInput(
-                value = payee,
-                onValueChange = onPayeeChange,
-                label = "PAYEE",
-                icon = Icons.Rounded.Person,
-                suggestions = uniquePayees
-            )
-            EntryEditorialInput(
-                value = noteUserPart,
-                onValueChange = onNoteUserPartChange,
-                label = "NOTES",
-                icon = Icons.AutoMirrored.Rounded.Notes,
-                suggestions = uniqueNotes,
-                maxLines = 4
-            )
-
-            EntryTagSection(
-                selectedTags = selectedTagNames,
-                onShowTagSheet = onShowTagSheet,
-                onRemoveTag = onRemoveTag
-            )
-
-            // Row for Payment Method and Status
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val methods = listOf(
-                    "Cash" to Icons.Rounded.Payments,
-                    "Credit Card" to Icons.Rounded.CreditCard,
-                    "Debit Card" to Icons.Rounded.CreditCard,
-                    "Bank Transfer" to Icons.Rounded.AccountBalance,
-                    "Digital Wallet" to Icons.Rounded.Wallet,
-                    "Mobile Payment" to Icons.Rounded.Contactless,
-                    "Check" to Icons.Rounded.Description,
-                    "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
-                    "Other" to Icons.Rounded.MoreHoriz
-                )
-                val paymentIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
-
-                EntryActionChip(
-                    icon = paymentIcon,
-                    label = paymentMethod,
-                    onClick = onPaymentMethodClick,
-                    modifier = Modifier.weight(1f)
-                )
-
-                val (statusIcon, statusColor) = when (status) {
-                    PlannedPaymentStatus.ACTIVE -> Icons.Rounded.CheckCircle to Color(0xFF4CAF50)
-                    PlannedPaymentStatus.PAUSED -> Icons.Rounded.PauseCircle to Color(0xFFFFC107)
-                    PlannedPaymentStatus.COMPLETED -> Icons.Rounded.CheckCircle to Color(0xFF2196F3)
-                    PlannedPaymentStatus.CANCELLED -> Icons.Rounded.Cancel to Color(0xFFF44336)
-                }
-
-                EntryActionChip(
-                    icon = statusIcon,
-                    label = status.name.lowercase().replaceFirstChar { it.uppercase() },
-                    onClick = onStatusClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = statusColor.copy(alpha = 0.1f),
-                    iconTint = statusColor
-                )
-            }
-
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            )
-
-            // End date toggle row
-            EntrySwitchRow(
-                label = "Set end date",
-                checked = hasEndDate,
-                onCheckedChange = onHasEndDateChange,
-                icon = Icons.Rounded.EventBusy
-            )
-
-            if (hasEndDate) {
-                EntryDateCard(
-                    icon = Icons.Rounded.CalendarMonth,
-                    label = "END DATE",
-                    dateMillis = endDateMillis,
-                    onClick = onEndDateClick
-                )
-            }
-
-            // Auto-confirm toggle row
-            EntrySwitchRow(
-                label = "Auto-confirm",
-                checked = autoConfirm,
-                onCheckedChange = onAutoConfirmChange,
-                icon = Icons.Rounded.AutoMode,
-                subtitle = "Automatically log when due",
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
-            )
-        }
+        // Bottom sheets and dialogs are handled in the Screen level for PlannedPayment
+        // but we could also move them here if we wanted to match TransactionFormBody exactly.
+        // For now, keeping them in Screen to avoid moving too much logic at once.
     }
 }

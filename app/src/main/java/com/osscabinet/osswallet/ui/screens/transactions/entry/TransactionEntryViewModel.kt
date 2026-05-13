@@ -162,7 +162,7 @@ class TransactionEntryViewModel(
         }
 
         _state.value = _state.value.copy(
-            title = transaction.title,
+            name = transaction.name,
             amount = transaction.amount.abs().toPlainString(),
             selectedCategoryId = transaction.categoryId,
             selectedTags = transaction.tags,
@@ -205,7 +205,7 @@ class TransactionEntryViewModel(
         }
 
         _state.value = currentState.copy(
-            title = prefill.title,
+            name = prefill.name,
             amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString()
                 ?: prefill.amount,
             selectedCategoryId = prefill.categoryId,
@@ -229,7 +229,7 @@ class TransactionEntryViewModel(
             targetAccount = targetAcc,
             targetCurrency = prefill.targetCurrency ?: targetAcc?.currencyCode ?: "",
             exchangeRate = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE,
-            selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.title else currentState.selectedTemplateName,
+            selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.name else currentState.selectedTemplateName,
             prefillDto = prefill,
             isSplitMode = prefill.isSplitMode,
             showSplitSheet = prefill.isSplitMode,
@@ -255,7 +255,7 @@ class TransactionEntryViewModel(
      */
     fun onEvent(event: TransactionEntryEvent) {
         when (event) {
-            is TransactionEntryEvent.SetTitle -> update { it.copy(title = event.title) }
+            is TransactionEntryEvent.SetName -> update { it.copy(name = event.name) }
             is TransactionEntryEvent.SetAmount -> update { it.copy(amount = event.amount) }
             is TransactionEntryEvent.SetCategory -> update {
                 it.copy(selectedCategoryId = event.categoryId)
@@ -438,6 +438,8 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.ShowSplitSheet -> update { it.copy(showSplitSheet = event.show) }
             is TransactionEntryEvent.ShowSplitCategorySheet -> update { it.copy(showSplitCategorySheet = event.splitIndex) }
             is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show) }
+            is TransactionEntryEvent.ShowCurrencySheet -> update { it.copy(showCurrencySheet = event.show) }
+            is TransactionEntryEvent.ShowTargetCurrencySheet -> update { it.copy(showTargetCurrencySheet = event.show) }
 
             // Navigation
             is TransactionEntryEvent.TriggerNavigation -> update { it.copy(navTriggered = true) }
@@ -507,7 +509,7 @@ class TransactionEntryViewModel(
         }
 
         return TransactionRequest(
-            title = currentState.title.ifBlank {
+            name = currentState.name.ifBlank {
                 currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction"
             },
             amount = if (currentState.isIncome || currentState.isTransfer) {
@@ -534,6 +536,7 @@ class TransactionEntryViewModel(
                 currentState.warrantyExpirationMillis
             } else null,
             status = currentState.status,
+            sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
             isTransfer = currentState.isTransfer,
             targetAccountId = currentState.targetAccount?.id,
             targetCurrency = currentState.targetCurrency,
@@ -568,7 +571,7 @@ class TransactionEntryViewModel(
                         amount = if (currentState.isIncome) splitAmount else splitAmount.negate(),
                         categoryId = split.categoryId ?: currentState.selectedCategoryId,
                         note = split.note,
-                        title = currentState.title.ifBlank {
+                        name = currentState.name.ifBlank {
                             currentState.categories.find { it.id == (split.categoryId ?: currentState.selectedCategoryId) }?.name ?: "Transaction"
                         }
                     )
@@ -654,7 +657,7 @@ class TransactionEntryViewModel(
         }
 
         return TransactionRequest(
-            title = currentState.title,
+            name = currentState.name,
             amount = BigDecimal.ZERO, // To be set by caller
             transactionType = when {
                 currentState.isIncome -> "income"
@@ -675,6 +678,7 @@ class TransactionEntryViewModel(
                 currentState.warrantyExpirationMillis
             } else null,
             status = currentState.status,
+            sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
             isTransfer = currentState.isTransfer,
             targetAccountId = currentState.targetAccount?.id,
             targetCurrency = currentState.targetCurrency,

@@ -54,51 +54,8 @@ fun PlannedPaymentEntryScreen(
         } else null
     ) { innerPadding ->
         PlannedPaymentFormBody(
-            selectedTemplate = state.linkedTemplate,
-            onTemplateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(true)) },
-            title = state.title,
-            onTitleChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTitle(it)) },
-            transactionType = state.transactionType,
-            onTypeSelected = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTransactionType(it)) },
-            amountText = state.amountText,
-            currency = state.currency,
-            onCurrencyClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(true)) },
-            onAmountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowNumpad(true)) },
-            scheduleSummary = PlannedPaymentService.buildScheduleSummary(
-                state.startDateMillis,
-                RecurrenceRule(state.recurrenceType, state.recurrenceInterval, state.dayOfWeek, state.dayOfMonth, state.cronExpression)
-            ),
-            onScheduleClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(true)) },
-            selectedAccount = state.accounts.find { it.id == state.selectedAccountId },
-            onAccountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
-            targetAccount = state.accounts.find { it.id == state.targetAccountId },
-            onTargetAccountClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },
-            categoryObj = state.categories.find { it.id == state.selectedCategoryId },
-            onCategoryClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
-            payee = state.payee,
-            onPayeeChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetPayee(it)) },
-            uniquePayees = state.uniquePayees,
-            noteUserPart = state.noteUserPart,
-            onNoteUserPartChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetNote(it)) },
-            uniqueNotes = state.uniqueNotes,
-            selectedTagNames = state.selectedTagNames,
-            onShowTagSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
-            onRemoveTag = { tag -> viewModel.onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
-            paymentMethod = state.paymentMethod,
-            onPaymentMethodClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
-            status = state.status,
-            onStatusClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
-            hasEndDate = state.hasEndDate,
-            onHasEndDateChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
-            endDateMillis = state.endDateMillis,
-            onEndDateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) },
-            autoConfirm = state.autoConfirm,
-            onAutoConfirmChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
-            allCurrencies = allCurrencies,
-            transferRate = state.transferRate,
-            targetCurrency = state.targetCurrency,
-            onTargetCurrencyClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
-            onTransferRateClick = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
+            state = state,
+            onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
 
@@ -137,7 +94,7 @@ fun PlannedPaymentEntryScreen(
             accounts = state.accounts,
             selectedAccountId = state.selectedAccountId,
             onAccountSelected = { account ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetAccountId(account?.id ?: ""))
+                viewModel.onEvent(PlannedPaymentEntryEvent.SetAccountId(account?.id))
                 viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
             },
             targetAccountId = state.targetAccountId,
@@ -169,7 +126,7 @@ fun PlannedPaymentEntryScreen(
             },
             showNumpad = state.showNumpad,
             onDismissNumpad = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) },
-            amountText = state.amountText,
+            amountText = state.amount,
             transactionType = state.transactionType,
             onAmountChanged = { newAmount ->
                 viewModel.onEvent(PlannedPaymentEntryEvent.SetAmountText(newAmount))

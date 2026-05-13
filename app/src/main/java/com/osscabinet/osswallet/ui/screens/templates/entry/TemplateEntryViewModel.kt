@@ -73,6 +73,11 @@ class TemplateEntryViewModel(
                         note = prefill.note ?: "",
                         payee = prefill.payee ?: "",
                         location = prefill.location ?: "",
+                        latitude = prefill.latitude,
+                        longitude = prefill.longitude,
+                        warrantyExpirationMillis = prefill.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        isWarrantyEnabled = prefill.warrantyExpiration != null,
+                        transactionStatus = prefill.status,
                         paymentMethod = prefill.paymentMethod ?: "Cash",
                         tags = prefill.tags
                     )
@@ -104,6 +109,11 @@ class TemplateEntryViewModel(
                         note = template.note ?: "",
                         payee = template.payee ?: "",
                         location = template.location ?: "",
+                        latitude = template.latitude,
+                        longitude = template.longitude,
+                        warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        isWarrantyEnabled = template.warrantyExpiration != null,
+                        transactionStatus = template.transactionStatus,
                         paymentMethod = template.paymentMethod ?: "Cash",
                         tags = template.tags
                     )
@@ -162,7 +172,16 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
-            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(location = event.location) }
+            is TemplateEntryEvent.SetLocation -> _state.update { 
+                it.copy(
+                    location = event.location,
+                    latitude = event.lat,
+                    longitude = event.lng
+                ) 
+            }
+            is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
+            is TemplateEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
+            is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
             is TemplateEntryEvent.AddTag -> {
@@ -188,6 +207,9 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
             is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
             is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
+            is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update { it.copy(showWarrantyDatePicker = event.show) }
+            is TemplateEntryEvent.ShowLocationSheet -> _state.update { it.copy(showLocationSheet = event.show) }
+            is TemplateEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is TemplateEntryEvent.ShowNumpad -> _state.update { it.copy(isNumpadVisible = event.show) }
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -258,8 +280,12 @@ class TemplateEntryViewModel(
                 note = s.note.ifBlank { null },
                 payee = s.payee.ifBlank { null },
                 location = s.location.ifBlank { null },
+                latitude = s.latitude,
+                longitude = s.longitude,
+                warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
+                transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod.ifBlank { null },
-                currency = s.currency.ifBlank { null },
+                currency = s.currency.ifBlank { "USD" },
                 tags = s.tags,
                 profileId = settingsRepository.currentProfileId.first()
             )

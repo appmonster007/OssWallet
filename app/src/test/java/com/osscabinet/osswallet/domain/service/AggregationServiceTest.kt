@@ -25,7 +25,7 @@ class AggregationServiceTest {
         categoryId: Long = 1001L
     ) = Transaction(
         id = id,
-        title = "Test",
+        name = "Test",
         amount = amount,
         timestamp = System.currentTimeMillis(),
         currency = currency,

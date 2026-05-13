@@ -45,12 +45,12 @@ class TransactionManager(
     ): Long {
         val targetAccountId = request.targetAccountId
         val sourceTransaction = (existingTransaction ?: Transaction(
-            title = "", amount = BigDecimal.ZERO,
+            name = "", amount = BigDecimal.ZERO,
             transactionType = "expense", accountId = request.accountId,
             currency = request.currency, timestamp = request.timestamp,
             categoryId = 1003L
         )).copy(
-            title = request.title.ifBlank { "Transfer" },
+            name = request.name.ifBlank { "Transfer" },
             amount = request.amount.negate(),
             transactionType = "expense",
             accountId = request.accountId,
@@ -63,7 +63,8 @@ class TransactionManager(
             latitude = request.latitude,
             longitude = request.longitude,
             warrantyExpiration = request.warrantyExpiration,
-            status = request.status
+            status = request.status,
+            sourcePlannedPaymentId = request.sourcePlannedPaymentId
         )
 
         if (targetAccountId == null) {
@@ -122,12 +123,12 @@ class TransactionManager(
     // if provided so that updates preserve the original id and any unrelated fields.
     private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction =
         (base ?: Transaction(
-            title = "", amount = BigDecimal.ZERO,
+            name = "", amount = BigDecimal.ZERO,
             transactionType = transactionType, accountId = accountId,
             currency = currency, timestamp = timestamp,
             categoryId = categoryId
         )).copy(
-            title = title,
+            name = name,
             amount = amount,
             transactionType = transactionType,
             accountId = accountId,
@@ -141,7 +142,8 @@ class TransactionManager(
             latitude = latitude,
             longitude = longitude,
             warrantyExpiration = warrantyExpiration,
-            status = status
+            status = status,
+            sourcePlannedPaymentId = sourcePlannedPaymentId
         )
 
     private suspend fun <T> andRefresh(block: suspend () -> T): T =

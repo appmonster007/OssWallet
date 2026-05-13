@@ -10,11 +10,11 @@ import java.math.BigDecimal
  */
 @Serializable
 data class TransactionPrefillDTO(
-    val title: String = "",
+    val name: String = "",
     val amount: String,
     val categoryId: Long,
     val transactionType: String, // "income", "expense", or "transfer"
-    val accountId: String,
+    val accountId: String? = null,
     val currency: String,
     val tags: List<String> = emptyList(),
     val paymentMethod: String = "Cash",
@@ -48,7 +48,7 @@ data class TransactionPrefillDTO(
             isSplitMode: Boolean = false
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(
-                title = transaction.title,
+                name = transaction.name,
                 amount = transaction.amount.abs().toPlainString(),
                 categoryId = transaction.categoryId,
                 transactionType = if (transaction.categoryId == 1003L) "transfer" else transaction.transactionType,
@@ -80,7 +80,7 @@ data class TransactionPrefillDTO(
                 else -> "expense"
             }
             return TransactionPrefillDTO(
-                title = template.name,
+                name = template.name,
                 amount = if (template.amount.signum() != 0) template.amount.abs().toPlainString() else "",
                 categoryId = template.categoryId,
                 transactionType = typeStr,
@@ -109,7 +109,7 @@ data class TransactionPrefillDTO(
                 else -> "expense"
             }
             return TransactionPrefillDTO(
-                title = template.name,
+                name = template.name,
                 amount = template.amount.abs().toPlainString(),
                 categoryId = template.categoryId,
                 transactionType = typeStr,

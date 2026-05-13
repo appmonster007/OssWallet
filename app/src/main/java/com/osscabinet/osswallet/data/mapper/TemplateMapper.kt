@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 
 fun TemplateEntity.toDomain(): Template {
     return Template(
@@ -19,6 +20,10 @@ fun TemplateEntity.toDomain(): Template {
         note = note,
         payee = payee,
         location = location,
+        latitude = latitude,
+        longitude = longitude,
+        warrantyExpiration = warrantyExpiration,
+        transactionStatus = try { TransactionStatus.valueOf(transactionStatus) } catch (e: Exception) { TransactionStatus.CLEARED },
         paymentMethod = paymentMethod,
         currency = currency,
         tags = if (tags.isEmpty()) emptyList() else tags.split(","),
@@ -44,6 +49,10 @@ fun Template.toEntity(): TemplateEntity {
         note = note,
         payee = payee,
         location = location,
+        latitude = latitude,
+        longitude = longitude,
+        warrantyExpiration = warrantyExpiration,
+        transactionStatus = transactionStatus.name,
         paymentMethod = paymentMethod,
         currency = currency,
         tags = tags.joinToString(","),

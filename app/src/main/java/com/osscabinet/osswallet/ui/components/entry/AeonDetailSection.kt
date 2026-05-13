@@ -1,0 +1,56 @@
+package com.osscabinet.ossWallet.ui.components.entry
+
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.runtime.Composable
+
+/**
+ * Standardized Detail tier component for entry screens.
+ * Encapsulates the Payee, Notes, and Tag selection rows.
+ */
+@Composable
+fun AeonDetailSection(
+    note: String,
+    onNoteChange: (String) -> Unit,
+    payee: String,
+    onPayeeChange: (String) -> Unit,
+    selectedTags: List<String>,
+    onTagClick: () -> Unit,
+    onRemoveTag: (String) -> Unit,
+    noteSuggestions: List<String> = emptyList(),
+    payeeSuggestions: List<String> = emptyList(),
+    additionalContent: @Composable (ColumnScope.() -> Unit)? = null
+) {
+    EntrySection(
+        title = "ADDITIONAL DETAILS",
+        icon = Icons.Rounded.MoreHoriz
+    ) {
+        EntryEditorialInput(
+            value = note,
+            onValueChange = onNoteChange,
+            label = "NOTE",
+            icon = Icons.AutoMirrored.Rounded.Notes,
+            suggestions = noteSuggestions,
+            placeholder = "Tap to enter..."
+        )
+
+        EntryEditorialInput(
+            value = payee,
+            onValueChange = onPayeeChange,
+            label = "PAYEE",
+            icon = Icons.Rounded.Person,
+            suggestions = payeeSuggestions
+        )
+
+        EntryTagSection(
+            selectedTags = selectedTags,
+            onShowTagSheet = onTagClick,
+            onRemoveTag = onRemoveTag
+        )
+
+        additionalContent?.invoke(this)
+    }
+}

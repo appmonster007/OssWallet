@@ -70,11 +70,11 @@ class PlannedPaymentEntryViewModel(
                         isEditMode = false,
                         plannedPaymentId = null,
                         linkedTemplate = null,
-                        title = template.name,
-                        amountText = template.amount.abs().toPlainString(),
-                        currency = template.currency ?: "USD",
+                        name = template.name,
+                        amount = template.amount.abs().toPlainString(),
+                        currency = template.currency,
                         transactionType = template.transactionType,
-                        selectedAccountId = template.accountId ?: "",
+                        selectedAccountId = template.accountId,
                         targetAccountId = template.targetAccountId,
                         targetCurrency = template.targetCurrency,
                         transferRate = template.transferRate,
@@ -89,6 +89,12 @@ class PlannedPaymentEntryViewModel(
                         selectedCategoryId = template.categoryId,
                         payee = template.payee ?: "",
                         noteUserPart = template.note ?: "",
+                        location = template.location ?: "",
+                        latitude = template.latitude,
+                        longitude = template.longitude,
+                        warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        isWarrantyEnabled = template.warrantyExpiration != null,
+                        transactionStatus = template.transactionStatus,
                         paymentMethod = template.paymentMethod ?: "Cash",
                         selectedTagNames = template.tags,
                         status = PlannedPaymentStatus.ACTIVE
@@ -102,7 +108,7 @@ class PlannedPaymentEntryViewModel(
                         plannedPaymentId = null,
                         startDateMillis = now,
                         endDateMillis = now,
-                        selectedAccountId = it.accounts.firstOrNull()?.id ?: ""
+                        selectedAccountId = null
                     )
                 }
             }
@@ -121,11 +127,11 @@ class PlannedPaymentEntryViewModel(
                         existingPayment = existing,
                         linkedTemplate = template,
                         templateUsageCount = usageCount,
-                        title = template.name,
-                        amountText = template.amount.toPlainString(),
-                        currency = template.currency ?: "USD",
+                        name = template.name,
+                        amount = template.amount.toPlainString(),
+                        currency = template.currency,
                         transactionType = template.transactionType,
-                        selectedAccountId = template.accountId ?: "",
+                        selectedAccountId = template.accountId,
                         targetAccountId = template.targetAccountId,
                         targetCurrency = template.targetCurrency,
                         transferRate = template.transferRate,
@@ -141,6 +147,12 @@ class PlannedPaymentEntryViewModel(
                         selectedCategoryId = template.categoryId,
                         payee = template.payee ?: "",
                         noteUserPart = template.note ?: "",
+                        location = template.location ?: "",
+                        latitude = template.latitude,
+                        longitude = template.longitude,
+                        warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        isWarrantyEnabled = template.warrantyExpiration != null,
+                        transactionStatus = template.transactionStatus,
                         paymentMethod = template.paymentMethod ?: "Cash",
                         selectedTagNames = template.tags,
                         status = existing.status
@@ -152,8 +164,19 @@ class PlannedPaymentEntryViewModel(
 
     fun onEvent(event: PlannedPaymentEntryEvent) {
         when (event) {
-            is PlannedPaymentEntryEvent.SetTitle -> _state.update { it.copy(title = event.title) }
-            is PlannedPaymentEntryEvent.SetAmountText -> _state.update { it.copy(amountText = event.amount) }
+            is PlannedPaymentEntryEvent.SetName -> {
+                _state.update { state ->
+                    val newNote = when {
+                        state.noteUserPart.isEmpty() -> "${event.name} - "
+                        state.name.isNotEmpty() && state.noteUserPart.startsWith("${state.name} - ") -> {
+                            state.noteUserPart.replaceFirst("${state.name} - ", "${event.name} - ")
+                        }
+                        else -> state.noteUserPart
+                    }
+                    state.copy(name = event.name, noteUserPart = newNote)
+                }
+            }
+            is PlannedPaymentEntryEvent.SetAmountText -> _state.update { it.copy(amount = event.amount) }
             is PlannedPaymentEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
                 _state.update { it.copy(transactionType = event.type) }
@@ -209,6 +232,16 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.SetCategoryId -> _state.update { it.copy(selectedCategoryId = event.id) }
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }
+            is PlannedPaymentEntryEvent.SetLocation -> _state.update { 
+                it.copy(
+                    location = event.location,
+                    latitude = event.lat,
+                    longitude = event.lng
+                ) 
+            }
+            is PlannedPaymentEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
+            is PlannedPaymentEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
+            is PlannedPaymentEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is PlannedPaymentEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTagNames = event.tags) }
             is PlannedPaymentEntryEvent.SetStatus -> _state.update { it.copy(status = event.status) }
@@ -217,9 +250,9 @@ class PlannedPaymentEntryViewModel(
                     if (event.template != null) {
                         state.copy(
                             linkedTemplate = event.template,
-                            title = event.template.name,
-                            amountText = event.template.amount.toPlainString(),
-                            currency = event.template.currency ?: "USD",
+                            name = event.template.name,
+                            amount = event.template.amount.toPlainString(),
+                            currency = event.template.currency,
                             transactionType = event.template.transactionType,
                             selectedAccountId = event.template.accountId ?: "",
                             targetAccountId = event.template.targetAccountId,
@@ -246,6 +279,9 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is PlannedPaymentEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is PlannedPaymentEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
+            is PlannedPaymentEntryEvent.ShowTransactionStatusSheet -> _state.update { it.copy(showTransactionStatusSheet = event.show) }
+            is PlannedPaymentEntryEvent.ShowWarrantyDatePicker -> _state.update { it.copy(showWarrantyDatePicker = event.show) }
+            is PlannedPaymentEntryEvent.ShowLocationSheet -> _state.update { it.copy(showLocationSheet = event.show) }
             is PlannedPaymentEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
             is PlannedPaymentEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
             is PlannedPaymentEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
@@ -261,7 +297,7 @@ class PlannedPaymentEntryViewModel(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amount = s.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val amount = s.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             val rule = RecurrenceRule(
                 type = s.recurrenceType,
                 interval = s.recurrenceInterval.coerceAtLeast(1),
@@ -269,37 +305,43 @@ class PlannedPaymentEntryViewModel(
                 dayOfMonth = s.dayOfMonth,
                 cronExpression = s.cronExpression
             )
-            val resolvedAccountId = s.selectedAccountId.ifBlank {
-                s.accounts.firstOrNull()?.id ?: ""
-            }
-            
             val templateToSave = (s.linkedTemplate ?: Template(
-                name = s.title,
+                name = s.name,
                 categoryId = s.selectedCategoryId,
                 amount = amount,
                 transactionType = s.transactionType,
-                accountId = resolvedAccountId,
+                accountId = s.selectedAccountId,
                 targetAccountId = s.targetAccountId,
                 targetCurrency = s.targetCurrency,
                 transferRate = s.transferRate,
                 currency = s.currency,
                 payee = s.payee,
                 note = s.noteUserPart,
+                location = s.location.ifBlank { null },
+                latitude = s.latitude,
+                longitude = s.longitude,
+                warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
+                transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
                 tags = s.selectedTagNames,
                 profileId = s.currentProfileId
             )).copy(
-                name = s.title,
+                name = s.name,
                 categoryId = s.selectedCategoryId,
                 amount = amount,
                 transactionType = s.transactionType,
-                accountId = resolvedAccountId,
+                accountId = s.selectedAccountId,
                 targetAccountId = s.targetAccountId,
                 targetCurrency = s.targetCurrency,
                 transferRate = s.transferRate,
                 currency = s.currency,
                 payee = s.payee,
                 note = s.noteUserPart,
+                location = s.location.ifBlank { null },
+                latitude = s.latitude,
+                longitude = s.longitude,
+                warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
+                transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
                 tags = s.selectedTagNames
             )
@@ -367,6 +409,7 @@ class PlannedPaymentEntryViewModel(
     private fun autoSelectTargetAccount() {
         val currentState = _state.value
         val selectedAccount = currentState.accounts.find { it.id == currentState.selectedAccountId }
+            ?: currentState.accounts.firstOrNull()
         val accounts = currentState.accounts
 
         if (selectedAccount != null && accounts.size > 1) {

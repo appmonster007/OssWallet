@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
@@ -214,6 +215,24 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetExchangeRate(rate))
                 onEvent(TransactionEntryEvent.ShowExchangeRateDialog(false))
             }
+        )
+    }
+
+    // Currency Selection
+    if (state.showCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrency = state.selectedCurrency,
+            onCurrencySelected = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
+            onDismiss = { onEvent(TransactionEntryEvent.ShowCurrencySheet(false)) }
+        )
+    }
+
+    if (state.showTargetCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrency = state.targetCurrency,
+            onCurrencySelected = { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) },
+            onDismiss = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false)) },
+            title = "Select Target Currency"
         )
     }
 }

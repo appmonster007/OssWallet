@@ -41,7 +41,7 @@ class TemplateViewModel(
         payee: String? = null,
         location: String? = null,
         paymentMethod: String? = null,
-        currency: String? = null,
+        currency: String,
         tags: List<String> = emptyList(),
         profileId: Int = 1
     ) {

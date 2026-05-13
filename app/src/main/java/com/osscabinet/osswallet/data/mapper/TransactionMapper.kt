@@ -13,7 +13,7 @@ import com.osscabinet.ossWallet.domain.util.joinByComma
 fun TransactionEntity.toDomain(): Transaction {
     return Transaction(
         id = id,
-        title = title,
+        name = name,
         amount = amount,
         timestamp = timestamp,
         currency = currency,
@@ -24,7 +24,7 @@ fun TransactionEntity.toDomain(): Transaction {
         paymentMethod = paymentMethod,
         payee = payee,
         note = note,
-        recurring = recurring,
+        sourcePlannedPaymentId = sourcePlannedPaymentId,
         latitude = latitude,
         longitude = longitude,
         warrantyExpiration = warrantyExpiration,
@@ -37,7 +37,7 @@ fun List<TransactionEntity>.toDomainList() = map { it.toDomain() }
 fun Transaction.toEntity(profileId: Int): TransactionEntity {
     return TransactionEntity(
         id = id,
-        title = title,
+        name = name,
         amount = amount,
         timestamp = timestamp,
         currency = currency,
@@ -49,7 +49,7 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         paymentMethod = paymentMethod,
         payee = payee,
         note = note,
-        recurring = recurring,
+        sourcePlannedPaymentId = sourcePlannedPaymentId,
         latitude = latitude,
         longitude = longitude,
         warrantyExpiration = warrantyExpiration,

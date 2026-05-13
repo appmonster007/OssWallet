@@ -1,15 +1,19 @@
 package com.osscabinet.ossWallet.ui.screens.tags
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class TagViewModel(private val repository: TagRepository) : ViewModel() {
+class TagViewModel(
+    private val repository: TagRepository,
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
     val tags: StateFlow<List<Tag>> = repository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

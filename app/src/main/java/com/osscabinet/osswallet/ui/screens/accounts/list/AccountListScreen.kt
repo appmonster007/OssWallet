@@ -174,7 +174,6 @@ fun AccountListScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) { account, isDragging ->
-            val index = editList.indexOf(account)
             AccountManagementListItem(
                 account = account,
                 isSelectionMode = isSelectionMode,
@@ -185,24 +184,6 @@ fun AccountListScreen(
                         selectedAccountIds - account.id
                     } else {
                         selectedAccountIds + account.id
-                    }
-                },
-                onMoveUp = {
-                    if (index > 0) {
-                        val newList = editList.toMutableList()
-                        val item = newList.removeAt(index)
-                        newList.add(index - 1, item)
-                        editList = newList
-                        viewModel.updateAccountsOrder(newList)
-                    }
-                },
-                onMoveDown = {
-                    if (index < editList.size - 1) {
-                        val newList = editList.toMutableList()
-                        val item = newList.removeAt(index)
-                        newList.add(index + 1, item)
-                        editList = newList
-                        viewModel.updateAccountsOrder(newList)
                     }
                 },
                 onToggleArchive = { viewModel.toggleArchiveAccount(account) },
@@ -219,8 +200,6 @@ fun AccountManagementListItem(
     isSelected: Boolean,
     isDragging: Boolean = false,
     onSelect: () -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
     onToggleArchive: () -> Unit,
     onAccountClick: () -> Unit
 ) {

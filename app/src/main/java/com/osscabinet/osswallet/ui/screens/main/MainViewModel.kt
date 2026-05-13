@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.main
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Profile
@@ -9,16 +8,17 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModel(
     private val profileRepository: ProfileRepository,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,
     private val templateRepository: TemplateRepository
-) : ViewModel() {
+) : BaseViewModel(settingsRepository) {
 
     val currentProfile: StateFlow<Profile?> = combine(
         settingsRepository.currentProfileId,

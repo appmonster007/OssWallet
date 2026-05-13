@@ -1,18 +1,18 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.remote.CurrencyResponse
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CurrencyViewModel(
     private val currencyRepository: CurrencyRepository,
-    private val settingsRepository: SettingsRepository
-) : ViewModel() {
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
 
     private val _uiState = MutableStateFlow(CurrencyUiState())
     val uiState: StateFlow<CurrencyUiState> = _uiState.asStateFlow()

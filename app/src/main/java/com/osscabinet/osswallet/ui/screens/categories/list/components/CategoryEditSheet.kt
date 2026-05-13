@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components
+package com.osscabinet.ossWallet.ui.screens.categories.list.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

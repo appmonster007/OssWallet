@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
@@ -16,6 +15,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,8 +31,8 @@ import java.util.UUID
 class PlannedPaymentViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
-    private val settingsRepository: SettingsRepository
-) : ViewModel() {
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId

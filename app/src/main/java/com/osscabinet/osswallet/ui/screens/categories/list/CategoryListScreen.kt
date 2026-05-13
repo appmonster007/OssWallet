@@ -15,12 +15,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+ import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
+import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryListScreen(
-    viewModel: TransactionViewModel,
+    viewModel: CategoryViewModel,
     onBackClick: () -> Unit
 ) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -118,12 +119,14 @@ fun CategoryListScreen(
             },
             onSave = { name, icon, color, parentId ->
                 viewModel.upsertCategory(
-                    id = editingCategory?.id ?: 0,
-                    name = name,
-                    iconName = icon,
-                    colorHex = color,
-                    parentId = parentId,
-                    isDefault = editingCategory?.isDefault ?: false
+                    Category(
+                        id = editingCategory?.id ?: 0,
+                        name = name,
+                        iconName = icon,
+                        colorHex = color,
+                        parentId = parentId,
+                        isDefault = editingCategory?.isDefault ?: false
+                    )
                 )
                 showAddDialog = false
                 selectedCategoryForEdit = null

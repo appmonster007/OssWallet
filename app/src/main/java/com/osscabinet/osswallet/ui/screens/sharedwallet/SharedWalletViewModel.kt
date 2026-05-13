@@ -1,9 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.sharedwallet
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.SharedWallet
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,8 +12,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SharedWalletViewModel(
-    private val repository: SharedWalletRepository
-) : ViewModel() {
+    private val repository: SharedWalletRepository,
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
 
     private val _uiState = MutableStateFlow(SharedWalletUiState())
     val uiState: StateFlow<SharedWalletUiState> = _uiState.asStateFlow()

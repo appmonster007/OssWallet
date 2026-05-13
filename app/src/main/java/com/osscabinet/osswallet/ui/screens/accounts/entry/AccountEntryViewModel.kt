@@ -6,15 +6,15 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountEntryViewModel(
+    private val accountUseCases: AccountUseCases,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val computationRepository: ComputationRepository,
@@ -130,39 +130,16 @@ class AccountEntryViewModel(
                     profileId
                 )
             } else {
-                val accountId = UUID.randomUUID().toString()
-                accountRepository.insertAccount(
-                    Account(
-                        id = accountId,
-                        name = s.accountName,
-                        currencyCode = s.primaryCurrency,
-                        structureType = s.structureType,
-                        colorHex = s.accentColorHex,
-                        icon = s.selectedIconName,
-                        allowedCurrencies = s.allowedCurrencies.toList()
-                    ),
-                    profileId
+                accountUseCases.createAccountWithInitialBalances(
+                    name = s.accountName,
+                    initialBalances = s.initialBalances,
+                    currency = s.primaryCurrency,
+                    structureType = s.structureType,
+                    colorHex = s.accentColorHex,
+                    icon = s.selectedIconName,
+                    allowedCurrencies = s.allowedCurrencies.toList(),
+                    profileId = profileId
                 )
-
-                // Insert initial balances as transactions
-                s.initialBalances.forEach { (currency, balance) ->
-                    val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    if (amount != BigDecimal.ZERO) {
-                        transactionRepository.insertTransaction(
-                            com.osscabinet.ossWallet.domain.model.Transaction(
-                                title = "Initial Balance",
-                                accountId = accountId,
-                                amount = amount,
-                                currency = currency,
-                                categoryId = 1001L, // Adjustment/Initial Balance category
-                                note = "Initial Balance",
-                                timestamp = System.currentTimeMillis(),
-                                transactionType = if (amount >= BigDecimal.ZERO) "income" else "expense"
-                            ),
-                            profileId
-                        )
-                    }
-                }
             }
             onSuccess()
         }
@@ -171,7 +148,7 @@ class AccountEntryViewModel(
     fun deleteAccount(onSuccess: () -> Unit) {
         val id = _state.value.accountId ?: return
         viewModelScope.launch {
-            accountRepository.deleteAccount(id)
+            accountUseCases.deleteAccount(id)
             onSuccess()
         }
     }

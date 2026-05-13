@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.loans
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
@@ -11,6 +10,7 @@ import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.LoanService
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,9 +24,9 @@ import java.math.BigDecimal
 
 class LoanViewModel(
     private val loanRepository: LoanRepository,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null
-) : ViewModel() {
+) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId

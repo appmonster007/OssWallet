@@ -22,17 +22,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterListScreen(
-    viewModel: SettingsViewModel,
+    viewModel: FilterViewModel,
     onBackClick: () -> Unit,
     onAddFilterClick: () -> Unit,
     onEditFilterClick: (Filter) -> Unit
 ) {
-    val filters by viewModel.allFilters.collectAsState(initial = emptyList())
+    val filters by viewModel.allFilters.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

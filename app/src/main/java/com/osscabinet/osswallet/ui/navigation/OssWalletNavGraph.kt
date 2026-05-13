@@ -6,41 +6,57 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.di.AppContainer
-import com.osscabinet.ossWallet.ui.screens.dashboard.*
 import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
-import com.osscabinet.ossWallet.ui.screens.accounts.*
-import com.osscabinet.ossWallet.ui.screens.budgets.*
-import com.osscabinet.ossWallet.ui.screens.loans.*
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.*
-import com.osscabinet.ossWallet.ui.screens.templates.*
-import com.osscabinet.ossWallet.ui.screens.transactions.*
-import com.osscabinet.ossWallet.ui.screens.settings.*
-import com.osscabinet.ossWallet.ui.screens.analytics.*
-import com.osscabinet.ossWallet.ui.screens.tags.*
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardScreen
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardUiState
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.list.AccountListScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailScreen
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.list.BudgetListScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.BudgetDetailScreen
+import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryScreen
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.list.LoanListScreen
+import com.osscabinet.ossWallet.ui.screens.loans.detail.LoanDetailScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentListScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.PlannedPaymentDetailScreen
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryScreen
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.list.TemplateListScreen
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
+import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.CurrencyViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
+import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
+import com.osscabinet.ossWallet.ui.screens.tags.list.TagListScreen
 import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
 import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletViewModel
 import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletScreen
-import com.osscabinet.ossWallet.ui.screens.accounts.entry.*
-import com.osscabinet.ossWallet.ui.screens.accounts.list.*
-import com.osscabinet.ossWallet.ui.screens.accounts.detail.*
-import com.osscabinet.ossWallet.ui.screens.budgets.entry.*
-import com.osscabinet.ossWallet.ui.screens.budgets.list.*
-import com.osscabinet.ossWallet.ui.screens.budgets.detail.*
-import com.osscabinet.ossWallet.ui.screens.loans.entry.*
-import com.osscabinet.ossWallet.ui.screens.loans.list.*
-import com.osscabinet.ossWallet.ui.screens.loans.detail.*
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.*
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.*
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.*
-import com.osscabinet.ossWallet.ui.screens.templates.entry.*
-import com.osscabinet.ossWallet.ui.screens.templates.list.*
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.*
-import com.osscabinet.ossWallet.ui.screens.transactions.list.*
-import com.osscabinet.ossWallet.ui.screens.categories.list.*
-import com.osscabinet.ossWallet.ui.screens.tags.list.*
-import com.osscabinet.ossWallet.ui.screens.filters.entry.*
-import com.osscabinet.ossWallet.ui.screens.filters.list.*
+import com.osscabinet.ossWallet.ui.screens.categories.list.CategoryListScreen
+import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
+import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryScreen
+import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -53,13 +69,14 @@ fun OssWalletNavGraph(
     onOpenDrawer: () -> Unit = {}
 ) {
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(
-            appContainer.settingsRepository,
-            appContainer.profileRepository,
-            appContainer.backupRepository,
-            appContainer.currencyRepository,
-            appContainer.filterRepository
-        )
+        factory = GenericViewModelFactory {
+            SettingsViewModel(
+                appContainer.settingsRepository,
+                appContainer.profileRepository,
+                appContainer.backupRepository,
+                appContainer.currencyRepository
+            )
+        }
     )
 
     val analyticsViewModel: AnalyticsViewModel = viewModel(
@@ -79,37 +96,49 @@ fun OssWalletNavGraph(
         }
     )
     
+    val categoryViewModel: CategoryViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            CategoryViewModel(
+                appContainer.categoryRepository,
+                appContainer.settingsRepository
+            )
+        }
+    )
+
     val transactionViewModel: TransactionViewModel = viewModel(
-        factory = TransactionViewModelFactory(
-            appContainer.transactionUseCases,
-            appContainer.settingsRepository,
-            appContainer.categoryRepository,
-            appContainer.accountRepository,
-            appContainer.filterRepository,
-            appContainer.computationRepository,
-            appContainer.transactionManager,
-            appContainer.plannedPaymentRepository,
-            appContainer.templateRepository
-        )
+        factory = GenericViewModelFactory {
+            TransactionViewModel(
+                appContainer.transactionUseCases,
+                appContainer.settingsRepository,
+                appContainer.categoryRepository,
+                appContainer.accountRepository,
+                appContainer.filterRepository,
+                appContainer.computationRepository,
+                appContainer.transactionManager,
+                appContainer.plannedPaymentRepository,
+                appContainer.templateRepository
+            )
+        }
     )
     
     val accountViewModel: AccountViewModel = viewModel(
-        factory = AccountViewModelFactory(
-            appContainer.accountRepository,
-            appContainer.transactionRepository,
-            appContainer.settingsRepository
-        )
+        factory = GenericViewModelFactory {
+            AccountViewModel(
+                appContainer.accountRepository,
+                appContainer.settingsRepository
+            )
+        }
     )
 
     val sharedWalletViewModel: SharedWalletViewModel = viewModel(
         factory = GenericViewModelFactory {
-            SharedWalletViewModel(appContainer.sharedWalletRepository)
+            SharedWalletViewModel(appContainer.sharedWalletRepository, appContainer.settingsRepository)
         }
     )
 
     val templateViewModel: TemplateViewModel = viewModel(
         factory = GenericViewModelFactory {
-            TemplateViewModel(appContainer.templateRepository)
+            TemplateViewModel(appContainer.templateRepository, appContainer.settingsRepository)
         }
     )
 
@@ -139,7 +168,19 @@ fun OssWalletNavGraph(
 
     val tagViewModel: TagViewModel = viewModel(
         factory = GenericViewModelFactory {
-            TagViewModel(appContainer.tagRepository)
+            TagViewModel(appContainer.tagRepository, appContainer.settingsRepository)
+        }
+    )
+
+    val accountEntryViewModel: AccountEntryViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            AccountEntryViewModel(
+                appContainer.accountUseCases,
+                appContainer.accountRepository,
+                appContainer.transactionRepository,
+                appContainer.computationRepository,
+                appContainer.settingsRepository
+            )
         }
     )
 
@@ -159,7 +200,7 @@ fun OssWalletNavGraph(
     if (isOnboardingCompleted == false) {
         OnboardingScreen(
             viewModel = settingsViewModel,
-            accountViewModel = accountViewModel,
+            accountEntryViewModel = accountEntryViewModel,
             onFinished = { /* State change will trigger re-composition */ }
         )
     } else if (isOnboardingCompleted == true) {
@@ -422,6 +463,7 @@ fun OssWalletNavGraph(
                 val entryViewModel: AccountEntryViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         AccountEntryViewModel(
+                            accountUseCases = appContainer.accountUseCases,
                             accountRepository = appContainer.accountRepository,
                             transactionRepository = appContainer.transactionRepository,
                             computationRepository = appContainer.computationRepository,
@@ -617,7 +659,7 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) {
                 CategoryListScreen(
-                    viewModel = transactionViewModel,
+                    viewModel = categoryViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -629,8 +671,16 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
+                val filterViewModel: FilterViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        FilterViewModel(
+                            appContainer.filterRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
                 FilterListScreen(
-                    viewModel = settingsViewModel,
+                    viewModel = filterViewModel,
                     onBackClick = { navController.popBackStack() },
                     onAddFilterClick = { 
                         navController.navigate(Screen.FilterEntry.createRoute())
@@ -653,21 +703,20 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterId = backStackEntry.arguments?.getLong("filterId") ?: -1L
-                val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-                val filterEntity = remember(filterId, savedFilters) {
-                    savedFilters.find { it.id == filterId }
-                }
-                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
-                
+                val entryViewModel: FilterEntryViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        FilterEntryViewModel(
+                            appContainer.filterRepository,
+                            appContainer.accountRepository,
+                            appContainer.categoryRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+
                 FilterEntryScreen(
-                    filter = filterEntity,
-                    accounts = accounts,
-                    allCategories = categories,
-                    onSaveFilter = { entity ->
-                        settingsViewModel.saveFilter(entity)
-                        navController.popBackStack()
-                    },
+                    filterId = filterId,
+                    viewModel = entryViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }

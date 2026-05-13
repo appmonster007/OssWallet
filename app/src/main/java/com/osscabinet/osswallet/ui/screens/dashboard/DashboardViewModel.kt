@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.DashboardSettings
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -32,6 +31,7 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +63,7 @@ enum class DashboardSection {
 class DashboardViewModel(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
@@ -72,7 +72,7 @@ class DashboardViewModel(
     private val budgetRepository: BudgetRepository? = null,
     private val loanRepository: LoanRepository? = null,
     private val transactionManager: TransactionManager? = null
-) : ViewModel(), CardUpdateHandler {
+) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.DASHBOARD

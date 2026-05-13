@@ -224,7 +224,7 @@ class AppContainer(private val context: Context) {
     }
 
     val accountUseCases by lazy {
-        AccountUseCases(accountRepository)
+        AccountUseCases(accountRepository, transactionRepository)
     }
 
     // Services

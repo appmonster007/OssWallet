@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components
+package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

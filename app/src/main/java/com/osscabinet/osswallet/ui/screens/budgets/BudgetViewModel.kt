@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.budgets
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
@@ -12,6 +11,7 @@ import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,11 +25,11 @@ import java.math.BigDecimal
 
 class BudgetViewModel(
     private val budgetRepository: BudgetRepository,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null,
     private val currencyRepository: CurrencyRepository? = null,
     private val categoryRepository: CategoryRepository? = null
-) : ViewModel() {
+) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId

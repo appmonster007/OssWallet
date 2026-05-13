@@ -1,0 +1,54 @@
+package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
+
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Template
+import java.math.BigDecimal
+
+sealed class PlannedPaymentEntryEvent {
+    data class SetTitle(val title: String) : PlannedPaymentEntryEvent()
+    data class SetAmountText(val amount: String) : PlannedPaymentEntryEvent()
+    data class SetCurrency(val currency: String) : PlannedPaymentEntryEvent()
+    data class SetTransactionType(val type: Int) : PlannedPaymentEntryEvent()
+    data class SetAccountId(val id: String) : PlannedPaymentEntryEvent()
+    data class SetTargetAccountId(val id: String?) : PlannedPaymentEntryEvent()
+    data class SetTargetCurrency(val currency: String?) : PlannedPaymentEntryEvent()
+    data class SetTransferRate(val rate: BigDecimal) : PlannedPaymentEntryEvent()
+    data class SetRecurrence(
+        val startDate: Long,
+        val type: RecurrenceType,
+        val interval: Int,
+        val dayOfWeek: Int?,
+        val dayOfMonth: Int?,
+        val cronExpression: String?
+    ) : PlannedPaymentEntryEvent()
+    data class SetAutoConfirm(val auto: Boolean) : PlannedPaymentEntryEvent()
+    data class SetHasEndDate(val has: Boolean) : PlannedPaymentEntryEvent()
+    data class SetEndDate(val date: Long) : PlannedPaymentEntryEvent()
+    data class SetCategoryId(val id: Long) : PlannedPaymentEntryEvent()
+    data class SetPayee(val payee: String) : PlannedPaymentEntryEvent()
+    data class SetNote(val note: String) : PlannedPaymentEntryEvent()
+    data class SetPaymentMethod(val method: String) : PlannedPaymentEntryEvent()
+    data class SetTags(val tags: List<String>) : PlannedPaymentEntryEvent()
+    data class SetStatus(val status: PlannedPaymentStatus) : PlannedPaymentEntryEvent()
+    data class SetLinkedTemplate(val template: Template?) : PlannedPaymentEntryEvent()
+    data class SetDeleteTemplateWithPayment(val delete: Boolean) : PlannedPaymentEntryEvent()
+
+    // Visibility
+    data class ShowScheduleBuilder(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowEndDatePicker(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowCategorySheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowAccountSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowTargetAccountSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowPaymentMethodSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowTagSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowStatusSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowNumpad(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowCurrencySheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowTargetCurrencySheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowTemplateSheet(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowExchangeRateDialog(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowDeleteDialog(val show: Boolean) : PlannedPaymentEntryEvent()
+
+    data object TriggerNavigation : PlannedPaymentEntryEvent()
+}

@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
 import android.net.Uri
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.*
 import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
@@ -12,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.ProfileType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -27,26 +27,11 @@ sealed class SyncState {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: CurrencyRepository,
-    private val filterRepository: FilterRepository
-) : ViewModel() {
-
-    val allFilters: Flow<List<Filter>> = filterRepository.getAllFilters()
-
-    fun saveFilter(filter: Filter) {
-        viewModelScope.launch {
-            filterRepository.insertFilter(filter)
-        }
-    }
-
-    fun deleteFilter(filter: Filter) {
-        viewModelScope.launch {
-            filterRepository.deleteFilter(filter)
-        }
-    }
+    private val currencyRepository: CurrencyRepository
+) : BaseViewModel(settingsRepository) {
 
     val currency: StateFlow<String> = settingsRepository.currency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
@@ -247,24 +232,5 @@ class SettingsViewModel(
                 .onSuccess { _backupMessage.send("Backup imported successfully") }
                 .onFailure { _backupMessage.send("Import failed: ${it.message}") }
         }
-    }
-}
-
-class SettingsViewModelFactory(
-    private val settingsRepository: SettingsRepository,
-    private val profileRepository: ProfileRepository,
-    private val backupRepository: BackupRepository,
-    private val currencyRepository: CurrencyRepository,
-    private val filterRepository: FilterRepository
-) : androidx.lifecycle.ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return SettingsViewModel(
-            settingsRepository,
-            profileRepository,
-            backupRepository,
-            currencyRepository,
-            filterRepository
-        ) as T
     }
 }

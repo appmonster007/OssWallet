@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.transactions
 
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -14,7 +13,6 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
-import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -49,13 +47,13 @@ import java.math.BigDecimal
 class TransactionViewModel(
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
-    private val categoryRepository: CategoryRepository,
+    categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val filterRepository: FilterRepository,
     private val computationRepository: ComputationRepository,
     private val transactionManager: TransactionManager,
     private val plannedPaymentRepository: PlannedPaymentRepository,
-    private val templateRepository: TemplateRepository
+    private val templateRepository: TemplateRepository,
 ) : BaseViewModel(settingsRepository) {
 
     // Replace multiple filter states with single FilterManager
@@ -64,17 +62,9 @@ class TransactionViewModel(
     // Expose merged filter as StateFlow directly from FilterManager
     val recordsFilter: StateFlow<TransactionFilter> = recordsFilterManager.mergedFilter
 
-    // Keep account detail filter separate (used in AccountDetailScreen)
-    private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
-    val accountDetailFilter = _accountDetailFilter.asStateFlow()
-
     // Track the initial filter from navigation (for resetting)
     private val _initialFilter = MutableStateFlow(TransactionFilter())
     val initialFilter = _initialFilter.asStateFlow()
-
-    // Track if records filter has been manually initialized (to prevent reinitialization from navigation)
-    private val _recordsFilterInitialized = MutableStateFlow(false)
-    val recordsFilterInitialized = _recordsFilterInitialized.asStateFlow()
 
     // Track revealed card IDs for swipe actions
     private val _revealedCardIdsList = MutableStateFlow<List<Long>>(emptyList())
@@ -138,7 +128,7 @@ class TransactionViewModel(
                     exchangeRates,
                     computationRepository.hasLoadedExchangeRates
                 ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
-                    if (!hasLoadedExchangeRates) return@combine emptyList<TransactionWithBalance>()
+                    if (!hasLoadedExchangeRates) return@combine emptyList()
 
                     val precision = decimalPrecision.value
 
@@ -153,7 +143,7 @@ class TransactionViewModel(
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
+                initialValue = emptyList(),
             )
 
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
@@ -232,7 +222,7 @@ class TransactionViewModel(
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TransactionListState()
+            initialValue = TransactionListState(),
         )
 
     val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
@@ -258,8 +248,8 @@ class TransactionViewModel(
                 
                 rawPatterns.map { pattern ->
                     val existsAsTemplate = templates.any { 
-                        it.name.equals(pattern.title, ignoreCase = true) || 
-                        it.payee?.equals(pattern.payee, ignoreCase = true) == true
+                        (it.name.equals(pattern.title, ignoreCase = true) ||
+                        it.payee?.equals(pattern.payee, ignoreCase = true) == true)
                     }
                     val existsAsPlannedPayment = plannedPayments.any { 
                         it.template.name.equals(pattern.title, ignoreCase = true) || 
@@ -280,11 +270,6 @@ class TransactionViewModel(
 
     fun updateRecordsFilter(newFilter: TransactionFilter) {
         recordsFilterManager.setFilter("manual", newFilter)
-        _recordsFilterInitialized.value = true
-    }
-
-    fun updateAccountDetailFilter(newFilter: TransactionFilter) {
-        _accountDetailFilter.value = newFilter
     }
 
     fun setRecordsAccountFilter(accountId: String?) {
@@ -304,14 +289,11 @@ class TransactionViewModel(
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        recordsFilterManager.setFilter("date", TransactionFilter(
-            timelineRange = TimelineRange.CustomRange(start, end)
-        ))
+        recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end)))
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
         recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = range))
-        _recordsFilterInitialized.value = true
     }
 
     fun setIncomeTypeFilter(type: String?) {
@@ -322,18 +304,8 @@ class TransactionViewModel(
         }
     }
 
-    fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
-        _accountDetailFilter.value =
-            _accountDetailFilter.value.copy(timelineRange = TimelineRange.CustomRange(start, end))
-    }
-
     fun clearRecordsFilters() {
         recordsFilterManager.clear()
-        _recordsFilterInitialized.value = false
-    }
-
-    fun clearAccountDetailFilters() {
-        _accountDetailFilter.value = TransactionFilter()
     }
 
     /**
@@ -345,14 +317,6 @@ class TransactionViewModel(
         _initialFilter.value = filter
         recordsFilterManager.clear()
         recordsFilterManager.setFilter("initial", filter)
-        _recordsFilterInitialized.value = true
-    }
-
-    /**
-     * Check if the current filter has been modified from the initial filter
-     */
-    fun hasModifiedFilter(): Boolean {
-        return recordsFilter.value != _initialFilter.value
     }
 
     /**
@@ -366,34 +330,6 @@ class TransactionViewModel(
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             transactionUseCases.deleteTransaction(id)
-        }
-    }
-
-    fun upsertCategory(
-        id: Long = 0,
-        name: String,
-        iconName: String,
-        colorHex: Int,
-        parentId: Long? = null,
-        isDefault: Boolean = false
-    ) {
-        viewModelScope.launch {
-            categoryRepository.upsertCategory(
-                com.osscabinet.ossWallet.domain.model.Category(
-                    id = id,
-                    name = name,
-                    iconName = iconName,
-                    colorHex = colorHex,
-                    parentId = parentId,
-                    isDefault = isDefault
-                )
-            )
-        }
-    }
-
-    fun deleteCategory(category: com.osscabinet.ossWallet.domain.model.Category) {
-        viewModelScope.launch {
-            categoryRepository.deleteCategory(category)
         }
     }
 
@@ -632,32 +568,5 @@ class TransactionViewModel(
 
     fun clearPlannedPaymentPrefill() {
         _plannedPaymentPrefill.value = null
-    }
-}
-
-class TransactionViewModelFactory(
-    private val transactionUseCases: TransactionUseCases,
-    private val settingsRepository: SettingsRepository,
-    private val categoryRepository: CategoryRepository,
-    private val accountRepository: AccountRepository,
-    private val filterRepository: FilterRepository,
-    private val computationRepository: ComputationRepository,
-    private val transactionManager: TransactionManager,
-    private val plannedPaymentRepository: PlannedPaymentRepository,
-    private val templateRepository: TemplateRepository
-) : androidx.lifecycle.ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return TransactionViewModel(
-            transactionUseCases,
-            settingsRepository,
-            categoryRepository,
-            accountRepository,
-            filterRepository,
-            computationRepository,
-            transactionManager,
-            plannedPaymentRepository,
-            templateRepository
-        ) as T
     }
 }

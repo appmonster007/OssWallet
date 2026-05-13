@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -23,6 +22,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,12 +38,12 @@ class AccountDetailViewModel(
     private val accountId: String,
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     @Suppress("UnusedPrivateMember") private val registry: CardComputerRegistry
-) : ViewModel(), CardUpdateHandler {
+) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ACCOUNT_DETAIL

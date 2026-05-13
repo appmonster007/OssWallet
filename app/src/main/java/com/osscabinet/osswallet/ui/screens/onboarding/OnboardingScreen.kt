@@ -26,13 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
-import com.osscabinet.ossWallet.ui.components.CurrencyManagementSection
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.CurrencyManagementSection
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
 import com.osscabinet.ossWallet.ui.util.*
-import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SyncState
 import java.math.BigDecimal
@@ -41,7 +42,7 @@ import java.math.BigDecimal
 @Composable
 fun OnboardingScreen(
     viewModel: SettingsViewModel,
-    accountViewModel: AccountViewModel,
+    accountEntryViewModel: AccountEntryViewModel,
     onFinished: () -> Unit
 ) {
     var step by remember { mutableStateOf(0) }
@@ -114,19 +115,22 @@ fun OnboardingScreen(
                                     isCurrencyMenuExpanded = true
                                     return@Button
                                 }
-                                accountViewModel.addAccountWithInitialBalances(
-                                        name = accountName,
-                                        initialBalances = initialBalances,
-                                        currency = currency,
-                                        structureType = "Cash",
-                                        colorHex = "#004D40", // Teal for healthy state
-                                        icon = "Payments",
-                                        allowedCurrencies = allowedCurrencies.toList()
-                                    )
+                                allowedCurrencies.forEach { curr ->
+                                    accountEntryViewModel.onEvent(AccountEntryEvent.SetInitialBalance(curr, initialBalances[curr] ?: ""))
+                                }
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetName(accountName))
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetPrimaryCurrency(currency))
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetAllowedCurrencies(allowedCurrencies))
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetStructureType("Cash"))
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetColor("#004D40"))
+                                accountEntryViewModel.onEvent(AccountEntryEvent.SetIcon("Payments"))
+                                
+                                accountEntryViewModel.saveAccount {
                                     viewModel.setOnboardingCompleted(true)
                                     onFinished()
                                 }
-                            },
+                            }
+                        },
                             modifier = Modifier.height(56.dp),
                             shape = RoundedCornerShape(28.dp),
                             contentPadding = PaddingValues(horizontal = 32.dp)

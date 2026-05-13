@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,7 +19,7 @@ import java.util.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
-    private val settingsRepository: SettingsRepository,
+    settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
@@ -27,7 +28,7 @@ class AnalyticsViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository
-) : ViewModel(), CardUpdateHandler {
+) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ANALYTICS

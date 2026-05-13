@@ -1,16 +1,18 @@
 package com.osscabinet.ossWallet.ui.screens.templates
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 class TemplateViewModel(
-    private val templateRepository: TemplateRepository
-) : ViewModel() {
+    private val templateRepository: TemplateRepository,
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
 
     val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

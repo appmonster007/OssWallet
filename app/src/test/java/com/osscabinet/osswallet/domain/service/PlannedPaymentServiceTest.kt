@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.domain.service
 
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -19,6 +21,16 @@ class PlannedPaymentServiceTest {
     private fun epochOf(year: Int, month: Int, day: Int): Long =
         LocalDate.of(year, month, day).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
+    private val stubTemplate = Template(
+        id = 1L,
+        name = "Test",
+        categoryId = 1001L,
+        amount = BigDecimal("100"),
+        transactionType = 0,
+        currency = "USD",
+        accountId = "acc1"
+    )
+
     private fun makePayment(
         recurrenceType: RecurrenceType,
         interval: Int = 1,
@@ -30,21 +42,19 @@ class PlannedPaymentServiceTest {
         status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE
     ) = PlannedPayment(
         id = 1L,
-        title = "Test",
-        amount = BigDecimal("100"),
-        currency = "USD",
-        transactionType = "expense",
-        accountId = "acc1",
-        categoryId = 1001L,
-        recurrenceRule = RecurrenceRule(
-            type = recurrenceType,
-            interval = interval,
-            dayOfMonth = dayOfMonth,
-            dayOfWeek = dayOfWeek
+        templateId = stubTemplate.id,
+        template = stubTemplate,
+        schedule = PaymentSchedule(
+            recurrenceRule = RecurrenceRule(
+                type = recurrenceType,
+                interval = interval,
+                dayOfMonth = dayOfMonth,
+                dayOfWeek = dayOfWeek
+            ),
+            startDate = startDate,
+            endDate = endDate,
+            nextDueDate = nextDueDate
         ),
-        startDate = startDate,
-        nextDueDate = nextDueDate,
-        endDate = endDate,
         status = status
     )
 

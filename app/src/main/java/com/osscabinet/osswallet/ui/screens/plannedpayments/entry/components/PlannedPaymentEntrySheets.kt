@@ -62,7 +62,7 @@ fun PlannedPaymentEntrySheets(
     showTargetAccountSheet: Boolean = false,
     onDismissTargetAccountSheet: () -> Unit = {},
     accounts: List<Account>,
-    selectedAccountId: String,
+    selectedAccountId: String?,
     onAccountSelected: (Account?) -> Unit,
     targetAccountId: String? = null,
     onTargetAccountSelected: (Account?) -> Unit = {},
@@ -137,13 +137,14 @@ fun PlannedPaymentEntrySheets(
             accounts = accounts,
             selectedAccountId = selectedAccountId,
             onAccountSelected = onAccountSelected,
-            onDismiss = onDismissAccountSheet
+            onDismiss = onDismissAccountSheet,
+            allowOutsideWallet = true
         )
     }
     if (showTargetAccountSheet) {
         TransactionAccountSelection(
             accounts = accounts,
-            selectedAccountId = targetAccountId ?: "",
+            selectedAccountId = targetAccountId,
             onAccountSelected = onTargetAccountSelected,
             onDismiss = onDismissTargetAccountSheet,
             title = "Select Target Account",

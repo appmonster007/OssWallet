@@ -151,7 +151,7 @@ object PlannedPaymentService {
             // Temporary object to leverage existing calculation logic
             val tempPayment = PlannedPayment(
                 templateId = 0L,
-                template = Template(name = "", categoryId = 0, amount = BigDecimal.ZERO, transactionType = 0),
+                template = Template(name = "", categoryId = 0, amount = BigDecimal.ZERO, transactionType = 0, accountId = null, currency = "USD"),
                 schedule = PaymentSchedule(rule, startDate, endDate, current)
             )
             current = calculateNextDueDate(tempPayment, current)

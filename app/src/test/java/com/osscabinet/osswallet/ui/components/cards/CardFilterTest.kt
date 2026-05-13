@@ -44,7 +44,7 @@ class CardFilterTest {
 
     private val transaction1 = Transaction(
         id = 1,
-        title = "Food",
+        name = "Food",
         amount = BigDecimal("100"),
         categoryId = 1001L,
         timestamp = System.currentTimeMillis(),
@@ -56,7 +56,7 @@ class CardFilterTest {
 
     private val transaction2 = Transaction(
         id = 2,
-        title = "Transport",
+        name = "Transport",
         amount = BigDecimal("200"),
         categoryId = 1002L,
         timestamp = System.currentTimeMillis(),
@@ -68,7 +68,7 @@ class CardFilterTest {
 
     private val transaction3 = Transaction(
         id = 3,
-        title = "Entertainment",
+        name = "Entertainment",
         amount = BigDecimal("300"),
         categoryId = 1003L,
         timestamp = System.currentTimeMillis(),

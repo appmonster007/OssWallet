@@ -171,7 +171,7 @@ class DatabaseSeeder @Inject constructor(
             try {
                 val categoryId = categoryNameToId[transaction.category]
                 if (categoryId == null) {
-                    android.util.Log.w("DatabaseSeeder", "Category '${transaction.category}' not found for transaction '${transaction.title}'")
+                    android.util.Log.w("DatabaseSeeder", "Category '${transaction.category}' not found for transaction '${transaction.name}'")
                     failedTransactions++
                     return@forEach
                 }
@@ -181,7 +181,7 @@ class DatabaseSeeder @Inject constructor(
 
                 successfulTransactions++
             } catch (e: Exception) {
-                android.util.Log.e("DatabaseSeeder", "Failed to insert transaction '${transaction.title}': ${e.message}")
+                android.util.Log.e("DatabaseSeeder", "Failed to insert transaction '${transaction.name}': ${e.message}")
                 failedTransactions++
             }
         }
@@ -392,7 +392,7 @@ class DatabaseSeeder @Inject constructor(
     }
 
     private data class TransactionSeedRow(
-        val title: String,
+        val name: String,
         val amount: BigDecimal,
         val category: String,
         val categoryId: Long?,
@@ -404,7 +404,7 @@ class DatabaseSeeder @Inject constructor(
         val payee: String,
         val note: String,
         val tags: String,
-        val recurring: String?,
+        val sourcePlannedPaymentId: Long? = null,
         val profileId: Int,
         val latitude: Double? = null,
         val longitude: Double? = null,
@@ -413,7 +413,7 @@ class DatabaseSeeder @Inject constructor(
     ) {
         fun toTransactionEntity(): TransactionEntity {
             return TransactionEntity(
-                title = title,
+                name = name,
                 amount = amount,
                 timestamp = timestamp ?: System.currentTimeMillis(),
                 currency = currency,
@@ -424,7 +424,7 @@ class DatabaseSeeder @Inject constructor(
                 payee = payee,
                 note = note,
                 tags = tags,
-                recurring = recurring,
+                sourcePlannedPaymentId = sourcePlannedPaymentId,
                 profileId = profileId,
                 latitude = latitude,
                 longitude = longitude,
@@ -437,7 +437,7 @@ class DatabaseSeeder @Inject constructor(
             fun fromCsv(line: String): TransactionSeedRow {
                 val parts = parseCsvLine(line)
                 return TransactionSeedRow(
-                    title = parts.getOrNull(0) ?: "",
+                    name = parts.getOrNull(0) ?: "",
                     amount = parts.getOrNull(1)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                     category = parts.getOrNull(2) ?: "",
                     categoryId = parts.getOrNull(3)?.toLongOrNull(),
@@ -449,7 +449,7 @@ class DatabaseSeeder @Inject constructor(
                     payee = parts.getOrNull(9) ?: "",
                     note = parts.getOrNull(10) ?: "",
                     tags = parts.getOrNull(11) ?: "",
-                    recurring = parts.getOrNull(12),
+                    sourcePlannedPaymentId = parts.getOrNull(12)?.toLongOrNull(),
                     profileId = parts.getOrNull(13)?.toIntOrNull() ?: 1,
                     latitude = parts.getOrNull(14)?.toDoubleOrNull(),
                     longitude = parts.getOrNull(15)?.toDoubleOrNull(),

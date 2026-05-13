@@ -436,7 +436,7 @@ private fun MockContentPreview() {
 
 private fun mockTransactionPreview() = Transaction(
     id = 1,
-    title = "Mock Transaction",
+    name = "Mock Transaction",
     amount = BigDecimal("45.00"),
     timestamp = System.currentTimeMillis(),
     currency = "USD",

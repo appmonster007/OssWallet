@@ -40,7 +40,7 @@ fun List<Transaction>.breakdownByAccount(
     exchangeRates: Map<String, BigDecimal>? = null,
     baseCurrency: String? = null
 ): List<AccountBreakdown> =
-    AggregationService.createMetricsBreakdown(this, { it.accountId }, exchangeRates, baseCurrency)
+    AggregationService.createMetricsBreakdown(filter { it.accountId != null }, { it.accountId!! }, exchangeRates, baseCurrency)
         .sortedByDescending { it.totalAmount }
 
 /**
@@ -152,28 +152,28 @@ fun List<Transaction>.breakdownByCategoryAndAccount(accounts: List<Account>): Ma
     groupBy { it.categoryId.toString() }.mapValues { (_, txs) -> txs.breakdownByAccount() }
 
 fun List<Transaction>.breakdownByAccountAndCategory(): Map<String, List<CategoryBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByCategory() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByCategory() }
 
 fun List<Transaction>.breakdownByAccountAndCurrency(): Map<String, List<CurrencyBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByCurrency() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByCurrency() }
 
 fun List<Transaction>.breakdownByCurrencyAndAccount(): Map<String, List<AccountBreakdown>> =
     groupBy { it.currency }.mapValues { (_, txs) -> txs.breakdownByAccount() }
 
 fun List<Transaction>.breakdownByAccountAndDate(): Map<String, List<DateBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByDate() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByDate() }
 
 fun List<Transaction>.breakdownByAccountAndMonth(): Map<String, List<MonthBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByMonth() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByMonth() }
 
 fun List<Transaction>.breakdownByAccountAndTransactionType(): Map<String, List<TransactionTypeBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByTransactionType() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByTransactionType() }
 
 fun List<Transaction>.breakdownByAccountAndPaymentMethod(): Map<String, List<PaymentMethodBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByPaymentMethod() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByPaymentMethod() }
 
 fun List<Transaction>.breakdownByAccountAndStatus(): Map<String, List<StatusBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByStatus() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByStatus() }
 
 fun List<Transaction>.breakdownByAccountAndTags(): Map<String, List<TagBreakdown>> =
-    groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByTags() }
+    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByTags() }

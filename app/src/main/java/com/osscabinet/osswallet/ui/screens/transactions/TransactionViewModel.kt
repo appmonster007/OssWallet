@@ -248,11 +248,11 @@ class TransactionViewModel(
                 
                 rawPatterns.map { pattern ->
                     val existsAsTemplate = templates.any { 
-                        (it.name.equals(pattern.title, ignoreCase = true) ||
+                        (it.name.equals(pattern.name, ignoreCase = true) ||
                         it.payee?.equals(pattern.payee, ignoreCase = true) == true)
                     }
                     val existsAsPlannedPayment = plannedPayments.any { 
-                        it.template.name.equals(pattern.title, ignoreCase = true) || 
+                        it.template.name.equals(pattern.name, ignoreCase = true) ||
                         it.template.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
                     

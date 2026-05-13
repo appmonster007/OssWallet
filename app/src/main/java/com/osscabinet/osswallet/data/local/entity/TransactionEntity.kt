@@ -33,18 +33,18 @@ import java.math.BigDecimal
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val title: String,
+    val name: String,
     val amount: BigDecimal,
     val timestamp: Long,
     val currency: String,
     val transactionType: String, // "income" or "expense"
-    val accountId: String,
+    val accountId: String? = null,
     val categoryId: Long,
     val tags: String = "", // Comma-separated tags
     val paymentMethod: String = "Cash",
     val payee: String = "",
     val note: String = "",
-    val recurring: String? = null,
+    val sourcePlannedPaymentId: Long? = null,
     val profileId: Int = 1,
     val latitude: Double? = null,
     val longitude: Double? = null,

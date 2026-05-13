@@ -11,7 +11,7 @@ import java.math.BigDecimal
  * Sealed class representing events that can modify the transaction entry state.
  */
 sealed class TransactionEntryEvent {
-    data class SetTitle(val title: String) : TransactionEntryEvent()
+    data class SetName(val name: String) : TransactionEntryEvent()
     data class SetAmount(val amount: String) : TransactionEntryEvent()
     data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
     data class SetTags(val tags: List<String>) : TransactionEntryEvent()
@@ -61,6 +61,8 @@ sealed class TransactionEntryEvent {
     data class ShowSplitSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowSplitCategorySheet(val splitIndex: Int?) : TransactionEntryEvent()
     data class ShowNumpad(val show: Boolean) : TransactionEntryEvent()
+    data class ShowCurrencySheet(val show: Boolean) : TransactionEntryEvent()
+    data class ShowTargetCurrencySheet(val show: Boolean) : TransactionEntryEvent()
 
     // Navigation
     data object TriggerNavigation : TransactionEntryEvent()

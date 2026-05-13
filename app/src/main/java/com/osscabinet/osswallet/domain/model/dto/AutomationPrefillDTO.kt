@@ -16,6 +16,10 @@ data class TemplatePrefillDTO(
     val note: String?,
     val payee: String?,
     val location: String?,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val warrantyExpiration: Long? = null,
+    val status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
     val paymentMethod: String?,
     val currency: String?,
     val tags: List<String>

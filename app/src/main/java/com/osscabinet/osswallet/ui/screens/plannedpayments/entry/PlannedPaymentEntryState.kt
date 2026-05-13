@@ -5,11 +5,11 @@ import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
-    val title: String = "",
-    val amountText: String = "",
+    val name: String = "",
+    val amount: String = "",
     val currency: String = "USD",
     val transactionType: Int = 0,
-    val selectedAccountId: String = "",
+    val selectedAccountId: String? = null,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
@@ -25,6 +25,12 @@ data class PlannedPaymentEntryState(
     val selectedCategoryId: Long = 1002L,
     val payee: String = "",
     val noteUserPart: String = "",
+    val location: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val isWarrantyEnabled: Boolean = false,
+    val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
+    val transactionStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
     val paymentMethod: String = "Cash",
     val selectedTagNames: List<String> = emptyList(),
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
@@ -40,6 +46,9 @@ data class PlannedPaymentEntryState(
     val showPaymentMethodSheet: Boolean = false,
     val showTagSheet: Boolean = false,
     val showStatusSheet: Boolean = false,
+    val showTransactionStatusSheet: Boolean = false,
+    val showWarrantyDatePicker: Boolean = false,
+    val showLocationSheet: Boolean = false,
     val showNumpad: Boolean = false,
     val showCurrencySheet: Boolean = false,
     val showTargetCurrencySheet: Boolean = false,
@@ -63,5 +72,5 @@ data class PlannedPaymentEntryState(
     val existingPayment: PlannedPayment? = null
 ) {
     val canSave: Boolean
-        get() = title.isNotBlank() && (amountText.toBigDecimalOrNull()?.signum() == 1)
+        get() = name.isNotBlank() && (amount.toBigDecimalOrNull()?.signum() == 1)
 }

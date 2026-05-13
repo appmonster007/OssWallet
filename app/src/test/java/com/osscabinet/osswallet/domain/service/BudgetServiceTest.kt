@@ -55,7 +55,7 @@ class BudgetServiceTest {
         timestamp: Long = System.currentTimeMillis()
     ) = Transaction(
         id = 0L,
-        title = "Test",
+        name = "Test",
         amount = amount,
         timestamp = timestamp,
         currency = currency,

@@ -8,18 +8,18 @@ interface Timestamped {
 
 data class Transaction(
     val id: Long = 0,
-    val title: String,
+    val name: String,
     val amount: BigDecimal,
     override val timestamp: Long,
     val currency: String,
     val transactionType: String, // "income" or "expense"
-    val accountId: String,
+    val accountId: String?,
     val categoryId: Long,
     val tags: List<String> = emptyList(),
     val paymentMethod: String = "Cash",
     val payee: String = "",
     val note: String = "",
-    val recurring: String? = null,
+    val sourcePlannedPaymentId: Long? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,

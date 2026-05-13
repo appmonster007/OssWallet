@@ -15,10 +15,10 @@ import java.util.Calendar
  * Represents a set of transactions that appear to be repeating.
  */
 data class DiscoveredPattern(
-    val title: String,
+    val name: String,
     val payee: String,
     val categoryId: Long,
-    val accountId: String,
+    val accountId: String?,
     val averageAmount: BigDecimal,
     val currency: String,
     val transactionType: String,
@@ -55,7 +55,7 @@ object PatternDiscoveryService {
         // 1. Group by key features (Payee + Category + Type + Currency)
         val groups = transactions.groupBy { tx ->
             val normalizedPayee = tx.payee.trim().lowercase()
-            val payeeKey = if (normalizedPayee.isEmpty()) "tx:${tx.title.trim().lowercase()}" else "payee:$normalizedPayee"
+            val payeeKey = if (normalizedPayee.isEmpty()) "tx:${tx.name.trim().lowercase()}" else "payee:$normalizedPayee"
             "$payeeKey|${tx.categoryId}|${tx.transactionType}|${tx.currency}"
         }
 
@@ -94,7 +94,7 @@ object PatternDiscoveryService {
         if (totalConfidence < 0.4f) return null
 
         return DiscoveredPattern(
-            title = lastTx.title,
+            name = lastTx.name,
             payee = lastTx.payee,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,
@@ -182,7 +182,7 @@ object PatternDiscoveryService {
 
         return Template(
             id = 0,
-            name = pattern.title,
+            name = pattern.name,
             categoryId = pattern.categoryId,
             amount = pattern.averageAmount,
             transactionType = if (pattern.transactionType == "income") 1 else 0,

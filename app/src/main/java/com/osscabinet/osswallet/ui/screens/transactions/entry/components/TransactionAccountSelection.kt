@@ -62,12 +62,12 @@ fun TransactionAccountSelection(
                             AeonHybridSelector(
                                 items = listOf(null),
                                 mode = AeonSelectMode.SINGLE,
-                                selectedIds = if (selectedAccountId == null) setOf("null") else emptySet(),
+                                selectedIds = if (selectedAccountId == null) setOf("") else emptySet(),
                                 onSelectionChange = { 
                                     onAccountSelected(null)
                                     onDismiss()
                                 },
-                                idMapper = { "null" },
+                                idMapper = { "" },
                                 labelMapper = { "Outside of Wallet" },
                                 detailMapper = { "External transfer" },
                                 iconMapper = { Icons.Rounded.Public },

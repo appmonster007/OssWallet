@@ -429,7 +429,7 @@ fun TemplatesScreenPreview() {
             payee = null,
             location = null,
             paymentMethod = null,
-            currency = null,
+            currency = "USD",
             tags = emptyList(),
             isStarred = true,
             displayOrder = 0
@@ -447,7 +447,7 @@ fun TemplatesScreenPreview() {
             payee = null,
             location = null,
             paymentMethod = null,
-            currency = null,
+            currency = "USD",
             tags = emptyList(),
             isStarred = true,
             displayOrder = 1
@@ -465,7 +465,7 @@ fun TemplatesScreenPreview() {
             payee = null,
             location = null,
             paymentMethod = null,
-            currency = null,
+            currency = "USD",
             tags = emptyList(),
             isStarred = false,
             displayOrder = 2
@@ -483,7 +483,7 @@ fun TemplatesScreenPreview() {
             payee = null,
             location = null,
             paymentMethod = null,
-            currency = null,
+            currency = "USD",
             tags = emptyList(),
             isStarred = false,
             displayOrder = 3
@@ -501,7 +501,7 @@ fun TemplatesScreenPreview() {
             payee = null,
             location = null,
             paymentMethod = null,
-            currency = null,
+            currency = "USD",
             tags = emptyList(),
             isStarred = false,
             displayOrder = 4
@@ -547,7 +547,7 @@ fun TemplateItemPreview() {
         payee = null,
         location = null,
         paymentMethod = null,
-        currency = null,
+        currency = "USD",
         tags = emptyList(),
         isStarred = true,
         displayOrder = 0

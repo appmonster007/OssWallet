@@ -58,8 +58,8 @@ class CardComputationTest {
     )
 
     private val transactions = listOf(
-        Transaction(id = 1L, title = "Salary", amount = BigDecimal("1000"), categoryId = 1001L, timestamp = System.currentTimeMillis(), currency = "USD", transactionType = "income", accountId = "1"),
-        Transaction(id = 2L, title = "Lunch", amount = BigDecimal("-50"), categoryId = 1002L, timestamp = System.currentTimeMillis(), currency = "EUR", transactionType = "expense", accountId = "2")
+        Transaction(id = 1L, name = "Salary", amount = BigDecimal("1000"), categoryId = 1001L, timestamp = System.currentTimeMillis(), currency = "USD", transactionType = "income", accountId = "1"),
+        Transaction(id = 2L, name = "Lunch", amount = BigDecimal("-50"), categoryId = 1002L, timestamp = System.currentTimeMillis(), currency = "EUR", transactionType = "expense", accountId = "2")
     )
 
     private val input = CardInput(

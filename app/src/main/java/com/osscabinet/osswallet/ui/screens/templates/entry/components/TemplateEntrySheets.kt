@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
@@ -41,7 +42,7 @@ fun TemplateEntrySheets(
     selectedAccount: Account?,
     onAccountSelected: (Account) -> Unit,
     targetAccount: Account? = null,
-    onTargetAccountSelected: (Account) -> Unit = {},
+    onTargetAccountSelected: (Account?) -> Unit = {},
     showCategorySheet: Boolean,
     onDismissCategorySheet: () -> Unit,
     categories: List<Category>,
@@ -84,20 +85,23 @@ fun TemplateEntrySheets(
     }
 
     if (showAccountSheet) {
-        AccountSelection(
+        TransactionAccountSelection(
             accounts = accounts,
-            selectedAccount = selectedAccount,
-            onAccountSelected = onAccountSelected,
-            onDismiss = onDismissAccountSheet
+            selectedAccountId = selectedAccount?.id ?: "",
+            onAccountSelected = { it?.let { onAccountSelected(it) } },
+            onDismiss = onDismissAccountSheet,
+            title = "Select Account"
         )
     }
 
     if (showTargetAccountSheet) {
-        AccountSelection(
+        TransactionAccountSelection(
             accounts = accounts,
-            selectedAccount = targetAccount,
+            selectedAccountId = targetAccount?.id ?: "",
             onAccountSelected = onTargetAccountSelected,
-            onDismiss = onDismissTargetAccountSheet
+            onDismiss = onDismissTargetAccountSheet,
+            title = "Select Target Account",
+            allowOutsideWallet = true
         )
     }
 

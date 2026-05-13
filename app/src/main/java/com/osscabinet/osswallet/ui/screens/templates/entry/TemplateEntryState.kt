@@ -38,6 +38,8 @@ data class TemplateEntryState(
     val showTargetCurrencySheet: Boolean = false,
     val showExchangeRateDialog: Boolean = false,
     val isNumpadVisible: Boolean = false,
+    val showDeleteDialog: Boolean = false,
+    val isLinkedToPlannedPayment: Boolean = false,
 
     // External data
     val accounts: List<Account> = emptyList(),

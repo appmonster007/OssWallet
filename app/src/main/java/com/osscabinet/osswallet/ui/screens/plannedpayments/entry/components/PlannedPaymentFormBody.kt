@@ -97,17 +97,6 @@ fun PlannedPaymentFormBody(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                EntryEditorialInput(
-                    value = title,
-                    onValueChange = onTitleChange,
-                    label = "PAYMENT NAME",
-                    icon = Icons.Rounded.Title
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-                )
                 EntryTypeSelector(
                     selectedType = transactionType,
                     onTypeSelected = onTypeSelected,
@@ -172,6 +161,19 @@ fun PlannedPaymentFormBody(
                         supportedCurrencies = allCurrencies
                     )
                 }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                )
+
+                EntryEditorialInput(
+                    value = title,
+                    onValueChange = onTitleChange,
+                    label = "PAYMENT NAME",
+                    icon = Icons.Rounded.Title
+                )
             }
         }
 

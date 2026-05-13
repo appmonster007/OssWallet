@@ -43,4 +43,7 @@ interface PlannedPaymentDao {
 
     @Query("DELETE FROM planned_payments WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT COUNT(*) FROM planned_payments WHERE templateId = :templateId")
+    suspend fun getCountByTemplateId(templateId: Long): Int
 }

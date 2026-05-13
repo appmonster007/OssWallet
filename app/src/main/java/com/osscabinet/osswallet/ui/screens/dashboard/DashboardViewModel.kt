@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.DashboardSettings
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -71,7 +70,7 @@ class DashboardViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository? = null,
     private val budgetRepository: BudgetRepository? = null,
     private val loanRepository: LoanRepository? = null,
-    private val transactionManager: TransactionManager? = null
+    private val transactionManager: TransactionManager? = null,
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -82,7 +81,6 @@ class DashboardViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, DashboardCardsConfig())
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
-    val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
 
     private val _initialViewContext =
         MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
@@ -94,7 +92,6 @@ class DashboardViewModel(
     )
 
     private val _viewFocus = MutableStateFlow<ViewFocus>(ViewFocus())
-    val viewFocus: StateFlow<ViewFocus> = _viewFocus.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -102,7 +99,7 @@ class DashboardViewModel(
                 _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull {
                     try {
                         DashboardSection.valueOf(it)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                 } ?: DashboardSection.entries
@@ -110,50 +107,12 @@ class DashboardViewModel(
         }
     }
 
-    fun updateSectionOrder(sections: List<DashboardSection>) {
-        viewModelScope.launch {
-            settingsRepository.updateDashboardSettings {
-                it.copy(
-                    layout = it.layout.copy(
-                        sectionOrder = sections.joinToString(",")
-                    )
-                )
-            }
-        }
-    }
-
     fun initializeDashboardView(viewContext: DashboardViewContext) {
         _initialViewContext.value = viewContext
-        when (viewContext) {
-            is DashboardViewContext.FocusCard -> {
-                _viewFocus.value = ViewFocus(focusedCardId = viewContext.cardId)
-            }
-
-            is DashboardViewContext.FocusSection -> {
-                _viewFocus.value = ViewFocus(focusedSection = viewContext.section)
-            }
-
-            else -> {
-                _viewFocus.value = ViewFocus()
-            }
-        }
-    }
-
-    fun updateViewFocus(focus: ViewFocus) {
-        _viewFocus.value = focus
     }
 
     fun resetToInitialView() {
         initializeDashboardView(_initialViewContext.value)
-    }
-
-    fun hasModifiedView(): Boolean {
-        val currentFocus = _viewFocus.value
-        return when (val initial = _initialViewContext.value) {
-            is DashboardViewContext.FocusCard -> currentFocus.focusedCardId != initial.cardId
-            is DashboardViewContext.FocusSection -> currentFocus.focusedSection != initial.section
-            else -> currentFocus.focusedCardId != null || currentFocus.focusedSection != null
-        }
     }
 
     fun clearViewFocus() {
@@ -228,7 +187,7 @@ class DashboardViewModel(
                     )
 
                     // Compute transactionsWithBalance
-                    val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                    val activeAccountIds = accounts.asSequence().filter { !it.isArchived }.map { it.id }.toSet()
                     val now = System.currentTimeMillis()
                     val transactionsWithBalance = allTransactions
                         .asSequence()

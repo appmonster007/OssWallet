@@ -27,8 +27,8 @@ class BudgetViewModel(
     private val budgetRepository: BudgetRepository,
     settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null,
-    private val currencyRepository: CurrencyRepository? = null,
-    private val categoryRepository: CategoryRepository? = null
+    currencyRepository: CurrencyRepository? = null,
+    categoryRepository: CategoryRepository? = null
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -133,38 +133,4 @@ class BudgetViewModel(
             budgetRepository.update(budget.copy(isArchived = true))
         }
     }
-
-    fun getBudgetProgress(budget: Budget, baseCurrency: String, precision: Int): BudgetProgress {
-        val now = System.currentTimeMillis()
-        val allTx = transactions.value
-        val allCats = categories.value
-        val rates = _exchangeRates.value
-        val rollover = BudgetService.calculateRollover(
-            budget,
-            allTx,
-            rates,
-            baseCurrency,
-            precision,
-            now,
-            allCats
-        )
-        val spent = BudgetService.calculateSpent(
-            budget,
-            allTx,
-            rates,
-            baseCurrency,
-            precision,
-            now,
-            allCats
-        )
-        return BudgetService.buildProgress(budget, spent, rollover)
-    }
-
-    fun getBudgetTransactions(budget: Budget): List<Transaction> {
-        val now = System.currentTimeMillis()
-        val allCats = categories.value
-        return BudgetService.filterTransactionsForBudget(budget, transactions.value, now, allCats)
-            .sortedByDescending { it.timestamp }
-    }
-
 }

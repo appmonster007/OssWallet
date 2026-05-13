@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -218,15 +221,42 @@ fun PlannedPaymentEntryScreen(
             },
             onDismiss = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowDeleteDialog(false)) },
             extraContent = {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Checkbox(
-                        checked = state.deleteTemplateWithPayment,
-                        onCheckedChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(it)) }
-                    )
-                    Text("Also delete linked template", style = MaterialTheme.typography.bodyMedium)
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = state.deleteTemplateWithPayment,
+                            onCheckedChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(it)) }
+                        )
+                        Text("Also delete linked template", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    
+                    if (state.deleteTemplateWithPayment && state.templateUsageCount > 1) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    "Warning: This template is shared with ${state.templateUsageCount - 1} other payment(s). Deleting it will also delete those payments.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
                 }
             }
         )

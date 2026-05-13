@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.screens.loans
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
-import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
@@ -25,7 +24,7 @@ import java.math.BigDecimal
 class LoanViewModel(
     private val loanRepository: LoanRepository,
     settingsRepository: SettingsRepository,
-    private val transactionRepository: TransactionRepository? = null
+    private val transactionRepository: TransactionRepository? = null,
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -47,12 +46,8 @@ class LoanViewModel(
     }
 
     val availableTags: StateFlow<List<String>> = transactions
-        .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
+        .map { txList -> txList.asSequence().flatMap { it.tags }.distinct().sorted().toList() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    fun getPaymentsForLoan(loanId: Long): Flow<List<LoanPayment>> =
-        loanRepository.getPaymentsForLoan(loanId)
-
 
     fun deleteLoan(loanId: Long) {
         viewModelScope.launch { loanRepository.deleteLoan(loanId) }
@@ -60,36 +55,5 @@ class LoanViewModel(
 
     fun settleLoan(loan: Loan) {
         viewModelScope.launch { loanRepository.updateLoan(LoanService.settledCopy(loan)) }
-    }
-
-    fun addPayment(payment: LoanPayment) {
-        viewModelScope.launch { loanRepository.insertPayment(payment) }
-    }
-
-    fun deletePayment(paymentId: Long) {
-        viewModelScope.launch { loanRepository.deletePayment(paymentId) }
-    }
-
-
-    /**
-     * Get transactions related to this loan based on linked account, categories, and tags.
-     */
-    fun getLoanTransactions(loan: Loan): List<Transaction> {
-        val allTransactions = transactions.value
-        return allTransactions.filter { transaction ->
-            // Filter by linked account if specified
-            val accountMatch =
-                loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
-
-            // Filter by categories if specified
-            val categoryMatch = loan.categoryIds.isEmpty() ||
-                    transaction.categoryId in loan.categoryIds
-
-            // Filter by tags if specified (transaction must have at least one matching tag)
-            val tagMatch = loan.tags.isEmpty() ||
-                    transaction.tags.any { it in loan.tags }
-
-            accountMatch && categoryMatch && tagMatch
-        }.sortedByDescending { it.timestamp }
     }
 }

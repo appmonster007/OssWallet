@@ -11,7 +11,7 @@ import java.math.BigDecimal
 
 class TemplateViewModel(
     private val templateRepository: TemplateRepository,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
     val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()

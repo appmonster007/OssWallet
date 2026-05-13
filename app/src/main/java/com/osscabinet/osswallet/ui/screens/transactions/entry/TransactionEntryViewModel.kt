@@ -22,7 +22,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.viewmodel.BaseViewModel
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

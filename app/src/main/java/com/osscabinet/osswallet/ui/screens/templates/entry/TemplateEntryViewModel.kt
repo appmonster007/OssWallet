@@ -1,0 +1,223 @@
+package com.osscabinet.ossWallet.ui.screens.templates.entry
+
+import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
+import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class TemplateEntryViewModel(
+    private val templateRepository: TemplateRepository,
+    private val accountRepository: AccountRepository,
+    private val categoryRepository: CategoryRepository,
+    private val tagRepository: TagRepository,
+    private val transactionUseCases: TransactionUseCases,
+    settingsRepository: SettingsRepository
+) : BaseViewModel(settingsRepository) {
+
+    private val _state = MutableStateFlow(TemplateEntryState())
+    val state: StateFlow<TemplateEntryState> = _state.asStateFlow()
+
+    init {
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
+        viewModelScope.launch {
+            settingsRepository.currentProfileId.flatMapLatest { profileId ->
+                combine(
+                    accountRepository.getAllAccounts(profileId),
+                    categoryRepository.categories,
+                    tagRepository.getAllTags(),
+                    settingsRepository.decimalPrecision
+                ) { accounts, categories, tags, precision ->
+                    val payees = transactionUseCases.getUniquePayees(profileId)
+                    val notes = transactionUseCases.getUniqueNotes(profileId)
+                    
+                    _state.update { 
+                        it.copy(
+                            accounts = accounts,
+                            categories = categories,
+                            allTags = tags,
+                            decimalPrecision = precision,
+                            uniquePayees = payees,
+                            uniqueNotes = notes
+                        )
+                    }
+                }
+            }.collect()
+        }
+    }
+
+    fun initialize(templateId: Long? = null, prefill: TemplatePrefillDTO? = null) {
+        if (templateId == null) {
+            if (prefill != null) {
+                _state.update {
+                    it.copy(
+                        isEditMode = false,
+                        templateId = null,
+                        name = prefill.name,
+                        amount = prefill.amount.abs().toPlainString(),
+                        transactionType = prefill.transactionType,
+                        categoryId = prefill.categoryId,
+                        accountId = prefill.accountId,
+                        currency = prefill.currency ?: "USD",
+                        note = prefill.note ?: "",
+                        payee = prefill.payee ?: "",
+                        location = prefill.location ?: "",
+                        paymentMethod = prefill.paymentMethod ?: "Cash",
+                        tags = prefill.tags
+                    )
+                }
+                updateCategoryName()
+            } else {
+                _state.update { it.copy(isEditMode = false, templateId = null) }
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            templateRepository.getTemplateById(templateId)?.let { template ->
+                _state.update {
+                    it.copy(
+                        templateId = templateId,
+                        isEditMode = true,
+                        name = template.name,
+                        amount = template.amount.toPlainString(),
+                        transactionType = template.transactionType,
+                        categoryId = template.categoryId,
+                        accountId = template.accountId,
+                        targetAccountId = template.targetAccountId,
+                        currency = template.currency ?: "USD",
+                        targetCurrency = template.targetCurrency,
+                        transferRate = template.transferRate,
+                        note = template.note ?: "",
+                        payee = template.payee ?: "",
+                        location = template.location ?: "",
+                        paymentMethod = template.paymentMethod ?: "Cash",
+                        tags = template.tags
+                    )
+                }
+                updateCategoryName()
+            }
+        }
+    }
+
+    fun onEvent(event: TemplateEntryEvent) {
+        when (event) {
+            is TemplateEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
+            is TemplateEntryEvent.SetAmount -> _state.update { it.copy(amount = event.amount) }
+            is TemplateEntryEvent.SetTransactionType -> _state.update { it.copy(transactionType = event.type) }
+            is TemplateEntryEvent.SetCategory -> {
+                _state.update { it.copy(categoryId = event.categoryId) }
+                updateCategoryName()
+            }
+            is TemplateEntryEvent.SetAccount -> {
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.accountId }
+                    state.copy(
+                        accountId = event.accountId,
+                        currency = account?.currencyCode ?: state.currency
+                    )
+                }
+            }
+            is TemplateEntryEvent.SetTargetAccount -> {
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.accountId }
+                    state.copy(
+                        targetAccountId = event.accountId,
+                        targetCurrency = account?.currencyCode ?: state.targetCurrency
+                    )
+                }
+            }
+            is TemplateEntryEvent.SetCurrency -> _state.update { it.copy(currency = event.currency) }
+            is TemplateEntryEvent.SetTargetCurrency -> _state.update { it.copy(targetCurrency = event.currency) }
+            is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
+            is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
+            is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
+            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(location = event.location) }
+            is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
+            is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
+            is TemplateEntryEvent.AddTag -> {
+                viewModelScope.launch {
+                    tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = event.name, colorHex = event.color ?: -1))
+                }
+            }
+            is TemplateEntryEvent.UpdateTag -> {
+                viewModelScope.launch {
+                    tagRepository.updateTag(event.tag.name, event.tag)
+                }
+            }
+            is TemplateEntryEvent.DeleteTag -> {
+                viewModelScope.launch {
+                    tagRepository.deleteTag(event.tag)
+                }
+            }
+            is TemplateEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
+            is TemplateEntryEvent.ShowTargetAccountSheet -> _state.update { it.copy(showTargetAccountSheet = event.show) }
+            is TemplateEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
+            is TemplateEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is TemplateEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
+            is TemplateEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
+            is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
+            is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
+            is TemplateEntryEvent.ShowNumpad -> _state.update { it.copy(isNumpadVisible = event.show) }
+            is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
+        }
+    }
+
+    private fun updateCategoryName() {
+        val categoryId = _state.value.categoryId
+        val category = _state.value.categories.find { it.id == categoryId }
+        _state.update { it.copy(categoryName = category?.name ?: "Unknown") }
+    }
+
+    fun saveTemplate(onSuccess: () -> Unit) {
+        val s = _state.value
+        if (!s.canSave) return
+
+        viewModelScope.launch {
+            val template = Template(
+                id = s.templateId ?: 0,
+                name = s.name,
+                categoryId = s.categoryId,
+                amount = s.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                transactionType = s.transactionType,
+                accountId = s.accountId,
+                targetAccountId = s.targetAccountId,
+                targetCurrency = s.targetCurrency,
+                transferRate = s.transferRate,
+                note = s.note.ifBlank { null },
+                payee = s.payee.ifBlank { null },
+                location = s.location.ifBlank { null },
+                paymentMethod = s.paymentMethod.ifBlank { null },
+                currency = s.currency.ifBlank { null },
+                tags = s.tags,
+                profileId = settingsRepository.currentProfileId.first()
+            )
+
+            if (s.isEditMode) {
+                templateRepository.updateTemplate(template)
+            } else {
+                templateRepository.insertTemplate(template)
+            }
+            onSuccess()
+        }
+    }
+
+    fun deleteTemplate(onSuccess: () -> Unit) {
+        val id = _state.value.templateId ?: return
+        viewModelScope.launch {
+            templateRepository.getTemplateById(id)?.let {
+                templateRepository.deleteTemplate(it)
+                onSuccess()
+            }
+        }
+    }
+}

@@ -62,37 +62,11 @@ fun LoanDetailSection(
         )
 
         // Settlement toggle
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.EventAvailable,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-            Text(
-                text = "Expected settlement date",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = hasSettlementDate,
-                onCheckedChange = onHasSettlementDateChange,
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = Color(0xFF004D40)
-                )
-            )
-        }
+        EntrySwitchRow(
+            label = "Expected settlement date",
+            checked = hasSettlementDate,
+            onCheckedChange = onHasSettlementDateChange,
+            icon = Icons.Rounded.EventAvailable
+        )
     }
 }

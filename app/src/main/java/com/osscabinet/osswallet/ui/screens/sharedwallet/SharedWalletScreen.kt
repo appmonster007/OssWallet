@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
-import com.osscabinet.ossWallet.ui.viewmodel.SharedWalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

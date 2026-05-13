@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import kotlin.math.atan2
 import kotlin.math.cos

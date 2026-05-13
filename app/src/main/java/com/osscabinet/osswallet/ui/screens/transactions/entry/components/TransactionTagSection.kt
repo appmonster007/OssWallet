@@ -120,12 +120,21 @@ fun TransactionTagSection(
         )
 
         // Warranty
-        WarrantyRow(
-            isEnabled = state.isWarrantyEnabled,
-            expirationMillis = state.warrantyExpirationMillis,
-            onToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
-            onShowDatePicker = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) }
+        EntrySwitchRow(
+            label = "Warranty Protection",
+            checked = state.isWarrantyEnabled,
+            onCheckedChange = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
+            icon = Icons.Rounded.Security
         )
+
+        if (state.isWarrantyEnabled) {
+            EntryDateCard(
+                icon = Icons.Rounded.CalendarMonth,
+                label = "EXPIRATION DATE",
+                dateMillis = state.warrantyExpirationMillis,
+                onClick = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) }
+            )
+        }
 
         // Location
         LocationRow(
@@ -259,72 +268,6 @@ private fun LinkedTransactionItem(
     }
 }
 
-
-@Composable
-private fun WarrantyRow(
-    isEnabled: Boolean,
-    expirationMillis: Long,
-    onToggle: (Boolean) -> Unit,
-    onShowDatePicker: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Security, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                }
-            }
-            Text(
-                "Warranty Protection",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = isEnabled,
-                onCheckedChange = onToggle,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF004D40)
-                )
-            )
-        }
-
-        if (isEnabled) {
-            Surface(
-                onClick = onShowDatePicker,
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Expiration Date", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)))
-                        Text(
-                            text = formatDate(expirationMillis),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun LocationRow(

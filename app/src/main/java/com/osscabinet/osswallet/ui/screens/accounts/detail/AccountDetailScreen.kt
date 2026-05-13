@@ -33,11 +33,11 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -54,8 +54,8 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailUiState
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder

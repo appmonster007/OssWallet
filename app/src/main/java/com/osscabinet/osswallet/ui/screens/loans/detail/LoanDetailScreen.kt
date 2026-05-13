@@ -71,9 +71,9 @@ import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode

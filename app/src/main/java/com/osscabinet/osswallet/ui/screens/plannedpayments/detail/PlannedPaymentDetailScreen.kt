@@ -68,7 +68,8 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
-import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
@@ -84,7 +85,7 @@ fun PlannedPaymentDetailScreen(
     plannedPaymentId: Long,
     viewModel: PlannedPaymentViewModel,
     transactionManager: TransactionManager,
-    templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel? = null,
+    templateViewModel: TemplateViewModel? = null,
     accounts: List<Account> = emptyList(),
     categories: List<Category> = emptyList(),
     onEditClick: (Long) -> Unit,

@@ -8,7 +8,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import java.math.BigDecimal
 import java.util.*
 

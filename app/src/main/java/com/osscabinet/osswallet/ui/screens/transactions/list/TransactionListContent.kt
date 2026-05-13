@@ -29,7 +29,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme

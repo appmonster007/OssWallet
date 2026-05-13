@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.viewmodel.CurrencyViewModel
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -198,7 +197,7 @@ fun ExchangeRatesScreen(
 }
 
 @Composable
-fun RatesTab(uiState: com.osscabinet.ossWallet.ui.viewmodel.CurrencyUiState, viewModel: CurrencyViewModel) {
+fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     
     val filteredRates = remember(uiState.rates, searchQuery) {
@@ -284,7 +283,7 @@ fun RatesTab(uiState: com.osscabinet.ossWallet.ui.viewmodel.CurrencyUiState, vie
 }
 
 @Composable
-fun ConverterTab(uiState: com.osscabinet.ossWallet.ui.viewmodel.CurrencyUiState, viewModel: CurrencyViewModel) {
+fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     var amountText by remember { mutableStateOf("1") }
     var fromCurrency by remember { mutableStateOf("USD") }
     var toCurrency by remember { mutableStateOf("EUR") }

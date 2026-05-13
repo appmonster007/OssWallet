@@ -14,7 +14,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.*
 
 @Composable
 fun BudgetActionCards(
@@ -45,10 +45,7 @@ fun BudgetActionCards(
         )
 
         // Row 2: Account and Tracks (Side by Side)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        EntryActionRow {
             val accountObj = if (selectedAccountIds.size == 1) accounts.find { it.id == selectedAccountIds.first() } else null
             EntryActionCard(
                 icon = getAccountIconByName(accountObj?.icon),

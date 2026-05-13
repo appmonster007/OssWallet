@@ -27,6 +27,9 @@ interface TemplateDao {
     @Query("SELECT * FROM templates WHERE name = :name LIMIT 1")
     suspend fun getTemplateByName(name: String): TemplateEntity?
 
+    @Query("SELECT * FROM templates WHERE id = :id LIMIT 1")
+    suspend fun getTemplateById(id: Long): TemplateEntity?
+
     @Update
     suspend fun updateTemplates(templates: List<TemplateEntity>)
 

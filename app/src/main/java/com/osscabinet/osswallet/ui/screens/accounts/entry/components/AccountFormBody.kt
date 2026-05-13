@@ -9,103 +9,28 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.*
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 
 @Composable
 fun AccountFormBody(
-    account: Account?,
-    viewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    isEditMode: Boolean,
-    accountId: String?,
-    onValidationChanged: (Boolean) -> Unit,
-    registerSaveAction: (() -> Unit) -> Unit,
-    onBackClick: () -> Unit,
-    onDone: () -> Unit,
+    state: AccountEntryState,
+    onEvent: (AccountEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val defaultCurrency by viewModel.defaultCurrency.collectAsStateWithLifecycle()
-    val allTransactions by transactionViewModel.transactions.collectAsStateWithLifecycle()
-    val exchangeRates by transactionViewModel.exchangeRates.collectAsStateWithLifecycle()
-
-    val accountBalance = remember(allTransactions, accountId, exchangeRates) {
-        if (isEditMode && account != null && accountId != null) {
+    val accountBalance = remember(state.allTransactions, state.accountId, state.exchangeRates) {
+        if (state.isEditMode && state.existingAccount != null && state.accountId != null) {
             AggregationService.calculateAccountBalance(
-                accountId = accountId,
-                allTransactions = allTransactions,
-                accountCurrency = account.currencyCode,
-                exchangeRates = exchangeRates
+                accountId = state.accountId,
+                allTransactions = state.allTransactions,
+                accountCurrency = state.existingAccount.currencyCode,
+                exchangeRates = state.exchangeRates
             )
         } else null
-    }
-
-    val currencyUsageMap = remember(allTransactions, accountId) {
-        if (isEditMode) {
-            allTransactions.filter { it.accountId == accountId }
-                .groupBy { it.currency }
-                .mapValues { it.value.isNotEmpty() }
-        } else emptyMap()
-    }
-
-    var accountName by remember(account) { mutableStateOf(account?.name ?: "") }
-    var structureType by remember(account) { mutableStateOf(account?.structureType ?: "Savings") }
-    var showStructureSheet by remember { mutableStateOf(false) }
-    
-    var primaryCurrency by remember(account, defaultCurrency) {
-        mutableStateOf(account?.currencyCode ?: defaultCurrency)
-    }
-    var allowedCurrencies by remember(account, defaultCurrency) {
-        mutableStateOf(
-            account?.allowedCurrencies?.toSet()
-                ?: if (defaultCurrency.isNotBlank()) setOf(defaultCurrency) else emptySet()
-        )
-    }
-    var initialBalances by remember { mutableStateOf(mapOf<String, String>()) }
-    var selectedIconName by remember(account) { mutableStateOf(account?.icon ?: "AccountBalance") }
-    var accentColorHex by remember(account) { mutableStateOf(account?.colorHex ?: "#004D5F") }
-
-    val isBalanceValid = initialBalances.values.all { it.isEmpty() || it.toBigDecimalOrNull() != null }
-    val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank() &&
-            allowedCurrencies.isNotEmpty() && (isEditMode || isBalanceValid)
-
-    LaunchedEffect(canSave) {
-        onValidationChanged(canSave)
-    }
-
-    registerSaveAction {
-        if (isEditMode && account != null && accountId != null) {
-            viewModel.updateAccount(
-                account.copy(
-                    name = accountName,
-                    structureType = structureType,
-                    currencyCode = primaryCurrency,
-                    allowedCurrencies = allowedCurrencies.toList(),
-                    colorHex = accentColorHex,
-                    icon = selectedIconName
-                )
-            )
-            onBackClick()
-        } else {
-            viewModel.addAccountWithInitialBalances(
-                name = accountName,
-                initialBalances = initialBalances,
-                currency = primaryCurrency,
-                structureType = structureType,
-                colorHex = accentColorHex,
-                icon = selectedIconName,
-                allowedCurrencies = allowedCurrencies.toList()
-            )
-            onDone()
-        }
     }
 
     Column(
@@ -116,20 +41,20 @@ fun AccountFormBody(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AeonHeroHeader(
-            title = accountName.ifBlank { "Untitled" },
-            subtitle = if (isEditMode && accountBalance != null)
-                "$primaryCurrency $accountBalance"
-            else if (primaryCurrency.isNotBlank())
-                "$primaryCurrency ${initialBalances[primaryCurrency]?.ifBlank { "0.00" } ?: "0.00"}"
+            title = state.accountName.ifBlank { "Untitled" },
+            subtitle = if (state.isEditMode && accountBalance != null)
+                "${state.primaryCurrency} $accountBalance"
+            else if (state.primaryCurrency.isNotBlank())
+                "${state.primaryCurrency} ${state.initialBalances[state.primaryCurrency]?.ifBlank { "0.00" } ?: "0.00"}"
             else "0.00",
-            accentColorHex = accentColorHex,
-            iconName = selectedIconName
+            accentColorHex = state.accentColorHex,
+            iconName = state.selectedIconName
         )
 
         EntrySection(title = "IDENTITY", icon = Icons.Rounded.Fingerprint) {
             EntryEditorialInput(
-                value = accountName,
-                onValueChange = { accountName = it },
+                value = state.accountName,
+                onValueChange = { onEvent(AccountEntryEvent.SetName(it)) },
                 label = "ACCOUNT NAME",
                 icon = Icons.AutoMirrored.Rounded.Label
             )
@@ -137,8 +62,8 @@ fun AccountFormBody(
             EntryActionCard(
                 icon = Icons.Rounded.Layers,
                 label = "STRUCTURE TYPE",
-                value = structureType,
-                onClick = { showStructureSheet = true },
+                value = state.structureType,
+                onClick = { onEvent(AccountEntryEvent.ShowStructureSheet(true)) },
                 iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                 iconTint = MaterialTheme.colorScheme.secondary
             )
@@ -146,24 +71,23 @@ fun AccountFormBody(
 
         // Currency management
         CurrencyManagementSection(
-            primaryCurrency = primaryCurrency,
-            onPrimaryCurrencyChange = { primaryCurrency = it },
-            allowedCurrencies = allowedCurrencies,
-            onAllowedCurrenciesChange = { allowedCurrencies = it },
-            accentColorHex = accentColorHex,
-            isEditMode = isEditMode,
-            currencyUsageMap = currencyUsageMap
+            primaryCurrency = state.primaryCurrency,
+            onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
+            allowedCurrencies = state.allowedCurrencies,
+            onAllowedCurrenciesChange = { onEvent(AccountEntryEvent.SetAllowedCurrencies(it)) },
+            accentColorHex = state.accentColorHex,
+            isEditMode = state.isEditMode,
+            currencyUsageMap = state.currencyUsageMap
         )
 
         // Initial balances (create mode only)
-        if (!isEditMode && allowedCurrencies.isNotEmpty()) {
+        if (!state.isEditMode && state.allowedCurrencies.isNotEmpty()) {
             EntrySection(title = "INITIAL BALANCES", icon = Icons.Rounded.AccountBalanceWallet) {
-                allowedCurrencies.forEach { currencyCode ->
+                state.allowedCurrencies.forEach { currencyCode ->
                     EntryEditorialInput(
-                        value = initialBalances[currencyCode] ?: "",
+                        value = state.initialBalances[currencyCode] ?: "",
                         onValueChange = { newBalance ->
-                            initialBalances = initialBalances.toMutableMap()
-                                .apply { put(currencyCode, newBalance) }
+                            onEvent(AccountEntryEvent.SetInitialBalance(currencyCode, newBalance))
                         },
                         label = "BALANCE ($currencyCode)",
                         icon = Icons.Rounded.AccountBalanceWallet
@@ -174,23 +98,23 @@ fun AccountFormBody(
 
         // Visual identity
         VisualIdentitySection(
-            selectedIconName = selectedIconName,
-            onIconSelected = { selectedIconName = it },
-            accentColorHex = accentColorHex,
-            onColorSelected = { accentColorHex = it }
+            selectedIconName = state.selectedIconName,
+            onIconSelected = { onEvent(AccountEntryEvent.SetIcon(it)) },
+            accentColorHex = state.accentColorHex,
+            onColorSelected = { onEvent(AccountEntryEvent.SetColor(it)) }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
     }
 
-    if (showStructureSheet) {
+    if (state.showStructureSheet) {
         StructureTypeSelection(
-            selectedType = structureType,
+            selectedType = state.structureType,
             onTypeSelected = { 
-                structureType = it
-                showStructureSheet = false 
+                onEvent(AccountEntryEvent.SetStructureType(it))
+                onEvent(AccountEntryEvent.ShowStructureSheet(false))
             },
-            onDismiss = { showStructureSheet = false }
+            onDismiss = { onEvent(AccountEntryEvent.ShowStructureSheet(false)) }
         )
     }
 }

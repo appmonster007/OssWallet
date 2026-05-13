@@ -1,252 +1,137 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetEntrySheets
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
-import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetEntryScreen(
-    budgetId: Long?,
-    viewModel: BudgetViewModel,
-    accounts: List<Account> = emptyList(),
-    categories: List<Category> = emptyList(),
+    budgetId: Long? = null,
+    viewModel: BudgetEntryViewModel,
     onBackClick: () -> Unit
 ) {
-    val budgets by viewModel.budgets.collectAsStateWithLifecycle()
-    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
-    val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
-    
-    val uniqueNotes = remember(transactions) {
-        transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
-    }
-    val existing = remember(budgetId, budgets) {
-        budgetId?.let { id -> budgets.find { it.id == id } }
+    LaunchedEffect(budgetId) {
+        viewModel.initialize(budgetId)
     }
 
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var limitText by remember(existing) {
-        mutableStateOf(
-            existing?.limitAmount?.toPlainString() ?: ""
-        )
-    }
-    var currency by remember(existing) { mutableStateOf(existing?.currency ?: "USD") }
-    var period by remember(existing) { mutableStateOf(existing?.period ?: BudgetPeriod.MONTHLY) }
-    var selectedTrackTypes by remember(existing) {
-        mutableStateOf(existing?.trackTypes?.toSet() ?: setOf(BudgetTrackType.EXPENSE))
-    }
-    var alertThreshold by remember(existing) {
-        mutableFloatStateOf(
-            existing?.alertThreshold ?: 0.8f
-        )
-    }
-    var rollover by remember(existing) { mutableStateOf(existing?.rollover ?: false) }
-    var note by remember(existing) { mutableStateOf("") }
-
-    var selectedCategoryIds by remember(existing) {
-        mutableStateOf(existing?.categoryIds?.toSet() ?: emptySet<Long>())
-    }
-    var selectedAccountIds by remember(existing) {
-        mutableStateOf(existing?.accountIds?.toSet() ?: emptySet<String>())
-    }
-    var selectedTags by remember(existing) {
-        mutableStateOf(existing?.tags?.toSet() ?: emptySet<String>())
-    }
-    val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
-
-    val now = remember { System.currentTimeMillis() }
-    var customStartDateMillis by remember(existing) {
-        mutableLongStateOf(existing?.customStartDate ?: now)
-    }
-    var customEndDateMillis by remember(existing) {
-        mutableLongStateOf(existing?.customEndDate ?: now)
-    }
-
-    val isEditing = budgetId != null
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
 
-    var showCustomStartPicker by remember { mutableStateOf(false) }
-    var showCustomEndPicker by remember { mutableStateOf(false) }
-    var showNumpad by remember { mutableStateOf(false) }
-    var showAccountSheet by remember { mutableStateOf(false) }
-    var showTrackTypeSheet by remember { mutableStateOf(false) }
-    var showCategorySheet by remember { mutableStateOf(false) }
-    var showTagSheet by remember { mutableStateOf(false) }
-    var showPeriodSheet by remember { mutableStateOf(false) }
-
-    var accountQuery by remember { mutableStateOf("") }
-    var categoryQuery by remember { mutableStateOf("") }
+    LaunchedEffect(state.navTriggered) {
+        if (state.navTriggered) {
+            onBackClick()
+        }
+    }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = name.isNotBlank() && 
-                 limitText.toBigDecimalOrNull() != null && 
-                 selectedCategoryIds.isNotEmpty()
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = if (isEditing) "Edit Budget" else "New Budget",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (isEditing) {
-                        IconButton(
-                            onClick = {
-                                viewModel.delete(budgetId!!)
-                                onBackClick()
-                            }
-                        ) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            val limit = limitText.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                            val budget = (existing ?: viewModel.buildDefault(profileId)).copy(
-                                id = budgetId ?: 0L,
-                                name = name,
-                                limitAmount = limit,
-                                currency = currency,
-                                period = period,
-                                trackTypes = selectedTrackTypes.toList()
-                                    .ifEmpty { listOf(BudgetTrackType.EXPENSE) },
-                                alertThreshold = alertThreshold,
-                                rollover = rollover,
-                                categoryIds = selectedCategoryIds.toList(),
-                                accountIds = selectedAccountIds.toList(),
-                                tags = selectedTags.toList(),
-                                customStartDate = if (period == BudgetPeriod.CUSTOM) customStartDateMillis else null,
-                                customEndDate = if (period == BudgetPeriod.CUSTOM) customEndDateMillis else null
-                            )
-                            viewModel.save(budget)
-                            onBackClick()
-                        },
-                        enabled = canSave
-                    ) {
-                        Icon(
-                            Icons.Rounded.Done,
-                            contentDescription = "Save",
-                            tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+    AeonEntryScaffold(
+        title = if (state.isEditMode) "Edit Budget" else "New Budget",
+        onBackClick = onBackClick,
+        onSaveClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            viewModel.saveBudget {
+                viewModel.onEvent(BudgetEntryEvent.TriggerNavigation)
+            }
+        },
+        canSave = state.canSave && !state.navTriggered,
+        isEditMode = state.isEditMode,
+        onDeleteClick = if (state.isEditMode) {
+            {
+                viewModel.deleteBudget {
+                    onBackClick()
+                }
+            }
+        } else null
     ) { innerPadding ->
         BudgetFormBody(
-            name = name,
-            onNameChange = { name = it },
-            amount = limitText,
-            currency = currency,
-            onCurrencyChange = { currency = it },
+            name = state.name,
+            onNameChange = { viewModel.onEvent(BudgetEntryEvent.SetName(it)) },
+            amount = state.limitAmount,
+            currency = state.currency,
+            onCurrencyChange = { viewModel.onEvent(BudgetEntryEvent.SetCurrency(it)) },
             supportedCurrencies = allCurrencies,
-            onAmountClick = { showNumpad = true },
-            period = period,
-            onPeriodClick = { showPeriodSheet = true },
-            selectedAccountIds = selectedAccountIds,
-            accounts = accounts,
-            onAccountClick = { showAccountSheet = true },
-            selectedTrackTypes = selectedTrackTypes,
-            onTrackTypeClick = { showTrackTypeSheet = true },
-            selectedCategoryIds = selectedCategoryIds,
-            categories = categories,
-            onCategoryClick = { showCategorySheet = true },
-            note = note,
-            onNoteChange = { note = it },
-            alertThreshold = alertThreshold,
-            onAlertThresholdChange = { alertThreshold = it },
-            rollover = rollover,
-            onRolloverChange = { rollover = it },
-            selectedTags = selectedTags,
-            onShowTagSheet = { showTagSheet = true },
-            onRemoveTag = { tag -> selectedTags = selectedTags - tag },
-            noteSuggestions = uniqueNotes,
+            onAmountClick = { viewModel.onEvent(BudgetEntryEvent.ShowNumpad(true)) },
+            period = state.period,
+            onPeriodClick = { viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(true)) },
+            selectedAccountIds = state.selectedAccountIds,
+            accounts = state.accounts,
+            onAccountClick = { viewModel.onEvent(BudgetEntryEvent.ShowAccountSheet(true)) },
+            selectedTrackTypes = state.selectedTrackTypes,
+            onTrackTypeClick = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(true)) },
+            selectedCategoryIds = state.selectedCategoryIds,
+            categories = state.categories,
+            onCategoryClick = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(true)) },
+            note = state.note,
+            onNoteChange = { viewModel.onEvent(BudgetEntryEvent.SetNote(it)) },
+            alertThreshold = state.alertThreshold,
+            onAlertThresholdChange = { viewModel.onEvent(BudgetEntryEvent.SetAlertThreshold(it)) },
+            rollover = state.rollover,
+            onRolloverChange = { viewModel.onEvent(BudgetEntryEvent.SetRollover(it)) },
+            selectedTags = state.selectedTags,
+            onShowTagSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(true)) },
+            onRemoveTag = { tag -> viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
+            noteSuggestions = state.uniqueNotes,
             modifier = Modifier.padding(innerPadding)
         )
 
         BudgetEntrySheets(
-            showCustomStartPicker = showCustomStartPicker,
-            onDismissCustomStartPicker = { showCustomStartPicker = false },
-            customStartDateMillis = customStartDateMillis,
-            onCustomStartDateSelected = { customStartDateMillis = it; showCustomStartPicker = false },
-            showCustomEndPicker = showCustomEndPicker,
-            onDismissCustomEndPicker = { showCustomEndPicker = false },
-            customEndDateMillis = customEndDateMillis,
-            onCustomEndDateSelected = { customEndDateMillis = it; showCustomEndPicker = false },
-            showNumpad = showNumpad,
-            onDismissNumpad = { showNumpad = false },
-            limitText = limitText,
-            onLimitChanged = { limitText = it },
-            showAccountSheet = showAccountSheet,
-            onDismissAccountSheet = { showAccountSheet = false },
-            accountQuery = accountQuery,
-            onAccountQueryChange = { accountQuery = it },
-            accounts = accounts,
-            selectedAccountIds = selectedAccountIds,
-            onAccountSelectionChange = { selectedAccountIds = it },
-            showPeriodSheet = showPeriodSheet,
-            onDismissPeriodSheet = { showPeriodSheet = false },
-            period = period,
+            showCustomStartPicker = state.showCustomStartPicker,
+            onDismissCustomStartPicker = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
+            customStartDateMillis = state.customStartDate,
+            onCustomStartDateSelected = { viewModel.onEvent(BudgetEntryEvent.SetCustomStartDate(it)) },
+            showCustomEndPicker = state.showCustomEndPicker,
+            onDismissCustomEndPicker = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
+            customEndDateMillis = state.customEndDate,
+            onCustomEndDateSelected = { viewModel.onEvent(BudgetEntryEvent.SetCustomEndDate(it)) },
+            showNumpad = state.showNumpad,
+            onDismissNumpad = { viewModel.onEvent(BudgetEntryEvent.ShowNumpad(false)) },
+            limitText = state.limitAmount,
+            onLimitChanged = { viewModel.onEvent(BudgetEntryEvent.SetLimitAmount(it)) },
+            showAccountSheet = state.showAccountSheet,
+            onDismissAccountSheet = { viewModel.onEvent(BudgetEntryEvent.ShowAccountSheet(false)) },
+            accountQuery = state.accountQuery,
+            onAccountQueryChange = { viewModel.onEvent(BudgetEntryEvent.SetAccountQuery(it)) },
+            accounts = state.accounts,
+            selectedAccountIds = state.selectedAccountIds,
+            onAccountSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetAccountIds(it)) },
+            showPeriodSheet = state.showPeriodSheet,
+            onDismissPeriodSheet = { viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(false)) },
+            period = state.period,
             onPeriodSelected = { 
-                period = it
-                if (period == BudgetPeriod.CUSTOM) {
-                    showCustomStartPicker = true
+                viewModel.onEvent(BudgetEntryEvent.SetPeriod(it))
+                if (it == BudgetPeriod.CUSTOM) {
+                    viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(true))
                 }
-                showPeriodSheet = false
+                viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(false))
             },
-            showTrackTypeSheet = showTrackTypeSheet,
-            onDismissTrackTypeSheet = { showTrackTypeSheet = false },
-            selectedTrackTypes = selectedTrackTypes,
-            onTrackTypeSelectionChange = { selectedTrackTypes = it },
-            showCategorySheet = showCategorySheet,
-            onDismissCategorySheet = { showCategorySheet = false },
-            categoryQuery = categoryQuery,
-            onCategoryQueryChange = { categoryQuery = it },
-            categories = categories,
-            selectedCategoryIds = selectedCategoryIds,
-            onCategorySelectionChange = { selectedCategoryIds = it },
-            showTagSheet = showTagSheet,
-            onDismissTagSheet = { showTagSheet = false },
-            availableTags = availableTags,
-            selectedTags = selectedTags,
-            onTagSelectionChange = { selectedTags = it },
-            onAddTag = { selectedTags = selectedTags + it }
+            showTrackTypeSheet = state.showTrackTypeSheet,
+            onDismissTrackTypeSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(false)) },
+            selectedTrackTypes = state.selectedTrackTypes,
+            onTrackTypeSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetTrackTypes(it)) },
+            showCategorySheet = state.showCategorySheet,
+            onDismissCategorySheet = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
+            categoryQuery = state.categoryQuery,
+            onCategoryQueryChange = { viewModel.onEvent(BudgetEntryEvent.SetCategoryQuery(it)) },
+            categories = state.categories,
+            selectedCategoryIds = state.selectedCategoryIds,
+            onCategorySelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetCategoryIds(it)) },
+            showTagSheet = state.showTagSheet,
+            onDismissTagSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false)) },
+            availableTags = state.availableTags.map { it.name },
+            selectedTags = state.selectedTags,
+            onTagSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetTags(it)) },
+            onAddTag = { viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags + it)) }
         )
     }
 }

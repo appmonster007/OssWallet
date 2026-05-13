@@ -209,10 +209,7 @@ fun TemplateFormBody(
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        EntryActionRow {
             EntryActionCard(
                 icon = getAccountIconByName(selectedAccount?.icon),
                 label = if (transactionType == 2) "FROM" else "ACCOUNT",

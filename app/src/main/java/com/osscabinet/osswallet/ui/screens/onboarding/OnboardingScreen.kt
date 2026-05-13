@@ -32,9 +32,9 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCur
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
 import com.osscabinet.ossWallet.ui.util.*
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SyncState
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SyncState
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -20,9 +20,11 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
-import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.*
+import com.osscabinet.ossWallet.ui.screens.transactions.*
+import com.osscabinet.ossWallet.ui.screens.templates.*
+import com.osscabinet.ossWallet.ui.screens.settings.*
+import com.osscabinet.ossWallet.ui.screens.analytics.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -32,9 +34,9 @@ fun TransactionListScreen(
     onMenuClick: () -> Unit,
     isTopLevelParam: Boolean = false,
     viewModel: TransactionViewModel,
-    accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
-    analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
+    accountViewModel: AccountViewModel,
+    analyticsViewModel: AnalyticsViewModel,
+    settingsViewModel: SettingsViewModel,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},

@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 
@@ -35,11 +35,7 @@ fun TransactionActionCards(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // First Row: Template and Date (Side by side)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        EntryActionRow {
             if (!state.isEditMode) {
                 EntryActionCard(
                     icon = Icons.Rounded.Bookmark,
@@ -64,11 +60,7 @@ fun TransactionActionCards(
         }
 
         // Second Row: Account and Category/Target Account (Side by side)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        EntryActionRow {
             val accountIcon = getAccountIconByName(state.selectedAccount?.icon)
             EntryActionCard(
                 icon = accountIcon,

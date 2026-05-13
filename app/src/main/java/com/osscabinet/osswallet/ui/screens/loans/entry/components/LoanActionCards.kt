@@ -11,7 +11,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -36,10 +36,7 @@ fun LoanActionCards(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Row 1: Start Date and Interest Rate
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        EntryActionRow {
             EntryActionCard(
                 icon = Icons.Rounded.CalendarToday,
                 label = "START DATE",
@@ -62,10 +59,7 @@ fun LoanActionCards(
         }
 
         // Row 2: Account and Settlement
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        EntryActionRow {
             val selectedAccount = accounts.find { it.id == linkedAccountId }
             EntryActionCard(
                 icon = getAccountIconByName(selectedAccount?.icon),

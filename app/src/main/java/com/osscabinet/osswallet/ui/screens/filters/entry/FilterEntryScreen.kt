@@ -186,9 +186,9 @@ fun FilterEntryScreen(
         if (state.showTagSheet) {
             AeonTagSelection(
                 tags = state.availableTags,
-                selectedTags = state.selectedTags.toList(),
+                selectedTags = state.selectedTags,
                 onTagsSelected = {
-                    viewModel.onEvent(FilterEntryEvent.SetTags(it.toSet()))
+                    viewModel.onEvent(FilterEntryEvent.SetTags(it))
                     viewModel.onEvent(FilterEntryEvent.ShowTagSheet(false))
                 },
                 onAddTag = { name, _ -> 

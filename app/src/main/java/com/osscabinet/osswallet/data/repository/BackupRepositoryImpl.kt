@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.util.splitByComma
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -258,7 +259,7 @@ class BackupRepositoryImpl(
                 transactionType = TransactionType.fromValue(p["transactionType"]), 
                 accountId = p["accountId"],
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, 
-                tags = p["tags"] ?: "", 
+                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(), 
                 paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) } ?: PaymentMethod.CASH, 
                 payee = p["payee"] ?: "", 
                 note = p["note"] ?: "", 
@@ -301,7 +302,7 @@ class BackupRepositoryImpl(
                 location = p["location"], 
                 paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) }, 
                 currency = p["currency"] ?: "USD",
-                tags = p["tags"] ?: "",
+                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(),
                 isStarred = p["isStarred"]?.toBoolean() ?: false, 
                 displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0,
                 profileId = p["profileId"]?.toIntOrNull() ?: 1,
@@ -444,7 +445,8 @@ class BackupRepositoryImpl(
                 maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
                 transactionType = TransactionType.fromValue(p["transactionType"]),
                 currencies = p["currencies"] ?: "",
-                statuses = p["statuses"] ?: ""
+                statuses = p["statuses"] ?: "",
+                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet()
             ))
         }
     }

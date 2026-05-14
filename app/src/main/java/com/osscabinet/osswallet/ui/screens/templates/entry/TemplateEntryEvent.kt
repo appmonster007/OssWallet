@@ -20,7 +20,7 @@ sealed class TemplateEntryEvent {
     data class SetWarrantyExpiration(val millis: Long) : TemplateEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : TemplateEntryEvent()
     data class SetPaymentMethod(val method: PaymentMethod) : TemplateEntryEvent()
-    data class SetTags(val tags: List<String>) : TemplateEntryEvent()
+    data class SetTags(val tags: Set<String>) : TemplateEntryEvent()
     data class AddTag(val name: String, val color: Int? = null) : TemplateEntryEvent()
     data class UpdateTag(val tag: Tag) : TemplateEntryEvent()
     data class DeleteTag(val tag: Tag) : TemplateEntryEvent()

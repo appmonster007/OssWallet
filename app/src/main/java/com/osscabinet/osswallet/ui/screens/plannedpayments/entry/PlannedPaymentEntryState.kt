@@ -31,7 +31,7 @@ data class PlannedPaymentEntryState(
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val selectedTagNames: List<String> = emptyList(),
+    val selectedTagNames: Set<String> = emptySet(),
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
     val linkedTemplate: Template? = null,
     val templateUsageCount: Int = 0,

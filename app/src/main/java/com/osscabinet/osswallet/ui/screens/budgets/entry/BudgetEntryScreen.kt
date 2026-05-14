@@ -247,9 +247,9 @@ fun BudgetEntryScreen(
         if (state.showTagSheet) {
             AeonTagSelection(
                 tags = state.availableTags,
-                selectedTags = state.selectedTags.toList(),
+                selectedTags = state.selectedTags,
                 onTagsSelected = {
-                    viewModel.onEvent(BudgetEntryEvent.SetTags(it.toSet()))
+                    viewModel.onEvent(BudgetEntryEvent.SetTags(it))
                     viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false))
                 },
                 onAddTag = { name, _ -> 

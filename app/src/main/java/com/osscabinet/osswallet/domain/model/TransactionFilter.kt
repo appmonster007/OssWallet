@@ -24,7 +24,7 @@ data class TransactionFilter(
     val maxAmount: BigDecimal? = null,
     val transactionType: TransactionType? = null, // null = all
     val currencies: List<String> = emptyList(),
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val statuses: List<TransactionStatus> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),
     val excludeFuture: Boolean = true
@@ -45,7 +45,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         accountIds = mergeLists(this.accountIds, other.accountIds),
         categoryIds = mergeLists(this.categoryIds, other.categoryIds),
         currencies = mergeLists(this.currencies, other.currencies),
-        tags = mergeLists(this.tags, other.tags),
+        tags = mergeSets(this.tags, other.tags),
         paymentMethods = mergeLists(this.paymentMethods, other.paymentMethods),
         statuses = mergeLists(this.statuses, other.statuses),
         linkedTransactionIds = mergeLists(this.linkedTransactionIds, other.linkedTransactionIds),
@@ -66,6 +66,12 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
 private fun <T> mergeLists(base: List<T>, other: List<T>): List<T> {
     return if (other.isNotEmpty()) {
         if (base.isEmpty()) other else base.intersect(other.toSet()).toList()
+    } else base
+}
+
+private fun <T> mergeSets(base: Set<T>, other: Set<T>): Set<T> {
+    return if (other.isNotEmpty()) {
+        if (base.isEmpty()) other else base.intersect(other)
     } else base
 }
 

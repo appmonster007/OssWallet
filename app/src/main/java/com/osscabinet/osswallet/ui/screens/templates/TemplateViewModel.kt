@@ -44,7 +44,7 @@ class TemplateViewModel(
         location: String? = null,
         paymentMethod: PaymentMethod? = null,
         currency: String,
-        tags: List<String> = emptyList(),
+        tags: Set<String> = emptySet(),
         profileId: Int = 1
     ) {
         viewModelScope.launch {

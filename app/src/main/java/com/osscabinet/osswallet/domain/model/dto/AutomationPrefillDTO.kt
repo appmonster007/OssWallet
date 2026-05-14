@@ -21,7 +21,7 @@ data class TemplatePrefillDTO(
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod? = null,
     val currency: String?,
-    val tags: List<String>
+    val tags: Set<String>
 )
 
 /**

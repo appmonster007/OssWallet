@@ -32,7 +32,7 @@ fun FilterEntity.toDomain(): Filter {
             currencies = if (currencies.isEmpty()) emptyList() else currencies.split(","),
             statuses = if (statuses.isEmpty()) emptyList() else statuses.split(",").filter { it.isNotBlank() }.map { TransactionStatus.valueOf(it) },
             linkedTransactionIds = if (linkedTransactionIds.isEmpty()) emptyList() else linkedTransactionIds.split(",").map { it.toLong() },
-            tags = if (tags.isEmpty()) emptyList() else tags.split(","),
+            tags = tags,
             excludeFuture = excludeFuture
         )
     )
@@ -67,7 +67,7 @@ fun Filter.toEntity(): FilterEntity {
         currencies = filter.currencies.joinToString(","),
         statuses = filter.statuses.joinToString(",") { it.name },
         linkedTransactionIds = filter.linkedTransactionIds.joinToString(","),
-        tags = filter.tags.joinToString(","),
+        tags = filter.tags,
         excludeFuture = filter.excludeFuture
     )
 }

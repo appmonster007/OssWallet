@@ -206,9 +206,9 @@ fun LoanEntryScreen(
         if (state.showTagSheet) {
             AeonTagSelection(
                 tags = state.availableTags.map { Tag(name = it, colorHex = -1) },
-                selectedTags = state.selectedTags.toList(),
+                selectedTags = state.selectedTags,
                 onTagsSelected = {
-                    viewModel.onEvent(LoanEntryEvent.SetTags(it.toSet()))
+                    viewModel.onEvent(LoanEntryEvent.SetTags(it))
                     viewModel.onEvent(LoanEntryEvent.ShowTagSheet(false))
                 },
                 onAddTag = { name, _ -> 

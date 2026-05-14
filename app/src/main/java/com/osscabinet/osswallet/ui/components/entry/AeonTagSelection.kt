@@ -53,8 +53,8 @@ val TagPresetColors = listOf(
 @Composable
 fun AeonTagSelection(
     tags: List<Tag>,
-    selectedTags: List<String>,
-    onTagsSelected: (List<String>) -> Unit,
+    selectedTags: Set<String>,
+    onTagsSelected: (Set<String>) -> Unit,
     onAddTag: (String, Int) -> Unit,
     onEditTag: (Tag) -> Unit,
     onDeleteTag: (Tag) -> Unit,
@@ -77,8 +77,8 @@ fun AeonTagSelection(
 @Composable
 fun AeonTagSelectionContent(
     tags: List<Tag>,
-    selectedTags: List<String>,
-    onTagsSelected: (List<String>) -> Unit,
+    selectedTags: Set<String>,
+    onTagsSelected: (Set<String>) -> Unit,
     onAddTag: (String, Int) -> Unit,
     onEditTag: (Tag) -> Unit,
     onDeleteTag: (Tag) -> Unit,
@@ -87,7 +87,7 @@ fun AeonTagSelectionContent(
     isSelectionModeEnabled: Boolean = true
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var currentSelection by remember { mutableStateOf(selectedTags.toSet()) }
+    var currentSelection by remember { mutableStateOf(selectedTags) }
     var isManagementMode by remember { mutableStateOf(!isSelectionModeEnabled) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     
@@ -383,7 +383,7 @@ fun AeonTagSelectionContent(
             if (isSelectionModeEnabled && !isManagementMode) {
                 Button(
                     onClick = {
-                        onTagsSelected(currentSelection.toList())
+                        onTagsSelected(currentSelection)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

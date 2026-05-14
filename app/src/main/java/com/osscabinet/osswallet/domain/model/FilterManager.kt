@@ -119,7 +119,7 @@ class FilterManager {
             transactionType = filters.mapNotNull { it.transactionType }.lastOrNull(),
             currencies = filters.flatMap { it.currencies }.distinct(),
             statuses = filters.flatMap { it.statuses }.distinct(),
-            tags = filters.flatMap { it.tags }.distinct(),
+            tags = filters.flatMap { it.tags }.toSet(),
             excludeFuture = filters.all { it.excludeFuture }
         )
     }

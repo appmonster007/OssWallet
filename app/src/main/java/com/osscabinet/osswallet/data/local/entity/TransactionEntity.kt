@@ -43,7 +43,7 @@ data class TransactionEntity(
     val transactionType: TransactionType,
     val accountId: String? = null,
     val categoryId: Long,
-    val tags: String = "", // Comma-separated tags
+    val tags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",

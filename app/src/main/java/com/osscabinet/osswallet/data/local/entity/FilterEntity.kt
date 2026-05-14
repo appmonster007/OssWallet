@@ -29,6 +29,6 @@ data class FilterEntity(
     val currencies: String = "", // Comma-separated currency codes
     val statuses: String = "", // Comma-separated status values
     val linkedTransactionIds: String = "", // Comma-separated IDs
-    val tags: String = "", // Comma-separated tags
+    val tags: Set<String> = emptySet(),
     val excludeFuture: Boolean = true
 )

@@ -5,27 +5,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
-import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.getAccountIconByName
-import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 
 /**
  * Main content layout for planned payment entry screen.
- * Optimized with shared components and inlined logic to reduce component bloat.
+ * Optimized with shared components and unified metadata section.
  */
 @Composable
 fun PlannedPaymentFormBody(
@@ -94,51 +89,15 @@ fun PlannedPaymentFormBody(
                 }
 
                 // Row 2: Account and Category/Target
-                AeonContextGrid {
-                    val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
-                    val accountIcon = getAccountIconByName(selectedAccount?.icon)
-                    val accountDisplay = when {
-                        state.selectedAccountId == null -> "Outside Wallet"
-                        selectedAccount != null -> selectedAccount.name
-                        else -> "Select"
-                    }
-                    EntryActionCard(
-                        icon = accountIcon,
-                        label = if (state.transactionType == 2) "FROM" else "ACCOUNT",
-                        value = accountDisplay,
-                        onClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-
-                    if (state.transactionType == 2) {
-                        val targetAccount = state.accounts.find { it.id == state.targetAccountId }
-                        val targetDisplay = targetAccount?.name ?: "Select"
-                        val targetIcon = getAccountIconByName(targetAccount?.icon)
-                        EntryActionCard(
-                            icon = targetIcon,
-                            label = "TO",
-                            value = targetDisplay,
-                            onClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
-                    } else {
-                        val categoryObj = state.categories.find { it.id == state.selectedCategoryId }
-                        val categoryIcon = getIconByName(categoryObj?.iconName)
-                        EntryActionCard(
-                            icon = categoryIcon,
-                            label = "CATEGORY",
-                            value = categoryObj?.name ?: "Unknown",
-                            onClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                }
+                AeonEntryContextRow(
+                    isTransfer = state.transactionType == 2,
+                    selectedAccount = state.accounts.find { it.id == state.selectedAccountId },
+                    onAccountClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
+                    selectedCategory = state.categories.find { it.id == state.selectedCategoryId },
+                    onCategoryClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
+                    targetAccount = state.accounts.find { it.id == state.targetAccountId },
+                    onTargetAccountClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) }
+                )
             }
 
             // DETAIL: Metadata section
@@ -153,93 +112,65 @@ fun PlannedPaymentFormBody(
                 noteSuggestions = state.uniqueNotes,
                 payeeSuggestions = state.uniquePayees,
                 additionalContent = {
-                    // Linked Transactions
-                    EntryLinkedTransactionsSection(
+                    AeonEntryMetadataSection(
                         linkedTransactions = state.displayLinkedTxs,
                         accounts = state.accounts,
                         categories = state.categories,
                         is24Hour = state.use24HourFormat,
-                        onShowSheet = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
-                        onRemoveLink = { txId ->
-                            onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId))
-                        }
-                    )
-
-                    // Planned Payment Status Row
-                    val ppStatusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
-                    val ppStatusIcon = AppIconMap[state.status.iconName] ?: Icons.Rounded.CheckCircle
-
-                    EntryActionChip(
-                        icon = ppStatusIcon,
-                        label = "Payment: ${state.status.displayName}",
-                        onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        iconTint = ppStatusColor,
-                        iconContainerColor = ppStatusColor.copy(alpha = 0.1f)
-                    )
-
-                    // Payment Method and Transaction Status row
-                    val paymentIcon = AppIconMap[state.paymentMethod.iconName] ?: Icons.Rounded.Payments
-                    
-                    val txStatusColor = Color(android.graphics.Color.parseColor(state.transactionStatus.colorHex))
-                    val txStatusIcon = AppIconMap[state.transactionStatus.iconName] ?: Icons.Rounded.CheckCircle
-
-                    EntryPaymentMethodStatusRow(
-                        paymentMethod = state.paymentMethod.displayName,
+                        onShowLinkedTransactions = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
+                        onRemoveLink = { txId -> onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId)) },
+                        paymentMethod = state.paymentMethod,
                         onPaymentMethodClick = { onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
                         statusLabel = state.transactionStatus.displayName,
+                        statusIconName = state.transactionStatus.iconName,
+                        statusColorHex = state.transactionStatus.colorHex,
                         onStatusClick = { onEvent(PlannedPaymentEntryEvent.ShowTransactionStatusSheet(true)) },
-                        paymentMethodIcon = paymentIcon,
-                        statusIcon = txStatusIcon,
-                        statusIconTint = txStatusColor,
-                        statusContainerColor = txStatusColor.copy(alpha = 0.1f)
-                    )
+                        warrantyEnabled = state.isWarrantyEnabled,
+                        onWarrantyToggle = { onEvent(PlannedPaymentEntryEvent.SetWarrantyEnabled(it)) },
+                        warrantyExpirationMillis = state.warrantyExpirationMillis,
+                        onWarrantyDateClick = { onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(true)) },
+                        locationCoords = if (state.latitude != null && state.longitude != null) state.latitude to state.longitude else null,
+                        onLocationClick = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },
+                        locationLabel = "Payment Location",
+                        additionalTopContent = {
+                             // Planned Payment Status Row
+                            val ppStatusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
+                            val ppStatusIcon = com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName] ?: Icons.Rounded.CheckCircle
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                    )
+                            EntryActionChip(
+                                icon = ppStatusIcon,
+                                label = "Payment: ${state.status.displayName}",
+                                onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                iconTint = ppStatusColor,
+                                iconContainerColor = ppStatusColor.copy(alpha = 0.1f)
+                            )
+                        },
+                        additionalBottomContent = {
+                            // End Date and Auto Confirmation
+                            EntrySwitchRow(
+                                label = "Has End Date",
+                                checked = state.hasEndDate,
+                                onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
+                                icon = Icons.Rounded.EventBusy
+                            )
 
-                    // End Date and Auto Confirmation
-                    EntrySwitchRow(
-                        label = "Has End Date",
-                        checked = state.hasEndDate,
-                        onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
-                        icon = Icons.Rounded.EventBusy
-                    )
+                            if (state.hasEndDate) {
+                                EntryDateCard(
+                                    icon = Icons.Rounded.CalendarToday,
+                                    label = "END DATE",
+                                    dateMillis = state.endDateMillis,
+                                    onClick = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) }
+                                )
+                            }
 
-                    if (state.hasEndDate) {
-                        EntryDateCard(
-                            icon = Icons.Rounded.CalendarToday,
-                            label = "END DATE",
-                            dateMillis = state.endDateMillis,
-                            onClick = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) }
-                        )
-                    }
-
-                    EntrySwitchRow(
-                        label = "Auto-confirm Transaction",
-                        checked = state.autoConfirm,
-                        onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
-                        icon = Icons.Rounded.AutoFixHigh
-                    )
-
-                    // Warranty
-                    EntryWarrantySection(
-                        enabled = state.isWarrantyEnabled,
-                        onToggle = { onEvent(PlannedPaymentEntryEvent.SetWarrantyEnabled(it)) },
-                        expirationMillis = state.warrantyExpirationMillis,
-                        onDateClick = { onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(true)) }
-                    )
-
-                    // Location
-                    EntryLocationRow(
-                        coords = if (state.latitude != null && state.longitude != null) {
-                            state.latitude to state.longitude
-                        } else null,
-                        onShowLocationSheet = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },
-                        label = "Payment Location"
+                            EntrySwitchRow(
+                                label = "Auto-confirm Transaction",
+                                checked = state.autoConfirm,
+                                onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
+                                icon = Icons.Rounded.AutoFixHigh
+                            )
+                        }
                     )
                 }
             )

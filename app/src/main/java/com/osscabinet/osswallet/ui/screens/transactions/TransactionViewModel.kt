@@ -252,8 +252,8 @@ class TransactionViewModel(
                         it.payee?.equals(pattern.payee, ignoreCase = true) == true)
                     }
                     val existsAsPlannedPayment = plannedPayments.any { 
-                        it.template.name.equals(pattern.name, ignoreCase = true) ||
-                        it.template.payee?.equals(pattern.payee, ignoreCase = true) == true
+                        it.name.equals(pattern.name, ignoreCase = true) ||
+                        it.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
                     
                     pattern.copy(
@@ -546,7 +546,7 @@ class TransactionViewModel(
         val payment = PatternDiscoveryService.toPlannedPayment(pattern)
         if (payment != null) {
             _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
-                template = payment.template,
+                template = PatternDiscoveryService.toTemplate(pattern),
                 schedule = payment.schedule
             )
         }

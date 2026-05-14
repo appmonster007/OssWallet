@@ -81,9 +81,23 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "templates.csv", listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "targetAccountId", "targetCurrency", "transferRate", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder", "profileId", "transactionStatus"), 
             templateDao.getAllTemplatesSync().map { listOf(it.id, it.name, it.categoryId, it.amount, it.transactionType, it.icon, it.colorHex, it.accountId, it.targetAccountId, it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.paymentMethod?.name, it.currency, it.tags, it.isStarred, it.displayOrder, it.profileId, it.transactionStatus.name) })
         
-        writeCsvToZip(zos, "planned_payments.csv", listOf("id", "templateId", "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression", "startDate", "endDate", "nextDueDate", "lastTriggeredDate", "autoConfirm", "status", "profileId"), 
+        writeCsvToZip(zos, "planned_payments.csv", listOf(
+            "id", "name", "categoryId", "amount", "transactionType", "accountId", "targetAccountId", 
+            "targetCurrency", "transferRate", "note", "payee", "location", "latitude", "longitude", 
+            "warrantyExpiration", "transactionStatus", "paymentMethod", "currency", "tags", 
+            "autoConfirm", "status", "profileId", "templateId", 
+            "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression", 
+            "startDate", "endDate", "nextDueDate", "lastTriggeredDate"
+        ), 
             plannedPaymentDao.getAllPlannedPaymentsSync().map { 
-                listOf(it.payment.id, it.payment.templateId, it.payment.schedule.recurrenceType, it.payment.schedule.interval, it.payment.schedule.dayOfWeek, it.payment.schedule.dayOfMonth, it.payment.schedule.recurrenceCronExpression, it.payment.schedule.startDate, it.payment.schedule.endDate, it.payment.schedule.nextDueDate, it.payment.schedule.lastTriggeredDate, it.payment.autoConfirm, it.payment.status.name, it.payment.profileId) 
+                listOf(
+                    it.id, it.name, it.categoryId, it.amount, it.transactionType, it.accountId, it.targetAccountId,
+                    it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.latitude, it.longitude,
+                    it.warrantyExpiration, it.transactionStatus.name, it.paymentMethod?.name, it.currency, it.tags,
+                    it.autoConfirm, it.status.name, it.profileId, it.templateId,
+                    it.schedule.recurrenceType, it.schedule.interval, it.schedule.dayOfWeek, it.schedule.dayOfMonth, it.schedule.recurrenceCronExpression,
+                    it.schedule.startDate, it.schedule.endDate, it.schedule.nextDueDate, it.schedule.lastTriggeredDate
+                )
             })
         
         writeCsvToZip(zos, "planned_payment_occurrences.csv", listOf("id", "plannedPaymentId", "scheduledDate", "generatedTransactionId", "status"), 
@@ -245,7 +259,7 @@ class BackupRepositoryImpl(
                 timestamp = p["timestamp"]?.toLongOrNull() ?: 0, 
                 currency = p["currency"] ?: "USD", 
                 transactionType = p["transactionType"] ?: "expense", 
-                accountId = p["accountId"] ?: "", 
+                accountId = p["accountId"],
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, 
                 tags = p["tags"] ?: "", 
                 paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) } ?: PaymentMethod.CASH, 
@@ -325,7 +339,24 @@ class BackupRepositoryImpl(
         CsvProcessor.parseCsv(it).forEach { p ->
             plannedPaymentDao.insert(PlannedPaymentEntity(
                 id = p["id"]?.toLong() ?: 0,
-                templateId = p["templateId"]?.toLongOrNull() ?: 0,
+                name = p["name"] ?: "",
+                categoryId = p["categoryId"]?.toLongOrNull() ?: 1002L,
+                amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                transactionType = p["transactionType"]?.toIntOrNull() ?: 0,
+                accountId = p["accountId"],
+                targetAccountId = p["targetAccountId"],
+                targetCurrency = p["targetCurrency"],
+                transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
+                note = p["note"],
+                payee = p["payee"],
+                location = p["location"],
+                latitude = p["latitude"]?.toDoubleOrNull(),
+                longitude = p["longitude"]?.toDoubleOrNull(),
+                warrantyExpiration = p["warrantyExpiration"]?.toLongOrNull(),
+                transactionStatus = p["transactionStatus"]?.let { TransactionStatus.fromString(it) } ?: TransactionStatus.CLEARED,
+                paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) },
+                currency = p["currency"] ?: "USD",
+                tags = p["tags"] ?: "",
                 schedule = RecurrenceScheduleEntity(
                     recurrenceType = p["recurrenceType"] ?: "MONTHLY",
                     interval = p["interval"]?.toIntOrNull() ?: 1,
@@ -338,8 +369,9 @@ class BackupRepositoryImpl(
                     lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull()
                 ),
                 autoConfirm = p["autoConfirm"]?.toBoolean() ?: false,
-                status = p["status"]?.let { PlannedPaymentStatus.valueOf(it) } ?: PlannedPaymentStatus.ACTIVE,
-                profileId = p["profileId"]?.toIntOrNull() ?: 1
+                status = p["status"]?.let { PlannedPaymentStatus.fromString(it) } ?: PlannedPaymentStatus.ACTIVE,
+                profileId = p["profileId"]?.toIntOrNull() ?: 1,
+                templateId = p["templateId"]?.toLongOrNull()
             ))
         }
     }
@@ -351,7 +383,7 @@ class BackupRepositoryImpl(
                 plannedPaymentId = p["plannedPaymentId"]?.toLongOrNull() ?: 0, 
                 scheduledDate = p["scheduledDate"]?.toLongOrNull() ?: 0, 
                 generatedTransactionId = p["generatedTransactionId"]?.toLongOrNull(), 
-                status = p["status"]?.let { OccurrenceStatus.valueOf(it) } ?: OccurrenceStatus.PENDING
+                status = p["status"]?.let { OccurrenceStatus.fromString(it) } ?: OccurrenceStatus.PENDING
             ))
         }
     }

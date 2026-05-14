@@ -118,24 +118,23 @@ class PlannedPaymentEntryViewModel(
 
         viewModelScope.launch {
             plannedPaymentRepository.getById(plannedPaymentId)?.let { existing ->
-                val template = existing.template
                 val schedule = existing.schedule
-                val usageCount = plannedPaymentRepository.getCountByTemplateId(template.id)
+                val usageCount = existing.templateId?.let { plannedPaymentRepository.getCountByTemplateId(it) } ?: 0
                 _state.update {
                     it.copy(
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
                         existingPayment = existing,
-                        linkedTemplate = template,
+                        linkedTemplate = existing.templateId?.let { id -> it.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
-                        name = template.name,
-                        amount = template.amount.toPlainString(),
-                        currency = template.currency,
-                        transactionType = template.transactionType,
-                        selectedAccountId = template.accountId,
-                        targetAccountId = template.targetAccountId,
-                        targetCurrency = template.targetCurrency,
-                        transferRate = template.transferRate,
+                        name = existing.name,
+                        amount = existing.amount.toPlainString(),
+                        currency = existing.currency,
+                        transactionType = existing.transactionType,
+                        selectedAccountId = existing.accountId,
+                        targetAccountId = existing.targetAccountId,
+                        targetCurrency = existing.targetCurrency,
+                        transferRate = existing.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
                         dayOfWeek = schedule.recurrenceRule.dayOfWeek,
@@ -145,17 +144,17 @@ class PlannedPaymentEntryViewModel(
                         startDateMillis = schedule.startDate,
                         hasEndDate = schedule.endDate != null,
                         endDateMillis = schedule.endDate ?: schedule.startDate,
-                        selectedCategoryId = template.categoryId,
-                        payee = template.payee ?: "",
-                        noteUserPart = template.note ?: "",
-                        location = template.location ?: "",
-                        latitude = template.latitude,
-                        longitude = template.longitude,
-                        warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
-                        isWarrantyEnabled = template.warrantyExpiration != null,
-                        transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                        selectedTagNames = template.tags,
+                        selectedCategoryId = existing.categoryId,
+                        payee = existing.payee ?: "",
+                        noteUserPart = existing.note ?: "",
+                        location = existing.location ?: "",
+                        latitude = existing.latitude,
+                        longitude = existing.longitude,
+                        warrantyExpirationMillis = existing.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        isWarrantyEnabled = existing.warrantyExpiration != null,
+                        transactionStatus = existing.transactionStatus,
+                        paymentMethod = existing.paymentMethod ?: PaymentMethod.CASH,
+                        selectedTagNames = existing.tags,
                         status = existing.status
                     )
                 }
@@ -262,10 +261,10 @@ class PlannedPaymentEntryViewModel(
                         state.copy(
                             linkedTemplate = event.template,
                             name = event.template.name,
-                            amount = event.template.amount.toPlainString(),
+                            amount = event.template.amount.abs().toPlainString(),
                             currency = event.template.currency,
                             transactionType = event.template.transactionType,
-                            selectedAccountId = event.template.accountId ?: "",
+                            selectedAccountId = event.template.accountId,
                             targetAccountId = event.template.targetAccountId,
                             targetCurrency = event.template.targetCurrency,
                             transferRate = event.template.transferRate,
@@ -317,7 +316,9 @@ class PlannedPaymentEntryViewModel(
                 dayOfMonth = s.dayOfMonth,
                 cronExpression = s.cronExpression
             )
-            val templateToSave = (s.linkedTemplate ?: Template(
+
+            val payment = (s.existingPayment ?: PlannedPayment(
+                id = 0,
                 name = s.name,
                 categoryId = s.selectedCategoryId,
                 amount = amount,
@@ -336,8 +337,16 @@ class PlannedPaymentEntryViewModel(
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
                 tags = s.selectedTagNames,
-                profileId = s.currentProfileId
+                schedule = PaymentSchedule(
+                    recurrenceRule = rule,
+                    startDate = s.startDateMillis,
+                    endDate = if (s.hasEndDate) s.endDateMillis else null,
+                    nextDueDate = s.startDateMillis
+                ),
+                profileId = s.currentProfileId,
+                templateId = s.linkedTemplate?.id
             )).copy(
+                id = s.plannedPaymentId ?: 0L,
                 name = s.name,
                 categoryId = s.selectedCategoryId,
                 amount = amount,
@@ -355,32 +364,7 @@ class PlannedPaymentEntryViewModel(
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
-                tags = s.selectedTagNames
-            )
-
-            val finalTemplateId = if (templateToSave.id == 0L) {
-                templateRepository.insertTemplate(templateToSave)
-            } else {
-                templateRepository.updateTemplate(templateToSave)
-                templateToSave.id
-            }
-            val finalTemplate = templateToSave.copy(id = finalTemplateId)
-
-            val payment = (s.existingPayment ?: PlannedPayment(
-                id = 0,
-                templateId = finalTemplateId,
-                template = finalTemplate,
-                schedule = PaymentSchedule(
-                    recurrenceRule = rule,
-                    startDate = s.startDateMillis,
-                    endDate = if (s.hasEndDate) s.endDateMillis else null,
-                    nextDueDate = s.startDateMillis
-                ),
-                profileId = s.currentProfileId
-            )).copy(
-                id = s.plannedPaymentId ?: 0L,
-                templateId = finalTemplateId,
-                template = finalTemplate,
+                tags = s.selectedTagNames,
                 schedule = PaymentSchedule(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
@@ -390,7 +374,8 @@ class PlannedPaymentEntryViewModel(
                 ),
                 autoConfirm = s.autoConfirm,
                 status = s.status,
-                profileId = s.currentProfileId
+                profileId = s.currentProfileId,
+                templateId = s.linkedTemplate?.id
             )
 
             if (s.isEditMode) {
@@ -408,8 +393,10 @@ class PlannedPaymentEntryViewModel(
         viewModelScope.launch {
             if (deleteTemplate) {
                 plannedPaymentRepository.getById(id)?.let { payment ->
-                    templateRepository.getTemplateById(payment.templateId)?.let { template ->
-                        templateRepository.deleteTemplate(template)
+                    payment.templateId?.let { templateId ->
+                        templateRepository.getTemplateById(templateId)?.let { template ->
+                            templateRepository.deleteTemplate(template)
+                        }
                     }
                 }
             }

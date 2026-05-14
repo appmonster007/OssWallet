@@ -5,13 +5,7 @@ import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import com.cronutils.parser.CronParser
-import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneOffset
@@ -150,8 +144,12 @@ object PlannedPaymentService {
             
             // Temporary object to leverage existing calculation logic
             val tempPayment = PlannedPayment(
-                templateId = 0L,
-                template = Template(name = "", categoryId = 0, amount = BigDecimal.ZERO, transactionType = 0, accountId = null, currency = "USD"),
+                name = "",
+                categoryId = 0,
+                amount = BigDecimal.ZERO,
+                transactionType = 0,
+                accountId = null,
+                currency = "USD",
                 schedule = PaymentSchedule(rule, startDate, endDate, current)
             )
             current = calculateNextDueDate(tempPayment, current)

@@ -2,38 +2,31 @@ package com.osscabinet.ossWallet.data.local.dao
 
 import androidx.room.*
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
-import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentWithTemplate
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlannedPaymentDao {
 
-    @Transaction
     @Query("SELECT * FROM planned_payments WHERE profileId = :profileId AND status = 'ACTIVE' ORDER BY nextDueDate ASC")
-    fun getActivePlannedPayments(profileId: Int): Flow<List<PlannedPaymentWithTemplate>>
+    fun getActivePlannedPayments(profileId: Int): Flow<List<PlannedPaymentEntity>>
 
-    @Transaction
     @Query("SELECT * FROM planned_payments WHERE profileId = :profileId ORDER BY nextDueDate ASC")
-    fun getAllPlannedPayments(profileId: Int): Flow<List<PlannedPaymentWithTemplate>>
+    fun getAllPlannedPayments(profileId: Int): Flow<List<PlannedPaymentEntity>>
 
-    @Transaction
     @Query("SELECT * FROM planned_payments WHERE profileId = :profileId ORDER BY nextDueDate ASC")
-    suspend fun getAllPlannedPaymentsSync(profileId: Int): List<PlannedPaymentWithTemplate>
+    suspend fun getAllPlannedPaymentsSync(profileId: Int): List<PlannedPaymentEntity>
 
-    @Transaction
     @Query("SELECT * FROM planned_payments WHERE profileId = :profileId AND status = 'ACTIVE' AND nextDueDate <= :untilDate ORDER BY nextDueDate ASC")
-    suspend fun getDuePlannedPayments(profileId: Int, untilDate: Long): List<PlannedPaymentWithTemplate>
+    suspend fun getDuePlannedPayments(profileId: Int, untilDate: Long): List<PlannedPaymentEntity>
 
-    @Transaction
     @Query("SELECT * FROM planned_payments")
-    suspend fun getAllPlannedPaymentsSync(): List<PlannedPaymentWithTemplate>
+    suspend fun getAllPlannedPaymentsSync(): List<PlannedPaymentEntity>
 
     @Query("DELETE FROM planned_payments")
     suspend fun clearAll()
 
-    @Transaction
     @Query("SELECT * FROM planned_payments WHERE id = :id")
-    suspend fun getById(id: Long): PlannedPaymentWithTemplate?
+    suspend fun getById(id: Long): PlannedPaymentEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PlannedPaymentEntity): Long

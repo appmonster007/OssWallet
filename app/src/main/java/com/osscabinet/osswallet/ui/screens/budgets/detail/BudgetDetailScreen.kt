@@ -220,7 +220,7 @@ fun BudgetDetailScreen(
                                             label = "ACCOUNTS",
                                             icon = Icons.Rounded.AccountBalance,
                                             allText = "All Accounts",
-                                            isEmpty = budget.accountIds.isEmpty(),
+                                            isEmpty = budget.accountIds.isEmpty() || (accounts.isNotEmpty() && budget.accountIds.size == accounts.size),
                                             items = selectedAccounts.map { account ->
                                                 {
                                                     val color = try {
@@ -236,7 +236,7 @@ fun BudgetDetailScreen(
                                             label = "CATEGORIES",
                                             icon = Icons.Rounded.Category,
                                             allText = "All Categories",
-                                            isEmpty = budget.categoryIds.isEmpty(),
+                                            isEmpty = budget.categoryIds.isEmpty() || (categoriesList.isNotEmpty() && budget.categoryIds.size == categoriesList.size),
                                             items = selectedCategories.map { category ->
                                                 {
                                                     val color = Color(category.colorHex)

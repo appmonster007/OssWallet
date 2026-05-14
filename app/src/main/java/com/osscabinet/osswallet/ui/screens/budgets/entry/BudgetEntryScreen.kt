@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.material.icons.rounded.*
@@ -9,9 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
@@ -50,11 +54,7 @@ fun BudgetEntryScreen(
         canSave = state.canSave && !state.navTriggered,
         isEditMode = state.isEditMode,
         onDeleteClick = if (state.isEditMode) {
-            {
-                viewModel.deleteBudget {
-                    onBackClick()
-                }
-            }
+            { viewModel.onEvent(BudgetEntryEvent.ShowDeleteDialog(true)) }
         } else null
     ) { innerPadding ->
         BudgetFormBody(
@@ -84,11 +84,20 @@ fun BudgetEntryScreen(
             selectedTags = state.selectedTags,
             onShowTagSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(true)) },
             onRemoveTag = { tag -> viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
+            selectedPaymentMethods = state.selectedPaymentMethods,
             onPaymentMethodClick = { viewModel.onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(true)) },
+            selectedStatuses = state.selectedStatuses,
             onStatusClick = { viewModel.onEvent(BudgetEntryEvent.ShowStatusSheet(true)) },
+            linkedTransactionIds = state.linkedTransactionIds,
             onLinkRecordClick = { viewModel.onEvent(BudgetEntryEvent.ShowLinkSheet(true)) },
+            filterId = state.filterId,
+            onFilterClick = { viewModel.onEvent(BudgetEntryEvent.ShowFilterSheet(true)) },
+            availableFilters = state.availableFilters,
             noteSuggestions = state.uniqueNotes,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            isFilterShared = state.filterUsageCount > 1,
+            filterUsageCount = state.filterUsageCount,
+            onMakeFilterUnique = { viewModel.onEvent(BudgetEntryEvent.MakeFilterUnique) }
         )
 
         // Selection Sheets
@@ -163,40 +172,28 @@ fun BudgetEntryScreen(
         }
 
         if (state.showCustomStartPicker) {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.customStartDate)
-            DatePickerDialog(
-                onDismissRequest = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(BudgetEntryEvent.SetCustomStartDate(it)) }
-                        viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false))
-                        viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(true))
-                    }) { Text("Next") }
+            AeonDatePickerDialog(
+                selectedDateMillis = state.customStartDate,
+                onDateSelected = { 
+                    viewModel.onEvent(BudgetEntryEvent.SetCustomStartDate(it))
+                    viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false))
+                    viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(true))
                 },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) }) { Text("Cancel") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
-            }
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
+                label = "Custom Start Date"
+            )
         }
 
         if (state.showCustomEndPicker) {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.customEndDate)
-            DatePickerDialog(
-                onDismissRequest = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(BudgetEntryEvent.SetCustomEndDate(it)) }
-                        viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false))
-                    }) { Text("OK") }
+            AeonDatePickerDialog(
+                selectedDateMillis = state.customEndDate,
+                onDateSelected = { 
+                    viewModel.onEvent(BudgetEntryEvent.SetCustomEndDate(it))
+                    viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false))
                 },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) }) { Text("Cancel") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
-            }
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
+                label = "Custom End Date"
+            )
         }
 
         if (state.showAccountSheet) {
@@ -263,5 +260,67 @@ fun BudgetEntryScreen(
                 onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false)) }
             )
         }
+
+        if (state.showFilterSheet) {
+            AeonFilterSelection(
+                filters = state.availableFilters,
+                selectedFilterId = state.filterId,
+                onFilterSelected = { viewModel.onEvent(BudgetEntryEvent.SetFilterId(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowFilterSheet(false)) },
+                title = "Select Filter",
+                showCreateNew = true
+            )
+        }
+
+        AeonConfirmDeleteDialog(
+            show = state.showDeleteDialog,
+            title = "Delete Budget",
+            message = "Are you sure you want to delete this budget?",
+            onConfirm = {
+                viewModel.deleteBudget {
+                    onBackClick()
+                }
+            },
+            onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowDeleteDialog(false)) },
+            extraContent = {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = state.deleteFilterWithBudget,
+                            onCheckedChange = { viewModel.onEvent(BudgetEntryEvent.SetDeleteFilterWithBudget(it)) }
+                        )
+                        Text("Also delete linked filter", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    
+                    if (state.deleteFilterWithBudget && state.filterUsageCount > 1) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    "Warning: This filter is shared with ${state.filterUsageCount - 1} other record(s). Deleting it will also affect them.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
 }

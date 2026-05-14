@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.loans.entry
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,6 +16,7 @@ class LoanEntryViewModel(
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
     private val transactionRepository: TransactionRepository,
+    private val filterRepository: FilterRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -32,21 +33,22 @@ class LoanEntryViewModel(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
-                    transactionRepository.getAllTransactions(profileId)
-                ) { accounts, categories, transactions ->
+                    tagRepository.getAllTags(),
+                    transactionRepository.getAllTransactions(profileId),
+                    filterRepository.getAllFilters()
+                ) { accounts, categories, tags, transactions, filters ->
                     val uniquePayees = transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted()
                     val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
-                    val availableTags = transactions.flatMap { it.tags }.distinct().sorted()
-                    
                     _state.update {
                         it.copy(
                             accounts = accounts,
                             categories = categories,
-                            allTransactions = transactions,
+                            availableTags = tags.map { t -> t.name },
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
-                            availableTags = availableTags,
-                            currentProfileId = profileId
+                            currentProfileId = profileId,
+                            allTransactions = transactions,
+                            availableFilters = filters
                         )
                     }
                 }
@@ -61,28 +63,32 @@ class LoanEntryViewModel(
         }
 
         viewModelScope.launch {
-            loanRepository.getLoanById(loanId)?.let { loan ->
+            loanRepository.getLoanById(loanId)?.let { loan: Loan ->
+                val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
+                val usageCount = loan.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 _state.update {
                     it.copy(
                         loanId = loanId,
                         isEditMode = true,
                         existingLoan = loan,
+                        linkedFilter = filter,
+                        filterUsageCount = usageCount,
                         name = loan.name,
                         principalAmount = loan.principalAmount.toPlainString(),
                         currency = loan.currency,
                         loanType = loan.loanType,
                         counterparty = loan.lenderOrBorrowerName,
                         interestRate = loan.interestRate?.toString() ?: "",
-                        note = loan.note ?: "",
+                        startDate = loan.startDate,
+                        hasSettlementDate = loan.expectedSettlementDate != null,
+                        settlementDate = loan.expectedSettlementDate ?: System.currentTimeMillis(),
+                        linkedAccountId = loan.linkedAccountId,
                         selectedCategoryIds = loan.categoryIds.toSet(),
                         selectedTags = loan.tags.toSet(),
                         selectedPaymentMethods = loan.paymentMethods.toSet(),
                         selectedStatuses = loan.statuses.toSet(),
                         linkedTransactionIds = loan.linkedTransactionIds.toSet(),
-                        startDate = loan.startDate,
-                        hasSettlementDate = loan.expectedSettlementDate != null,
-                        settlementDate = loan.expectedSettlementDate ?: System.currentTimeMillis(),
-                        linkedAccountId = loan.linkedAccountId ?: ""
+                        filterId = loan.filterId
                     )
                 }
             }
@@ -100,10 +106,41 @@ class LoanEntryViewModel(
             is LoanEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is LoanEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
             is LoanEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
+            is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
+            is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
+            is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
             is LoanEntryEvent.SetStartDate -> _state.update { it.copy(startDate = event.date) }
             is LoanEntryEvent.SetHasSettlementDate -> _state.update { it.copy(hasSettlementDate = event.has) }
             is LoanEntryEvent.SetSettlementDate -> _state.update { it.copy(settlementDate = event.date) }
             is LoanEntryEvent.SetLinkedAccountId -> _state.update { it.copy(linkedAccountId = event.id) }
+            is LoanEntryEvent.SetFilterId -> {
+                val filter = _state.value.availableFilters.find { it.id == event.filterId }
+                _state.update { state ->
+                    if (filter != null) {
+                        state.copy(
+                            filterId = event.filterId,
+                            linkedFilter = filter,
+                            selectedCategoryIds = filter.filter.categoryIds.toSet(),
+                            selectedTags = filter.filter.tags.toSet(),
+                            selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
+                            selectedStatuses = filter.filter.statuses.toSet(),
+                            linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
+                            linkedAccountId = filter.filter.accountIds.firstOrNull() ?: state.linkedAccountId
+                        )
+                    } else {
+                        state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
+                    }
+                }
+                if (event.filterId != null) {
+                    viewModelScope.launch {
+                        val count = filterRepository.getFilterUsageCount(event.filterId)
+                        _state.update { it.copy(filterUsageCount = count) }
+                    }
+                }
+            }
+            LoanEntryEvent.MakeFilterUnique -> _state.update { it.copy(filterId = null, linkedFilter = null) }
+            is LoanEntryEvent.SetDeleteFilterWithLoan -> _state.update { it.copy(deleteFilterWithLoan = event.delete) }
+            is LoanEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is LoanEntryEvent.ShowStartDatePicker -> _state.update { it.copy(showStartDatePicker = event.show) }
             is LoanEntryEvent.ShowSettlementDatePicker -> _state.update { it.copy(showSettlementDatePicker = event.show) }
             is LoanEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
@@ -114,9 +151,7 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is LoanEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is LoanEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
-            is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
-            is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
-            is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
+            is LoanEntryEvent.ShowFilterSheet -> _state.update { it.copy(showFilterSheet = event.show) }
             is LoanEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is LoanEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
             is LoanEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -129,14 +164,37 @@ class LoanEntryViewModel(
 
         viewModelScope.launch {
             val amount = s.principalAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            
+            // 1. Create or Update Filter
+            val filter = Filter(
+                id = s.linkedFilter?.id ?: 0L,
+                name = "Filter for Loan: ${s.name}",
+                filter = TransactionFilter(
+                    categoryIds = s.selectedCategoryIds.toList(),
+                    accountIds = if (s.linkedAccountId.isBlank()) emptyList() else listOf(s.linkedAccountId),
+                    tags = s.selectedTags.toList(),
+                    paymentMethods = s.selectedPaymentMethods.toList(),
+                    statuses = s.selectedStatuses.toList(),
+                    linkedTransactionIds = s.linkedTransactionIds.toList()
+                )
+            )
+
+            val filterId = if (filter.id == 0L) {
+                filterRepository.insertFilter(filter)
+            } else {
+                filterRepository.updateFilter(filter)
+                filter.id
+            }
+
+            // 2. Create or Update Loan
             val loan = (s.existingLoan ?: Loan(
                 id = 0,
                 name = s.name,
                 principalAmount = amount,
                 currency = s.currency,
-                loanType = s.loanType,
-                lenderOrBorrowerName = s.counterparty,
                 startDate = s.startDate,
+                lenderOrBorrowerName = s.counterparty,
+                loanType = s.loanType,
                 linkedAccountId = s.linkedAccountId,
                 profileId = s.currentProfileId
             )).copy(
@@ -144,19 +202,20 @@ class LoanEntryViewModel(
                 name = s.name,
                 principalAmount = amount,
                 currency = s.currency,
-                loanType = s.loanType,
-                lenderOrBorrowerName = s.counterparty,
                 interestRate = s.interestRate.toFloatOrNull(),
-                note = s.note,
                 startDate = s.startDate,
-                expectedSettlementDate = if (s.hasSettlementDate) s.settlementDate else null,
+                lenderOrBorrowerName = s.counterparty,
+                loanType = s.loanType,
                 linkedAccountId = s.linkedAccountId,
+                expectedSettlementDate = if (s.hasSettlementDate) s.settlementDate else null,
+                profileId = s.currentProfileId,
+                note = s.note,
                 categoryIds = s.selectedCategoryIds.toList(),
                 tags = s.selectedTags.toList(),
                 paymentMethods = s.selectedPaymentMethods.toList(),
                 statuses = s.selectedStatuses.toList(),
                 linkedTransactionIds = s.linkedTransactionIds.toList(),
-                profileId = s.currentProfileId
+                filterId = filterId
             )
 
             if (s.isEditMode) {
@@ -170,7 +229,17 @@ class LoanEntryViewModel(
 
     fun deleteLoan(onSuccess: () -> Unit) {
         val id = _state.value.loanId ?: return
+        val deleteFilter = _state.value.deleteFilterWithLoan
         viewModelScope.launch {
+            if (deleteFilter) {
+                loanRepository.getLoanById(id)?.let { loan ->
+                    loan.filterId?.let { filterId ->
+                        filterRepository.getFilterById(filterId)?.let { filter ->
+                            filterRepository.deleteFilter(filter)
+                        }
+                    }
+                }
+            }
             loanRepository.deleteLoan(id)
             onSuccess()
         }

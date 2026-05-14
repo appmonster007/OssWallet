@@ -28,6 +28,7 @@ fun AeonTransactionListFilteredPreview() {
     OssWalletTheme {
         TransactionListContent(
             listState = com.osscabinet.ossWallet.domain.model.TransactionListState(isEmpty = false),
+            allTransactions = emptyList(),
             accounts = mockAccounts,
             categories = mockCategories,
             decimalPrecision = 2,

@@ -5,6 +5,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.Flip
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,16 +45,46 @@ fun <T, ID> AeonSelectionSheet(
     footerContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
     var query by remember { mutableStateOf("") }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     
     val filteredItems = remember(query, items) {
         if (query.isBlank()) items
         else items.filter { labelMapper(it).contains(query, ignoreCase = true) }
     }
 
+    val filteredIds = remember(filteredItems) { filteredItems.map(idMapper).toSet() }
+
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = title,
-            onBack = onDismiss
+            onBack = onDismiss,
+            actions = {
+                if (mode == AeonSelectMode.MULTI && filteredIds.isNotEmpty()) {
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onSelectionChange(selectedIds + filteredIds)
+                    }) {
+                        Icon(Icons.Rounded.SelectAll, contentDescription = "Select All")
+                    }
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onSelectionChange(selectedIds - filteredIds)
+                    }) {
+                        Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All")
+                    }
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        val newSelection = selectedIds.toMutableSet()
+                        filteredIds.forEach { id ->
+                            if (id in newSelection) newSelection.remove(id)
+                            else newSelection.add(id)
+                        }
+                        onSelectionChange(newSelection)
+                    }) {
+                        Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection")
+                    }
+                }
+            }
         ) { padding ->
             Column(
                 modifier = modifier

@@ -37,7 +37,8 @@ fun EntryEditorialInput(
     modifier: Modifier = Modifier,
     suggestions: List<String> = emptyList(),
     maxLines: Int = 4,
-    placeholder: String = "Tap to enter..."
+    placeholder: String = "Tap to enter...",
+    additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
@@ -125,6 +126,8 @@ fun EntryEditorialInput(
                                 .onFocusChanged { isFocused = it.isFocused }
                         )
                     }
+
+                    additionalContent()
                 }
             }
         }

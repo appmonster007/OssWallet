@@ -26,4 +26,7 @@ interface FilterDao {
 
     @Delete
     suspend fun deleteFilter(filter: FilterEntity)
+
+    @Query("SELECT (SELECT COUNT(*) FROM budgets WHERE filterId = :filterId) + (SELECT COUNT(*) FROM loans WHERE filterId = :filterId)")
+    suspend fun getFilterUsageCount(filterId: Long): Int
 }

@@ -20,6 +20,11 @@ data class BudgetEntryState(
     val linkedTransactionIds: Set<Long> = emptySet(),
     val customStartDate: Long = System.currentTimeMillis(),
     val customEndDate: Long = System.currentTimeMillis(),
+    val filterId: Long? = null,
+    val linkedFilter: Filter? = null,
+    val filterUsageCount: Int = 0,
+    val deleteFilterWithBudget: Boolean = false,
+    val showDeleteDialog: Boolean = false,
 
     // UI State
     val showCustomStartPicker: Boolean = false,
@@ -33,6 +38,7 @@ data class BudgetEntryState(
     val showPaymentMethodSheet: Boolean = false,
     val showStatusSheet: Boolean = false,
     val showLinkSheet: Boolean = false,
+    val showFilterSheet: Boolean = false,
     val accountQuery: String = "",
     val categoryQuery: String = "",
     val isEditMode: Boolean = false,
@@ -46,10 +52,10 @@ data class BudgetEntryState(
     val availableTags: List<Tag> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
-    val existingBudget: Budget? = null
+    val existingBudget: Budget? = null,
+    val availableFilters: List<com.osscabinet.ossWallet.domain.model.Filter> = emptyList()
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && 
-                 limitAmount.toBigDecimalOrNull() != null && 
-                 selectedCategoryIds.isNotEmpty()
+                 limitAmount.toBigDecimalOrNull() != null
 }

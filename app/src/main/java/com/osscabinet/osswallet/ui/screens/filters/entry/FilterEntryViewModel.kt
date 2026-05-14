@@ -2,11 +2,12 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -17,7 +18,8 @@ class FilterEntryViewModel(
     private val filterRepository: FilterRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
-    private val transactionRepository: com.osscabinet.ossWallet.domain.repository.TransactionRepository,
+    private val transactionRepository: TransactionRepository,
+    private val tagRepository: TagRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -34,13 +36,15 @@ class FilterEntryViewModel(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
-                    transactionRepository.getAllTransactions(profileId)
-                ) { accounts, categories, transactions ->
+                    transactionRepository.getAllTransactions(profileId),
+                    tagRepository.getAllTags()
+                ) { accounts, categories, transactions, tags ->
                     _state.update { 
                         it.copy(
                             accounts = accounts,
                             categories = categories,
-                            allTransactions = transactions
+                            allTransactions = transactions,
+                            availableTags = tags
                         )
                     }
                 }
@@ -55,14 +59,32 @@ class FilterEntryViewModel(
         }
 
         viewModelScope.launch {
-            filterRepository.getAllFilters().first().find { it.id == filterId }?.let { filter ->
+            filterRepository.getFilterById(filterId)?.let { filter ->
+                val tf = filter.filter
                 _state.update {
                     it.copy(
                         filterId = filterId,
                         isEditMode = true,
                         existingFilter = filter,
                         name = filter.name,
-                        transactionFilter = filter.filter
+                        transactionType = tf.transactionType,
+                        selectedAccountIds = tf.accountIds.toSet(),
+                        selectedCategoryIds = tf.categoryIds.toSet(),
+                        selectedPaymentMethods = tf.paymentMethods.toSet(),
+                        selectedStatuses = tf.statuses.toSet(),
+                        linkedTransactionIds = tf.linkedTransactionIds.toSet(),
+                        selectedTags = tf.tags.toSet(),
+                        selectedCurrencies = tf.currencies.toSet(),
+                        queryNote = tf.queryNote ?: "",
+                        isNoteRegex = tf.isNoteRegex,
+                        queryPayee = tf.queryPayee ?: "",
+                        isPayeeRegex = tf.isPayeeRegex,
+                        minAmount = tf.minAmount?.toPlainString() ?: "",
+                        maxAmount = tf.maxAmount?.toPlainString() ?: "",
+                        hasWarranty = tf.hasWarranty,
+                        warrantyExpirationStart = tf.warrantyExpirationStart,
+                        warrantyExpirationEnd = tf.warrantyExpirationEnd,
+                        excludeFuture = tf.excludeFuture
                     )
                 }
             }
@@ -72,9 +94,57 @@ class FilterEntryViewModel(
     fun onEvent(event: FilterEntryEvent) {
         when (event) {
             is FilterEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
-            is FilterEntryEvent.SetTransactionFilter -> _state.update { it.copy(transactionFilter = event.filter) }
+            is FilterEntryEvent.SetTransactionType -> _state.update { it.copy(transactionType = event.type) }
+            is FilterEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
+            is FilterEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
+            is FilterEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
+            is FilterEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
+            is FilterEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
+            is FilterEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
+            is FilterEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
+            is FilterEntryEvent.SetQueryNote -> _state.update { it.copy(queryNote = event.query) }
+            is FilterEntryEvent.SetNoteRegex -> _state.update { it.copy(isNoteRegex = event.isRegex) }
+            is FilterEntryEvent.SetQueryPayee -> _state.update { it.copy(queryPayee = event.query) }
+            is FilterEntryEvent.SetPayeeRegex -> _state.update { it.copy(isPayeeRegex = event.isRegex) }
+            is FilterEntryEvent.SetMinAmount -> _state.update { it.copy(minAmount = event.amount) }
+            is FilterEntryEvent.SetMaxAmount -> _state.update { it.copy(maxAmount = event.amount) }
+            is FilterEntryEvent.SetHasWarranty -> _state.update { it.copy(hasWarranty = event.hasWarranty) }
+            is FilterEntryEvent.SetWarrantyExpirationStart -> _state.update { it.copy(warrantyExpirationStart = event.date) }
+            is FilterEntryEvent.SetWarrantyExpirationEnd -> _state.update { it.copy(warrantyExpirationEnd = event.date) }
+            is FilterEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
+            is FilterEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
+            is FilterEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
+            is FilterEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is FilterEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
+            is FilterEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
+            is FilterEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
+            is FilterEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
+            is FilterEntryEvent.ShowTypeSheet -> _state.update { it.copy(showTypeSheet = event.show) }
+            is FilterEntryEvent.ShowMinAmountSheet -> _state.update { it.copy(showMinAmountSheet = event.show) }
+            is FilterEntryEvent.ShowMaxAmountSheet -> _state.update { it.copy(showMaxAmountSheet = event.show) }
+            is FilterEntryEvent.ShowWarrantyStartPicker -> _state.update { it.copy(showWarrantyStartPicker = event.show) }
+            is FilterEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
-            FilterEntryEvent.ResetFilter -> _state.update { it.copy(transactionFilter = TransactionFilter()) }
+            FilterEntryEvent.ResetFilter -> _state.update { it.copy(
+                transactionType = null,
+                selectedAccountIds = emptySet(),
+                selectedCategoryIds = emptySet(),
+                selectedPaymentMethods = emptySet(),
+                selectedStatuses = emptySet(),
+                linkedTransactionIds = emptySet(),
+                selectedTags = emptySet(),
+                selectedCurrencies = emptySet(),
+                queryNote = "",
+                isNoteRegex = false,
+                queryPayee = "",
+                isPayeeRegex = false,
+                minAmount = "",
+                maxAmount = "",
+                hasWarranty = null,
+                warrantyExpirationStart = null,
+                warrantyExpirationEnd = null,
+                excludeFuture = true
+            ) }
         }
     }
 
@@ -86,9 +156,13 @@ class FilterEntryViewModel(
             val filter = Filter(
                 id = s.filterId ?: 0L,
                 name = s.name,
-                filter = s.transactionFilter
+                filter = s.toTransactionFilter()
             )
-            filterRepository.insertFilter(filter)
+            if (s.isEditMode) {
+                filterRepository.updateFilter(filter)
+            } else {
+                filterRepository.insertFilter(filter)
+            }
             onSuccess()
         }
     }

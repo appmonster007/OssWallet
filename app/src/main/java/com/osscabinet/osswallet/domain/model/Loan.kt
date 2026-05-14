@@ -23,7 +23,8 @@ data class Loan(
     val tags: List<String> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
-    val linkedTransactionIds: List<Long> = emptyList()
+    val linkedTransactionIds: List<Long> = emptyList(),
+    val filterId: Long? = null
 )
 
 data class LoanPayment(

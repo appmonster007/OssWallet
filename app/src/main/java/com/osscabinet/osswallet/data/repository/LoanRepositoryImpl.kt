@@ -35,49 +35,17 @@ class LoanRepositoryImpl(
         loanPaymentDao.getPaymentsForLoanSync(loanId).map { it.toDomain() }
 
     override suspend fun insertLoan(loan: Loan): Long {
-        val filterId = filterRepository.insertFilter(
-            Filter(
-                name = "Loan Filter: ${loan.name}",
-                filter = TransactionFilter(
-                    categoryIds = loan.categoryIds,
-                    tags = loan.tags,
-                    accountIds = listOf(loan.linkedAccountId),
-                    paymentMethods = loan.paymentMethods,
-                    statuses = loan.statuses,
-                    linkedTransactionIds = loan.linkedTransactionIds
-                )
-            )
-        )
+        val filterId = loan.filterId ?: throw IllegalArgumentException("FilterId must be provided")
         return loanDao.insert(loan.toEntity(filterId))
     }
 
     override suspend fun updateLoan(loan: Loan) {
-        val existing = loanDao.getLoanById(loan.id)
-        if (existing != null) {
-            filterRepository.updateFilter(
-                Filter(
-                    id = existing.loan.filterId,
-                    name = "Loan Filter: ${loan.name}",
-                    filter = TransactionFilter(
-                        categoryIds = loan.categoryIds,
-                        tags = loan.tags,
-                        accountIds = listOf(loan.linkedAccountId),
-                        paymentMethods = loan.paymentMethods,
-                        statuses = loan.statuses,
-                        linkedTransactionIds = loan.linkedTransactionIds
-                    )
-                )
-            )
-            loanDao.update(loan.toEntity(existing.loan.filterId))
-        }
+        val filterId = loan.filterId ?: throw IllegalArgumentException("FilterId must be provided")
+        loanDao.update(loan.toEntity(filterId))
     }
 
     override suspend fun deleteLoan(loanId: Long) {
-        val existing = loanDao.getLoanById(loanId)
-        if (existing != null) {
-            loanDao.deleteById(loanId)
-            filterRepository.deleteFilter(existing.filter.toDomain())
-        }
+        loanDao.deleteById(loanId)
     }
 
     override suspend fun insertPayment(payment: LoanPayment): Long =

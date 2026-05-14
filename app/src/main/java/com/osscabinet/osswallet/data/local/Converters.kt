@@ -102,4 +102,14 @@ class Converters {
     fun toTransactionType(value: String?): TransactionType? {
         return value?.let { TransactionType.fromValue(it) }
     }
+
+    @TypeConverter
+    fun fromStringSet(value: Set<String>?): String? {
+        return value?.joinToString(",")
+    }
+
+    @TypeConverter
+    fun toStringSet(value: String?): Set<String>? {
+        return value?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+    }
 }

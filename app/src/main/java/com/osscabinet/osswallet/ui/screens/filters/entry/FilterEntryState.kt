@@ -61,7 +61,7 @@ data class FilterEntryState(
         paymentMethods = selectedPaymentMethods.toList(),
         statuses = selectedStatuses.toList(),
         linkedTransactionIds = linkedTransactionIds.toList(),
-        tags = selectedTags.toList(),
+        tags = selectedTags,
         currencies = selectedCurrencies.toList(),
         queryNote = queryNote.takeIf { it.isNotBlank() },
         isNoteRegex = isNoteRegex,

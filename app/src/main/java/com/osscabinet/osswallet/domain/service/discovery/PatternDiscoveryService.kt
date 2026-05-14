@@ -19,7 +19,7 @@ data class DiscoveredPattern(
     val transactionType: TransactionType,
     val paymentMethod: PaymentMethod,
     val note: String,
-    val tags: List<String>,
+    val tags: Set<String>,
     val latitude: Double?,
     val longitude: Double?,
     val warrantyExpiration: Long?,

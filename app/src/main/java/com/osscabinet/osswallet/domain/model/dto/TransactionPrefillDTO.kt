@@ -18,7 +18,7 @@ data class TransactionPrefillDTO(
     val transactionType: TransactionType,
     val accountId: String? = null,
     val currency: String,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",

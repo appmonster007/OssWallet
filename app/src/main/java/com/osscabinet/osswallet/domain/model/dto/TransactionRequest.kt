@@ -16,7 +16,7 @@ data class TransactionRequest(
     val accountId: String,
     val currency: String,
     val categoryId: Long,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val timestamp: Long = System.currentTimeMillis(),
     val payee: String = "",

@@ -82,7 +82,7 @@ data class PlannedPayment(
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod? = null,
     val currency: String,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val schedule: PaymentSchedule,
     val autoConfirm: Boolean = false,
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,

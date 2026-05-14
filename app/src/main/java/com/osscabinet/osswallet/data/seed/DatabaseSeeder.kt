@@ -425,7 +425,7 @@ class DatabaseSeeder @Inject constructor(
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
-                tags = tags,
+                tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
                 sourcePlannedPaymentId = sourcePlannedPaymentId,
                 profileId = profileId,
                 latitude = latitude,

@@ -25,8 +25,7 @@ class TagRepositoryImpl(
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {
         val transactions = transactionDao.getTransactionsWithTag(tag.name)
         val updatedTransactions = transactions.map { tx ->
-            val currentTags = tx.tags.splitByComma().filter { it.isNotBlank() && it != tag.name }
-            tx.copy(tags = currentTags.joinByComma())
+            tx.copy(tags = tx.tags - tag.name)
         }
         transactionDao.updateTransactions(updatedTransactions)
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
@@ -42,8 +41,8 @@ class TagRepositoryImpl(
         if (oldName != newTag.name) {
             val transactions = transactionDao.getTransactionsWithTag(oldName)
             val updatedTransactions = transactions.map { tx ->
-                val currentTags = tx.tags.splitByComma().map { if (it == oldName) newTag.name else it }
-                tx.copy(tags = currentTags.joinByComma())
+                val currentTags = tx.tags.map { if (it == oldName) newTag.name else it }.toSet()
+                tx.copy(tags = currentTags)
             }
             transactionDao.updateTransactions(updatedTransactions)
         }

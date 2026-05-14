@@ -68,7 +68,7 @@ fun TagListScreen(
     // Reuse the AeonTagSelectionContent but without "Done" selection logic
     AeonTagSelectionContent(
         tags = tags,
-        selectedTags = emptyList(),
+        selectedTags = emptySet<String>(),
         onTagsSelected = { onBackClick() },
         onAddTag = { name, color -> 
             viewModel.addTag(name, color)

@@ -40,7 +40,7 @@ data class TemplateEntity(
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod? = null,
     val currency: String,
-    val tags: String = "", // Comma-separated tags
+    val tags: Set<String> = emptySet(),
     val isStarred: Boolean = false,
     val displayOrder: Int = 0,
     val profileId: Int = 1

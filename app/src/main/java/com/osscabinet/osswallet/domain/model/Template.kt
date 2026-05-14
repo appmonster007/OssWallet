@@ -23,7 +23,7 @@ data class Template(
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod? = null,
     val currency: String,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val isStarred: Boolean = false,
     val displayOrder: Int = 0,
     val profileId: Int = 1

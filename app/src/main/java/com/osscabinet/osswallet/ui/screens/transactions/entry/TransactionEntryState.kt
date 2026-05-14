@@ -13,7 +13,7 @@ data class TransactionEntryState(
     // Core form fields
     val amount: String = "",
     val selectedCategoryId: Long = 1002L,
-    val selectedTags: List<String> = emptyList(),
+    val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val transactionType: TransactionType = TransactionType.EXPENSE,

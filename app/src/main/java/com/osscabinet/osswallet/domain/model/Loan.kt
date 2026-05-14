@@ -20,7 +20,7 @@ data class Loan(
     val profileId: Int,
     val note: String = "",
     val categoryIds: List<Long> = emptyList(),
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),

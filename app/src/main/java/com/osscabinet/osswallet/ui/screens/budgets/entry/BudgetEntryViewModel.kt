@@ -192,7 +192,7 @@ class BudgetEntryViewModel(
                 filter = TransactionFilter(
                     categoryIds = s.selectedCategoryIds.toList(),
                     accountIds = s.selectedAccountIds.toList(),
-                    tags = s.selectedTags.toList(),
+                    tags = s.selectedTags,
                     paymentMethods = s.selectedPaymentMethods.toList(),
                     statuses = s.selectedStatuses.toList(),
                     linkedTransactionIds = s.linkedTransactionIds.toList(),
@@ -226,7 +226,7 @@ class BudgetEntryViewModel(
                 rollover = s.rollover,
                 categoryIds = s.selectedCategoryIds.toList(),
                 accountIds = s.selectedAccountIds.toList(),
-                tags = s.selectedTags.toList(),
+                tags = s.selectedTags,
                 paymentMethods = s.selectedPaymentMethods.toList(),
                 statuses = s.selectedStatuses.toList(),
                 linkedTransactionIds = s.linkedTransactionIds.toList(),

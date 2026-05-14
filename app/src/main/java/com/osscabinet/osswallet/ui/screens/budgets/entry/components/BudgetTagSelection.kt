@@ -23,8 +23,8 @@ fun BudgetTagSelection(
 
     AeonTagSelection(
         tags = tagList,
-        selectedTags = selectedTags.toList(),
-        onTagsSelected = { onSelectionChanged(it.toSet()) },
+        selectedTags = selectedTags,
+        onTagsSelected = { onSelectionChanged(it) },
         onAddTag = { name, _ -> onAddTag(name) },
         onEditTag = { },
         onDeleteTag = { }, // Deletion not supported in simple string-based tag selection yet

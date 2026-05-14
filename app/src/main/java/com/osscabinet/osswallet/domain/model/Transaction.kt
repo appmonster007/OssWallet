@@ -15,7 +15,7 @@ data class Transaction(
     val transactionType: TransactionType,
     val accountId: String?,
     val categoryId: Long,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",

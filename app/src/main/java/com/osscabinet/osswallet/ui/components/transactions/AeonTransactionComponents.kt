@@ -181,7 +181,7 @@ fun AeonTransactionItem(
     type: CashFlowType,
     timestamp: String,
     note: String? = null,
-    tags: List<String> = emptyList(),
+    tags: Set<String> = emptySet(),
     icon: ImageVector? = null,
     iconBg: Color? = null,
     useNoteAsHeader: Boolean = false,

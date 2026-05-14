@@ -431,7 +431,7 @@ fun TemplatesScreenPreview() {
             location = null,
             paymentMethod = null,
             currency = "USD",
-            tags = emptyList(),
+            tags = emptySet<String>(),
             isStarred = true,
             displayOrder = 0
         ),
@@ -449,7 +449,7 @@ fun TemplatesScreenPreview() {
             location = null,
             paymentMethod = null,
             currency = "USD",
-            tags = emptyList(),
+            tags = emptySet<String>(),
             isStarred = true,
             displayOrder = 1
         ),
@@ -467,7 +467,7 @@ fun TemplatesScreenPreview() {
             location = null,
             paymentMethod = null,
             currency = "USD",
-            tags = emptyList(),
+            tags = emptySet<String>(),
             isStarred = false,
             displayOrder = 2
         ),
@@ -485,7 +485,7 @@ fun TemplatesScreenPreview() {
             location = null,
             paymentMethod = null,
             currency = "USD",
-            tags = emptyList(),
+            tags = emptySet<String>(),
             isStarred = false,
             displayOrder = 3
         ),
@@ -503,7 +503,7 @@ fun TemplatesScreenPreview() {
             location = null,
             paymentMethod = null,
             currency = "USD",
-            tags = emptyList(),
+            tags = emptySet<String>(),
             isStarred = false,
             displayOrder = 4
         )
@@ -549,7 +549,7 @@ fun TemplateItemPreview() {
         location = null,
         paymentMethod = null,
         currency = "USD",
-        tags = emptyList(),
+        tags = emptySet(),
         isStarred = true,
         displayOrder = 0
     )

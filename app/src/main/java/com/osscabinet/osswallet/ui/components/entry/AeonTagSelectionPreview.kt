@@ -22,7 +22,7 @@ fun AeonTagSelectionPreview() {
     OssWalletTheme {
         AeonTagSelectionContent(
             tags = mockTags,
-            selectedTags = listOf("Personal", "Shopping"),
+            selectedTags = setOf("Personal", "Shopping"),
             onTagsSelected = {},
             onAddTag = { _, _ -> },
             onEditTag = {},

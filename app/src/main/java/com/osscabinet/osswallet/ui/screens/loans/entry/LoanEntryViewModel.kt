@@ -185,7 +185,7 @@ class LoanEntryViewModel(
                 filter = TransactionFilter(
                     categoryIds = s.selectedCategoryIds.toList(),
                     accountIds = if (s.linkedAccountId.isBlank()) emptyList() else listOf(s.linkedAccountId),
-                    tags = s.selectedTags.toList(),
+                    tags = s.selectedTags,
                     paymentMethods = s.selectedPaymentMethods.toList(),
                     statuses = s.selectedStatuses.toList(),
                     linkedTransactionIds = s.linkedTransactionIds.toList()
@@ -224,7 +224,7 @@ class LoanEntryViewModel(
                 profileId = s.currentProfileId,
                 note = s.note,
                 categoryIds = s.selectedCategoryIds.toList(),
-                tags = s.selectedTags.toList(),
+                tags = s.selectedTags,
                 paymentMethods = s.selectedPaymentMethods.toList(),
                 statuses = s.selectedStatuses.toList(),
                 linkedTransactionIds = s.linkedTransactionIds.toList(),

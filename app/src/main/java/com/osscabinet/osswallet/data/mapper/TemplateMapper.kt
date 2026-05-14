@@ -26,7 +26,7 @@ fun TemplateEntity.toDomain(): Template {
         transactionStatus = transactionStatus,
         paymentMethod = paymentMethod,
         currency = currency,
-        tags = if (tags.isEmpty()) emptyList() else tags.split(","),
+        tags = tags,
         isStarred = isStarred,
         displayOrder = displayOrder,
         profileId = profileId
@@ -55,7 +55,7 @@ fun Template.toEntity(): TemplateEntity {
         transactionStatus = transactionStatus,
         paymentMethod = paymentMethod,
         currency = currency,
-        tags = tags.joinToString(","),
+        tags = tags,
         isStarred = isStarred,
         displayOrder = displayOrder,
         profileId = profileId

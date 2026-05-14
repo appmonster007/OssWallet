@@ -13,7 +13,7 @@ data class Budget(
     val period: BudgetPeriod,
     val categoryIds: List<Long> = emptyList(),
     val accountIds: List<String> = emptyList(),
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),

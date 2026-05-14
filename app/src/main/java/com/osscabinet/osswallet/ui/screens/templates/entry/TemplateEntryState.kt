@@ -28,7 +28,7 @@ data class TemplateEntryState(
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val tags: List<String> = emptyList(),
+    val tags: Set<String> = emptySet(),
 
     // UI State
     val showAccountSheet: Boolean = false,

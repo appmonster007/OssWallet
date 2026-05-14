@@ -10,7 +10,7 @@ import java.math.BigDecimal
 sealed class TransactionEntryEvent {
     data class SetAmount(val amount: String) : TransactionEntryEvent()
     data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
-    data class SetTags(val tags: List<String>) : TransactionEntryEvent()
+    data class SetTags(val tags: Set<String>) : TransactionEntryEvent()
     data class AddTag(val tag: String, val color: Int? = null) : TransactionEntryEvent()
     data class DeleteTag(val tag: Tag) : TransactionEntryEvent()
     data class RemoveTag(val tag: String) : TransactionEntryEvent()

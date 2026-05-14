@@ -13,7 +13,7 @@ import java.math.BigDecimal
 
 @Preview(showBackground = true)
 @Composable
-fun LoanHeroPreview() {
+fun AeonLoanHeroPreview() {
     val loan = Loan(
         id = 1,
         name = "Personal Loan",

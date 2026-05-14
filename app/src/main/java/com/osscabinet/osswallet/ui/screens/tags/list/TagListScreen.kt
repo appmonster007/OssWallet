@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,12 +14,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelectionContent
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionContent
+import com.osscabinet.ossWallet.ui.components.entry.TagPresetColors
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
 
 /**
  * Screen for managing tags in settings.
- * Reuses TagSelectionContent for a consistent search-and-create experience.
+ * Reuses AeonTagSelectionContent for a consistent search-and-create experience.
  */
 @Composable
 fun TagListScreen(
@@ -63,8 +65,8 @@ fun TagListScreen(
         )
     }
 
-    // Reuse the TagSelectionContent but without "Done" selection logic
-    TagSelectionContent(
+    // Reuse the AeonTagSelectionContent but without "Done" selection logic
+    AeonTagSelectionContent(
         tags = tags,
         selectedTags = emptyList(),
         onTagsSelected = { onBackClick() },
@@ -107,18 +109,18 @@ fun EditTagDialog(
                 
                 Text("Tag Color", style = MaterialTheme.typography.labelLarge)
                 
-                com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagPresetColors.chunked(4).forEach { row ->
+                TagPresetColors.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { color ->
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .background(color, androidx.compose.foundation.shape.CircleShape)
+                                    .background(color, CircleShape)
                                     .clickable { selectedColor = color }
                                     .border(
                                         width = if (selectedColor == color) 2.dp else 0.dp,
                                         color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        shape = androidx.compose.foundation.shape.CircleShape
+                                        shape = CircleShape
                                     )
                             )
                         }

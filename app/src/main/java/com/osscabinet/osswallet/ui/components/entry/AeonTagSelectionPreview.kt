@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
+package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -7,7 +7,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Preview(showBackground = true)
 @Composable
-fun TagSelectionPreview() {
+fun AeonTagSelectionPreview() {
     val mockTags = listOf(
         Tag(1, "Personal", 0xFFEF5350.toInt()),
         Tag(2, "Work", 0xFF42A5F5.toInt()),
@@ -20,7 +20,7 @@ fun TagSelectionPreview() {
     )
     
     OssWalletTheme {
-        TagSelectionContent(
+        AeonTagSelectionContent(
             tags = mockTags,
             selectedTags = listOf("Personal", "Shopping"),
             onTagsSelected = {},

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -111,15 +112,6 @@ data class TransactionEntryState(
             return amountValue >= BigDecimal.ZERO && selectedAccount != null
         }
 }
-
-/**
- * Data class representing a single split of a transaction.
- */
-data class TransactionSplit(
-    val categoryId: Long? = null,
-    val amount: String = "",
-    val note: String = ""
-)
 
 /**
  * Sealed class representing events that can modify the transaction entry state.

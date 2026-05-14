@@ -8,10 +8,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.components.entry.*
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
 
 /**
  * Container for all bottom sheets used in transaction entry.
@@ -179,9 +177,18 @@ fun TransactionEntrySheets(
 
     // Split Transaction Screen
     if (state.showSplitSheet) {
-        TransactionSplitSheet(
-            state = state,
-            onEvent = onEvent,
+        AeonTransactionSplitSheet(
+            totalAmount = state.amountValue,
+            currency = state.selectedCurrency,
+            splits = state.splits,
+            categories = state.categories,
+            onAddSplit = { onEvent(TransactionEntryEvent.AddSplit) },
+            onRemoveSplit = { index -> onEvent(TransactionEntryEvent.RemoveSplit(index)) },
+            onUpdateSplit = { index, amount, note, categoryId ->
+                onEvent(TransactionEntryEvent.UpdateSplit(index, amount = amount, note = note, categoryId = categoryId))
+            },
+            onShowCategorySheet = { index -> onEvent(TransactionEntryEvent.ShowSplitCategorySheet(index)) },
+            onToggleSplitMode = { onEvent(TransactionEntryEvent.ToggleSplitMode(it)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowSplitSheet(false)) }
         )
     }

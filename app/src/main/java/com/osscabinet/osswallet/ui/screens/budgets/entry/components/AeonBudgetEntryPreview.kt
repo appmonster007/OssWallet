@@ -13,7 +13,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Preview(showBackground = true)
 @Composable
-fun BudgetEntryPreview() {
+fun AeonBudgetEntryPreview() {
     OssWalletTheme {
         Column(
             modifier = Modifier

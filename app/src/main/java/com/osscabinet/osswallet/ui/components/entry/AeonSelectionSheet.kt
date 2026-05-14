@@ -42,7 +42,8 @@ fun <T, ID> AeonSelectionSheet(
     noneLabel: String? = null,
     noneIcon: ImageVector = Icons.Rounded.Block,
     headerContent: @Composable (ColumnScope.() -> Unit)? = null,
-    footerContent: @Composable (ColumnScope.() -> Unit)? = null
+    footerContent: @Composable (ColumnScope.() -> Unit)? = null,
+    startExpanded: Boolean = true
 ) {
     var query by remember { mutableStateOf("") }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -134,7 +135,8 @@ fun <T, ID> AeonSelectionSheet(
                                     iconMapper = iconMapper,
                                     colorMapper = colorMapper,
                                     noneLabel = noneLabel,
-                                    noneIcon = noneIcon
+                                    noneIcon = noneIcon,
+                                    startExpanded = startExpanded
                                 )
                             } else {
                                 AeonHybridSelector(

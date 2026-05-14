@@ -42,7 +42,8 @@ fun <T, ID> AeonHierarchicalHybridSelector(
     noneIcon: ImageVector = Icons.Rounded.Block,
     onParentSelected: (ID?) -> Unit = {},
     onEditClick: (T) -> Unit = {},
-    onAddChildClick: (T) -> Unit = {}
+    onAddChildClick: (T) -> Unit = {},
+    startExpanded: Boolean = true
 ) {
     val rootItems = items.filter { parentIdMapper(it) == null }.sortedBy { labelMapper(it) }
 
@@ -123,7 +124,8 @@ fun <T, ID> AeonHierarchicalHybridSelector(
                 onParentSelected = onParentSelected,
                 onEditClick = onEditClick,
                 onAddChildClick = onAddChildClick,
-                depth = 0
+                depth = 0,
+                startExpanded = startExpanded
             )
         }
     }
@@ -144,13 +146,14 @@ private fun <T, ID> RecursiveHybridNode(
     onParentSelected: (ID?) -> Unit,
     onEditClick: (T) -> Unit,
     onAddChildClick: (T) -> Unit,
-    depth: Int
+    depth: Int,
+    startExpanded: Boolean
 ) {
     val itemId = idMapper(item)
     val children = allItems.filter { parentIdMapper(it) == itemId }.sortedBy { labelMapper(it) }
     var expanded by remember {
-        mutableStateOf(selectedIds.contains(itemId) ||
-            selectedIds.any { id -> allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId })
+        mutableStateOf(startExpanded && (selectedIds.contains(itemId) ||
+            selectedIds.any { id -> allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId }))
     }
 
     // Alternating contrast backgrounds for levels
@@ -223,7 +226,8 @@ private fun <T, ID> RecursiveHybridNode(
                             onParentSelected = onParentSelected,
                             onEditClick = onEditClick,
                             onAddChildClick = onAddChildClick,
-                            depth = depth + 1
+                            depth = depth + 1,
+                            startExpanded = startExpanded
                         )
                     }
 

@@ -83,7 +83,8 @@ fun FilterFields(
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
-                title = "Filter Categories"
+                title = "Filter Categories",
+                startExpanded = false
             )
         }
         "Currencies" -> {

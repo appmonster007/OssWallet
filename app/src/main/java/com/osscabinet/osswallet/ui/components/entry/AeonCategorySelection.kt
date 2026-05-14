@@ -13,7 +13,8 @@ fun AeonCategorySelection(
     onSelectionChange: (Set<Long>) -> Unit,
     onDismiss: () -> Unit,
     mode: AeonSelectMode = AeonSelectMode.SINGLE,
-    title: String = "Select Category"
+    title: String = "Select Category",
+    startExpanded: Boolean = true
 ) {
     AeonSelectionSheet(
         title = title,
@@ -28,6 +29,7 @@ fun AeonCategorySelection(
         parentIdMapper = { it.parentId },
         iconMapper = { getIconByName(it.iconName) },
         colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
-        searchPlaceholder = "Search categories..."
+        searchPlaceholder = "Search categories...",
+        startExpanded = startExpanded
     )
 }

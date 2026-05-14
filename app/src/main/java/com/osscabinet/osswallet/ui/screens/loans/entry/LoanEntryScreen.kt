@@ -199,7 +199,8 @@ fun LoanEntryScreen(
                 },
                 onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowCategorySheet(false)) },
                 mode = AeonSelectMode.MULTI,
-                title = "Loan Categories"
+                title = "Loan Categories",
+                startExpanded = false
             )
         }
 

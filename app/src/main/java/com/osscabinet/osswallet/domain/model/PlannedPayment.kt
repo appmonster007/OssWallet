@@ -68,7 +68,7 @@ data class PlannedPayment(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
+    val transactionType: TransactionType,
     val accountId: String? = null,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,

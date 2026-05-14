@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -310,7 +310,7 @@ fun BudgetDetailScreen(
                         } else {
                             val now = System.currentTimeMillis()
                             val transactionType = if (budget.trackTypes.size == 1) {
-                                if (budget.trackTypes.first() == BudgetTrackType.INCOME) "income" else "expense"
+                                budget.trackTypes.first()
                             } else null
 
                             val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {

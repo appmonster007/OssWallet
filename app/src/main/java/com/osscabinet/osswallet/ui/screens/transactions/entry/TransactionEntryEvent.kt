@@ -16,7 +16,7 @@ sealed class TransactionEntryEvent {
     data class RemoveTag(val tag: String) : TransactionEntryEvent()
     data class SetPaymentMethod(val method: PaymentMethod) : TransactionEntryEvent()
     data class SetStatus(val status: TransactionStatus) : TransactionEntryEvent()
-    data class SetTransactionType(val type: Int) : TransactionEntryEvent()
+    data class SetTransactionType(val type: TransactionType) : TransactionEntryEvent()
     data class SetDate(val millis: Long) : TransactionEntryEvent()
     data class SetPayee(val payee: String) : TransactionEntryEvent()
     data class SetNote(val note: String) : TransactionEntryEvent()

@@ -31,12 +31,7 @@ class PlannedPaymentWorker(
         
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
-                val typeStr = when (payment.transactionType) {
-                    1 -> "income"
-                    2 -> "transfer"
-                    else -> "expense"
-                }
-                val amount = if (typeStr == "income" || typeStr == "transfer") {
+                val amount = if (payment.transactionType == TransactionType.INCOME || payment.transactionType == TransactionType.TRANSFER) {
                     payment.amount.abs()
                 } else {
                     payment.amount.abs().negate()
@@ -45,7 +40,7 @@ class PlannedPaymentWorker(
                 val request = TransactionRequest(
                     name = allCategories.find { it.id == payment.categoryId }?.name ?: "Planned Payment",
                     amount = amount,
-                    transactionType = typeStr,
+                    transactionType = payment.transactionType,
                     accountId = payment.accountId ?: "",
                     currency = payment.currency,
                     categoryId = payment.categoryId,
@@ -59,7 +54,7 @@ class PlannedPaymentWorker(
                     warrantyExpiration = payment.warrantyExpiration,
                     status = payment.transactionStatus,
                     sourcePlannedPaymentId = payment.id,
-                    isTransfer = payment.transactionType == 2,
+                    isTransfer = payment.transactionType == TransactionType.TRANSFER,
                     targetAccountId = payment.targetAccountId,
                     targetCurrency = payment.targetCurrency,
                     transferRate = payment.transferRate

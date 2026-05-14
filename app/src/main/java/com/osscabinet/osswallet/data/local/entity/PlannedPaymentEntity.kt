@@ -9,6 +9,7 @@ import androidx.room.Relation
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 @Entity(
@@ -34,7 +35,7 @@ data class PlannedPaymentEntity(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
+    val transactionType: TransactionType,
     val accountId: String? = null,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,

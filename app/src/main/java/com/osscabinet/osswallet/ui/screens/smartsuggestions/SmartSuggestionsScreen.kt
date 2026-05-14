@@ -185,7 +185,7 @@ private fun SuggestionListItem(
                     text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
-                    color = if (pattern.transactionType == "income") Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                    color = if (pattern.transactionType == TransactionType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
                 )
             }
 
@@ -303,7 +303,7 @@ private fun SmartSuggestionsScreenPreview() {
             accountId = "Savings",
             averageAmount = BigDecimal("-15.99"),
             currency = "USD",
-            transactionType = "expense",
+            transactionType = TransactionType.EXPENSE,
             paymentMethod = PaymentMethod.CREDIT_CARD,
             note = "Monthly plan",
             tags = listOf("subscription", "streaming"),
@@ -322,7 +322,7 @@ private fun SmartSuggestionsScreenPreview() {
             accountId = "Checking",
             averageAmount = BigDecimal("-85.40"),
             currency = "USD",
-            transactionType = "expense",
+            transactionType = TransactionType.EXPENSE,
             paymentMethod = PaymentMethod.DEBIT_CARD,
             note = "",
             tags = emptyList(),

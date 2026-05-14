@@ -148,7 +148,7 @@ fun PlannedPaymentDetailScreen(
             // Hero card
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == 1) TealHealthy else RedWarning
+                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == TransactionType.INCOME) TealHealthy else RedWarning
                     PlannedPaymentStatus.PAUSED -> Color.Gray
                     else -> Color.Gray
                 }
@@ -201,11 +201,7 @@ fun PlannedPaymentDetailScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
-                        val typeLabel = when (payment.transactionType) {
-                            1 -> "Income"
-                            2 -> "Transfer"
-                            else -> "Expense"
-                        }
+                        val typeLabel = payment.transactionType.displayName
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)

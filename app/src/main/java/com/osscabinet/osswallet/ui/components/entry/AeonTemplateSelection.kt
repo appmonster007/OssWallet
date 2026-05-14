@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
@@ -118,9 +119,9 @@ fun AeonTemplateSelection(
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
-                                        "${if (template.transactionType == 1) "+" else "-"}${template.amount} ${template.currency ?: ""}",
+                                        "${if (template.transactionType == TransactionType.INCOME) "+" else "-"}${template.amount} ${template.currency ?: ""}",
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = if (template.transactionType == 1) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                                        color = if (template.transactionType == TransactionType.INCOME) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }

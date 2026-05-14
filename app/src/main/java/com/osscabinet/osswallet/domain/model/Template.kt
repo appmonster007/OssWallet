@@ -7,7 +7,7 @@ data class Template(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
+    val transactionType: TransactionType,
     val icon: String? = null,
     val colorHex: String? = null,
     val accountId: String?,

@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.navigation
 
+import com.osscabinet.ossWallet.domain.model.TransactionType
+
 sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard?viewContext={viewContext}&topLevel={topLevel}") {
         fun createRoute(viewContext: String? = null, topLevel: Boolean = true): String {
@@ -19,11 +21,11 @@ sealed class Screen(val route: String) {
         }
     }
     object TransactionEntry : Screen("transaction_entry?transactionId={transactionId}&accountId={accountId}&type={type}&templateId={templateId}") {
-        fun createRoute(transactionId: Long? = null, accountId: String? = null, type: Int? = null, templateId: Long? = null): String {
+        fun createRoute(transactionId: Long? = null, accountId: String? = null, type: TransactionType? = null, templateId: Long? = null): String {
             val params = mutableListOf<String>()
             transactionId?.let { params.add("transactionId=$it") }
             accountId?.let { params.add("accountId=$it") }
-            type?.let { params.add("type=$it") }
+            type?.let { params.add("type=${it.toInt()}") }
             templateId?.let { params.add("templateId=$it") }
             return if (params.isEmpty()) "transaction_entry" else "transaction_entry?${params.joinToString("&")}"
         }

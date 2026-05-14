@@ -79,7 +79,7 @@ class TransactionRepositoryImpl(
         }
         if (filter.transactionType != null) {
             queryBuilder.append(" AND transactionType = ?")
-            args.add(filter.transactionType)
+            args.add(filter.transactionType.value)
         }
         if (filter.minAmount != null) {
             queryBuilder.append(" AND amount >= ?")

@@ -22,7 +22,7 @@ data class TransactionFilter(
     val minAmount: java.math.BigDecimal? = null,
     @Serializable(with = NullableBigDecimalSerializer::class)
     val maxAmount: java.math.BigDecimal? = null,
-    val transactionType: String? = null, // null = all, "income" = income only, "expense" = expense only
+    val transactionType: TransactionType? = null, // null = all
     val currencies: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),

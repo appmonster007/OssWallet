@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.model.dto
 
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -14,7 +15,7 @@ data class TransactionPrefillDTO(
     val name: String = "",
     val amount: String,
     val categoryId: Long,
-    val transactionType: String, // "income", "expense", or "transfer"
+    val transactionType: TransactionType,
     val accountId: String? = null,
     val currency: String,
     val tags: List<String> = emptyList(),
@@ -52,7 +53,7 @@ data class TransactionPrefillDTO(
                 name = "", // Transactions don't have names
                 amount = transaction.amount.abs().toPlainString(),
                 categoryId = transaction.categoryId,
-                transactionType = if (transaction.categoryId == 1003L) "transfer" else transaction.transactionType,
+                transactionType = if (transaction.categoryId == 1003L) TransactionType.TRANSFER else transaction.transactionType,
                 accountId = transaction.accountId,
                 currency = transaction.currency,
                 tags = transaction.tags,
@@ -75,16 +76,11 @@ data class TransactionPrefillDTO(
         fun fromTemplate(
             template: com.osscabinet.ossWallet.domain.model.Template
         ): TransactionPrefillDTO {
-            val typeStr = when (template.transactionType) {
-                1 -> "income"
-                2 -> "transfer"
-                else -> "expense"
-            }
             return TransactionPrefillDTO(
                 name = template.name,
                 amount = if (template.amount.signum() != 0) template.amount.abs().toPlainString() else "",
                 categoryId = template.categoryId,
-                transactionType = typeStr,
+                transactionType = template.transactionType,
                 accountId = template.accountId ?: "",
                 currency = template.currency ?: "",
                 tags = template.tags,
@@ -103,16 +99,11 @@ data class TransactionPrefillDTO(
             payment: com.osscabinet.ossWallet.domain.model.PlannedPayment,
             scheduledDate: Long? = null
         ): TransactionPrefillDTO {
-            val typeStr = when (payment.transactionType) {
-                1 -> "income"
-                2 -> "transfer"
-                else -> "expense"
-            }
             return TransactionPrefillDTO(
                 name = payment.name,
                 amount = payment.amount.abs().toPlainString(),
                 categoryId = payment.categoryId,
-                transactionType = typeStr,
+                transactionType = payment.transactionType,
                 accountId = payment.accountId ?: "",
                 currency = payment.currency,
                 tags = payment.tags,

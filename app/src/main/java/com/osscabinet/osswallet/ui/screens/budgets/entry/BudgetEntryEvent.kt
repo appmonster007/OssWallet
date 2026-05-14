@@ -1,14 +1,14 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 
 sealed class BudgetEntryEvent {
     data class SetName(val name: String) : BudgetEntryEvent()
     data class SetLimitAmount(val amount: String) : BudgetEntryEvent()
     data class SetCurrency(val currency: String) : BudgetEntryEvent()
     data class SetPeriod(val period: BudgetPeriod) : BudgetEntryEvent()
-    data class SetTrackTypes(val types: Set<BudgetTrackType>) : BudgetEntryEvent()
+    data class SetTrackTypes(val types: Set<TransactionType>) : BudgetEntryEvent()
     data class SetAlertThreshold(val threshold: Float) : BudgetEntryEvent()
     data class SetRollover(val rollover: Boolean) : BudgetEntryEvent()
     data class SetNote(val note: String) : BudgetEntryEvent()

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import java.math.BigDecimal
 import kotlin.math.abs
@@ -440,7 +441,7 @@ private fun mockTransactionPreview() = Transaction(
     amount = BigDecimal("45.00"),
     timestamp = System.currentTimeMillis(),
     currency = "USD",
-    transactionType = "expense",
+    transactionType = TransactionType.EXPENSE,
     accountId = "acc_1",
     categoryId = 1002L
 )

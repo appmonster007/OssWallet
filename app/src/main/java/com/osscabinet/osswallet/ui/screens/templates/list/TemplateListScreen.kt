@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
@@ -228,9 +229,9 @@ fun TemplateItem(
     onCreatePlannedPayment: () -> Unit
 ) {
     val (badgeColor, badgeIcon) = when (template.transactionType) {
-        0 -> MaterialTheme.colorScheme.error to Icons.Rounded.ArrowDownward          // expense — red
-        1 -> Color(0xFF2E7D32) to Icons.Rounded.ArrowUpward                         // income — green
-        else -> MaterialTheme.colorScheme.secondary to Icons.Rounded.Sync           // transfer
+        TransactionType.EXPENSE -> MaterialTheme.colorScheme.error to Icons.Rounded.ArrowDownward
+        TransactionType.INCOME -> Color(0xFF2E7D32) to Icons.Rounded.ArrowUpward
+        else -> MaterialTheme.colorScheme.secondary to Icons.Rounded.Sync
     }
 
     Card(
@@ -309,12 +310,12 @@ fun TemplateDialog(
     template: Template?,
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
     onDismiss: () -> Unit,
-    onConfirm: (String, Long, Double, Int, String?, String?) -> Unit
+    onConfirm: (String, Long, Double, TransactionType, String?, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(template?.name ?: "") }
     var categoryId by remember { mutableLongStateOf(template?.categoryId ?: 1002L) }
     var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
-    var type by remember { mutableIntStateOf(template?.transactionType ?: 0) }
+    var type by remember { mutableStateOf(template?.transactionType ?: TransactionType.EXPENSE) }
     var note by remember { mutableStateOf(template?.note ?: "") }
     var accountId by remember { mutableStateOf(template?.accountId) }
     
@@ -370,18 +371,18 @@ fun TemplateDialog(
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
-                        selected = type == 0,
-                        onClick = { type = 0 },
+                        selected = type == TransactionType.EXPENSE,
+                        onClick = { type = TransactionType.EXPENSE },
                         label = { Text("Expense") }
                     )
                     FilterChip(
-                        selected = type == 1,
-                        onClick = { type = 1 },
+                        selected = type == TransactionType.INCOME,
+                        onClick = { type = TransactionType.INCOME },
                         label = { Text("Income") }
                     )
                     FilterChip(
-                        selected = type == 2,
-                        onClick = { type = 2 },
+                        selected = type == TransactionType.TRANSFER,
+                        onClick = { type = TransactionType.TRANSFER },
                         label = { Text("Transfer") }
                     )
                 }
@@ -421,7 +422,7 @@ fun TemplatesScreenPreview() {
             name = "Coffee Shop",
             categoryId = 1001L,
             amount = BigDecimal("5.50"),
-            transactionType = 0,
+            transactionType = TransactionType.EXPENSE,
             icon = null,
             colorHex = null,
             accountId = null,
@@ -439,7 +440,7 @@ fun TemplatesScreenPreview() {
             name = "Monthly Rent",
             categoryId = 1002L,
             amount = BigDecimal("1200.00"),
-            transactionType = 0,
+            transactionType = TransactionType.EXPENSE,
             icon = null,
             colorHex = null,
             accountId = null,
@@ -457,7 +458,7 @@ fun TemplatesScreenPreview() {
             name = "Salary",
             categoryId = 1003L,
             amount = BigDecimal("3500.00"),
-            transactionType = 1,
+            transactionType = TransactionType.INCOME,
             icon = null,
             colorHex = null,
             accountId = null,
@@ -475,7 +476,7 @@ fun TemplatesScreenPreview() {
             name = "Grocery Shopping",
             categoryId = 1004L,
             amount = BigDecimal("150.00"),
-            transactionType = 0,
+            transactionType = TransactionType.EXPENSE,
             icon = null,
             colorHex = null,
             accountId = null,
@@ -493,7 +494,7 @@ fun TemplatesScreenPreview() {
             name = "Savings Transfer",
             categoryId = 1005L,
             amount = BigDecimal("500.00"),
-            transactionType = 2,
+            transactionType = TransactionType.TRANSFER,
             icon = null,
             colorHex = null,
             accountId = null,
@@ -539,7 +540,7 @@ fun TemplateItemPreview() {
         name = "Coffee Shop",
         categoryId = 1001L,
         amount = BigDecimal("5.50"),
-        transactionType = 0,
+        transactionType = TransactionType.EXPENSE,
         icon = null,
         colorHex = null,
         accountId = null,

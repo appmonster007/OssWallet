@@ -44,8 +44,8 @@ fun BudgetEntrySheets(
     onPeriodSelected: (BudgetPeriod) -> Unit,
     showTrackTypeSheet: Boolean,
     onDismissTrackTypeSheet: () -> Unit,
-    selectedTrackTypes: Set<BudgetTrackType>,
-    onTrackTypeSelectionChange: (Set<BudgetTrackType>) -> Unit,
+    selectedTrackTypes: Set<TransactionType>,
+    onTrackTypeSelectionChange: (Set<TransactionType>) -> Unit,
     showCategorySheet: Boolean,
     onDismissCategorySheet: () -> Unit,
     categoryQuery: String,
@@ -77,7 +77,7 @@ fun BudgetEntrySheets(
     if (showNumpad) {
         CalculatorSheet(
             currentAmount = limitText,
-            transactionType = 1,
+            transactionType = TransactionType.INCOME,
             decimalPrecision = 2,
             onAmountChanged = onLimitChanged,
             onDismiss = onDismissNumpad
@@ -189,25 +189,26 @@ fun BudgetEntrySheets(
                     Box(modifier = Modifier.weight(1f, fill = false)) {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                             AeonHybridSelector(
-                                items = BudgetTrackType.entries,
+                                items = listOf(TransactionType.EXPENSE, TransactionType.INCOME),
                                 mode = AeonSelectMode.MULTI,
                                 selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }
                                     .toSet(),
                                 onSelectionChange = { ids ->
                                     if (ids.isNotEmpty()) {
                                         onTrackTypeSelectionChange(ids.mapNotNull { ordinal ->
-                                            BudgetTrackType.entries.getOrNull(ordinal.toInt())
+                                            listOf(TransactionType.EXPENSE, TransactionType.INCOME).getOrNull(ordinal.toInt())
                                         }.toSet())
                                     }
                                 },
                                 idMapper = { it.ordinal.toLong() },
                                 labelMapper = {
-                                    it.name.lowercase().replaceFirstChar { c -> c.uppercase() }
+                                    it.displayName
                                 },
                                 iconMapper = {
                                     when (it) {
-                                        BudgetTrackType.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
-                                        BudgetTrackType.INCOME -> Icons.AutoMirrored.Rounded.TrendingUp
+                                        TransactionType.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
+                                        TransactionType.INCOME -> Icons.AutoMirrored.Rounded.TrendingUp
+                                        else -> Icons.Rounded.Update
                                     }
                                 }
                             )

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.templates
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -31,7 +32,7 @@ class TemplateViewModel(
         name: String,
         categoryId: Long,
         amount: BigDecimal,
-        transactionType: Int,
+        transactionType: TransactionType,
         icon: String? = null,
         colorHex: String? = null,
         accountId: String? = null,

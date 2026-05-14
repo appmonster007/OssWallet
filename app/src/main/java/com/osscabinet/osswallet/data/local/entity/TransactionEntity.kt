@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 @Entity(
@@ -39,7 +40,7 @@ data class TransactionEntity(
     val amount: BigDecimal,
     val timestamp: Long,
     val currency: String,
-    val transactionType: String, // "income" or "expense"
+    val transactionType: TransactionType,
     val accountId: String? = null,
     val categoryId: Long,
     val tags: String = "", // Comma-separated tags

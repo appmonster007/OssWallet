@@ -82,11 +82,7 @@ class PlannedPaymentViewModel(
             val request = TransactionRequest(
                 name = categoryName,
                 amount = payment.amount,
-                transactionType = when(payment.transactionType) {
-                    1 -> "income"
-                    2 -> "transfer"
-                    else -> "expense"
-                },
+                transactionType = payment.transactionType,
                 accountId = payment.accountId ?: "",
                 currency = payment.currency,
                 categoryId = payment.categoryId,
@@ -99,7 +95,7 @@ class PlannedPaymentViewModel(
                 longitude = payment.longitude,
                 warrantyExpiration = payment.warrantyExpiration,
                 status = payment.transactionStatus,
-                isTransfer = payment.transactionType == 2,
+                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate

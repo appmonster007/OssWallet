@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Preview(showBackground = true)
@@ -37,7 +37,7 @@ fun BudgetEntryPreview() {
                 selectedAccountIds = emptySet(),
                 accounts = emptyList(),
                 onAccountClick = {},
-                selectedTrackTypes = setOf(BudgetTrackType.EXPENSE),
+                selectedTrackTypes = setOf(TransactionType.EXPENSE),
                 onTrackTypeClick = {},
                 selectedCategoryIds = emptySet(),
                 categories = emptyList(),

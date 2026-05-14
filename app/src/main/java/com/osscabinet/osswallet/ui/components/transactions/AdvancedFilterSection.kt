@@ -92,7 +92,7 @@ fun AdvancedFilterSection(
                             selected = true,
                             onClick = { },
                             enabled = false,
-                            label = { Text(type.replaceFirstChar { it.uppercase() }) }
+                            label = { Text(type.displayName) }
                         )
                     }
                 }
@@ -176,7 +176,7 @@ fun AdvancedFilterSection(
                         FilterChip(
                             selected = true,
                             onClick = { removeFilter(filter, "transactionType", null, onFilterChange) },
-                            label = { Text(type.replaceFirstChar { it.uppercase() }) },
+                            label = { Text(type.displayName) },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )
                     }

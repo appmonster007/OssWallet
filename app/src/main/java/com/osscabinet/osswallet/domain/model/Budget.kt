@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.domain.model
 import java.math.BigDecimal
 
 enum class BudgetPeriod { DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, CUSTOM }
-enum class BudgetTrackType { EXPENSE, INCOME }
 enum class BudgetAlertLevel { NONE, WARNING, EXCEEDED }
 
 data class Budget(
@@ -17,7 +16,7 @@ data class Budget(
     val tags: List<String> = emptyList(),
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
-    val trackTypes: List<BudgetTrackType> = listOf(BudgetTrackType.EXPENSE),
+    val trackTypes: List<TransactionType> = listOf(TransactionType.EXPENSE),
     val isArchived: Boolean = false,
     val profileId: Int,
     val customStartDate: Long? = null,

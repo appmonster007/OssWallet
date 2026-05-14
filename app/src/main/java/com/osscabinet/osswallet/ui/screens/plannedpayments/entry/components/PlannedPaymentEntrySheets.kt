@@ -147,12 +147,7 @@ fun PlannedPaymentEntrySheets(
                 onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
             },
             onTypeChanged = { newType ->
-                val type = when (newType) {
-                    "income" -> 1
-                    "transfer" -> 2
-                    else -> 0
-                }
-                onEvent(PlannedPaymentEntryEvent.SetTransactionType(type))
+                onEvent(PlannedPaymentEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) }
         )

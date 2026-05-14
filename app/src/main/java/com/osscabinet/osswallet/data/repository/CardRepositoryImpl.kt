@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
@@ -26,7 +27,7 @@ class CardRepositoryImpl(
                 title = "CATEGORY PIE CHART",
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionType = "expense"
+                    transactionType = TransactionType.EXPENSE
                 ),
                 showLabels = true,
                 showLegend = true
@@ -37,7 +38,7 @@ class CardRepositoryImpl(
                 title = "CATEGORY TREEMAP",
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionType = "expense"
+                    transactionType = TransactionType.EXPENSE
                 ),
                 showLabels = true
             )

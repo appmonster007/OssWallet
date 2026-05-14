@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 
 import androidx.compose.runtime.Composable
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
@@ -22,12 +23,7 @@ fun TemplateEntrySheets(
             decimalPrecision = state.decimalPrecision,
             onAmountChanged = { onEvent(TemplateEntryEvent.SetAmount(it)) },
             onTypeChanged = { newType ->
-                val type = when (newType) {
-                    "income" -> 1
-                    "transfer" -> 2
-                    else -> 0
-                }
-                onEvent(TemplateEntryEvent.SetTransactionType(type))
+                onEvent(TemplateEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowNumpad(false)) }
         )

@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
@@ -43,7 +44,7 @@ fun AnalyticsScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
-    onAddClick: (Int?, Long?) -> Unit,
+    onAddClick: (TransactionType?, Long?) -> Unit,
     cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -153,7 +154,7 @@ fun AnalyticsScreen(
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {
                         if (!expandableFabEnabled) {
-                            onAddClick(0, null)
+                            onAddClick(TransactionType.EXPENSE, null)
                         }
                     },
                     fabMenu = if (expandableFabEnabled) {
@@ -179,7 +180,7 @@ fun AnalyticsScreen(
             onCardTypeSelected = { cardType ->
                 val defaultFilter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionType = "expense"
+                    transactionType = TransactionType.EXPENSE
                 )
                 when (cardType) {
                     CardType.CATEGORY_PIE_CHART -> viewModel.addCard(

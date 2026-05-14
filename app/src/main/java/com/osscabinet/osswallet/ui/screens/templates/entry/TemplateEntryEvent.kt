@@ -6,7 +6,7 @@ import java.math.BigDecimal
 sealed class TemplateEntryEvent {
     data class SetName(val name: String) : TemplateEntryEvent()
     data class SetAmount(val amount: String) : TemplateEntryEvent()
-    data class SetTransactionType(val type: Int) : TemplateEntryEvent()
+    data class SetTransactionType(val type: TransactionType) : TemplateEntryEvent()
     data class SetCategory(val categoryId: Long) : TemplateEntryEvent()
     data class SetAccount(val accountId: String?) : TemplateEntryEvent()
     data class SetTargetAccount(val accountId: String?) : TemplateEntryEvent()

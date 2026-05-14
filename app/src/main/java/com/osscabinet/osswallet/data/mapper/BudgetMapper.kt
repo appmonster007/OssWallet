@@ -3,7 +3,7 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.util.joinByComma
 
@@ -18,9 +18,9 @@ fun BudgetEntity.toDomain(): Budget = Budget(
     tags = tags.splitByComma(),
     alertThreshold = alertThreshold,
     rollover = rollover,
-    trackTypes = trackType.splitByComma().mapNotNull {
-        runCatching { BudgetTrackType.valueOf(it.trim()) }.getOrNull()
-    }.ifEmpty { listOf(BudgetTrackType.EXPENSE) },
+    trackTypes = trackType.splitByComma().map {
+        TransactionType.fromValue(it.trim())
+    }.ifEmpty { listOf(TransactionType.EXPENSE) },
     isArchived = isArchived,
     profileId = profileId,
     customStartDate = customStartDate,
@@ -38,7 +38,7 @@ fun Budget.toEntity(): BudgetEntity = BudgetEntity(
     tags = tags.joinByComma(),
     alertThreshold = alertThreshold,
     rollover = rollover,
-    trackType = trackTypes.joinToString(",") { it.name },
+    trackType = trackTypes.joinToString(",") { it.value },
     isArchived = isArchived,
     profileId = profileId,
     customStartDate = customStartDate,

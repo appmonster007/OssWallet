@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.service.financial
 
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 /**
@@ -81,7 +82,7 @@ typealias AccountBreakdown = FinancialMetrics<String>
 typealias CategoryBreakdown = FinancialMetrics<String>
 typealias DateBreakdown = FinancialMetrics<String>
 typealias MonthBreakdown = FinancialMetrics<String>
-typealias TransactionTypeBreakdown = FinancialMetrics<String>
+typealias TransactionTypeBreakdown = FinancialMetrics<TransactionType>
 typealias PaymentMethodBreakdown = FinancialMetrics<PaymentMethod>
 typealias TagBreakdown = FinancialMetrics<String>
 typealias StatusBreakdown = FinancialMetrics<String>

@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
 
 @Composable
@@ -25,7 +25,7 @@ fun BudgetFormBody(
     selectedAccountIds: Set<String>,
     accounts: List<Account>,
     onAccountClick: () -> Unit,
-    selectedTrackTypes: Set<BudgetTrackType>,
+    selectedTrackTypes: Set<TransactionType>,
     onTrackTypeClick: () -> Unit,
     selectedCategoryIds: Set<Long>,
     categories: List<Category>,

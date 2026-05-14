@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
@@ -274,15 +275,10 @@ class DashboardViewModel(
                 plannedPaymentId = payment.id,
                 scheduledDate = payment.schedule.nextDueDate
             )
-            val typeStr = when (payment.transactionType) {
-                1 -> "income"
-                2 -> "transfer"
-                else -> "expense"
-            }
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
-                transactionType = typeStr,
+                transactionType = payment.transactionType,
                 accountId = payment.accountId ?: "",
                 currency = payment.currency,
                 categoryId = payment.categoryId,
@@ -291,7 +287,7 @@ class DashboardViewModel(
                 timestamp = occurrence.scheduledDate,
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",
-                isTransfer = payment.transactionType == 2,
+                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate

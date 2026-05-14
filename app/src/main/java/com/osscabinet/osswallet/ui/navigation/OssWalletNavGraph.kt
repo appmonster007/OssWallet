@@ -57,6 +57,7 @@ import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryScreen
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -379,7 +380,7 @@ fun OssWalletNavGraph(
                 TransactionEntryScreen(
                     transactionId = if (transactionId == -1L) null else transactionId,
                     accountId = accountId,
-                    initialType = if (type == -1) null else type,
+                    initialType = if (type == -1) null else TransactionType.fromInt(type),
                     initialTemplateId = if (templateId == -1L) null else templateId,
                     prefillDto = prefillDto,
                     viewModel = entryViewModel,

@@ -7,7 +7,7 @@ sealed class PlannedPaymentEntryEvent {
     data class SetName(val name: String) : PlannedPaymentEntryEvent()
     data class SetAmountText(val amount: String) : PlannedPaymentEntryEvent()
     data class SetCurrency(val currency: String) : PlannedPaymentEntryEvent()
-    data class SetTransactionType(val type: Int) : PlannedPaymentEntryEvent()
+    data class SetTransactionType(val type: TransactionType) : PlannedPaymentEntryEvent()
     data class SetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetCurrency(val currency: String?) : PlannedPaymentEntryEvent()

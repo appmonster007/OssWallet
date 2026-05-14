@@ -17,13 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
 fun AeonImpactHeaderCard(
-    transactionType: Int,
-    onTypeSelected: (Int) -> Unit,
+    transactionType: TransactionType,
+    onTypeSelected: (TransactionType) -> Unit,
     amount: String,
     currency: String,
     onCurrencyClick: () -> Unit,
@@ -45,12 +46,7 @@ fun AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList()
 ) {
-    val defaultAmountColor = when (transactionType) {
-        1 -> Color(0xFF004D40)
-        0 -> Color(0xFFB3261E)
-        else -> MaterialTheme.colorScheme.primary
-    }
-    val activeAmountColor = amountColor ?: defaultAmountColor
+    val activeAmountColor = Color(android.graphics.Color.parseColor(transactionType.colorHex))
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -66,11 +62,17 @@ fun AeonImpactHeaderCard(
             EntryTypeSelector(
                 selectedType = transactionType,
                 onTypeSelected = onTypeSelected,
-                types = listOf(
-                    Triple(Icons.Rounded.Remove, "Expense", 0),
-                    Triple(Icons.Rounded.Add, "Income", 1),
-                    Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
-                ),
+                types = TransactionType.entries.map { 
+                    Triple(
+                        when(it) {
+                            TransactionType.EXPENSE -> Icons.Rounded.Remove
+                            TransactionType.INCOME -> Icons.Rounded.Add
+                            TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                        },
+                        it.displayName,
+                        it
+                    )
+                },
                 selectedColor = activeAmountColor,
                 itemWidth = 100.dp
             )

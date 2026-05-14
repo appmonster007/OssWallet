@@ -296,7 +296,7 @@ class TransactionViewModel(
         recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = range))
     }
 
-    fun setIncomeTypeFilter(type: String?) {
+    fun setIncomeTypeFilter(type: com.osscabinet.ossWallet.domain.model.TransactionType?) {
         if (type != null) {
             recordsFilterManager.setFilter("type", TransactionFilter(transactionType = type))
         } else {
@@ -397,7 +397,7 @@ class TransactionViewModel(
                     val targetTx = linkedTxs.find { 
                         it.categoryId == 1003L && 
                         it.accountId != transaction.accountId &&
-                        it.transactionType == "income" 
+                        it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {

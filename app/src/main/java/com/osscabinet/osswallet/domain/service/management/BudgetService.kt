@@ -4,10 +4,10 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
@@ -105,7 +105,7 @@ object BudgetService {
         // If it's an income-only budget, we track progress towards positive target.
         // Otherwise (expense or mixed), we track net outflow (negated sum).
         val onlyIncome =
-            budget.trackTypes.size == 1 && budget.trackTypes.first() == BudgetTrackType.INCOME
+            budget.trackTypes.size == 1 && budget.trackTypes.first() == TransactionType.INCOME
         val spent = if (onlyIncome) netAmount else netAmount.negate()
 
         return spent.setScale(precision, RoundingMode.HALF_UP)
@@ -126,7 +126,7 @@ object BudgetService {
             categoryIds = TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories),
             tags = budget.tags,
             transactionType = if (budget.trackTypes.size == 1) {
-                budget.trackTypes.first().name.lowercase()
+                budget.trackTypes.first()
             } else null,
             excludeFuture = false // Budgets track the whole configured period
         )

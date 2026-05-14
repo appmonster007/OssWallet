@@ -11,7 +11,7 @@ data class TemplateEntryState(
     // Core form fields
     val name: String = "",
     val amount: String = "",
-    val transactionType: Int = 0, // 0: Expense, 1: Income, 2: Transfer
+    val transactionType: TransactionType = TransactionType.EXPENSE,
     val categoryId: Long = 1002L,
     val categoryName: String = "Unknown",
     val accountId: String? = null,

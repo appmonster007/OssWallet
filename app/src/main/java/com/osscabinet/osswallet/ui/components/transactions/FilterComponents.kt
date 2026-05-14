@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
@@ -223,21 +224,18 @@ fun FilterFields(
                 // Type Card
                 ContextCard(
                     title = "Type",
-                    value = when (filter.transactionType) {
-                        "income" -> "Income"
-                        "expense" -> "Expense"
-                        else -> "All Types"
-                    },
+                    value = filter.transactionType?.displayName ?: "All Types",
                     icon = when (filter.transactionType) {
-                        "income" -> Icons.AutoMirrored.Filled.TrendingUp
-                        "expense" -> Icons.AutoMirrored.Filled.TrendingDown
+                        TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                        TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
                         else -> Icons.Default.FilterList
                     },
                     modifier = Modifier.weight(1f),
                     onClick = {
                         val nextType = when (filter.transactionType) {
-                            null -> "expense"
-                            "expense" -> "income"
+                            null -> TransactionType.EXPENSE
+                            TransactionType.EXPENSE -> TransactionType.INCOME
+                            TransactionType.INCOME -> TransactionType.TRANSFER
                             else -> null
                         }
                         onFilterChange(filter.copy(transactionType = nextType))

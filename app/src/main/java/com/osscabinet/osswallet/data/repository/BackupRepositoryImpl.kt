@@ -2,8 +2,7 @@ package com.osscabinet.ossWallet.data.repository
 
 import android.content.ContentResolver
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
+import androidx.core.net.toUri
 import androidx.room.withTransaction
 import com.osscabinet.ossWallet.data.local.*
 import com.osscabinet.ossWallet.data.local.dao.*
@@ -22,7 +21,6 @@ import java.math.BigDecimal
 import java.util.zip.ZipInputStream
 
 class BackupRepositoryImpl(
-    private val contentResolver: ContentResolver,
     private val profileDao: ProfileDao,
     private val accountDao: AccountDao,
     private val transactionDao: TransactionDao,
@@ -38,13 +36,12 @@ class BackupRepositoryImpl(
     private val filterDao: FilterDao,
     private val currencyDao: CurrencyDao,
     private val database: AppDatabase,
-    private val context: Context,
-    private val settingsDataStore: SettingsDataStore
+    private val context: Context
 ) : BackupRepository {
 
     override suspend fun exportData(uriString: String, type: BackupType): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val uri = android.net.Uri.parse(uriString)
+            val uri = uriString.toUri()
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 when (type) {
                     BackupType.CSV_ZIP -> createZipBackup(outputStream)
@@ -139,7 +136,7 @@ class BackupRepositoryImpl(
 
     override suspend fun importData(uriString: String, type: BackupType): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val uri = android.net.Uri.parse(uriString)
+            val uri = uriString.toUri()
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 when (type) {
                     BackupType.CSV_ZIP -> restoreZipBackup(inputStream)
@@ -258,7 +255,7 @@ class BackupRepositoryImpl(
                 amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
                 timestamp = p["timestamp"]?.toLongOrNull() ?: 0, 
                 currency = p["currency"] ?: "USD", 
-                transactionType = p["transactionType"] ?: "expense", 
+                transactionType = TransactionType.fromValue(p["transactionType"]), 
                 accountId = p["accountId"],
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, 
                 tags = p["tags"] ?: "", 
@@ -292,7 +289,7 @@ class BackupRepositoryImpl(
                 name = p["name"] ?: "", 
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
                 amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
-                transactionType = p["transactionType"]?.toIntOrNull() ?: 0,
+                transactionType = TransactionType.fromInt(p["transactionType"]?.toIntOrNull() ?: 0),
                 icon = p["icon"], 
                 colorHex = p["colorHex"], 
                 accountId = p["accountId"],
@@ -342,7 +339,7 @@ class BackupRepositoryImpl(
                 name = p["name"] ?: "",
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002L,
                 amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                transactionType = p["transactionType"]?.toIntOrNull() ?: 0,
+                transactionType = TransactionType.fromInt(p["transactionType"]?.toIntOrNull() ?: 0),
                 accountId = p["accountId"],
                 targetAccountId = p["targetAccountId"],
                 targetCurrency = p["targetCurrency"],
@@ -453,7 +450,7 @@ class BackupRepositoryImpl(
                 warrantyExpirationEnd = p["warrantyExpirationEnd"]?.toLongOrNull(),
                 minAmount = p["minAmount"]?.toBigDecimalOrNull(),
                 maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
-                transactionType = p["transactionType"],
+                transactionType = TransactionType.fromValue(p["transactionType"]),
                 currencies = p["currencies"] ?: "",
                 statuses = p["statuses"] ?: ""
             ))

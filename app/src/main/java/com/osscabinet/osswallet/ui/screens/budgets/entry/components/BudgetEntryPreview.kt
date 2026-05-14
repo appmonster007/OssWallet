@@ -21,15 +21,19 @@ fun BudgetEntryPreview() {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            BudgetHeaderCard(
-                name = "Monthly Groceries",
-                onNameChange = {},
-                amount = "500.00",
-                currency = "USD",
-                onCurrencyChange = {},
-                supportedCurrencies = listOf("USD", "EUR"),
-                onAmountClick = {}
-            )
+        com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard(
+            transactionType = TransactionType.INCOME,
+            onTypeSelected = {},
+            amount = "500.00",
+            currency = "USD",
+            onCurrencyClick = {},
+            onAmountClick = {},
+            name = "Monthly Groceries",
+            onNameChange = {},
+            nameLabel = "BUDGET NAME",
+            showTypeSelector = false,
+            amountColor = androidx.compose.ui.graphics.Color(0xFF004D40)
+        )
 
             BudgetActionCards(
                 period = BudgetPeriod.MONTHLY,

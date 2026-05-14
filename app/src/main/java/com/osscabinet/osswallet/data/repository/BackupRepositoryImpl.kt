@@ -72,8 +72,11 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"), 
             transactionLinkDao.getAllLinksSync().map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
         
-        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "period", "categoryIds", "accountIds", "tags", "alertThreshold", "rollover", "trackType", "isArchived", "profileId", "customStartDate", "customEndDate"), 
-            budgetDao.getAllBudgetsSync().map { listOf(it.id, it.name, it.currency, it.limitAmount, it.period, it.categoryIds, it.accountIds, it.tags, it.alertThreshold, it.rollover, it.trackType, it.isArchived, it.profileId, it.customStartDate, it.customEndDate) })
+        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "period", "alertThreshold", "rollover", "isArchived", "profileId", "customStartDate", "customEndDate", "filterId"), 
+            budgetDao.getAllBudgetsSync().map { 
+                val b = it.budget
+                listOf(b.id, b.name, b.currency, b.limitAmount, b.period, b.alertThreshold, b.rollover, b.isArchived, b.profileId, b.customStartDate, b.customEndDate, b.filterId) 
+            })
         
         writeCsvToZip(zos, "templates.csv", listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "targetAccountId", "targetCurrency", "transferRate", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder", "profileId", "transactionStatus"), 
             templateDao.getAllTemplatesSync().map { listOf(it.id, it.name, it.categoryId, it.amount, it.transactionType, it.icon, it.colorHex, it.accountId, it.targetAccountId, it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.paymentMethod?.name, it.currency, it.tags, it.isStarred, it.displayOrder, it.profileId, it.transactionStatus.name) })
@@ -97,8 +100,11 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "tags.csv", listOf("id", "name", "colorHex"), 
             tagDao.getAllTagsSync().map { listOf(it.id, it.name, it.colorHex) })
 
-        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note"), 
-            loanDao.getAllLoansSync().map { listOf(it.id, it.name, it.principalAmount, it.currency, it.interestRate, it.startDate, it.lenderOrBorrowerName, it.loanType, it.linkedAccountId, it.expectedSettlementDate, it.status, it.profileId, it.note) })
+        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note", "filterId"), 
+            loanDao.getAllLoansSync().map { 
+                val l = it.loan
+                listOf(l.id, l.name, l.principalAmount, l.currency, l.interestRate, l.startDate, l.lenderOrBorrowerName, l.loanType, l.linkedAccountId, l.expectedSettlementDate, l.status, l.profileId, l.note, l.filterId) 
+            })
 
         writeCsvToZip(zos, "loan_payments.csv", listOf("id", "loanId", "amount", "date", "transactionId", "note"), 
             loanPaymentDao.getAllPaymentsSync().map { listOf(it.id, it.loanId, it.amount, it.date, it.transactionId, it.note) })
@@ -306,23 +312,23 @@ class BackupRepositoryImpl(
 
     private suspend fun restoreBudgets(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
-            budgetDao.insert(BudgetEntity(
-                id = p["id"]?.toLong() ?: 0, 
-                name = p["name"] ?: "", 
-                currency = p["currency"] ?: "USD", 
-                limitAmount = p["limitAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
-                period = p["period"] ?: "MONTHLY", 
-                categoryIds = p["categoryIds"] ?: "", 
-                accountIds = p["accountIds"] ?: "", 
-                tags = p["tags"] ?: "",
-                alertThreshold = p["alertThreshold"]?.toFloatOrNull() ?: 0.8f, 
-                rollover = p["rollover"]?.toBoolean() ?: false, 
-                trackType = p["trackType"] ?: "EXPENSE", 
-                isArchived = p["isArchived"]?.toBoolean() ?: false, 
-                profileId = p["profileId"]?.toIntOrNull() ?: 1, 
-                customStartDate = p["customStartDate"]?.toLongOrNull(),
-                customEndDate = p["customEndDate"]?.toLongOrNull()
-            ))
+            val filterId = p["filterId"]?.toLongOrNull()
+            if (filterId != null) {
+                budgetDao.insert(BudgetEntity(
+                    id = p["id"]?.toLong() ?: 0, 
+                    name = p["name"] ?: "", 
+                    currency = p["currency"] ?: "USD", 
+                    limitAmount = p["limitAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
+                    period = p["period"] ?: "MONTHLY", 
+                    alertThreshold = p["alertThreshold"]?.toFloatOrNull() ?: 0.8f, 
+                    rollover = p["rollover"]?.toBoolean() ?: false, 
+                    isArchived = p["isArchived"]?.toBoolean() ?: false, 
+                    profileId = p["profileId"]?.toIntOrNull() ?: 1, 
+                    customStartDate = p["customStartDate"]?.toLongOrNull(),
+                    customEndDate = p["customEndDate"]?.toLongOrNull(),
+                    filterId = filterId
+                ))
+            }
         }
     }
 
@@ -379,21 +385,25 @@ class BackupRepositoryImpl(
 
     private suspend fun restoreLoans(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
-            loanDao.insert(LoanEntity(
-                id = p["id"]?.toLong() ?: 0,
-                name = p["name"] ?: "",
-                principalAmount = p["principalAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                currency = p["currency"] ?: "USD",
-                interestRate = p["interestRate"]?.toFloatOrNull(),
-                startDate = p["startDate"]?.toLongOrNull() ?: 0,
-                lenderOrBorrowerName = p["lenderOrBorrowerName"] ?: "",
-                loanType = p["loanType"] ?: "debt",
-                linkedAccountId = p["linkedAccountId"] ?: "",
-                expectedSettlementDate = p["expectedSettlementDate"]?.toLongOrNull(),
-                status = p["status"] ?: "ACTIVE",
-                profileId = p["profileId"]?.toIntOrNull() ?: 1,
-                note = p["note"] ?: ""
-            ))
+            val filterId = p["filterId"]?.toLongOrNull()
+            if (filterId != null) {
+                loanDao.insert(LoanEntity(
+                    id = p["id"]?.toLong() ?: 0,
+                    name = p["name"] ?: "",
+                    principalAmount = p["principalAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                    currency = p["currency"] ?: "USD",
+                    interestRate = p["interestRate"]?.toFloatOrNull(),
+                    startDate = p["startDate"]?.toLongOrNull() ?: 0,
+                    lenderOrBorrowerName = p["lenderOrBorrowerName"] ?: "",
+                    loanType = p["loanType"] ?: "debt",
+                    linkedAccountId = p["linkedAccountId"] ?: "",
+                    expectedSettlementDate = p["expectedSettlementDate"]?.toLongOrNull(),
+                    status = p["status"] ?: "ACTIVE",
+                    profileId = p["profileId"]?.toIntOrNull() ?: 1,
+                    note = p["note"] ?: "",
+                    filterId = filterId
+                ))
+            }
         }
     }
 

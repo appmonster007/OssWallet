@@ -91,27 +91,34 @@ fun AeonEntryContextRow(
 }
 
 /**
+ * Data class representing the shared metadata state for entry screens.
+ */
+data class AeonMetadataState(
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+    val statusLabel: String = "Completed",
+    val statusIcon: String = "CheckCircle",
+    val statusColor: String = "#4CAF50",
+    val isWarrantyEnabled: Boolean = false,
+    val warrantyExpiration: Long = System.currentTimeMillis(),
+    val location: Pair<Double, Double>? = null,
+    val linkedTransactions: List<Transaction> = emptyList()
+)
+
+/**
  * Common metadata section containing Linked Transactions, Payment Method, Status, Warranty, and Location.
  */
 @Composable
 fun AeonEntryMetadataSection(
-    linkedTransactions: List<Transaction>,
+    state: AeonMetadataState,
     accounts: List<Account>,
     categories: List<Category>,
     is24Hour: Boolean,
     onShowLinkedTransactions: () -> Unit,
     onRemoveLink: (Long) -> Unit,
-    paymentMethod: PaymentMethod,
     onPaymentMethodClick: () -> Unit,
-    statusLabel: String,
-    statusIconName: String,
-    statusColorHex: String,
     onStatusClick: () -> Unit,
-    warrantyEnabled: Boolean,
     onWarrantyToggle: (Boolean) -> Unit,
-    warrantyExpirationMillis: Long,
     onWarrantyDateClick: () -> Unit,
-    locationCoords: Pair<Double, Double>?,
     onLocationClick: () -> Unit,
     locationLabel: String = "Location",
     additionalTopContent: @Composable (ColumnScope.() -> Unit)? = null,
@@ -122,7 +129,7 @@ fun AeonEntryMetadataSection(
 
         // Linked Transactions
         EntryLinkedTransactionsSection(
-            linkedTransactions = linkedTransactions,
+            linkedTransactions = state.linkedTransactions,
             accounts = accounts,
             categories = categories,
             is24Hour = is24Hour,
@@ -131,14 +138,14 @@ fun AeonEntryMetadataSection(
         )
 
         // Payment Method and Status row
-        val statusColor = Color(android.graphics.Color.parseColor(statusColorHex))
-        val statusIcon = AppIconMap[statusIconName] ?: Icons.Rounded.CheckCircle
-        val paymentIcon = AppIconMap[paymentMethod.iconName] ?: Icons.Rounded.Payments
+        val statusColor = Color(android.graphics.Color.parseColor(state.statusColor))
+        val statusIcon = AppIconMap[state.statusIcon] ?: Icons.Rounded.CheckCircle
+        val paymentIcon = AppIconMap[state.paymentMethod.iconName] ?: Icons.Rounded.Payments
 
         EntryPaymentMethodStatusRow(
-            paymentMethod = paymentMethod.displayName,
+            paymentMethod = state.paymentMethod.displayName,
             onPaymentMethodClick = onPaymentMethodClick,
-            statusLabel = statusLabel,
+            statusLabel = state.statusLabel,
             onStatusClick = onStatusClick,
             paymentMethodIcon = paymentIcon,
             statusIcon = statusIcon,
@@ -156,15 +163,15 @@ fun AeonEntryMetadataSection(
 
         // Warranty
         EntryWarrantySection(
-            enabled = warrantyEnabled,
+            enabled = state.isWarrantyEnabled,
             onToggle = onWarrantyToggle,
-            expirationMillis = warrantyExpirationMillis,
+            expirationMillis = state.warrantyExpiration,
             onDateClick = onWarrantyDateClick
         )
 
         // Location
         EntryLocationRow(
-            coords = locationCoords,
+            coords = state.location,
             onShowLocationSheet = onLocationClick,
             label = locationLabel
         )

@@ -6,10 +6,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 
 @Composable
 fun BudgetFormBody(
@@ -49,15 +51,20 @@ fun BudgetFormBody(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Impact Header Card
-        BudgetHeaderCard(
-            name = name,
-            onNameChange = onNameChange,
+        // IMPACT: Header card (Unified component)
+        AeonImpactHeaderCard(
+            transactionType = TransactionType.INCOME, // Mock type for budget
+            onTypeSelected = { },
             amount = amount,
             currency = currency,
-            onCurrencyChange = onCurrencyChange,
-            supportedCurrencies = supportedCurrencies,
-            onAmountClick = onAmountClick
+            onCurrencyClick = { onCurrencyChange(currency) },
+            onAmountClick = onAmountClick,
+            name = name,
+            onNameChange = onNameChange,
+            nameLabel = "BUDGET NAME",
+            showTypeSelector = false,
+            amountColor = Color(0xFF004D40), // Teal for budget healthy
+            supportedCurrencies = supportedCurrencies
         )
 
         // Context Action Cards Grid

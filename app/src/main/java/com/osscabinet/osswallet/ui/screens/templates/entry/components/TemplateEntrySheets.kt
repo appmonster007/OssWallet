@@ -5,10 +5,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
 
 @Composable
@@ -17,7 +16,7 @@ fun TemplateEntrySheets(
     onEvent: (TemplateEntryEvent) -> Unit
 ) {
     if (state.isNumpadVisible) {
-        CalculatorSheet(
+        AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
             decimalPrecision = state.decimalPrecision,
@@ -30,10 +29,10 @@ fun TemplateEntrySheets(
     }
 
     if (state.showAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountId = state.selectedAccount?.id,
-            onAccountSelected = { onEvent(TemplateEntryEvent.SetAccount(it?.id)) },
+            selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
             title = "Select Account",
             allowOutsideWallet = true
@@ -41,10 +40,10 @@ fun TemplateEntrySheets(
     }
 
     if (state.showTargetAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountId = state.selectedTargetAccount?.id,
-            onAccountSelected = { onEvent(TemplateEntryEvent.SetTargetAccount(it?.id)) },
+            selectedAccountIds = state.selectedTargetAccount?.id?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetTargetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
             title = "Select Target Account",
             allowOutsideWallet = true
@@ -52,19 +51,18 @@ fun TemplateEntrySheets(
     }
 
     if (state.showCategorySheet) {
-        TransactionCategorySelection(
+        AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryId = state.categoryId,
-            onCategorySelected = { _, id ->
-                onEvent(TemplateEntryEvent.SetCategory(id))
-                onEvent(TemplateEntryEvent.ShowCategorySheet(false))
+            selectedCategoryIds = setOf(state.categoryId),
+            onSelectionChange = { ids ->
+                onEvent(TemplateEntryEvent.SetCategory(ids.firstOrNull() ?: -1L))
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowCategorySheet(false)) }
         )
     }
 
     if (state.showPaymentMethodSheet) {
-        PaymentMethodSelection(
+        AeonPaymentMethodSelection(
             selectedMethod = state.paymentMethod,
             onMethodSelected = { 
                 onEvent(TemplateEntryEvent.SetPaymentMethod(it))
@@ -75,7 +73,7 @@ fun TemplateEntrySheets(
     }
 
     if (state.showStatusSheet) {
-        StatusSelection(
+        AeonStatusSelection(
             selectedStatus = state.transactionStatus,
             onStatusSelected = {
                 onEvent(TemplateEntryEvent.SetTransactionStatus(it))
@@ -86,7 +84,7 @@ fun TemplateEntrySheets(
     }
 
     if (state.showTagSheet) {
-        TagSelection(
+        AeonTagSelection(
             tags = state.allTags,
             selectedTags = state.tags,
             onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
@@ -143,9 +141,9 @@ fun TemplateEntrySheets(
     }
 
     if (state.showLocationSheet) {
-        LocationSelection(
+        AeonLocationSelection(
             currentCoords = if (state.latitude != null && state.longitude != null) {
-                state.latitude to state.longitude
+                state.latitude!! to state.longitude!!
             } else null,
             onLocationSelected = { coords ->
                 onEvent(TemplateEntryEvent.SetLocation("", coords?.first, coords?.second))
@@ -156,7 +154,7 @@ fun TemplateEntrySheets(
     }
 
     if (state.showLinkedTransactionSheet) {
-        LinkedTransactionSelection(
+        AeonLinkedTransactionSelection(
             transactions = state.allTransactions,
             currentTransactionId = null,
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),

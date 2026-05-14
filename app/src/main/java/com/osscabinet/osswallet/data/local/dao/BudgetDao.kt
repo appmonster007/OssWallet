@@ -2,28 +2,34 @@ package com.osscabinet.ossWallet.data.local.dao
 
 import androidx.room.*
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.data.local.entity.BudgetWithFilter
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BudgetDao {
 
+    @Transaction
     @Query("SELECT * FROM budgets WHERE profileId = :profileId AND isArchived = 0 ORDER BY name ASC")
-    fun getActiveBudgets(profileId: Int): Flow<List<BudgetEntity>>
+    fun getActiveBudgets(profileId: Int): Flow<List<BudgetWithFilter>>
 
+    @Transaction
     @Query("SELECT * FROM budgets WHERE profileId = :profileId ORDER BY name ASC")
-    fun getAllBudgets(profileId: Int): Flow<List<BudgetEntity>>
+    fun getAllBudgets(profileId: Int): Flow<List<BudgetWithFilter>>
 
+    @Transaction
     @Query("SELECT * FROM budgets WHERE profileId = :profileId AND isArchived = 0 ORDER BY name ASC")
-    suspend fun getActiveBudgetsSync(profileId: Int): List<BudgetEntity>
+    suspend fun getActiveBudgetsSync(profileId: Int): List<BudgetWithFilter>
 
+    @Transaction
     @Query("SELECT * FROM budgets")
-    suspend fun getAllBudgetsSync(): List<BudgetEntity>
+    suspend fun getAllBudgetsSync(): List<BudgetWithFilter>
 
     @Query("DELETE FROM budgets")
     suspend fun clearAll()
 
+    @Transaction
     @Query("SELECT * FROM budgets WHERE id = :id")
-    suspend fun getById(id: Long): BudgetEntity?
+    suspend fun getById(id: Long): BudgetWithFilter?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: BudgetEntity): Long

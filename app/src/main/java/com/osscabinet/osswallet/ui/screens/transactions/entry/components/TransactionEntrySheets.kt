@@ -7,8 +7,8 @@ import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
@@ -38,12 +38,13 @@ fun TransactionEntrySheets(
 
     // Category Selection
     if (state.showCategorySheet) {
-        TransactionCategorySelection(
+        AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryId = state.selectedCategoryId,
-            onCategorySelected = { _, id ->
-                onEvent(TransactionEntryEvent.SetCategory(id))
-                onEvent(TransactionEntryEvent.ShowCategorySheet(false))
+            selectedCategoryIds = setOf(state.selectedCategoryId),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { id ->
+                    onEvent(TransactionEntryEvent.SetCategory(id))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowCategorySheet(false)) }
         )
@@ -51,12 +52,13 @@ fun TransactionEntrySheets(
 
     // Account Selection
     if (state.showAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountId = state.selectedAccount?.id,
-            onAccountSelected = { account ->
-                onEvent(TransactionEntryEvent.SetAccount(account))
-                onEvent(TransactionEntryEvent.ShowAccountSheet(false))
+            selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { id ->
+                    onEvent(TransactionEntryEvent.SetAccount(state.accounts.find { it.id == id }))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) }
         )
@@ -64,12 +66,13 @@ fun TransactionEntrySheets(
 
     // Target Account Selection (for transfers)
     if (state.showTargetAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts.filter { it.id != state.selectedAccount?.id },
-            selectedAccountId = state.targetAccount?.id,
-            onAccountSelected = { account ->
-                onEvent(TransactionEntryEvent.SetTargetAccount(account))
-                onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false))
+            selectedAccountIds = state.targetAccount?.id?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { id ->
+                    onEvent(TransactionEntryEvent.SetTargetAccount(state.accounts.find { it.id == id }))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
             title = "Select Target Account",
@@ -95,7 +98,7 @@ fun TransactionEntrySheets(
 
     // Linked Transaction Selection
     if (state.showLinkedTransactionSheet) {
-        LinkedTransactionSelection(
+        AeonLinkedTransactionSelection(
             transactions = state.transactions,
             currentTransactionId = state.transactionId,
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
@@ -111,7 +114,7 @@ fun TransactionEntrySheets(
 
     // Tag Selection
     if (state.showTagSheet) {
-        TagSelection(
+        AeonTagSelection(
             tags = state.allTags,
             selectedTags = state.selectedTags,
             onTagsSelected = { tags ->
@@ -127,7 +130,7 @@ fun TransactionEntrySheets(
 
     // Payment Method Selection
     if (state.showPaymentMethodSheet) {
-        PaymentMethodSelection(
+        AeonPaymentMethodSelection(
             selectedMethod = state.paymentMethod,
             onMethodSelected = { method ->
                 onEvent(TransactionEntryEvent.SetPaymentMethod(method))
@@ -139,7 +142,7 @@ fun TransactionEntrySheets(
 
     // Status Selection
     if (state.showStatusSheet) {
-        StatusSelection(
+        AeonStatusSelection(
             selectedStatus = state.status,
             onStatusSelected = { status ->
                 onEvent(TransactionEntryEvent.SetStatus(status))
@@ -164,7 +167,7 @@ fun TransactionEntrySheets(
 
     // Location Selection
     if (state.showLocationSheet) {
-        LocationSelection(
+        AeonLocationSelection(
             currentCoords = state.locationCoords,
             onLocationSelected = { coords ->
                 onEvent(TransactionEntryEvent.SetLocation(coords))
@@ -185,12 +188,13 @@ fun TransactionEntrySheets(
 
     // Split Category Selection
     state.showSplitCategorySheet?.let { index ->
-        TransactionCategorySelection(
+        AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryId = state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId,
-            onCategorySelected = { _, id ->
-                onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId = id))
-                onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null))
+            selectedCategoryIds = setOf(state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { id ->
+                    onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId = id))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null)) }
         )
@@ -198,7 +202,7 @@ fun TransactionEntrySheets(
 
     // Numpad (Calculator)
     if (state.isNumpadVisible) {
-        CalculatorSheet(
+        AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
             decimalPrecision = state.decimalPrecision,

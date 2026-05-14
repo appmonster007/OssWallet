@@ -13,7 +13,7 @@ interface FilterDao {
     suspend fun getFilterById(id: Long): FilterEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertFilter(filter: FilterEntity)
+    suspend fun insertFilter(filter: FilterEntity): Long
 
     @Query("SELECT * FROM transaction_filters")
     suspend fun getAllFiltersSync(): List<FilterEntity>

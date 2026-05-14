@@ -34,6 +34,7 @@ fun AeonImpactHeaderCard(
     nameLabel: String = "",
     nameIcon: ImageVector = Icons.Rounded.Title,
     showName: Boolean = true,
+    showTypeSelector: Boolean = true,
     isTransfer: Boolean = false,
     targetAccountId: String? = null,
     targetCurrency: String? = null,
@@ -46,7 +47,7 @@ fun AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList()
 ) {
-    val activeAmountColor = Color(android.graphics.Color.parseColor(transactionType.colorHex))
+    val activeAmountColor = amountColor ?: Color(android.graphics.Color.parseColor(transactionType.colorHex))
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -59,25 +60,27 @@ fun AeonImpactHeaderCard(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            EntryTypeSelector(
-                selectedType = transactionType,
-                onTypeSelected = onTypeSelected,
-                types = TransactionType.entries.map { 
-                    Triple(
-                        when(it) {
-                            TransactionType.EXPENSE -> Icons.Rounded.Remove
-                            TransactionType.INCOME -> Icons.Rounded.Add
-                            TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
-                        },
-                        it.displayName,
-                        it
-                    )
-                },
-                selectedColor = activeAmountColor,
-                itemWidth = 100.dp
-            )
+            if (showTypeSelector) {
+                EntryTypeSelector(
+                    selectedType = transactionType,
+                    onTypeSelected = onTypeSelected,
+                    types = TransactionType.entries.map { 
+                        Triple(
+                            when(it) {
+                                TransactionType.EXPENSE -> Icons.Rounded.Remove
+                                TransactionType.INCOME -> Icons.Rounded.Add
+                                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                            },
+                            it.displayName,
+                            it
+                        )
+                    },
+                    selectedColor = activeAmountColor,
+                    itemWidth = 100.dp
+                )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
             Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                 EntryAmountDisplay(

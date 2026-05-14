@@ -53,6 +53,7 @@ private fun calculateScrollBottomPadding(): Dp {
 @Composable
 fun TransactionListContent(
     listState: TransactionListState,
+    allTransactions: List<Transaction>,
     accounts: List<Account>,
     categories: List<Category>,
     decimalPrecision: Int,
@@ -126,6 +127,7 @@ fun TransactionListContent(
                 filter = filter,
                 accounts = accounts,
                 allCategories = categories,
+                allTransactions = allTransactions,
                 savedFilters = savedFilters,
                 onUpdateTimelineRange = onUpdateTimelineRange,
                 onApplyFilter = onUpdateFilter,
@@ -224,7 +226,8 @@ fun TransactionListContentPreview() {
                 onBackClick = {},
                 onUpdateFilter = {},
                 onUpdateTimelineRange = { },
-                onUpdateRecordsSettings = {}
+                onUpdateRecordsSettings = {},
+                allTransactions = emptyList()
             )
         }
     }

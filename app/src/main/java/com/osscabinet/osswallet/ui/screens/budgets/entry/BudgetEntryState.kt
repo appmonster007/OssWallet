@@ -15,6 +15,9 @@ data class BudgetEntryState(
     val selectedCategoryIds: Set<Long> = emptySet(),
     val selectedAccountIds: Set<String> = emptySet(),
     val selectedTags: Set<String> = emptySet(),
+    val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
+    val selectedStatuses: Set<TransactionStatus> = emptySet(),
+    val linkedTransactionIds: Set<Long> = emptySet(),
     val customStartDate: Long = System.currentTimeMillis(),
     val customEndDate: Long = System.currentTimeMillis(),
 
@@ -27,6 +30,9 @@ data class BudgetEntryState(
     val showCategorySheet: Boolean = false,
     val showTagSheet: Boolean = false,
     val showPeriodSheet: Boolean = false,
+    val showPaymentMethodSheet: Boolean = false,
+    val showStatusSheet: Boolean = false,
+    val showLinkSheet: Boolean = false,
     val accountQuery: String = "",
     val categoryQuery: String = "",
     val isEditMode: Boolean = false,
@@ -36,6 +42,7 @@ data class BudgetEntryState(
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val allTransactions: List<Transaction> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,

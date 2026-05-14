@@ -15,11 +15,13 @@ import androidx.compose.runtime.Composable
 fun AeonDetailSection(
     note: String,
     onNoteChange: (String) -> Unit,
-    payee: String,
-    onPayeeChange: (String) -> Unit,
-    selectedTags: List<String>,
-    onTagClick: () -> Unit,
-    onRemoveTag: (String) -> Unit,
+    payee: String = "",
+    onPayeeChange: (String) -> Unit = {},
+    payeeLabel: String = "PAYEE",
+    showPayee: Boolean = true,
+    selectedTags: Collection<String> = emptyList(),
+    onTagClick: () -> Unit = {},
+    onRemoveTag: (String) -> Unit = {},
     noteSuggestions: List<String> = emptyList(),
     payeeSuggestions: List<String> = emptyList(),
     additionalContent: @Composable (ColumnScope.() -> Unit)? = null
@@ -37,16 +39,18 @@ fun AeonDetailSection(
             placeholder = "Tap to enter..."
         )
 
-        EntryEditorialInput(
-            value = payee,
-            onValueChange = onPayeeChange,
-            label = "PAYEE",
-            icon = Icons.Rounded.Person,
-            suggestions = payeeSuggestions
-        )
+        if (showPayee) {
+            EntryEditorialInput(
+                value = payee,
+                onValueChange = onPayeeChange,
+                label = payeeLabel,
+                icon = Icons.Rounded.Person,
+                suggestions = payeeSuggestions
+            )
+        }
 
         EntryTagSection(
-            selectedTags = selectedTags,
+            selectedTags = selectedTags.toList(),
             onShowTagSheet = onTagClick,
             onRemoveTag = onRemoveTag
         )

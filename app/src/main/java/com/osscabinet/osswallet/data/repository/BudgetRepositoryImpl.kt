@@ -36,6 +36,9 @@ class BudgetRepositoryImpl(
                     categoryIds = budget.categoryIds,
                     accountIds = budget.accountIds,
                     tags = budget.tags,
+                    paymentMethods = budget.paymentMethods,
+                    statuses = budget.statuses,
+                    linkedTransactionIds = budget.linkedTransactionIds,
                     transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null
                 )
             )
@@ -54,6 +57,9 @@ class BudgetRepositoryImpl(
                         categoryIds = budget.categoryIds,
                         accountIds = budget.accountIds,
                         tags = budget.tags,
+                        paymentMethods = budget.paymentMethods,
+                        statuses = budget.statuses,
+                        linkedTransactionIds = budget.linkedTransactionIds,
                         transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null
                     )
                 )

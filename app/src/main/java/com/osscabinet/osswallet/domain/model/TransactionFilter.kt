@@ -26,6 +26,7 @@ data class TransactionFilter(
     val currencies: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
+    val linkedTransactionIds: List<Long> = emptyList(),
     val excludeFuture: Boolean = true
 )
 
@@ -47,6 +48,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         tags = mergeLists(this.tags, other.tags),
         paymentMethods = mergeLists(this.paymentMethods, other.paymentMethods),
         statuses = mergeLists(this.statuses, other.statuses),
+        linkedTransactionIds = mergeLists(this.linkedTransactionIds, other.linkedTransactionIds),
         transactionType = other.transactionType ?: this.transactionType,
         queryNote = other.queryNote ?: this.queryNote,
         isNoteRegex = if (other.queryNote != null) other.isNoteRegex else this.isNoteRegex,

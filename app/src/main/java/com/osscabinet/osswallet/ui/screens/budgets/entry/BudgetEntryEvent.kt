@@ -15,6 +15,9 @@ sealed class BudgetEntryEvent {
     data class SetCategoryIds(val ids: Set<Long>) : BudgetEntryEvent()
     data class SetAccountIds(val ids: Set<String>) : BudgetEntryEvent()
     data class SetTags(val tags: Set<String>) : BudgetEntryEvent()
+    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) : BudgetEntryEvent()
+    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) : BudgetEntryEvent()
+    data class SetLinkedTransactions(val ids: Set<Long>) : BudgetEntryEvent()
     data class SetCustomStartDate(val date: Long) : BudgetEntryEvent()
     data class SetCustomEndDate(val date: Long) : BudgetEntryEvent()
     
@@ -27,6 +30,9 @@ sealed class BudgetEntryEvent {
     data class ShowCategorySheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowTagSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowPeriodSheet(val show: Boolean) : BudgetEntryEvent()
+    data class ShowPaymentMethodSheet(val show: Boolean) : BudgetEntryEvent()
+    data class ShowStatusSheet(val show: Boolean) : BudgetEntryEvent()
+    data class ShowLinkSheet(val show: Boolean) : BudgetEntryEvent()
     
     data class SetAccountQuery(val query: String) : BudgetEntryEvent()
     data class SetCategoryQuery(val query: String) : BudgetEntryEvent()

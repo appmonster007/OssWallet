@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,6 +27,7 @@ fun AeonEntryScaffold(
     modifier: Modifier = Modifier,
     isEditMode: Boolean = false,
     onDeleteClick: (() -> Unit)? = null,
+    onResetClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.background,
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -52,6 +54,14 @@ fun AeonEntryScaffold(
                     }
                 },
                 actions = {
+                    if (onResetClick != null) {
+                        IconButton(onClick = onResetClick) {
+                            Icon(
+                                Icons.Rounded.RestartAlt,
+                                contentDescription = "Reset"
+                            )
+                        }
+                    }
                     if (isEditMode && onDeleteClick != null) {
                         IconButton(onClick = onDeleteClick) {
                             Icon(

@@ -36,6 +36,7 @@ fun AdvancedFilterSection(
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     modifier: Modifier = Modifier,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
@@ -262,6 +263,7 @@ fun AdvancedFilterSection(
                     onFilterChange = onFilterChange,
                     accounts = accounts,
                     allCategories = allCategories,
+                    allTransactions = allTransactions,
                     showAccountFilter = filterRules.allowAccountSelection,
                     onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) },
                     filterRules = filterRules

@@ -55,6 +55,7 @@ fun TransactionListScreen(
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
+    val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -91,6 +92,7 @@ fun TransactionListScreen(
 
     TransactionListContent(
         listState = listState,
+        allTransactions = allTransactions,
         accounts = accounts,
         categories = categories,
         decimalPrecision = decimalPrecision,

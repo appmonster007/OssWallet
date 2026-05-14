@@ -39,6 +39,7 @@ fun FilterSheetContent(
     filter: TransactionFilter,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     onUpdateTimelineRange: (TimelineRange) -> Unit,
     onApplyFilter: (TransactionFilter) -> Unit,
@@ -242,6 +243,7 @@ fun FilterSheetContent(
                 },
                 accounts = accounts,
                 allCategories = allCategories,
+                allTransactions = allTransactions,
                 showAccountFilter = showAccountFilter,
                 allAvailableCurrencies = accounts.flatMap { account ->
                     if (account.allowedCurrencies.isEmpty()) listOf(account.currencyCode)

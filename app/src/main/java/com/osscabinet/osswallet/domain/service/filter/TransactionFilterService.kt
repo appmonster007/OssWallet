@@ -98,10 +98,12 @@ object TransactionFilterService {
                 (filter.warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= filter.warrantyExpirationEnd)
 
         val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
+        val matchesLinkedTransactions = filter.linkedTransactionIds.isEmpty() || tx.id in filter.linkedTransactionIds
 
         return matchesAccounts && matchesCategories && matchesType && matchesAmount &&
                 matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
-                matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags
+                matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags &&
+                matchesLinkedTransactions
     }
 
     fun filterTransactionsWithBalance(

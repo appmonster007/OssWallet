@@ -17,6 +17,9 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -49,15 +52,15 @@ fun BudgetFormBody(
     selectedTags: Set<String>,
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
-    selectedPaymentMethods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>,
+    selectedPaymentMethods: Set<PaymentMethod>,
     onPaymentMethodClick: () -> Unit,
-    selectedStatuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>,
+    selectedStatuses: Set<TransactionStatus>,
     onStatusClick: () -> Unit,
     linkedTransactionIds: Set<Long>,
     onLinkRecordClick: () -> Unit,
     filterId: Long?,
     onFilterClick: () -> Unit,
-    availableFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
+    availableFilters: List<Filter>,
     noteSuggestions: List<String>,
     modifier: Modifier = Modifier,
     isFilterShared: Boolean = false,
@@ -107,7 +110,7 @@ fun BudgetFormBody(
                     icon = getAccountIconByName(accountObj?.icon),
                     label = "ACCOUNT",
                     value = when {
-                        selectedAccountIds.isEmpty() -> "All Accounts"
+                        selectedAccountIds.isEmpty() || (accounts.isNotEmpty() && selectedAccountIds.size == accounts.size) -> "All Accounts"
                         accountObj != null -> accountObj.name
                         else -> "${selectedAccountIds.size} Accounts"
                     },
@@ -120,7 +123,7 @@ fun BudgetFormBody(
                 EntryActionCard(
                     icon = Icons.Rounded.ShowChart,
                     label = "TRACKS",
-                    value = if (selectedTrackTypes.size == TransactionType.entries.size) "All Types"
+                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
                             else selectedTrackTypes.joinToString { it.displayName },
                     onClick = onTrackTypeClick,
                     modifier = Modifier.weight(1f),
@@ -135,7 +138,7 @@ fun BudgetFormBody(
                 icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
                 label = "CATEGORIES",
                 value = when {
-                    selectedCategoryIds.isEmpty() -> "All Categories"
+                    selectedCategoryIds.isEmpty() || (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
                     categoryObj != null -> categoryObj.name
                     else -> "${selectedCategoryIds.size} Categories"
                 },
@@ -200,7 +203,7 @@ fun BudgetFormBody(
             EntryActionCard(
                 icon = Icons.Rounded.Payments,
                 label = "PAYMENT METHODS",
-                value = if (selectedPaymentMethods.isEmpty()) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                value = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
                 onClick = onPaymentMethodClick,
                 modifier = Modifier.fillMaxWidth(),
                 iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
@@ -211,7 +214,7 @@ fun BudgetFormBody(
             EntryActionCard(
                 icon = Icons.Rounded.CheckCircle,
                 label = "TRANSACTION STATUS",
-                value = if (selectedStatuses.isEmpty()) "All Statuses" else "${selectedStatuses.size} Selected",
+                value = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
                 onClick = onStatusClick,
                 modifier = Modifier.fillMaxWidth(),
                 iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),

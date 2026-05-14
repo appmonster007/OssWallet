@@ -217,6 +217,7 @@ fun LoanDetailScreen(
                         summary = summary,
                         selectedAccount = selectedAccount,
                         selectedCategories = selectedCategories,
+                        allCategoriesCount = categoriesList.size,
                         precision = precision
                     )
 
@@ -316,6 +317,7 @@ private fun LoanOverviewTab(
     summary: com.osscabinet.ossWallet.domain.model.LoanSummary,
     selectedAccount: com.osscabinet.ossWallet.domain.model.Account?,
     selectedCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
+    allCategoriesCount: Int,
     precision: Int
 ) {
     var showAmortization by remember { mutableStateOf(false) }
@@ -372,7 +374,7 @@ private fun LoanOverviewTab(
                         label = "CATEGORIES",
                         icon = Icons.Rounded.Category,
                         allText = "All Categories",
-                        isEmpty = loan.categoryIds.isEmpty(),
+                        isEmpty = loan.categoryIds.isEmpty() || (allCategoriesCount > 0 && loan.categoryIds.size == allCategoriesCount),
                         items = selectedCategories.map { category ->
                             {
                                 val color = Color(category.colorHex)

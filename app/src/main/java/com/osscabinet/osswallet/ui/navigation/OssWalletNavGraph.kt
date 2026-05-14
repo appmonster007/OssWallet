@@ -735,6 +735,7 @@ fun OssWalletNavGraph(
                         PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
                             appContainer.templateRepository,
+                            appContainer.categoryRepository,
                             appContainer.settingsRepository
                         )
                     }
@@ -957,6 +958,7 @@ fun OssWalletNavGraph(
                         PlannedPaymentViewModel(
                             appContainer.plannedPaymentRepository,
                             appContainer.templateRepository,
+                            appContainer.categoryRepository,
                             appContainer.settingsRepository
                         )
                     }

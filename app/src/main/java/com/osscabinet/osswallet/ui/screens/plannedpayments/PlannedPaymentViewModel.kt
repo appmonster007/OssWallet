@@ -1,14 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
@@ -30,6 +25,7 @@ import java.util.UUID
 class PlannedPaymentViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
+    private val categoryRepository: CategoryRepository,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
@@ -77,8 +73,11 @@ class PlannedPaymentViewModel(
     ) {
         viewModelScope.launch {
             val template = payment.template
+            val categories = categoryRepository.getAllCategoriesSync()
+            val categoryName = categories.find { it.id == template.categoryId }?.name ?: "Planned Payment"
+            
             val request = TransactionRequest(
-                name = template.name,
+                name = categoryName,
                 amount = template.amount,
                 transactionType = when(template.transactionType) {
                     1 -> "income"
@@ -89,10 +88,14 @@ class PlannedPaymentViewModel(
                 currency = template.currency ?: "USD",
                 categoryId = template.categoryId,
                 tags = template.tags,
-                paymentMethod = template.paymentMethod ?: "Cash",
+                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                 timestamp = occurrence.scheduledDate,
                 payee = template.payee ?: "",
                 note = template.note ?: "",
+                latitude = template.latitude,
+                longitude = template.longitude,
+                warrantyExpiration = template.warrantyExpiration,
+                status = template.transactionStatus,
                 isTransfer = template.transactionType == 2,
                 targetAccountId = template.targetAccountId,
                 targetCurrency = template.targetCurrency,

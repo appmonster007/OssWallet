@@ -310,7 +310,7 @@ fun PlannedPaymentDetailScreen(
             // ─── Metadata card ───────────────────────────────────────────────
             val hasMetadata = accounts.isNotEmpty() ||
                     !payment.template.payee.isNullOrBlank() ||
-                    !payment.template.paymentMethod.isNullOrBlank() ||
+                    payment.template.paymentMethod != null ||
                     categoryName != "Unknown" ||
                     payment.template.tags.isNotEmpty() ||
                     !payment.template.note.isNullOrBlank()
@@ -338,11 +338,11 @@ fun PlannedPaymentDetailScreen(
                             if (categoryName != "Unknown") {
                                 DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
                             }
-                            if (!payment.template.paymentMethod.isNullOrBlank()) {
+                            if (payment.template.paymentMethod != null) {
                                 DetailMetaRow(
                                     Icons.Rounded.Payments,
                                     "Payment method",
-                                    payment.template.paymentMethod!!
+                                    payment.template.paymentMethod!!.displayName
                                 )
                             }
                             if (payment.template.tags.isNotEmpty()) {

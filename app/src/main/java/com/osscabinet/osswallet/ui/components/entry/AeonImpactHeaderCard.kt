@@ -28,10 +28,11 @@ fun AeonImpactHeaderCard(
     currency: String,
     onCurrencyClick: () -> Unit,
     onAmountClick: () -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-    nameLabel: String,
+    name: String = "",
+    onNameChange: (String) -> Unit = {},
+    nameLabel: String = "",
     nameIcon: ImageVector = Icons.Rounded.Title,
+    showName: Boolean = true,
     isTransfer: Boolean = false,
     targetAccountId: String? = null,
     targetCurrency: String? = null,
@@ -153,18 +154,20 @@ fun AeonImpactHeaderCard(
                 )
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-            )
+            if (showName) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                )
 
-            EntryEditorialInput(
-                value = name,
-                onValueChange = onNameChange,
-                label = nameLabel,
-                icon = nameIcon
-            )
+                EntryEditorialInput(
+                    value = name,
+                    onValueChange = onNameChange,
+                    label = nameLabel,
+                    icon = nameIcon
+                )
+            }
         }
     }
 }

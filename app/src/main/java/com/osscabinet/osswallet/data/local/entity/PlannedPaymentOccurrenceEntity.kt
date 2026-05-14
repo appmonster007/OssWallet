@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 
 @Entity(
     tableName = "planned_payment_occurrences",
@@ -26,5 +27,5 @@ data class PlannedPaymentOccurrenceEntity(
     val plannedPaymentId: Long,
     val scheduledDate: Long,
     val generatedTransactionId: Long? = null,
-    val status: String = "PENDING"
+    val status: OccurrenceStatus = OccurrenceStatus.PENDING
 )

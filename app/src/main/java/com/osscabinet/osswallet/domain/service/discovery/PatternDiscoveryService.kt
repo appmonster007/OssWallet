@@ -1,11 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.discovery
 
-import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Calendar
@@ -22,7 +17,7 @@ data class DiscoveredPattern(
     val averageAmount: BigDecimal,
     val currency: String,
     val transactionType: String,
-    val paymentMethod: String,
+    val paymentMethod: PaymentMethod,
     val note: String,
     val tags: List<String>,
     val latitude: Double?,
@@ -55,7 +50,7 @@ object PatternDiscoveryService {
         // 1. Group by key features (Payee + Category + Type + Currency)
         val groups = transactions.groupBy { tx ->
             val normalizedPayee = tx.payee.trim().lowercase()
-            val payeeKey = if (normalizedPayee.isEmpty()) "tx:${tx.name.trim().lowercase()}" else "payee:$normalizedPayee"
+            val payeeKey = if (normalizedPayee.isEmpty()) "note:${tx.note.trim().lowercase()}" else "payee:$normalizedPayee"
             "$payeeKey|${tx.categoryId}|${tx.transactionType}|${tx.currency}"
         }
 
@@ -94,7 +89,7 @@ object PatternDiscoveryService {
         if (totalConfidence < 0.4f) return null
 
         return DiscoveredPattern(
-            name = lastTx.name,
+            name = lastTx.payee.ifBlank { lastTx.note.ifBlank { "Discovered Pattern" } },
             payee = lastTx.payee,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,

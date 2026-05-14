@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import java.math.BigDecimal
 
@@ -15,7 +16,7 @@ data class TransactionRequest(
     val currency: String,
     val categoryId: Long,
     val tags: List<String> = emptyList(),
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val timestamp: Long = System.currentTimeMillis(),
     val payee: String = "",
     val note: String = "",

@@ -65,6 +65,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
@@ -457,11 +458,14 @@ private fun PlannedPaymentListItem(
     val formattedAmount = remember(payment.template.amount) {
         payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
+    
+    val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat
+    val statusColor = if (isOverdue) RedWarning else Color(android.graphics.Color.parseColor(payment.status.colorHex))
 
     ManagementListItem(
         onClick = onTap,
-        icon = Icons.Rounded.Repeat,
-        iconTint = typeColor,
+        icon = statusIcon,
+        iconTint = statusColor,
         title = payment.template.name,
         subtitle = recurrenceLabel,
         isWarning = isOverdue,

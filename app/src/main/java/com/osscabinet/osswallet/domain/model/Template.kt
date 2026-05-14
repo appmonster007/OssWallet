@@ -21,7 +21,7 @@ data class Template(
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
-    val paymentMethod: String? = null,
+    val paymentMethod: PaymentMethod? = null,
     val currency: String,
     val tags: List<String> = emptyList(),
     val isStarred: Boolean = false,

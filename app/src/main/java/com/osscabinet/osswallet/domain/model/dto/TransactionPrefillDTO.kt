@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
@@ -17,7 +18,7 @@ data class TransactionPrefillDTO(
     val accountId: String? = null,
     val currency: String,
     val tags: List<String> = emptyList(),
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",
     val latitude: Double? = null,
@@ -48,7 +49,7 @@ data class TransactionPrefillDTO(
             isSplitMode: Boolean = false
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(
-                name = transaction.name,
+                name = "", // Transactions don't have names
                 amount = transaction.amount.abs().toPlainString(),
                 categoryId = transaction.categoryId,
                 transactionType = if (transaction.categoryId == 1003L) "transfer" else transaction.transactionType,
@@ -87,7 +88,7 @@ data class TransactionPrefillDTO(
                 accountId = template.accountId ?: "",
                 currency = template.currency ?: "",
                 tags = template.tags,
-                paymentMethod = template.paymentMethod ?: "Cash",
+                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                 payee = template.payee ?: "",
                 note = template.note ?: "",
                 sourceTemplateId = template.id
@@ -116,7 +117,7 @@ data class TransactionPrefillDTO(
                 accountId = template.accountId ?: "",
                 currency = template.currency ?: "USD",
                 tags = template.tags,
-                paymentMethod = template.paymentMethod ?: "Cash",
+                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                 payee = template.payee ?: "",
                 note = template.note ?: "",
                 targetAccountId = template.targetAccountId,

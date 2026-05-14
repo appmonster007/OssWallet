@@ -47,7 +47,7 @@ class PlannedPaymentRepositoryImpl(
         occurrenceDao.insert(occurrence.toEntity())
 
     override suspend fun updateOccurrenceStatus(occurrenceId: Long, status: OccurrenceStatus) =
-        occurrenceDao.updateStatus(occurrenceId, status.name)
+        occurrenceDao.updateStatus(occurrenceId, status)
 
     override suspend fun getOccurrenceForDate(plannedPaymentId: Long, scheduledDate: Long): PlannedPaymentOccurrence? =
         occurrenceDao.getOccurrenceForDate(plannedPaymentId, scheduledDate)?.toDomain()

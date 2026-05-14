@@ -1,8 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 
 sealed class PlannedPaymentEntryEvent {
@@ -31,12 +29,14 @@ sealed class PlannedPaymentEntryEvent {
     data class SetLocation(val location: String, val lat: Double? = null, val lng: Double? = null) : PlannedPaymentEntryEvent()
     data class SetWarrantyEnabled(val enabled: Boolean) : PlannedPaymentEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : PlannedPaymentEntryEvent()
-    data class SetTransactionStatus(val status: com.osscabinet.ossWallet.domain.model.TransactionStatus) : PlannedPaymentEntryEvent()
-    data class SetPaymentMethod(val method: String) : PlannedPaymentEntryEvent()
+    data class SetTransactionStatus(val status: TransactionStatus) : PlannedPaymentEntryEvent()
+    data class SetPaymentMethod(val method: PaymentMethod) : PlannedPaymentEntryEvent()
     data class SetTags(val tags: List<String>) : PlannedPaymentEntryEvent()
     data class SetStatus(val status: PlannedPaymentStatus) : PlannedPaymentEntryEvent()
     data class SetLinkedTemplate(val template: Template?) : PlannedPaymentEntryEvent()
     data class SetDeleteTemplateWithPayment(val delete: Boolean) : PlannedPaymentEntryEvent()
+    data class SetLinkedTransactionIds(val ids: List<Long>) : PlannedPaymentEntryEvent()
+    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) : PlannedPaymentEntryEvent()
 
     // Visibility
     data class ShowScheduleBuilder(val show: Boolean) : PlannedPaymentEntryEvent()
@@ -55,6 +55,7 @@ sealed class PlannedPaymentEntryEvent {
     data class ShowTargetCurrencySheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowTemplateSheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowExchangeRateDialog(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowLinkedTransactionSheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : PlannedPaymentEntryEvent()
 
     data object TriggerNavigation : PlannedPaymentEntryEvent()

@@ -10,7 +10,9 @@ import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
-import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
+import com.osscabinet.ossWallet.data.local.entity.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.BuildConfig
 import android.content.Context
 import java.io.BufferedReader
@@ -171,7 +173,7 @@ class DatabaseSeeder @Inject constructor(
             try {
                 val categoryId = categoryNameToId[transaction.category]
                 if (categoryId == null) {
-                    android.util.Log.w("DatabaseSeeder", "Category '${transaction.category}' not found for transaction '${transaction.name}'")
+                    android.util.Log.w("DatabaseSeeder", "Category '${transaction.category}' not found for transaction")
                     failedTransactions++
                     return@forEach
                 }
@@ -181,7 +183,7 @@ class DatabaseSeeder @Inject constructor(
 
                 successfulTransactions++
             } catch (e: Exception) {
-                android.util.Log.e("DatabaseSeeder", "Failed to insert transaction '${transaction.name}': ${e.message}")
+                android.util.Log.e("DatabaseSeeder", "Failed to insert transaction: ${e.message}")
                 failedTransactions++
             }
         }
@@ -392,7 +394,6 @@ class DatabaseSeeder @Inject constructor(
     }
 
     private data class TransactionSeedRow(
-        val name: String,
         val amount: BigDecimal,
         val category: String,
         val categoryId: Long?,
@@ -400,7 +401,7 @@ class DatabaseSeeder @Inject constructor(
         val currency: String,
         val transactionType: String,
         val accountId: String,
-        val paymentMethod: String,
+        val paymentMethod: PaymentMethod,
         val payee: String,
         val note: String,
         val tags: String,
@@ -409,11 +410,11 @@ class DatabaseSeeder @Inject constructor(
         val latitude: Double? = null,
         val longitude: Double? = null,
         val warrantyExpiration: Long? = null,
-        val status: String = "cleared"
+        val status: TransactionStatus = TransactionStatus.CLEARED
     ) {
         fun toTransactionEntity(): TransactionEntity {
             return TransactionEntity(
-                name = name,
+                name = category,
                 amount = amount,
                 timestamp = timestamp ?: System.currentTimeMillis(),
                 currency = currency,
@@ -437,7 +438,6 @@ class DatabaseSeeder @Inject constructor(
             fun fromCsv(line: String): TransactionSeedRow {
                 val parts = parseCsvLine(line)
                 return TransactionSeedRow(
-                    name = parts.getOrNull(0) ?: "",
                     amount = parts.getOrNull(1)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                     category = parts.getOrNull(2) ?: "",
                     categoryId = parts.getOrNull(3)?.toLongOrNull(),
@@ -445,7 +445,7 @@ class DatabaseSeeder @Inject constructor(
                     currency = parts.getOrNull(5) ?: "USD",
                     transactionType = parts.getOrNull(6) ?: "expense",
                     accountId = parts.getOrNull(7) ?: "",
-                    paymentMethod = parts.getOrNull(8) ?: "Cash",
+                    paymentMethod = PaymentMethod.fromString(parts.getOrNull(8) ?: "Cash"),
                     payee = parts.getOrNull(9) ?: "",
                     note = parts.getOrNull(10) ?: "",
                     tags = parts.getOrNull(11) ?: "",
@@ -454,7 +454,7 @@ class DatabaseSeeder @Inject constructor(
                     latitude = parts.getOrNull(14)?.toDoubleOrNull(),
                     longitude = parts.getOrNull(15)?.toDoubleOrNull(),
                     warrantyExpiration = parts.getOrNull(16)?.toLongOrNull(),
-                    status = parts.getOrNull(17) ?: "cleared"
+                    status = TransactionStatus.fromString(parts.getOrNull(17) ?: "cleared")
                 )
             }
         }

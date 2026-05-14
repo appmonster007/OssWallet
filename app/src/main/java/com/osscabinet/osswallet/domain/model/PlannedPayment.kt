@@ -12,7 +12,16 @@ enum class RecurrenceType {
     CRON
 }
 
-enum class PlannedPaymentStatus { ACTIVE, PAUSED, COMPLETED, CANCELLED }
+enum class PlannedPaymentStatus(
+    val displayName: String,
+    val iconName: String,
+    val colorHex: String
+) {
+    ACTIVE("Active", "CheckCircle", "#4CAF50"),
+    PAUSED("Paused", "PauseCircle", "#FFC107"),
+    COMPLETED("Completed", "CheckCircle", "#2196F3"),
+    CANCELLED("Cancelled", "Cancel", "#F44336")
+}
 
 enum class OccurrenceStatus { PENDING, CONFIRMED, SKIPPED }
 

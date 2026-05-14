@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import java.math.BigDecimal
 
 @Entity(
@@ -41,7 +43,7 @@ data class TransactionEntity(
     val accountId: String? = null,
     val categoryId: Long,
     val tags: String = "", // Comma-separated tags
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",
     val sourcePlannedPaymentId: Long? = null,
@@ -49,5 +51,5 @@ data class TransactionEntity(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
-    val status: String = "cleared"
+    val status: TransactionStatus = TransactionStatus.CLEARED
 )

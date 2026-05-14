@@ -52,7 +52,8 @@ class PlannedPaymentEntryViewModel(
                             availableTags = tags,
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
-                            currentProfileId = profileId
+                            currentProfileId = profileId,
+                            allTransactions = transactions
                         )
                     }
                 }
@@ -95,7 +96,7 @@ class PlannedPaymentEntryViewModel(
                         warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: "Cash",
+                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                         selectedTagNames = template.tags,
                         status = PlannedPaymentStatus.ACTIVE
                     )
@@ -153,7 +154,7 @@ class PlannedPaymentEntryViewModel(
                         warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: "Cash",
+                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                         selectedTagNames = template.tags,
                         status = existing.status
                     )
@@ -244,6 +245,16 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is PlannedPaymentEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTagNames = event.tags) }
+            is PlannedPaymentEntryEvent.SetLinkedTransactionIds -> {
+                val linkedTxs = _state.value.allTransactions.filter { event.ids.contains(it.id) }
+                _state.update { it.copy(displayLinkedTxs = linkedTxs) }
+            }
+            is PlannedPaymentEntryEvent.RemoveLinkedTransaction -> {
+                _state.update { state ->
+                    val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
+                    state.copy(displayLinkedTxs = newList)
+                }
+            }
             is PlannedPaymentEntryEvent.SetStatus -> _state.update { it.copy(status = event.status) }
             is PlannedPaymentEntryEvent.SetLinkedTemplate -> {
                 _state.update { state ->
@@ -261,7 +272,7 @@ class PlannedPaymentEntryViewModel(
                             selectedCategoryId = event.template.categoryId,
                             payee = event.template.payee ?: "",
                             noteUserPart = event.template.note ?: "",
-                            paymentMethod = event.template.paymentMethod ?: "Cash",
+                            paymentMethod = event.template.paymentMethod ?: PaymentMethod.CASH,
                             selectedTagNames = event.template.tags
                         )
                     } else {
@@ -286,6 +297,7 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
             is PlannedPaymentEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
             is PlannedPaymentEntryEvent.ShowTemplateSheet -> _state.update { it.copy(showTemplateSheet = event.show) }
+            is PlannedPaymentEntryEvent.ShowLinkedTransactionSheet -> _state.update { it.copy(showLinkedTransactionSheet = event.show) }
             is PlannedPaymentEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
             is PlannedPaymentEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is PlannedPaymentEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }

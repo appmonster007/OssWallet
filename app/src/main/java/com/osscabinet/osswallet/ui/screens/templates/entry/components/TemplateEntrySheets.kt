@@ -1,203 +1,176 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CurrencyExchange
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
+import androidx.compose.runtime.Composable
+import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
+import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.StatusSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
-import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
 
 @Composable
 fun TemplateEntrySheets(
-    isNumpadVisible: Boolean,
-    onDismissNumpad: () -> Unit,
-    amount: String,
-    onAmountChange: (String) -> Unit,
-    onTypeChangedFromNumpad: (String) -> Unit = {},
-    transactionType: Int,
-    decimalPrecision: Int,
-    showAccountSheet: Boolean,
-    onDismissAccountSheet: () -> Unit,
-    showTargetAccountSheet: Boolean = false,
-    onDismissTargetAccountSheet: () -> Unit = {},
-    accounts: List<Account>,
-    selectedAccount: Account?,
-    onAccountSelected: (Account?) -> Unit,
-    targetAccount: Account? = null,
-    onTargetAccountSelected: (Account?) -> Unit = {},
-    showCategorySheet: Boolean,
-    onDismissCategorySheet: () -> Unit,
-    categories: List<Category>,
-    selectedCategoryId: Long,
-    onCategorySelected: (String, Long) -> Unit,
-    showPaymentMethodSheet: Boolean,
-    onDismissPaymentMethodSheet: () -> Unit,
-    paymentMethod: String,
-    onPaymentMethodSelected: (String) -> Unit,
-    showStatusSheet: Boolean = false,
-    onDismissStatusSheet: () -> Unit = {},
-    transactionStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
-    onStatusSelected: (com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = {},
-    showTagSheet: Boolean,
-    onDismissTagSheet: () -> Unit,
-    allTags: List<Tag>,
-    selectedTags: List<String>,
-    onTagsSelected: (List<String>) -> Unit,
-    onAddTag: (String, Int) -> Unit,
-    onEditTag: (Tag) -> Unit,
-    onDeleteTag: (Tag) -> Unit,
-    showCurrencySheet: Boolean = false,
-    onDismissCurrencySheet: () -> Unit = {},
-    currency: String = "USD",
-    onCurrencySelected: (String) -> Unit = {},
-    showTargetCurrencySheet: Boolean = false,
-    onDismissTargetCurrencySheet: () -> Unit = {},
-    targetCurrency: String = "USD",
-    onTargetCurrencySelected: (String) -> Unit = {},
-    showExchangeRateDialog: Boolean = false,
-    onDismissExchangeRateDialog: () -> Unit = {},
-    exchangeRate: java.math.BigDecimal = java.math.BigDecimal.ONE,
-    onExchangeRateChanged: (java.math.BigDecimal) -> Unit = {},
-    showWarrantyDatePicker: Boolean = false,
-    onDismissWarrantyDatePicker: () -> Unit = {},
-    warrantyExpirationMillis: Long = System.currentTimeMillis(),
-    onWarrantyDateSelected: (Long) -> Unit = {},
-    showLocationSheet: Boolean = false,
-    onDismissLocationSheet: () -> Unit = {},
-    latitude: Double? = null,
-    longitude: Double? = null,
-    onLocationSelected: (String, Double?, Double?) -> Unit = { _, _, _ -> }
+    state: TemplateEntryState,
+    onEvent: (TemplateEntryEvent) -> Unit
 ) {
-    if (isNumpadVisible) {
-        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet(
-            currentAmount = amount,
-            transactionType = transactionType,
-            decimalPrecision = decimalPrecision,
-            onAmountChanged = onAmountChange,
-            onTypeChanged = onTypeChangedFromNumpad,
-            onDismiss = onDismissNumpad
+    if (state.isNumpadVisible) {
+        CalculatorSheet(
+            currentAmount = state.amount,
+            transactionType = state.transactionType,
+            decimalPrecision = state.decimalPrecision,
+            onAmountChanged = { onEvent(TemplateEntryEvent.SetAmount(it)) },
+            onTypeChanged = { newType ->
+                val type = when (newType) {
+                    "income" -> 1
+                    "transfer" -> 2
+                    else -> 0
+                }
+                onEvent(TemplateEntryEvent.SetTransactionType(type))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowNumpad(false)) }
         )
     }
 
-    if (showAccountSheet) {
+    if (state.showAccountSheet) {
         TransactionAccountSelection(
-            accounts = accounts,
-            selectedAccountId = selectedAccount?.id,
-            onAccountSelected = onAccountSelected,
-            onDismiss = onDismissAccountSheet,
+            accounts = state.accounts,
+            selectedAccountId = state.selectedAccount?.id,
+            onAccountSelected = { onEvent(TemplateEntryEvent.SetAccount(it?.id)) },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
             title = "Select Account",
             allowOutsideWallet = true
         )
     }
 
-    if (showTargetAccountSheet) {
+    if (state.showTargetAccountSheet) {
         TransactionAccountSelection(
-            accounts = accounts,
-            selectedAccountId = targetAccount?.id,
-            onAccountSelected = onTargetAccountSelected,
-            onDismiss = onDismissTargetAccountSheet,
+            accounts = state.accounts,
+            selectedAccountId = state.selectedTargetAccount?.id,
+            onAccountSelected = { onEvent(TemplateEntryEvent.SetTargetAccount(it?.id)) },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
             title = "Select Target Account",
             allowOutsideWallet = true
         )
     }
 
-    if (showCategorySheet) {
+    if (state.showCategorySheet) {
         TransactionCategorySelection(
-            categories = categories,
-            selectedCategoryId = selectedCategoryId,
-            onCategorySelected = onCategorySelected,
-            onDismiss = onDismissCategorySheet
+            categories = state.categories,
+            selectedCategoryId = state.categoryId,
+            onCategorySelected = { _, id ->
+                onEvent(TemplateEntryEvent.SetCategory(id))
+                onEvent(TemplateEntryEvent.ShowCategorySheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowCategorySheet(false)) }
         )
     }
 
-    if (showPaymentMethodSheet) {
+    if (state.showPaymentMethodSheet) {
         PaymentMethodSelection(
-            selectedMethod = paymentMethod,
-            onMethodSelected = onPaymentMethodSelected,
-            onDismiss = onDismissPaymentMethodSheet
+            selectedMethod = state.paymentMethod,
+            onMethodSelected = { 
+                onEvent(TemplateEntryEvent.SetPaymentMethod(it))
+                onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false)) }
         )
     }
 
-    if (showStatusSheet) {
+    if (state.showStatusSheet) {
         StatusSelection(
-            selectedStatus = transactionStatus,
-            onStatusSelected = onStatusSelected,
-            onDismiss = onDismissStatusSheet
+            selectedStatus = state.transactionStatus,
+            onStatusSelected = {
+                onEvent(TemplateEntryEvent.SetTransactionStatus(it))
+                onEvent(TemplateEntryEvent.ShowStatusSheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowStatusSheet(false)) }
         )
     }
 
-    if (showTagSheet) {
+    if (state.showTagSheet) {
         TagSelection(
-            tags = allTags,
-            selectedTags = selectedTags,
-            onTagsSelected = onTagsSelected,
-            onAddTag = onAddTag,
-            onEditTag = onEditTag,
-            onDeleteTag = onDeleteTag,
-            onDismiss = onDismissTagSheet
+            tags = state.allTags,
+            selectedTags = state.tags,
+            onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
+            onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
+            onEditTag = { onEvent(TemplateEntryEvent.UpdateTag(it)) },
+            onDeleteTag = { onEvent(TemplateEntryEvent.DeleteTag(it)) },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowTagSheet(false)) }
         )
     }
 
-    if (showCurrencySheet) {
+    if (state.showCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = currency,
-            onCurrencySelected = onCurrencySelected,
-            onDismiss = onDismissCurrencySheet
+            selectedCurrency = state.currency,
+            onCurrencySelected = { 
+                onEvent(TemplateEntryEvent.SetCurrency(it))
+                onEvent(TemplateEntryEvent.ShowCurrencySheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) }
         )
     }
 
-    if (showTargetCurrencySheet) {
+    if (state.showTargetCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = targetCurrency,
-            onCurrencySelected = onTargetCurrencySelected,
-            onDismiss = onDismissTargetCurrencySheet,
+            selectedCurrency = state.targetCurrency ?: "USD",
+            onCurrencySelected = { 
+                onEvent(TemplateEntryEvent.SetTargetCurrency(it))
+                onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
             title = "Select Target Currency"
         )
     }
 
-    if (showExchangeRateDialog) {
-        com.osscabinet.ossWallet.ui.components.ExchangeRateDialog(
-            initialRate = exchangeRate,
-            onConfirm = onExchangeRateChanged,
-            onDismiss = onDismissExchangeRateDialog
-        )
-    }
-
-    if (showWarrantyDatePicker) {
-        com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog(
-            selectedDateMillis = warrantyExpirationMillis,
-            onDateSelected = onWarrantyDateSelected,
-            onDismiss = onDismissWarrantyDatePicker
-        )
-    }
-
-    if (showLocationSheet) {
-        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.LocationSelection(
-            currentCoords = if (latitude != null && longitude != null) latitude to longitude else null,
-            onLocationSelected = { coords ->
-                onLocationSelected("", coords?.first, coords?.second)
+    if (state.showExchangeRateDialog) {
+        ExchangeRateDialog(
+            initialRate = state.transferRate,
+            onConfirm = { 
+                onEvent(TemplateEntryEvent.SetTransferRate(it))
+                onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false))
             },
-            onDismiss = onDismissLocationSheet
+            onDismiss = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false)) }
+        )
+    }
+
+    if (state.showWarrantyDatePicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.warrantyExpirationMillis,
+            onDateSelected = { 
+                onEvent(TemplateEntryEvent.SetWarrantyExpiration(it))
+                onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(false)) }
+        )
+    }
+
+    if (state.showLocationSheet) {
+        LocationSelection(
+            currentCoords = if (state.latitude != null && state.longitude != null) {
+                state.latitude to state.longitude
+            } else null,
+            onLocationSelected = { coords ->
+                onEvent(TemplateEntryEvent.SetLocation("", coords?.first, coords?.second))
+                onEvent(TemplateEntryEvent.ShowLocationSheet(false))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowLocationSheet(false)) }
+        )
+    }
+
+    if (state.showLinkedTransactionSheet) {
+        LinkedTransactionSelection(
+            transactions = state.allTransactions,
+            currentTransactionId = null,
+            linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
+            accounts = state.accounts,
+            categories = state.categories,
+            is24Hour = state.use24HourFormat,
+            onLinkedTransactionsChanged = { ids ->
+                onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList()))
+            },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(false)) }
         )
     }
 }

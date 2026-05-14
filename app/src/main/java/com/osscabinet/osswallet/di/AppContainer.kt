@@ -184,6 +184,7 @@ class AppContainer(private val context: Context) {
             db.plannedPaymentDao(),
             db.plannedPaymentOccurrenceDao(),
             db.filterDao(),
+            db.currencyDao(),
             db,
             context,
             settingsDataStore

@@ -1,8 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
@@ -66,7 +65,7 @@ fun removeFilter(
         "dateRange" -> filter.copy(timelineRange = TimelineRange.AllTime)
         "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as Long))
         "currencies" -> filter.copy(currencies = filter.currencies - (value as String))
-        "paymentMethods" -> filter.copy(paymentMethods = filter.paymentMethods - (value as String))
+        "paymentMethods" -> filter.copy(paymentMethods = filter.paymentMethods - (value as PaymentMethod))
         "queryNote" -> filter.copy(queryNote = null)
         "queryPayee" -> filter.copy(queryPayee = null)
         "amountRange" -> filter.copy(minAmount = null, maxAmount = null)

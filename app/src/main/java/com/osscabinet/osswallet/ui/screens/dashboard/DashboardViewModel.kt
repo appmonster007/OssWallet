@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -287,7 +288,7 @@ class DashboardViewModel(
                 currency = template.currency,
                 categoryId = template.categoryId,
                 tags = template.tags,
-                paymentMethod = template.paymentMethod ?: "Cash",
+                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                 timestamp = occurrence.scheduledDate,
                 payee = template.payee ?: "",
                 note = template.note ?: "",

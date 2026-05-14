@@ -9,12 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 
 /**
  * Full-screen selection for Payment Methods.
@@ -22,27 +20,17 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
  */
 @Composable
 fun PaymentMethodSelection(
-    selectedMethod: String,
-    onMethodSelected: (String) -> Unit,
+    selectedMethod: PaymentMethod,
+    onMethodSelected: (PaymentMethod) -> Unit,
     onDismiss: () -> Unit
 ) {
     var query by remember { mutableStateOf("") }
     
-    val baseMethods = listOf(
-        "Cash" to Icons.Rounded.Payments,
-        "Credit Card" to Icons.Rounded.CreditCard,
-        "Debit Card" to Icons.Rounded.CreditCard,
-        "Bank Transfer" to Icons.Rounded.AccountBalance,
-        "Digital Wallet" to Icons.Rounded.Wallet,
-        "Mobile Payment" to Icons.Rounded.Contactless,
-        "Check" to Icons.Rounded.Description,
-        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
-        "Other" to Icons.Rounded.MoreHoriz
-    )
+    val baseMethods = PaymentMethod.entries
 
     val filteredMethods = remember(query) {
         if (query.isBlank()) baseMethods
-        else baseMethods.filter { it.first.contains(query, ignoreCase = true) || it.first.fuzzyMatch(query) }
+        else baseMethods.filter { it.displayName.contains(query, ignoreCase = true) || it.displayName.fuzzyMatch(query) }
     }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
@@ -76,16 +64,16 @@ fun PaymentMethodSelection(
                         AeonHybridSelector(
                             items = filteredMethods,
                             mode = AeonSelectMode.SINGLE,
-                            selectedIds = setOf(selectedMethod),
+                            selectedIds = setOf(selectedMethod.name),
                             onSelectionChange = { ids ->
                                 ids.firstOrNull()?.let { 
-                                    onMethodSelected(it)
+                                    onMethodSelected(PaymentMethod.valueOf(it))
                                     onDismiss()
                                 }
                             },
-                            idMapper = { it.first },
-                            labelMapper = { it.first },
-                            iconMapper = { it.second }
+                            idMapper = { it.name },
+                            labelMapper = { it.displayName },
+                            iconMapper = { AppIconMap[it.iconName] ?: Icons.Rounded.Payments }
                         )
                     }
                 }

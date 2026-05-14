@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
@@ -40,7 +41,7 @@ class TemplateViewModel(
         note: String? = null,
         payee: String? = null,
         location: String? = null,
-        paymentMethod: String? = null,
+        paymentMethod: PaymentMethod? = null,
         currency: String,
         tags: List<String> = emptyList(),
         profileId: Int = 1

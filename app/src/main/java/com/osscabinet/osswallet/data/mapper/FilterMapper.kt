@@ -1,9 +1,7 @@
 package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 fun FilterEntity.toDomain(): Filter {
@@ -24,7 +22,7 @@ fun FilterEntity.toDomain(): Filter {
             isPayeeRegex = isPayeeRegex,
             categoryIds = if (categoryIds.isEmpty()) emptyList() else categoryIds.split(",").map { it.toLong() },
             accountIds = if (accountIds.isEmpty()) emptyList() else accountIds.split(","),
-            paymentMethods = if (paymentMethods.isEmpty()) emptyList() else paymentMethods.split(","),
+            paymentMethods = if (paymentMethods.isEmpty()) emptyList() else paymentMethods.split(",").map { PaymentMethod.fromString(it) },
             hasWarranty = hasWarranty,
             warrantyExpirationStart = warrantyExpirationStart,
             warrantyExpirationEnd = warrantyExpirationEnd,
@@ -56,7 +54,7 @@ fun Filter.toEntity(): FilterEntity {
         accountIds = filter.accountIds.joinToString(","),
         startDate = entityStart,
         endDate = entityEnd,
-        paymentMethods = filter.paymentMethods.joinToString(","),
+        paymentMethods = filter.paymentMethods.joinToString(",") { it.name },
         hasWarranty = filter.hasWarranty,
         warrantyExpirationStart = filter.warrantyExpirationStart,
         warrantyExpirationEnd = filter.warrantyExpirationEnd,

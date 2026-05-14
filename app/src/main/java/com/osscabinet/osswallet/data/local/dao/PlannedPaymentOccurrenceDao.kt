@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local.dao
 
 import androidx.room.*
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,5 +27,5 @@ interface PlannedPaymentOccurrenceDao {
     suspend fun update(entity: PlannedPaymentOccurrenceEntity)
 
     @Query("UPDATE planned_payment_occurrences SET status = :status WHERE id = :id")
-    suspend fun updateStatus(id: Long, status: String)
+    suspend fun updateStatus(id: Long, status: OccurrenceStatus)
 }

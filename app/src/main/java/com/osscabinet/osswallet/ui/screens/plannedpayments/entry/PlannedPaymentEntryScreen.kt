@@ -9,9 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
@@ -37,8 +34,6 @@ fun PlannedPaymentEntryScreen(
         }
     }
 
-    val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Payment" else "New Payment",
         onBackClick = onBackClick,
@@ -60,111 +55,8 @@ fun PlannedPaymentEntryScreen(
         )
 
         PlannedPaymentEntrySheets(
-            showScheduleBuilder = state.showScheduleBuilder,
-            onDismissScheduleBuilder = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false)) },
-            startDateMillis = state.startDateMillis,
-            recurrenceType = state.recurrenceType,
-            recurrenceInterval = state.recurrenceInterval,
-            dayOfWeek = state.dayOfWeek,
-            dayOfMonth = state.dayOfMonth,
-            cronExpression = state.cronExpression,
-            onScheduleConfirm = { start, type, interval, dow, dom, cron ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetRecurrence(start, type, interval, dow, dom, cron))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false))
-            },
-            showEndDatePicker = state.showEndDatePicker,
-            onDismissEndDatePicker = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false)) },
-            endDateMillis = state.endDateMillis,
-            onEndDateSelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetEndDate(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false))
-            },
-            showCategorySheet = state.showCategorySheet,
-            onDismissCategorySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false)) },
-            categories = state.categories,
-            selectedCategoryId = state.selectedCategoryId,
-            onCategorySelected = { category ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetCategoryId(category.id))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
-            },
-            showAccountSheet = state.showAccountSheet,
-            onDismissAccountSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
-            showTargetAccountSheet = state.showTargetAccountSheet,
-            onDismissTargetAccountSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
-            accounts = state.accounts,
-            selectedAccountId = state.selectedAccountId,
-            onAccountSelected = { account ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetAccountId(account?.id))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
-            },
-            targetAccountId = state.targetAccountId,
-            onTargetAccountSelected = { account ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(account?.id))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
-            },
-            showPaymentMethodSheet = state.showPaymentMethodSheet,
-            onDismissPaymentMethodSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false)) },
-            paymentMethod = state.paymentMethod,
-            onPaymentMethodSelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetPaymentMethod(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false))
-            },
-            showTagSheet = state.showTagSheet,
-            onDismissTagSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false)) },
-            availableTags = state.availableTags,
-            selectedTagNames = state.selectedTagNames,
-            onTagsSelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetTags(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false))
-            },
-            showStatusSheet = state.showStatusSheet,
-            onDismissStatusSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false)) },
-            status = state.status,
-            onStatusSelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetStatus(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
-            },
-            showNumpad = state.showNumpad,
-            onDismissNumpad = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) },
-            amountText = state.amount,
-            transactionType = state.transactionType,
-            onAmountChanged = { newAmount ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetAmountText(newAmount))
-            },
-            onTypeChangedFromNumpad = { newType ->
-                val type = when (newType) {
-                    "income" -> 1
-                    "transfer" -> 2
-                    else -> 0
-                }
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetTransactionType(type))
-            },
-            showCurrencySheet = state.showCurrencySheet,
-            onDismissCurrencySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false)) },
-            currency = state.currency,
-            onCurrencySelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetCurrency(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false))
-            },
-            showTargetCurrencySheet = state.showTargetCurrencySheet,
-            onDismissTargetCurrencySheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false)) },
-            targetCurrency = state.targetCurrency ?: "USD",
-            onTargetCurrencySelected = { 
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false))
-            },
-            allCurrencies = allCurrencies,
-            showTemplateSheet = state.showTemplateSheet,
-            onDismissTemplateSheet = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false)) },
-            templates = state.templates,
-            onTemplateSelected = { template ->
-                viewModel.onEvent(PlannedPaymentEntryEvent.SetLinkedTemplate(template))
-                viewModel.onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false))
-            },
-            showExchangeRateDialog = state.showExchangeRateDialog,
-            onDismissExchangeRateDialog = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false)) },
-            exchangeRate = state.transferRate,
-            onExchangeRateChanged = { viewModel.onEvent(PlannedPaymentEntryEvent.SetTransferRate(it)) }
+            state = state,
+            onEvent = viewModel::onEvent
         )
 
         AeonConfirmDeleteDialog(

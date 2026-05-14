@@ -28,7 +28,7 @@ fun TransactionEntity.toDomain(): Transaction {
         latitude = latitude,
         longitude = longitude,
         warrantyExpiration = warrantyExpiration,
-        status = TransactionStatus.fromString(status)
+        status = status
     )
 }
 
@@ -53,6 +53,6 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         latitude = latitude,
         longitude = longitude,
         warrantyExpiration = warrantyExpiration,
-        status = status.name
+        status = status
     )
 }

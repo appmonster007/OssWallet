@@ -1,9 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -11,14 +8,13 @@ import java.math.BigDecimal
  * Sealed class representing events that can modify the transaction entry state.
  */
 sealed class TransactionEntryEvent {
-    data class SetName(val name: String) : TransactionEntryEvent()
     data class SetAmount(val amount: String) : TransactionEntryEvent()
     data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
     data class SetTags(val tags: List<String>) : TransactionEntryEvent()
     data class AddTag(val tag: String, val color: Int? = null) : TransactionEntryEvent()
     data class DeleteTag(val tag: Tag) : TransactionEntryEvent()
     data class RemoveTag(val tag: String) : TransactionEntryEvent()
-    data class SetPaymentMethod(val method: String) : TransactionEntryEvent()
+    data class SetPaymentMethod(val method: PaymentMethod) : TransactionEntryEvent()
     data class SetStatus(val status: TransactionStatus) : TransactionEntryEvent()
     data class SetTransactionType(val type: Int) : TransactionEntryEvent()
     data class SetDate(val millis: Long) : TransactionEntryEvent()

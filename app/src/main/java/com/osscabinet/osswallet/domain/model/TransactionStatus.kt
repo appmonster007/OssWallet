@@ -55,7 +55,7 @@ enum class TransactionStatus(
          * Defaults to CLEARED if string doesn't match any status
          */
         fun fromString(value: String): TransactionStatus {
-            return values().find { it.name.equals(value, ignoreCase = true) }
+            return entries.find { it.name.equals(value, ignoreCase = true) }
                 ?: CLEARED
         }
     }

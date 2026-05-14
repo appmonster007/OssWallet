@@ -92,8 +92,19 @@ fun BudgetFormBody(
 
         // CONTEXT: Action cards grid
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Row 1: Period and Tracks
+            // Row 1: Filter and Period
             AeonContextGrid {
+                val filterObj = availableFilters.find { it.id == filterId }
+                EntryActionCard(
+                    icon = Icons.Rounded.FilterList,
+                    label = "FILTER",
+                    value = filterObj?.name ?: "None",
+                    onClick = onFilterClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+
                 EntryActionCard(
                     icon = Icons.Rounded.DateRange,
                     label = "PERIOD",
@@ -102,18 +113,6 @@ fun BudgetFormBody(
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.secondary
-                )
-
-                EntryActionCard(
-                    icon = Icons.Rounded.ShowChart,
-                    label = "TRACKS",
-                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
-                            else if (selectedTrackTypes.size == 1) selectedTrackTypes.first().displayName
-                            else "${selectedTrackTypes.size} Selected",
-                    onClick = onTrackTypeClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
                 )
             }
 
@@ -124,9 +123,10 @@ fun BudgetFormBody(
                     icon = getAccountIconByName(accountObj?.icon),
                     label = "ACCOUNT",
                     value = when {
-                        selectedAccountIds.isEmpty() || (accounts.isNotEmpty() && selectedAccountIds.size == accounts.size) -> "All Accounts"
+                        selectedAccountIds.isEmpty() -> "0 Selected"
+                        (accounts.isNotEmpty() && selectedAccountIds.size == accounts.size) -> "All Accounts"
                         accountObj != null -> accountObj.name
-                        else -> "${selectedAccountIds.size} Accounts"
+                        else -> "${selectedAccountIds.size} Selected"
                     },
                     onClick = onAccountClick,
                     modifier = Modifier.weight(1f),
@@ -139,9 +139,10 @@ fun BudgetFormBody(
                     icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
                     label = "CATEGORIES",
                     value = when {
-                        selectedCategoryIds.isEmpty() || (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
+                        selectedCategoryIds.isEmpty() -> "0 Selected"
+                        (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
                         categoryObj != null -> categoryObj.name
-                        else -> "${selectedCategoryIds.size} Categories"
+                        else -> "${selectedCategoryIds.size} Selected"
                     },
                     onClick = onCategoryClick,
                     modifier = Modifier.weight(1f),
@@ -150,14 +151,15 @@ fun BudgetFormBody(
                 )
             }
 
-            // Row 3: Filter (Full Width)
-            val filterObj = availableFilters.find { it.id == filterId }
+            // Row 3: Tracks (Full Width)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EntryActionCard(
-                    icon = Icons.Rounded.FilterList,
-                    label = "FILTER",
-                    value = filterObj?.name ?: "None",
-                    onClick = onFilterClick,
+                    icon = Icons.Rounded.ShowChart,
+                    label = "TRACKS",
+                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
+                            else if (selectedTrackTypes.size == 1) selectedTrackTypes.first().displayName
+                            else "${selectedTrackTypes.size} Selected",
+                    onClick = onTrackTypeClick,
                     modifier = Modifier.fillMaxWidth(),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.tertiary
@@ -202,9 +204,17 @@ fun BudgetFormBody(
             additionalContent = {
                 // Payment Method and Status row
                 EntryPaymentMethodStatusRow(
-                    paymentMethod = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                    paymentMethod = when {
+                        selectedPaymentMethods.isEmpty() -> "0 Selected"
+                        selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
+                        else -> "${selectedPaymentMethods.size} Selected"
+                    },
                     onPaymentMethodClick = onPaymentMethodClick,
-                    statusLabel = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
+                    statusLabel = when {
+                        selectedStatuses.isEmpty() -> "0 Selected"
+                        selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
+                        else -> "${selectedStatuses.size} Selected"
+                    },
                     onStatusClick = onStatusClick
                 )
 

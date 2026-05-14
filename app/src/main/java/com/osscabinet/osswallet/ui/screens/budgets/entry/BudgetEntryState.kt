@@ -57,5 +57,9 @@ data class BudgetEntryState(
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && 
-                 limitAmount.toBigDecimalOrNull() != null
+                 limitAmount.toBigDecimalOrNull() != null &&
+                 selectedAccountIds.isNotEmpty() &&
+                 selectedCategoryIds.isNotEmpty() &&
+                 selectedPaymentMethods.isNotEmpty() &&
+                 selectedStatuses.isNotEmpty()
 }

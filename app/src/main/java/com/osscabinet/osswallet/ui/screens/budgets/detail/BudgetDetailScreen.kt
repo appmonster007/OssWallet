@@ -93,8 +93,8 @@ fun BudgetDetailScreen(
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
     val budget = remember(budgetId, budgets) { budgets.find { it.id == budgetId } }
 
-    LaunchedEffect(budget) {
-        if (budget == null) {
+    LaunchedEffect(budgets) {
+        if (budgets.isNotEmpty() && budget == null) {
             onBackClick()
         }
     }
@@ -120,6 +120,7 @@ fun BudgetDetailScreen(
 
     val budgetTransactions =
         remember(budget, absoluteTransactionsWithBalance) {
+            if (budget == null) return@remember emptyList()
             val (start, end) = BudgetService.getCurrentPeriodRange(budget, System.currentTimeMillis())
             val budgetFilter = TransactionFilter(
                 categoryIds = budget.categoryIds,
@@ -137,12 +138,12 @@ fun BudgetDetailScreen(
             }
         }
 
-    val selectedAccounts = remember(accounts, budget.accountIds) {
-        if (budget.accountIds.isEmpty()) emptyList()
+    val selectedAccounts = remember(accounts, budget?.accountIds) {
+        if (budget == null || budget.accountIds.isEmpty()) emptyList()
         else accounts.filter { it.id in budget.accountIds }
     }
-    val selectedCategories = remember(categoriesList, budget.categoryIds) {
-        if (budget.categoryIds.isEmpty()) emptyList()
+    val selectedCategories = remember(categoriesList, budget?.categoryIds) {
+        if (budget == null || budget.categoryIds.isEmpty()) emptyList()
         else categoriesList.filter { it.id in budget.categoryIds }
     }
 

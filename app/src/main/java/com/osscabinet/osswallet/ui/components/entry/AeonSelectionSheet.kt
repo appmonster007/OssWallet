@@ -125,8 +125,8 @@ fun <T, ID> AeonSelectionSheet(
                                     items = if (query.isBlank()) items else filteredItems,
                                     mode = mode,
                                     selectedIds = selectedIds,
-                                    onSelectionChange = {
-                                        onSelectionChange(it)
+                                    onSelectionChange = { ids ->
+                                        onSelectionChange(ids)
                                         if (mode == AeonSelectMode.SINGLE) onDismiss()
                                     },
                                     idMapper = idMapper,
@@ -143,8 +143,8 @@ fun <T, ID> AeonSelectionSheet(
                                     items = filteredItems,
                                     mode = mode,
                                     selectedIds = selectedIds,
-                                    onSelectionChange = {
-                                        onSelectionChange(it)
+                                    onSelectionChange = { ids ->
+                                        onSelectionChange(ids)
                                         if (mode == AeonSelectMode.SINGLE) onDismiss()
                                     },
                                     idMapper = idMapper,

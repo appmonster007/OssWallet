@@ -49,10 +49,10 @@ class LoanEntryViewModel(
                             currentProfileId = profileId,
                             allTransactions = transactions,
                             availableFilters = filters,
-                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
-                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
-                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
-                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { it.name }.toSet()
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else if (it.selectedCategoryIds.isEmpty()) categories.map { c -> c.id }.toSet() else it.selectedCategoryIds,
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else if (it.selectedPaymentMethods.isEmpty()) PaymentMethod.entries.toSet() else it.selectedPaymentMethods,
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else if (it.selectedStatuses.isEmpty()) TransactionStatus.entries.toSet() else it.selectedStatuses,
+                            selectedTags = if (it.isEditMode) it.selectedTags else it.selectedTags
                         )
                     }
                 }
@@ -69,7 +69,7 @@ class LoanEntryViewModel(
                     selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                     selectedPaymentMethods = PaymentMethod.entries.toSet(),
                     selectedStatuses = TransactionStatus.entries.toSet(),
-                    selectedTags = it.availableTags.toSet()
+                    selectedTags = emptySet()
                 ) 
             }
             return
@@ -131,8 +131,8 @@ class LoanEntryViewModel(
                 _state.update { state ->
                     if (filter != null) {
                         state.copy(
-                            filterId = event.filterId,
-                            linkedFilter = filter,
+                            filterId = null, // DELINK
+                            linkedFilter = null, // DELINK
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
                             selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
@@ -142,12 +142,6 @@ class LoanEntryViewModel(
                         )
                     } else {
                         state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
-                    }
-                }
-                if (event.filterId != null) {
-                    viewModelScope.launch {
-                        val count = filterRepository.getFilterUsageCount(event.filterId)
-                        _state.update { it.copy(filterUsageCount = count) }
                     }
                 }
             }

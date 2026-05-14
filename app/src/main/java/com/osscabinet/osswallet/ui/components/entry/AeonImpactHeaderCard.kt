@@ -21,6 +21,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+/**
+ * Convenience overload for TransactionType.
+ */
 @Composable
 fun AeonImpactHeaderCard(
     transactionType: TransactionType,
@@ -34,6 +37,8 @@ fun AeonImpactHeaderCard(
     nameLabel: String = "",
     nameIcon: ImageVector = Icons.Rounded.Title,
     showName: Boolean = true,
+    showAmount: Boolean = true,
+    showCurrency: Boolean = true,
     showTypeSelector: Boolean = true,
     isTransfer: Boolean = false,
     targetAccountId: String? = null,
@@ -47,7 +52,81 @@ fun AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList()
 ) {
-    val activeAmountColor = amountColor ?: Color(android.graphics.Color.parseColor(transactionType.colorHex))
+    val types = TransactionType.entries.map {
+        Triple(
+            when (it) {
+                TransactionType.EXPENSE -> Icons.Rounded.Remove
+                TransactionType.INCOME -> Icons.Rounded.Add
+                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+            },
+            it.displayName,
+            it
+        )
+    }
+
+    AeonImpactHeaderCard(
+        selectedType = transactionType,
+        onTypeSelected = onTypeSelected,
+        types = types,
+        amount = amount,
+        currency = currency,
+        onCurrencyClick = onCurrencyClick,
+        onAmountClick = onAmountClick,
+        name = name,
+        onNameChange = onNameChange,
+        nameLabel = nameLabel,
+        nameIcon = nameIcon,
+        showName = showName,
+        showAmount = showAmount,
+        showCurrency = showCurrency,
+        showTypeSelector = showTypeSelector,
+        isTransfer = isTransfer,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        onTargetCurrencyClick = onTargetCurrencyClick,
+        transferRate = transferRate,
+        onExchangeRateClick = onExchangeRateClick,
+        isSplitMode = isSplitMode,
+        onSplitClick = onSplitClick,
+        amountColor = amountColor ?: Color(android.graphics.Color.parseColor(transactionType.colorHex)),
+        supportedCurrencies = supportedCurrencies,
+        targetSupportedCurrencies = targetSupportedCurrencies
+    )
+}
+
+/**
+ * Generic version of AeonImpactHeaderCard for different entity types (Loans, etc).
+ */
+@Composable
+fun <T> AeonImpactHeaderCard(
+    selectedType: T,
+    onTypeSelected: (T) -> Unit,
+    types: List<Triple<ImageVector, String, T>>,
+    amount: String,
+    currency: String,
+    onCurrencyClick: () -> Unit,
+    onAmountClick: () -> Unit,
+    name: String = "",
+    onNameChange: (String) -> Unit = {},
+    nameLabel: String = "",
+    nameIcon: ImageVector = Icons.Rounded.Title,
+    showName: Boolean = true,
+    showAmount: Boolean = true,
+    showCurrency: Boolean = true,
+    showTypeSelector: Boolean = true,
+    isTransfer: Boolean = false,
+    targetAccountId: String? = null,
+    targetCurrency: String? = null,
+    onTargetCurrencyClick: () -> Unit = {},
+    transferRate: BigDecimal = BigDecimal.ONE,
+    onExchangeRateClick: () -> Unit = {},
+    isSplitMode: Boolean = false,
+    onSplitClick: (() -> Unit)? = null,
+    amountColor: Color? = null,
+    supportedCurrencies: List<String> = emptyList(),
+    targetSupportedCurrencies: List<String> = emptyList()
+) {
+    val activeAmountColor = amountColor ?: MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -62,19 +141,9 @@ fun AeonImpactHeaderCard(
         ) {
             if (showTypeSelector) {
                 EntryTypeSelector(
-                    selectedType = transactionType,
+                    selectedType = selectedType,
                     onTypeSelected = onTypeSelected,
-                    types = TransactionType.entries.map { 
-                        Triple(
-                            when(it) {
-                                TransactionType.EXPENSE -> Icons.Rounded.Remove
-                                TransactionType.INCOME -> Icons.Rounded.Add
-                                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
-                            },
-                            it.displayName,
-                            it
-                        )
-                    },
+                    types = types,
                     selectedColor = activeAmountColor,
                     itemWidth = 100.dp
                 )
@@ -82,38 +151,41 @@ fun AeonImpactHeaderCard(
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
-                EntryAmountDisplay(
-                    amount = amount,
-                    currency = currency,
-                    onCurrencyClick = { onCurrencyClick() },
-                    onAmountClick = onAmountClick,
-                    amountColor = activeAmountColor,
-                    supportedCurrencies = supportedCurrencies
-                )
+            if (showAmount) {
+                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
+                    EntryAmountDisplay(
+                        amount = amount,
+                        currency = currency,
+                        onCurrencyClick = { onCurrencyClick() },
+                        onAmountClick = onAmountClick,
+                        amountColor = activeAmountColor,
+                        supportedCurrencies = supportedCurrencies,
+                        showCurrency = showCurrency
+                    )
 
-                if (onSplitClick != null && !isTransfer) {
-                    IconButton(
-                        onClick = onSplitClick,
-                        modifier = Modifier.padding(end = 8.dp).size(32.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                    else Color.Transparent
-                                ),
-                            contentAlignment = Alignment.Center
+                    if (onSplitClick != null && !isTransfer) {
+                        IconButton(
+                            onClick = onSplitClick,
+                            modifier = Modifier.padding(end = 8.dp).size(32.dp)
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.CallSplit,
-                                contentDescription = "Split Transaction",
-                                modifier = Modifier.size(20.dp),
-                                tint = if (isSplitMode) MaterialTheme.colorScheme.primary 
-                                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else Color.Transparent
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.CallSplit,
+                                    contentDescription = "Split Transaction",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (isSplitMode) MaterialTheme.colorScheme.primary 
+                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
                         }
                     }
                 }

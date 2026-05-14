@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -9,8 +12,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
-import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetEntrySheets
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,57 +84,184 @@ fun BudgetEntryScreen(
             selectedTags = state.selectedTags,
             onShowTagSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(true)) },
             onRemoveTag = { tag -> viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
+            onPaymentMethodClick = { viewModel.onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(true)) },
+            onStatusClick = { viewModel.onEvent(BudgetEntryEvent.ShowStatusSheet(true)) },
+            onLinkRecordClick = { viewModel.onEvent(BudgetEntryEvent.ShowLinkSheet(true)) },
             noteSuggestions = state.uniqueNotes,
             modifier = Modifier.padding(innerPadding)
         )
 
-        BudgetEntrySheets(
-            showCustomStartPicker = state.showCustomStartPicker,
-            onDismissCustomStartPicker = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
-            customStartDateMillis = state.customStartDate,
-            onCustomStartDateSelected = { viewModel.onEvent(BudgetEntryEvent.SetCustomStartDate(it)) },
-            showCustomEndPicker = state.showCustomEndPicker,
-            onDismissCustomEndPicker = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
-            customEndDateMillis = state.customEndDate,
-            onCustomEndDateSelected = { viewModel.onEvent(BudgetEntryEvent.SetCustomEndDate(it)) },
-            showNumpad = state.showNumpad,
-            onDismissNumpad = { viewModel.onEvent(BudgetEntryEvent.ShowNumpad(false)) },
-            limitText = state.limitAmount,
-            onLimitChanged = { viewModel.onEvent(BudgetEntryEvent.SetLimitAmount(it)) },
-            showAccountSheet = state.showAccountSheet,
-            onDismissAccountSheet = { viewModel.onEvent(BudgetEntryEvent.ShowAccountSheet(false)) },
-            accountQuery = state.accountQuery,
-            onAccountQueryChange = { viewModel.onEvent(BudgetEntryEvent.SetAccountQuery(it)) },
-            accounts = state.accounts,
-            selectedAccountIds = state.selectedAccountIds,
-            onAccountSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetAccountIds(it)) },
-            showPeriodSheet = state.showPeriodSheet,
-            onDismissPeriodSheet = { viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(false)) },
-            period = state.period,
-            onPeriodSelected = { 
-                viewModel.onEvent(BudgetEntryEvent.SetPeriod(it))
-                if (it == BudgetPeriod.CUSTOM) {
-                    viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(true))
+        // Selection Sheets
+        if (state.showPaymentMethodSheet) {
+            AeonPaymentMethodSelection(
+                selectedMethods = state.selectedPaymentMethods,
+                onSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetPaymentMethods(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Payment Methods"
+            )
+        }
+
+        if (state.showStatusSheet) {
+            AeonStatusSelection(
+                selectedStatuses = state.selectedStatuses,
+                onSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetStatuses(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowStatusSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Statuses"
+            )
+        }
+
+        if (state.showLinkSheet) {
+            AeonLinkedTransactionSelection(
+                transactions = state.allTransactions,
+                currentTransactionId = null,
+                linkedIds = state.linkedTransactionIds,
+                accounts = state.accounts,
+                categories = state.categories,
+                onLinkedTransactionsChanged = { viewModel.onEvent(BudgetEntryEvent.SetLinkedTransactions(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowLinkSheet(false)) }
+            )
+        }
+        if (state.showNumpad) {
+            AeonCalculatorSheet(
+                currentAmount = state.limitAmount,
+                onAmountChanged = { viewModel.onEvent(BudgetEntryEvent.SetLimitAmount(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowNumpad(false)) },
+                title = "Budget Limit"
+            )
+        }
+
+        if (state.showPeriodSheet) {
+            AeonSelectionSheet(
+                title = "Budget Period",
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(false)) },
+                items = BudgetPeriod.entries,
+                selectedIds = setOf(state.period),
+                onSelectionChange = { ids ->
+                    ids.firstOrNull()?.let { 
+                        viewModel.onEvent(BudgetEntryEvent.SetPeriod(it))
+                        if (it == BudgetPeriod.CUSTOM) {
+                            viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(true))
+                        }
+                    }
+                },
+                idMapper = { it },
+                labelMapper = { it.name.lowercase().replaceFirstChar { it.uppercase() } },
+                mode = AeonSelectMode.SINGLE,
+                iconMapper = {
+                    when (it) {
+                        BudgetPeriod.DAILY -> Icons.Rounded.Today
+                        BudgetPeriod.WEEKLY -> Icons.Rounded.ViewWeek
+                        BudgetPeriod.MONTHLY -> Icons.Rounded.CalendarMonth
+                        BudgetPeriod.QUARTERLY -> Icons.Rounded.PieChart
+                        BudgetPeriod.YEARLY -> Icons.Rounded.CalendarToday
+                        BudgetPeriod.CUSTOM -> Icons.Rounded.EditCalendar
+                    }
                 }
-                viewModel.onEvent(BudgetEntryEvent.ShowPeriodSheet(false))
-            },
-            showTrackTypeSheet = state.showTrackTypeSheet,
-            onDismissTrackTypeSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(false)) },
-            selectedTrackTypes = state.selectedTrackTypes,
-            onTrackTypeSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetTrackTypes(it)) },
-            showCategorySheet = state.showCategorySheet,
-            onDismissCategorySheet = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
-            categoryQuery = state.categoryQuery,
-            onCategoryQueryChange = { viewModel.onEvent(BudgetEntryEvent.SetCategoryQuery(it)) },
-            categories = state.categories,
-            selectedCategoryIds = state.selectedCategoryIds,
-            onCategorySelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetCategoryIds(it)) },
-            showTagSheet = state.showTagSheet,
-            onDismissTagSheet = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false)) },
-            availableTags = state.availableTags.map { it.name },
-            selectedTags = state.selectedTags,
-            onTagSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetTags(it)) },
-            onAddTag = { viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags + it)) }
-        )
+            )
+        }
+
+        if (state.showCustomStartPicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.customStartDate)
+            DatePickerDialog(
+                onDismissRequest = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(BudgetEntryEvent.SetCustomStartDate(it)) }
+                        viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false))
+                        viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(true))
+                    }) { Text("Next") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        if (state.showCustomEndPicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.customEndDate)
+            DatePickerDialog(
+                onDismissRequest = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(BudgetEntryEvent.SetCustomEndDate(it)) }
+                        viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false))
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        if (state.showAccountSheet) {
+            AeonAccountSelection(
+                accounts = state.accounts,
+                selectedAccountIds = state.selectedAccountIds,
+                onSelectionChange = { ids ->
+                    viewModel.onEvent(BudgetEntryEvent.SetAccountIds(ids))
+                },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowAccountSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Budget Accounts"
+            )
+        }
+
+        if (state.showTrackTypeSheet) {
+            AeonSelectionSheet(
+                title = "Track Transaction Types",
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(false)) },
+                items = TransactionType.entries,
+                selectedIds = state.selectedTrackTypes,
+                onSelectionChange = { ids ->
+                    viewModel.onEvent(BudgetEntryEvent.SetTrackTypes(ids))
+                },
+                idMapper = { it },
+                labelMapper = { it.displayName },
+                mode = AeonSelectMode.MULTI,
+                iconMapper = {
+                    when (it) {
+                        TransactionType.EXPENSE -> Icons.Rounded.Remove
+                        TransactionType.INCOME -> Icons.Rounded.Add
+                        TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                    }
+                }
+            )
+        }
+
+        if (state.showCategorySheet) {
+            AeonCategorySelection(
+                categories = state.categories,
+                selectedCategoryIds = state.selectedCategoryIds,
+                onSelectionChange = { ids ->
+                    viewModel.onEvent(BudgetEntryEvent.SetCategoryIds(ids))
+                },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Budget Categories"
+            )
+        }
+
+        if (state.showTagSheet) {
+            AeonTagSelection(
+                tags = state.availableTags,
+                selectedTags = state.selectedTags.toList(),
+                onTagsSelected = {
+                    viewModel.onEvent(BudgetEntryEvent.SetTags(it.toSet()))
+                    viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false))
+                },
+                onAddTag = { name, _ -> 
+                    viewModel.onEvent(BudgetEntryEvent.SetTags(state.selectedTags + name))
+                },
+                onEditTag = {},
+                onDeleteTag = {},
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false)) }
+            )
+        }
     }
 }

@@ -41,6 +41,7 @@ class BudgetEntryViewModel(
                         it.copy(
                             accounts = accounts,
                             categories = categories,
+                            allTransactions = transactions,
                             availableTags = tags,
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId
@@ -75,6 +76,9 @@ class BudgetEntryViewModel(
                         selectedCategoryIds = budget.categoryIds.toSet(),
                         selectedAccountIds = budget.accountIds.toSet(),
                         selectedTags = budget.tags.toSet(),
+                        selectedPaymentMethods = budget.paymentMethods.toSet(),
+                        selectedStatuses = budget.statuses.toSet(),
+                        linkedTransactionIds = budget.linkedTransactionIds.toSet(),
                         customStartDate = budget.customStartDate ?: System.currentTimeMillis(),
                         customEndDate = budget.customEndDate ?: System.currentTimeMillis()
                     )
@@ -106,6 +110,12 @@ class BudgetEntryViewModel(
             is BudgetEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is BudgetEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is BudgetEntryEvent.ShowPeriodSheet -> _state.update { it.copy(showPeriodSheet = event.show) }
+            is BudgetEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is BudgetEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
+            is BudgetEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
+            is BudgetEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
+            is BudgetEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
+            is BudgetEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
             is BudgetEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is BudgetEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
             is BudgetEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -137,6 +147,9 @@ class BudgetEntryViewModel(
                 categoryIds = s.selectedCategoryIds.toList(),
                 accountIds = s.selectedAccountIds.toList(),
                 tags = s.selectedTags.toList(),
+                paymentMethods = s.selectedPaymentMethods.toList(),
+                statuses = s.selectedStatuses.toList(),
+                linkedTransactionIds = s.linkedTransactionIds.toList(),
                 customStartDate = if (s.period == com.osscabinet.ossWallet.domain.model.BudgetPeriod.CUSTOM) s.customStartDate else null,
                 customEndDate = if (s.period == com.osscabinet.ossWallet.domain.model.BudgetPeriod.CUSTOM) s.customEndDate else null,
                 profileId = s.currentProfileId

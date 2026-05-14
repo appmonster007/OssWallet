@@ -3,14 +3,23 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.transactions.CompactTextField
 import com.osscabinet.ossWallet.ui.components.transactions.FilterFields
 
@@ -41,6 +50,9 @@ fun FilterEntryScreen(
                 viewModel.onEvent(FilterEntryEvent.TriggerNavigation)
             }
         },
+        onResetClick = {
+            viewModel.onEvent(FilterEntryEvent.ResetFilter)
+        },
         canSave = state.canSave,
         isEditMode = state.isEditMode,
         onDeleteClick = if (state.isEditMode) {
@@ -57,32 +69,65 @@ fun FilterEntryScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            // Filter Name field
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // IMPACT: Header card (Filter Name)
+            AeonImpactHeaderCard(
+                transactionType = state.transactionFilter.transactionType ?: com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+                onTypeSelected = { type ->
+                    viewModel.onEvent(FilterEntryEvent.SetTransactionFilter(state.transactionFilter.copy(transactionType = type)))
+                },
+                amount = "",
+                currency = "",
+                onCurrencyClick = { },
+                onAmountClick = { },
+                name = state.name,
+                onNameChange = { viewModel.onEvent(FilterEntryEvent.SetName(it)) },
+                nameLabel = "FILTER NAME",
+                showTypeSelector = true,
+                showAmount = false,
+                showCurrency = false
+            )
+
+            // CONTEXT: Action cards grid
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "FILTER NAME",
+                    "CONTEXT",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )
-                CompactTextField(
-                    value = state.name,
-                    onValueChange = { viewModel.onEvent(FilterEntryEvent.SetName(it)) },
-                    placeholder = "Enter filter name...",
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
+                AeonContextGrid {
+                    // Accounts
+                    EntryActionCard(
+                        icon = Icons.Default.AccountBalance,
+                        label = "ACCOUNTS",
+                        value = if (state.transactionFilter.accountIds.isEmpty()) "All" else "${state.transactionFilter.accountIds.size} Selected",
+                        onClick = { /* This will be handled by FilterFields for now or a separate sheet */ },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Categories
+                    EntryActionCard(
+                        icon = Icons.Default.Category,
+                        label = "CATEGORIES",
+                        value = if (state.transactionFilter.categoryIds.isEmpty()) "All" else "${state.transactionFilter.categoryIds.size} Selected",
+                        onClick = { /* This will be handled by FilterFields for now or a separate sheet */ },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
-            // Shared Filter Fields
+            // DETAIL: Full Filter Capabilities
             FilterFields(
                 filter = state.transactionFilter,
                 onFilterChange = { viewModel.onEvent(FilterEntryEvent.SetTransactionFilter(it)) },
                 accounts = state.accounts,
-                allCategories = state.categories
+                allCategories = state.categories,
+                allTransactions = state.allTransactions
             )
         }
     }

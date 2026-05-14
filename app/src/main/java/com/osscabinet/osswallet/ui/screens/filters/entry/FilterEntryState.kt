@@ -17,6 +17,7 @@ data class FilterEntryState(
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     val existingFilter: Filter? = null
 ) {
     val canSave: Boolean get() = name.isNotBlank() && !navTriggered

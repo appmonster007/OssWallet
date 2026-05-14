@@ -42,6 +42,7 @@ class LoanEntryViewModel(
                         it.copy(
                             accounts = accounts,
                             categories = categories,
+                            allTransactions = transactions,
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
                             availableTags = availableTags,
@@ -75,6 +76,9 @@ class LoanEntryViewModel(
                         note = loan.note ?: "",
                         selectedCategoryIds = loan.categoryIds.toSet(),
                         selectedTags = loan.tags.toSet(),
+                        selectedPaymentMethods = loan.paymentMethods.toSet(),
+                        selectedStatuses = loan.statuses.toSet(),
+                        linkedTransactionIds = loan.linkedTransactionIds.toSet(),
                         startDate = loan.startDate,
                         hasSettlementDate = loan.expectedSettlementDate != null,
                         settlementDate = loan.expectedSettlementDate ?: System.currentTimeMillis(),
@@ -107,6 +111,12 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is LoanEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is LoanEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
+            is LoanEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is LoanEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
+            is LoanEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
+            is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
+            is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
+            is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
             is LoanEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is LoanEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
             is LoanEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -143,6 +153,9 @@ class LoanEntryViewModel(
                 linkedAccountId = s.linkedAccountId,
                 categoryIds = s.selectedCategoryIds.toList(),
                 tags = s.selectedTags.toList(),
+                paymentMethods = s.selectedPaymentMethods.toList(),
+                statuses = s.selectedStatuses.toList(),
+                linkedTransactionIds = s.linkedTransactionIds.toList(),
                 profileId = s.currentProfileId
             )
 

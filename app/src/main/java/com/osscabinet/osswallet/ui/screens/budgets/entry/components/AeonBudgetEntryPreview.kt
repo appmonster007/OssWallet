@@ -15,50 +15,35 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 @Composable
 fun AeonBudgetEntryPreview() {
     OssWalletTheme {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-        com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard(
-            transactionType = TransactionType.INCOME,
-            onTypeSelected = {},
-            amount = "500.00",
-            currency = "USD",
-            onCurrencyClick = {},
-            onAmountClick = {},
+        BudgetFormBody(
             name = "Monthly Groceries",
             onNameChange = {},
-            nameLabel = "BUDGET NAME",
-            showTypeSelector = false,
-            amountColor = androidx.compose.ui.graphics.Color(0xFF004D40)
+            amount = "500.00",
+            currency = "USD",
+            onCurrencyChange = {},
+            supportedCurrencies = listOf("USD", "EUR"),
+            onAmountClick = {},
+            period = BudgetPeriod.MONTHLY,
+            onPeriodClick = {},
+            selectedAccountIds = emptySet(),
+            accounts = emptyList(),
+            onAccountClick = {},
+            selectedTrackTypes = setOf(TransactionType.EXPENSE),
+            onTrackTypeClick = {},
+            selectedCategoryIds = emptySet(),
+            categories = emptyList(),
+            onCategoryClick = {},
+            note = "Try to keep it under 500",
+            onNoteChange = {},
+            alertThreshold = 0.8f,
+            onAlertThresholdChange = {},
+            rollover = true,
+            onRolloverChange = {},
+            selectedTags = setOf("Grocery", "Monthly"),
+            onShowTagSheet = {},
+            onRemoveTag = {},
+            noteSuggestions = emptyList(),
+            modifier = Modifier.padding(16.dp)
         )
-
-            BudgetActionCards(
-                period = BudgetPeriod.MONTHLY,
-                onPeriodClick = {},
-                selectedAccountIds = emptySet(),
-                accounts = emptyList(),
-                onAccountClick = {},
-                selectedTrackTypes = setOf(TransactionType.EXPENSE),
-                onTrackTypeClick = {},
-                selectedCategoryIds = emptySet(),
-                categories = emptyList(),
-                onCategoryClick = {}
-            )
-
-            BudgetDetailSection(
-                note = "Try to keep it under 500",
-                onNoteChange = {},
-                alertThreshold = 0.8f,
-                onAlertThresholdChange = {},
-                rollover = true,
-                onRolloverChange = {},
-                selectedTags = setOf("Grocery", "Monthly"),
-                onShowTagSheet = {},
-                onRemoveTag = {}
-            )
-        }
     }
 }

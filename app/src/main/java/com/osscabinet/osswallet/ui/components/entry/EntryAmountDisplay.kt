@@ -29,7 +29,8 @@ fun EntryAmountDisplay(
     onAmountClick: () -> Unit,
     modifier: Modifier = Modifier,
     amountColor: Color = MaterialTheme.colorScheme.primary,
-    supportedCurrencies: List<String> = listOf("USD")
+    supportedCurrencies: List<String> = listOf("USD"),
+    showCurrency: Boolean = true
 ) {
     Column(
         modifier = modifier
@@ -47,13 +48,15 @@ fun EntryAmountDisplay(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            CurrencySelector(
-                selectedCurrency = currency.ifEmpty { "USD" },
-                onCurrencySelected = onCurrencyClick,
-                supportedCurrencies = supportedCurrencies
-            )
+            if (showCurrency) {
+                CurrencySelector(
+                    selectedCurrency = currency.ifEmpty { "USD" },
+                    onCurrencySelected = onCurrencyClick,
+                    supportedCurrencies = supportedCurrencies
+                )
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+            }
 
             val amountDisplay = if (amount.isEmpty()) "0.00" else amount
             var multiplier by remember(amountDisplay) { mutableStateOf(1f) }

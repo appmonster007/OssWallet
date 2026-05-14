@@ -41,7 +41,10 @@ class LoanRepositoryImpl(
                 filter = TransactionFilter(
                     categoryIds = loan.categoryIds,
                     tags = loan.tags,
-                    accountIds = listOf(loan.linkedAccountId)
+                    accountIds = listOf(loan.linkedAccountId),
+                    paymentMethods = loan.paymentMethods,
+                    statuses = loan.statuses,
+                    linkedTransactionIds = loan.linkedTransactionIds
                 )
             )
         )
@@ -58,7 +61,10 @@ class LoanRepositoryImpl(
                     filter = TransactionFilter(
                         categoryIds = loan.categoryIds,
                         tags = loan.tags,
-                        accountIds = listOf(loan.linkedAccountId)
+                        accountIds = listOf(loan.linkedAccountId),
+                        paymentMethods = loan.paymentMethods,
+                        statuses = loan.statuses,
+                        linkedTransactionIds = loan.linkedTransactionIds
                     )
                 )
             )

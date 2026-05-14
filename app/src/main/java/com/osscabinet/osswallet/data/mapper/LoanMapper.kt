@@ -22,7 +22,10 @@ fun LoanWithFilter.toDomain(): Loan {
         profileId = loan.profileId,
         note = loan.note,
         categoryIds = filterDomain.filter.categoryIds,
-        tags = filterDomain.filter.tags
+        tags = filterDomain.filter.tags,
+        paymentMethods = filterDomain.filter.paymentMethods,
+        statuses = filterDomain.filter.statuses,
+        linkedTransactionIds = filterDomain.filter.linkedTransactionIds
     )
 }
 

@@ -62,10 +62,11 @@ fun TemplateEntrySheets(
 
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
-            selectedMethod = state.paymentMethod,
-            onMethodSelected = { 
-                onEvent(TemplateEntryEvent.SetPaymentMethod(it))
-                onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false))
+            selectedMethods = setOf(state.paymentMethod),
+            onSelectionChange = { methods ->
+                methods.firstOrNull()?.let { method ->
+                    onEvent(TemplateEntryEvent.SetPaymentMethod(method))
+                }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false)) }
         )
@@ -73,10 +74,11 @@ fun TemplateEntrySheets(
 
     if (state.showStatusSheet) {
         AeonStatusSelection(
-            selectedStatus = state.transactionStatus,
-            onStatusSelected = {
-                onEvent(TemplateEntryEvent.SetTransactionStatus(it))
-                onEvent(TemplateEntryEvent.ShowStatusSheet(false))
+            selectedStatuses = setOf(state.transactionStatus),
+            onSelectionChange = { statuses ->
+                statuses.firstOrNull()?.let { status ->
+                    onEvent(TemplateEntryEvent.SetTransactionStatus(status))
+                }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowStatusSheet(false)) }
         )

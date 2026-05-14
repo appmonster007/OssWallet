@@ -13,6 +13,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +34,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.entry.*
 import androidx.compose.ui.graphics.Color
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,6 +50,7 @@ fun FilterFields(
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTransactions: List<Transaction> = emptyList(),
     showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
@@ -53,73 +58,32 @@ fun FilterFields(
     onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    var showWarrantyStartPicker by remember { mutableStateOf(false) }
-    var showWarrantyEndPicker by remember { mutableStateOf(false) }
-    var activeDialog by remember { mutableStateOf<String?>(null) }
+    var activeSheet by remember { mutableStateOf<String?>(null) }
 
-    if (showWarrantyStartPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationStart)
-        DatePickerDialog(
-            onDismissRequest = { showWarrantyStartPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onFilterChange(filter.copy(warrantyExpirationStart = datePickerState.selectedDateMillis))
-                    showWarrantyStartPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWarrantyStartPicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    if (showWarrantyEndPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationEnd)
-        DatePickerDialog(
-            onDismissRequest = { showWarrantyEndPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onFilterChange(filter.copy(warrantyExpirationEnd = datePickerState.selectedDateMillis))
-                    showWarrantyEndPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWarrantyEndPicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    // Dialogs for multi-selection
-    when (activeDialog) {
+    // Sheets for multi-selection
+    when (activeSheet) {
         "Accounts" -> {
-            MultiSelectionDialog(
-                title = "Select Accounts",
-                items = accounts,
-                selectedItems = accounts.filter { it.id in filter.accountIds },
-                onDismissRequest = { activeDialog = null },
-                onConfirm = { selected ->
-                    onFilterChange(filter.copy(accountIds = selected.map { it.id }))
-                    activeDialog = null
+            AeonAccountSelection(
+                accounts = accounts,
+                selectedAccountIds = filter.accountIds.toSet(),
+                onSelectionChange = { ids ->
+                    onFilterChange(filter.copy(accountIds = ids.toList()))
                 },
-                idMapper = { it.id },
-                labelMapper = { it.name },
-                iconMapper = { AppIconMap[it.icon] },
-                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                onDismiss = { activeSheet = null },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Accounts"
             )
         }
         "Categories" -> {
-            CategorySelectionDialog(
+            AeonCategorySelection(
                 categories = allCategories,
                 selectedCategoryIds = filter.categoryIds.toSet(),
-                onDismissRequest = { activeDialog = null },
-                onConfirm = { selectedIds ->
-                    onFilterChange(filter.copy(categoryIds = selectedIds.toList()))
-                    activeDialog = null
-                }
+                onSelectionChange = { ids ->
+                    onFilterChange(filter.copy(categoryIds = ids.toList()))
+                },
+                onDismiss = { activeSheet = null },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Categories"
             )
         }
         "Currencies" -> {
@@ -134,32 +98,103 @@ fun FilterFields(
                     }
                 }.distinct().sorted()
             }
-            MultiSelectionDialog(
-                title = "Select Currencies",
+            AeonSelectionSheet(
+                title = "Filter Currencies",
+                onDismiss = { activeSheet = null },
                 items = availableCurrencies,
-                selectedItems = filter.currencies,
-                onDismissRequest = { activeDialog = null },
-                onConfirm = { selected ->
-                    onFilterChange(filter.copy(currencies = selected))
-                    activeDialog = null
+                selectedIds = filter.currencies.toSet(),
+                onSelectionChange = { ids ->
+                    onFilterChange(filter.copy(currencies = ids.toList()))
                 },
                 idMapper = { it },
-                labelMapper = { it }
+                labelMapper = { it },
+                mode = AeonSelectMode.MULTI
             )
         }
         "PaymentMethods" -> {
-            MultiSelectionDialog(
-                title = "Select Payment Methods",
-                items = PaymentMethod.entries,
-                selectedItems = filter.paymentMethods,
-                onDismissRequest = { activeDialog = null },
-                onConfirm = { selected ->
-                    onFilterChange(filter.copy(paymentMethods = selected))
-                    activeDialog = null
+            AeonPaymentMethodSelection(
+                selectedMethods = filter.paymentMethods.toSet(),
+                onSelectionChange = { methods ->
+                    onFilterChange(filter.copy(paymentMethods = methods.toList()))
                 },
-                idMapper = { it },
-                labelMapper = { it.displayName }
+                onDismiss = { activeSheet = null },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Payment Methods"
             )
+        }
+        "Statuses" -> {
+            AeonStatusSelection(
+                selectedStatuses = filter.statuses.toSet(),
+                onSelectionChange = { statuses ->
+                    onFilterChange(filter.copy(statuses = statuses.toList()))
+                },
+                onDismiss = { activeSheet = null },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Statuses"
+            )
+        }
+        "LinkedTransactions" -> {
+            AeonLinkedTransactionSelection(
+                transactions = allTransactions,
+                currentTransactionId = null,
+                linkedIds = filter.linkedTransactionIds.toSet(),
+                accounts = accounts,
+                categories = allCategories,
+                onLinkedTransactionsChanged = { ids ->
+                    onFilterChange(filter.copy(linkedTransactionIds = ids.toList()))
+                },
+                onDismiss = { activeSheet = null }
+            )
+        }
+        "MinAmount" -> {
+            AeonCalculatorSheet(
+                currentAmount = filter.minAmount?.toString() ?: "",
+                onAmountChanged = { onFilterChange(filter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                onDismiss = { activeSheet = null },
+                title = "Minimum Amount"
+            )
+        }
+        "MaxAmount" -> {
+            AeonCalculatorSheet(
+                currentAmount = filter.maxAmount?.toString() ?: "",
+                onAmountChanged = { onFilterChange(filter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                onDismiss = { activeSheet = null },
+                title = "Maximum Amount"
+            )
+        }
+        "WarrantyStart" -> {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationStart)
+            DatePickerDialog(
+                onDismissRequest = { activeSheet = null },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onFilterChange(filter.copy(warrantyExpirationStart = datePickerState.selectedDateMillis))
+                        activeSheet = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { activeSheet = null }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+        "WarrantyEnd" -> {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationEnd)
+            DatePickerDialog(
+                onDismissRequest = { activeSheet = null },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onFilterChange(filter.copy(warrantyExpirationEnd = datePickerState.selectedDateMillis))
+                        activeSheet = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { activeSheet = null }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
         }
     }
 
@@ -249,7 +284,7 @@ fun FilterFields(
                         value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
                         icon = Icons.Default.AccountBalance,
                         modifier = Modifier.weight(1f),
-                        onClick = { activeDialog = "Accounts" }
+                        onClick = { activeSheet = "Accounts" }
                     )
                 }
             }
@@ -265,7 +300,7 @@ fun FilterFields(
                         value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
                         icon = Icons.Default.Category,
                         modifier = Modifier.weight(1f),
-                        onClick = { activeDialog = "Categories" }
+                        onClick = { activeSheet = "Categories" }
                     )
                 }
 
@@ -276,7 +311,7 @@ fun FilterFields(
                         value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
                         icon = Icons.Default.MonetizationOn,
                         modifier = Modifier.weight(1f),
-                        onClick = { activeDialog = "Currencies" }
+                        onClick = { activeSheet = "Currencies" }
                     )
                 }
             }
@@ -332,30 +367,12 @@ fun FilterFields(
                     ),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )
-                MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    val statusOptions = com.osscabinet.ossWallet.domain.model.TransactionStatus.values()
-                    statusOptions.forEachIndexed { index, status ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = statusOptions.size),
-                            checked = status in filter.statuses,
-                            onCheckedChange = {
-                                val newStatuses = if (it) {
-                                    filter.statuses + status
-                                } else {
-                                    filter.statuses - status
-                                }
-                                onFilterChange(filter.copy(statuses = newStatuses))
-                            },
-                            icon = {
-                                if (status in filter.statuses) {
-                                    Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                                } else null
-                            }
-                        ) {
-                            Text(status.displayName, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
+                ContextCard(
+                    title = "Statuses",
+                    value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
+                    icon = Icons.AutoMirrored.Rounded.FactCheck,
+                    onClick = { activeSheet = "Statuses" }
+                )
             }
         }
 
@@ -375,19 +392,19 @@ fun FilterFields(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CompactTextField(
-                        value = filter.minAmount?.toString() ?: "",
-                        onValueChange = { onFilterChange(filter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
-                        placeholder = "Min",
+                    ContextCard(
+                        title = "Min Amount",
+                        value = filter.minAmount?.toString() ?: "No Min",
+                        icon = Icons.Rounded.Remove,
                         modifier = Modifier.weight(1f),
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        onClick = { activeSheet = "MinAmount" }
                     )
-                    CompactTextField(
-                        value = filter.maxAmount?.toString() ?: "",
-                        onValueChange = { onFilterChange(filter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
-                        placeholder = "Max",
+                    ContextCard(
+                        title = "Max Amount",
+                        value = filter.maxAmount?.toString() ?: "No Max",
+                        icon = Icons.Rounded.Add,
                         modifier = Modifier.weight(1f),
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        onClick = { activeSheet = "MaxAmount" }
                     )
                 }
             }
@@ -406,11 +423,29 @@ fun FilterFields(
                 )
                 ContextCard(
                     title = "Methods",
-                    value = if (filter.paymentMethods.isEmpty()) "Any Method" else filter.paymentMethods.joinToString(", "),
+                    value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
                     icon = Icons.Default.Payments,
-                    onClick = { activeDialog = "PaymentMethods" }
+                    onClick = { activeSheet = "PaymentMethods" }
                 )
             }
+        }
+
+        // Linked Records Card (Full Width)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "LINKED RECORDS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            )
+            ContextCard(
+                title = "Linked",
+                value = if (filter.linkedTransactionIds.isEmpty()) "None" else "${filter.linkedTransactionIds.size} Linked",
+                icon = Icons.Rounded.Link,
+                onClick = { activeSheet = "LinkedTransactions" }
+            )
         }
 
         // Warranty Expiry Range
@@ -423,36 +458,14 @@ fun FilterFields(
                 ),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(modifier = Modifier.weight(1f).clickable { showWarrantyStartPicker = true }) {
-                    CompactTextField(
-                        value = filter.warrantyExpirationStart?.let {
-                            SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                        } ?: "",
-                        onValueChange = { },
-                        placeholder = "Start Date",
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = Icons.Default.CalendarMonth,
-                        enabled = false
-                    )
-                }
-                Box(modifier = Modifier.weight(1f).clickable { showWarrantyEndPicker = true }) {
-                    CompactTextField(
-                        value = filter.warrantyExpirationEnd?.let {
-                            SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                        } ?: "",
-                        onValueChange = { },
-                        placeholder = "End Date",
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = Icons.Default.CalendarMonth,
-                        enabled = false
-                    )
-                }
-            }
+            AeonDateRangeCard(
+                startDateMillis = filter.warrantyExpirationStart,
+                endDateMillis = filter.warrantyExpirationEnd,
+                onStartClick = { activeSheet = "WarrantyStart" },
+                onEndClick = { activeSheet = "WarrantyEnd" },
+                startLabel = "EXPIRY FROM",
+                endLabel = "EXPIRY TO"
+            )
         }
     }
 }
@@ -499,7 +512,8 @@ fun ContextCard(
                     title.uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.5.sp,
+                        fontSize = 10.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -509,227 +523,6 @@ fun ContextCard(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun <T, ID> MultiSelectionDialog(
-    title: String,
-    items: List<T>,
-    selectedItems: List<T>,
-    onDismissRequest: () -> Unit,
-    onConfirm: (List<T>) -> Unit,
-    idMapper: (T) -> ID,
-    labelMapper: (T) -> String,
-    iconMapper: (T) -> ImageVector? = { null },
-    colorMapper: (T) -> Color? = { null }
-) {
-    var currentSelectionIds by remember { mutableStateOf(selectedItems.map(idMapper).toSet()) }
-    var searchQuery by remember { mutableStateOf("") }
-
-    val filteredItems = remember(items, searchQuery) {
-        if (searchQuery.isBlank()) items
-        else items.filter { labelMapper(it).contains(searchQuery, ignoreCase = true) || labelMapper(it).fuzzyMatch(searchQuery) }
-    }
-
-    AeonFullScreenDialog(onDismissRequest = onDismissRequest) {
-        AeonSelectionScreen(
-            title = title,
-            onBack = onDismissRequest,
-            actions = {
-                TextButton(onClick = { onConfirm(items.filter { idMapper(it) in currentSelectionIds }) }) {
-                    Text("DONE", fontWeight = FontWeight.Bold)
-                }
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 24.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val allSelected = items.isNotEmpty() && currentSelectionIds.size == items.size
-
-                    FilterChip(
-                        selected = allSelected,
-                        onClick = {
-                            currentSelectionIds = if (allSelected) emptySet() else items.map(idMapper).toSet()
-                        },
-                        label = { Text(if (allSelected) "Deselect All" else "Select All") },
-                        leadingIcon = if (allSelected) {
-                            { Icon(Icons.Default.Close, null, Modifier.size(18.dp)) }
-                        } else {
-                            { Icon(Icons.Default.SelectAll, null, Modifier.size(18.dp)) }
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    AssistChip(
-                        onClick = {
-                            val allItemsSet = items.map(idMapper).toSet()
-                            currentSelectionIds = allItemsSet.subtract(currentSelectionIds)
-                        },
-                        label = { Text("Invert") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Flip,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    Spacer(Modifier.weight(1f))
-
-                    Badge(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.sizeIn(minWidth = 24.dp, minHeight = 24.dp)
-                    ) {
-                        Text(
-                            text = "${currentSelectionIds.size}",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-
-                if (items.size > 5) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search items...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = if (searchQuery.isNotEmpty()) {
-                            {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, null)
-                                }
-                            }
-                        } else null,
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                            focusedBorderColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                )
-
-                if (filteredItems.isEmpty() && searchQuery.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.SearchOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                        Text(
-                            "No results for \"$searchQuery\"",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Box(modifier = Modifier.weight(1f)) {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        AeonHybridSelector(
-                            items = filteredItems,
-                            mode = AeonSelectMode.MULTI,
-                            selectedIds = currentSelectionIds,
-                            onSelectionChange = { currentSelectionIds = it },
-                            idMapper = idMapper,
-                            labelMapper = labelMapper,
-                            iconMapper = iconMapper,
-                            colorMapper = colorMapper
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MultiSelectionDialogPreview() {
-    MaterialTheme {
-        MultiSelectionDialog(
-            title = "Select Categories",
-            items = listOf("Food & Dining", "Transportation", "Shopping", "Entertainment", "Health & Fitness", "Education", "Gifts & Donations", "Investments"),
-            selectedItems = listOf("Food & Dining", "Shopping"),
-            onDismissRequest = {},
-            onConfirm = {},
-            idMapper = { it.hashCode().toLong() },
-            labelMapper = { it }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CategorySelectionDialog(
-    categories: List<Category>,
-    selectedCategoryIds: Set<Long>,
-    onDismissRequest: () -> Unit,
-    onConfirm: (Set<Long>) -> Unit
-) {
-    var tempSelectedIds by remember { mutableStateOf(selectedCategoryIds) }
-
-    AeonFullScreenDialog(onDismissRequest = onDismissRequest) {
-        AeonSelectionScreen(
-            title = "Select Categories",
-            onBack = onDismissRequest,
-            actions = {
-                TextButton(onClick = { onConfirm(tempSelectedIds) }) {
-                    Text("DONE", fontWeight = FontWeight.Bold)
-                }
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(24.dp)
-                    .fillMaxSize()
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        AeonHierarchicalHybridSelector(
-                            items = categories,
-                            mode = AeonSelectMode.MULTI,
-                            selectedIds = tempSelectedIds,
-                            onSelectionChange = { tempSelectedIds = it },
-                            idMapper = { it.id },
-                            labelMapper = { it.name },
-                            parentIdMapper = { it.parentId },
-                            iconMapper = { AppIconMap[it.iconName] },
-                            colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-                }
             }
         }
     }

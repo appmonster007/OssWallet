@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
@@ -16,6 +17,7 @@ class FilterEntryViewModel(
     private val filterRepository: FilterRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val transactionRepository: com.osscabinet.ossWallet.domain.repository.TransactionRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -31,12 +33,14 @@ class FilterEntryViewModel(
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 combine(
                     accountRepository.getAllAccounts(profileId),
-                    categoryRepository.categories
-                ) { accounts, categories ->
+                    categoryRepository.categories,
+                    transactionRepository.getAllTransactions(profileId)
+                ) { accounts, categories, transactions ->
                     _state.update { 
                         it.copy(
                             accounts = accounts,
-                            categories = categories
+                            categories = categories,
+                            allTransactions = transactions
                         )
                     }
                 }
@@ -70,6 +74,7 @@ class FilterEntryViewModel(
             is FilterEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
             is FilterEntryEvent.SetTransactionFilter -> _state.update { it.copy(transactionFilter = event.filter) }
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
+            FilterEntryEvent.ResetFilter -> _state.update { it.copy(transactionFilter = TransactionFilter()) }
         }
     }
 

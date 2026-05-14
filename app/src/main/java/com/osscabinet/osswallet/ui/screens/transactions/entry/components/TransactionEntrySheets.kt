@@ -129,10 +129,11 @@ fun TransactionEntrySheets(
     // Payment Method Selection
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
-            selectedMethod = state.paymentMethod,
-            onMethodSelected = { method ->
-                onEvent(TransactionEntryEvent.SetPaymentMethod(method))
-                onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(false))
+            selectedMethods = setOf(state.paymentMethod),
+            onSelectionChange = { methods ->
+                methods.firstOrNull()?.let { method ->
+                    onEvent(TransactionEntryEvent.SetPaymentMethod(method))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(false)) }
         )
@@ -141,10 +142,11 @@ fun TransactionEntrySheets(
     // Status Selection
     if (state.showStatusSheet) {
         AeonStatusSelection(
-            selectedStatus = state.status,
-            onStatusSelected = { status ->
-                onEvent(TransactionEntryEvent.SetStatus(status))
-                onEvent(TransactionEntryEvent.ShowStatusSheet(false))
+            selectedStatuses = setOf(state.status),
+            onSelectionChange = { statuses ->
+                statuses.firstOrNull()?.let { status ->
+                    onEvent(TransactionEntryEvent.SetStatus(status))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowStatusSheet(false)) }
         )

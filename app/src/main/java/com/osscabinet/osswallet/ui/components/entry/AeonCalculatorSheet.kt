@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
@@ -17,11 +18,12 @@ import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 @Composable
 fun AeonCalculatorSheet(
     currentAmount: String,
-    transactionType: TransactionType,
+    transactionType: TransactionType = TransactionType.EXPENSE,
     decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
     onTypeChanged: (String) -> Unit = {},
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    title: String? = null
 ) {
     val transactionTypeStr = transactionType.value
 
@@ -43,6 +45,14 @@ fun AeonCalculatorSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp)
         ) {
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(bottom = 16.dp, start = 8.dp)
+                )
+            }
+
             CalculatorNumpad(
                 amount = currentAmount,
                 onAmountChange = { amount, type ->

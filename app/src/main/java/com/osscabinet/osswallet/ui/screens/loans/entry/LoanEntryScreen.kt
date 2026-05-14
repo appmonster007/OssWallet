@@ -8,9 +8,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
-import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanEntrySheets
+import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanFormBody
+import com.osscabinet.ossWallet.domain.model.Tag
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,48 +85,140 @@ fun LoanEntryScreen(
             selectedTags = state.selectedTags,
             onShowTagSheet = { viewModel.onEvent(LoanEntryEvent.ShowTagSheet(true)) },
             onRemoveTag = { tag -> viewModel.onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) },
+            onPaymentMethodClick = { viewModel.onEvent(LoanEntryEvent.ShowPaymentMethodSheet(true)) },
+            onStatusClick = { viewModel.onEvent(LoanEntryEvent.ShowStatusSheet(true)) },
+            onLinkRecordClick = { viewModel.onEvent(LoanEntryEvent.ShowLinkSheet(true)) },
             counterpartySuggestions = state.uniquePayees,
             noteSuggestions = state.uniqueNotes,
             modifier = Modifier.padding(innerPadding)
         )
 
-        LoanEntrySheets(
-            showStartDatePicker = state.showStartDatePicker,
-            onDismissStartDatePicker = { viewModel.onEvent(LoanEntryEvent.ShowStartDatePicker(false)) },
-            startDateMillis = state.startDate,
-            onStartDateSelected = { viewModel.onEvent(LoanEntryEvent.SetStartDate(it)) },
-            showSettlementDatePicker = state.showSettlementDatePicker,
-            onDismissSettlementDatePicker = { viewModel.onEvent(LoanEntryEvent.ShowSettlementDatePicker(false)) },
-            settlementDateMillis = state.settlementDate,
-            onSettlementDateSelected = { viewModel.onEvent(LoanEntryEvent.SetSettlementDate(it)) },
-            showNumpad = state.showNumpad,
-            onDismissNumpad = { viewModel.onEvent(LoanEntryEvent.ShowNumpad(false)) },
-            principalText = state.principalAmount,
-            onPrincipalChanged = { viewModel.onEvent(LoanEntryEvent.SetPrincipalAmount(it)) },
-            showInterestNumpad = state.showInterestNumpad,
-            onDismissInterestNumpad = { viewModel.onEvent(LoanEntryEvent.ShowInterestNumpad(false)) },
-            interestText = state.interestRate,
-            onInterestChanged = { viewModel.onEvent(LoanEntryEvent.SetInterestRate(it)) },
-            showAccountSheet = state.showAccountSheet,
-            onDismissAccountSheet = { viewModel.onEvent(LoanEntryEvent.ShowAccountSheet(false)) },
-            accountQuery = state.accountQuery,
-            onAccountQueryChange = { viewModel.onEvent(LoanEntryEvent.SetAccountQuery(it)) },
-            accounts = state.accounts,
-            linkedAccountId = state.linkedAccountId,
-            onAccountSelected = { viewModel.onEvent(LoanEntryEvent.SetLinkedAccountId(it)) },
-            showCategorySheet = state.showCategorySheet,
-            onDismissCategorySheet = { viewModel.onEvent(LoanEntryEvent.ShowCategorySheet(false)) },
-            categoryQuery = state.categoryQuery,
-            onCategoryQueryChange = { viewModel.onEvent(LoanEntryEvent.SetCategoryQuery(it)) },
-            categories = state.categories,
-            selectedCategoryIds = state.selectedCategoryIds,
-            onCategorySelectionChange = { viewModel.onEvent(LoanEntryEvent.SetCategoryIds(it)) },
-            showTagSheet = state.showTagSheet,
-            onDismissTagSheet = { viewModel.onEvent(LoanEntryEvent.ShowTagSheet(false)) },
-            availableTags = state.availableTags,
-            selectedTags = state.selectedTags,
-            onTagSelectionChange = { viewModel.onEvent(LoanEntryEvent.SetTags(it)) },
-            onAddTag = { viewModel.onEvent(LoanEntryEvent.SetTags(state.selectedTags + it)) }
-        )
+        // Standardized Selection Sheets
+        if (state.showPaymentMethodSheet) {
+            AeonPaymentMethodSelection(
+                selectedMethods = state.selectedPaymentMethods,
+                onSelectionChange = { viewModel.onEvent(LoanEntryEvent.SetPaymentMethods(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowPaymentMethodSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Payment Methods"
+            )
+        }
+
+        if (state.showStatusSheet) {
+            AeonStatusSelection(
+                selectedStatuses = state.selectedStatuses,
+                onSelectionChange = { viewModel.onEvent(LoanEntryEvent.SetStatuses(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowStatusSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Statuses"
+            )
+        }
+
+        if (state.showLinkSheet) {
+            AeonLinkedTransactionSelection(
+                transactions = state.allTransactions,
+                currentTransactionId = null,
+                linkedIds = state.linkedTransactionIds,
+                accounts = state.accounts,
+                categories = state.categories,
+                onLinkedTransactionsChanged = { viewModel.onEvent(LoanEntryEvent.SetLinkedTransactions(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowLinkSheet(false)) }
+            )
+        }
+        if (state.showStartDatePicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.startDate)
+            DatePickerDialog(
+                onDismissRequest = { viewModel.onEvent(LoanEntryEvent.ShowStartDatePicker(false)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(LoanEntryEvent.SetStartDate(it)) }
+                        viewModel.onEvent(LoanEntryEvent.ShowStartDatePicker(false))
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onEvent(LoanEntryEvent.ShowStartDatePicker(false)) }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        if (state.showSettlementDatePicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.settlementDate)
+            DatePickerDialog(
+                onDismissRequest = { viewModel.onEvent(LoanEntryEvent.ShowSettlementDatePicker(false)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { viewModel.onEvent(LoanEntryEvent.SetSettlementDate(it)) }
+                        viewModel.onEvent(LoanEntryEvent.ShowSettlementDatePicker(false))
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onEvent(LoanEntryEvent.ShowSettlementDatePicker(false)) }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        if (state.showNumpad) {
+            AeonCalculatorSheet(
+                currentAmount = state.principalAmount,
+                onAmountChanged = { viewModel.onEvent(LoanEntryEvent.SetPrincipalAmount(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowNumpad(false)) },
+                title = "Loan Principal"
+            )
+        }
+
+        if (state.showInterestNumpad) {
+            AeonCalculatorSheet(
+                currentAmount = state.interestRate,
+                onAmountChanged = { viewModel.onEvent(LoanEntryEvent.SetInterestRate(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowInterestNumpad(false)) },
+                title = "Interest Rate (%)"
+            )
+        }
+
+        if (state.showAccountSheet) {
+            AeonAccountSelection(
+                accounts = state.accounts,
+                selectedAccountIds = if (state.linkedAccountId.isEmpty()) emptySet() else setOf(state.linkedAccountId),
+                onSelectionChange = { ids ->
+                    ids.firstOrNull()?.let { viewModel.onEvent(LoanEntryEvent.SetLinkedAccountId(it)) }
+                    viewModel.onEvent(LoanEntryEvent.ShowAccountSheet(false))
+                },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowAccountSheet(false)) },
+                title = "Linked Account"
+            )
+        }
+
+        if (state.showCategorySheet) {
+            AeonCategorySelection(
+                categories = state.categories,
+                selectedCategoryIds = state.selectedCategoryIds,
+                onSelectionChange = { ids ->
+                    viewModel.onEvent(LoanEntryEvent.SetCategoryIds(ids))
+                },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowCategorySheet(false)) },
+                mode = AeonSelectMode.MULTI
+            )
+        }
+
+        if (state.showTagSheet) {
+            AeonTagSelection(
+                tags = state.availableTags.map { Tag(0, it, 0) }, // Mock Tag objects
+                selectedTags = state.selectedTags.toList(),
+                onTagsSelected = {
+                    viewModel.onEvent(LoanEntryEvent.SetTags(it.toSet()))
+                    viewModel.onEvent(LoanEntryEvent.ShowTagSheet(false))
+                },
+                onAddTag = { name, _ -> 
+                    viewModel.onEvent(LoanEntryEvent.SetTags(state.selectedTags + name))
+                },
+                onEditTag = {},
+                onDeleteTag = {},
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowTagSheet(false)) }
+            )
+        }
     }
 }

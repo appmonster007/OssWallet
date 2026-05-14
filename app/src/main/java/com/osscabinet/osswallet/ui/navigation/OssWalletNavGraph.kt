@@ -712,6 +712,7 @@ fun OssWalletNavGraph(
                             appContainer.filterRepository,
                             appContainer.accountRepository,
                             appContainer.categoryRepository,
+                            appContainer.transactionRepository,
                             appContainer.settingsRepository
                         )
                     }

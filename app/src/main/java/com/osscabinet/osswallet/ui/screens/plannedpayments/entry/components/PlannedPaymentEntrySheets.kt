@@ -105,7 +105,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showStatusSheet) {
-        PlannedPaymentStatusSelection(
+        AeonPlannedPaymentStatusSelection(
             selectedStatus = state.status,
             onStatusSelected = { status ->
                 onEvent(PlannedPaymentEntryEvent.SetStatus(status))
@@ -225,25 +225,4 @@ fun PlannedPaymentEntrySheets(
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(false)) }
         )
     }
-}
-
-@Composable
-private fun PlannedPaymentStatusSelection(
-    selectedStatus: PlannedPaymentStatus,
-    onStatusSelected: (PlannedPaymentStatus) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AeonSelectionSheet(
-        title = "Payment Status",
-        onDismiss = onDismiss,
-        items = PlannedPaymentStatus.entries,
-        selectedIds = setOf(selectedStatus),
-        onSelectionChange = { ids ->
-            ids.firstOrNull()?.let { onStatusSelected(it) }
-        },
-        idMapper = { it },
-        labelMapper = { it.displayName },
-        iconMapper = { AppIconMap[it.iconName] ?: Icons.Rounded.CheckCircle },
-        colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-    )
 }

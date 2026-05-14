@@ -14,7 +14,7 @@ import java.math.BigDecimal
 
 @Preview(showBackground = true)
 @Composable
-fun BudgetHeroPreview() {
+fun AeonBudgetHeroPreview() {
     val budget = Budget(
         id = 1,
         name = "Monthly Entertainment",

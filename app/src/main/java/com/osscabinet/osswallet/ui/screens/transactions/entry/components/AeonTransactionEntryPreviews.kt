@@ -8,7 +8,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Preview(showBackground = true, heightDp = 1000)
 @Composable
-fun TransactionFormBodyPreview() {
+fun AeonTransactionFormBodyPreview() {
     OssWalletTheme {
         TransactionFormBody(
             state = TransactionEntryState(
@@ -24,7 +24,7 @@ fun TransactionFormBodyPreview() {
 
 @Preview(showBackground = true, heightDp = 1000)
 @Composable
-fun TransactionFormBodyTransferPreview() {
+fun AeonTransactionFormBodyTransferPreview() {
     OssWalletTheme {
         TransactionFormBody(
             state = TransactionEntryState(

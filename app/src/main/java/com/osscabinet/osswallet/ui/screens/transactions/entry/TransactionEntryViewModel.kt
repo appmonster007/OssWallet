@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest

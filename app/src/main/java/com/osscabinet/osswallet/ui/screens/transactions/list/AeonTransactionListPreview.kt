@@ -14,7 +14,7 @@ import java.util.*
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800, name = "Filtered Transactions")
 @Composable
-fun TransactionListFilteredPreview() {
+fun AeonTransactionListFilteredPreview() {
     val mockAccounts = listOf(
         Account("1", "Main Bank", "USD", "REGULAR", "#2196F3", "AccountBalance", listOf("USD")),
         Account("2", "Cash", "USD", "REGULAR", "#4CAF50", "AccountBalanceWallet", listOf("USD"))

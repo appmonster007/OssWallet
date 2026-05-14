@@ -8,7 +8,6 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
 
 @Composable
 fun TemplateEntrySheets(

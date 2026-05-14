@@ -3,9 +3,9 @@ package com.osscabinet.ossWallet.domain.service
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,7 +39,7 @@ class BudgetServiceTest {
         accountIds = accountIds,
         alertThreshold = alertThreshold,
         rollover = rollover,
-        trackTypes = listOf(BudgetTrackType.EXPENSE),
+        trackTypes = listOf(TransactionType.EXPENSE),
         isArchived = false,
         profileId = 1,
         customStartDate = customStart,
@@ -48,7 +48,7 @@ class BudgetServiceTest {
 
     private fun makeTransaction(
         amount: BigDecimal,
-        transactionType: String = "expense",
+        transactionType: TransactionType = TransactionType.EXPENSE,
         currency: String = "USD",
         accountId: String = "acc1",
         categoryId: Long = 1001L,
@@ -166,8 +166,8 @@ class BudgetServiceTest {
         val inPeriod = epochOf(2024, 3, 10)
 
         val transactions = listOf(
-            makeTransaction(BigDecimal("-200"), transactionType = "expense", timestamp = inPeriod),
-            makeTransaction(BigDecimal("500"), transactionType = "income", timestamp = inPeriod)
+            makeTransaction(BigDecimal("-200"), transactionType = TransactionType.EXPENSE, timestamp = inPeriod),
+            makeTransaction(BigDecimal("500"), transactionType = TransactionType.INCOME, timestamp = inPeriod)
         )
 
         val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)

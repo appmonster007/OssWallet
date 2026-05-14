@@ -36,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,6 +92,12 @@ fun BudgetDetailScreen(
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
     val budget = remember(budgetId, budgets) { budgets.find { it.id == budgetId } }
+
+    LaunchedEffect(budget) {
+        if (budget == null) {
+            onBackClick()
+        }
+    }
 
     if (budget == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

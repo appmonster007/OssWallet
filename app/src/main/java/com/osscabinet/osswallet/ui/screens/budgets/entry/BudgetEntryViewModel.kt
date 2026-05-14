@@ -245,21 +245,20 @@ class BudgetEntryViewModel(
         }
     }
 
-    fun deleteBudget(onSuccess: () -> Unit) {
+    fun deleteBudget() {
         val id = _state.value.budgetId ?: return
+        val filterId = _state.value.filterId
         val deleteFilter = _state.value.deleteFilterWithBudget
+        
         viewModelScope.launch {
-            if (deleteFilter) {
-                budgetRepository.getById(id)?.let { budget ->
-                    budget.filterId?.let { filterId ->
-                        filterRepository.getFilterById(filterId)?.let { filter ->
-                            filterRepository.deleteFilter(filter)
-                        }
-                    }
+            if (deleteFilter && filterId != null) {
+                filterRepository.getFilterById(filterId)?.let { filter ->
+                    filterRepository.deleteFilter(filter)
                 }
+            } else {
+                budgetRepository.delete(id)
             }
-            budgetRepository.delete(id)
-            onSuccess()
+            _state.update { it.copy(navTriggered = true) }
         }
     }
 }

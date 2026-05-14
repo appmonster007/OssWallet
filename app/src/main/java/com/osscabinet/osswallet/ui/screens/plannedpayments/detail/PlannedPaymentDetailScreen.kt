@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -56,6 +57,12 @@ fun PlannedPaymentDetailScreen(
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val payment =
         remember(plannedPaymentId, payments) { payments.find { it.id == plannedPaymentId } }
+
+    LaunchedEffect(payment) {
+        if (payment == null) {
+            onBackClick()
+        }
+    }
 
     val occurrencesFlow = remember(plannedPaymentId) {
         viewModel.getOccurrencesForPayment(plannedPaymentId)

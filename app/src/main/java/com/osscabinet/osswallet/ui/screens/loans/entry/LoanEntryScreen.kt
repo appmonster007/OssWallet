@@ -236,9 +236,7 @@ fun LoanEntryScreen(
             title = "Delete Loan",
             message = "Are you sure you want to delete this loan?",
             onConfirm = {
-                viewModel.deleteLoan {
-                    onBackClick()
-                }
+                viewModel.deleteLoan()
             },
             onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowDeleteDialog(false)) },
             extraContent = {

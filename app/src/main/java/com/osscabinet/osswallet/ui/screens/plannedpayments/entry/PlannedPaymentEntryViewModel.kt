@@ -401,21 +401,20 @@ class PlannedPaymentEntryViewModel(
         }
     }
 
-    fun deletePlannedPayment(onSuccess: () -> Unit) {
+    fun deletePlannedPayment() {
         val id = _state.value.plannedPaymentId ?: return
+        val templateId = _state.value.existingPayment?.templateId
         val deleteTemplate = _state.value.deleteTemplateWithPayment
+        
         viewModelScope.launch {
-            if (deleteTemplate) {
-                plannedPaymentRepository.getById(id)?.let { payment ->
-                    payment.templateId?.let { templateId ->
-                        templateRepository.getTemplateById(templateId)?.let { template ->
-                            templateRepository.deleteTemplate(template)
-                        }
-                    }
+            if (deleteTemplate && templateId != null) {
+                templateRepository.getTemplateById(templateId)?.let { template ->
+                    templateRepository.deleteTemplate(template)
                 }
+            } else {
+                plannedPaymentRepository.delete(id)
             }
-            plannedPaymentRepository.delete(id)
-            onSuccess()
+            _state.update { it.copy(navTriggered = true) }
         }
     }
 

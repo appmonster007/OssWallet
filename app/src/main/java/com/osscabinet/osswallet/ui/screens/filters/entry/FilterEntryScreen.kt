@@ -50,9 +50,7 @@ fun FilterEntryScreen(
         isEditMode = state.isEditMode,
         onDeleteClick = if (state.isEditMode) {
             {
-                viewModel.deleteFilter {
-                    onBackClick()
-                }
+                viewModel.deleteFilter()
             }
         } else null
     ) { innerPadding ->

@@ -277,9 +277,7 @@ fun BudgetEntryScreen(
             title = "Delete Budget",
             message = "Are you sure you want to delete this budget?",
             onConfirm = {
-                viewModel.deleteBudget {
-                    onBackClick()
-                }
+                viewModel.deleteBudget()
             },
             onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowDeleteDialog(false)) },
             extraContent = {

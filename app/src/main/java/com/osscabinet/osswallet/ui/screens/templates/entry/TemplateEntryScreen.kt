@@ -64,9 +64,7 @@ fun TemplateEntryScreen(
                 "Are you sure you want to delete this template?"
             },
             onConfirm = {
-                viewModel.deleteTemplate {
-                    onBackClick()
-                }
+                viewModel.deleteTemplate()
             },
             onDismiss = { viewModel.onEvent(TemplateEntryEvent.ShowDeleteDialog(false)) }
         )

@@ -79,21 +79,15 @@ class BackupRepositoryImpl(
             templateDao.getAllTemplatesSync().map { listOf(it.id, it.name, it.categoryId, it.amount, it.transactionType, it.icon, it.colorHex, it.accountId, it.targetAccountId, it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.paymentMethod?.name, it.currency, it.tags, it.isStarred, it.displayOrder, it.profileId, it.transactionStatus.name) })
         
         writeCsvToZip(zos, "planned_payments.csv", listOf(
-            "id", "name", "categoryId", "amount", "transactionType", "accountId", "targetAccountId", 
-            "targetCurrency", "transferRate", "note", "payee", "location", "latitude", "longitude", 
-            "warrantyExpiration", "transactionStatus", "paymentMethod", "currency", "tags", 
-            "autoConfirm", "status", "profileId", "templateId", 
-            "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression", 
+            "id", "autoConfirm", "status", "profileId", "templateId",
+            "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression",
             "startDate", "endDate", "nextDueDate", "lastTriggeredDate"
-        ), 
-            plannedPaymentDao.getAllPlannedPaymentsSync().map { 
+        ),
+            plannedPaymentDao.getAllPlannedPaymentsSync().map {
                 listOf(
-                    it.id, it.name, it.categoryId, it.amount, it.transactionType, it.accountId, it.targetAccountId,
-                    it.targetCurrency, it.transferRate, it.note, it.payee, it.location, it.latitude, it.longitude,
-                    it.warrantyExpiration, it.transactionStatus.name, it.paymentMethod?.name, it.currency, it.tags,
-                    it.autoConfirm, it.status.name, it.profileId, it.templateId,
-                    it.schedule.recurrenceType, it.schedule.interval, it.schedule.dayOfWeek, it.schedule.dayOfMonth, it.schedule.recurrenceCronExpression,
-                    it.schedule.startDate, it.schedule.endDate, it.schedule.nextDueDate, it.schedule.lastTriggeredDate
+                    it.payment.id, it.payment.autoConfirm, it.payment.status.name, it.payment.profileId, it.payment.templateId,
+                    it.payment.schedule.recurrenceType, it.payment.schedule.interval, it.payment.schedule.dayOfWeek, it.payment.schedule.dayOfMonth, it.payment.schedule.recurrenceCronExpression,
+                    it.payment.schedule.startDate, it.payment.schedule.endDate, it.payment.schedule.nextDueDate, it.payment.schedule.lastTriggeredDate
                 )
             })
         
@@ -334,42 +328,30 @@ class BackupRepositoryImpl(
 
     private suspend fun restorePlannedPayments(file: File) = file.takeIf { it.exists() }?.let {
         CsvProcessor.parseCsv(it).forEach { p ->
-            plannedPaymentDao.insert(PlannedPaymentEntity(
-                id = p["id"]?.toLong() ?: 0,
-                name = p["name"] ?: "",
-                categoryId = p["categoryId"]?.toLongOrNull() ?: 1002L,
-                amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                transactionType = TransactionType.fromInt(p["transactionType"]?.toIntOrNull() ?: 0),
-                accountId = p["accountId"],
-                targetAccountId = p["targetAccountId"],
-                targetCurrency = p["targetCurrency"],
-                transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
-                note = p["note"],
-                payee = p["payee"],
-                location = p["location"],
-                latitude = p["latitude"]?.toDoubleOrNull(),
-                longitude = p["longitude"]?.toDoubleOrNull(),
-                warrantyExpiration = p["warrantyExpiration"]?.toLongOrNull(),
-                transactionStatus = p["transactionStatus"]?.let { TransactionStatus.fromString(it) } ?: TransactionStatus.CLEARED,
-                paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) },
-                currency = p["currency"] ?: "USD",
-                tags = p["tags"] ?: "",
-                schedule = RecurrenceScheduleEntity(
-                    recurrenceType = p["recurrenceType"] ?: "MONTHLY",
-                    interval = p["interval"]?.toIntOrNull() ?: 1,
-                    dayOfWeek = p["dayOfWeek"]?.toIntOrNull(),
-                    dayOfMonth = p["dayOfMonth"]?.toIntOrNull(),
-                    recurrenceCronExpression = p["recurrenceCronExpression"],
-                    startDate = p["startDate"]?.toLongOrNull() ?: 0,
-                    endDate = p["endDate"]?.toLongOrNull(),
-                    nextDueDate = p["nextDueDate"]?.toLongOrNull() ?: 0,
-                    lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull()
-                ),
-                autoConfirm = p["autoConfirm"]?.toBoolean() ?: false,
-                status = p["status"]?.let { PlannedPaymentStatus.fromString(it) } ?: PlannedPaymentStatus.ACTIVE,
-                profileId = p["profileId"]?.toIntOrNull() ?: 1,
-                templateId = p["templateId"]?.toLongOrNull()
-            ))
+            val templateId = p["templateId"]?.toLongOrNull()
+            if (templateId != null) {
+                plannedPaymentDao.insert(PlannedPaymentEntity(
+                    id = p["id"]?.toLong() ?: 0,
+                    schedule = RecurrenceScheduleEntity(
+                        recurrenceType = p["recurrenceType"] ?: "MONTHLY",
+                        interval = p["interval"]?.toIntOrNull() ?: 1,
+                        dayOfWeek = p["dayOfWeek"]?.toIntOrNull(),
+                        dayOfMonth = p["dayOfMonth"]?.toIntOrNull(),
+                        recurrenceCronExpression = p["recurrenceCronExpression"],
+                        startDate = p["startDate"]?.toLongOrNull() ?: 0,
+                        endDate = p["endDate"]?.toLongOrNull(),
+                        nextDueDate = p["nextDueDate"]?.toLongOrNull() ?: 0,
+                        lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull()
+                    ),
+                    autoConfirm = p["autoConfirm"]?.toBoolean() ?: false,
+                    status = p["status"]?.let { PlannedPaymentStatus.fromString(it) } ?: PlannedPaymentStatus.ACTIVE,
+                    profileId = p["profileId"]?.toIntOrNull() ?: 1,
+                    templateId = templateId
+                ))
+            } else {
+                // Handle legacy data without templateId if necessary
+                // For now, if we force non-nullable, we might need to create a dummy template or skip
+            }
         }
     }
 

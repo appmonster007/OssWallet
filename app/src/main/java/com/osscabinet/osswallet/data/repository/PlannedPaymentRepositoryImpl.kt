@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 
 class PlannedPaymentRepositoryImpl(
     private val dao: PlannedPaymentDao,
-    private val occurrenceDao: PlannedPaymentOccurrenceDao
+    private val occurrenceDao: PlannedPaymentOccurrenceDao,
 ) : PlannedPaymentRepository {
 
     override fun getActivePlannedPayments(profileId: Int): Flow<List<PlannedPayment>> =
@@ -25,8 +25,8 @@ class PlannedPaymentRepositoryImpl(
     override suspend fun getAllSync(profileId: Int): List<PlannedPayment> =
         dao.getAllPlannedPaymentsSync(profileId).map { it.toDomain() }
 
-    override suspend fun getDue(profileId: Int, untilDate: Long): List<PlannedPayment> =
-        dao.getDuePlannedPayments(profileId, untilDate).map { it.toDomain() }
+    override suspend fun getDue(profileId: Int): List<PlannedPayment> =
+        dao.getDuePlannedPayments(profileId).map { it.toDomain() }
 
     override suspend fun getById(id: Long): PlannedPayment? =
         dao.getById(id)?.toDomain()

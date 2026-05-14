@@ -49,7 +49,7 @@ fun TransactionHeader(
     initiallyExpanded: Boolean = false
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
-    
+
     val styles = TransactionHeaderStyles.default()
     val balanceWeight = when {
         showOpeningBalance && showClosingBalance -> 2f
@@ -64,7 +64,7 @@ fun TransactionHeader(
             inc.signum() != 0 || exp.signum() != 0
         }
     }
-    
+
     val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
     val canExpand = currenciesToDisplay.isNotEmpty()
 
@@ -90,7 +90,7 @@ fun TransactionHeader(
                         style = styles.subtitleStyle
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Row 2: Headers
@@ -147,9 +147,9 @@ fun TransactionHeader(
                             )
                         }
                     }
-                    
+
                     val baseColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
-                    
+
                     Text(
                         formatCurrencyRight(incomeBase, baseCurrency, precision, shorten = true),
                         style = styles.baseValueStyle,
@@ -171,7 +171,7 @@ fun TransactionHeader(
                         modifier = baseColumnModifier,
                         textAlign = TextAlign.End
                     )
-                    
+
                     if (balanceWeight > 0) {
                         val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, precision, shorten = true)
                         val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true)
@@ -321,7 +321,7 @@ private data class TransactionHeaderStyles(
                 fontSize = 8.sp
             ),
             baseValueStyle = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold, 
+                fontWeight = FontWeight.Bold,
                 fontSize = 9.sp
             ),
             breakdownLabelStyle = MaterialTheme.typography.labelSmall.copy(

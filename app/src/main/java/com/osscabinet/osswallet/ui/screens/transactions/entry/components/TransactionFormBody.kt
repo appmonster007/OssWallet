@@ -111,23 +111,25 @@ fun TransactionFormBody(
                 payeeSuggestions = state.allPayees,
                 additionalContent = {
                     AeonEntryMetadataSection(
-                        linkedTransactions = state.displayLinkedTxs,
+                        state = AeonMetadataState(
+                            paymentMethod = state.paymentMethod,
+                            statusLabel = state.status.displayName,
+                            statusIcon = state.status.iconName,
+                            statusColor = state.status.colorHex,
+                            isWarrantyEnabled = state.isWarrantyEnabled,
+                            warrantyExpiration = state.warrantyExpirationMillis,
+                            location = state.locationCoords,
+                            linkedTransactions = state.displayLinkedTxs
+                        ),
                         accounts = state.accounts,
                         categories = state.categories,
                         is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(TransactionEntryEvent.RemoveLinkedTransaction(state.transactionId ?: -1L, txId)) },
-                        paymentMethod = state.paymentMethod,
                         onPaymentMethodClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },
-                        statusLabel = state.status.displayName,
-                        statusIconName = state.status.iconName,
-                        statusColorHex = state.status.colorHex,
                         onStatusClick = { onEvent(TransactionEntryEvent.ShowStatusSheet(true)) },
-                        warrantyEnabled = state.isWarrantyEnabled,
                         onWarrantyToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
-                        warrantyExpirationMillis = state.warrantyExpirationMillis,
                         onWarrantyDateClick = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) },
-                        locationCoords = state.locationCoords,
                         onLocationClick = { onEvent(TransactionEntryEvent.ShowLocationSheet(true)) },
                         locationLabel = "Transaction Location"
                     )

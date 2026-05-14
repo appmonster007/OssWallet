@@ -117,17 +117,18 @@ class BudgetEntryViewModel(
         if (!s.canSave) return
 
         viewModelScope.launch {
+            val amount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             val budget = (s.existingBudget ?: Budget(
                 id = 0,
                 name = s.name,
-                limitAmount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                limitAmount = amount,
                 currency = s.currency,
                 period = s.period,
                 profileId = s.currentProfileId
             )).copy(
                 id = s.budgetId ?: 0L,
                 name = s.name,
-                limitAmount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                limitAmount = amount,
                 currency = s.currency,
                 period = s.period,
                 trackTypes = s.selectedTrackTypes.toList().ifEmpty { listOf(TransactionType.EXPENSE) },

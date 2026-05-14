@@ -1,16 +1,27 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import androidx.room.Relation
 import java.math.BigDecimal
 
 @Entity(
     tableName = "budgets",
     indices = [
         Index(value = ["profileId"]),
-        Index(value = ["isArchived"])
+        Index(value = ["isArchived"]),
+        Index(value = ["filterId"])
+    ],
+    foreignKeys = [
+        ForeignKey(
+            entity = FilterEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["filterId"],
+            onDelete = ForeignKey.CASCADE
+        )
     ]
 )
 data class BudgetEntity(
@@ -19,14 +30,20 @@ data class BudgetEntity(
     val currency: String,
     val limitAmount: BigDecimal,
     val period: String,
-    val categoryIds: String = "",
-    val accountIds: String = "",
-    val tags: String = "",
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
-    val trackType: String = "expense",
     val isArchived: Boolean = false,
     val profileId: Int,
     val customStartDate: Long? = null,
-    val customEndDate: Long? = null
+    val customEndDate: Long? = null,
+    val filterId: Long
+)
+
+data class BudgetWithFilter(
+    @Embedded val budget: BudgetEntity,
+    @Relation(
+        parentColumn = "filterId",
+        entityColumn = "id"
+    )
+    val filter: FilterEntity
 )

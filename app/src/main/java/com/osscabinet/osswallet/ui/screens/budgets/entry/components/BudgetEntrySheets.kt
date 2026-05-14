@@ -11,11 +11,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
 
 @Composable
 fun BudgetEntrySheets(
@@ -75,7 +77,7 @@ fun BudgetEntrySheets(
         )
     }
     if (showNumpad) {
-        CalculatorSheet(
+        AeonCalculatorSheet(
             currentAmount = limitText,
             transactionType = TransactionType.INCOME,
             decimalPrecision = 2,
@@ -85,185 +87,77 @@ fun BudgetEntrySheets(
     }
 
     if (showAccountSheet) {
-        val filteredAccounts = remember(accountQuery, accounts) {
-            if (accountQuery.isBlank()) accounts
-            else accounts.filter { it.name.contains(accountQuery, ignoreCase = true) }
-        }
-
-        AeonFullScreenDialog(onDismissRequest = onDismissAccountSheet) {
-            AeonSelectionScreen(
-                title = "Select Accounts",
-                onBack = onDismissAccountSheet
-            ) { padding ->
-                Column(modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 24.dp)) {
-                    Text(
-                        text = "Choose which accounts to include in this budget",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    AeonSearchField(
-                        query = accountQuery,
-                        onQueryChange = onAccountQueryChange,
-                        placeholder = "Search accounts..."
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = filteredAccounts,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedAccountIds,
-                                onSelectionChange = onAccountSelectionChange,
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                detailMapper = { it.currencyCode },
-                                iconMapper = { getAccountIconByName(it.icon) },
-                                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        AeonAccountSelection(
+            accounts = accounts,
+            selectedAccountIds = selectedAccountIds,
+            onSelectionChange = onAccountSelectionChange,
+            onDismiss = onDismissAccountSheet,
+            mode = AeonSelectMode.MULTI,
+            title = "Select Accounts",
+            description = "Choose which accounts to include in this budget"
+        )
     }
 
     if (showPeriodSheet) {
-        AeonFullScreenDialog(onDismissRequest = onDismissPeriodSheet) {
-            AeonSelectionScreen(
-                title = "Reset Period",
-                onBack = onDismissPeriodSheet
-            ) { padding ->
-                Column(modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 24.dp)) {
-                    Text(
-                        text = "How often should this budget reset?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = BudgetPeriod.entries,
-                                mode = AeonSelectMode.SINGLE,
-                                selectedIds = setOf(period.ordinal.toLong()),
-                                onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { ordinal ->
-                                        BudgetPeriod.entries.getOrNull(ordinal.toInt())?.let { onPeriodSelected(it) }
-                                    }
-                                },
-                                idMapper = { it.ordinal.toLong() },
-                                labelMapper = {
-                                    it.name.lowercase().replaceFirstChar { c -> c.uppercase() }
-                                },
-                                iconMapper = { Icons.Rounded.Update }
-                            )
-                        }
-                    }
-                }
+        AeonSelectionSheet(
+            title = "Reset Period",
+            onDismiss = onDismissPeriodSheet,
+            items = BudgetPeriod.entries,
+            selectedIds = setOf(period),
+            onSelectionChange = { ids: Set<BudgetPeriod> ->
+                ids.firstOrNull()?.let { onPeriodSelected(it) }
+            },
+            idMapper = { it: BudgetPeriod -> it },
+            labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+            iconMapper = { Icons.Rounded.Update },
+            headerContent = {
+                Text(
+                    text = "How often should this budget reset?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             }
-        }
+        )
     }
 
     if (showTrackTypeSheet) {
-        AeonFullScreenDialog(onDismissRequest = onDismissTrackTypeSheet) {
-            AeonSelectionScreen(
-                title = "Track Types",
-                onBack = onDismissTrackTypeSheet
-            ) { padding ->
-                Column(modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 24.dp)) {
-                    Text(
-                        text = "Should this budget track expenses, income, or both?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = listOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }
-                                    .toSet(),
-                                onSelectionChange = { ids ->
-                                    if (ids.isNotEmpty()) {
-                                        onTrackTypeSelectionChange(ids.mapNotNull { ordinal ->
-                                            listOf(TransactionType.EXPENSE, TransactionType.INCOME).getOrNull(ordinal.toInt())
-                                        }.toSet())
-                                    }
-                                },
-                                idMapper = { it.ordinal.toLong() },
-                                labelMapper = {
-                                    it.displayName
-                                },
-                                iconMapper = {
-                                    when (it) {
-                                        TransactionType.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
-                                        TransactionType.INCOME -> Icons.AutoMirrored.Rounded.TrendingUp
-                                        else -> Icons.Rounded.Update
-                                    }
-                                }
-                            )
-                        }
-                    }
+        AeonSelectionSheet(
+            title = "Track Types",
+            onDismiss = onDismissTrackTypeSheet,
+            items = listOf(TransactionType.EXPENSE, TransactionType.INCOME),
+            selectedIds = selectedTrackTypes,
+            onSelectionChange = onTrackTypeSelectionChange,
+            idMapper = { it: TransactionType -> it },
+            labelMapper = { it.displayName },
+            mode = AeonSelectMode.MULTI,
+            iconMapper = {
+                when (it) {
+                    TransactionType.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
+                    TransactionType.INCOME -> Icons.AutoMirrored.Rounded.TrendingUp
+                    else -> Icons.Rounded.Update
                 }
+            },
+            headerContent = {
+                Text(
+                    text = "Should this budget track expenses, income, or both?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             }
-        }
+        )
     }
 
     if (showCategorySheet) {
-        val filteredCategories = remember(categoryQuery, categories) {
-            if (categoryQuery.isBlank()) categories
-            else categories.filter { it.name.contains(categoryQuery, ignoreCase = true) }
-        }
-
-        AeonFullScreenDialog(onDismissRequest = onDismissCategorySheet) {
-            AeonSelectionScreen(
-                title = "Categories",
-                onBack = onDismissCategorySheet
-            ) { padding ->
-                Column(modifier = Modifier
-                    .padding(padding)
-                    .padding(24.dp)) {
-                    
-                    AeonSearchField(
-                        query = categoryQuery,
-                        onQueryChange = onCategoryQueryChange,
-                        placeholder = "Search categories..."
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHierarchicalHybridSelector(
-                                items = filteredCategories,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedCategoryIds,
-                                onSelectionChange = onCategorySelectionChange,
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                parentIdMapper = { it.parentId },
-                                iconMapper = { getIconByName(it.iconName) },
-                                colorMapper = {
-                                    if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(
-                                        it.colorHex
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        AeonCategorySelection(
+            categories = categories,
+            selectedCategoryIds = selectedCategoryIds,
+            onSelectionChange = onCategorySelectionChange,
+            onDismiss = onDismissCategorySheet,
+            mode = AeonSelectMode.MULTI,
+            title = "Categories"
+        )
     }
 
     if (showTagSheet) {

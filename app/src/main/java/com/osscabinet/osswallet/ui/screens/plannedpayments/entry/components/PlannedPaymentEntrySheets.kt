@@ -13,11 +13,6 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
 
 @Composable
 fun PlannedPaymentEntrySheets(
@@ -52,38 +47,31 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showCategorySheet) {
-        TransactionCategorySelection(
+        AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryId = state.selectedCategoryId,
-            onCategorySelected = { _, id ->
-                onEvent(PlannedPaymentEntryEvent.SetCategoryId(id))
-                onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
+            selectedCategoryIds = setOf(state.selectedCategoryId),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCategoryId(it)) }
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false)) }
         )
     }
 
     if (state.showAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountId = state.selectedAccountId,
-            onAccountSelected = { account ->
-                onEvent(PlannedPaymentEntryEvent.SetAccountId(account?.id))
-                onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
-            },
+            selectedAccountIds = state.selectedAccountId?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
             allowOutsideWallet = true
         )
     }
 
     if (state.showTargetAccountSheet) {
-        TransactionAccountSelection(
+        AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountId = state.targetAccountId,
-            onAccountSelected = { account ->
-                onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(account?.id))
-                onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
-            },
+            selectedAccountIds = state.targetAccountId?.let { setOf(it) } ?: emptySet(),
+            onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
             title = "Select Target Account",
             allowOutsideWallet = true
@@ -91,7 +79,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showPaymentMethodSheet) {
-        PaymentMethodSelection(
+        AeonPaymentMethodSelection(
             selectedMethod = state.paymentMethod,
             onMethodSelected = { method ->
                 onEvent(PlannedPaymentEntryEvent.SetPaymentMethod(method))
@@ -102,7 +90,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showTagSheet) {
-        TagSelection(
+        AeonTagSelection(
             tags = state.availableTags,
             selectedTags = state.selectedTagNames,
             onTagsSelected = { tags ->
@@ -128,7 +116,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showTransactionStatusSheet) {
-        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.StatusSelection(
+        AeonStatusSelection(
             selectedStatus = state.transactionStatus,
             onStatusSelected = { status ->
                 onEvent(PlannedPaymentEntryEvent.SetTransactionStatus(status))
@@ -139,7 +127,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showNumpad) {
-        CalculatorSheet(
+        AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
             decimalPrecision = 2,
@@ -211,7 +199,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showLocationSheet) {
-        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.LocationSelection(
+        AeonLocationSelection(
             currentCoords = if (state.latitude != null && state.longitude != null) {
                 state.latitude to state.longitude
             } else null,
@@ -224,7 +212,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showLinkedTransactionSheet) {
-        com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.LinkedTransactionSelection(
+        AeonLinkedTransactionSelection(
             transactions = state.allTransactions,
             currentTransactionId = null, // Planned payments don't have a transaction ID
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
@@ -245,26 +233,17 @@ private fun PlannedPaymentStatusSelection(
     onStatusSelected: (PlannedPaymentStatus) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val statuses = PlannedPaymentStatus.entries
-    AeonFullScreenDialog(onDismissRequest = onDismiss) {
-        AeonSelectionScreen(title = "Payment Status", onBack = onDismiss) { padding ->
-            Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
-                AeonHybridSelector(
-                    items = statuses,
-                    mode = AeonSelectMode.SINGLE,
-                    selectedIds = setOf(selectedStatus.name),
-                    onSelectionChange = { ids ->
-                        statuses.find { it.name == ids.firstOrNull() }?.let {
-                            onStatusSelected(it)
-                            onDismiss()
-                        }
-                    },
-                    idMapper = { it.name },
-                    labelMapper = { it.displayName },
-                    iconMapper = { AppIconMap[it.iconName] ?: Icons.Rounded.CheckCircle },
-                    colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-                )
-            }
-        }
-    }
+    AeonSelectionSheet(
+        title = "Payment Status",
+        onDismiss = onDismiss,
+        items = PlannedPaymentStatus.entries,
+        selectedIds = setOf(selectedStatus),
+        onSelectionChange = { ids ->
+            ids.firstOrNull()?.let { onStatusSelected(it) }
+        },
+        idMapper = { it },
+        labelMapper = { it.displayName },
+        iconMapper = { AppIconMap[it.iconName] ?: Icons.Rounded.CheckCircle },
+        colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+    )
 }

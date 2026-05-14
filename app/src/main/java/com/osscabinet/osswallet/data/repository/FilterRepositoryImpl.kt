@@ -17,7 +17,7 @@ class FilterRepositoryImpl(
     override suspend fun getFilterById(id: Long): Filter? = 
         filterDao.getFilterById(id)?.toDomain()
 
-    override suspend fun insertFilter(filter: Filter) = 
+    override suspend fun insertFilter(filter: Filter): Long =
         filterDao.insertFilter(filter.toEntity())
 
     override suspend fun updateFilter(filter: Filter) = 

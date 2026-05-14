@@ -118,10 +118,11 @@ class LoanEntryViewModel(
         if (!s.canSave) return
 
         viewModelScope.launch {
+            val amount = s.principalAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             val loan = (s.existingLoan ?: Loan(
                 id = 0,
                 name = s.name,
-                principalAmount = s.principalAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                principalAmount = amount,
                 currency = s.currency,
                 loanType = s.loanType,
                 lenderOrBorrowerName = s.counterparty,
@@ -131,7 +132,7 @@ class LoanEntryViewModel(
             )).copy(
                 id = s.loanId ?: 0L,
                 name = s.name,
-                principalAmount = s.principalAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                principalAmount = amount,
                 currency = s.currency,
                 loanType = s.loanType,
                 lenderOrBorrowerName = s.counterparty,

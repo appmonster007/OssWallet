@@ -2,11 +2,11 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry.components
 
 import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelection
 
 /**
  * Full-screen selection for Tags in Budget Entry.
- * Now uses the improved TagSelection component for consistency.
+ * Now uses the improved AeonTagSelection component for consistency.
  */
 @Composable
 fun BudgetTagSelection(
@@ -21,7 +21,7 @@ fun BudgetTagSelection(
         Tag(index.toLong(), name, 0xFF6200EE.toInt()) // Default color if not provided
     }
 
-    TagSelection(
+    AeonTagSelection(
         tags = tagList,
         selectedTags = selectedTags.toList(),
         onTagsSelected = { onSelectionChanged(it.toSet()) },

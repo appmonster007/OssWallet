@@ -78,23 +78,25 @@ fun TemplateFormBody(
                 payeeSuggestions = state.uniquePayees,
                 additionalContent = {
                     AeonEntryMetadataSection(
-                        linkedTransactions = state.displayLinkedTxs,
+                        state = AeonMetadataState(
+                            paymentMethod = state.paymentMethod,
+                            statusLabel = state.transactionStatus.displayName,
+                            statusIcon = state.transactionStatus.iconName,
+                            statusColor = state.transactionStatus.colorHex,
+                            isWarrantyEnabled = state.isWarrantyEnabled,
+                            warrantyExpiration = state.warrantyExpirationMillis,
+                            location = if (state.latitude != null && state.longitude != null) state.latitude!! to state.longitude!! else null,
+                            linkedTransactions = state.displayLinkedTxs
+                        ),
                         accounts = state.accounts,
                         categories = state.categories,
                         is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(TemplateEntryEvent.RemoveLinkedTransaction(state.templateId ?: -1L, txId)) },
-                        paymentMethod = state.paymentMethod,
                         onPaymentMethodClick = { onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(true)) },
-                        statusLabel = state.transactionStatus.displayName,
-                        statusIconName = state.transactionStatus.iconName,
-                        statusColorHex = state.transactionStatus.colorHex,
                         onStatusClick = { onEvent(TemplateEntryEvent.ShowStatusSheet(true)) },
-                        warrantyEnabled = state.isWarrantyEnabled,
                         onWarrantyToggle = { onEvent(TemplateEntryEvent.SetWarrantyEnabled(it)) },
-                        warrantyExpirationMillis = state.warrantyExpirationMillis,
                         onWarrantyDateClick = { onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(true)) },
-                        locationCoords = if (state.latitude != null && state.longitude != null) state.latitude!! to state.longitude!! else null,
                         onLocationClick = { onEvent(TemplateEntryEvent.ShowLocationSheet(true)) },
                         locationLabel = "Template Location"
                     )

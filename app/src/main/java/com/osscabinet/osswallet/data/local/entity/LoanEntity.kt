@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import java.math.BigDecimal
 
 @Entity(
@@ -11,7 +13,8 @@ import java.math.BigDecimal
     indices = [
         Index(value = ["profileId"]),
         Index(value = ["status"]),
-        Index(value = ["linkedAccountId"])
+        Index(value = ["linkedAccountId"]),
+        Index(value = ["filterId"])
     ],
     foreignKeys = [
         ForeignKey(
@@ -19,6 +22,12 @@ import java.math.BigDecimal
             parentColumns = ["id"],
             childColumns = ["linkedAccountId"],
             onDelete = ForeignKey.SET_NULL
+        ),
+        ForeignKey(
+            entity = FilterEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["filterId"],
+            onDelete = ForeignKey.CASCADE
         )
     ]
 )
@@ -36,6 +45,14 @@ data class LoanEntity(
     val status: String = "ACTIVE",
     val profileId: Int,
     val note: String = "",
-    val categoryIds: String = "",
-    val tags: String = ""
+    val filterId: Long
+)
+
+data class LoanWithFilter(
+    @Embedded val loan: LoanEntity,
+    @Relation(
+        parentColumn = "filterId",
+        entityColumn = "id"
+    )
+    val filter: FilterEntity
 )

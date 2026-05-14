@@ -7,6 +7,8 @@ import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -84,7 +86,7 @@ object LoanService {
 
     /**
      * Calculate loan summary from transactions instead of loan payments.
-     * Filters transactions based on loan's account, categories, and tags.
+     * Filters transactions based on loan's linked filter.
      */
     fun buildSummaryFromTransactions(
         loan: Loan,
@@ -107,24 +109,15 @@ object LoanService {
     }
 
     /**
-     * Filter transactions for a specific loan based on account, categories, and tags.
+     * Filter transactions for a specific loan based on its filter details.
      */
     fun filterTransactionsForLoan(loan: Loan, transactions: List<Transaction>): List<Transaction> {
-        return transactions.filter { transaction ->
-            // Filter by linked account if specified
-            val accountMatch =
-                loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
-
-            // Filter by categories if specified
-            val categoryMatch = loan.categoryIds.isEmpty() ||
-                    transaction.categoryId in loan.categoryIds
-
-            // Filter by tags if specified (transaction must have at least one matching tag)
-            val tagMatch = loan.tags.isEmpty() ||
-                    transaction.tags.any { it in loan.tags }
-
-            accountMatch && categoryMatch && tagMatch
-        }.sortedByDescending { it.timestamp }
+        val filter = TransactionFilter(
+            categoryIds = loan.categoryIds,
+            tags = loan.tags,
+            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId)
+        )
+        return TransactionFilterService.filterTransactions(transactions, filter)
     }
 
     fun settledCopy(loan: Loan): Loan = loan.copy(status = LoanStatus.SETTLED)

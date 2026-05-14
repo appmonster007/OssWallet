@@ -1,0 +1,130 @@
+package com.osscabinet.ossWallet.ui.components.entry
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.*
+
+/**
+ * A generic full-screen selection sheet that provides a unified search and selection experience.
+ * Used as a base for Account, Category, and other entity selections.
+ */
+@Composable
+fun <T, ID> AeonSelectionSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    items: List<T>,
+    selectedIds: Set<ID>,
+    onSelectionChange: (Set<ID>) -> Unit,
+    idMapper: (T) -> ID,
+    labelMapper: (T) -> String,
+    modifier: Modifier = Modifier,
+    mode: AeonSelectMode = AeonSelectMode.SINGLE,
+    iconMapper: (T) -> ImageVector? = { null },
+    colorMapper: (T) -> Color? = { null },
+    detailMapper: (T) -> String? = { null },
+    searchPlaceholder: String = "Search...",
+    emptyMessage: String? = null,
+    isHierarchical: Boolean = false,
+    parentIdMapper: ((T) -> ID?)? = null,
+    noneLabel: String? = null,
+    noneIcon: ImageVector = Icons.Rounded.Block,
+    headerContent: @Composable (ColumnScope.() -> Unit)? = null,
+    footerContent: @Composable (ColumnScope.() -> Unit)? = null
+) {
+    var query by remember { mutableStateOf("") }
+    
+    val filteredItems = remember(query, items) {
+        if (query.isBlank()) items
+        else items.filter { labelMapper(it).contains(query, ignoreCase = true) }
+    }
+
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        AeonSelectionScreen(
+            title = title,
+            onBack = onDismiss
+        ) { padding ->
+            Column(
+                modifier = modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                headerContent?.invoke(this)
+
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = searchPlaceholder
+                )
+                
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (filteredItems.isEmpty() && query.isNotBlank()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = emptyMessage ?: "No matches found for \"$query\"",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            if (isHierarchical && parentIdMapper != null) {
+                                AeonHierarchicalHybridSelector(
+                                    items = if (query.isBlank()) items else filteredItems,
+                                    mode = mode,
+                                    selectedIds = selectedIds,
+                                    onSelectionChange = {
+                                        onSelectionChange(it)
+                                        if (mode == AeonSelectMode.SINGLE) onDismiss()
+                                    },
+                                    idMapper = idMapper,
+                                    labelMapper = labelMapper,
+                                    parentIdMapper = parentIdMapper,
+                                    iconMapper = iconMapper,
+                                    colorMapper = colorMapper,
+                                    noneLabel = noneLabel,
+                                    noneIcon = noneIcon
+                                )
+                            } else {
+                                AeonHybridSelector(
+                                    items = filteredItems,
+                                    mode = mode,
+                                    selectedIds = selectedIds,
+                                    onSelectionChange = {
+                                        onSelectionChange(it)
+                                        if (mode == AeonSelectMode.SINGLE) onDismiss()
+                                    },
+                                    idMapper = idMapper,
+                                    labelMapper = labelMapper,
+                                    iconMapper = iconMapper,
+                                    colorMapper = colorMapper,
+                                    detailMapper = detailMapper
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                footerContent?.invoke(this)
+            }
+        }
+    }
+}

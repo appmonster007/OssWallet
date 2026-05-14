@@ -114,23 +114,25 @@ fun PlannedPaymentFormBody(
                 payeeSuggestions = state.uniquePayees,
                 additionalContent = {
                     AeonEntryMetadataSection(
-                        linkedTransactions = state.displayLinkedTxs,
+                        state = AeonMetadataState(
+                            paymentMethod = state.paymentMethod,
+                            statusLabel = state.transactionStatus.displayName,
+                            statusIcon = state.transactionStatus.iconName,
+                            statusColor = state.transactionStatus.colorHex,
+                            isWarrantyEnabled = state.isWarrantyEnabled,
+                            warrantyExpiration = state.warrantyExpirationMillis,
+                            location = if (state.latitude != null && state.longitude != null) state.latitude to state.longitude else null,
+                            linkedTransactions = state.displayLinkedTxs
+                        ),
                         accounts = state.accounts,
                         categories = state.categories,
                         is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId)) },
-                        paymentMethod = state.paymentMethod,
                         onPaymentMethodClick = { onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
-                        statusLabel = state.transactionStatus.displayName,
-                        statusIconName = state.transactionStatus.iconName,
-                        statusColorHex = state.transactionStatus.colorHex,
                         onStatusClick = { onEvent(PlannedPaymentEntryEvent.ShowTransactionStatusSheet(true)) },
-                        warrantyEnabled = state.isWarrantyEnabled,
                         onWarrantyToggle = { onEvent(PlannedPaymentEntryEvent.SetWarrantyEnabled(it)) },
-                        warrantyExpirationMillis = state.warrantyExpirationMillis,
                         onWarrantyDateClick = { onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(true)) },
-                        locationCoords = if (state.latitude != null && state.longitude != null) state.latitude to state.longitude else null,
                         onLocationClick = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },
                         locationLabel = "Payment Location",
                         additionalTopContent = {

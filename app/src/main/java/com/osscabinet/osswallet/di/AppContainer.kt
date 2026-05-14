@@ -198,11 +198,11 @@ class AppContainer(private val context: Context) {
     }
 
     val budgetRepository: BudgetRepository by lazy {
-        BudgetRepositoryImpl(db.budgetDao())
+        BudgetRepositoryImpl(db.budgetDao(), filterRepository)
     }
 
     val loanRepository: LoanRepository by lazy {
-        LoanRepositoryImpl(db.loanDao(), db.loanPaymentDao())
+        LoanRepositoryImpl(db.loanDao(), db.loanPaymentDao(), filterRepository)
     }
 
     private val queryCache: QueryCache by lazy { QueryCache() }

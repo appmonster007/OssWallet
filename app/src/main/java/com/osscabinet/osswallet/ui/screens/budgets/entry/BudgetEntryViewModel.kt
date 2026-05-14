@@ -3,7 +3,9 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -49,7 +51,12 @@ class BudgetEntryViewModel(
                             availableTags = tags,
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
-                            availableFilters = filters
+                            availableFilters = filters,
+                            selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else accounts.map { a -> a.id }.toSet(),
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
+                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { it.name }.toSet()
                         )
                     }
                 }
@@ -59,7 +66,17 @@ class BudgetEntryViewModel(
 
     fun initialize(budgetId: Long? = null) {
         if (budgetId == null) {
-            _state.update { it.copy(isEditMode = false, budgetId = null) }
+            _state.update { 
+                it.copy(
+                    isEditMode = false, 
+                    budgetId = null,
+                    selectedAccountIds = it.accounts.map { a -> a.id }.toSet(),
+                    selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
+                    selectedPaymentMethods = PaymentMethod.entries.toSet(),
+                    selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedTags = it.availableTags.map { it.name }.toSet()
+                ) 
+            }
             return
         }
 
@@ -183,8 +200,8 @@ class BudgetEntryViewModel(
                 )
             )
 
-            val filterId = if (filter.id == 0L) {
-                filterRepository.insertFilter(filter)
+            val filterId = if (filter.id == 0L || s.filterUsageCount > 1) {
+                filterRepository.insertFilter(filter.copy(id = 0L))
             } else {
                 filterRepository.updateFilter(filter)
                 filter.id

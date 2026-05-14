@@ -213,7 +213,7 @@ fun BudgetEntryScreen(
             AeonSelectionSheet(
                 title = "Track Transaction Types",
                 onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(false)) },
-                items = TransactionType.entries,
+                items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
                 selectedIds = state.selectedTrackTypes,
                 onSelectionChange = { ids ->
                     viewModel.onEvent(BudgetEntryEvent.SetTrackTypes(ids))

@@ -54,6 +54,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -112,12 +113,20 @@ fun BudgetDetailScreen(
 
     val budgetTransactions =
         remember(budget, absoluteTransactionsWithBalance) {
+            val (start, end) = BudgetService.getCurrentPeriodRange(budget, System.currentTimeMillis())
+            val budgetFilter = TransactionFilter(
+                categoryIds = budget.categoryIds,
+                accountIds = budget.accountIds,
+                tags = budget.tags,
+                paymentMethods = budget.paymentMethods,
+                statuses = budget.statuses,
+                linkedTransactionIds = budget.linkedTransactionIds,
+                transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null,
+                timelineRange = TimelineRange.CustomRange(start, end),
+                excludeFuture = false
+            )
             absoluteTransactionsWithBalance.filter { item ->
-                val transaction = item.transaction
-                val accountMatch = budget.accountIds.isEmpty() || transaction.accountId in budget.accountIds
-                val categoryMatch = budget.categoryIds.isEmpty() || transaction.categoryId in budget.categoryIds
-                val tagMatch = budget.tags.isEmpty() || transaction.tags.any { it in budget.tags }
-                accountMatch && categoryMatch && tagMatch
+                TransactionFilterService.matches(item.transaction, budgetFilter, start, end)
             }
         }
 

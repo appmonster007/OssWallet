@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
@@ -44,7 +46,13 @@ class FilterEntryViewModel(
                             accounts = accounts,
                             categories = categories,
                             allTransactions = transactions,
-                            availableTags = tags
+                            availableTags = tags,
+                            selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else accounts.map { a -> a.id }.toSet(),
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
+                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else transactions.map { t -> t.currency }.distinct().toSet(),
+                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { t -> t.name }.toSet()
                         )
                     }
                 }
@@ -54,7 +62,17 @@ class FilterEntryViewModel(
 
     fun initialize(filterId: Long? = null) {
         if (filterId == null || filterId == -1L) {
-            _state.update { it.copy(isEditMode = false, filterId = null) }
+            _state.update { 
+                it.copy(
+                    isEditMode = false, 
+                    filterId = null,
+                    selectedAccountIds = it.accounts.map { a -> a.id }.toSet(),
+                    selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
+                    selectedPaymentMethods = PaymentMethod.entries.toSet(),
+                    selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedTags = it.availableTags.map { t -> t.name }.toSet()
+                ) 
+            }
             return
         }
 
@@ -127,13 +145,13 @@ class FilterEntryViewModel(
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
             FilterEntryEvent.ResetFilter -> _state.update { it.copy(
                 transactionType = null,
-                selectedAccountIds = emptySet(),
-                selectedCategoryIds = emptySet(),
-                selectedPaymentMethods = emptySet(),
-                selectedStatuses = emptySet(),
+                selectedAccountIds = it.accounts.map { a -> a.id }.toSet(),
+                selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
+                selectedPaymentMethods = PaymentMethod.entries.toSet(),
+                selectedStatuses = TransactionStatus.entries.toSet(),
                 linkedTransactionIds = emptySet(),
-                selectedTags = emptySet(),
-                selectedCurrencies = emptySet(),
+                selectedTags = it.availableTags.map { t -> t.name }.toSet(),
+                selectedCurrencies = it.allTransactions.map { t -> t.currency }.distinct().toSet(),
                 queryNote = "",
                 isNoteRegex = false,
                 queryPayee = "",

@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
@@ -30,8 +29,8 @@ data class PlannedPaymentEntryState(
     val longitude: Double? = null,
     val isWarrantyEnabled: Boolean = false,
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
-    val transactionStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
-    val paymentMethod: String = "Cash",
+    val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val selectedTagNames: List<String> = emptyList(),
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
     val linkedTemplate: Template? = null,
@@ -49,6 +48,7 @@ data class PlannedPaymentEntryState(
     val showTransactionStatusSheet: Boolean = false,
     val showWarrantyDatePicker: Boolean = false,
     val showLocationSheet: Boolean = false,
+    val showLinkedTransactionSheet: Boolean = false,
     val showNumpad: Boolean = false,
     val showCurrencySheet: Boolean = false,
     val showTargetCurrencySheet: Boolean = false,
@@ -69,7 +69,10 @@ data class PlannedPaymentEntryState(
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
-    val existingPayment: PlannedPayment? = null
+    val existingPayment: PlannedPayment? = null,
+    val displayLinkedTxs: List<Transaction> = emptyList(),
+    val allTransactions: List<Transaction> = emptyList(),
+    val use24HourFormat: Boolean = false
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && (amount.toBigDecimalOrNull()?.signum() == 1)

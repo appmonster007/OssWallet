@@ -162,7 +162,6 @@ class TransactionEntryViewModel(
         }
 
         _state.value = _state.value.copy(
-            name = transaction.name,
             amount = transaction.amount.abs().toPlainString(),
             selectedCategoryId = transaction.categoryId,
             selectedTags = transaction.tags,
@@ -205,7 +204,6 @@ class TransactionEntryViewModel(
         }
 
         _state.value = currentState.copy(
-            name = prefill.name,
             amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString()
                 ?: prefill.amount,
             selectedCategoryId = prefill.categoryId,
@@ -255,7 +253,6 @@ class TransactionEntryViewModel(
      */
     fun onEvent(event: TransactionEntryEvent) {
         when (event) {
-            is TransactionEntryEvent.SetName -> update { it.copy(name = event.name) }
             is TransactionEntryEvent.SetAmount -> update { it.copy(amount = event.amount) }
             is TransactionEntryEvent.SetCategory -> update {
                 it.copy(selectedCategoryId = event.categoryId)
@@ -509,9 +506,7 @@ class TransactionEntryViewModel(
         }
 
         return TransactionRequest(
-            name = currentState.name.ifBlank {
-                currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction"
-            },
+            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
             amount = if (currentState.isIncome || currentState.isTransfer) {
                 currentState.amountValue
             } else {
@@ -568,12 +563,10 @@ class TransactionEntryViewModel(
                 currentState.splits.forEach { split ->
                     val splitAmount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val request = buildBaseRequest().copy(
+                        name = currentState.categories.find { it.id == (split.categoryId ?: currentState.selectedCategoryId) }?.name ?: "Transaction",
                         amount = if (currentState.isIncome) splitAmount else splitAmount.negate(),
                         categoryId = split.categoryId ?: currentState.selectedCategoryId,
-                        note = split.note,
-                        name = currentState.name.ifBlank {
-                            currentState.categories.find { it.id == (split.categoryId ?: currentState.selectedCategoryId) }?.name ?: "Transaction"
-                        }
+                        note = split.note
                     )
                     
                     val newId = transactionManager.handleSaveTransaction(null, request, profileId)
@@ -657,7 +650,7 @@ class TransactionEntryViewModel(
         }
 
         return TransactionRequest(
-            name = currentState.name,
+            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
             amount = BigDecimal.ZERO, // To be set by caller
             transactionType = when {
                 currentState.isIncome -> "income"

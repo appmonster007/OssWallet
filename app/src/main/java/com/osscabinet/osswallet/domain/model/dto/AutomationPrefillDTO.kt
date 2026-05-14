@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
-import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 
 /**
@@ -19,8 +18,8 @@ data class TemplatePrefillDTO(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
-    val status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
-    val paymentMethod: String?,
+    val status: TransactionStatus = TransactionStatus.CLEARED,
+    val paymentMethod: PaymentMethod? = null,
     val currency: String?,
     val tags: List<String>
 )

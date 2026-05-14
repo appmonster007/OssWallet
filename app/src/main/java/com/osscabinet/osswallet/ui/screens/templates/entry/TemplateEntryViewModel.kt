@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -37,8 +37,9 @@ class TemplateEntryViewModel(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags(),
-                    settingsRepository.decimalPrecision
-                ) { accounts, categories, tags, precision ->
+                    settingsRepository.decimalPrecision,
+                    transactionUseCases.getTransactions(profileId)
+                ) { accounts, categories, tags, precision, transactions ->
                     val payees = transactionUseCases.getUniquePayees(profileId)
                     val notes = transactionUseCases.getUniqueNotes(profileId)
                     
@@ -49,7 +50,8 @@ class TemplateEntryViewModel(
                             allTags = tags,
                             decimalPrecision = precision,
                             uniquePayees = payees,
-                            uniqueNotes = notes
+                            uniqueNotes = notes,
+                            allTransactions = transactions
                         )
                     }
                 }
@@ -78,7 +80,7 @@ class TemplateEntryViewModel(
                         warrantyExpirationMillis = prefill.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = prefill.warrantyExpiration != null,
                         transactionStatus = prefill.status,
-                        paymentMethod = prefill.paymentMethod ?: "Cash",
+                        paymentMethod = prefill.paymentMethod ?: PaymentMethod.CASH,
                         tags = prefill.tags
                     )
                 }
@@ -114,7 +116,7 @@ class TemplateEntryViewModel(
                         warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: "Cash",
+                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                         tags = template.tags
                     )
                 }
@@ -184,6 +186,16 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
+            is TemplateEntryEvent.SetLinkedTransactionIds -> {
+                val linkedTxs = _state.value.allTransactions.filter { event.ids.contains(it.id) }
+                _state.update { it.copy(displayLinkedTxs = linkedTxs) }
+            }
+            is TemplateEntryEvent.RemoveLinkedTransaction -> {
+                _state.update { state ->
+                    val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
+                    state.copy(displayLinkedTxs = newList)
+                }
+            }
             is TemplateEntryEvent.AddTag -> {
                 viewModelScope.launch {
                     tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = event.name, colorHex = event.color ?: -1))
@@ -210,6 +222,7 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update { it.copy(showWarrantyDatePicker = event.show) }
             is TemplateEntryEvent.ShowLocationSheet -> _state.update { it.copy(showLocationSheet = event.show) }
             is TemplateEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
+            is TemplateEntryEvent.ShowLinkedTransactionSheet -> _state.update { it.copy(showLinkedTransactionSheet = event.show) }
             is TemplateEntryEvent.ShowNumpad -> _state.update { it.copy(isNumpadVisible = event.show) }
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -284,7 +297,7 @@ class TemplateEntryViewModel(
                 longitude = s.longitude,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
-                paymentMethod = s.paymentMethod.ifBlank { null },
+                paymentMethod = s.paymentMethod,
                 currency = s.currency.ifBlank { "USD" },
                 tags = s.tags,
                 profileId = settingsRepository.currentProfileId.first()

@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.data.local.entity
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import java.math.BigDecimal
 
 @Entity(
@@ -34,8 +36,8 @@ data class TemplateEntity(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
-    val transactionStatus: String = "CLEARED",
-    val paymentMethod: String? = null,
+    val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
+    val paymentMethod: PaymentMethod? = null,
     val currency: String,
     val tags: String = "", // Comma-separated tags
     val isStarred: Boolean = false,

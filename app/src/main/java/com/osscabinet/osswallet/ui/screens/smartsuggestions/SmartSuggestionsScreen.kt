@@ -20,7 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
-import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -218,7 +218,7 @@ private fun SuggestionListItem(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        DetailItem("Method", pattern.paymentMethod, Modifier.weight(1f))
+                        DetailItem("Method", pattern.paymentMethod.displayName, Modifier.weight(1f))
                         if (pattern.note.isNotEmpty()) {
                             DetailItem("Note", pattern.note, Modifier.weight(1f))
                         }
@@ -304,7 +304,7 @@ private fun SmartSuggestionsScreenPreview() {
             averageAmount = BigDecimal("-15.99"),
             currency = "USD",
             transactionType = "expense",
-            paymentMethod = "Credit Card",
+            paymentMethod = PaymentMethod.CREDIT_CARD,
             note = "Monthly plan",
             tags = listOf("subscription", "streaming"),
             latitude = null,
@@ -323,7 +323,7 @@ private fun SmartSuggestionsScreenPreview() {
             averageAmount = BigDecimal("-85.40"),
             currency = "USD",
             transactionType = "expense",
-            paymentMethod = "Debit Card",
+            paymentMethod = PaymentMethod.DEBIT_CARD,
             note = "",
             tags = emptyList(),
             latitude = null,

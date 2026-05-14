@@ -23,9 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
@@ -149,10 +147,9 @@ fun FilterFields(
             )
         }
         "PaymentMethods" -> {
-            val paymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "Other")
             MultiSelectionDialog(
                 title = "Select Payment Methods",
-                items = paymentMethods,
+                items = PaymentMethod.entries,
                 selectedItems = filter.paymentMethods,
                 onDismissRequest = { activeDialog = null },
                 onConfirm = { selected ->
@@ -160,7 +157,7 @@ fun FilterFields(
                     activeDialog = null
                 },
                 idMapper = { it },
-                labelMapper = { it }
+                labelMapper = { it.displayName }
             )
         }
     }

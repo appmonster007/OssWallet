@@ -30,7 +30,7 @@ fun PlannedPaymentWithTemplate.toDomain(): PlannedPayment = PlannedPayment(
         lastTriggeredDate = payment.schedule.lastTriggeredDate
     ),
     autoConfirm = payment.autoConfirm,
-    status = PlannedPaymentStatus.valueOf(payment.status),
+    status = payment.status,
     profileId = payment.profileId
 )
 
@@ -49,7 +49,7 @@ fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
         lastTriggeredDate = schedule.lastTriggeredDate
     ),
     autoConfirm = autoConfirm,
-    status = status.name,
+    status = status,
     profileId = profileId
 )
 
@@ -58,7 +58,7 @@ fun PlannedPaymentOccurrenceEntity.toDomain(): PlannedPaymentOccurrence = Planne
     plannedPaymentId = plannedPaymentId,
     scheduledDate = scheduledDate,
     generatedTransactionId = generatedTransactionId,
-    status = OccurrenceStatus.valueOf(status)
+    status = status
 )
 
 fun PlannedPaymentOccurrence.toEntity(): PlannedPaymentOccurrenceEntity = PlannedPaymentOccurrenceEntity(
@@ -66,5 +66,5 @@ fun PlannedPaymentOccurrence.toEntity(): PlannedPaymentOccurrenceEntity = Planne
     plannedPaymentId = plannedPaymentId,
     scheduledDate = scheduledDate,
     generatedTransactionId = generatedTransactionId,
-    status = status.name
+    status = status
 )

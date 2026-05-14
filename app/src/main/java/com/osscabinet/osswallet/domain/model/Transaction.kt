@@ -16,7 +16,7 @@ data class Transaction(
     val accountId: String?,
     val categoryId: Long,
     val tags: List<String> = emptyList(),
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val payee: String = "",
     val note: String = "",
     val sourcePlannedPaymentId: Long? = null,

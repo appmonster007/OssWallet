@@ -2,10 +2,10 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
 
 /**
  * Container for all bottom sheets used in transaction entry.
+ * Uses shared components to ensure consistency.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,9 +22,7 @@ fun TransactionEntrySheets(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-
-    // Date/Time Picker (AeonDateTimePicker with custom UI)
+    // Date/Time Picker
     if (state.showDatePicker) {
         AeonDateTimePicker(
             initialDateTime = state.selectedDateMillis,
@@ -36,7 +35,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Category Selection Screen
+    // Category Selection
     if (state.showCategorySheet) {
         TransactionCategorySelection(
             categories = state.categories,
@@ -49,7 +48,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Account Selection Screen
+    // Account Selection
     if (state.showAccountSheet) {
         TransactionAccountSelection(
             accounts = state.accounts,
@@ -62,7 +61,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Target Account Selection Screen (for transfers)
+    // Target Account Selection (for transfers)
     if (state.showTargetAccountSheet) {
         TransactionAccountSelection(
             accounts = state.accounts.filter { it.id != state.selectedAccount?.id },
@@ -77,20 +76,23 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Template Selection Screen
+    // Template Selection
     if (state.showTemplateSheet) {
-        TemplateSelection(
+        AeonTemplateSelection(
             templates = state.templates,
             categories = state.categories,
             onTemplateSelected = { template ->
-                onEvent(TransactionEntryEvent.ApplyTemplate(template))
+                if (template != null) {
+                    onEvent(TransactionEntryEvent.ApplyTemplate(template))
+                }
                 onEvent(TransactionEntryEvent.ShowTemplateSheet(false))
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowTemplateSheet(false)) }
+            onDismiss = { onEvent(TransactionEntryEvent.ShowTemplateSheet(false)) },
+            showCreateNew = false
         )
     }
 
-    // Linked Transaction Selection Screen
+    // Linked Transaction Selection
     if (state.showLinkedTransactionSheet) {
         LinkedTransactionSelection(
             transactions = state.transactions,
@@ -106,7 +108,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Tag Selection Screen
+    // Tag Selection
     if (state.showTagSheet) {
         TagSelection(
             tags = state.allTags,
@@ -116,13 +118,13 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { tag, color -> onEvent(TransactionEntryEvent.AddTag(tag, color)) },
-            onEditTag = { tag -> /* We could support edit from here too if desired */ },
+            onEditTag = { _ -> /* Support edit if needed */ },
             onDeleteTag = { tag -> onEvent(TransactionEntryEvent.DeleteTag(tag)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTagSheet(false)) }
         )
     }
 
-    // Payment Method Selection Screen
+    // Payment Method Selection
     if (state.showPaymentMethodSheet) {
         PaymentMethodSelection(
             selectedMethod = state.paymentMethod,
@@ -134,7 +136,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Status Selection Screen
+    // Status Selection
     if (state.showStatusSheet) {
         StatusSelection(
             selectedStatus = state.status,
@@ -146,7 +148,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Warranty Date/Time Picker (AeonDateTimePicker with custom UI)
+    // Warranty Date Picker
     if (state.showWarrantyDatePicker) {
         AeonDateTimePicker(
             initialDateTime = state.warrantyExpirationMillis,
@@ -159,7 +161,7 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Location Selection Screen
+    // Location Selection
     if (state.showLocationSheet) {
         LocationSelection(
             currentCoords = state.locationCoords,

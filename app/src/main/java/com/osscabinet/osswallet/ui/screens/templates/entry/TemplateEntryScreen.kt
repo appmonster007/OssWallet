@@ -51,76 +51,8 @@ fun TemplateEntryScreen(
         )
 
         TemplateEntrySheets(
-            isNumpadVisible = state.isNumpadVisible,
-            onDismissNumpad = { viewModel.onEvent(TemplateEntryEvent.ShowNumpad(false)) },
-            amount = state.amount,
-            onAmountChange = { viewModel.onEvent(TemplateEntryEvent.SetAmount(it)) },
-            onTypeChangedFromNumpad = { newType ->
-                val type = when (newType) {
-                    "income" -> 1
-                    "transfer" -> 2
-                    else -> 0
-                }
-                viewModel.onEvent(TemplateEntryEvent.SetTransactionType(type))
-            },
-            transactionType = state.transactionType,
-            decimalPrecision = state.decimalPrecision,
-            showAccountSheet = state.showAccountSheet,
-            onDismissAccountSheet = { viewModel.onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
-            showTargetAccountSheet = state.showTargetAccountSheet,
-            onDismissTargetAccountSheet = { viewModel.onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
-            accounts = state.accounts,
-            selectedAccount = state.selectedAccount,
-            onAccountSelected = {
-                viewModel.onEvent(TemplateEntryEvent.SetAccount(it?.id))
-                viewModel.onEvent(TemplateEntryEvent.ShowAccountSheet(false))
-            },
-            targetAccount = state.selectedTargetAccount,
-            onTargetAccountSelected = {
-                viewModel.onEvent(TemplateEntryEvent.SetTargetAccount(it?.id))
-                viewModel.onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false))
-            },
-            showCategorySheet = state.showCategorySheet,
-            onDismissCategorySheet = { viewModel.onEvent(TemplateEntryEvent.ShowCategorySheet(false)) },
-            categories = state.categories,
-            selectedCategoryId = state.categoryId,
-            onCategorySelected = { _, id ->
-                viewModel.onEvent(TemplateEntryEvent.SetCategory(id))
-                viewModel.onEvent(TemplateEntryEvent.ShowCategorySheet(false))
-            },
-            showPaymentMethodSheet = state.showPaymentMethodSheet,
-            onDismissPaymentMethodSheet = { viewModel.onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false)) },
-            paymentMethod = state.paymentMethod,
-            onPaymentMethodSelected = { 
-                viewModel.onEvent(TemplateEntryEvent.SetPaymentMethod(it))
-                viewModel.onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false))
-            },
-            showTagSheet = state.showTagSheet,
-            onDismissTagSheet = { viewModel.onEvent(TemplateEntryEvent.ShowTagSheet(false)) },
-            allTags = state.allTags,
-            selectedTags = state.tags,
-            onTagsSelected = { viewModel.onEvent(TemplateEntryEvent.SetTags(it)) },
-            onAddTag = { name, color -> viewModel.onEvent(TemplateEntryEvent.AddTag(name, color)) },
-            onEditTag = { viewModel.onEvent(TemplateEntryEvent.UpdateTag(it)) },
-            onDeleteTag = { viewModel.onEvent(TemplateEntryEvent.DeleteTag(it)) },
-            showCurrencySheet = state.showCurrencySheet,
-            onDismissCurrencySheet = { viewModel.onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) },
-            currency = state.currency,
-            onCurrencySelected = { 
-                viewModel.onEvent(TemplateEntryEvent.SetCurrency(it))
-                viewModel.onEvent(TemplateEntryEvent.ShowCurrencySheet(false))
-            },
-            showTargetCurrencySheet = state.showTargetCurrencySheet,
-            onDismissTargetCurrencySheet = { viewModel.onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
-            targetCurrency = state.targetCurrency ?: "USD",
-            onTargetCurrencySelected = { 
-                viewModel.onEvent(TemplateEntryEvent.SetTargetCurrency(it))
-                viewModel.onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false))
-            },
-            showExchangeRateDialog = state.showExchangeRateDialog,
-            onDismissExchangeRateDialog = { viewModel.onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false)) },
-            exchangeRate = state.transferRate,
-            onExchangeRateChanged = { viewModel.onEvent(TemplateEntryEvent.SetTransferRate(it)) }
+            state = state,
+            onEvent = viewModel::onEvent
         )
 
         AeonConfirmDeleteDialog(

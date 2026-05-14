@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import java.math.BigDecimal
 
 @Entity(
@@ -30,7 +31,7 @@ data class PlannedPaymentEntity(
     val templateId: Long,
     @Embedded val schedule: RecurrenceScheduleEntity,
     val autoConfirm: Boolean = false,
-    val status: String = "ACTIVE",
+    val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
     val profileId: Int = 1
 )
 

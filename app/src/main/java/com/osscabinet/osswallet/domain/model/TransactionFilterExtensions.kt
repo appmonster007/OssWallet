@@ -113,13 +113,13 @@ fun TransactionFilter.withAmountRange(min: BigDecimal?, max: BigDecimal?): Trans
 /**
  * Creates a filter with a specific payment method.
  */
-fun TransactionFilter.withPaymentMethod(method: String): TransactionFilter =
+fun TransactionFilter.withPaymentMethod(method: PaymentMethod): TransactionFilter =
     copy(paymentMethods = listOf(method))
 
 /**
  * Creates a filter with specific payment methods.
  */
-fun TransactionFilter.withPaymentMethods(methods: List<String>): TransactionFilter =
+fun TransactionFilter.withPaymentMethods(methods: List<PaymentMethod>): TransactionFilter =
     copy(paymentMethods = methods)
 
 /**

@@ -1,10 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -31,7 +27,7 @@ data class TemplateEntryState(
     val isWarrantyEnabled: Boolean = false,
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val tags: List<String> = emptyList(),
 
     // UI State
@@ -46,6 +42,7 @@ data class TemplateEntryState(
     val showExchangeRateDialog: Boolean = false,
     val showWarrantyDatePicker: Boolean = false,
     val showLocationSheet: Boolean = false,
+    val showLinkedTransactionSheet: Boolean = false,
     val isNumpadVisible: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val isLinkedToPlannedPayment: Boolean = false,
@@ -62,7 +59,10 @@ data class TemplateEntryState(
     val templateId: Long? = null,
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false,
-    val prefillDto: TransactionPrefillDTO? = null
+    val prefillDto: TransactionPrefillDTO? = null,
+    val displayLinkedTxs: List<Transaction> = emptyList(),
+    val allTransactions: List<Transaction> = emptyList(),
+    val use24HourFormat: Boolean = false
 ) {
     val selectedAccount: Account? get() = accounts.find { it.id == accountId }
     val selectedTargetAccount: Account? get() = accounts.find { it.id == targetAccountId }

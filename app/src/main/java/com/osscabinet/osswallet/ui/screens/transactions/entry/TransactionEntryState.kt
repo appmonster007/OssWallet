@@ -1,11 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -15,11 +10,10 @@ import java.math.BigDecimal
  */
 data class TransactionEntryState(
     // Core form fields
-    val name: String = "",
     val amount: String = "",
     val selectedCategoryId: Long = 1002L,
     val selectedTags: List<String> = emptyList(),
-    val paymentMethod: String = "Cash",
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val transactionType: Int = 0, // 0: Expense, 1: Income, 2: Transfer
     val selectedDateMillis: Long = System.currentTimeMillis(),

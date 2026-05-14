@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
-import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 
 sealed class TemplateEntryEvent {
@@ -18,12 +18,14 @@ sealed class TemplateEntryEvent {
     data class SetLocation(val location: String, val lat: Double? = null, val lng: Double? = null) : TemplateEntryEvent()
     data class SetWarrantyEnabled(val enabled: Boolean) : TemplateEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : TemplateEntryEvent()
-    data class SetTransactionStatus(val status: com.osscabinet.ossWallet.domain.model.TransactionStatus) : TemplateEntryEvent()
-    data class SetPaymentMethod(val method: String) : TemplateEntryEvent()
+    data class SetTransactionStatus(val status: TransactionStatus) : TemplateEntryEvent()
+    data class SetPaymentMethod(val method: PaymentMethod) : TemplateEntryEvent()
     data class SetTags(val tags: List<String>) : TemplateEntryEvent()
     data class AddTag(val name: String, val color: Int? = null) : TemplateEntryEvent()
     data class UpdateTag(val tag: Tag) : TemplateEntryEvent()
     data class DeleteTag(val tag: Tag) : TemplateEntryEvent()
+    data class SetLinkedTransactionIds(val ids: List<Long>) : TemplateEntryEvent()
+    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) : TemplateEntryEvent()
 
     // Sheet visibility
     data class ShowAccountSheet(val show: Boolean) : TemplateEntryEvent()
@@ -38,6 +40,7 @@ sealed class TemplateEntryEvent {
     data class ShowLocationSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowNumpad(val show: Boolean) : TemplateEntryEvent()
+    data class ShowLinkedTransactionSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 
     // Navigation

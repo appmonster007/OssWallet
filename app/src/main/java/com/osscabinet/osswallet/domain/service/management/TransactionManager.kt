@@ -45,12 +45,15 @@ class TransactionManager(
     ): Long {
         val targetAccountId = request.targetAccountId
         val sourceTransaction = (existingTransaction ?: Transaction(
-            name = "", amount = BigDecimal.ZERO,
-            transactionType = "expense", accountId = request.accountId,
-            currency = request.currency, timestamp = request.timestamp,
+            id = 0,
+            name = request.name,
+            amount = BigDecimal.ZERO,
+            timestamp = request.timestamp,
+            currency = request.currency,
+            transactionType = "expense",
+            accountId = request.accountId,
             categoryId = 1003L
         )).copy(
-            name = request.name.ifBlank { "Transfer" },
             amount = request.amount.negate(),
             transactionType = "expense",
             accountId = request.accountId,
@@ -123,12 +126,15 @@ class TransactionManager(
     // if provided so that updates preserve the original id and any unrelated fields.
     private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction =
         (base ?: Transaction(
-            name = "", amount = BigDecimal.ZERO,
-            transactionType = transactionType, accountId = accountId,
-            currency = currency, timestamp = timestamp,
+            id = 0,
+            name = name,
+            amount = BigDecimal.ZERO,
+            timestamp = timestamp,
+            currency = currency,
+            transactionType = transactionType,
+            accountId = accountId,
             categoryId = categoryId
         )).copy(
-            name = name,
             amount = amount,
             transactionType = transactionType,
             accountId = accountId,

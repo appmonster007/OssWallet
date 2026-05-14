@@ -274,28 +274,27 @@ class DashboardViewModel(
                 plannedPaymentId = payment.id,
                 scheduledDate = payment.schedule.nextDueDate
             )
-            val template = payment.template
-            val typeStr = when (template.transactionType) {
+            val typeStr = when (payment.transactionType) {
                 1 -> "income"
                 2 -> "transfer"
                 else -> "expense"
             }
             val request = TransactionRequest(
-                name = template.name,
-                amount = template.amount,
+                name = payment.name,
+                amount = payment.amount,
                 transactionType = typeStr,
-                accountId = template.accountId ?: "",
-                currency = template.currency,
-                categoryId = template.categoryId,
-                tags = template.tags,
-                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
+                accountId = payment.accountId ?: "",
+                currency = payment.currency,
+                categoryId = payment.categoryId,
+                tags = payment.tags,
+                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
                 timestamp = occurrence.scheduledDate,
-                payee = template.payee ?: "",
-                note = template.note ?: "",
-                isTransfer = template.transactionType == 2,
-                targetAccountId = template.targetAccountId,
-                targetCurrency = template.targetCurrency,
-                transferRate = template.transferRate
+                payee = payment.payee ?: "",
+                note = payment.note ?: "",
+                isTransfer = payment.transactionType == 2,
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                transferRate = payment.transferRate
             )
             val transactionId = manager.handleSaveTransaction(null, request, profileId)
             repo.upsertOccurrence(

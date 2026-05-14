@@ -75,5 +75,5 @@ data class PlannedPaymentEntryState(
     val use24HourFormat: Boolean = false
 ) {
     val canSave: Boolean
-        get() = name.isNotBlank() && (amount.toBigDecimalOrNull()?.signum() == 1)
+        get() = name.isNotBlank()
 }

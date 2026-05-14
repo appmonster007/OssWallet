@@ -103,26 +103,25 @@ data class TransactionPrefillDTO(
             payment: com.osscabinet.ossWallet.domain.model.PlannedPayment,
             scheduledDate: Long? = null
         ): TransactionPrefillDTO {
-            val template = payment.template
-            val typeStr = when (template.transactionType) {
+            val typeStr = when (payment.transactionType) {
                 1 -> "income"
                 2 -> "transfer"
                 else -> "expense"
             }
             return TransactionPrefillDTO(
-                name = template.name,
-                amount = template.amount.abs().toPlainString(),
-                categoryId = template.categoryId,
+                name = payment.name,
+                amount = payment.amount.abs().toPlainString(),
+                categoryId = payment.categoryId,
                 transactionType = typeStr,
-                accountId = template.accountId ?: "",
-                currency = template.currency ?: "USD",
-                tags = template.tags,
-                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                payee = template.payee ?: "",
-                note = template.note ?: "",
-                targetAccountId = template.targetAccountId,
-                targetCurrency = template.targetCurrency,
-                exchangeRate = template.transferRate.toPlainString(),
+                accountId = payment.accountId ?: "",
+                currency = payment.currency,
+                tags = payment.tags,
+                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                payee = payment.payee ?: "",
+                note = payment.note ?: "",
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                exchangeRate = payment.transferRate.toPlainString(),
                 sourcePlannedPaymentId = payment.id,
                 timestamp = scheduledDate ?: payment.schedule.nextDueDate
             )

@@ -1,18 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -20,35 +9,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.LocalOffer
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -56,13 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -100,7 +61,6 @@ fun PlannedPaymentDetailScreen(
         viewModel.getOccurrencesForPayment(plannedPaymentId)
     }
     val occurrences by occurrencesFlow.collectAsStateWithLifecycle(emptyList())
-    val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
 
     if (payment == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -120,11 +80,11 @@ fun PlannedPaymentDetailScreen(
         occurrences.filter { it.scheduledDate < now }.sortedByDescending { it.scheduledDate }
     }
 
-    val accountName = remember(payment.template.accountId, accounts) {
-        accounts.find { it.id == payment.template.accountId }?.name ?: payment.template.accountId?.take(8) ?: "Unknown"
+    val accountName = remember(payment.accountId, accounts) {
+        accounts.find { it.id == payment.accountId }?.name ?: payment.accountId?.take(8) ?: "Unknown"
     }
-    val categoryName = remember(payment.template.categoryId, categories) {
-        categories.find { it.id == payment.template.categoryId }?.name ?: "Unknown"
+    val categoryName = remember(payment.categoryId, categories) {
+        categories.find { it.id == payment.categoryId }?.name ?: "Unknown"
     }
 
     Scaffold(
@@ -132,7 +92,7 @@ fun PlannedPaymentDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        payment.template.name,
+                        payment.name,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp,
                         maxLines = 1,
@@ -147,22 +107,21 @@ fun PlannedPaymentDetailScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            val t = payment.template
                             templateViewModel?.addTemplate(
-                                name = t.name,
-                                categoryId = t.categoryId,
-                                amount = t.amount,
-                                transactionType = t.transactionType,
-                                accountId = t.accountId,
-                                targetAccountId = t.targetAccountId,
-                                targetCurrency = t.targetCurrency,
-                                transferRate = t.transferRate,
-                                note = t.note,
-                                payee = t.payee,
-                                location = t.location,
-                                paymentMethod = t.paymentMethod,
-                                currency = t.currency,
-                                tags = t.tags,
+                                name = payment.name,
+                                categoryId = payment.categoryId,
+                                amount = payment.amount,
+                                transactionType = payment.transactionType,
+                                accountId = payment.accountId,
+                                targetAccountId = payment.targetAccountId,
+                                targetCurrency = payment.targetCurrency,
+                                transferRate = payment.transferRate,
+                                note = payment.note,
+                                payee = payment.payee,
+                                location = payment.location,
+                                paymentMethod = payment.paymentMethod,
+                                currency = payment.currency,
+                                tags = payment.tags,
                                 profileId = payment.profileId
                             )
                         }
@@ -186,21 +145,21 @@ fun PlannedPaymentDetailScreen(
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ─── Hero card ───────────────────────────────────────────────────
+            // Hero card
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.template.transactionType == 1) TealHealthy else RedWarning
+                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == 1) TealHealthy else RedWarning
                     PlannedPaymentStatus.PAUSED -> Color.Gray
                     else -> Color.Gray
                 }
                 val recurrenceText =
                     PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
                 val formattedAmount =
-                    payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                    payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
                 val nextRelative = formatRelativeDate(payment.schedule.nextDueDate, now)
 
                 AeonExpressiveCard(
-                    title = payment.template.name,
+                    title = payment.name,
                     subtitle = recurrenceText,
                     accentColor = accentColor,
                     modifier = Modifier.fillMaxWidth()
@@ -214,20 +173,17 @@ fun PlannedPaymentDetailScreen(
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                             color = accentColor
                         )
-                    if (payment.template.currency != null) {
                         Text(
-                            payment.template.currency,
+                            payment.currency,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                             color = accentColor.copy(alpha = 0.7f),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                     }
-                    }
                     Spacer(Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val statusLabel =
-                            payment.status.name.lowercase().replaceFirstChar { it.uppercase() }
+                        val statusLabel = payment.status.displayName
                         val statusColor = when (payment.status) {
                             PlannedPaymentStatus.ACTIVE -> accentColor
                             PlannedPaymentStatus.PAUSED -> Color.Gray
@@ -245,7 +201,7 @@ fun PlannedPaymentDetailScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
-                        val typeLabel = when (payment.template.transactionType) {
+                        val typeLabel = when (payment.transactionType) {
                             1 -> "Income"
                             2 -> "Transfer"
                             else -> "Expense"
@@ -307,13 +263,13 @@ fun PlannedPaymentDetailScreen(
                 }
             }
 
-            // ─── Metadata card ───────────────────────────────────────────────
+            // Metadata card
             val hasMetadata = accounts.isNotEmpty() ||
-                    !payment.template.payee.isNullOrBlank() ||
-                    payment.template.paymentMethod != null ||
+                    !payment.payee.isNullOrBlank() ||
+                    payment.paymentMethod != null ||
                     categoryName != "Unknown" ||
-                    payment.template.tags.isNotEmpty() ||
-                    !payment.template.note.isNullOrBlank()
+                    payment.tags.isNotEmpty() ||
+                    !payment.note.isNullOrBlank()
             if (hasMetadata) {
                 item {
                     Surface(
@@ -332,31 +288,31 @@ fun PlannedPaymentDetailScreen(
                             if (accounts.isNotEmpty()) {
                                 DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
                             }
-                            if (!payment.template.payee.isNullOrBlank()) {
-                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.template.payee!!)
+                            if (!payment.payee.isNullOrBlank()) {
+                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.payee!!)
                             }
                             if (categoryName != "Unknown") {
                                 DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
                             }
-                            if (payment.template.paymentMethod != null) {
+                            if (payment.paymentMethod != null) {
                                 DetailMetaRow(
                                     Icons.Rounded.Payments,
                                     "Payment method",
-                                    payment.template.paymentMethod!!.displayName
+                                    payment.paymentMethod!!.displayName
                                 )
                             }
-                            if (payment.template.tags.isNotEmpty()) {
+                            if (payment.tags.isNotEmpty()) {
                                 DetailMetaRow(
                                     Icons.Rounded.LocalOffer,
                                     "Tags",
-                                    payment.template.tags.joinToString(" · ")
+                                    payment.tags.joinToString(" · ")
                                 )
                             }
-                            if (!payment.template.note.isNullOrBlank()) {
+                            if (!payment.note.isNullOrBlank()) {
                                 DetailMetaRow(
                                     Icons.AutoMirrored.Rounded.Notes,
                                     "Note",
-                                    payment.template.note!!,
+                                    payment.note!!,
                                     singleLine = false
                                 )
                             }
@@ -365,7 +321,7 @@ fun PlannedPaymentDetailScreen(
                 }
             }
 
-            // ─── Upcoming occurrences ────────────────────────────────────────
+            // Upcoming occurrences
             if (upcomingItems.isNotEmpty()) {
                 item {
                     ManagementSectionHeader(
@@ -394,7 +350,7 @@ fun PlannedPaymentDetailScreen(
                 }
             }
 
-            // ─── History ─────────────────────────────────────────────────────
+            // History
             if (pastOccurrences.isNotEmpty()) {
                 item {
                     ManagementSectionHeader(
@@ -469,7 +425,7 @@ private fun OccurrenceItem(
     val iconColor = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.secondary
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
     val formattedAmount =
-        item.plannedPayment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+        item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
 
     Surface(
         color = if (item.isOverdue)
@@ -512,7 +468,7 @@ private fun OccurrenceItem(
                     color = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "$formattedAmount ${item.plannedPayment.template.currency ?: ""}",
+                    "$formattedAmount ${item.plannedPayment.currency}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -648,7 +604,7 @@ private fun PastOccurrenceItem(
     payment: PlannedPayment
 ) {
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
-    val formattedAmount = payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
         OccurrenceStatus.CONFIRMED -> Triple("Confirmed", TealHealthy, Icons.Rounded.CheckCircle)
         OccurrenceStatus.SKIPPED -> Triple("Skipped", Color.Gray, Icons.Rounded.Cancel)
@@ -692,7 +648,7 @@ private fun PastOccurrenceItem(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
                 Text(
-                    "$formattedAmount ${payment.template.currency ?: ""}",
+                    "$formattedAmount ${payment.currency}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )

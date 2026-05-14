@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
+import java.math.BigDecimal
+
 enum class RecurrenceType {
     ONE_TIME,
     DAILY,
@@ -20,10 +22,27 @@ enum class PlannedPaymentStatus(
     ACTIVE("Active", "CheckCircle", "#4CAF50"),
     PAUSED("Paused", "PauseCircle", "#FFC107"),
     COMPLETED("Completed", "CheckCircle", "#2196F3"),
-    CANCELLED("Cancelled", "Cancel", "#F44336")
+    CANCELLED("Cancelled", "Cancel", "#F44336");
+
+    companion object {
+        fun fromString(value: String): PlannedPaymentStatus {
+            return entries.find { 
+                it.name.equals(value, ignoreCase = true) || 
+                it.displayName.equals(value, ignoreCase = true) 
+            } ?: ACTIVE
+        }
+    }
 }
 
-enum class OccurrenceStatus { PENDING, CONFIRMED, SKIPPED }
+enum class OccurrenceStatus { 
+    PENDING, CONFIRMED, SKIPPED;
+
+    companion object {
+        fun fromString(value: String): OccurrenceStatus {
+            return entries.find { it.name.equals(value, ignoreCase = true) } ?: PENDING
+        }
+    }
+}
 
 data class RecurrenceRule(
     val type: RecurrenceType,
@@ -46,12 +65,29 @@ data class PaymentSchedule(
 
 data class PlannedPayment(
     val id: Long = 0,
-    val templateId: Long,
-    val template: Template, // Fully populated when loaded from repo
+    val name: String,
+    val categoryId: Long,
+    val amount: BigDecimal,
+    val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
+    val accountId: String? = null,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: BigDecimal = BigDecimal.ONE,
+    val note: String? = null,
+    val payee: String? = null,
+    val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val warrantyExpiration: Long? = null,
+    val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
+    val paymentMethod: PaymentMethod? = null,
+    val currency: String,
+    val tags: List<String> = emptyList(),
     val schedule: PaymentSchedule,
     val autoConfirm: Boolean = false,
     val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
-    val profileId: Int = 1
+    val profileId: Int = 1,
+    val templateId: Long? = null
 )
 
 data class PlannedPaymentOccurrence(

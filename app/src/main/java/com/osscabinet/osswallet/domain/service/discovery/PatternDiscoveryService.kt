@@ -202,14 +202,27 @@ object PatternDiscoveryService {
         val rule = pattern.recurrenceRule ?: return null
         
         return PlannedPayment(
-            templateId = 0L,
-            template = toTemplate(pattern),
+            id = 0,
+            name = pattern.name,
+            categoryId = pattern.categoryId,
+            amount = pattern.averageAmount,
+            transactionType = if (pattern.transactionType == "income") 1 else 0,
+            accountId = pattern.accountId,
+            note = pattern.note,
+            payee = pattern.payee,
+            location = if (pattern.latitude != null && pattern.longitude != null) "${pattern.latitude},${pattern.longitude}" else null,
+            latitude = pattern.latitude,
+            longitude = pattern.longitude,
+            paymentMethod = pattern.paymentMethod,
+            currency = pattern.currency,
+            tags = pattern.tags,
             schedule = PaymentSchedule(
                 recurrenceRule = rule,
                 startDate = pattern.lastDate,
                 nextDueDate = calculateNextDueDate(pattern.lastDate, rule)
             ),
-            autoConfirm = autoConfirm
+            autoConfirm = autoConfirm,
+            templateId = null
         )
     }
 

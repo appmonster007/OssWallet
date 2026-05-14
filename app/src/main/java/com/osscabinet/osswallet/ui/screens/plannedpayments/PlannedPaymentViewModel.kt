@@ -47,7 +47,11 @@ class PlannedPaymentViewModel(
             if (payment != null) {
                 plannedPaymentRepository.delete(paymentId)
                 if (deleteTemplate) {
-                    templateRepository.deleteTemplate(payment.template)
+                    payment.templateId?.let { tid ->
+                        templateRepository.getTemplateById(tid)?.let { template ->
+                            templateRepository.deleteTemplate(template)
+                        }
+                    }
                 }
             }
         }
@@ -72,34 +76,33 @@ class PlannedPaymentViewModel(
         profileId: Int
     ) {
         viewModelScope.launch {
-            val template = payment.template
             val categories = categoryRepository.getAllCategoriesSync()
-            val categoryName = categories.find { it.id == template.categoryId }?.name ?: "Planned Payment"
+            val categoryName = categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
             
             val request = TransactionRequest(
                 name = categoryName,
-                amount = template.amount,
-                transactionType = when(template.transactionType) {
+                amount = payment.amount,
+                transactionType = when(payment.transactionType) {
                     1 -> "income"
                     2 -> "transfer"
                     else -> "expense"
                 },
-                accountId = template.accountId ?: "",
-                currency = template.currency ?: "USD",
-                categoryId = template.categoryId,
-                tags = template.tags,
-                paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
+                accountId = payment.accountId ?: "",
+                currency = payment.currency,
+                categoryId = payment.categoryId,
+                tags = payment.tags,
+                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
                 timestamp = occurrence.scheduledDate,
-                payee = template.payee ?: "",
-                note = template.note ?: "",
-                latitude = template.latitude,
-                longitude = template.longitude,
-                warrantyExpiration = template.warrantyExpiration,
-                status = template.transactionStatus,
-                isTransfer = template.transactionType == 2,
-                targetAccountId = template.targetAccountId,
-                targetCurrency = template.targetCurrency,
-                transferRate = template.transferRate
+                payee = payment.payee ?: "",
+                note = payment.note ?: "",
+                latitude = payment.latitude,
+                longitude = payment.longitude,
+                warrantyExpiration = payment.warrantyExpiration,
+                status = payment.transactionStatus,
+                isTransfer = payment.transactionType == 2,
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                transferRate = payment.transferRate
             )
             val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
             plannedPaymentRepository.upsertOccurrence(

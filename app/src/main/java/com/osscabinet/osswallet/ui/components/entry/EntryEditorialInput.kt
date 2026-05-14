@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -41,9 +42,10 @@ fun EntryEditorialInput(
     var expanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     val filteredSuggestions = remember(value, suggestions) {
-        if (value.isBlank()) emptyList()
+        if (value.isBlank()) suggestions.take(5)
         else suggestions.filter {
             it.contains(value, ignoreCase = true) || it.fuzzyMatch(value)
         }.take(5)
@@ -138,6 +140,7 @@ fun EntryEditorialInput(
                     onClick = {
                         onValueChange(suggestion)
                         expanded = false
+                        focusManager.clearFocus()
                     }
                 )
             }

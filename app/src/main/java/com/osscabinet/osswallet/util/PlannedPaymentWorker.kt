@@ -12,7 +12,6 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import kotlinx.coroutines.flow.first
-import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
 class PlannedPaymentWorker(
@@ -32,35 +31,38 @@ class PlannedPaymentWorker(
         
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
-                val template = payment.template
-                val typeStr = when (template.transactionType) {
+                val typeStr = when (payment.transactionType) {
                     1 -> "income"
                     2 -> "transfer"
                     else -> "expense"
                 }
-                val amount = if (typeStr == "income") template.amount.abs() else template.amount.abs().negate()
+                val amount = if (typeStr == "income" || typeStr == "transfer") {
+                    payment.amount.abs()
+                } else {
+                    payment.amount.abs().negate()
+                }
 
                 val request = TransactionRequest(
-                    name = allCategories.find { it.id == template.categoryId }?.name ?: "Planned Payment",
+                    name = allCategories.find { it.id == payment.categoryId }?.name ?: "Planned Payment",
                     amount = amount,
                     transactionType = typeStr,
-                    accountId = template.accountId ?: "",
-                    currency = template.currency,
-                    categoryId = template.categoryId,
-                    tags = template.tags,
-                    paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
+                    accountId = payment.accountId ?: "",
+                    currency = payment.currency,
+                    categoryId = payment.categoryId,
+                    tags = payment.tags,
+                    paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
                     timestamp = payment.schedule.nextDueDate,
-                    payee = template.payee ?: "",
-                    note = template.note ?: "",
-                    latitude = template.latitude,
-                    longitude = template.longitude,
-                    warrantyExpiration = template.warrantyExpiration,
-                    status = template.transactionStatus,
+                    payee = payment.payee ?: "",
+                    note = payment.note ?: "",
+                    latitude = payment.latitude,
+                    longitude = payment.longitude,
+                    warrantyExpiration = payment.warrantyExpiration,
+                    status = payment.transactionStatus,
                     sourcePlannedPaymentId = payment.id,
-                    isTransfer = template.transactionType == 2,
-                    targetAccountId = template.targetAccountId,
-                    targetCurrency = template.targetCurrency,
-                    transferRate = template.transferRate
+                    isTransfer = payment.transactionType == 2,
+                    targetAccountId = payment.targetAccountId,
+                    targetCurrency = payment.targetCurrency,
+                    transferRate = payment.transferRate
                 )
 
                 val txId = container.transactionManager.handleSaveTransaction(null, request, profileId)
@@ -83,7 +85,7 @@ class PlannedPaymentWorker(
                     payment.copy(
                         schedule = payment.schedule.copy(
                             nextDueDate = nextDate,
-                            lastTriggeredDate = now
+                            lastTriggeredDate = payment.schedule.nextDueDate
                         )
                     )
                 )

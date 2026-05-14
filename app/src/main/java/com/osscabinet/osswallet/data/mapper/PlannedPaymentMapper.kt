@@ -2,41 +2,71 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
-import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentWithTemplate
 import com.osscabinet.ossWallet.data.local.entity.RecurrenceScheduleEntity
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.util.joinByComma
 
-fun PlannedPaymentWithTemplate.toDomain(): PlannedPayment = PlannedPayment(
-    id = payment.id,
-    templateId = payment.templateId,
-    template = template.toDomain(),
+fun PlannedPaymentEntity.toDomain(): PlannedPayment = PlannedPayment(
+    id = id,
+    name = name,
+    categoryId = categoryId,
+    amount = amount,
+    transactionType = transactionType,
+    accountId = accountId,
+    targetAccountId = targetAccountId,
+    targetCurrency = targetCurrency,
+    transferRate = transferRate,
+    note = note,
+    payee = payee,
+    location = location,
+    latitude = latitude,
+    longitude = longitude,
+    warrantyExpiration = warrantyExpiration,
+    transactionStatus = transactionStatus,
+    paymentMethod = paymentMethod,
+    currency = currency,
+    tags = if (tags.isEmpty()) emptyList() else tags.split(","),
     schedule = PaymentSchedule(
         recurrenceRule = RecurrenceRule(
-            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.valueOf(payment.schedule.recurrenceType),
-            interval = payment.schedule.interval,
-            dayOfWeek = payment.schedule.dayOfWeek,
-            dayOfMonth = payment.schedule.dayOfMonth,
-            cronExpression = payment.schedule.recurrenceCronExpression
+            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.valueOf(schedule.recurrenceType),
+            interval = schedule.interval,
+            dayOfWeek = schedule.dayOfWeek,
+            dayOfMonth = schedule.dayOfMonth,
+            cronExpression = schedule.recurrenceCronExpression
         ),
-        startDate = payment.schedule.startDate,
-        endDate = payment.schedule.endDate,
-        nextDueDate = payment.schedule.nextDueDate,
-        lastTriggeredDate = payment.schedule.lastTriggeredDate
+        startDate = schedule.startDate,
+        endDate = schedule.endDate,
+        nextDueDate = schedule.nextDueDate,
+        lastTriggeredDate = schedule.lastTriggeredDate
     ),
-    autoConfirm = payment.autoConfirm,
-    status = payment.status,
-    profileId = payment.profileId
+    autoConfirm = autoConfirm,
+    status = status,
+    profileId = profileId,
+    templateId = templateId
 )
 
 fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
     id = id,
-    templateId = templateId,
+    name = name,
+    categoryId = categoryId,
+    amount = amount,
+    transactionType = transactionType,
+    accountId = accountId,
+    targetAccountId = targetAccountId,
+    targetCurrency = targetCurrency,
+    transferRate = transferRate,
+    note = note,
+    payee = payee,
+    location = location,
+    latitude = latitude,
+    longitude = longitude,
+    warrantyExpiration = warrantyExpiration,
+    transactionStatus = transactionStatus,
+    paymentMethod = paymentMethod,
+    currency = currency,
+    tags = tags.joinToString(","),
     schedule = RecurrenceScheduleEntity(
         recurrenceType = schedule.recurrenceRule.type.name,
         interval = schedule.recurrenceRule.interval,
@@ -50,7 +80,8 @@ fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
     ),
     autoConfirm = autoConfirm,
     status = status,
-    profileId = profileId
+    profileId = profileId,
+    templateId = templateId
 )
 
 fun PlannedPaymentOccurrenceEntity.toDomain(): PlannedPaymentOccurrence = PlannedPaymentOccurrence(

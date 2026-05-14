@@ -448,15 +448,15 @@ private fun PlannedPaymentListItem(
 
     val typeColor = when {
         isOverdue -> RedWarning
-        payment.template.transactionType == 1 -> TealHealthy
+        payment.transactionType == 1 -> TealHealthy
         else -> RedWarning
     }
     val dateColor =
         if (isOverdue) RedWarning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
 
     val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
-    val formattedAmount = remember(payment.template.amount) {
-        payment.template.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = remember(payment.amount) {
+        payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
     
     val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat
@@ -466,7 +466,7 @@ private fun PlannedPaymentListItem(
         onClick = onTap,
         icon = statusIcon,
         iconTint = statusColor,
-        title = payment.template.name,
+        title = payment.name,
         subtitle = recurrenceLabel,
         isWarning = isOverdue,
         trailingContent = {
@@ -477,7 +477,7 @@ private fun PlannedPaymentListItem(
                     color = typeColor
                 )
                 Text(
-                    payment.template.currency ?: "USD",
+                    payment.currency,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )

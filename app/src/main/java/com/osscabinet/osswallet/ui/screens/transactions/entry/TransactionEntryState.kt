@@ -103,12 +103,12 @@ data class TransactionEntryState(
         get() {
             if (isSplitMode) {
                 val totalSplitAmount = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
-                return amountValue > BigDecimal.ZERO && 
+                return amountValue >= BigDecimal.ZERO && 
                        totalSplitAmount == amountValue && 
                        selectedAccount != null && 
                        splits.all { it.categoryId != null }
             }
-            return amountValue > BigDecimal.ZERO && selectedAccount != null
+            return amountValue >= BigDecimal.ZERO && selectedAccount != null
         }
 }
 

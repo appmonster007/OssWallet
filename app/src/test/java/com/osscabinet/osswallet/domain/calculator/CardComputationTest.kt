@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.calculator
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -58,8 +59,8 @@ class CardComputationTest {
     )
 
     private val transactions = listOf(
-        Transaction(id = 1L, name = "Salary", amount = BigDecimal("1000"), categoryId = 1001L, timestamp = System.currentTimeMillis(), currency = "USD", transactionType = "income", accountId = "1"),
-        Transaction(id = 2L, name = "Lunch", amount = BigDecimal("-50"), categoryId = 1002L, timestamp = System.currentTimeMillis(), currency = "EUR", transactionType = "expense", accountId = "2")
+        Transaction(id = 1L, name = "Salary", amount = BigDecimal("1000"), categoryId = 1001L, timestamp = System.currentTimeMillis(), currency = "USD", transactionType = TransactionType.INCOME, accountId = "1"),
+        Transaction(id = 2L, name = "Lunch", amount = BigDecimal("-50"), categoryId = 1002L, timestamp = System.currentTimeMillis(), currency = "EUR", transactionType = TransactionType.EXPENSE, accountId = "2")
     )
 
     private val input = CardInput(

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -49,7 +50,7 @@ class CardFilterTest {
         categoryId = 1001L,
         timestamp = System.currentTimeMillis(),
         currency = "USD",
-        transactionType = "expense",
+        transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
         status = TransactionStatus.CLEARED
     )
@@ -61,7 +62,7 @@ class CardFilterTest {
         categoryId = 1002L,
         timestamp = System.currentTimeMillis(),
         currency = "EUR",
-        transactionType = "expense",
+        transactionType = TransactionType.EXPENSE,
         accountId = "acc2",
         status = TransactionStatus.CLEARED
     )
@@ -73,7 +74,7 @@ class CardFilterTest {
         categoryId = 1003L,
         timestamp = System.currentTimeMillis(),
         currency = "GBP",
-        transactionType = "expense",
+        transactionType = TransactionType.EXPENSE,
         accountId = "acc3",
         status = TransactionStatus.CLEARED
     )

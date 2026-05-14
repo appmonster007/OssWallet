@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByCategory
 import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByDate
@@ -29,7 +30,7 @@ class AggregationServiceTest {
         amount = amount,
         timestamp = System.currentTimeMillis(),
         currency = currency,
-        transactionType = if (amount.signum() >= 0) "income" else "expense",
+        transactionType = if (amount.signum() >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
         accountId = accountId,
         categoryId = categoryId,
         status = TransactionStatus.CLEARED

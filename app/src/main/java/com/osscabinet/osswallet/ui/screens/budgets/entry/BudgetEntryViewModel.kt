@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -129,7 +130,7 @@ class BudgetEntryViewModel(
                 limitAmount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                 currency = s.currency,
                 period = s.period,
-                trackTypes = s.selectedTrackTypes.toList().ifEmpty { listOf(com.osscabinet.ossWallet.domain.model.BudgetTrackType.EXPENSE) },
+                trackTypes = s.selectedTrackTypes.toList().ifEmpty { listOf(TransactionType.EXPENSE) },
                 alertThreshold = s.alertThreshold,
                 rollover = s.rollover,
                 categoryIds = s.selectedCategoryIds.toList(),

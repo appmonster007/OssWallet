@@ -70,13 +70,13 @@ fun TransactionFilter.forCategories(categoryIds: List<Long>): TransactionFilter 
  * Creates a filter for income transactions only.
  */
 fun TransactionFilter.forIncome(): TransactionFilter =
-    copy(transactionType = "income")
+    copy(transactionType = TransactionType.INCOME)
 
 /**
  * Creates a filter for expense transactions only.
  */
 fun TransactionFilter.forExpense(): TransactionFilter =
-    copy(transactionType = "expense")
+    copy(transactionType = TransactionType.EXPENSE)
 
 /**
  * Creates a filter with a specific timeline range.

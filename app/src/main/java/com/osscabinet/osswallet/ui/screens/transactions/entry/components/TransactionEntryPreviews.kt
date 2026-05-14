@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
@@ -12,7 +13,7 @@ fun TransactionFormBodyPreview() {
         TransactionFormBody(
             state = TransactionEntryState(
                 amount = "42.50",
-                transactionType = 0,
+                transactionType = TransactionType.EXPENSE,
                 selectedCurrency = "USD",
                 note = "Dinner with friends"
             ),
@@ -28,7 +29,7 @@ fun TransactionFormBodyTransferPreview() {
         TransactionFormBody(
             state = TransactionEntryState(
                 amount = "500.00",
-                transactionType = 2,
+                transactionType = TransactionType.TRANSFER,
                 selectedCurrency = "USD",
                 targetCurrency = "EUR",
                 note = "Monthly Savings Transfer"

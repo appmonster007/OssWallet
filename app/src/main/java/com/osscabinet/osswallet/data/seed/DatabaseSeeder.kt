@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.data.local.entity.*
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.BuildConfig
 import android.content.Context
 import java.io.BufferedReader
@@ -195,7 +196,7 @@ class DatabaseSeeder @Inject constructor(
         android.util.Log.d("DatabaseSeeder", "Seeded preset filters")
 
         // Mark as seeded
-        settingsDataStore.saveDatabaseSeeded(true)
+        settingsDataStore.saveDatabaseSeeded(seeded = true)
         android.util.Log.d("DatabaseSeeder", "Database seeding completed successfully")
     }
 
@@ -204,27 +205,27 @@ class DatabaseSeeder @Inject constructor(
             FilterEntity(
                 name = "Food & Dining Expense",
                 categoryIds = categoryNameToId["Food & Dining"]?.toString() ?: "1",
-                transactionType = "expense"
+                transactionType = TransactionType.EXPENSE
             ),
             FilterEntity(
                 name = "Shopping Expense",
                 categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
-                transactionType = "expense"
+                transactionType = TransactionType.EXPENSE
             ),
             FilterEntity(
                 name = "Salary Income",
                 categoryIds = categoryNameToId["Income"]?.toString() ?: "8",
-                transactionType = "income"
+                transactionType = TransactionType.INCOME
             ),
             FilterEntity(
                 name = "Transportation Expense",
                 categoryIds = categoryNameToId["Transportation"]?.toString() ?: "2",
-                transactionType = "expense"
+                transactionType = TransactionType.EXPENSE
             ),
             FilterEntity(
                 name = "Entertainment Expense",
                 categoryIds = categoryNameToId["Entertainment"]?.toString() ?: "5",
-                transactionType = "expense"
+                transactionType = TransactionType.EXPENSE
             )
         )
 
@@ -399,7 +400,7 @@ class DatabaseSeeder @Inject constructor(
         val categoryId: Long?,
         val timestamp: Long?,
         val currency: String,
-        val transactionType: String,
+        val transactionType: TransactionType,
         val accountId: String,
         val paymentMethod: PaymentMethod,
         val payee: String,
@@ -443,7 +444,7 @@ class DatabaseSeeder @Inject constructor(
                     categoryId = parts.getOrNull(3)?.toLongOrNull(),
                     timestamp = parts.getOrNull(4)?.toLongOrNull(),
                     currency = parts.getOrNull(5) ?: "USD",
-                    transactionType = parts.getOrNull(6) ?: "expense",
+                    transactionType = TransactionType.fromValue(parts.getOrNull(6) ?: "expense"),
                     accountId = parts.getOrNull(7) ?: "",
                     paymentMethod = PaymentMethod.fromString(parts.getOrNull(8) ?: "Cash"),
                     payee = parts.getOrNull(9) ?: "",

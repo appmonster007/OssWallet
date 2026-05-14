@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -92,7 +93,7 @@ fun AccountDetailScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
-    onAddTransactionClick: (String, Int?, Long?) -> Unit,
+    onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     // Initialize filter from navigation parameter when screen opens
@@ -361,7 +362,7 @@ fun AccountDetailScreen(
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
             onFabClick = {
                 if (!expandableFabEnabled) {
-                    navigate { onAddTransactionClick(accountId, 0, null) }
+                    navigate { onAddTransactionClick(accountId, TransactionType.EXPENSE, null) }
                 }
             },
             fabMenu = if (expandableFabEnabled) {

@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -90,5 +91,15 @@ class Converters {
     @TypeConverter
     fun toOccurrenceStatus(value: String?): OccurrenceStatus? {
         return value?.let { OccurrenceStatus.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromTransactionType(value: TransactionType?): String? {
+        return value?.value
+    }
+
+    @TypeConverter
+    fun toTransactionType(value: String?): TransactionType? {
+        return value?.let { TransactionType.fromValue(it) }
     }
 }

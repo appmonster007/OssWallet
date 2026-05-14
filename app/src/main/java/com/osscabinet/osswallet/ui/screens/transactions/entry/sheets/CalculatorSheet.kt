@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 
 /**
@@ -16,19 +17,14 @@ import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 @Composable
 fun CalculatorSheet(
     currentAmount: String,
-    transactionType: Int, // 0=expense, 1=income, 2=transfer
+    transactionType: TransactionType,
     decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
     onTypeChanged: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     // Map transaction type to string for CalculatorNumpad
-    val transactionTypeStr = when (transactionType) {
-        0 -> "expense"
-        1 -> "income"
-        2 -> "transfer"
-        else -> "expense"
-    }
+    val transactionTypeStr = transactionType.value
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true

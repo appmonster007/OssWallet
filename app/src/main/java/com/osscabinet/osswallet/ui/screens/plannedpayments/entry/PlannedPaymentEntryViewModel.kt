@@ -180,10 +180,10 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
                 _state.update { it.copy(transactionType = event.type) }
-                if (event.type == 2 && oldType != 2) {
+                if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
-                if (event.type == 2) {
+                if (event.type == TransactionType.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -430,7 +430,7 @@ class PlannedPaymentEntryViewModel(
     private fun recalculateExchangeRate() {
         viewModelScope.launch {
             val currentState = _state.value
-            if (currentState.transactionType == 2 &&
+            if (currentState.transactionType == TransactionType.TRANSFER &&
                 currentState.currency.isNotEmpty() &&
                 currentState.targetCurrency?.isNotEmpty() == true
             ) {

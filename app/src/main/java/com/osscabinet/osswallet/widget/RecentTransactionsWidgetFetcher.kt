@@ -71,7 +71,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
                 id = tx.id,
                 amount = formatCurrencyRight(tx.amount.abs(), tx.currency, common.precision),
                 currency = tx.currency,
-                type = tx.transactionType,
+                type = tx.transactionType.value,
                 category = category?.name ?: "Unknown",
                 timestamp = if (isSameDay(tx.timestamp, System.currentTimeMillis())) {
                     timeFormatter.format(Date(tx.timestamp))

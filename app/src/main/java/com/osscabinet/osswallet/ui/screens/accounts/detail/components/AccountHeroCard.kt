@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -161,7 +162,7 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = Color(0xFF00695C),
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.copy(transactionType = "income")) }
+                    onClick = { onClickIncome(filter.copy(transactionType = TransactionType.INCOME)) }
                 )
                 FlowSummaryItem(
                     label = "Expense",
@@ -170,7 +171,7 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = Color(0xFFC62828),
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.copy(transactionType = "expense")) }
+                    onClick = { onClickExpense(filter.copy(transactionType = TransactionType.EXPENSE)) }
                 )
             }
 

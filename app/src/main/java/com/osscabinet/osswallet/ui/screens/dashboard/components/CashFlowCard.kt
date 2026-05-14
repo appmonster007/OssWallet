@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.ui.components.*
@@ -122,7 +123,7 @@ fun CashFlowCard(
                 incomeColor = PositiveAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickIncome(filter.copy(transactionType = "income")) }
+                onClick = { onClickIncome(filter.copy(transactionType = TransactionType.INCOME)) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -136,7 +137,7 @@ fun CashFlowCard(
                             onClick = {
                                 onClickIncome(
                                     filter.copy(
-                                        transactionType = "income",
+                                        transactionType = TransactionType.INCOME,
                                         currencies = listOf(item.currency)
                                     )
                                 )
@@ -155,7 +156,7 @@ fun CashFlowCard(
                 expenseColor = NegativeAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickExpense(filter.copy(transactionType = "expense")) }
+                onClick = { onClickExpense(filter.copy(transactionType = TransactionType.EXPENSE)) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -169,7 +170,7 @@ fun CashFlowCard(
                             onClick = {
                                 onClickExpense(
                                     filter.copy(
-                                        transactionType = "expense",
+                                        transactionType = TransactionType.EXPENSE,
                                         currencies = listOf(item.currency)
                                     )
                                 )

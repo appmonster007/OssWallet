@@ -10,7 +10,7 @@ data class TemplatePrefillDTO(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: Int, // 0: Expense, 1: Income
+    val transactionType: TransactionType,
     val accountId: String?,
     val note: String?,
     val payee: String?,

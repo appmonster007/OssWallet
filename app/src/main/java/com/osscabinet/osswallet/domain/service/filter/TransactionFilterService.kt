@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.service.filter
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
@@ -219,7 +220,7 @@ object TransactionFilterService {
      */
     fun filterByTransactionType(
         transactions: List<Transaction>,
-        transactionType: String
+        transactionType: TransactionType
     ): List<Transaction> =
         transactions.filter { it.transactionType == transactionType }
 

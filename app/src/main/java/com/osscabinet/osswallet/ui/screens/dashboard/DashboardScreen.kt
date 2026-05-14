@@ -59,6 +59,7 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -105,7 +106,7 @@ fun DashboardScreen(
     onBackClick: () -> Unit = {},
     isTopLevelParam: Boolean = false,
     onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
-    onAddClick: (Int?, Long?) -> Unit,
+    onAddClick: (TransactionType?, Long?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
@@ -296,7 +297,7 @@ fun DashboardScreen(
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
             onFabClick = {
                 if (!expandableFabEnabled) {
-                    navigate { onAddClick(0, null) }
+                    navigate { onAddClick(TransactionType.EXPENSE, null) }
                 }
             },
             fabMenu = if (expandableFabEnabled) {

@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 
@@ -70,7 +71,7 @@ fun LoanEntrySheets(
     if (showNumpad) {
         CalculatorSheet(
             currentAmount = principalText,
-            transactionType = 1,
+            transactionType = TransactionType.INCOME,
             decimalPrecision = 2,
             onAmountChanged = onPrincipalChanged,
             onDismiss = onDismissNumpad
@@ -79,7 +80,7 @@ fun LoanEntrySheets(
     if (showInterestNumpad) {
         CalculatorSheet(
             currentAmount = interestText,
-            transactionType = 1,
+            transactionType = TransactionType.INCOME,
             decimalPrecision = 2,
             onAmountChanged = onInterestChanged,
             onDismiss = onDismissInterestNumpad

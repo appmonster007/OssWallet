@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
@@ -24,7 +25,7 @@ data class FilterEntity(
     val warrantyExpirationEnd: Long? = null,
     val minAmount: BigDecimal? = null,
     val maxAmount: BigDecimal? = null,
-    val transactionType: String? = null, // "income", "expense", or null for all
+    val transactionType: TransactionType? = null, // null for all
     val currencies: String = "", // Comma-separated currency codes
     val statuses: String = "" // Comma-separated status values
 )

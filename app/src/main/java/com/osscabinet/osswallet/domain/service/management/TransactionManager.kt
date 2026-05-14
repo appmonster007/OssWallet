@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -50,12 +51,12 @@ class TransactionManager(
             amount = BigDecimal.ZERO,
             timestamp = request.timestamp,
             currency = request.currency,
-            transactionType = "expense",
+            transactionType = TransactionType.EXPENSE,
             accountId = request.accountId,
             categoryId = 1003L
         )).copy(
             amount = request.amount.negate(),
-            transactionType = "expense",
+            transactionType = TransactionType.EXPENSE,
             accountId = request.accountId,
             currency = request.currency,
             categoryId = 1003L, // Transfer category ID
@@ -85,7 +86,7 @@ class TransactionManager(
         val targetTransaction = sourceTransaction.copy(
             id = 0,
             amount = request.amount.multiply(request.transferRate),
-            transactionType = "income",
+            transactionType = TransactionType.INCOME,
             accountId = targetAccountId,
             currency = request.targetCurrency ?: request.currency
         )

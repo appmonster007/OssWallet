@@ -170,7 +170,6 @@ class AppContainer(private val context: Context) {
 
     val backupRepository: BackupRepository by lazy {
         BackupRepositoryImpl(
-            context.contentResolver,
             db.profileDao(),
             db.accountDao(),
             db.transactionDao(),
@@ -186,8 +185,7 @@ class AppContainer(private val context: Context) {
             db.filterDao(),
             db.currencyDao(),
             db,
-            context,
-            settingsDataStore
+            context
         )
     }
 

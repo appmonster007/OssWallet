@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Profile
 import android.graphics.Color as AndroidColor
 
@@ -204,8 +205,8 @@ fun AppDrawerContent(
                             icon = {
                                 Icon(
                                     when (template.transactionType) {
-                                        1 -> Icons.Rounded.ArrowUpward
-                                        2 -> Icons.Rounded.SwapHoriz
+                                        TransactionType.INCOME -> Icons.Rounded.ArrowUpward
+                                        TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
                                         else -> Icons.Rounded.ArrowDownward
                                     },
                                     contentDescription = null,

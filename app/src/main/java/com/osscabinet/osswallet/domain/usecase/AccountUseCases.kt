@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import java.math.BigDecimal
@@ -51,7 +52,7 @@ class AccountUseCases(
                         categoryId = 1001L,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
-                        transactionType = if (amount >= BigDecimal.ZERO) "income" else "expense"
+                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
                     ),
                     profileId
                 )

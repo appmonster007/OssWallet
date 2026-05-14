@@ -147,7 +147,7 @@ object PlannedPaymentService {
                 name = "",
                 categoryId = 0,
                 amount = BigDecimal.ZERO,
-                transactionType = 0,
+                transactionType = TransactionType.EXPENSE,
                 accountId = null,
                 currency = "USD",
                 schedule = PaymentSchedule(rule, startDate, endDate, current)

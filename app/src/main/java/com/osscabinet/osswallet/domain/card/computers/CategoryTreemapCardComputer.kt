@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
@@ -24,7 +25,7 @@ class CategoryTreemapCardComputer :
                 config.filter.categoryIds,
                 input.categories
             ),
-            transactionType = config.filter.transactionType ?: "expense"
+            transactionType = config.filter.transactionType ?: TransactionType.EXPENSE
         )
         val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 

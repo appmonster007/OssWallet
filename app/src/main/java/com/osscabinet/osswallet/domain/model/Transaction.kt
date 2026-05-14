@@ -12,7 +12,7 @@ data class Transaction(
     val amount: BigDecimal,
     override val timestamp: Long,
     val currency: String,
-    val transactionType: String, // "income" or "expense"
+    val transactionType: TransactionType,
     val accountId: String?,
     val categoryId: Long,
     val tags: List<String> = emptyList(),

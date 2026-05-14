@@ -18,6 +18,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
 
@@ -30,7 +31,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.Transac
 fun TransactionEntryScreen(
     transactionId: Long? = null,
     accountId: String? = null,
-    initialType: Int? = null,
+    initialType: TransactionType? = null,
     initialTemplateId: Long? = null,
     prefillDto: com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO? = null,
     viewModel: TransactionEntryViewModel,
@@ -41,7 +42,7 @@ fun TransactionEntryScreen(
         viewModel.initialize(
             transactionId = transactionId,
             accountId = accountId,
-            initialType = initialType ?: 0,
+            initialType = initialType ?: TransactionType.EXPENSE,
             initialTemplateId = initialTemplateId,
             prefillDto = prefillDto
         )

@@ -4,6 +4,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
@@ -203,6 +204,9 @@ fun TransactionEntrySheets(
             decimalPrecision = state.decimalPrecision,
             onAmountChanged = { amount ->
                 onEvent(TransactionEntryEvent.SetAmount(amount))
+            },
+            onTypeChanged = { newType ->
+                onEvent(TransactionEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowNumpad(false)) }
         )

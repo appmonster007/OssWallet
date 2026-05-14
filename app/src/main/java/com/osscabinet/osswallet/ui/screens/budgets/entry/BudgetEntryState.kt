@@ -8,7 +8,7 @@ data class BudgetEntryState(
     val limitAmount: String = "",
     val currency: String = "USD",
     val period: BudgetPeriod = BudgetPeriod.MONTHLY,
-    val selectedTrackTypes: Set<BudgetTrackType> = setOf(BudgetTrackType.EXPENSE),
+    val selectedTrackTypes: Set<TransactionType> = setOf(TransactionType.EXPENSE),
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
     val note: String = "",

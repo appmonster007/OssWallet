@@ -15,7 +15,7 @@ data class TransactionEntryState(
     val selectedTags: List<String> = emptyList(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,
-    val transactionType: Int = 0, // 0: Expense, 1: Income, 2: Transfer
+    val transactionType: TransactionType = TransactionType.EXPENSE,
     val selectedDateMillis: Long = System.currentTimeMillis(),
     val payee: String = "",
     val note: String = "",
@@ -88,9 +88,9 @@ data class TransactionEntryState(
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false
 ) {
-    val isIncome: Boolean get() = transactionType == 1
-    val isExpense: Boolean get() = transactionType == 0
-    val isTransfer: Boolean get() = transactionType == 2
+    val isIncome: Boolean get() = transactionType == TransactionType.INCOME
+    val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
+    val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
 
     val displayLinkedTxs: List<Transaction>
         get() = linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }

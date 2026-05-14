@@ -45,6 +45,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
@@ -439,7 +440,7 @@ private fun AccountItemContent(
                 onRecordsClick?.invoke(
                     filter.copy(
                         accountIds = listOf(account.id),
-                        transactionType = "income"
+                        transactionType = TransactionType.INCOME
                     )
                 )
             },
@@ -447,7 +448,7 @@ private fun AccountItemContent(
                 onRecordsClick?.invoke(
                     filter.copy(
                         accountIds = listOf(account.id),
-                        transactionType = "expense"
+                        transactionType = TransactionType.EXPENSE
                     )
                 )
             }

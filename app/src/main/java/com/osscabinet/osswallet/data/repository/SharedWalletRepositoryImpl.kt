@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.repository
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -67,8 +68,8 @@ class SharedWalletRepositoryImpl(
 
     private fun generateMockSharedTransactions(walletId: String): List<Transaction> {
         return listOf(
-            Transaction(id = 100, name = "Groceries (Synced)", amount = BigDecimal("45.0"), timestamp = System.currentTimeMillis() - 100000, currency = "USD", transactionType = "expense", accountId = "mock_acc", categoryId = 1L),
-            Transaction(id = 101, name = "Rent Shared", amount = BigDecimal("1200.0"), timestamp = System.currentTimeMillis() - 500000, currency = "USD", transactionType = "expense", accountId = "mock_acc", categoryId = 4L)
+            Transaction(id = 100, name = "Groceries (Synced)", amount = BigDecimal("45.0"), timestamp = System.currentTimeMillis() - 100000, currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "mock_acc", categoryId = 1L),
+            Transaction(id = 101, name = "Rent Shared", amount = BigDecimal("1200.0"), timestamp = System.currentTimeMillis() - 500000, currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "mock_acc", categoryId = 4L)
         )
     }
 }

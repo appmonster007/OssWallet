@@ -2,19 +2,56 @@ package com.osscabinet.ossWallet.domain.model
 
 /**
  * Enum representing the type of a transaction.
- * Replaces the boolean isIncome field for better type safety and extensibility.
+ *
+ * @property displayName Human-readable name for UI display
+ * @property value String identifier used for persistence
+ * @property iconName Name of the icon to use (maps to AppIconMap in UI layer)
+ * @property colorHex Hex color value for the type
  */
-enum class TransactionType(val displayName: String, val value: String) {
-    INCOME("Income", "income"),
-    EXPENSE("Expense", "expense");
+enum class TransactionType(
+    val displayName: String,
+    val value: String,
+    val iconName: String,
+    val colorHex: String
+) {
+    EXPENSE(
+        displayName = "Expense",
+        value = "expense",
+        iconName = "Remove",
+        colorHex = "#B3261E"
+    ),
+    INCOME(
+        displayName = "Income",
+        value = "income",
+        iconName = "Add",
+        colorHex = "#004D40"
+    ),
+    TRANSFER(
+        displayName = "Transfer",
+        value = "transfer",
+        iconName = "SwapHoriz",
+        colorHex = "#2196F3"
+    );
 
     companion object {
         /**
          * Get TransactionType from string value.
-         * Returns null if the value is invalid.
+         * Defaults to EXPENSE if the value is invalid.
          */
-        fun fromValue(value: String?): TransactionType? {
-            return values().find { it.value == value }
+        fun fromValue(value: String?): TransactionType {
+            return entries.find { it.value.equals(value, ignoreCase = true) } ?: EXPENSE
+        }
+
+        /**
+         * Get TransactionType from integer (used in some entities).
+         * 0: Expense, 1: Income, 2: Transfer
+         */
+        fun fromInt(type: Int): TransactionType {
+            return when (type) {
+                1 -> INCOME
+                2 -> TRANSFER
+                else -> EXPENSE
+            }
         }
 
         /**
@@ -27,9 +64,18 @@ enum class TransactionType(val displayName: String, val value: String) {
 
         /**
          * Special value for filters to indicate "all types".
-         * This is not a valid transaction type, only used for filtering.
          */
         const val ALL = "all"
+    }
+
+    /**
+     * Convert to integer representation.
+     * 0: Expense, 1: Income, 2: Transfer
+     */
+    fun toInt(): Int = when (this) {
+        EXPENSE -> 0
+        INCOME -> 1
+        TRANSFER -> 2
     }
 
     /**

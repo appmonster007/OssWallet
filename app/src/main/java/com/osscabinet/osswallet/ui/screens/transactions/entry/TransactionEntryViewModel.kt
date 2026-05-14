@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -58,7 +59,7 @@ class TransactionEntryViewModel(
     fun initialize(
         transactionId: Long? = null,
         accountId: String? = null,
-        initialType: Int = 0,
+        initialType: TransactionType = TransactionType.EXPENSE,
         initialTemplateId: Long? = null,
         prefillDto: TransactionPrefillDTO? = null
     ) {
@@ -143,19 +144,18 @@ class TransactionEntryViewModel(
         linkedTxs: List<Transaction>
     ) {
         val txType = when {
-            transaction.categoryId == 1003L -> 2
-            transaction.transactionType == "income" -> 1
-            else -> 0
+            transaction.categoryId == 1003L -> TransactionType.TRANSFER
+            else -> transaction.transactionType
         }
 
         val selectedAcc = accounts.find { it.id == transaction.accountId }
 
         // Find target account for transfers
         var targetAcc: Account? = null
-        if (txType == 2) {
+        if (txType == TransactionType.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
                 tx.categoryId == 1003L &&
-                        tx.transactionType == "income" &&
+                        tx.transactionType == TransactionType.INCOME &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 1000
             }
             targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
@@ -191,14 +191,10 @@ class TransactionEntryViewModel(
         
         val prefillAcc = accounts.find { it.id == prefill.accountId } ?: currentState.selectedAccount
         
-        val txType = when (prefill.transactionType) {
-            "transfer" -> 2
-            "income" -> 1
-            else -> 0
-        }
+        val txType = prefill.transactionType
 
         var targetAcc: Account? = null
-        if (txType == 2) {
+        if (txType == TransactionType.TRANSFER) {
             targetAcc = prefill.targetAccountId?.let { id -> accounts.find { acc -> acc.id == id } }
                 ?: currentState.targetAccount
         }
@@ -240,7 +236,7 @@ class TransactionEntryViewModel(
         )
 
         // Post-prefill logic for transfers
-        if (txType == 2) {
+        if (txType == TransactionType.TRANSFER) {
             if (_state.value.targetAccount == null) {
                 autoSelectTargetAccount()
             }
@@ -287,12 +283,12 @@ class TransactionEntryViewModel(
                 update { it.copy(transactionType = event.type) }
 
                 // Auto-select target account when switching to transfer
-                if (event.type == 2 && oldType != 2) {
+                if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
 
                 // Recalculate exchange rate if switching to/from transfer
-                if (event.type == 2) {
+                if (event.type == TransactionType.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -513,9 +509,9 @@ class TransactionEntryViewModel(
                 currentState.amountValue.negate()
             },
             transactionType = when {
-                currentState.isIncome -> "income"
-                currentState.isTransfer -> "expense" // Transfer is stored as expense with link
-                else -> "expense"
+                currentState.isIncome -> TransactionType.INCOME
+                currentState.isTransfer -> TransactionType.EXPENSE // Transfer is stored as expense with link
+                else -> TransactionType.EXPENSE
             },
             accountId = currentState.selectedAccount?.id ?: "",
             currency = currentState.selectedCurrency,
@@ -653,9 +649,9 @@ class TransactionEntryViewModel(
             name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
             amount = BigDecimal.ZERO, // To be set by caller
             transactionType = when {
-                currentState.isIncome -> "income"
-                currentState.isTransfer -> "expense"
-                else -> "expense"
+                currentState.isIncome -> TransactionType.INCOME
+                currentState.isTransfer -> TransactionType.EXPENSE
+                else -> TransactionType.EXPENSE
             },
             accountId = currentState.selectedAccount?.id ?: "",
             currency = currentState.selectedCurrency,

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.model.dto
 
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 /**
@@ -11,7 +12,7 @@ import java.math.BigDecimal
 data class TransactionRequest(
     val name: String,
     val amount: BigDecimal,
-    val transactionType: String,
+    val transactionType: TransactionType,
     val accountId: String,
     val currency: String,
     val categoryId: Long,

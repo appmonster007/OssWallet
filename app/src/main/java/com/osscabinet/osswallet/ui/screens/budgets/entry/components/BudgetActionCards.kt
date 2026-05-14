@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -23,7 +23,7 @@ fun BudgetActionCards(
     selectedAccountIds: Set<String>,
     accounts: List<Account>,
     onAccountClick: () -> Unit,
-    selectedTrackTypes: Set<BudgetTrackType>,
+    selectedTrackTypes: Set<TransactionType>,
     onTrackTypeClick: () -> Unit,
     selectedCategoryIds: Set<Long>,
     categories: List<Category>,
@@ -64,8 +64,8 @@ fun BudgetActionCards(
             EntryActionCard(
                 icon = Icons.Rounded.ShowChart,
                 label = "TRACKS",
-                value = if (selectedTrackTypes.size == BudgetTrackType.entries.size) "All Types"
-                        else selectedTrackTypes.joinToString { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                value = if (selectedTrackTypes.size == TransactionType.entries.size) "All Types"
+                        else selectedTrackTypes.joinToString { it.displayName },
                 onClick = onTrackTypeClick,
                 modifier = Modifier.weight(1f),
                 iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),

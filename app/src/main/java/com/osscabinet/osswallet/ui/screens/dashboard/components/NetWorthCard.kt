@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
@@ -194,7 +195,7 @@ fun NetWorthCard(
                     color = PositiveAmountColor,
                     isIncome = true,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.copy(transactionType = "income")) },
+                    onClick = { onClickIncome(filter.copy(transactionType = TransactionType.INCOME)) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
                 FlowBadge(
@@ -205,7 +206,7 @@ fun NetWorthCard(
                     color = NegativeAmountColor,
                     isIncome = false,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.copy(transactionType = "expense")) },
+                    onClick = { onClickExpense(filter.copy(transactionType = TransactionType.EXPENSE)) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }

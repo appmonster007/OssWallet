@@ -7,7 +7,7 @@ data class PlannedPaymentEntryState(
     val name: String = "",
     val amount: String = "",
     val currency: String = "USD",
-    val transactionType: Int = 0,
+    val transactionType: TransactionType = TransactionType.EXPENSE,
     val selectedAccountId: String? = null,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,

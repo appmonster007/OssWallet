@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AppIconMap
@@ -448,7 +449,7 @@ private fun PlannedPaymentListItem(
 
     val typeColor = when {
         isOverdue -> RedWarning
-        payment.transactionType == 1 -> TealHealthy
+        payment.transactionType == TransactionType.INCOME -> TealHealthy
         else -> RedWarning
     }
     val dateColor =

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import androidx.compose.ui.text.font.FontWeight
@@ -283,7 +284,7 @@ fun TransactionFabMenu(
     isExpanded: Boolean,
     templates: List<Template>,
     categories: List<Category> = emptyList(),
-    onAddClick: (Int?, Long?) -> Unit,
+    onAddClick: (TransactionType?, Long?) -> Unit,
     onAddAccountClick: (() -> Unit)? = null
 ) {
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -320,7 +321,7 @@ fun TransactionFabMenu(
         label = "Transfer",
         icon = Icons.Default.SyncAlt,
         index = if (onAddAccountClick != null) baseIndex + 1 else baseIndex,
-        onClick = { onAddClick(2, null) }
+        onClick = { onAddClick(TransactionType.TRANSFER, null) }
     )
 
     FabMenuItem(
@@ -328,7 +329,7 @@ fun TransactionFabMenu(
         label = "New Transaction",
         icon = Icons.Default.Add,
         index = if (onAddAccountClick != null) baseIndex + 2 else baseIndex + 1,
-        onClick = { onAddClick(0, null) }
+        onClick = { onAddClick(TransactionType.EXPENSE, null) }
     )
 }
 

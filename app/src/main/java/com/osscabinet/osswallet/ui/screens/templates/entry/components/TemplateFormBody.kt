@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
@@ -44,7 +45,7 @@ fun TemplateFormBody(
                 name = state.name,
                 onNameChange = { onEvent(TemplateEntryEvent.SetName(it)) },
                 nameLabel = "TEMPLATE NAME",
-                isTransfer = state.transactionType == 2,
+                isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
                 targetCurrency = state.targetCurrency,
                 onTargetCurrencyClick = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
@@ -55,7 +56,7 @@ fun TemplateFormBody(
 
             // CONTEXT: Action cards row: Account, Category
             AeonEntryContextRow(
-                isTransfer = state.transactionType == 2,
+                isTransfer = state.transactionType == TransactionType.TRANSFER,
                 selectedAccount = state.selectedAccount,
                 onAccountClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
                 selectedCategory = state.selectedCategory,

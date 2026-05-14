@@ -150,7 +150,8 @@ class AccountDetailViewModel(
                     accounts = listOf(account),
                     exchangeRates = rates,
                     precision = precision,
-                    limit = Int.MAX_VALUE
+                    limit = Int.MAX_VALUE,
+                    excludeFuture = !settings.transactionsSection.showPlannedPayments || currentFilter.excludeFuture
                 )
 
                 // Filtered transactions for the list tab

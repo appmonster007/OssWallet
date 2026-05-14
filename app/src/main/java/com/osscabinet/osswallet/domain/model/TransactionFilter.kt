@@ -40,7 +40,7 @@ data class TransactionFilter(
  */
 fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
     return this.copy(
-        timelineRange = if (other.timelineRange != TimelineRange.AllTime || this.timelineRange == TimelineRange.AllTime) other.timelineRange else this.timelineRange,
+        timelineRange = other.timelineRange,
         accountIds = mergeLists(this.accountIds, other.accountIds),
         categoryIds = mergeLists(this.categoryIds, other.categoryIds),
         currencies = mergeLists(this.currencies, other.currencies),

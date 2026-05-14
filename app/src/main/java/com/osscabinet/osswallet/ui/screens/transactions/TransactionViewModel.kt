@@ -126,8 +126,9 @@ class TransactionViewModel(
                     transactionUseCases.getTransactions(profileId),
                     accounts,
                     exchangeRates,
-                    computationRepository.hasLoadedExchangeRates
-                ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
+                    computationRepository.hasLoadedExchangeRates,
+                    recordsFilter // Added recordsFilter to track excludeFuture
+                ) { allTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
                     val precision = decimalPrecision.value
@@ -137,7 +138,8 @@ class TransactionViewModel(
                         accounts = accounts,
                         exchangeRates = rates,
                         precision = precision,
-                        limit = Int.MAX_VALUE
+                        limit = Int.MAX_VALUE,
+                        excludeFuture = currentFilter.excludeFuture // Respect the filter's setting
                     )
                 }
             }.stateIn(

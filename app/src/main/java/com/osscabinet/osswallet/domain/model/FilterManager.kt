@@ -102,7 +102,7 @@ class FilterManager {
         if (filters.isEmpty()) return TransactionFilter()
         
         return TransactionFilter(
-            timelineRange = filters.lastOrNull { it.timelineRange != com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime }?.timelineRange
+            timelineRange = filters.map { it.timelineRange }.lastOrNull() 
                 ?: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
             queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
             isNoteRegex = filters.any { it.isNoteRegex },
@@ -118,7 +118,9 @@ class FilterManager {
             maxAmount = filters.mapNotNull { it.maxAmount }.minOrNull(),
             transactionType = filters.mapNotNull { it.transactionType }.lastOrNull(),
             currencies = filters.flatMap { it.currencies }.distinct(),
-            statuses = filters.flatMap { it.statuses }.distinct()
+            statuses = filters.flatMap { it.statuses }.distinct(),
+            tags = filters.flatMap { it.tags }.distinct(),
+            excludeFuture = filters.all { it.excludeFuture }
         )
     }
 }

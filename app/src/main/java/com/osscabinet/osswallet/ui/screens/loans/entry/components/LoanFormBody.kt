@@ -7,12 +7,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -128,7 +125,7 @@ fun LoanFormBody(
                 EntryActionCard(
                     icon = getAccountIconByName(accountObj?.icon),
                     label = "ACCOUNT",
-                    value = accountObj?.name ?: "Select",
+                    value = accountObj?.name ?: "Select Account",
                     onClick = onAccountClick,
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
@@ -167,7 +164,7 @@ fun LoanFormBody(
                 if (filterId != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
@@ -191,51 +188,6 @@ fun LoanFormBody(
             }
         }
 
-        // DETAIL: Filter section
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "FILTERS",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-            )
-
-            // Payment Methods
-            EntryActionCard(
-                icon = Icons.Rounded.Payments,
-                label = "PAYMENT METHODS",
-                value = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
-                onClick = onPaymentMethodClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
-            )
-
-            // Transaction Status
-            EntryActionCard(
-                icon = Icons.Rounded.CheckCircle,
-                label = "TRANSACTION STATUS",
-                value = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
-                onClick = onStatusClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.secondary
-            )
-
-            // Linked Transactions
-            EntryActionCard(
-                icon = Icons.Rounded.Link,
-                label = "LINKED TRANSACTIONS",
-                value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
-                onClick = onLinkRecordClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.tertiary
-            )
-        }
-
         // DETAIL: Metadata section
         AeonDetailSection(
             note = note,
@@ -249,6 +201,25 @@ fun LoanFormBody(
             onRemoveTag = onRemoveTag,
             noteSuggestions = noteSuggestions,
             additionalContent = {
+                // Payment Method and Status row
+                EntryPaymentMethodStatusRow(
+                    paymentMethod = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                    onPaymentMethodClick = onPaymentMethodClick,
+                    statusLabel = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
+                    onStatusClick = onStatusClick
+                )
+
+                // Linked Transactions
+                EntryActionCard(
+                    icon = Icons.Rounded.Link,
+                    label = "LINKED TRANSACTIONS",
+                    value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
+                    onClick = onLinkRecordClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+
                 // Settlement Date
                 EntrySwitchRow(
                     label = "Has Settlement Date",

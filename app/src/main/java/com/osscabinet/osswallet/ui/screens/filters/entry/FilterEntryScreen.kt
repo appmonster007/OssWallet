@@ -147,7 +147,8 @@ fun FilterEntryScreen(
                 onSelectionChange = { ids -> viewModel.onEvent(FilterEntryEvent.SetCategoryIds(ids)) },
                 onDismiss = { viewModel.onEvent(FilterEntryEvent.ShowCategorySheet(false)) },
                 mode = AeonSelectMode.MULTI,
-                title = "Filter Categories"
+                title = "Filter Categories",
+                startExpanded = false
             )
         }
 

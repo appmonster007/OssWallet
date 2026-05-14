@@ -76,7 +76,7 @@ fun BudgetFormBody(
     ) {
         // IMPACT: Header card
         AeonImpactHeaderCard(
-            transactionType = TransactionType.INCOME,
+            transactionType = TransactionType.EXPENSE,
             onTypeSelected = { },
             amount = amount,
             currency = currency,
@@ -92,18 +92,32 @@ fun BudgetFormBody(
 
         // CONTEXT: Action cards grid
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Row 1: Period (Full Width)
-            EntryActionCard(
-                icon = Icons.Rounded.DateRange,
-                label = "PERIOD",
-                value = period.name.lowercase().replaceFirstChar { it.uppercase() },
-                onClick = onPeriodClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.secondary
-            )
+            // Row 1: Period and Tracks
+            AeonContextGrid {
+                EntryActionCard(
+                    icon = Icons.Rounded.DateRange,
+                    label = "PERIOD",
+                    value = period.name.lowercase().replaceFirstChar { it.uppercase() },
+                    onClick = onPeriodClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.secondary
+                )
 
-            // Row 2: Account and Tracks
+                EntryActionCard(
+                    icon = Icons.Rounded.ShowChart,
+                    label = "TRACKS",
+                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
+                            else if (selectedTrackTypes.size == 1) selectedTrackTypes.first().displayName
+                            else "${selectedTrackTypes.size} Selected",
+                    onClick = onTrackTypeClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+            }
+
+            // Row 2: Account and Categories
             AeonContextGrid {
                 val accountObj = if (selectedAccountIds.size == 1) accounts.find { it.id == selectedAccountIds.first() } else null
                 EntryActionCard(
@@ -120,35 +134,23 @@ fun BudgetFormBody(
                     iconTint = MaterialTheme.colorScheme.primary
                 )
 
+                val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
                 EntryActionCard(
-                    icon = Icons.Rounded.ShowChart,
-                    label = "TRACKS",
-                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
-                            else selectedTrackTypes.joinToString { it.displayName },
-                    onClick = onTrackTypeClick,
+                    icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                    label = "CATEGORIES",
+                    value = when {
+                        selectedCategoryIds.isEmpty() || (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
+                        categoryObj != null -> categoryObj.name
+                        else -> "${selectedCategoryIds.size} Categories"
+                    },
+                    onClick = onCategoryClick,
                     modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // Row 3: Categories (Full Width)
-            val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
-            EntryActionCard(
-                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
-                label = "CATEGORIES",
-                value = when {
-                    selectedCategoryIds.isEmpty() || (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
-                    categoryObj != null -> categoryObj.name
-                    else -> "${selectedCategoryIds.size} Categories"
-                },
-                onClick = onCategoryClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
-            )
-
-            // Row 4: Filter (Full Width)
+            // Row 3: Filter (Full Width)
             val filterObj = availableFilters.find { it.id == filterId }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EntryActionCard(
@@ -188,51 +190,6 @@ fun BudgetFormBody(
             }
         }
 
-        // DETAIL: Filter section
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "FILTERS",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-            )
-
-            // Payment Methods
-            EntryActionCard(
-                icon = Icons.Rounded.Payments,
-                label = "PAYMENT METHODS",
-                value = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
-                onClick = onPaymentMethodClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
-            )
-
-            // Transaction Status
-            EntryActionCard(
-                icon = Icons.Rounded.CheckCircle,
-                label = "TRANSACTION STATUS",
-                value = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
-                onClick = onStatusClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.secondary
-            )
-
-            // Linked Transactions
-            EntryActionCard(
-                icon = Icons.Rounded.Link,
-                label = "LINKED TRANSACTIONS",
-                value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
-                onClick = onLinkRecordClick,
-                modifier = Modifier.fillMaxWidth(),
-                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.tertiary
-            )
-        }
-
         // DETAIL: Metadata section
         AeonDetailSection(
             note = note,
@@ -243,9 +200,28 @@ fun BudgetFormBody(
             onRemoveTag = onRemoveTag,
             noteSuggestions = noteSuggestions,
             additionalContent = {
+                // Payment Method and Status row
+                EntryPaymentMethodStatusRow(
+                    paymentMethod = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                    onPaymentMethodClick = onPaymentMethodClick,
+                    statusLabel = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
+                    onStatusClick = onStatusClick
+                )
+
+                // Linked Transactions
+                EntryActionCard(
+                    icon = Icons.Rounded.Link,
+                    label = "LINKED TRANSACTIONS",
+                    value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
+                    onClick = onLinkRecordClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+
                 // Alert threshold
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

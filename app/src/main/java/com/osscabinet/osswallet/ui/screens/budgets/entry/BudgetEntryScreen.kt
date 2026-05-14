@@ -240,7 +240,8 @@ fun BudgetEntryScreen(
                 },
                 onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
                 mode = AeonSelectMode.MULTI,
-                title = "Budget Categories"
+                title = "Budget Categories",
+                startExpanded = false
             )
         }
 

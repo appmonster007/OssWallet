@@ -64,13 +64,21 @@ class TransactionUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int,
         limit: Int = 20,
-        days: Int = 7
+        days: Int = 7,
+        excludeFuture: Boolean = true
     ): List<TransactionWithBalance> {
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
 
-        // Calculate running balances for all transactions first (to ensure accurate balances)
-        val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
+        val now = System.currentTimeMillis()
+        val filteredTransactions = if (excludeFuture) {
+            allTransactions.filter { it.timestamp <= now }
+        } else {
+            allTransactions
+        }
+
+        // Calculate running balances for filtered transactions
+        val transactionsWithBalance = filteredTransactions.sortedBy { it.timestamp }
             .groupBy { it.accountId }
             .flatMap { (accId, accountTransactions) ->
                 val account = accountMap[accId]

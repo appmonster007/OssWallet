@@ -141,6 +141,19 @@ fun TransactionListTopAppBar(
                             showMoreMenu = false
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Exclude Future Transactions") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.excludeFutureTransactions,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(excludeFutureTransactions = !recordsSettings.excludeFutureTransactions))
+                            showMoreMenu = false
+                        }
+                    )
                 }
             }
         }

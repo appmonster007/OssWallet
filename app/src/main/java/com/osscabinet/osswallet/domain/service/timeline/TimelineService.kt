@@ -171,14 +171,14 @@ object TimelineService {
         TransactionGroupingType.BY_DAY -> {
             transactions.groupBy {
                 val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
-                "${date.year}-${date.monthValue}-${date.dayOfMonth}"
+                date.toString()
             }
         }
         TransactionGroupingType.BY_WEEK -> {
             transactions.groupBy {
                 val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
                 val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
-                "${date.year}-W$weekOfYear"
+                "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
             }
         }
     }

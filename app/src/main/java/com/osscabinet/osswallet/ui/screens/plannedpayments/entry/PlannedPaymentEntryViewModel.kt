@@ -317,6 +317,38 @@ class PlannedPaymentEntryViewModel(
                 cronExpression = s.cronExpression
             )
 
+            // 1. Create or Update Template
+            val template = Template(
+                id = s.linkedTemplate?.id ?: 0L,
+                name = s.name,
+                categoryId = s.selectedCategoryId,
+                amount = amount,
+                transactionType = s.transactionType,
+                accountId = s.selectedAccountId,
+                targetAccountId = s.targetAccountId,
+                targetCurrency = s.targetCurrency,
+                transferRate = s.transferRate,
+                currency = s.currency,
+                payee = s.payee,
+                note = s.noteUserPart,
+                location = s.location.ifBlank { null },
+                latitude = s.latitude,
+                longitude = s.longitude,
+                warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
+                transactionStatus = s.transactionStatus,
+                paymentMethod = s.paymentMethod,
+                tags = s.selectedTagNames,
+                profileId = s.currentProfileId
+            )
+
+            val templateId = if (template.id == 0L) {
+                templateRepository.insertTemplate(template)
+            } else {
+                templateRepository.updateTemplate(template)
+                template.id
+            }
+
+            // 2. Create or Update Planned Payment
             val payment = (s.existingPayment ?: PlannedPayment(
                 id = 0,
                 name = s.name,
@@ -344,27 +376,9 @@ class PlannedPaymentEntryViewModel(
                     nextDueDate = s.startDateMillis
                 ),
                 profileId = s.currentProfileId,
-                templateId = s.linkedTemplate?.id
+                templateId = templateId
             )).copy(
                 id = s.plannedPaymentId ?: 0L,
-                name = s.name,
-                categoryId = s.selectedCategoryId,
-                amount = amount,
-                transactionType = s.transactionType,
-                accountId = s.selectedAccountId,
-                targetAccountId = s.targetAccountId,
-                targetCurrency = s.targetCurrency,
-                transferRate = s.transferRate,
-                currency = s.currency,
-                payee = s.payee,
-                note = s.noteUserPart,
-                location = s.location.ifBlank { null },
-                latitude = s.latitude,
-                longitude = s.longitude,
-                warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
-                transactionStatus = s.transactionStatus,
-                paymentMethod = s.paymentMethod,
-                tags = s.selectedTagNames,
                 schedule = PaymentSchedule(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
@@ -375,7 +389,7 @@ class PlannedPaymentEntryViewModel(
                 autoConfirm = s.autoConfirm,
                 status = s.status,
                 profileId = s.currentProfileId,
-                templateId = s.linkedTemplate?.id
+                templateId = templateId
             )
 
             if (s.isEditMode) {

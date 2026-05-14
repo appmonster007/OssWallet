@@ -2,71 +2,54 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
+import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentWithTemplate
 import com.osscabinet.ossWallet.data.local.entity.RecurrenceScheduleEntity
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 
-fun PlannedPaymentEntity.toDomain(): PlannedPayment = PlannedPayment(
-    id = id,
-    name = name,
-    categoryId = categoryId,
-    amount = amount,
-    transactionType = transactionType,
-    accountId = accountId,
-    targetAccountId = targetAccountId,
-    targetCurrency = targetCurrency,
-    transferRate = transferRate,
-    note = note,
-    payee = payee,
-    location = location,
-    latitude = latitude,
-    longitude = longitude,
-    warrantyExpiration = warrantyExpiration,
-    transactionStatus = transactionStatus,
-    paymentMethod = paymentMethod,
-    currency = currency,
-    tags = if (tags.isEmpty()) emptyList() else tags.split(","),
+fun PlannedPaymentWithTemplate.toDomain(): PlannedPayment = PlannedPayment(
+    id = payment.id,
+    name = template.name,
+    categoryId = template.categoryId,
+    amount = template.amount,
+    transactionType = template.transactionType,
+    accountId = template.accountId,
+    targetAccountId = template.targetAccountId,
+    targetCurrency = template.targetCurrency,
+    transferRate = template.transferRate,
+    note = template.note,
+    payee = template.payee,
+    location = template.location,
+    latitude = template.latitude,
+    longitude = template.longitude,
+    warrantyExpiration = template.warrantyExpiration,
+    transactionStatus = template.transactionStatus,
+    paymentMethod = template.paymentMethod,
+    currency = template.currency,
+    tags = if (template.tags.isEmpty()) emptyList() else template.tags.split(","),
     schedule = PaymentSchedule(
         recurrenceRule = RecurrenceRule(
-            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.valueOf(schedule.recurrenceType),
-            interval = schedule.interval,
-            dayOfWeek = schedule.dayOfWeek,
-            dayOfMonth = schedule.dayOfMonth,
-            cronExpression = schedule.recurrenceCronExpression
+            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.valueOf(payment.schedule.recurrenceType),
+            interval = payment.schedule.interval,
+            dayOfWeek = payment.schedule.dayOfWeek,
+            dayOfMonth = payment.schedule.dayOfMonth,
+            cronExpression = payment.schedule.recurrenceCronExpression,
         ),
-        startDate = schedule.startDate,
-        endDate = schedule.endDate,
-        nextDueDate = schedule.nextDueDate,
-        lastTriggeredDate = schedule.lastTriggeredDate
+        startDate = payment.schedule.startDate,
+        endDate = payment.schedule.endDate,
+        nextDueDate = payment.schedule.nextDueDate,
+        lastTriggeredDate = payment.schedule.lastTriggeredDate
     ),
-    autoConfirm = autoConfirm,
-    status = status,
-    profileId = profileId,
-    templateId = templateId
+    autoConfirm = payment.autoConfirm,
+    status = payment.status,
+    profileId = payment.profileId,
+    templateId = payment.templateId
 )
 
 fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
     id = id,
-    name = name,
-    categoryId = categoryId,
-    amount = amount,
-    transactionType = transactionType,
-    accountId = accountId,
-    targetAccountId = targetAccountId,
-    targetCurrency = targetCurrency,
-    transferRate = transferRate,
-    note = note,
-    payee = payee,
-    location = location,
-    latitude = latitude,
-    longitude = longitude,
-    warrantyExpiration = warrantyExpiration,
-    transactionStatus = transactionStatus,
-    paymentMethod = paymentMethod,
-    currency = currency,
-    tags = tags.joinToString(","),
     schedule = RecurrenceScheduleEntity(
         recurrenceType = schedule.recurrenceRule.type.name,
         interval = schedule.recurrenceRule.interval,
@@ -81,7 +64,7 @@ fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
     autoConfirm = autoConfirm,
     status = status,
     profileId = profileId,
-    templateId = templateId
+    templateId = templateId ?: throw IllegalArgumentException("TemplateId cannot be null for PlannedPaymentEntity")
 )
 
 fun PlannedPaymentOccurrenceEntity.toDomain(): PlannedPaymentOccurrence = PlannedPaymentOccurrence(

@@ -56,5 +56,8 @@ data class LoanEntryState(
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && 
-                 principalAmount.toBigDecimalOrNull() != null
+                 principalAmount.toBigDecimalOrNull() != null &&
+                 selectedCategoryIds.isNotEmpty() &&
+                 selectedPaymentMethods.isNotEmpty() &&
+                 selectedStatuses.isNotEmpty()
 }

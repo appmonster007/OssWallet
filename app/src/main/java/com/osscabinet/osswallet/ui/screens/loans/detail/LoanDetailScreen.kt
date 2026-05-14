@@ -107,20 +107,21 @@ fun LoanDetailScreen(
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val loan = remember(loanId, loans) { loans.find { it.id == loanId } }
     
-    LaunchedEffect(loan) {
-        if (loan == null) {
+    LaunchedEffect(loans) {
+        if (loans.isNotEmpty() && loan == null) {
             onBackClick()
         }
     }
-    
-    if (loan == null) return
 
     val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
-
     val now = System.currentTimeMillis()
+
     val summary = remember(loan, allTransactions, now) {
+        if (loan == null) return@remember null
         LoanService.buildSummaryFromTransactions(loan, allTransactions, now, precision)
     }
+    
+    if (loan == null || summary == null) return
 
     if (loan.principalAmount > BigDecimal.ZERO)
         (summary.totalPaid.divide(loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat()

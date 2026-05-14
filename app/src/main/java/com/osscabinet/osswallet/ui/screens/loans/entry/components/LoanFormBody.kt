@@ -98,24 +98,25 @@ fun LoanFormBody(
 
         // CONTEXT: Action cards grid
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Row 1: Start Date and Interest Rate
+            // Row 1: Filter and Start Date
             AeonContextGrid {
+                val filterObj = availableFilters.find { it.id == filterId }
+                EntryActionCard(
+                    icon = Icons.Rounded.FilterList,
+                    label = "FILTER",
+                    value = filterObj?.name ?: "None",
+                    onClick = onFilterClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+
                 EntryDateCard(
                     icon = Icons.Rounded.CalendarToday,
                     label = "START DATE",
                     dateMillis = startDateMillis,
                     onClick = onStartDateClick,
                     modifier = Modifier.weight(1f)
-                )
-
-                EntryActionCard(
-                    icon = Icons.Rounded.Percent,
-                    label = "INTEREST",
-                    value = if (interestRate.isEmpty()) "0%" else "$interestRate%",
-                    onClick = onInterestClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
                 )
             }
 
@@ -137,7 +138,8 @@ fun LoanFormBody(
                     icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
                     label = "CATEGORY",
                     value = when {
-                        selectedCategoryIds.isEmpty() || (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
+                        selectedCategoryIds.isEmpty() -> "0 Selected"
+                        (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
                         categoryObj != null -> categoryObj.name
                         else -> "${selectedCategoryIds.size} Selected"
                     },
@@ -148,14 +150,13 @@ fun LoanFormBody(
                 )
             }
 
-            // Row 3: Filter (Full Width)
-            val filterObj = availableFilters.find { it.id == filterId }
+            // Row 3: Interest (Full Width)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EntryActionCard(
-                    icon = Icons.Rounded.FilterList,
-                    label = "FILTER",
-                    value = filterObj?.name ?: "None",
-                    onClick = onFilterClick,
+                    icon = Icons.Rounded.Percent,
+                    label = "INTEREST",
+                    value = if (interestRate.isEmpty()) "0%" else "$interestRate%",
+                    onClick = onInterestClick,
                     modifier = Modifier.fillMaxWidth(),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.tertiary
@@ -203,9 +204,17 @@ fun LoanFormBody(
             additionalContent = {
                 // Payment Method and Status row
                 EntryPaymentMethodStatusRow(
-                    paymentMethod = if (selectedPaymentMethods.isEmpty() || selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                    paymentMethod = when {
+                        selectedPaymentMethods.isEmpty() -> "0 Selected"
+                        selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
+                        else -> "${selectedPaymentMethods.size} Selected"
+                    },
                     onPaymentMethodClick = onPaymentMethodClick,
-                    statusLabel = if (selectedStatuses.isEmpty() || selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${selectedStatuses.size} Selected",
+                    statusLabel = when {
+                        selectedStatuses.isEmpty() -> "0 Selected"
+                        selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
+                        else -> "${selectedStatuses.size} Selected"
+                    },
                     onStatusClick = onStatusClick
                 )
 

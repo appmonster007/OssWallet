@@ -52,11 +52,11 @@ class BudgetEntryViewModel(
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
                             availableFilters = filters,
-                            selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else accounts.map { a -> a.id }.toSet(),
-                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
-                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
-                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
-                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { it.name }.toSet()
+                            selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else if (it.selectedAccountIds.isEmpty()) accounts.map { a -> a.id }.toSet() else it.selectedAccountIds,
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else if (it.selectedCategoryIds.isEmpty()) categories.map { c -> c.id }.toSet() else it.selectedCategoryIds,
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else if (it.selectedPaymentMethods.isEmpty()) PaymentMethod.entries.toSet() else it.selectedPaymentMethods,
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else if (it.selectedStatuses.isEmpty()) TransactionStatus.entries.toSet() else it.selectedStatuses,
+                            selectedTags = if (it.isEditMode) it.selectedTags else it.selectedTags
                         )
                     }
                 }
@@ -74,7 +74,7 @@ class BudgetEntryViewModel(
                     selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                     selectedPaymentMethods = PaymentMethod.entries.toSet(),
                     selectedStatuses = TransactionStatus.entries.toSet(),
-                    selectedTags = it.availableTags.map { it.name }.toSet()
+                    selectedTags = emptySet()
                 ) 
             }
             return
@@ -148,8 +148,8 @@ class BudgetEntryViewModel(
                 _state.update { state ->
                     if (filter != null) {
                         state.copy(
-                            filterId = event.filterId,
-                            linkedFilter = filter,
+                            filterId = null, // DELINK
+                            linkedFilter = null, // DELINK
                             selectedAccountIds = filter.filter.accountIds.toSet(),
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
@@ -160,12 +160,6 @@ class BudgetEntryViewModel(
                         )
                     } else {
                         state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
-                    }
-                }
-                if (event.filterId != null) {
-                    viewModelScope.launch {
-                        val count = filterRepository.getFilterUsageCount(event.filterId)
-                        _state.update { it.copy(filterUsageCount = count) }
                     }
                 }
             }

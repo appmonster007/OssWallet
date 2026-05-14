@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -140,15 +141,16 @@ fun LoanDetailScreen(
     // Get loan-related transactions for Activity tab
     val loanTransactions =
         remember(loan, absoluteTransactionsWithBalance) {
+            val loanFilter = TransactionFilter(
+                categoryIds = loan.categoryIds,
+                tags = loan.tags,
+                accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+                paymentMethods = loan.paymentMethods,
+                statuses = loan.statuses,
+                linkedTransactionIds = loan.linkedTransactionIds
+            )
             absoluteTransactionsWithBalance.filter { item ->
-                val transaction = item.transaction
-                val accountMatch =
-                    loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
-                val categoryMatch = loan.categoryIds.isEmpty() ||
-                        transaction.categoryId in loan.categoryIds
-                val tagMatch = loan.tags.isEmpty() ||
-                        transaction.tags.any { it in loan.tags }
-                accountMatch && categoryMatch && tagMatch
+                TransactionFilterService.matches(item.transaction, loanFilter)
             }
         }
 

@@ -48,7 +48,11 @@ class LoanEntryViewModel(
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
                             allTransactions = transactions,
-                            availableFilters = filters
+                            availableFilters = filters,
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
+                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { it.name }.toSet()
                         )
                     }
                 }
@@ -58,7 +62,16 @@ class LoanEntryViewModel(
 
     fun initialize(loanId: Long? = null) {
         if (loanId == null) {
-            _state.update { it.copy(isEditMode = false, loanId = null) }
+            _state.update { 
+                it.copy(
+                    isEditMode = false, 
+                    loanId = null,
+                    selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
+                    selectedPaymentMethods = PaymentMethod.entries.toSet(),
+                    selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedTags = it.availableTags.toSet()
+                ) 
+            }
             return
         }
 
@@ -179,8 +192,8 @@ class LoanEntryViewModel(
                 )
             )
 
-            val filterId = if (filter.id == 0L) {
-                filterRepository.insertFilter(filter)
+            val filterId = if (filter.id == 0L || s.filterUsageCount > 1) {
+                filterRepository.insertFilter(filter.copy(id = 0L))
             } else {
                 filterRepository.updateFilter(filter)
                 filter.id

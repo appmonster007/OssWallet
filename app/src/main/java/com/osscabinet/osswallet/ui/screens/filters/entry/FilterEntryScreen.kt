@@ -112,13 +112,13 @@ fun FilterEntryScreen(
             AeonSelectionSheet(
                 title = "Transaction Type",
                 onDismiss = { viewModel.onEvent(FilterEntryEvent.ShowTypeSheet(false)) },
-                items = listOf(null) + com.osscabinet.ossWallet.domain.model.TransactionType.entries,
+                items = listOf(null) + com.osscabinet.ossWallet.domain.model.TransactionType.entries.filter { it != com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER },
                 selectedIds = setOf(state.transactionType),
                 onSelectionChange = { ids ->
                     viewModel.onEvent(FilterEntryEvent.SetTransactionType(ids.firstOrNull()))
                 },
                 idMapper = { it },
-                labelMapper = { it?.name ?: "All Types" },
+                labelMapper = { it?.displayName ?: "All (Income & Expense)" },
                 mode = AeonSelectMode.SINGLE,
                 iconMapper = {
                     when (it) {

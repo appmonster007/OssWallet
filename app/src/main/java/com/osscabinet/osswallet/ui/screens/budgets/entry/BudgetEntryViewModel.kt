@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -17,6 +19,7 @@ class BudgetEntryViewModel(
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
     private val transactionRepository: TransactionRepository,
+    private val filterRepository: FilterRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -34,8 +37,9 @@ class BudgetEntryViewModel(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags(),
-                    transactionRepository.getAllTransactions(profileId)
-                ) { accounts, categories, tags, transactions ->
+                    transactionRepository.getAllTransactions(profileId),
+                    filterRepository.getAllFilters()
+                ) { accounts, categories, tags, transactions, filters ->
                     val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
                     _state.update {
                         it.copy(
@@ -44,7 +48,8 @@ class BudgetEntryViewModel(
                             allTransactions = transactions,
                             availableTags = tags,
                             uniqueNotes = uniqueNotes,
-                            currentProfileId = profileId
+                            currentProfileId = profileId,
+                            availableFilters = filters
                         )
                     }
                 }
@@ -60,11 +65,15 @@ class BudgetEntryViewModel(
 
         viewModelScope.launch {
             budgetRepository.getById(budgetId)?.let { budget ->
+                val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
+                val usageCount = budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
                         isEditMode = true,
                         existingBudget = budget,
+                        linkedFilter = filter,
+                        filterUsageCount = usageCount,
                         name = budget.name,
                         limitAmount = budget.limitAmount.toPlainString(),
                         currency = budget.currency,
@@ -72,7 +81,6 @@ class BudgetEntryViewModel(
                         selectedTrackTypes = budget.trackTypes.toSet(),
                         alertThreshold = budget.alertThreshold,
                         rollover = budget.rollover,
-                        note = "", // note is not in Budget model?
                         selectedCategoryIds = budget.categoryIds.toSet(),
                         selectedAccountIds = budget.accountIds.toSet(),
                         selectedTags = budget.tags.toSet(),
@@ -80,7 +88,8 @@ class BudgetEntryViewModel(
                         selectedStatuses = budget.statuses.toSet(),
                         linkedTransactionIds = budget.linkedTransactionIds.toSet(),
                         customStartDate = budget.customStartDate ?: System.currentTimeMillis(),
-                        customEndDate = budget.customEndDate ?: System.currentTimeMillis()
+                        customEndDate = budget.customEndDate ?: System.currentTimeMillis(),
+                        filterId = budget.filterId
                     )
                 }
             }
@@ -113,9 +122,39 @@ class BudgetEntryViewModel(
             is BudgetEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is BudgetEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is BudgetEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
+            is BudgetEntryEvent.ShowFilterSheet -> _state.update { it.copy(showFilterSheet = event.show) }
             is BudgetEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is BudgetEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
             is BudgetEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
+            is BudgetEntryEvent.SetFilterId -> {
+                val filter = _state.value.availableFilters.find { it.id == event.filterId }
+                _state.update { state ->
+                    if (filter != null) {
+                        state.copy(
+                            filterId = event.filterId,
+                            linkedFilter = filter,
+                            selectedAccountIds = filter.filter.accountIds.toSet(),
+                            selectedCategoryIds = filter.filter.categoryIds.toSet(),
+                            selectedTags = filter.filter.tags.toSet(),
+                            selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
+                            selectedStatuses = filter.filter.statuses.toSet(),
+                            linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
+                            selectedTrackTypes = if (filter.filter.transactionType != null) setOf(filter.filter.transactionType) else state.selectedTrackTypes
+                        )
+                    } else {
+                        state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
+                    }
+                }
+                if (event.filterId != null) {
+                    viewModelScope.launch {
+                        val count = filterRepository.getFilterUsageCount(event.filterId)
+                        _state.update { it.copy(filterUsageCount = count) }
+                    }
+                }
+            }
+            BudgetEntryEvent.MakeFilterUnique -> _state.update { it.copy(filterId = null, linkedFilter = null) }
+            is BudgetEntryEvent.SetDeleteFilterWithBudget -> _state.update { it.copy(deleteFilterWithBudget = event.delete) }
+            is BudgetEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is BudgetEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is BudgetEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
             is BudgetEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -128,6 +167,30 @@ class BudgetEntryViewModel(
 
         viewModelScope.launch {
             val amount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            
+            // 1. Create or Update Filter
+            val filter = Filter(
+                id = s.linkedFilter?.id ?: 0L,
+                name = "Filter for Budget: ${s.name}",
+                filter = TransactionFilter(
+                    categoryIds = s.selectedCategoryIds.toList(),
+                    accountIds = s.selectedAccountIds.toList(),
+                    tags = s.selectedTags.toList(),
+                    paymentMethods = s.selectedPaymentMethods.toList(),
+                    statuses = s.selectedStatuses.toList(),
+                    linkedTransactionIds = s.linkedTransactionIds.toList(),
+                    transactionType = if (s.selectedTrackTypes.size == 1) s.selectedTrackTypes.first() else null
+                )
+            )
+
+            val filterId = if (filter.id == 0L) {
+                filterRepository.insertFilter(filter)
+            } else {
+                filterRepository.updateFilter(filter)
+                filter.id
+            }
+
+            // 2. Create or Update Budget
             val budget = (s.existingBudget ?: Budget(
                 id = 0,
                 name = s.name,
@@ -152,7 +215,8 @@ class BudgetEntryViewModel(
                 linkedTransactionIds = s.linkedTransactionIds.toList(),
                 customStartDate = if (s.period == com.osscabinet.ossWallet.domain.model.BudgetPeriod.CUSTOM) s.customStartDate else null,
                 customEndDate = if (s.period == com.osscabinet.ossWallet.domain.model.BudgetPeriod.CUSTOM) s.customEndDate else null,
-                profileId = s.currentProfileId
+                profileId = s.currentProfileId,
+                filterId = filterId
             )
 
             if (s.isEditMode) {
@@ -166,7 +230,17 @@ class BudgetEntryViewModel(
 
     fun deleteBudget(onSuccess: () -> Unit) {
         val id = _state.value.budgetId ?: return
+        val deleteFilter = _state.value.deleteFilterWithBudget
         viewModelScope.launch {
+            if (deleteFilter) {
+                budgetRepository.getById(id)?.let { budget ->
+                    budget.filterId?.let { filterId ->
+                        filterRepository.getFilterById(filterId)?.let { filter ->
+                            filterRepository.deleteFilter(filter)
+                        }
+                    }
+                }
+            }
             budgetRepository.delete(id)
             onSuccess()
         }

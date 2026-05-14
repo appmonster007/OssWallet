@@ -9,4 +9,5 @@ interface FilterRepository {
     suspend fun insertFilter(filter: Filter): Long
     suspend fun updateFilter(filter: Filter)
     suspend fun deleteFilter(filter: Filter)
+    suspend fun getFilterUsageCount(filterId: Long): Int
 }

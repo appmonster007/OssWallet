@@ -14,7 +14,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Flip
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -78,6 +89,7 @@ fun AeonTagSelectionContent(
     var searchQuery by remember { mutableStateOf("") }
     var currentSelection by remember { mutableStateOf(selectedTags.toSet()) }
     var isManagementMode by remember { mutableStateOf(!isSelectionModeEnabled) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     
     // Track newly added tags locally for immediate feedback
     var localTags by remember { mutableStateOf(emptyList<Tag>()) }
@@ -90,6 +102,8 @@ fun AeonTagSelectionContent(
         else allTags.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
 
+    val filteredNames = remember(filteredTags) { filteredTags.map { it.name }.toSet() }
+
     val exactMatchExists = remember(allTags, searchQuery) {
         val trimmed = searchQuery.trim()
         trimmed.isNotEmpty() && allTags.any { it.name.equals(trimmed, ignoreCase = true) }
@@ -99,6 +113,32 @@ fun AeonTagSelectionContent(
         title = title,
         onBack = onDismiss,
         actions = {
+            if (isSelectionModeEnabled && !isManagementMode && filteredNames.isNotEmpty()) {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    currentSelection = currentSelection + filteredNames
+                }) {
+                    Icon(Icons.Rounded.SelectAll, contentDescription = "Select All")
+                }
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    currentSelection = currentSelection - filteredNames
+                }) {
+                    Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All")
+                }
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    val newSelection = currentSelection.toMutableSet()
+                    filteredNames.forEach { name ->
+                        if (name in newSelection) newSelection.remove(name)
+                        else newSelection.add(name)
+                    }
+                    currentSelection = newSelection
+                }) {
+                    Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection")
+                }
+            }
+
             if (isSelectionModeEnabled) {
                 IconButton(onClick = { isManagementMode = !isManagementMode }) {
                     Icon(

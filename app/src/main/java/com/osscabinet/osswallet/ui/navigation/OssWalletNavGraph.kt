@@ -713,6 +713,7 @@ fun OssWalletNavGraph(
                             appContainer.accountRepository,
                             appContainer.categoryRepository,
                             appContainer.transactionRepository,
+                            appContainer.tagRepository,
                             appContainer.settingsRepository
                         )
                     }
@@ -807,6 +808,7 @@ fun OssWalletNavGraph(
                             categoryRepository = appContainer.categoryRepository,
                             tagRepository = appContainer.tagRepository,
                             transactionRepository = appContainer.transactionRepository,
+                            filterRepository = appContainer.filterRepository,
                             settingsRepository = appContainer.settingsRepository
                         )
                     }
@@ -893,6 +895,7 @@ fun OssWalletNavGraph(
                             categoryRepository = appContainer.categoryRepository,
                             tagRepository = appContainer.tagRepository,
                             transactionRepository = appContainer.transactionRepository,
+                            filterRepository = appContainer.filterRepository,
                             settingsRepository = appContainer.settingsRepository
                         )
                     }

@@ -19,6 +19,11 @@ data class LoanEntryState(
     val hasSettlementDate: Boolean = false,
     val settlementDate: Long = System.currentTimeMillis(),
     val linkedAccountId: String = "",
+    val filterId: Long? = null,
+    val linkedFilter: Filter? = null,
+    val filterUsageCount: Int = 0,
+    val deleteFilterWithLoan: Boolean = false,
+    val showDeleteDialog: Boolean = false,
 
     // UI State
     val showStartDatePicker: Boolean = false,
@@ -31,6 +36,7 @@ data class LoanEntryState(
     val showPaymentMethodSheet: Boolean = false,
     val showStatusSheet: Boolean = false,
     val showLinkSheet: Boolean = false,
+    val showFilterSheet: Boolean = false,
     val accountQuery: String = "",
     val categoryQuery: String = "",
     val isEditMode: Boolean = false,
@@ -45,10 +51,10 @@ data class LoanEntryState(
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
-    val existingLoan: Loan? = null
+    val existingLoan: Loan? = null,
+    val availableFilters: List<com.osscabinet.ossWallet.domain.model.Filter> = emptyList()
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && 
-                 principalAmount.toBigDecimalOrNull() != null && 
-                 selectedCategoryIds.isNotEmpty()
+                 principalAmount.toBigDecimalOrNull() != null
 }

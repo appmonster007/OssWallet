@@ -42,6 +42,15 @@ fun AeonBudgetEntryPreview() {
             selectedTags = setOf("Grocery", "Monthly"),
             onShowTagSheet = {},
             onRemoveTag = {},
+            selectedPaymentMethods = emptySet(),
+            onPaymentMethodClick = {},
+            selectedStatuses = emptySet(),
+            onStatusClick = {},
+            linkedTransactionIds = emptySet(),
+            onLinkRecordClick = {},
+            filterId = null,
+            onFilterClick = {},
+            availableFilters = emptyList(),
             noteSuggestions = emptyList(),
             modifier = Modifier.padding(16.dp)
         )

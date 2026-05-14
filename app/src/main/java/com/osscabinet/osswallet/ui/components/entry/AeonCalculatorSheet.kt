@@ -18,7 +18,7 @@ import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 @Composable
 fun AeonCalculatorSheet(
     currentAmount: String,
-    transactionType: TransactionType = TransactionType.EXPENSE,
+    transactionType: TransactionType = TransactionType.INCOME,
     decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
     onTypeChanged: (String) -> Unit = {},

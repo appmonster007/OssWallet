@@ -19,6 +19,10 @@ sealed class LoanEntryEvent {
     data class SetHasSettlementDate(val has: Boolean) : LoanEntryEvent()
     data class SetSettlementDate(val date: Long) : LoanEntryEvent()
     data class SetLinkedAccountId(val id: String) : LoanEntryEvent()
+    data class SetFilterId(val filterId: Long?) : LoanEntryEvent()
+    data object MakeFilterUnique : LoanEntryEvent()
+    data class SetDeleteFilterWithLoan(val delete: Boolean) : LoanEntryEvent()
+    data class ShowDeleteDialog(val show: Boolean) : LoanEntryEvent()
     
     // Visibility
     data class ShowStartDatePicker(val show: Boolean) : LoanEntryEvent()
@@ -31,6 +35,7 @@ sealed class LoanEntryEvent {
     data class ShowPaymentMethodSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowLinkSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowFilterSheet(val show: Boolean) : LoanEntryEvent()
     
     data class SetAccountQuery(val query: String) : LoanEntryEvent()
     data class SetCategoryQuery(val query: String) : LoanEntryEvent()

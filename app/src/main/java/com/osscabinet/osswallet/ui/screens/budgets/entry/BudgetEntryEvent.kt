@@ -20,6 +20,10 @@ sealed class BudgetEntryEvent {
     data class SetLinkedTransactions(val ids: Set<Long>) : BudgetEntryEvent()
     data class SetCustomStartDate(val date: Long) : BudgetEntryEvent()
     data class SetCustomEndDate(val date: Long) : BudgetEntryEvent()
+    data class SetFilterId(val filterId: Long?) : BudgetEntryEvent()
+    data object MakeFilterUnique : BudgetEntryEvent()
+    data class SetDeleteFilterWithBudget(val delete: Boolean) : BudgetEntryEvent()
+    data class ShowDeleteDialog(val show: Boolean) : BudgetEntryEvent()
     
     // Visibility
     data class ShowCustomStartPicker(val show: Boolean) : BudgetEntryEvent()
@@ -33,6 +37,7 @@ sealed class BudgetEntryEvent {
     data class ShowPaymentMethodSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowLinkSheet(val show: Boolean) : BudgetEntryEvent()
+    data class ShowFilterSheet(val show: Boolean) : BudgetEntryEvent()
     
     data class SetAccountQuery(val query: String) : BudgetEntryEvent()
     data class SetCategoryQuery(val query: String) : BudgetEntryEvent()

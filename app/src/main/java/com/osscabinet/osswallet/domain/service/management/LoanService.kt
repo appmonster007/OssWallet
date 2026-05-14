@@ -96,7 +96,7 @@ object LoanService {
     ): LoanSummary {
         val filteredTransactions = filterTransactionsForLoan(loan, transactions)
         val totalPaid = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-            acc + if (loan.loanType == LoanType.LENT) tx.amount.abs() else tx.amount.abs().negate()
+            acc + tx.amount.abs()
         }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
         val interest = calculateInterestAccrued(loan, now)
@@ -115,7 +115,10 @@ object LoanService {
         val filter = TransactionFilter(
             categoryIds = loan.categoryIds,
             tags = loan.tags,
-            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId)
+            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+            paymentMethods = loan.paymentMethods,
+            statuses = loan.statuses,
+            linkedTransactionIds = loan.linkedTransactionIds
         )
         return TransactionFilterService.filterTransactions(transactions, filter)
     }

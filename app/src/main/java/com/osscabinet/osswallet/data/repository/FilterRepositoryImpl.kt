@@ -25,4 +25,7 @@ class FilterRepositoryImpl(
 
     override suspend fun deleteFilter(filter: Filter) = 
         filterDao.deleteFilter(filter.toEntity())
+
+    override suspend fun getFilterUsageCount(filterId: Long): Int =
+        filterDao.getFilterUsageCount(filterId)
 }

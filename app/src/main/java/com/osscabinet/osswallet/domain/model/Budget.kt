@@ -23,7 +23,8 @@ data class Budget(
     val isArchived: Boolean = false,
     val profileId: Int,
     val customStartDate: Long? = null,
-    val customEndDate: Long? = null
+    val customEndDate: Long? = null,
+    val filterId: Long? = null
 )
 
 data class BudgetProgress(

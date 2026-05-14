@@ -119,21 +119,19 @@ object BudgetService {
     ): List<Transaction> {
         val (start, end) = getCurrentPeriodRange(budget, now)
 
-        // Utilize TransactionFilter for standard-compliant filtering
         val budgetFilter = TransactionFilter(
             categoryIds = budget.categoryIds,
             accountIds = budget.accountIds,
             tags = budget.tags,
-            transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null
-        )
-
-        // Merge with period filter
-        val combinedFilter = budgetFilter.copy(
+            paymentMethods = budget.paymentMethods,
+            statuses = budget.statuses,
+            linkedTransactionIds = budget.linkedTransactionIds,
+            transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null,
             timelineRange = TimelineRange.CustomRange(start, end),
             excludeFuture = false
         )
 
-        return TransactionFilterService.filterTransactions(transactions, combinedFilter)
+        return TransactionFilterService.filterTransactions(transactions, budgetFilter)
     }
 
     fun buildProgress(

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -48,11 +49,20 @@ fun BudgetFormBody(
     selectedTags: Set<String>,
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
+    selectedPaymentMethods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>,
     onPaymentMethodClick: () -> Unit,
+    selectedStatuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>,
     onStatusClick: () -> Unit,
+    linkedTransactionIds: Set<Long>,
     onLinkRecordClick: () -> Unit,
+    filterId: Long?,
+    onFilterClick: () -> Unit,
+    availableFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
     noteSuggestions: List<String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isFilterShared: Boolean = false,
+    filterUsageCount: Int = 0,
+    onMakeFilterUnique: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -119,11 +129,11 @@ fun BudgetFormBody(
                 )
             }
 
-            // Row 3: Filters / Categories (Full Width)
+            // Row 3: Categories (Full Width)
             val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
             EntryActionCard(
-                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.FilterList,
-                label = "FILTERS",
+                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                label = "CATEGORIES",
                 value = when {
                     selectedCategoryIds.isEmpty() -> "All Categories"
                     categoryObj != null -> categoryObj.name
@@ -133,6 +143,90 @@ fun BudgetFormBody(
                 modifier = Modifier.fillMaxWidth(),
                 iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 iconTint = MaterialTheme.colorScheme.primary
+            )
+
+            // Row 4: Filter (Full Width)
+            val filterObj = availableFilters.find { it.id == filterId }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                EntryActionCard(
+                    icon = Icons.Rounded.FilterList,
+                    label = "FILTER",
+                    value = filterObj?.name ?: "None",
+                    onClick = onFilterClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+                
+                if (filterId != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isFilterShared) "Shared with ${filterUsageCount - 1} other(s)" else "Unique Filter",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        if (isFilterShared) {
+                            TextButton(
+                                onClick = onMakeFilterUnique,
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Make Unique", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // DETAIL: Filter section
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "FILTERS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            )
+
+            // Payment Methods
+            EntryActionCard(
+                icon = Icons.Rounded.Payments,
+                label = "PAYMENT METHODS",
+                value = if (selectedPaymentMethods.isEmpty()) "All Methods" else "${selectedPaymentMethods.size} Selected",
+                onClick = onPaymentMethodClick,
+                modifier = Modifier.fillMaxWidth(),
+                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.primary
+            )
+
+            // Transaction Status
+            EntryActionCard(
+                icon = Icons.Rounded.CheckCircle,
+                label = "TRANSACTION STATUS",
+                value = if (selectedStatuses.isEmpty()) "All Statuses" else "${selectedStatuses.size} Selected",
+                onClick = onStatusClick,
+                modifier = Modifier.fillMaxWidth(),
+                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.secondary
+            )
+
+            // Linked Transactions
+            EntryActionCard(
+                icon = Icons.Rounded.Link,
+                label = "LINKED TRANSACTIONS",
+                value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
+                onClick = onLinkRecordClick,
+                modifier = Modifier.fillMaxWidth(),
+                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.tertiary
             )
         }
 
@@ -146,71 +240,53 @@ fun BudgetFormBody(
             onRemoveTag = onRemoveTag,
             noteSuggestions = noteSuggestions,
             additionalContent = {
-                AeonEntryMetadataSection(
-                    state = AeonMetadataState(
-                        paymentMethod = com.osscabinet.ossWallet.domain.model.PaymentMethod.CASH, // Default or first selected
-                        linkedTransactions = emptyList() // Need to load these or just show count
-                    ),
-                    accounts = accounts,
-                    categories = categories,
-                    is24Hour = false,
-                    onShowLinkedTransactions = onLinkRecordClick,
-                    onRemoveLink = { /* handled by linking sheet */ },
-                    onPaymentMethodClick = onPaymentMethodClick,
-                    onStatusClick = onStatusClick,
-                    onWarrantyToggle = {},
-                    onWarrantyDateClick = {},
-                    onLocationClick = {},
-                    additionalBottomContent = {
-                        // Alert threshold
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Rounded.Shield,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.secondary
-                                    )
-                                }
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Alert threshold",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                                Text(
-                                    text = "at ${(alertThreshold * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                                Slider(
-                                    value = alertThreshold,
-                                    onValueChange = onAlertThresholdChange,
-                                    valueRange = 0.5f..1.0f,
-                                    steps = 9,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                // Alert threshold
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.Shield,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
                         }
-
-                        // Rollover toggle
-                        EntrySwitchRow(
-                            label = "Roll over balance",
-                            checked = rollover,
-                            onCheckedChange = onRolloverChange,
-                            icon = Icons.Rounded.Autorenew,
-                            subtitle = "Carry unused budget forward"
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Alert threshold",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                        Text(
+                            text = "at ${(alertThreshold * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                        Slider(
+                            value = alertThreshold,
+                            onValueChange = onAlertThresholdChange,
+                            valueRange = 0.5f..1.0f,
+                            steps = 9,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
+                }
+
+                // Rollover toggle
+                EntrySwitchRow(
+                    label = "Roll over balance",
+                    checked = rollover,
+                    onCheckedChange = onRolloverChange,
+                    icon = Icons.Rounded.Autorenew,
+                    subtitle = "Carry unused budget forward"
                 )
             }
         )

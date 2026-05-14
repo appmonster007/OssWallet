@@ -185,11 +185,11 @@ class FilterEntryViewModel(
         }
     }
 
-    fun deleteFilter(onSuccess: () -> Unit) {
+    fun deleteFilter() {
         val filter = _state.value.existingFilter ?: return
         viewModelScope.launch {
             filterRepository.deleteFilter(filter)
-            onSuccess()
+            _state.update { it.copy(navTriggered = true) }
         }
     }
 }

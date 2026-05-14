@@ -240,21 +240,20 @@ class LoanEntryViewModel(
         }
     }
 
-    fun deleteLoan(onSuccess: () -> Unit) {
+    fun deleteLoan() {
         val id = _state.value.loanId ?: return
+        val filterId = _state.value.filterId
         val deleteFilter = _state.value.deleteFilterWithLoan
+        
         viewModelScope.launch {
-            if (deleteFilter) {
-                loanRepository.getLoanById(id)?.let { loan ->
-                    loan.filterId?.let { filterId ->
-                        filterRepository.getFilterById(filterId)?.let { filter ->
-                            filterRepository.deleteFilter(filter)
-                        }
-                    }
+            if (deleteFilter && filterId != null) {
+                filterRepository.getFilterById(filterId)?.let { filter ->
+                    filterRepository.deleteFilter(filter)
                 }
+            } else {
+                loanRepository.deleteLoan(id)
             }
-            loanRepository.deleteLoan(id)
-            onSuccess()
+            _state.update { it.copy(navTriggered = true) }
         }
     }
 }

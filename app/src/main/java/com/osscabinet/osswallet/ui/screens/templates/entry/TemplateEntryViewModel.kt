@@ -312,13 +312,13 @@ class TemplateEntryViewModel(
         }
     }
 
-    fun deleteTemplate(onSuccess: () -> Unit) {
+    fun deleteTemplate() {
         val id = _state.value.templateId ?: return
         viewModelScope.launch {
             templateRepository.getTemplateById(id)?.let {
                 templateRepository.deleteTemplate(it)
-                onSuccess()
             }
+            _state.update { it.copy(navTriggered = true) }
         }
     }
 }

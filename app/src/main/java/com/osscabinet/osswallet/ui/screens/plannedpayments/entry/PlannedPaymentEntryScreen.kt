@@ -64,9 +64,7 @@ fun PlannedPaymentEntryScreen(
             title = "Delete Planned Payment",
             message = "Are you sure you want to delete this planned payment?",
             onConfirm = {
-                viewModel.deletePlannedPayment {
-                    onBackClick()
-                }
+                viewModel.deletePlannedPayment()
             },
             onDismiss = { viewModel.onEvent(PlannedPaymentEntryEvent.ShowDeleteDialog(false)) },
             extraContent = {

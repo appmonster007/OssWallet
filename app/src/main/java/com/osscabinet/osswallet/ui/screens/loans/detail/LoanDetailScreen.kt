@@ -41,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,7 +105,16 @@ fun LoanDetailScreen(
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
-    val loan = remember(loanId, loans) { loans.find { it.id == loanId } } ?: return
+    val loan = remember(loanId, loans) { loans.find { it.id == loanId } }
+    
+    LaunchedEffect(loan) {
+        if (loan == null) {
+            onBackClick()
+        }
+    }
+    
+    if (loan == null) return
+
     val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     val now = System.currentTimeMillis()

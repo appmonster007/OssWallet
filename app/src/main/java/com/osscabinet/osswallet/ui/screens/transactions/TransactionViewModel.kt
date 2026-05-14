@@ -35,13 +35,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
@@ -127,8 +128,8 @@ class TransactionViewModel(
                     accounts,
                     exchangeRates,
                     computationRepository.hasLoadedExchangeRates,
-                    recordsFilter // Added recordsFilter to track excludeFuture
-                ) { allTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
+                    recordsSettings.map { it.excludeFutureTransactions }.distinctUntilChanged()
+                ) { allTransactions, accounts, rates, hasLoadedExchangeRates, excludeFuture ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
                     val precision = decimalPrecision.value
@@ -139,7 +140,7 @@ class TransactionViewModel(
                         exchangeRates = rates,
                         precision = precision,
                         limit = Int.MAX_VALUE,
-                        excludeFuture = currentFilter.excludeFuture // Respect the filter's setting
+                        excludeFuture = excludeFuture
                     )
                 }
             }.stateIn(
@@ -151,9 +152,14 @@ class TransactionViewModel(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter
-        ) { absoluteTxs, currentFilter ->
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, currentFilter)
+            recordsFilter,
+            recordsSettings.map { it.excludeFutureTransactions }.distinctUntilChanged()
+        ) { absoluteTxs, currentFilter, globalExcludeFuture ->
+            // Respect both current filter and global setting
+            val effectiveFilter = currentFilter.copy(
+                excludeFuture = currentFilter.excludeFuture && globalExcludeFuture
+            )
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -163,20 +169,12 @@ class TransactionViewModel(
     val scopedHistoryWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter
-        ) { absoluteTxs, currentFilter ->
-            val (startTime, endTime) = TimelineService.getDateRange(currentFilter.timelineRange)
-            val now = System.currentTimeMillis()
+            recordsFilter.map { it.timelineRange }.distinctUntilChanged()
+        ) { absoluteTxs, timelineRange ->
+            val (_, endTime) = TimelineService.getDateRange(timelineRange)
             
-            absoluteTxs.filter { item ->
-                TransactionFilterService.matches(
-                    tx = item.transaction,
-                    filter = currentFilter,
-                    startTime = startTime,
-                    endTime = endTime,
-                    now = now
-                )
-            }
+            if (endTime == null) absoluteTxs
+            else absoluteTxs.filter { it.transaction.timestamp <= endTime }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

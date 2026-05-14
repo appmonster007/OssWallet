@@ -107,6 +107,8 @@ class TransactionUseCases(
             .filter { it.transaction.accountId in nonArchivedAccountIds }
             .sortedByDescending { it.transaction.timestamp }
 
+        if (limit == Int.MAX_VALUE) return transactionsWithBalance
+
         // Get transactions from last 7 days
         val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
         val transactionsFromLastDays =

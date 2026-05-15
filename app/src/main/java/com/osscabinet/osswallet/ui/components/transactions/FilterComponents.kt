@@ -226,6 +226,46 @@ fun FilterFields(
                     ),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )
+
+                // Regex Toggles
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                ) {
+                    Surface(
+                        onClick = { onFilterChange(filter.copy(isNoteRegex = !filter.isNoteRegex)) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (filter.isNoteRegex) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isNoteRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Note Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isNoteRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Surface(
+                        onClick = { onFilterChange(filter.copy(isPayeeRegex = !filter.isPayeeRegex)) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (filter.isPayeeRegex) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isPayeeRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Payee Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isPayeeRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
@@ -237,7 +277,7 @@ fun FilterFields(
                             onFilterChange(newFilter)
                             onImmediateApply?.invoke(newFilter, 500)
                         },
-                        placeholder = "Note...",
+                        placeholder = if (filter.isNoteRegex) "/regex/i" else "Note...",
                         modifier = Modifier.weight(1f),
                         leadingIcon = Icons.Default.Search
                     )
@@ -248,7 +288,7 @@ fun FilterFields(
                             onFilterChange(newFilter)
                             onImmediateApply?.invoke(newFilter, 500)
                         },
-                        placeholder = "Payee...",
+                        placeholder = if (filter.isPayeeRegex) "/regex/i" else "Payee...",
                         modifier = Modifier.weight(1f),
                         leadingIcon = Icons.Default.Search
                     )

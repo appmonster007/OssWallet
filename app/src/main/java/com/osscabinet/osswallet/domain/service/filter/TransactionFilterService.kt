@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import java.math.BigDecimal
 
 /**
@@ -76,14 +77,14 @@ object TransactionFilterService {
 
         // Payee match
         val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
-            try { Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch (e: Exception) { false }
+            try { filter.queryPayee.toSmartRegex().containsMatchIn(tx.payee) } catch (e: Exception) { false }
         } else if (!filter.queryPayee.isNullOrBlank()) {
             tx.payee.contains(filter.queryPayee, ignoreCase = true)
         } else true
 
         // Note match
         val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
-            try { Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch (e: Exception) { false }
+            try { filter.queryNote.toSmartRegex().containsMatchIn(tx.note) } catch (e: Exception) { false }
         } else if (!filter.queryNote.isNullOrBlank()) {
             tx.note.contains(filter.queryNote, ignoreCase = true)
         } else true

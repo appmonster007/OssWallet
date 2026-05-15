@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -137,7 +138,7 @@ class TransactionRepositoryImpl(
             domainTransactions.filter { transaction ->
                 val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
                     try {
-                        Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(transaction.note)
+                        filter.queryNote.toSmartRegex().containsMatchIn(transaction.note)
                     } catch (e: Exception) {
                         false
                     }
@@ -145,7 +146,7 @@ class TransactionRepositoryImpl(
 
                 val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
                     try {
-                        Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(transaction.payee)
+                        filter.queryPayee.toSmartRegex().containsMatchIn(transaction.payee)
                     } catch (e: Exception) {
                         false
                     }

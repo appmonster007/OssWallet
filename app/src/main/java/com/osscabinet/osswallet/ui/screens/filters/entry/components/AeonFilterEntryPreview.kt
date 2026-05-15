@@ -18,7 +18,6 @@ fun AeonFilterEntryPreview() {
                 name = "High Expenses",
                 selectedTransactionTypes = setOf(TransactionType.EXPENSE),
                 minAmount = "100",
-                queryNote = "subscription",
                 isNoteRegex = true
             ),
             onEvent = {},

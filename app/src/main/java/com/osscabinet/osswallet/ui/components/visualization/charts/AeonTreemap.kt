@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -74,6 +75,7 @@ fun AeonTreemap(
     val disclosurePainter = rememberVectorPainter(Icons.Default.AddCircle)
 
     val totalValue = nodes.sumOf { it.value.abs() }
+    val dims = AeonTheme.dimensions
 
     BoxWithConstraints(modifier = modifier) {
         val widthPx = with(density) { maxWidth.toPx() }
@@ -137,18 +139,18 @@ fun AeonTreemap(
                 // 1. Draw Ambient Shadow (Background depth for the whole treemap)
                 drawRoundRect(
                     color = Color.Black.copy(alpha = 0.04f),
-                    topLeft = Offset(-2.dp.toPx(), -2.dp.toPx()),
-                    size = Size(widthPx + 4.dp.toPx(), heightPx + 4.dp.toPx()),
-                    cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                    topLeft = Offset(-(dims.spacingXs / 2).toPx(), -(dims.spacingXs / 2).toPx()),
+                    size = Size(widthPx + dims.spacingXs.toPx(), heightPx + dims.spacingXs.toPx()),
+                    cornerRadius = CornerRadius(dims.spacingSm.toPx(), dims.spacingSm.toPx())
                 )
 
                 layouts.forEach { (node, rect) ->
                     val isSelected = selectedNode == node
-                    val radius = if (rounded) 6.dp.toPx() else 0f
+                    val radius = if (rounded) (dims.spacingXs * 1.5f).toPx() else 0f
                     val cornerRadius = CornerRadius(radius, radius)
                     
                     // Modern Look: Precise radial gaps (spacing between rectangles)
-                    val gap = if (rounded) 2.dp.toPx() else 0f
+                    val gap = if (rounded) (dims.spacingXs / 2).toPx() else 0f
                     val drawRect = Rect(
                         rect.left + gap / 2,
                         rect.top + gap / 2,
@@ -167,14 +169,14 @@ fun AeonTreemap(
                     )
                     
                     // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
-                    if (drawRect.width > 20.dp.toPx() && drawRect.height > 20.dp.toPx()) {
-                        val innerRadius = if (rounded) 5.dp.toPx() else 0f
+                    if (drawRect.width > dims.containerCornerRadius.toPx() && drawRect.height > dims.containerCornerRadius.toPx()) {
+                        val innerRadius = if (rounded) (dims.spacingXs * 1.25f).toPx() else 0f
                         drawRoundRect(
                             color = Color.White.copy(alpha = 0.15f),
-                            topLeft = Offset(drawRect.left + 1.dp.toPx(), drawRect.top + 1.dp.toPx()),
-                            size = Size(drawRect.width - 2.dp.toPx(), drawRect.height - 2.dp.toPx()),
+                            topLeft = Offset(drawRect.left + (dims.spacingXs / 4).toPx(), drawRect.top + (dims.spacingXs / 4).toPx()),
+                            size = Size(drawRect.width - (dims.spacingXs / 2).toPx(), drawRect.height - (dims.spacingXs / 2).toPx()),
                             cornerRadius = CornerRadius(innerRadius, innerRadius),
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = (dims.spacingXs / 4).toPx())
                         )
                         
                         // Subtle Top Glow
@@ -197,7 +199,7 @@ fun AeonTreemap(
                             topLeft = Offset(drawRect.left, drawRect.top),
                             size = Size(drawRect.width, drawRect.height),
                             cornerRadius = cornerRadius,
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = (dims.spacingXs * 0.75f).toPx())
                         )
                     }
                 }
@@ -220,15 +222,15 @@ fun AeonTreemap(
             // Overlay labels for larger segments
             if (showLabels) {
                 layouts.forEach { (node, rect) ->
-                    val gap = with(density) { if (rounded) 2.dp.toPx() else 0f }
+                    val gap = with(density) { if (rounded) (dims.spacingXs / 2).toPx() else 0f }
                     val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
                     val rectWidthDp = with(density) { drawRect.width.toDp() }
                     val rectHeightDp = with(density) { drawRect.height.toDp() }
                     
                     // Show labels if box is reasonably large
-                    val showText = rectWidthDp > 40.dp && rectHeightDp > 28.dp
+                    val showText = rectWidthDp > dims.spacing3xl && rectHeightDp > dims.buttonCornerRadius
                     // Show only subcategory indicator if box is too small for text but large enough for icon
-                    val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > 16.dp && rectHeightDp > 16.dp
+                    val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > dims.spacingLg && rectHeightDp > dims.spacingLg
 
                     if (showText || showOnlyIcon) {
                         val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
@@ -238,7 +240,7 @@ fun AeonTreemap(
                             modifier = Modifier
                                 .offset(x = with(density) { drawRect.left.toDp() }, y = with(density) { drawRect.top.toDp() })
                                 .size(rectWidthDp, rectHeightDp)
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                                .padding(horizontal = dims.spacingSm, vertical = dims.spacingXs)
                                 .clipToBounds(),
                             contentAlignment = if (showText) Alignment.TopStart else Alignment.Center
                         ) {
@@ -257,7 +259,7 @@ fun AeonTreemap(
                                             Image(
                                                 painter = disclosurePainter,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(10.dp).padding(start = 2.dp),
+                                                modifier = Modifier.size(dims.iconSizeXs).padding(start = (dims.spacingXs / 2)),
                                                 colorFilter = ColorFilter.tint(iconTint)
                                             )
                                         }
@@ -274,7 +276,7 @@ fun AeonTreemap(
                                 Image(
                                     painter = disclosurePainter,
                                     contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
+                                    modifier = Modifier.size(dims.iconSizeXs),
                                     colorFilter = ColorFilter.tint(iconTint)
                                 )
                             }
@@ -423,7 +425,7 @@ private fun layoutRow(
 @Composable
 fun AeonTreemapPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.size(400.dp, 300.dp).padding(16.dp)) {
+        Box(modifier = Modifier.size(400.dp, 300.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonTreemap(
                 nodes = listOf(
                     AeonTreemapNode("Food", BigDecimal("500.00"), Color(0xFFFF5722), emptyList(), emptyMap(), false, 0, 0f, null),

@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
@@ -77,7 +78,7 @@ fun DetailDrawer(
                             }
                         }
                     },
-                shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
+                shape = RoundedCornerShape(topStart = AeonTheme.dimensions.cardCornerRadius, bottomStart = AeonTheme.dimensions.cardCornerRadius),
                 color = Color(0xFFC2D2FF),
                 shadowElevation = 8.dp
             ) {
@@ -85,7 +86,7 @@ fun DetailDrawer(
                     Icon(
                         Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                         contentDescription = "Open Details",
-                        modifier = Modifier.padding(end = 12.dp)
+                        modifier = Modifier.padding(end = AeonTheme.dimensions.listPadding)
                     )
                 }
             }
@@ -113,7 +114,7 @@ fun DetailDrawer(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(AeonTheme.dimensions.screenPadding),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = onClose) {
@@ -170,13 +171,13 @@ fun AeonShimmer(
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+            .padding(horizontal = AeonTheme.dimensions.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl),
+        contentPadding = PaddingValues(top = AeonTheme.dimensions.spacingLg, bottom = AeonTheme.dimensions.spacingXl)
     ) {
         if (showNetWorth) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                     Box(modifier = Modifier.size(150.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
                     Box(modifier = Modifier.size(250.dp, 48.dp).background(brush, RoundedCornerShape(8.dp)))
                     Box(modifier = Modifier.size(100.dp, 24.dp).background(brush, RoundedCornerShape(16.dp)))
@@ -185,35 +186,35 @@ fun AeonShimmer(
         }
         if (showCurrency) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                     repeat(3) {
-                        Box(modifier = Modifier.size(120.dp, 60.dp).background(brush, RoundedCornerShape(20.dp)))
+                        Box(modifier = Modifier.size(120.dp, 60.dp).background(brush, RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)))
                     }
                 }
             }
         }
         if (showCashflow) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(brush, RoundedCornerShape(32.dp)))
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(brush, RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius)))
             }
         }
         if (showAccounts) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Box(modifier = Modifier.size(100.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
                         Box(modifier = Modifier.size(60.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(24.dp)))
-                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(24.dp)))
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)))
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)))
                     }
                 }
             }
         }
         if (showBudgets) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                     Box(modifier = Modifier.size(120.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
                     repeat(2) {
                         Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(brush, RoundedCornerShape(16.dp)))

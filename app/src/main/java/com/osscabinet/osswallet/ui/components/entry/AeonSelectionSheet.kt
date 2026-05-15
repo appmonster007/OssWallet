@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * A generic full-screen selection sheet that provides a unified search and selection experience.
@@ -54,6 +55,7 @@ fun <T, ID> AeonSelectionSheet(
     }
 
     val filteredIds = remember(filteredItems) { filteredItems.map(idMapper).toSet() }
+    val dims = AeonTheme.dimensions
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
@@ -90,8 +92,8 @@ fun <T, ID> AeonSelectionSheet(
             Column(
                 modifier = modifier
                     .padding(padding)
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = dims.spacingXl),
+                verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
             ) {
                 headerContent?.invoke(this)
 
@@ -104,13 +106,13 @@ fun <T, ID> AeonSelectionSheet(
                 Box(modifier = Modifier.weight(1f, fill = false)) {
                     Column(
                         modifier = Modifier.verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         if (filteredItems.isEmpty() && query.isNotBlank()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(32.dp),
+                                    .padding(dims.spacing2xl),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(

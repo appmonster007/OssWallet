@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -42,6 +43,7 @@ fun AeonTransactionSplitSheet(
     onToggleSplitMode: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dims = AeonTheme.dimensions
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -55,13 +57,13 @@ fun AeonTransactionSplitSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
+                .padding(bottom = dims.spacing2xl)
         ) {
             // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                    .padding(horizontal = dims.spacingXl, vertical = dims.spacingSm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -89,7 +91,7 @@ fun AeonTransactionSplitSheet(
                     Icon(
                         Icons.Rounded.Add,
                         contentDescription = "Add Split",
-                        modifier = Modifier.padding(8.dp).size(20.dp),
+                        modifier = Modifier.padding(dims.spacingSm).size(dims.containerCornerRadius),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -99,13 +101,13 @@ fun AeonTransactionSplitSheet(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = dims.spacingXl, vertical = dims.spacingLg),
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                shape = RoundedCornerShape(24.dp),
-                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                shape = RoundedCornerShape(dims.cardCornerRadius),
+                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
             ) {
                 Row(
-                    modifier = Modifier.padding(20.dp),
+                    modifier = Modifier.padding(dims.containerCornerRadius),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -151,9 +153,9 @@ fun AeonTransactionSplitSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                    .padding(horizontal = dims.spacingXl),
+                verticalArrangement = Arrangement.spacedBy(dims.spacingMd),
+                contentPadding = PaddingValues(bottom = dims.spacingXl)
             ) {
                 itemsIndexed(splits) { index, split ->
                     SplitItem(
@@ -161,7 +163,8 @@ fun AeonTransactionSplitSheet(
                         categories = categories,
                         onRemove = { onRemoveSplit(index) },
                         onUpdate = { a, n, c -> onUpdateSplit(index, a, n, c) },
-                        onShowCategory = { onShowCategorySheet(index) }
+                        onShowCategory = { onShowCategorySheet(index) },
+                        dims = dims
                     )
                 }
             }
@@ -171,7 +174,7 @@ fun AeonTransactionSplitSheet(
                     text = "Allocation must match total amount",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+                        .padding(start = dims.spacingXl, end = dims.spacingXl, bottom = dims.spacingMd),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.error
@@ -181,8 +184,8 @@ fun AeonTransactionSplitSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = dims.spacingXl),
+                horizontalArrangement = Arrangement.spacedBy(dims.spacingMd),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
@@ -192,10 +195,10 @@ fun AeonTransactionSplitSheet(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(20.dp),
+                        .height(dims.spacing2xl + dims.spacingXl),
+                    shape = RoundedCornerShape(dims.containerCornerRadius),
                     border = androidx.compose.foundation.BorderStroke(
-                        0.5.dp,
+                        (dims.spacingXs / 8),
                         MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -212,9 +215,9 @@ fun AeonTransactionSplitSheet(
                     onClick = onDismiss,
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp),
+                        .height(dims.spacing2xl + dims.spacingXl),
                     enabled = isFullyAllocated && splits.size >= 2,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(dims.containerCornerRadius),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -236,17 +239,18 @@ private fun SplitItem(
     categories: List<Category>,
     onRemove: () -> Unit,
     onUpdate: (String?, String?, Long?) -> Unit,
-    onShowCategory: () -> Unit
+    onShowCategory: () -> Unit,
+    dims: com.osscabinet.ossWallet.ui.theme.AeonDimensions
 ) {
     val category = categories.find { it.id == split.categoryId }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        shape = RoundedCornerShape(dims.cardCornerRadius),
+        border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(dims.spacingLg)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -256,27 +260,27 @@ private fun SplitItem(
                     onClick = onShowCategory,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(dims.componentCornerRadius)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = dims.spacingMd, vertical = dims.spacingSm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
                             shape = CircleShape,
                             color = (category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f),
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(dims.spacing2xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     getIconByName(category?.iconName),
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(dims.iconSizeSm),
                                     tint = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(dims.spacingMd))
                         Text(
                             text = category?.name ?: "Select Category",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
@@ -286,7 +290,7 @@ private fun SplitItem(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(dims.spacingMd))
 
                 // Amount Input
                 Column(horizontalAlignment = Alignment.End) {
@@ -305,7 +309,7 @@ private fun SplitItem(
                                 onUpdate(it, null, null)
                             }
                         },
-                        modifier = Modifier.width(90.dp),
+                        modifier = Modifier.width(dims.iconSize3xl + dims.spacingXl),
                         placeholder = { Text("0.00", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth()) },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
@@ -324,18 +328,18 @@ private fun SplitItem(
 
                 IconButton(
                     onClick = onRemove,
-                    modifier = Modifier.padding(start = 4.dp).size(36.dp)
+                    modifier = Modifier.padding(start = dims.spacingXs).size(dims.spacingXl + dims.spacingMd)
                 ) {
                     Icon(
                         Icons.Rounded.DeleteOutline,
                         contentDescription = "Remove",
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(dims.containerCornerRadius + 2.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dims.spacingMd))
 
             // Note Input
             TextField(
@@ -349,14 +353,14 @@ private fun SplitItem(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(dims.spacingMd),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
                 leadingIcon = {
                     Icon(
                         Icons.AutoMirrored.Rounded.Notes,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(dims.spacingLg),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }

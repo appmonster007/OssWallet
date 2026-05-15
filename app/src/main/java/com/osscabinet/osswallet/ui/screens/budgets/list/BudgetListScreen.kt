@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
@@ -108,18 +109,18 @@ fun BudgetListScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            modifier = Modifier.size(72.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.AccountBalance,
                                     contentDescription = null,
-                                    modifier = Modifier.size(36.dp),
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -142,8 +143,8 @@ fun BudgetListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                 ) {
                     if (active.isNotEmpty()) {
                         item {
@@ -257,12 +258,12 @@ private fun BudgetListItem(
             )
         },
         additionalContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                 LinearProgressIndicator(
                     progress = { progressFraction },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp),
+                        .height(AeonTheme.dimensions.spacingSm),
                     color = progressColor,
                     trackColor = progressColor.copy(alpha = 0.15f),
                     strokeCap = StrokeCap.Round

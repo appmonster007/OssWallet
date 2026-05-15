@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+
 /**
  * Compact action chip for entry screens.
  * Following the "Architect Slate" design specification with haptics and animations.
@@ -62,7 +64,7 @@ fun EntryActionChip(
             onClick()
         },
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         color = backgroundColor,
         border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),
         modifier = modifier
@@ -73,20 +75,20 @@ fun EntryActionChip(
             }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.chipPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
         ) {
             Surface(
                 shape = CircleShape,
                 color = iconContainerColor ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = iconTint ?: (if (isSelected) selectedColor else MaterialTheme.colorScheme.primary)
                     )
                 }

@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,10 +60,10 @@ fun SmartSuggestionsScreen(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
                         tint = MaterialTheme.colorScheme.outline
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No suggestions available yet",
                         style = MaterialTheme.typography.bodyLarge,
@@ -79,12 +80,12 @@ fun SmartSuggestionsScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = 16.dp
+                    start = AeonTheme.dimensions.screenPadding,
+                    end = AeonTheme.dimensions.screenPadding,
+                    top = padding.calculateTopPadding() + AeonTheme.dimensions.spacingSm,
+                    bottom = AeonTheme.dimensions.screenPadding
                 ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {
                 items(visiblePatterns) { pattern ->
                     SuggestionListItem(
@@ -118,12 +119,12 @@ private fun SuggestionListItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
             // Header Row: Type Indicator + Dismiss Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,18 +132,18 @@ private fun SuggestionListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingXs),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            modifier = Modifier.size(12.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
                             tint = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         Text(
@@ -156,18 +157,18 @@ private fun SuggestionListItem(
 
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Dismiss",
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = MaterialTheme.colorScheme.outline
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
 
             // Main Info Row: Payee + Abbreviated Amount
             Row(
@@ -189,7 +190,7 @@ private fun SuggestionListItem(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
             val recommendation = when {
                 pattern.recurrenceRule != null -> "Recurring ${pattern.recurrenceRule.type.name.lowercase()} payment detected."
@@ -206,25 +207,25 @@ private fun SuggestionListItem(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                shape = RoundedCornerShape(12.dp),
+                    .padding(vertical = AeonTheme.dimensions.spacingMd),
+                shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(modifier = Modifier.padding(AeonTheme.dimensions.spacingMd)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                         val categoryName = categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
                         DetailItem("Category", categoryName, Modifier.weight(1f))
                         DetailItem("Account", pattern.accountId ?: "Outside Wallet", Modifier.weight(1f))
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                         DetailItem("Method", pattern.paymentMethod.displayName, Modifier.weight(1f))
                         if (pattern.note.isNotEmpty()) {
                             DetailItem("Note", pattern.note, Modifier.weight(1f))
                         }
                     }
                     if (pattern.tags.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                         DetailItem("Tags", pattern.tags.joinToString(", "), Modifier.fillMaxWidth())
                     }
                 }
@@ -236,18 +237,18 @@ private fun SuggestionListItem(
                 color = MaterialTheme.colorScheme.outline
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 if (pattern.recurrenceRule != null && !pattern.existsAsPlannedPayment) {
                     Column(modifier = Modifier.weight(1f)) {
                         Button(
                             onClick = { onAcceptAsPlannedPayment(pattern) },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(AeonTheme.dimensions.listPadding)
                         ) {
                             Text("Save Planned", style = MaterialTheme.typography.labelSmall)
                         }
@@ -256,7 +257,7 @@ private fun SuggestionListItem(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline,
                             fontSize = 10.sp,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
                         )
                     }
                 }
@@ -266,7 +267,7 @@ private fun SuggestionListItem(
                         FilledTonalButton(
                             onClick = { onAcceptAsTemplate(pattern) },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(AeonTheme.dimensions.listPadding)
                         ) {
                             Text("Save Template", style = MaterialTheme.typography.labelSmall)
                         }
@@ -275,7 +276,7 @@ private fun SuggestionListItem(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline,
                             fontSize = 10.sp,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
                         )
                     }
                 }

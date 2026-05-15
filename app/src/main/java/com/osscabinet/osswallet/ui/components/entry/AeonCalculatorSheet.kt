@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 
@@ -26,6 +27,7 @@ fun AeonCalculatorSheet(
     title: String? = null
 ) {
     val transactionTypeStr = transactionType.value
+    val dims = AeonTheme.dimensions
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -34,7 +36,7 @@ fun AeonCalculatorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = RoundedCornerShape(topStart = dims.dialogCornerRadius, topEnd = dims.dialogCornerRadius),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
     ) {
@@ -42,14 +44,14 @@ fun AeonCalculatorSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .padding(horizontal = dims.spacingXl)
+                .padding(bottom = dims.spacing2xl)
         ) {
             if (title != null) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(bottom = 16.dp, start = 8.dp)
+                    modifier = Modifier.padding(bottom = dims.spacingLg, start = dims.spacingSm)
                 )
             }
 

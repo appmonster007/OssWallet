@@ -72,6 +72,7 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
@@ -137,9 +138,9 @@ private fun SwipeablePaymentItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
                     .background(bgColor)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = AeonTheme.dimensions.spacingXl),
                 contentAlignment = if (isStartToEnd) Alignment.CenterStart else Alignment.CenterEnd
             ) {
                 when (direction) {
@@ -147,14 +148,14 @@ private fun SwipeablePaymentItem(
                         Icons.Rounded.CheckCircle,
                         contentDescription = "Confirm",
                         tint = Color(0xFF004D40),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                     )
 
                     SwipeToDismissBoxValue.EndToStart -> Icon(
                         Icons.Rounded.SkipNext,
                         contentDescription = "Skip",
                         tint = Color(0xFFB3261E),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                     )
 
                     else -> {}
@@ -246,18 +247,18 @@ fun PlannedPaymentListScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            modifier = Modifier.size(72.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.Repeat,
                                     contentDescription = null,
-                                    modifier = Modifier.size(36.dp),
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -280,8 +281,8 @@ fun PlannedPaymentListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
                 ) {
                     if (overdue.isNotEmpty()) {
                         item {

@@ -68,6 +68,7 @@ import com.osscabinet.ossWallet.ui.components.management.ScopeSection
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -198,8 +199,8 @@ fun BudgetDetailScreen(
                     0 -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                            contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
                         ) {
                             item {
                                 BudgetHeroCard(
@@ -216,7 +217,7 @@ fun BudgetDetailScreen(
                                     icon = Icons.Rounded.FilterAlt,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
                                         ScopeSection(
                                             label = "ACCOUNTS",
                                             icon = Icons.Rounded.AccountBalance,
@@ -267,15 +268,15 @@ fun BudgetDetailScreen(
                                 item {
                                     Surface(
                                         color = TealHealthy.copy(alpha = 0.05f),
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                                         border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
                                     ) {
                                         Row(
                                             modifier = Modifier
-                                                .padding(16.dp)
+                                                .padding(AeonTheme.dimensions.cardPadding)
                                                 .fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                                         ) {
                                             Icon(
                                                 Icons.Rounded.Autorenew,
@@ -307,14 +308,14 @@ fun BudgetDetailScreen(
                         if (budgetTransactions.isEmpty()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 border = BorderStroke(
                                     0.5.dp,
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                 )
                             ) {
-                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
                                     Text(
                                         "No activity in this period",
                                         style = MaterialTheme.typography.bodyMedium,

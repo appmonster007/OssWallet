@@ -10,15 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.model.PaymentMethod
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun LoanFormBody(
@@ -74,8 +70,11 @@ fun LoanFormBody(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = AeonTheme.dimensions.spacingLg
+            ),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
         // IMPACT: Header card
         AeonImpactHeaderCard(
@@ -97,7 +96,7 @@ fun LoanFormBody(
         )
 
         // CONTEXT: Action cards grid
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             // Row 1: Filter and Start Date
             AeonContextGrid {
                 val filterObj = availableFilters.find { it.id == filterId }
@@ -151,7 +150,7 @@ fun LoanFormBody(
             }
 
             // Row 3: Interest (Full Width)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                 EntryActionCard(
                     icon = Icons.Rounded.Percent,
                     label = "INTEREST",
@@ -164,7 +163,7 @@ fun LoanFormBody(
                 
                 if (filterId != null) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -177,10 +176,10 @@ fun LoanFormBody(
                             TextButton(
                                 onClick = onMakeFilterUnique,
                                 contentPadding = PaddingValues(0.dp),
-                                modifier = Modifier.height(24.dp)
+                                modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
                             ) {
-                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
                                 Text("Make Unique", style = MaterialTheme.typography.labelSmall)
                             }
                         }

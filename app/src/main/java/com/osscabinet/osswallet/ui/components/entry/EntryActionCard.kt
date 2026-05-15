@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Shared action card for entry screens.
@@ -66,7 +67,7 @@ fun EntryActionCard(
             onClick()
         },
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         color = backgroundColor,
         border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),
         shadowElevation = 0.dp,
@@ -78,24 +79,24 @@ fun EntryActionCard(
             }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
                 color = if (isSelected) selectedColor.copy(alpha = 0.12f) else iconContainerColor,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = if (isSelected) selectedColor else iconTint
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.weight(1f)
@@ -126,12 +127,12 @@ fun EntryActionCard(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onTrailingIconClick?.invoke()
                     },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                 ) {
                     Icon(
                         trailingIcon,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     )
                 }

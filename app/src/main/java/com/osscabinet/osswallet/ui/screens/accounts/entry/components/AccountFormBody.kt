@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun AccountFormBody(
@@ -37,8 +38,11 @@ fun AccountFormBody(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = AeonTheme.dimensions.spacingLg
+            ),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
         AeonHeroHeader(
             title = state.accountName.ifBlank { "Untitled" },
@@ -104,7 +108,7 @@ fun AccountFormBody(
             onColorSelected = { onEvent(AccountEntryEvent.SetColor(it)) }
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacing2xl))
     }
 
     if (state.showStructureSheet) {
@@ -137,13 +141,13 @@ private fun StructureTypeSelection(
             title = "Structure Type",
             onBack = onDismiss
         ) { padding ->
-            Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+            Column(modifier = Modifier.padding(padding).padding(horizontal = AeonTheme.dimensions.screenPadding)) {
                 AeonSearchField(
                     query = query,
                     onQueryChange = { query = it },
                     placeholder = "Search types..."
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
                 Box(modifier = Modifier.weight(1f, fill = false)) {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(

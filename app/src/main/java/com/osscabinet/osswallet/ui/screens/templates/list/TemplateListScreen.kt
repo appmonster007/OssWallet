@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
@@ -152,9 +153,10 @@ fun TemplateListScreenContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) { template, isDragging ->
+                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                ) {
+                    template, isDragging ->
                     ReorderTemplateItem(
                         template = template,
                         isDragging = isDragging
@@ -167,8 +169,8 @@ fun TemplateListScreenContent(
                     .fillMaxSize()
                     .padding(padding)
                     .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {
                 items(templates, key = { it.id }) { template ->
                     TemplateItem(
@@ -192,7 +194,7 @@ fun ReorderTemplateItem(
     isDragging: Boolean = false
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = if (isDragging) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         border = if (isDragging) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
@@ -201,18 +203,18 @@ fun ReorderTemplateItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Rounded.DragHandle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Icon(Icons.Rounded.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
         }
     }
@@ -236,18 +238,18 @@ fun TemplateItem(
 
     Card(
         onClick = onEdit,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Surface(
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ) {
@@ -278,7 +280,7 @@ fun TemplateItem(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Column(modifier = Modifier.weight(1f)) {
                 Text(template.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 Text(categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -326,7 +328,7 @@ fun TemplateDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (template == null) "New Template" else "Edit Template") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -355,12 +357,12 @@ fun TemplateDialog(
                 
                 Surface(
                     onClick = { showAccountPicker = true },
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -369,7 +371,7 @@ fun TemplateDialog(
                     }
                 }
                 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                     FilterChip(
                         selected = type == TransactionType.EXPENSE,
                         onClick = { type = TransactionType.EXPENSE },
@@ -555,7 +557,7 @@ fun TemplateItemPreview() {
     )
 
     MaterialTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)) {
             TemplateItem(
                 template = sampleTemplate,
                 categoryName = "Food & Dining",

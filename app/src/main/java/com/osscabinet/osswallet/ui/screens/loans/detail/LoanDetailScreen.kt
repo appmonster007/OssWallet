@@ -73,6 +73,7 @@ import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
@@ -229,15 +230,15 @@ fun LoanDetailScreen(
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                shape = RoundedCornerShape(24.dp),
+                                    .padding(AeonTheme.dimensions.screenPadding),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 border = BorderStroke(
                                     0.5.dp,
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                 )
                             ) {
-                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
                                     Text(
                                         "No related transactions",
                                         style = MaterialTheme.typography.bodyMedium,
@@ -337,8 +338,8 @@ private fun LoanOverviewTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
         item {
             LoanHeroCard(
@@ -356,7 +357,7 @@ private fun LoanOverviewTab(
                 icon = Icons.Rounded.FilterAlt,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
                     ScopeSection(
                         label = "LINKED ACCOUNT",
                         icon = Icons.Rounded.AccountBalance,
@@ -473,27 +474,27 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
     }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.2f),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 "${entry.period}",
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.width(28.dp),
+                modifier = Modifier.width(AeonTheme.dimensions.spacingXl),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 dateStr,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.width(70.dp)
+                modifier = Modifier.width(AeonTheme.dimensions.iconSize3xl)
             )
             Text(
                 entry.principal.setScale(2, RoundingMode.HALF_UP).toPlainString(),

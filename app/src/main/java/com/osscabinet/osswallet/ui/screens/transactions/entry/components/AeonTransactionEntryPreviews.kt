@@ -24,6 +24,22 @@ fun AeonTransactionFormBodyPreview() {
 
 @Preview(showBackground = true, heightDp = 1000)
 @Composable
+fun AeonTransactionFormBodyAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        TransactionFormBody(
+            state = TransactionEntryState(
+                amount = "42.50",
+                transactionType = TransactionType.EXPENSE,
+                selectedCurrency = "USD",
+                note = "Dinner with friends"
+            ),
+            onEvent = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1000)
+@Composable
 fun AeonTransactionFormBodyTransferPreview() {
     OssWalletTheme {
         TransactionFormBody(

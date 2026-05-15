@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -69,15 +70,15 @@ fun ExchangeRatesScreen(
                 }
                 Column {
                     Text("New rates fetched. Do you want to save them?", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = jsonPreview,
-                            modifier = Modifier.padding(8.dp),
+                            modifier = Modifier.padding(AeonTheme.dimensions.spacingSm),
                             style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -150,7 +151,7 @@ fun ExchangeRatesScreen(
                                 }
                                 IconButton(onClick = { viewModel.refreshRates() }) {
                                     if (uiState.isLoading) {
-                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        CircularProgressIndicator(modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm), strokeWidth = 2.dp)
                                     } else {
                                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                                     }
@@ -209,7 +210,7 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(AeonTheme.dimensions.screenPadding)
     ) {
         OutlinedTextField(
             value = searchQuery,
@@ -224,7 +225,7 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     }
                 }
             },
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -232,12 +233,12 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
             )
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.screenPadding))
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Currency", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -251,21 +252,21 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(AeonTheme.dimensions.screenPadding),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(rate.currencyCode.take(2), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                         Text(rate.currencyCode, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                     Text(
@@ -276,7 +277,7 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                         )
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
         }
     }
@@ -302,19 +303,19 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(AeonTheme.dimensions.spacingXl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
     ) {
         // Big Display
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(32.dp)
+                    .padding(AeonTheme.dimensions.spacing2xl)
                     .fillMaxWidth()
             ) {
                 // Source - Align Left
@@ -336,7 +337,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = null,
                     modifier = Modifier
-                        .padding(vertical = 12.dp)
+                        .padding(vertical = AeonTheme.dimensions.spacingMd)
                         .align(Alignment.CenterHorizontally),
                     tint = MaterialTheme.colorScheme.outline
                 )
@@ -362,7 +363,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
         }
 
         // Controls
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
             CurrencySelector(
                 label = "From",
                 selected = fromCurrency,
@@ -380,7 +381,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
         }
 
         // Keypad for "Big numbered UI"
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
             val keys = listOf(
                 listOf("1", "2", "3"),
                 listOf("4", "5", "6"),
@@ -389,7 +390,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
             )
             
             keys.forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                     row.forEach { key ->
                         KeyButton(
                             text = key,
@@ -476,8 +477,8 @@ fun CurrencySelector(
 fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.height(64.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(AeonTheme.dimensions.iconSize3xl),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         contentPadding = PaddingValues(0.dp)
     ) {
         if (text == "C") {

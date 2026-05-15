@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -212,11 +213,11 @@ fun AeonTransactionItem(
                 )
             }
 
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Column(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(32.dp)) {
+                    Box(modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             shape = CircleShape,
@@ -229,7 +230,7 @@ fun AeonTransactionItem(
                                     icon ?: Icons.Rounded.Category,
                                     contentDescription = null,
                                     tint = iconBg ?: MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                                 )
                             }
                         }
@@ -238,7 +239,7 @@ fun AeonTransactionItem(
                         if (status != com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED) {
                             Surface(
                                 modifier = Modifier
-                                    .size(12.dp)
+                                    .size(AeonTheme.dimensions.iconSizeXs)
                                     .align(Alignment.BottomStart),
                                 shape = CircleShape,
                                 color = when (status) {
@@ -268,11 +269,11 @@ fun AeonTransactionItem(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
 
                     Row(
                         modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -324,9 +325,7 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp
                                     ),
-                                    color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(
-                                        alpha = 0.7f
-                                    )
+                                    color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.8f)
                                 )
                             }
 
@@ -339,14 +338,14 @@ fun AeonTransactionItem(
                                 Text(
                                     balanceText,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
                                 )
                             }
 
                             Text(
                                 timestamp,
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
                                 modifier = Modifier.padding(top = 2.dp)
                             )
                         }
@@ -355,13 +354,13 @@ fun AeonTransactionItem(
 
                 if (tags.isNotEmpty()) {
                     FlowRow(
-                        modifier = Modifier.padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.padding(top = AeonTheme.dimensions.spacingSm),
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         tags.forEach { tag ->
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.spacingXs),
                                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
                             ) {
                                 Text(
@@ -371,7 +370,7 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     ),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXs, vertical = 2.dp)
                                 )
                             }
                         }

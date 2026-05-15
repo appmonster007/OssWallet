@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
@@ -149,8 +150,8 @@ fun PlannedPaymentDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             // Hero card
             item {
@@ -173,7 +174,7 @@ fun PlannedPaymentDetailScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Text(
                             formattedAmount,
@@ -184,12 +185,12 @@ fun PlannedPaymentDetailScreen(
                             payment.currency,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                             color = accentColor.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingXs)
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                         val statusLabel = payment.status.displayName
                         val statusColor = when (payment.status) {
                             PlannedPaymentStatus.ACTIVE -> accentColor
@@ -197,7 +198,7 @@ fun PlannedPaymentDetailScreen(
                             else -> MaterialTheme.colorScheme.error
                         }
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                             color = statusColor.copy(alpha = 0.12f),
                             border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.3f))
                         ) {
@@ -205,33 +206,33 @@ fun PlannedPaymentDetailScreen(
                                 statusLabel,
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = statusColor,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
                             )
                         }
                         val typeLabel = payment.transactionType.displayName
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ) {
                             Text(
                                 typeLabel,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
                             )
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                     HorizontalDivider(
                         thickness = 0.5.dp,
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Icon(
                             Icons.Rounded.Repeat,
@@ -257,7 +258,7 @@ fun PlannedPaymentDetailScreen(
                             color = accentColor
                         )
                     }
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
                     Text(
                         "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.schedule.startDate))}",
                         style = MaterialTheme.typography.bodySmall,
@@ -277,7 +278,7 @@ fun PlannedPaymentDetailScreen(
                 item {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         border = BorderStroke(
                             0.5.dp,
@@ -285,8 +286,8 @@ fun PlannedPaymentDetailScreen(
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                         ) {
                             if (accounts.isNotEmpty()) {
                                 DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
@@ -381,12 +382,12 @@ private fun DetailMetaRow(
 ) {
     Row(
         verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         Icon(
             icon,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
         Column(modifier = Modifier.weight(1f)) {
@@ -435,7 +436,7 @@ private fun OccurrenceItem(
             MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.12f)
         else
             MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         border = BorderStroke(
             0.5.dp,
             if (item.isOverdue) RedWarning.copy(alpha = 0.2f)
@@ -446,20 +447,20 @@ private fun OccurrenceItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(AeonTheme.dimensions.spacingMd),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
                 color = iconColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.CalendarToday,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = iconColor
                     )
                 }
@@ -478,19 +479,19 @@ private fun OccurrenceItem(
             }
             when (status) {
                 OccurrenceStatus.PENDING -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                         Surface(
                             onClick = onSkip,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f),
                             border = BorderStroke(
                                 0.5.dp,
                                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
                             ),
-                            modifier = Modifier.height(32.dp)
+                            modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                         ) {
                             Box(
-                                modifier = Modifier.padding(horizontal = 12.dp),
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("Skip", style = MaterialTheme.typography.labelMedium)
@@ -499,14 +500,14 @@ private fun OccurrenceItem(
                         if (canConfirmToday) {
                             Surface(
                                 onClick = onConfirm,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                 color = TealHealthy,
-                                modifier = Modifier.height(32.dp)
+                                modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Done,
@@ -530,14 +531,14 @@ private fun OccurrenceItem(
                                 else -> "Due soon"
                             }
                             Surface(
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                modifier = Modifier.height(32.dp)
+                                modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Schedule,
@@ -561,13 +562,13 @@ private fun OccurrenceItem(
                 OccurrenceStatus.CONFIRMED -> {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Icon(
                             Icons.Rounded.CheckCircle,
                             contentDescription = null,
                             tint = TealHealthy,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                         Text(
                             "Confirmed",
@@ -580,13 +581,13 @@ private fun OccurrenceItem(
                 OccurrenceStatus.SKIPPED -> {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Icon(
                             Icons.Rounded.Cancel,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                         Text(
                             "Skipped",
@@ -620,27 +621,27 @@ private fun PastOccurrenceItem(
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(AeonTheme.dimensions.spacingMd),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
                 color = statusColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         statusIcon,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = statusColor
                     )
                 }
@@ -658,7 +659,7 @@ private fun PastOccurrenceItem(
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
             ) {
                 Icon(
                     statusIcon,

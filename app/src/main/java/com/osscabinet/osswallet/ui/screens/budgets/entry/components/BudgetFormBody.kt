@@ -13,16 +13,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.PaymentMethod
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun BudgetFormBody(
@@ -71,8 +66,11 @@ fun BudgetFormBody(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = AeonTheme.dimensions.spacingLg
+            ),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
         // IMPACT: Header card
         AeonImpactHeaderCard(
@@ -91,7 +89,7 @@ fun BudgetFormBody(
         )
 
         // CONTEXT: Action cards grid
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             // Row 1: Filter and Period
             AeonContextGrid {
                 val filterObj = availableFilters.find { it.id == filterId }
@@ -152,7 +150,7 @@ fun BudgetFormBody(
             }
 
             // Row 3: Tracks (Full Width)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                 EntryActionCard(
                     icon = Icons.Rounded.ShowChart,
                     label = "TRACKS",
@@ -167,7 +165,7 @@ fun BudgetFormBody(
                 
                 if (filterId != null) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -180,10 +178,10 @@ fun BudgetFormBody(
                             TextButton(
                                 onClick = onMakeFilterUnique,
                                 contentPadding = PaddingValues(0.dp),
-                                modifier = Modifier.height(24.dp)
+                                modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
                             ) {
-                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
                                 Text("Make Unique", style = MaterialTheme.typography.labelSmall)
                             }
                         }
@@ -231,20 +229,20 @@ fun BudgetFormBody(
 
                 // Alert threshold
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingSm),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
                     Surface(
                         shape = androidx.compose.foundation.shape.CircleShape,
                         color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Rounded.Shield,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(AeonTheme.dimensions.spacingLg),
                                 tint = MaterialTheme.colorScheme.secondary
                             )
                         }

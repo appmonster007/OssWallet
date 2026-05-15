@@ -55,6 +55,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -133,7 +134,7 @@ fun NetWorthCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             // Primary Figure: Manrope, Bold, 20px (or larger as per font setting)
             val baseFontSize = when (fontSize) {
@@ -184,7 +185,7 @@ fun NetWorthCard(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 FlowBadge(
@@ -256,12 +257,12 @@ private fun FlowBadge(
     Surface(
         modifier = modifier.clickable(onClick = onClick),
         color = color.copy(alpha = 0.08f),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         border = BorderStroke(0.5.dp, color.copy(alpha = 0.1f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -270,7 +271,7 @@ private fun FlowBadge(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                 ) {
 //                Icon(
 //                    if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
@@ -296,12 +297,12 @@ private fun FlowBadge(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                         ) {
                             Icon(
                                 if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                 contentDescription = null,
-                                modifier = Modifier.size(10.dp),
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
                                 tint = color.copy(alpha = 0.7f)
                             )
                             Text(
@@ -452,7 +453,7 @@ private fun NetWorthDisplaySettingsDialog(
                 }
             }
         },
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     )
 }
@@ -461,25 +462,56 @@ private fun NetWorthDisplaySettingsDialog(
 @Composable
 fun NetWorthCardPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            NetWorthCard(
-                currentMetrics = NetWorthMetrics(
-                    netWorth = BigDecimal("125000.50"),
-                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
-                        totalIncomeInBase = BigDecimal("5000.00"),
-                        totalExpensesInBase = BigDecimal("3200.00")
-                    )
-                ),
-                baseCurrency = "USD",
-                precision = 2,
-                cardId = "preview",
-                fontSize = "Medium",
-                showComparison = true,
-                filter = TransactionFilter(),
-                onFontSizeChange = { _, _ -> },
-                onShowComparisonChange = { _, _ -> },
-                onFilterChange = { _, _ -> }
-            )
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                NetWorthCard(
+                    currentMetrics = NetWorthMetrics(
+                        netWorth = BigDecimal("125000.50"),
+                        cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
+                            totalIncomeInBase = BigDecimal("5000.00"),
+                            totalExpensesInBase = BigDecimal("3200.00")
+                        )
+                    ),
+                    baseCurrency = "USD",
+                    precision = 2,
+                    cardId = "preview",
+                    fontSize = "Medium",
+                    showComparison = true,
+                    filter = TransactionFilter(),
+                    onFontSizeChange = { _, _ -> },
+                    onShowComparisonChange = { _, _ -> },
+                    onFilterChange = { _, _ -> }
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Net Worth Card - Amoled")
+@Composable
+fun NetWorthCardAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                NetWorthCard(
+                    currentMetrics = NetWorthMetrics(
+                        netWorth = BigDecimal("125000.50"),
+                        cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
+                            totalIncomeInBase = BigDecimal("5000.00"),
+                            totalExpensesInBase = BigDecimal("3200.00")
+                        )
+                    ),
+                    baseCurrency = "USD",
+                    precision = 2,
+                    cardId = "preview",
+                    fontSize = "Medium",
+                    showComparison = true,
+                    filter = TransactionFilter(),
+                    onFontSizeChange = { _, _ -> },
+                    onShowComparisonChange = { _, _ -> },
+                    onFilterChange = { _, _ -> }
+                )
+            }
         }
     }
 }

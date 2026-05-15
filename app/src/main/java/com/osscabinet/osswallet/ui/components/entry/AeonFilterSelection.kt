@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun AeonFilterSelection(
@@ -30,6 +31,7 @@ fun AeonFilterSelection(
     title: String = "Select Filter",
     showCreateNew: Boolean = true
 ) {
+    val dims = AeonTheme.dimensions
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = title,
@@ -44,7 +46,7 @@ fun AeonFilterSelection(
             Column(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = dims.spacingXl)
             ) {
                 AeonSearchField(
                     query = query,
@@ -53,38 +55,38 @@ fun AeonFilterSelection(
                 )
                 
                 if (showCreateNew) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dims.spacingLg))
                     
                     Surface(
                         onClick = { onFilterSelected(null); onDismiss() },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(dims.componentCornerRadius),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        border = BorderStroke((dims.spacingXs / 4), MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(dims.spacingLg),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(dims.spacingSm))
                             Text("Create New Filter", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dims.spacingXl))
 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
+                    verticalArrangement = Arrangement.spacedBy(dims.spacingMd),
+                    contentPadding = PaddingValues(bottom = dims.spacingXl)
                 ) {
                     items(filtered) { filter ->
                         Card(
                             onClick = { onFilterSelected(filter.id); onDismiss() },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(dims.componentCornerRadius),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (filter.id == selectedFilterId) 
                                     MaterialTheme.colorScheme.primaryContainer 
@@ -93,11 +95,11 @@ fun AeonFilterSelection(
                             )
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(dims.spacingLg),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(
-                                    modifier = Modifier.size(40.dp),
+                                    modifier = Modifier.size(dims.iconSizeXl),
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                                 ) {
@@ -106,11 +108,11 @@ fun AeonFilterSelection(
                                             Icons.Rounded.FilterList,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(dims.containerCornerRadius)
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(dims.spacingLg))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(filter.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     val detailText = buildString {

@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
@@ -77,7 +78,7 @@ fun AccountListScreen(
         },
         onDismiss = { showMultiDeleteDialog = false },
         extraContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                 selectedAccounts.forEach { account ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -167,12 +168,12 @@ fun AccountListScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .graphicsLayer(clip = false),
             contentPadding = PaddingValues(
-                top = 16.dp,
+                top = AeonTheme.dimensions.screenPadding,
                 bottom = 100.dp,
-                start = 16.dp,
-                end = 16.dp
+                start = AeonTheme.dimensions.screenPadding,
+                end = AeonTheme.dimensions.screenPadding
             ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) { account, isDragging ->
             AccountManagementListItem(
                 account = account,
@@ -211,7 +212,7 @@ fun AccountManagementListItem(
             .fillMaxWidth()
             .alpha(if (account.isArchived) 0.6f else 1f)
             .clickable(enabled = isSelectionMode) { onSelect() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = when {
             isDragging -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
             isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -221,12 +222,12 @@ fun AccountManagementListItem(
             1.dp, 
             if (isSelected || isDragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
         ),
-        shadowElevation = if (isDragging) 8.dp else 0.dp
+        shadowElevation = if (isDragging) AeonTheme.dimensions.spacingSm else 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             if (isSelectionMode) {
                 Checkbox(
@@ -237,7 +238,7 @@ fun AccountManagementListItem(
                 Icon(
                     Icons.Rounded.DragHandle,
                     contentDescription = "Drag to reorder",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                     tint = MaterialTheme.colorScheme.outline
                 )
             }
@@ -245,13 +246,13 @@ fun AccountManagementListItem(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(AeonTheme.dimensions.spacingSm))
                     .clickable(enabled = !isSelectionMode) { onAccountClick() },
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 Surface(
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                     shape = CircleShape,
                     color = accountColor
                 ) {
@@ -260,7 +261,7 @@ fun AccountManagementListItem(
                         Icon(
                             icon,
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                             tint = contentColor
                         )
                     }

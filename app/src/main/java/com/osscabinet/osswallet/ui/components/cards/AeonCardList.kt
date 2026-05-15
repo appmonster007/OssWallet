@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Robust, unified card list component for all analytical screens.
@@ -29,8 +31,8 @@ fun AeonCardList(
     onDelete: (String) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
+    contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.screenPadding),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
     animateCards: Boolean = true,
     currentTheme: String = "light",
     accounts: List<Account> = emptyList(),
@@ -142,7 +144,7 @@ private fun CardWithCallbacks.copyWithRules(
 private fun CardErrorState(message: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
         ),
@@ -150,8 +152,8 @@ private fun CardErrorState(message: String?) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.spacingMd),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

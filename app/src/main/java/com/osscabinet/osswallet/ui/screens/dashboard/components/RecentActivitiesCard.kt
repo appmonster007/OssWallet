@@ -52,6 +52,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 
 @Composable
@@ -96,13 +97,13 @@ fun RecentActivitiesCard(
             )
             IconButton(
                 onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
             }
         }
@@ -172,9 +173,9 @@ private fun RecentActivitiesDisplaySettingsDialog(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
                 Text("Delete")
             }
         },
@@ -190,16 +191,16 @@ private fun RecentActivitiesDisplaySettingsDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                 // Group By Selection
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         Text(
                             "GROUP BY",
@@ -234,7 +235,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
                 }
             }
         },
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     )
 }

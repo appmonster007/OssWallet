@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Shared Context grid for Account and Category/Target account selection.
@@ -124,7 +125,7 @@ fun AeonEntryMetadataSection(
     additionalTopContent: @Composable (ColumnScope.() -> Unit)? = null,
     additionalBottomContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
         additionalTopContent?.invoke(this)
 
         // Linked Transactions
@@ -154,8 +155,8 @@ fun AeonEntryMetadataSection(
         )
 
         HorizontalDivider(
-            modifier = Modifier.padding(vertical = 4.dp),
-            thickness = 0.5.dp,
+            modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
+            thickness = (AeonTheme.dimensions.spacingXs / 8),
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
         )
 

@@ -27,16 +27,17 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * A reusable card component following the "Architect Slate" design specification.
  * 
  * Rules:
- * - Corner Radius: 32dp
- * - Background: Surface Container Low
- * - Padding: 24dp internal
- * - Elevation: Flat (0dp)
- * - Interactive: Scale-98 on press
+ * Corner Radius: 24dp (AeonTheme.dimensions.cardCornerRadius)
+ * Background: Surface Container Low
+ * Padding: 16dp internal (AeonTheme.dimensions.cardPadding)
+ * Elevation: Flat (0dp)
+ * Interactive: Scale-98 on press
  */
 @Composable
 fun AeonExpressiveCard(
@@ -74,7 +75,7 @@ fun AeonExpressiveCard(
                     onClick = onClick
                 ) else Modifier
             ),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -91,7 +92,7 @@ fun AeonExpressiveCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(AeonTheme.dimensions.cardPadding)
         ) {
             // Header Composition (Icon + Title + Subtitle)
             Row(
@@ -99,11 +100,11 @@ fun AeonExpressiveCard(
                     .fillMaxWidth()
                     .then(headerModifier),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 if (icon != null) {
                     Surface(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
                         shape = CircleShape,
                         color = iconColor.copy(alpha = 0.15f)
                     ) {
@@ -111,7 +112,7 @@ fun AeonExpressiveCard(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                                 tint = iconColor
                             )
                         }
@@ -143,14 +144,14 @@ fun AeonExpressiveCard(
                 if (headerTrailing != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         headerTrailing(activeFilterCount)
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp)) // Vertical Rhythm: 8dp gap
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm)) // Vertical Rhythm: 8dp gap
             
             content()
         }

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -46,6 +47,8 @@ fun AeonChartInteractionPopup(
     onDrillInClick: () -> Unit = {},
     onNavigateToRecords: () -> Unit = {},
 ) {
+    val dims = AeonTheme.dimensions
+    
     // Boundary-Aware Tooltip Positioning
     val tooltipWidth = if (hasSubcategories) 240.dp else 180.dp
     // Height is dynamic based on content but we need an estimate for positioning
@@ -62,24 +65,24 @@ fun AeonChartInteractionPopup(
         modifier = Modifier
             .offset { IntOffset(xPos.roundToInt(), yPos.roundToInt()) }
             .width(tooltipWidth)
-            .clip(RoundedCornerShape(20.dp)),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
-        tonalElevation = 8.dp,
-        shadowElevation = 12.dp,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            .clip(RoundedCornerShape(dims.containerCornerRadius)),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(dims.spacingSm),
+        tonalElevation = dims.spacingSm,
+        shadowElevation = dims.spacingMd,
+        border = BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(dims.spacingMd),
+            verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             // Header: Color + Name
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
+                        .size(dims.spacingSm)
                         .clip(CircleShape)
                         .background(color)
                 )
@@ -108,7 +111,7 @@ fun AeonChartInteractionPopup(
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
                 ) {
                     Text(
                         text = "GLOBAL SHARE",
@@ -129,14 +132,14 @@ fun AeonChartInteractionPopup(
             // Action Buttons - Compact Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
             ) {
                 if (hasSubcategories && subcategoryCount > 1) {
                     Button(
                         onClick = onDrillInClick,
-                        modifier = Modifier.weight(1f).height(32.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f).height(dims.spacing2xl),
+                        contentPadding = PaddingValues(horizontal = dims.spacingSm),
+                        shape = RoundedCornerShape(dims.spacingSm),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = color,
                             contentColor = if (ColorUtils.calculateLuminance(color.toArgb()) > 0.5) {
@@ -146,8 +149,8 @@ fun AeonChartInteractionPopup(
                             }
                         )
                     ) {
-                        Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(dims.iconSizeXs + 2.dp))
+                        Spacer(modifier = Modifier.width(dims.spacingXs))
                         Text(
                             "DIVE IN ($subcategoryCount)", 
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -160,16 +163,16 @@ fun AeonChartInteractionPopup(
                 
                 Button(
                     onClick = onNavigateToRecords,
-                    modifier = Modifier.weight(1f).height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f).height(dims.spacing2xl),
+                    contentPadding = PaddingValues(horizontal = dims.spacingSm),
+                    shape = RoundedCornerShape(dims.spacingSm),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(dims.iconSizeXs + 2.dp))
+                    Spacer(modifier = Modifier.width(dims.spacingXs))
                     Text(
                         "RECORDS", 
                         style = MaterialTheme.typography.labelSmall.copy(

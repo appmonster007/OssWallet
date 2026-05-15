@@ -22,6 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
@@ -48,6 +49,7 @@ fun AeonBarChart(
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val density = LocalDensity.current
+    val dims = AeonTheme.dimensions
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(data) {
@@ -118,7 +120,7 @@ fun AeonBarChart(
             }
             
             // Zero Line
-            drawLine(color = Color.Gray.copy(alpha = 0.3f), start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = 1.dp.toPx())
+            drawLine(color = Color.Gray.copy(alpha = 0.3f), start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
 
             // Draw Bars
             val barWidth = (widthPx - 2 * padding) / data.size * 0.7f
@@ -135,7 +137,7 @@ fun AeonBarChart(
                     color = barColor.copy(alpha = 0.8f),
                     topLeft = Offset(x - barWidth / 2, top),
                     size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                    cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
                 )
             }
         }
@@ -158,13 +160,13 @@ fun AeonBarChart(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(dims.spacingMd)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                border = androidx.compose.foundation.BorderStroke(1.dp, barColor.copy(alpha = 0.5f))
+                tonalElevation = dims.spacingSm,
+                shadowElevation = dims.spacingSm,
+                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), barColor.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(10.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                Column(modifier = Modifier.padding(dims.spacingSm), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                     Text(pair.first, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(formatCurrencyRight(pair.second, currency, precision), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = barColor)
                 }

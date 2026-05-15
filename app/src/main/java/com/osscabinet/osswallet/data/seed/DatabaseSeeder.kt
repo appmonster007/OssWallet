@@ -1,15 +1,7 @@
 package com.osscabinet.ossWallet.data.seed
 
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.local.dao.AccountDao
-import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.data.local.dao.TransactionDao
-import com.osscabinet.ossWallet.data.local.dao.FilterDao
-import com.osscabinet.ossWallet.data.local.dao.ProfileDao
-import com.osscabinet.ossWallet.data.local.entity.AccountEntity
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -55,6 +47,10 @@ class DatabaseSeeder @Inject constructor(
     private val transactionDao: TransactionDao,
     private val filterDao: FilterDao,
     private val profileDao: ProfileDao,
+    private val budgetDao: BudgetDao,
+    private val loanDao: LoanDao,
+    private val templateDao: TemplateDao,
+    private val plannedPaymentDao: PlannedPaymentDao,
     private val context: Context,
     private val settingsDataStore: SettingsDataStore
 ) {
@@ -76,6 +72,10 @@ class DatabaseSeeder @Inject constructor(
         categoryDao.clearAll()
         filterDao.clearAll()
         profileDao.clearAll()
+        budgetDao.clearAll()
+        loanDao.clearAll()
+        templateDao.clearAll()
+        plannedPaymentDao.clearAll()
         android.util.Log.d("DatabaseSeeder", "Cleared existing data")
 
         // Insert default profile
@@ -195,6 +195,26 @@ class DatabaseSeeder @Inject constructor(
         seedPresetFilters(categoryNameToId)
         android.util.Log.d("DatabaseSeeder", "Seeded preset filters")
 
+        // Seed Templates
+        val templateIds = seedTemplates(categoryNameToId)
+        android.util.Log.d("DatabaseSeeder", "Seeded templates")
+
+        // Seed Planned Payments
+        seedPlannedPayments(templateIds)
+        android.util.Log.d("DatabaseSeeder", "Seeded planned payments")
+
+        // Seed Budgets
+        seedBudgets(categoryNameToId)
+        android.util.Log.d("DatabaseSeeder", "Seeded budgets")
+
+        // Seed Loans
+        seedLoans()
+        android.util.Log.d("DatabaseSeeder", "Seeded loans")
+
+        // Seed Scenario Transactions
+        seedScenarioTransactions(categoryNameToId)
+        android.util.Log.d("DatabaseSeeder", "Seeded scenario transactions")
+
         // Mark as seeded
         settingsDataStore.saveDatabaseSeeded(seeded = true)
         android.util.Log.d("DatabaseSeeder", "Database seeding completed successfully")
@@ -236,6 +256,276 @@ class DatabaseSeeder @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("DatabaseSeeder", "Failed to insert preset filter '${filter.name}': ${e.message}")
             }
+        }
+    }
+
+    private suspend fun seedTemplates(categoryNameToId: Map<String, Long>): Map<String, Long> {
+        val templates = listOf(
+            TemplateEntity(
+                name = "Monthly Rent",
+                categoryId = categoryNameToId["Rent"] ?: 4L,
+                amount = BigDecimal("1850.00"),
+                transactionType = TransactionType.EXPENSE,
+                currency = "USD",
+                paymentMethod = PaymentMethod.BANK_TRANSFER,
+                payee = "Property Management",
+                note = "Monthly rent payment",
+                tags = setOf("Housing", "Essential")
+            ),
+            TemplateEntity(
+                name = "Quick Coffee",
+                categoryId = categoryNameToId["Coffee & Snacks"] ?: 1L,
+                amount = BigDecimal("6.50"),
+                transactionType = TransactionType.EXPENSE,
+                currency = "USD",
+                paymentMethod = PaymentMethod.CASH,
+                payee = "Starbucks",
+                note = "Latte",
+                tags = setOf("Social")
+            ),
+            TemplateEntity(
+                name = "Salary Deposit",
+                categoryId = categoryNameToId["Salary"] ?: 8L,
+                amount = BigDecimal("5250.00"),
+                transactionType = TransactionType.INCOME,
+                currency = "USD",
+                paymentMethod = PaymentMethod.BANK_TRANSFER,
+                payee = "TechCorp Inc",
+                note = "Monthly salary",
+                tags = setOf("Work")
+            ),
+            TemplateEntity(
+                name = "Gojek Bali",
+                categoryId = categoryNameToId["Rideshare"] ?: 2L,
+                amount = BigDecimal("35000.00"),
+                transactionType = TransactionType.EXPENSE,
+                currency = "IDR",
+                paymentMethod = PaymentMethod.DIGITAL_WALLET,
+                payee = "Gojek",
+                note = "Ride in Bali",
+                tags = setOf("Travel")
+            )
+        )
+
+        val templateIds = mutableMapOf<String, Long>()
+        templates.forEach { template ->
+            val id = templateDao.insertTemplate(template)
+            templateIds[template.name] = id
+        }
+        return templateIds
+    }
+
+    private suspend fun seedPlannedPayments(templateIds: Map<String, Long>) {
+        val now = System.currentTimeMillis()
+        val plannedPayments = listOf(
+            PlannedPaymentEntity(
+                templateId = templateIds["Monthly Rent"] ?: 0L,
+                schedule = RecurrenceScheduleEntity(
+                    recurrenceType = "MONTHLY",
+                    dayOfMonth = 1,
+                    startDate = now,
+                    nextDueDate = now + 86400000L * 30
+                ),
+                autoConfirm = true
+            ),
+            PlannedPaymentEntity(
+                templateId = templateIds["Salary Deposit"] ?: 0L,
+                schedule = RecurrenceScheduleEntity(
+                    recurrenceType = "MONTHLY",
+                    dayOfMonth = 1,
+                    startDate = now,
+                    nextDueDate = now + 86400000L * 30
+                ),
+                autoConfirm = false
+            ),
+            PlannedPaymentEntity(
+                templateId = templateIds["Quick Coffee"] ?: 0L,
+                schedule = RecurrenceScheduleEntity(
+                    recurrenceType = "WEEKLY",
+                    dayOfWeek = 2, // Monday
+                    startDate = now,
+                    nextDueDate = now + 86400000L * 7
+                ),
+                autoConfirm = false
+            )
+        )
+
+        plannedPayments.forEach { planned ->
+            if (planned.templateId != 0L) {
+                plannedPaymentDao.insert(planned)
+            }
+        }
+    }
+
+    private suspend fun seedBudgets(categoryNameToId: Map<String, Long>) {
+        // Food Budget
+        val foodFilter = FilterEntity(
+            name = "Food Budget Filter",
+            categoryIds = setOf(
+                categoryNameToId["Food & Dining"] ?: 0L,
+                categoryNameToId["Groceries"] ?: 0L,
+                categoryNameToId["Coffee & Snacks"] ?: 0L
+            ).filter { it != 0L }.toSet(),
+            transactionTypes = setOf(TransactionType.EXPENSE)
+        )
+        val foodFilterId = filterDao.insertFilter(foodFilter)
+        
+        budgetDao.insert(
+            BudgetEntity(
+                name = "Monthly Food",
+                currency = "USD",
+                limitAmount = BigDecimal("800.00"),
+                filterId = foodFilterId,
+                profileId = 1
+            )
+        )
+
+        // Travel Budget JPY
+        val travelFilter = FilterEntity(
+            name = "Japan Trip Filter",
+            currencies = setOf("JPY"),
+            categoryIds = setOf(categoryNameToId["Travel"] ?: 0L).filter { it != 0L }.toSet()
+        )
+        val travelFilterId = filterDao.insertFilter(travelFilter)
+
+        budgetDao.insert(
+            BudgetEntity(
+                name = "Japan Trip",
+                currency = "JPY",
+                limitAmount = BigDecimal("200000.00"),
+                filterId = travelFilterId,
+                profileId = 1
+            )
+        )
+    }
+
+    private suspend fun seedLoans() {
+        // Car Loan
+        val carLoanFilter = FilterEntity(
+            name = "Car Loan Filter",
+            tags = setOf("CarLoan")
+        )
+        val carLoanFilterId = filterDao.insertFilter(carLoanFilter)
+
+        loanDao.insert(
+            LoanEntity(
+                name = "Car Loan",
+                principalAmount = BigDecimal("25000.00"),
+                currency = "USD",
+                interestRate = 3.5f,
+                startDate = System.currentTimeMillis() - 86400000L * 100,
+                lenderOrBorrowerName = "Chase Auto",
+                loanType = "BORROWED",
+                linkedAccountId = "acc_bank",
+                profileId = 1,
+                filterId = carLoanFilterId
+            )
+        )
+
+        // Friend Loan
+        val friendLoanFilter = FilterEntity(
+            name = "Friend Loan Filter",
+            queryPayee = "John Doe"
+        )
+        val friendLoanFilterId = filterDao.insertFilter(friendLoanFilter)
+
+        loanDao.insert(
+            LoanEntity(
+                name = "Lent to John",
+                principalAmount = BigDecimal("500.00"),
+                currency = "USD",
+                startDate = System.currentTimeMillis() - 86400000L * 10,
+                lenderOrBorrowerName = "John Doe",
+                loanType = "LENT",
+                linkedAccountId = "acc_cash",
+                profileId = 1,
+                filterId = friendLoanFilterId
+            )
+        )
+    }
+
+    private suspend fun seedScenarioTransactions(categoryNameToId: Map<String, Long>) {
+        val now = System.currentTimeMillis()
+        val extraTransactions = listOf(
+            // Car Loan payment
+            TransactionEntity(
+                name = "Car Loan Payment",
+                amount = BigDecimal("450.00"),
+                timestamp = now - 86400000L * 5,
+                currency = "USD",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "acc_bank",
+                categoryId = categoryNameToId["Others"] ?: 1000L,
+                paymentMethod = PaymentMethod.BANK_TRANSFER,
+                payee = "Chase Auto",
+                note = "Monthly installment",
+                tags = setOf("CarLoan"),
+                profileId = 1
+            ),
+            // Japan Trip expenses
+            TransactionEntity(
+                name = "Sushi Dinner Tokyo",
+                amount = BigDecimal("8500.00"),
+                timestamp = now - 86400000L * 2,
+                currency = "JPY",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "acc_jpy",
+                categoryId = categoryNameToId["Travel"] ?: 0L,
+                paymentMethod = PaymentMethod.CASH,
+                payee = "Kyubey Sushi",
+                note = "Amazing sushi",
+                tags = setOf("Travel", "Food"),
+                profileId = 1
+            ),
+            // Friend loan repayment (partial)
+            TransactionEntity(
+                name = "John Repayment",
+                amount = BigDecimal("100.00"),
+                timestamp = now - 86400000L * 1,
+                currency = "USD",
+                transactionType = TransactionType.INCOME,
+                accountId = "acc_cash",
+                categoryId = categoryNameToId["Others"] ?: 1000L,
+                paymentMethod = PaymentMethod.CASH,
+                payee = "John Doe",
+                note = "Partial repayment of loan",
+                tags = emptySet(),
+                profileId = 1
+            ),
+            // EUR Transaction
+            TransactionEntity(
+                name = "Berlin Hotel",
+                amount = BigDecimal("120.00"),
+                timestamp = now - 86400000L * 10,
+                currency = "EUR",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "acc_bank",
+                categoryId = categoryNameToId["Travel"] ?: 0L,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                payee = "Hilton Berlin",
+                note = "Business trip",
+                tags = setOf("Travel"),
+                profileId = 1
+            ),
+            // INR Transaction
+            TransactionEntity(
+                name = "Bangalore Dinner",
+                amount = BigDecimal("2500.00"),
+                timestamp = now - 86400000L * 3,
+                currency = "INR",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "acc_bank",
+                categoryId = categoryNameToId["Food & Dining"] ?: 0L,
+                paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+                payee = "Toit",
+                note = "Dinner in Bangalore",
+                tags = setOf("Social"),
+                profileId = 1
+            )
+        )
+
+        extraTransactions.forEach { 
+            transactionDao.insertTransaction(it)
         }
     }
 

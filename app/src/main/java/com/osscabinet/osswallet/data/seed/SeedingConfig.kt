@@ -46,6 +46,10 @@ object SeedingConfig {
                 transactionDao = database.transactionDao(),
                 filterDao = database.filterDao(),
                 profileDao = database.profileDao(),
+                budgetDao = database.budgetDao(),
+                loanDao = database.loanDao(),
+                templateDao = database.templateDao(),
+                plannedPaymentDao = database.plannedPaymentDao(),
                 context = context,
                 settingsDataStore = settingsDataStore
             )

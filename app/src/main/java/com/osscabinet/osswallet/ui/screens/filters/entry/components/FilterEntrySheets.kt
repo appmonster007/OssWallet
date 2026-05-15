@@ -152,6 +152,14 @@ fun FilterEntrySheets(
         )
     }
 
+    if (state.showTimelineSheet) {
+        AeonTimelineSheet(
+            selectedRange = state.timelineRange,
+            onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) },
+            onDismiss = { onEvent(FilterEntryEvent.ShowTimelineSheet(false)) }
+        )
+    }
+
     if (state.showWarrantyStartPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 enum class LoanType { LENT, BORROWED }
@@ -26,6 +27,7 @@ data class Loan(
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val filterId: Long? = null
 )
 

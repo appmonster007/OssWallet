@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -11,72 +10,15 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 
 object BudgetService {
 
     fun getCurrentPeriodRange(budget: Budget, now: Long): Pair<Long, Long> {
-        val zone = ZoneId.systemDefault()
-        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
-        return when (budget.period) {
-            BudgetPeriod.DAILY -> {
-                val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
-                val end = today.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                Pair(start, end)
-            }
-
-            BudgetPeriod.WEEKLY -> {
-                val start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                val end = start.plusDays(6)
-                Pair(
-                    start.atStartOfDay(zone).toInstant().toEpochMilli(),
-                    end.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                )
-            }
-
-            BudgetPeriod.MONTHLY -> {
-                val start = today.with(TemporalAdjusters.firstDayOfMonth())
-                val end = today.with(TemporalAdjusters.lastDayOfMonth())
-                Pair(
-                    start.atStartOfDay(zone).toInstant().toEpochMilli(),
-                    end.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                )
-            }
-
-            BudgetPeriod.QUARTERLY -> {
-                val firstMonthOfQuarter = ((today.monthValue - 1) / 3) * 3 + 1
-                val start =
-                    today.withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth())
-                val lastMonthOfQuarter = firstMonthOfQuarter + 2
-                val end =
-                    today.withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth())
-                Pair(
-                    start.atStartOfDay(zone).toInstant().toEpochMilli(),
-                    end.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                )
-            }
-
-            BudgetPeriod.YEARLY -> {
-                val start = today.with(TemporalAdjusters.firstDayOfYear())
-                val end = today.with(TemporalAdjusters.lastDayOfYear())
-                Pair(
-                    start.atStartOfDay(zone).toInstant().toEpochMilli(),
-                    end.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
-                )
-            }
-
-            BudgetPeriod.CUSTOM -> {
-                val start = budget.customStartDate ?: now
-                val end = budget.customEndDate ?: now
-                Pair(start, end)
-            }
-        }
+        val (start, end) = TimelineService.getDateRange(budget.timelineRange, referenceTime = now)
+        return Pair(start ?: now, end ?: now)
     }
 
     fun calculateSpent(
@@ -179,27 +121,20 @@ object BudgetService {
     ): BigDecimal {
         if (!budget.rollover || depth >= 12) return BigDecimal.ZERO
         
-        val previousNow = getPreviousPeriodMidpoint(budget, now)
-        val previousSpent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories)
+        val previousRange = TimelineService.getPreviousRange(budget.timelineRange, referenceTime = now)
+        val (prevStart, prevEnd) = previousRange
+        
+        // Midpoint of previous period to calculate spent
+        val previousNow = if (prevStart != null && prevEnd != null) (prevStart + prevEnd) / 2 else now
+        
+        // Temporarily override budget's timelineRange to previous for spent calculation
+        val previousBudget = budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
+        val previousSpent = calculateSpent(previousBudget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories)
         
         // Cumulative: Previous period's rollover affects its effective limit
-        val previousRollover = calculateRollover(budget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories, depth + 1)
+        val previousRollover = calculateRollover(previousBudget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories, depth + 1)
         val previousEffectiveLimit = budget.limitAmount.add(previousRollover)
         
         return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)
-    }
-
-    private fun getPreviousPeriodMidpoint(budget: Budget, now: Long): Long {
-        val zone = ZoneId.systemDefault()
-        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
-        val previousDate = when (budget.period) {
-            BudgetPeriod.DAILY -> today.minusDays(1)
-            BudgetPeriod.WEEKLY -> today.minusWeeks(1)
-            BudgetPeriod.MONTHLY -> today.minusMonths(1)
-            BudgetPeriod.QUARTERLY -> today.minusMonths(3)
-            BudgetPeriod.YEARLY -> today.minusYears(1)
-            BudgetPeriod.CUSTOM -> today.minusMonths(1)
-        }
-        return previousDate.atStartOfDay(zone).toInstant().toEpochMilli()
     }
 }

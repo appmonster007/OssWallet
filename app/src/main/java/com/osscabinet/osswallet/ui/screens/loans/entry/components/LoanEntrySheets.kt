@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.loans.entry.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
@@ -10,69 +11,12 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanEntrySheets(
     state: LoanEntryState,
     onEvent: (LoanEntryEvent) -> Unit
 ) {
-    if (state.showStartDatePicker) {
-        AeonDatePickerDialog(
-            selectedDateMillis = state.startDate,
-            onDateSelected = { 
-                onEvent(LoanEntryEvent.SetStartDate(it))
-                onEvent(LoanEntryEvent.ShowStartDatePicker(false))
-            },
-            onDismiss = { onEvent(LoanEntryEvent.ShowStartDatePicker(false)) }
-        )
-    }
-
-    if (state.showSettlementDatePicker) {
-        AeonDatePickerDialog(
-            selectedDateMillis = state.settlementDate,
-            onDateSelected = { 
-                onEvent(LoanEntryEvent.SetSettlementDate(it))
-                onEvent(LoanEntryEvent.ShowSettlementDatePicker(false))
-            },
-            onDismiss = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(false)) }
-        )
-    }
-
-    if (state.showPaymentMethodSheet) {
-        AeonPaymentMethodSelection(
-            selectedMethods = state.selectedPaymentMethods,
-            onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetPaymentMethods(ids))
-            },
-            onDismiss = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(false)) },
-            mode = AeonSelectMode.MULTI,
-            title = "Filter Payment Methods"
-        )
-    }
-
-    if (state.showStatusSheet) {
-        AeonStatusSelection(
-            selectedStatuses = state.selectedStatuses,
-            onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetStatuses(ids))
-            },
-            onDismiss = { onEvent(LoanEntryEvent.ShowStatusSheet(false)) },
-            mode = AeonSelectMode.MULTI,
-            title = "Filter Statuses"
-        )
-    }
-
-    if (state.showLinkSheet) {
-        AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
-            currentTransactionId = null,
-            linkedIds = state.linkedTransactionIds,
-            accounts = state.accounts,
-            categories = state.categories,
-            onLinkedTransactionsChanged = { onEvent(LoanEntryEvent.SetLinkedTransactions(it)) },
-            onDismiss = { onEvent(LoanEntryEvent.ShowLinkSheet(false)) }
-        )
-    }
-
     if (state.showNumpad) {
         AeonCalculatorSheet(
             currentAmount = state.principalAmount,
@@ -91,16 +35,49 @@ fun LoanEntrySheets(
         )
     }
 
+    if (state.showTimelineSheet) {
+        AeonTimelineSheet(
+            selectedRange = state.timelineRange,
+            onRangeSelected = { onEvent(LoanEntryEvent.SetTimelineRange(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowTimelineSheet(false)) }
+        )
+    }
+
+    if (state.showStartDatePicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.startDate,
+            onDateSelected = { 
+                onEvent(LoanEntryEvent.SetStartDate(it))
+                onEvent(LoanEntryEvent.ShowStartDatePicker(false))
+            },
+            onDismiss = { onEvent(LoanEntryEvent.ShowStartDatePicker(false)) },
+            label = "Start Date"
+        )
+    }
+
+    if (state.showSettlementDatePicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.settlementDate,
+            onDateSelected = { 
+                onEvent(LoanEntryEvent.SetSettlementDate(it))
+                onEvent(LoanEntryEvent.ShowSettlementDatePicker(false))
+            },
+            onDismiss = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(false)) },
+            label = "Settlement Date"
+        )
+    }
+
     if (state.showAccountSheet) {
         AeonAccountSelection(
             accounts = state.accounts,
             selectedAccountIds = if (state.linkedAccountId.isEmpty()) emptySet() else setOf(state.linkedAccountId),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { onEvent(LoanEntryEvent.SetLinkedAccountId(it)) }
+                onEvent(LoanEntryEvent.ShowAccountSheet(false))
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.SINGLE,
-            title = "Loan Account"
+            title = "Select Account"
         )
     }
 
@@ -111,7 +88,7 @@ fun LoanEntrySheets(
             items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetTrackTypes(ids))
+                onEvent(LoanEntryEvent.SetTrackTypes(ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -131,18 +108,18 @@ fun LoanEntrySheets(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetCategoryIds(ids))
+                onEvent(LoanEntryEvent.SetCategoryIds(ids))
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
-            title = "Loan Categories",
+            title = "Filter Categories",
             startExpanded = false
         )
     }
 
     if (state.showTagSheet) {
         AeonTagSelection(
-            tags = state.availableTags.map { com.osscabinet.ossWallet.domain.model.Tag(name = it, colorHex = -1) },
+            tags = state.availableTags,
             selectedTags = state.selectedTags,
             onTagsSelected = {
                 onEvent(LoanEntryEvent.SetTags(it))
@@ -161,7 +138,7 @@ fun LoanEntrySheets(
         AeonCurrencySelection(
             selectedCurrencies = state.selectedCurrencies,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetCurrencies(ids))
+                onEvent(LoanEntryEvent.SetCurrencies(ids))
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -177,6 +154,78 @@ fun LoanEntrySheets(
             onDismiss = { onEvent(LoanEntryEvent.ShowFilterSheet(false)) },
             title = "Select Filter",
             showCreateNew = true
+        )
+    }
+
+    if (state.showPaymentMethodSheet) {
+        AeonPaymentMethodSelection(
+            selectedMethods = state.selectedPaymentMethods,
+            onSelectionChange = { ids ->
+                onEvent(LoanEntryEvent.SetPaymentMethods(ids))
+            },
+            onDismiss = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(false)) },
+            mode = AeonSelectMode.MULTI,
+            title = "Filter Payment Methods"
+        )
+    }
+
+    if (state.showStatusSheet) {
+        AeonStatusSelection(
+            selectedStatuses = state.selectedStatuses,
+            onSelectionChange = { ids ->
+                onEvent(LoanEntryEvent.SetStatuses(ids))
+            },
+            onDismiss = { onEvent(LoanEntryEvent.ShowStatusSheet(false)) },
+            mode = AeonSelectMode.MULTI,
+            title = "Filter Statuses"
+        )
+    }
+
+    if (state.showLinkSheet) {
+        AeonLinkedTransactionSelection(
+            transactions = state.allTransactions,
+            currentTransactionId = null,
+            linkedIds = state.linkedTransactionIds,
+            accounts = state.accounts,
+            categories = state.categories,
+            onLinkedTransactionsChanged = { onEvent(LoanEntryEvent.SetLinkedTransactions(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowLinkSheet(false)) }
+        )
+    }
+
+    if (state.showMinAmountSheet) {
+        AeonCalculatorSheet(
+            currentAmount = state.minAmount,
+            onAmountChanged = { onEvent(LoanEntryEvent.SetMinAmount(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowMinAmountSheet(false)) },
+            title = "Minimum Amount"
+        )
+    }
+
+    if (state.showMaxAmountSheet) {
+        AeonCalculatorSheet(
+            currentAmount = state.maxAmount,
+            onAmountChanged = { onEvent(LoanEntryEvent.SetMaxAmount(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowMaxAmountSheet(false)) },
+            title = "Maximum Amount"
+        )
+    }
+
+    if (state.showWarrantyStartPicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
+            onDateSelected = { onEvent(LoanEntryEvent.SetWarrantyExpirationStart(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowWarrantyStartPicker(false)) },
+            label = "Warranty Expiration Start"
+        )
+    }
+
+    if (state.showWarrantyEndPicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
+            onDateSelected = { onEvent(LoanEntryEvent.SetWarrantyExpirationEnd(it)) },
+            onDismiss = { onEvent(LoanEntryEvent.ShowWarrantyEndPicker(false)) },
+            label = "Warranty Expiration End"
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.filters.entry
 
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 data class FilterEntryState(
@@ -24,6 +25,7 @@ data class FilterEntryState(
     val hasWarranty: Boolean? = null,
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val excludeFuture: Boolean = true,
     
     // UI State
@@ -42,6 +44,7 @@ data class FilterEntryState(
     val showTypeSheet: Boolean = false,
     val showMinAmountSheet: Boolean = false,
     val showMaxAmountSheet: Boolean = false,
+    val showTimelineSheet: Boolean = false,
     val showWarrantyStartPicker: Boolean = false,
     val showWarrantyEndPicker: Boolean = false,
     
@@ -53,14 +56,7 @@ data class FilterEntryState(
     val existingFilter: Filter? = null
 ) {
     val canSave: Boolean 
-        get() = name.isNotBlank() && 
-                !navTriggered &&
-                selectedTransactionTypes.isNotEmpty() &&
-                selectedAccountIds.isNotEmpty() &&
-                selectedCategoryIds.isNotEmpty() &&
-                selectedPaymentMethods.isNotEmpty() &&
-                selectedStatuses.isNotEmpty() &&
-                selectedCurrencies.isNotEmpty()
+        get() = name.isNotBlank() && !navTriggered
     
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
         transactionTypes = selectedTransactionTypes.toList(),
@@ -80,6 +76,7 @@ data class FilterEntryState(
         hasWarranty = hasWarranty,
         warrantyExpirationStart = warrantyExpirationStart,
         warrantyExpirationEnd = warrantyExpirationEnd,
+        timelineRange = timelineRange,
         excludeFuture = excludeFuture
     )
 }

@@ -8,12 +8,14 @@ import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -32,20 +34,21 @@ fun BudgetFormBody(
     onEvent: (BudgetEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dims = AeonTheme.dimensions
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding,
-                    vertical = AeonTheme.dimensions.spacingLg
+                    horizontal = dims.screenPadding,
+                    vertical = dims.spacingLg
                 ),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+            verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
             // IMPACT: Header card containing budget name and limit amount
             AeonImpactHeaderCard(
-                transactionType = TransactionType.EXPENSE,
+                transactionType = if (state.selectedTrackTypes.contains(TransactionType.EXPENSE)) TransactionType.EXPENSE else TransactionType.INCOME,
                 onTypeSelected = { },
                 amount = state.limitAmount,
                 currency = state.currency,
@@ -60,7 +63,7 @@ fun BudgetFormBody(
 
             // CONTEXT: Action cards grid for primary budget parameters
             AeonContextGrid {
-                // Row 1: Filter and Period
+                // Row 1: Linked Filter and Period
                 EntryActionRow {
                     val filterObj = state.availableFilters.find { it.id == state.filterId }
                     EntryActionCard(
@@ -76,22 +79,27 @@ fun BudgetFormBody(
                     EntryActionCard(
                         icon = Icons.Rounded.DateRange,
                         label = "PERIOD",
-                        value = state.period.name.lowercase().replaceFirstChar { it.uppercase() },
-                        onClick = { onEvent(BudgetEntryEvent.ShowPeriodSheet(show = true)) },
+                        value = when (val range = state.timelineRange) {
+                            is TimelineRange.AllTime -> "All Time"
+                            is TimelineRange.ThisPeriod -> "This ${range.period.label}"
+                            is TimelineRange.LastPeriod -> range.period.label
+                            is TimelineRange.CustomRange -> "Custom"
+                        },
+                        onClick = { onEvent(BudgetEntryEvent.ShowTimelineSheet(show = true)) },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                         iconTint = MaterialTheme.colorScheme.secondary
                     )
                 }
 
-                // Row 2: Accounts and Categories (Filterable)
+                // Row 2: Accounts and Categories
                 EntryActionRow {
                     val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
                     EntryActionCard(
                         icon = getAccountIconByName(accountObj?.icon),
                         label = "ACCOUNTS",
                         value = when {
-                            state.selectedAccountIds.isEmpty() -> "0 Selected"
+                            state.selectedAccountIds.isEmpty() -> "All Accounts"
                             (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
                             accountObj != null -> accountObj.name
                             else -> "${state.selectedAccountIds.size} Selected"
@@ -107,7 +115,7 @@ fun BudgetFormBody(
                         icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
                         label = "CATEGORIES",
                         value = when {
-                            state.selectedCategoryIds.isEmpty() -> "0 Selected"
+                            state.selectedCategoryIds.isEmpty() -> "All Categories"
                             (state.categories.isNotEmpty() && (state.selectedCategoryIds.size == state.categories.size)) -> "All Categories"
                             categoryObj != null -> categoryObj.name
                             else -> "${state.selectedCategoryIds.size} Selected"
@@ -125,7 +133,7 @@ fun BudgetFormBody(
                         icon = Icons.AutoMirrored.Rounded.ShowChart,
                         label = "FLOWS",
                         value = when {
-                            state.selectedTrackTypes.isEmpty() -> "0 Selected"
+                            state.selectedTrackTypes.isEmpty() -> "All Flows"
                             state.selectedTrackTypes.size >= 2 -> "All Flows"
                             else -> state.selectedTrackTypes.first().displayName
                         },
@@ -155,13 +163,55 @@ fun BudgetFormBody(
             AeonDetailSection(
                 note = state.note,
                 onNoteChange = { onEvent(BudgetEntryEvent.SetNote(it)) },
+                showNote = false, // We'll render manual note with regex below
                 showPayee = false,
-                selectedTags = state.selectedTags,
-                onTagClick = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
-                onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
+                selectedTags = emptyList(), // Manual tags below
                 noteSuggestions = state.uniqueNotes,
                 additionalContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                        // Note Filter with Regex Toggle
+                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
+                            EntrySwitchRow(
+                                label = "Use Regex for Note",
+                                checked = state.isNoteRegex,
+                                onCheckedChange = { onEvent(BudgetEntryEvent.SetNoteRegex(it)) },
+                                icon = Icons.Rounded.Code,
+                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
+                            )
+                            EntryEditorialInput(
+                                value = state.queryNote,
+                                onValueChange = { onEvent(BudgetEntryEvent.SetQueryNote(it)) },
+                                label = "NOTE QUERY",
+                                icon = Icons.AutoMirrored.Rounded.Notes,
+                                placeholder = if (state.isNoteRegex) "e.g. /coffee/i or /^Rent/m" else "e.g. Starbucks coffee"
+                            )
+                        }
+
+                        // Payee Filter with Regex Toggle
+                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
+                            EntrySwitchRow(
+                                label = "Use Regex for Payee",
+                                checked = state.isPayeeRegex,
+                                onCheckedChange = { onEvent(BudgetEntryEvent.SetPayeeRegex(it)) },
+                                icon = Icons.Rounded.Code,
+                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
+                            )
+                            EntryEditorialInput(
+                                value = state.queryPayee,
+                                onValueChange = { onEvent(BudgetEntryEvent.SetQueryPayee(it)) },
+                                label = "PAYEE QUERY",
+                                icon = Icons.Rounded.Person,
+                                placeholder = if (state.isPayeeRegex) "e.g. /Amazon/i" else "e.g. Amazon"
+                            )
+                        }
+
+                        // Tags Selection
+                        EntryTagSection(
+                            selectedTags = state.selectedTags.toList(),
+                            onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
+                            onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) }
+                        )
+
                         // Sharing info and Make Unique action
                         if (state.filterId != null) {
                             Row(
@@ -191,13 +241,13 @@ fun BudgetFormBody(
                         // Payment Method and Status multi-selection
                         EntryPaymentMethodStatusRow(
                             paymentMethod = when {
-                                state.selectedPaymentMethods.isEmpty() -> "0 Selected"
+                                state.selectedPaymentMethods.isEmpty() -> "All Methods"
                                 state.selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
                                 else -> "${state.selectedPaymentMethods.size} Selected"
                             },
                             onPaymentMethodClick = { onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(show = true)) },
                             statusLabel = when {
-                                state.selectedStatuses.isEmpty() -> "0 Selected"
+                                state.selectedStatuses.isEmpty() -> "All Statuses"
                                 state.selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
                                 else -> "${state.selectedStatuses.size} Selected"
                             },
@@ -215,25 +265,109 @@ fun BudgetFormBody(
                             iconTint = MaterialTheme.colorScheme.tertiary
                         )
 
+                        // Amount Constraints
+                        AeonContextGrid {
+                            // Min Amount
+                            EntryActionCard(
+                                icon = Icons.Rounded.ArrowDownward,
+                                label = "MIN AMOUNT",
+                                value = state.minAmount.ifEmpty { "Any" },
+                                onClick = { onEvent(BudgetEntryEvent.ShowMinAmountSheet(show = true)) },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.primary
+                            )
+
+                            // Max Amount
+                            EntryActionCard(
+                                icon = Icons.Rounded.ArrowUpward,
+                                label = "MAX AMOUNT",
+                                value = state.maxAmount.ifEmpty { "Any" },
+                                onClick = { onEvent(BudgetEntryEvent.ShowMaxAmountSheet(show = true)) },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+
+                        // Warranty
+                        EntryActionCard(
+                            icon = Icons.Rounded.Verified,
+                            label = "WARRANTY",
+                            value = when (state.hasWarranty) {
+                                null -> "Any"
+                                true -> "Has Warranty"
+                                false -> "No Warranty"
+                            },
+                            onClick = {
+                                onEvent(
+                                    BudgetEntryEvent.SetHasWarranty(
+                                        when (state.hasWarranty) {
+                                            null -> true
+                                            true -> false
+                                            false -> null
+                                        }
+                                    )
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                            iconTint = MaterialTheme.colorScheme.tertiary
+                        )
+
+                        if (state.hasWarranty == true) {
+                            val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+                            AeonContextGrid {
+                                EntryActionCard(
+                                    icon = Icons.Rounded.CalendarToday,
+                                    label = "WARRANTY START",
+                                    value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    onClick = { onEvent(BudgetEntryEvent.ShowWarrantyStartPicker(show = true)) },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                    iconTint = MaterialTheme.colorScheme.secondary
+                                )
+
+                                EntryActionCard(
+                                    icon = Icons.Rounded.CalendarToday,
+                                    label = "WARRANTY END",
+                                    value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    onClick = { onEvent(BudgetEntryEvent.ShowWarrantyEndPicker(show = true)) },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                    iconTint = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+
+                        // Exclude Future
+                        EntrySwitchRow(
+                            label = "Exclude Future",
+                            checked = state.excludeFuture,
+                            onCheckedChange = { onEvent(BudgetEntryEvent.SetExcludeFuture(it)) },
+                            icon = Icons.Rounded.Schedule,
+                            subtitle = "Don't include future transactions"
+                        )
+
                         // Management settings for the budget itself
                         EntrySection(title = "MANAGEMENT", icon = Icons.Rounded.Settings) {
-                            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
                                 // Alert threshold control
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingSm),
+                                    modifier = Modifier.fillMaxWidth().padding(top = dims.spacingSm),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                    horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
                                 ) {
                                     Surface(
                                         shape = androidx.compose.foundation.shape.CircleShape,
                                         color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                        modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
+                                        modifier = Modifier.size(dims.spacing2xl)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
                                                 Icons.Rounded.NotificationsActive,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                                modifier = Modifier.size(dims.iconSizeSm),
                                                 tint = MaterialTheme.colorScheme.secondary
                                             )
                                         }

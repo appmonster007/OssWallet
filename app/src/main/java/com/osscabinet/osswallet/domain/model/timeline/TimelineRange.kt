@@ -16,6 +16,18 @@ sealed class TimelineRange {
     data class LastPeriod(val period: LastPeriodType, val offset: Int = 0) : TimelineRange()
     @Serializable
     data class CustomRange(val start: Long? = null, val end: Long? = null) : TimelineRange()
+
+    fun toDisplayString(): String = when (this) {
+        is AllTime -> "All Time"
+        is ThisPeriod -> period.label
+        is LastPeriod -> "Last ${period.label}"
+        is CustomRange -> {
+            if (start != null && end != null) {
+                val formatter = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+                "${formatter.format(java.util.Date(start))} - ${formatter.format(java.util.Date(end))}"
+            } else "Custom"
+        }
+    }
 }
 
 @Serializable

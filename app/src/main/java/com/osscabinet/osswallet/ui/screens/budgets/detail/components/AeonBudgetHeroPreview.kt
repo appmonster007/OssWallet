@@ -7,8 +7,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -20,7 +21,7 @@ fun AeonBudgetHeroPreview() {
         name = "Monthly Entertainment",
         currency = "USD",
         limitAmount = BigDecimal("200.00"),
-        period = BudgetPeriod.MONTHLY,
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
         profileId = 1,
         alertThreshold = 0.8f
     )

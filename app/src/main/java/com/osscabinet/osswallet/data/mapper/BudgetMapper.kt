@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetWithFilter
 import com.osscabinet.ossWallet.domain.model.Budget
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 
 fun BudgetWithFilter.toDomain(): Budget {
     val filterDomain = filter.toDomain()
@@ -12,7 +11,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         name = budget.name,
         currency = budget.currency,
         limitAmount = budget.limitAmount,
-        period = BudgetPeriod.valueOf(budget.period),
+        timelineRange = budget.timelineRange,
         categoryIds = filterDomain.filter.categoryIds,
         accountIds = filterDomain.filter.accountIds,
         tags = filterDomain.filter.tags,
@@ -25,8 +24,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         trackTypes = filterDomain.filter.transactionTypes,
         isArchived = budget.isArchived,
         profileId = budget.profileId,
-        customStartDate = budget.customStartDate,
-        customEndDate = budget.customEndDate
+        filterId = budget.filterId
     )
 }
 
@@ -35,12 +33,10 @@ fun Budget.toEntity(filterId: Long): BudgetEntity = BudgetEntity(
     name = name,
     currency = currency,
     limitAmount = limitAmount,
-    period = period.name,
+    timelineRange = timelineRange,
     alertThreshold = alertThreshold,
     rollover = rollover,
     isArchived = isArchived,
     profileId = profileId,
-    customStartDate = customStartDate,
-    customEndDate = customEndDate,
     filterId = filterId
 )

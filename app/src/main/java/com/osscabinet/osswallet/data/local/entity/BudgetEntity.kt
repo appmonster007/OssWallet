@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 @Entity(
@@ -29,13 +30,11 @@ data class BudgetEntity(
     val name: String,
     val currency: String,
     val limitAmount: BigDecimal,
-    val period: String,
+    val timelineRange: TimelineRange,
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
     val isArchived: Boolean = false,
     val profileId: Int,
-    val customStartDate: Long? = null,
-    val customEndDate: Long? = null,
     val filterId: Long
 )
 

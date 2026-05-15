@@ -2,8 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryEvent
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetEntrySheets(
     state: BudgetEntryState,
@@ -25,58 +26,11 @@ fun BudgetEntrySheets(
         )
     }
 
-    if (state.showPeriodSheet) {
-        AeonSelectionSheet(
-            title = "Budget Period",
-            onDismiss = { onEvent(BudgetEntryEvent.ShowPeriodSheet(false)) },
-            items = BudgetPeriod.entries,
-            selectedIds = setOf(state.period),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { 
-                    onEvent(BudgetEntryEvent.SetPeriod(it))
-                    if (it == BudgetPeriod.CUSTOM) {
-                        onEvent(BudgetEntryEvent.ShowCustomStartPicker(true))
-                    }
-                }
-            },
-            idMapper = { it },
-            labelMapper = { it.name.lowercase().replaceFirstChar { it.uppercase() } },
-            mode = AeonSelectMode.SINGLE,
-            iconMapper = {
-                when (it) {
-                    BudgetPeriod.DAILY -> Icons.Rounded.Today
-                    BudgetPeriod.WEEKLY -> Icons.Rounded.ViewWeek
-                    BudgetPeriod.MONTHLY -> Icons.Rounded.CalendarMonth
-                    BudgetPeriod.QUARTERLY -> Icons.Rounded.PieChart
-                    BudgetPeriod.YEARLY -> Icons.Rounded.CalendarToday
-                    BudgetPeriod.CUSTOM -> Icons.Rounded.EditCalendar
-                }
-            }
-        )
-    }
-
-    if (state.showCustomStartPicker) {
-        AeonDatePickerDialog(
-            selectedDateMillis = state.customStartDate,
-            onDateSelected = { 
-                onEvent(BudgetEntryEvent.SetCustomStartDate(it))
-                onEvent(BudgetEntryEvent.ShowCustomStartPicker(false))
-                onEvent(BudgetEntryEvent.ShowCustomEndPicker(true))
-            },
-            onDismiss = { onEvent(BudgetEntryEvent.ShowCustomStartPicker(false)) },
-            label = "Custom Start Date"
-        )
-    }
-
-    if (state.showCustomEndPicker) {
-        AeonDatePickerDialog(
-            selectedDateMillis = state.customEndDate,
-            onDateSelected = { 
-                onEvent(BudgetEntryEvent.SetCustomEndDate(it))
-                onEvent(BudgetEntryEvent.ShowCustomEndPicker(false))
-            },
-            onDismiss = { onEvent(BudgetEntryEvent.ShowCustomEndPicker(false)) },
-            label = "Custom End Date"
+    if (state.showTimelineSheet) {
+        AeonTimelineSheet(
+            selectedRange = state.timelineRange,
+            onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowTimelineSheet(false)) }
         )
     }
 
@@ -85,7 +39,7 @@ fun BudgetEntrySheets(
             accounts = state.accounts,
             selectedAccountIds = state.selectedAccountIds,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetAccountIds(ids))
+                onEvent(BudgetEntryEvent.SetAccountIds(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -100,7 +54,7 @@ fun BudgetEntrySheets(
             items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetTrackTypes(ids))
+                onEvent(BudgetEntryEvent.SetTrackTypes(ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -120,7 +74,7 @@ fun BudgetEntrySheets(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetCategoryIds(ids))
+                onEvent(BudgetEntryEvent.SetCategoryIds(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -150,7 +104,7 @@ fun BudgetEntrySheets(
         AeonCurrencySelection(
             selectedCurrencies = state.selectedCurrencies,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetCurrencies(ids))
+                onEvent(BudgetEntryEvent.SetCurrencies(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowCurrencyFilterSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -173,7 +127,7 @@ fun BudgetEntrySheets(
         AeonPaymentMethodSelection(
             selectedMethods = state.selectedPaymentMethods,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetPaymentMethods(ids))
+                onEvent(BudgetEntryEvent.SetPaymentMethods(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -185,7 +139,7 @@ fun BudgetEntrySheets(
         AeonStatusSelection(
             selectedStatuses = state.selectedStatuses,
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetStatuses(ids))
+                onEvent(BudgetEntryEvent.SetStatuses(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -202,6 +156,42 @@ fun BudgetEntrySheets(
             categories = state.categories,
             onLinkedTransactionsChanged = { onEvent(BudgetEntryEvent.SetLinkedTransactions(it)) },
             onDismiss = { onEvent(BudgetEntryEvent.ShowLinkSheet(false)) }
+        )
+    }
+
+    if (state.showMinAmountSheet) {
+        AeonCalculatorSheet(
+            currentAmount = state.minAmount,
+            onAmountChanged = { onEvent(BudgetEntryEvent.SetMinAmount(it)) },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowMinAmountSheet(false)) },
+            title = "Minimum Amount"
+        )
+    }
+
+    if (state.showMaxAmountSheet) {
+        AeonCalculatorSheet(
+            currentAmount = state.maxAmount,
+            onAmountChanged = { onEvent(BudgetEntryEvent.SetMaxAmount(it)) },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowMaxAmountSheet(false)) },
+            title = "Maximum Amount"
+        )
+    }
+
+    if (state.showWarrantyStartPicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
+            onDateSelected = { onEvent(BudgetEntryEvent.SetWarrantyExpirationStart(it)) },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowWarrantyStartPicker(false)) },
+            label = "Warranty Expiration Start"
+        )
+    }
+
+    if (state.showWarrantyEndPicker) {
+        AeonDatePickerDialog(
+            selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
+            onDateSelected = { onEvent(BudgetEntryEvent.SetWarrantyExpirationEnd(it)) },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowWarrantyEndPicker(false)) },
+            label = "Warranty Expiration End"
         )
     }
 }

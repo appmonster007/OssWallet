@@ -226,7 +226,7 @@ private fun BudgetListItem(
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> RedWarning
         BudgetAlertLevel.NONE -> TealHealthy
     }
-    val periodLabel = budget.period.name.lowercase().replaceFirstChar { it.uppercase() }
+    val periodLabel = budget.timelineRange.toDisplayString()
 
     ManagementListItem(
         onClick = onTap,

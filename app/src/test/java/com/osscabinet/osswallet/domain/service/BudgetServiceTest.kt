@@ -2,10 +2,10 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.*
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -20,30 +20,26 @@ class BudgetServiceTest {
         LocalDate.of(year, month, day).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()
 
     private fun makeBudget(
-        period: BudgetPeriod = BudgetPeriod.MONTHLY,
+        timelineRange: TimelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
         limit: BigDecimal = BigDecimal("1000"),
         categoryIds: List<Long> = emptyList(),
         accountIds: List<String> = emptyList(),
         alertThreshold: Float = 0.8f,
         rollover: Boolean = false,
-        customStart: Long? = null,
-        customEnd: Long? = null,
         currency: String = "USD"
     ) = Budget(
         id = 1L,
         name = "Test Budget",
         currency = currency,
         limitAmount = limit,
-        period = period,
+        timelineRange = timelineRange,
         categoryIds = categoryIds,
         accountIds = accountIds,
         alertThreshold = alertThreshold,
         rollover = rollover,
         trackTypes = listOf(TransactionType.EXPENSE),
         isArchived = false,
-        profileId = 1,
-        customStartDate = customStart,
-        customEndDate = customEnd
+        profileId = 1
     )
 
     private fun makeTransaction(
@@ -67,7 +63,7 @@ class BudgetServiceTest {
 
     @Test
     fun `getCurrentPeriodRange WEEKLY returns correct start and end`() {
-        val budget = makeBudget(BudgetPeriod.WEEKLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.WEEK))
         val now = epochOf(2024, 3, 13)
         val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
         assertTrue("Start should be before or equal to now", start <= now)
@@ -76,7 +72,7 @@ class BudgetServiceTest {
 
     @Test
     fun `getCurrentPeriodRange MONTHLY covers full month`() {
-        val budget = makeBudget(BudgetPeriod.MONTHLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
         val now = epochOf(2024, 3, 15)
         val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
         assertTrue("Start should be on or before March 1", start <= epochOf(2024, 3, 1))
@@ -85,7 +81,7 @@ class BudgetServiceTest {
 
     @Test
     fun `getCurrentPeriodRange QUARTERLY covers full quarter`() {
-        val budget = makeBudget(BudgetPeriod.QUARTERLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.QUARTER))
         val now = epochOf(2024, 2, 15)
         val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
         assertTrue("Start should be on or before Jan 1", start <= epochOf(2024, 1, 1))
@@ -94,7 +90,7 @@ class BudgetServiceTest {
 
     @Test
     fun `getCurrentPeriodRange YEARLY covers full year`() {
-        val budget = makeBudget(BudgetPeriod.YEARLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.YEAR))
         val now = epochOf(2024, 6, 15)
         val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
         assertTrue("Start should be on or before Jan 1", start <= epochOf(2024, 1, 1))
@@ -105,7 +101,7 @@ class BudgetServiceTest {
     fun `getCurrentPeriodRange CUSTOM uses budget custom dates`() {
         val customStart = epochOf(2024, 3, 1)
         val customEnd = epochOf(2024, 5, 31)
-        val budget = makeBudget(BudgetPeriod.CUSTOM, customStart = customStart, customEnd = customEnd)
+        val budget = makeBudget(TimelineRange.CustomRange(customStart, customEnd))
         val now = epochOf(2024, 4, 15)
         val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
         assertEquals(customStart, start)
@@ -144,7 +140,7 @@ class BudgetServiceTest {
 
     @Test
     fun `calculateSpent sums matching transactions in period`() {
-        val budget = makeBudget(BudgetPeriod.MONTHLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
         val now = epochOf(2024, 3, 15)
         val inPeriod = epochOf(2024, 3, 10)
         val outOfPeriod = epochOf(2024, 2, 10)
@@ -161,7 +157,7 @@ class BudgetServiceTest {
 
     @Test
     fun `calculateSpent ignores income transactions`() {
-        val budget = makeBudget(BudgetPeriod.MONTHLY)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
         val now = epochOf(2024, 3, 15)
         val inPeriod = epochOf(2024, 3, 10)
 
@@ -176,7 +172,7 @@ class BudgetServiceTest {
 
     @Test
     fun `calculateSpent filters by categoryId when set`() {
-        val budget = makeBudget(BudgetPeriod.MONTHLY, categoryIds = listOf(1L))
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), categoryIds = listOf(1L))
         val now = epochOf(2024, 3, 15)
         val inPeriod = epochOf(2024, 3, 10)
 

@@ -41,9 +41,14 @@ object TimelineService {
     fun getRangeForThis(
         period: ThisPeriodType,
         offset: Int = 0,
-        firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY
+        firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY,
+        referenceTime: Long? = null
     ): Pair<Long, Long> {
-        val now = ZonedDateTime.now(systemZoneId)
+        val now = if (referenceTime != null) {
+            ZonedDateTime.ofInstant(Instant.ofEpochMilli(referenceTime), systemZoneId)
+        } else {
+            ZonedDateTime.now(systemZoneId)
+        }
         val base: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> now.plusDays(offset.toLong())
             ThisPeriodType.WEEK -> now.plusWeeks(offset.toLong())
@@ -91,8 +96,16 @@ object TimelineService {
     /**
      * Gets the date range for a "last period" type.
      */
-    fun getRangeForLast(period: LastPeriodType, offset: Int = 0): Pair<Long, Long> {
-        val now = ZonedDateTime.now(systemZoneId)
+    fun getRangeForLast(
+        period: LastPeriodType,
+        offset: Int = 0,
+        referenceTime: Long? = null
+    ): Pair<Long, Long> {
+        val now = if (referenceTime != null) {
+            ZonedDateTime.ofInstant(Instant.ofEpochMilli(referenceTime), systemZoneId)
+        } else {
+            ZonedDateTime.now(systemZoneId)
+        }
         
         // Duration of one period
         val (startDelta, endDelta) = when (period) {
@@ -116,11 +129,11 @@ object TimelineService {
     /**
      * Extracts the date range from a timeline range.
      */
-    fun getDateRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
+    fun getDateRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
         return when (timelineRange) {
             is TimelineRange.AllTime -> Pair(null, null)
-            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period, timelineRange.offset)
-            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period, timelineRange.offset)
+            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period, timelineRange.offset, referenceTime = referenceTime)
+            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period, timelineRange.offset, referenceTime = referenceTime)
             is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
         }
     }
@@ -129,9 +142,9 @@ object TimelineService {
      * Gets the previous date range for a given timeline range.
      * Legacy method used for comparison metrics.
      */
-    fun getPreviousRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
+    fun getPreviousRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
         val prevRange = shiftRange(timelineRange, -1)
-        return getDateRange(prevRange)
+        return getDateRange(prevRange, referenceTime = referenceTime)
     }
 
     /**

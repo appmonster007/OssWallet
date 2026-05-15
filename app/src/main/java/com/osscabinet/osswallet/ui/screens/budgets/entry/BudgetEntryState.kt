@@ -1,17 +1,28 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 data class BudgetEntryState(
     val name: String = "",
     val limitAmount: String = "",
     val currency: String = "USD",
-    val period: BudgetPeriod = BudgetPeriod.MONTHLY,
+    val timelineRange: TimelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
     val selectedTrackTypes: Set<TransactionType> = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
     val note: String = "",
+    val queryNote: String = "",
+    val isNoteRegex: Boolean = false,
+    val queryPayee: String = "",
+    val isPayeeRegex: Boolean = false,
+    val minAmount: String = "",
+    val maxAmount: String = "",
+    val hasWarranty: Boolean? = null,
+    val warrantyExpirationStart: Long? = null,
+    val warrantyExpirationEnd: Long? = null,
+    val excludeFuture: Boolean = true,
     val selectedCategoryIds: Set<Long> = emptySet(),
     val selectedAccountIds: Set<String> = emptySet(),
     val selectedCurrencies: Set<String> = emptySet(),
@@ -19,8 +30,6 @@ data class BudgetEntryState(
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
     val selectedStatuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val customStartDate: Long = System.currentTimeMillis(),
-    val customEndDate: Long = System.currentTimeMillis(),
     val filterId: Long? = null,
     val linkedFilter: Filter? = null,
     val filterUsageCount: Int = 0,
@@ -31,16 +40,20 @@ data class BudgetEntryState(
     val showCustomStartPicker: Boolean = false,
     val showCustomEndPicker: Boolean = false,
     val showNumpad: Boolean = false,
+    val showTimelineSheet: Boolean = false,
     val showAccountSheet: Boolean = false,
     val showTrackTypeSheet: Boolean = false,
     val showCategorySheet: Boolean = false,
     val showTagSheet: Boolean = false,
-    val showPeriodSheet: Boolean = false,
     val showCurrencyFilterSheet: Boolean = false,
     val showPaymentMethodSheet: Boolean = false,
     val showStatusSheet: Boolean = false,
     val showLinkSheet: Boolean = false,
     val showFilterSheet: Boolean = false,
+    val showMinAmountSheet: Boolean = false,
+    val showMaxAmountSheet: Boolean = false,
+    val showWarrantyStartPicker: Boolean = false,
+    val showWarrantyEndPicker: Boolean = false,
     val accountQuery: String = "",
     val categoryQuery: String = "",
     val isEditMode: Boolean = false,
@@ -60,10 +73,5 @@ data class BudgetEntryState(
     val canSave: Boolean
         get() = name.isNotBlank() && 
                  limitAmount.toBigDecimalOrNull() != null &&
-                 selectedAccountIds.isNotEmpty() &&
-                 selectedCategoryIds.isNotEmpty() &&
-                 selectedPaymentMethods.isNotEmpty() &&
-                 selectedStatuses.isNotEmpty() &&
-                 selectedTrackTypes.isNotEmpty() &&
-                 selectedCurrencies.isNotEmpty()
+                 !navTriggered
 }

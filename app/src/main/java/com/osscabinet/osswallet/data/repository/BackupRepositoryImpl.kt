@@ -73,10 +73,10 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"), 
             transactionLinkDao.getAllLinksSync().map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
         
-        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "period", "alertThreshold", "rollover", "isArchived", "profileId", "customStartDate", "customEndDate", "filterId"), 
+        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "timelineRange", "alertThreshold", "rollover", "isArchived", "profileId", "filterId"), 
             budgetDao.getAllBudgetsSync().map { 
                 val b = it.budget
-                listOf(b.id, b.name, b.currency, b.limitAmount, b.period, b.alertThreshold, b.rollover, b.isArchived, b.profileId, b.customStartDate, b.customEndDate, b.filterId) 
+                listOf(b.id, b.name, b.currency, b.limitAmount, Json.encodeToString(b.timelineRange), b.alertThreshold, b.rollover, b.isArchived, b.profileId, b.filterId) 
             })
         
         writeCsvToZip(zos, "templates.csv", listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "targetAccountId", "targetCurrency", "transferRate", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder", "profileId", "transactionStatus"), 
@@ -101,10 +101,10 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "tags.csv", listOf("id", "name", "colorHex"), 
             tagDao.getAllTagsSync().map { listOf(it.id, it.name, it.colorHex) })
 
-        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note", "filterId"), 
+        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note", "timelineRange", "filterId"), 
             loanDao.getAllLoansSync().map { 
                 val l = it.loan
-                listOf(l.id, l.name, l.principalAmount, l.currency, l.interestRate, l.startDate, l.lenderOrBorrowerName, l.loanType, l.linkedAccountId, l.expectedSettlementDate, l.status, l.profileId, l.note, l.filterId) 
+                listOf(l.id, l.name, l.principalAmount, l.currency, l.interestRate, l.startDate, l.lenderOrBorrowerName, l.loanType, l.linkedAccountId, l.expectedSettlementDate, l.status, l.profileId, l.note, Json.encodeToString(l.timelineRange), l.filterId) 
             })
 
         writeCsvToZip(zos, "loan_payments.csv", listOf("id", "loanId", "amount", "date", "transactionId", "note"), 
@@ -320,13 +320,23 @@ class BackupRepositoryImpl(
                     name = p["name"] ?: "", 
                     currency = p["currency"] ?: "USD", 
                     limitAmount = p["limitAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
-                    period = p["period"] ?: "MONTHLY", 
+                    timelineRange = p["timelineRange"]?.let { 
+                        try { Json.decodeFromString<TimelineRange>(it) } catch (_: Exception) { TimelineRange.AllTime }
+                    } ?: p["period"]?.let { legacyPeriod ->
+                        // Basic migration from legacy period string
+                        when (legacyPeriod) {
+                            "DAILY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.TODAY)
+                            "WEEKLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.WEEK)
+                            "MONTHLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH)
+                            "YEARLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.YEAR)
+                            "CUSTOM" -> TimelineRange.CustomRange(p["customStartDate"]?.toLongOrNull(), p["customEndDate"]?.toLongOrNull())
+                            else -> TimelineRange.AllTime
+                        }
+                    } ?: TimelineRange.AllTime,
                     alertThreshold = p["alertThreshold"]?.toFloatOrNull() ?: 0.8f, 
                     rollover = p["rollover"]?.toBoolean() ?: false, 
                     isArchived = p["isArchived"]?.toBoolean() ?: false, 
                     profileId = p["profileId"]?.toIntOrNull() ?: 1, 
-                    customStartDate = p["customStartDate"]?.toLongOrNull(),
-                    customEndDate = p["customEndDate"]?.toLongOrNull(),
                     filterId = filterId
                 ))
             }
@@ -402,6 +412,9 @@ class BackupRepositoryImpl(
                     status = p["status"] ?: "ACTIVE",
                     profileId = p["profileId"]?.toIntOrNull() ?: 1,
                     note = p["note"] ?: "",
+                    timelineRange = p["timelineRange"]?.let { 
+                        try { Json.decodeFromString<TimelineRange>(it) } catch (_: Exception) { TimelineRange.AllTime }
+                    } ?: TimelineRange.AllTime,
                     filterId = filterId
                 ))
             }

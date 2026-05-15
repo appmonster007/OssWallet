@@ -5,8 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
@@ -19,7 +20,7 @@ fun AeonBudgetEntryPreview() {
                 name = "Monthly Groceries",
                 limitAmount = "500.00",
                 currency = "USD",
-                period = BudgetPeriod.MONTHLY,
+                timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
                 selectedTrackTypes = setOf(TransactionType.EXPENSE),
                 note = "Try to keep it under 500",
                 alertThreshold = 0.8f,

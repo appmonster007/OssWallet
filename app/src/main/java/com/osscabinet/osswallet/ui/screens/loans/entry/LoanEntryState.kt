@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.loans.entry
 
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 data class LoanEntryState(
     val name: String = "",
@@ -10,6 +11,16 @@ data class LoanEntryState(
     val counterparty: String = "",
     val interestRate: String = "",
     val note: String = "",
+    val queryNote: String = "",
+    val isNoteRegex: Boolean = false,
+    val queryPayee: String = "",
+    val isPayeeRegex: Boolean = false,
+    val minAmount: String = "",
+    val maxAmount: String = "",
+    val hasWarranty: Boolean? = null,
+    val warrantyExpirationStart: Long? = null,
+    val warrantyExpirationEnd: Long? = null,
+    val excludeFuture: Boolean = true,
     val selectedTrackTypes: Set<TransactionType> = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
     val selectedCategoryIds: Set<Long> = emptySet(),
     val selectedCurrencies: Set<String> = emptySet(),
@@ -17,6 +28,7 @@ data class LoanEntryState(
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
     val selectedStatuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val startDate: Long = System.currentTimeMillis(),
     val hasSettlementDate: Boolean = false,
     val settlementDate: Long = System.currentTimeMillis(),
@@ -32,6 +44,7 @@ data class LoanEntryState(
     val showSettlementDatePicker: Boolean = false,
     val showNumpad: Boolean = false,
     val showInterestNumpad: Boolean = false,
+    val showTimelineSheet: Boolean = false,
     val showAccountSheet: Boolean = false,
     val showTrackTypeSheet: Boolean = false,
     val showCategorySheet: Boolean = false,
@@ -41,6 +54,10 @@ data class LoanEntryState(
     val showStatusSheet: Boolean = false,
     val showLinkSheet: Boolean = false,
     val showFilterSheet: Boolean = false,
+    val showMinAmountSheet: Boolean = false,
+    val showMaxAmountSheet: Boolean = false,
+    val showWarrantyStartPicker: Boolean = false,
+    val showWarrantyEndPicker: Boolean = false,
     val accountQuery: String = "",
     val categoryQuery: String = "",
     val isEditMode: Boolean = false,
@@ -51,7 +68,7 @@ data class LoanEntryState(
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
     val allTransactions: List<Transaction> = emptyList(),
-    val availableTags: List<String> = emptyList(),
+    val availableTags: List<Tag> = emptyList(),
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
@@ -61,10 +78,6 @@ data class LoanEntryState(
     val canSave: Boolean
         get() = name.isNotBlank() && 
                  principalAmount.toBigDecimalOrNull() != null &&
-                 selectedCategoryIds.isNotEmpty() &&
-                 selectedPaymentMethods.isNotEmpty() &&
-                 selectedStatuses.isNotEmpty() &&
-                 selectedTrackTypes.isNotEmpty() &&
-                 selectedCurrencies.isNotEmpty() &&
+                 !navTriggered &&
                  linkedAccountId.isNotBlank()
 }

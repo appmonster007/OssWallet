@@ -1,8 +1,8 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
-enum class BudgetPeriod { DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, CUSTOM }
 enum class BudgetAlertLevel { NONE, WARNING, EXCEEDED }
 
 data class Budget(
@@ -10,7 +10,7 @@ data class Budget(
     val name: String,
     val currency: String,
     val limitAmount: BigDecimal,
-    val period: BudgetPeriod,
+    val timelineRange: TimelineRange,
     val categoryIds: List<Long> = emptyList(),
     val accountIds: List<String> = emptyList(),
     val tags: Set<String> = emptySet(),

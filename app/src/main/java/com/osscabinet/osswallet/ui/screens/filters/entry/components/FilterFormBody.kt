@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -59,6 +60,39 @@ fun FilterFormBody(
             // CONTEXT: Primary filter criteria grid
             AeonContextGrid {
                 EntryActionRow {
+                    // Period
+                    EntryActionCard(
+                        icon = Icons.Rounded.DateRange,
+                        label = "PERIOD",
+                        value = when (val range = state.timelineRange) {
+                            is TimelineRange.AllTime -> "All Time"
+                            is TimelineRange.ThisPeriod -> "This ${range.period.label}"
+                            is TimelineRange.LastPeriod -> range.period.label
+                            is TimelineRange.CustomRange -> "Custom"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowTimelineSheet(show = true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.primary
+                    )
+
+                    // Flows (renamed from Types)
+                    EntryActionCard(
+                        icon = Icons.AutoMirrored.Rounded.ShowChart,
+                        label = "FLOWS",
+                        value = when {
+                            state.selectedTransactionTypes.isEmpty() || (state.selectedTransactionTypes.size == (TransactionType.entries.size - 1)) -> "All Flows"
+                            state.selectedTransactionTypes.size == 1 -> state.selectedTransactionTypes.first().displayName
+                            else -> "${state.selectedTransactionTypes.size} Selected"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                EntryActionRow {
                     // Accounts
                     val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
                     EntryActionCard(
@@ -92,37 +126,20 @@ fun FilterFormBody(
                     )
                 }
 
-                EntryActionRow {
-                    // Types
-                    EntryActionCard(
-                        icon = Icons.AutoMirrored.Rounded.ShowChart,
-                        label = "TYPES",
-                        value = when {
-                            state.selectedTransactionTypes.isEmpty() || (state.selectedTransactionTypes.size == (TransactionType.entries.size - 1)) -> "All Types"
-                            state.selectedTransactionTypes.size == 1 -> state.selectedTransactionTypes.first().displayName
-                            else -> "${state.selectedTransactionTypes.size} Selected"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
-                    )
-
-                    // Currencies
-                    EntryActionCard(
-                        icon = Icons.Rounded.CurrencyExchange,
-                        label = "CURRENCIES",
-                        value = when {
-                            state.selectedCurrencies.isEmpty() -> "All Currencies"
-                            state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
-                            else -> "${state.selectedCurrencies.size} Selected"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                // Currencies Standalone card
+                EntryActionCard(
+                    icon = Icons.Rounded.CurrencyExchange,
+                    label = "CURRENCIES",
+                    value = when {
+                        state.selectedCurrencies.isEmpty() -> "All Currencies"
+                        state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
+                        else -> "${state.selectedCurrencies.size} Selected"
+                    },
+                    onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
             }
 
             // DETAIL: Extended filter criteria and search

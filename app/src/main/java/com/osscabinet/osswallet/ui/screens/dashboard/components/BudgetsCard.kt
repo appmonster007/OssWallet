@@ -218,11 +218,11 @@ private fun BudgetProgressRow(
 fun BudgetsCardPreview() {
     val budget1 = com.osscabinet.ossWallet.domain.model.Budget(
         id = 1L, name = "Food", currency = "USD", limitAmount = java.math.BigDecimal("1000.00"),
-        period = com.osscabinet.ossWallet.domain.model.BudgetPeriod.MONTHLY, profileId = 1
+        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH), profileId = 1
     )
     val budget2 = com.osscabinet.ossWallet.domain.model.Budget(
         id = 2L, name = "Rent", currency = "USD", limitAmount = java.math.BigDecimal("1200.00"),
-        period = com.osscabinet.ossWallet.domain.model.BudgetPeriod.MONTHLY, profileId = 1
+        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH), profileId = 1
     )
     
     val budgets = listOf(

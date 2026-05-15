@@ -27,7 +27,9 @@ fun LoanWithFilter.toDomain(): Loan {
         currencies = filterDomain.filter.currencies,
         paymentMethods = filterDomain.filter.paymentMethods,
         statuses = filterDomain.filter.statuses,
-        linkedTransactionIds = filterDomain.filter.linkedTransactionIds
+        linkedTransactionIds = filterDomain.filter.linkedTransactionIds,
+        timelineRange = loan.timelineRange,
+        filterId = loan.filterId
     )
 }
 
@@ -45,6 +47,7 @@ fun Loan.toEntity(filterId: Long): LoanEntity = LoanEntity(
     status = status.name,
     profileId = profileId,
     note = note,
+    timelineRange = timelineRange,
     filterId = filterId
 )
 

@@ -43,7 +43,7 @@ fun BudgetHeroCard(
 
     AeonExpressiveCard(
         title = budget.name,
-        subtitle = "${budget.period.name} Budget",
+        subtitle = "Budget: ${budget.timelineRange.toDisplayString()}",
         icon = Icons.Rounded.DonutLarge,
         accentColor = accentColor,
         modifier = modifier

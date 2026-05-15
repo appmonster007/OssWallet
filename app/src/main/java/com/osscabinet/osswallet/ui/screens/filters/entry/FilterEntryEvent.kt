@@ -21,6 +21,7 @@ sealed class FilterEntryEvent {
     data class SetHasWarranty(val hasWarranty: Boolean?) : FilterEntryEvent()
     data class SetWarrantyExpirationStart(val date: Long?) : FilterEntryEvent()
     data class SetWarrantyExpirationEnd(val date: Long?) : FilterEntryEvent()
+    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) : FilterEntryEvent()
     data class SetExcludeFuture(val exclude: Boolean) : FilterEntryEvent()
     
     // Visibility
@@ -34,6 +35,7 @@ sealed class FilterEntryEvent {
     data class ShowTypeSheet(val show: Boolean) : FilterEntryEvent()
     data class ShowMinAmountSheet(val show: Boolean) : FilterEntryEvent()
     data class ShowMaxAmountSheet(val show: Boolean) : FilterEntryEvent()
+    data class ShowTimelineSheet(val show: Boolean) : FilterEntryEvent()
     data class ShowWarrantyStartPicker(val show: Boolean) : FilterEntryEvent()
     data class ShowWarrantyEndPicker(val show: Boolean) : FilterEntryEvent()
     

@@ -39,23 +39,21 @@ class LoanEntryViewModel(
                 ) { accounts, categories, tags, transactions, filters ->
                     val uniquePayees = transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted()
                     val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
-                    val usedCurrencies = transactions.map { it.currency }.distinct().toSet()
-                    val allCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies
                     _state.update {
                         it.copy(
                             accounts = accounts,
                             categories = categories,
-                            availableTags = tags.map { t -> t.name },
+                            availableTags = tags,
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
                             allTransactions = transactions,
                             availableFilters = filters,
-                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else if (it.selectedCategoryIds.isEmpty()) categories.map { c -> c.id }.toSet() else it.selectedCategoryIds,
-                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else if (it.selectedPaymentMethods.isEmpty()) PaymentMethod.entries.toSet() else it.selectedPaymentMethods,
-                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else if (it.selectedStatuses.isEmpty()) TransactionStatus.entries.toSet() else it.selectedStatuses,
-                            selectedTrackTypes = if (it.isEditMode) it.selectedTrackTypes else if (it.selectedTrackTypes.isEmpty()) setOf(TransactionType.EXPENSE, TransactionType.INCOME) else it.selectedTrackTypes,
-                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else if (it.selectedCurrencies.isEmpty()) allCurrencies else it.selectedCurrencies,
+                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
+                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
+                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else emptySet(),
+                            selectedTrackTypes = if (it.isEditMode) it.selectedTrackTypes else setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else emptySet(),
                             selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
                         )
                     }
@@ -67,16 +65,25 @@ class LoanEntryViewModel(
     fun initialize(loanId: Long? = null) {
         if (loanId == null) {
             _state.update { 
-                val usedCurrencies = it.allTransactions.map { t -> t.currency }.distinct().toSet()
                 it.copy(
                     isEditMode = false, 
                     loanId = null,
-                    selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
-                    selectedPaymentMethods = PaymentMethod.entries.toSet(),
-                    selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedCategoryIds = emptySet(),
+                    selectedPaymentMethods = emptySet(),
+                    selectedStatuses = emptySet(),
                     selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                    selectedCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies,
-                    selectedTags = emptySet()
+                    selectedCurrencies = emptySet(),
+                    selectedTags = emptySet(),
+                    queryNote = "",
+                    queryPayee = "",
+                    isNoteRegex = false,
+                    isPayeeRegex = false,
+                    minAmount = "",
+                    maxAmount = "",
+                    hasWarranty = null,
+                    warrantyExpirationStart = null,
+                    warrantyExpirationEnd = null,
+                    excludeFuture = true
                 ) 
             }
             return
@@ -86,6 +93,7 @@ class LoanEntryViewModel(
             loanRepository.getLoanById(loanId)?.let { loan: Loan ->
                 val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val usageCount = loan.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
+                val tf = filter?.filter ?: TransactionFilter()
                 _state.update {
                     it.copy(
                         loanId = loanId,
@@ -103,6 +111,7 @@ class LoanEntryViewModel(
                         hasSettlementDate = loan.expectedSettlementDate != null,
                         settlementDate = loan.expectedSettlementDate ?: System.currentTimeMillis(),
                         linkedAccountId = loan.linkedAccountId,
+                        timelineRange = loan.timelineRange,
                         selectedTrackTypes = loan.trackTypes.toSet(),
                         selectedCategoryIds = loan.categoryIds.toSet(),
                         selectedCurrencies = loan.currencies.toSet(),
@@ -110,7 +119,17 @@ class LoanEntryViewModel(
                         selectedPaymentMethods = loan.paymentMethods.toSet(),
                         selectedStatuses = loan.statuses.toSet(),
                         linkedTransactionIds = loan.linkedTransactionIds.toSet(),
-                        filterId = loan.filterId
+                        filterId = loan.filterId,
+                        queryNote = tf.queryNote ?: "",
+                        isNoteRegex = tf.isNoteRegex,
+                        queryPayee = tf.queryPayee ?: "",
+                        isPayeeRegex = tf.isPayeeRegex,
+                        minAmount = tf.minAmount?.toPlainString() ?: "",
+                        maxAmount = tf.maxAmount?.toPlainString() ?: "",
+                        hasWarranty = tf.hasWarranty,
+                        warrantyExpirationStart = tf.warrantyExpirationStart,
+                        warrantyExpirationEnd = tf.warrantyExpirationEnd,
+                        excludeFuture = tf.excludeFuture
                     )
                 }
             }
@@ -130,6 +149,17 @@ class LoanEntryViewModel(
             is LoanEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
             is LoanEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is LoanEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
+            is LoanEntryEvent.SetQueryNote -> _state.update { it.copy(queryNote = event.query) }
+            is LoanEntryEvent.SetNoteRegex -> _state.update { it.copy(isNoteRegex = event.isRegex) }
+            is LoanEntryEvent.SetQueryPayee -> _state.update { it.copy(queryPayee = event.query) }
+            is LoanEntryEvent.SetPayeeRegex -> _state.update { it.copy(isPayeeRegex = event.isRegex) }
+            is LoanEntryEvent.SetMinAmount -> _state.update { it.copy(minAmount = event.amount) }
+            is LoanEntryEvent.SetMaxAmount -> _state.update { it.copy(maxAmount = event.amount) }
+            is LoanEntryEvent.SetHasWarranty -> _state.update { it.copy(hasWarranty = event.hasWarranty) }
+            is LoanEntryEvent.SetWarrantyExpirationStart -> _state.update { it.copy(warrantyExpirationStart = event.date) }
+            is LoanEntryEvent.SetWarrantyExpirationEnd -> _state.update { it.copy(warrantyExpirationEnd = event.date) }
+            is LoanEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
+            is LoanEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
             is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
             is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
@@ -151,6 +181,17 @@ class LoanEntryViewModel(
                             selectedStatuses = filter.filter.statuses.toSet(),
                             linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
                             linkedAccountId = filter.filter.accountIds.firstOrNull() ?: state.linkedAccountId,
+                            queryNote = filter.filter.queryNote ?: "",
+                            isNoteRegex = filter.filter.isNoteRegex,
+                            queryPayee = filter.filter.queryPayee ?: "",
+                            isPayeeRegex = filter.filter.isPayeeRegex,
+                            minAmount = filter.filter.minAmount?.toPlainString() ?: "",
+                            maxAmount = filter.filter.maxAmount?.toPlainString() ?: "",
+                            hasWarranty = filter.filter.hasWarranty,
+                            warrantyExpirationStart = filter.filter.warrantyExpirationStart,
+                            warrantyExpirationEnd = filter.filter.warrantyExpirationEnd,
+                            timelineRange = filter.filter.timelineRange,
+                            excludeFuture = filter.filter.excludeFuture,
                             selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
                                 filter.filter.transactionTypes.toSet()
                             } else {
@@ -171,6 +212,7 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowInterestNumpad -> _state.update { it.copy(showInterestNumpad = event.show) }
             is LoanEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is LoanEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
+            is LoanEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
             is LoanEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is LoanEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is LoanEntryEvent.ShowCurrencyFilterSheet -> _state.update { it.copy(showCurrencyFilterSheet = event.show) }
@@ -178,6 +220,10 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is LoanEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
             is LoanEntryEvent.ShowFilterSheet -> _state.update { it.copy(showFilterSheet = event.show) }
+            is LoanEntryEvent.ShowMinAmountSheet -> _state.update { it.copy(showMinAmountSheet = event.show) }
+            is LoanEntryEvent.ShowMaxAmountSheet -> _state.update { it.copy(showMaxAmountSheet = event.show) }
+            is LoanEntryEvent.ShowWarrantyStartPicker -> _state.update { it.copy(showWarrantyStartPicker = event.show) }
+            is LoanEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
             is LoanEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is LoanEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
             is LoanEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -203,7 +249,18 @@ class LoanEntryViewModel(
                     statuses = s.selectedStatuses.toList(),
                     currencies = s.selectedCurrencies.toList(),
                     linkedTransactionIds = s.linkedTransactionIds.toList(),
-                    transactionTypes = s.selectedTrackTypes.toList()
+                    transactionTypes = s.selectedTrackTypes.toList(),
+                    queryNote = s.queryNote.takeIf { it.isNotBlank() },
+                    isNoteRegex = s.isNoteRegex,
+                    queryPayee = s.queryPayee.takeIf { it.isNotBlank() },
+                    isPayeeRegex = s.isPayeeRegex,
+                    minAmount = s.minAmount.toBigDecimalOrNull(),
+                    maxAmount = s.maxAmount.toBigDecimalOrNull(),
+                    hasWarranty = s.hasWarranty,
+                    warrantyExpirationStart = s.warrantyExpirationStart,
+                    warrantyExpirationEnd = s.warrantyExpirationEnd,
+                    timelineRange = s.timelineRange,
+                    excludeFuture = s.excludeFuture
                 )
             )
 
@@ -224,7 +281,8 @@ class LoanEntryViewModel(
                 lenderOrBorrowerName = s.counterparty,
                 loanType = s.loanType,
                 linkedAccountId = s.linkedAccountId,
-                profileId = s.currentProfileId
+                profileId = s.currentProfileId,
+                timelineRange = s.timelineRange
             )).copy(
                 id = s.loanId ?: 0L,
                 name = s.name,
@@ -245,6 +303,7 @@ class LoanEntryViewModel(
                 paymentMethods = s.selectedPaymentMethods.toList(),
                 statuses = s.selectedStatuses.toList(),
                 linkedTransactionIds = s.linkedTransactionIds.toList(),
+                timelineRange = s.timelineRange,
                 filterId = filterId
             )
 

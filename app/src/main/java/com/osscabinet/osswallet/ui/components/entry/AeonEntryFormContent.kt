@@ -34,7 +34,7 @@ fun AeonEntryContextRow(
     splitCount: Int = 0,
     onSplitClick: () -> Unit = {}
 ) {
-    AeonContextGrid {
+    EntryActionRow {
         val accountIcon = getAccountIconByName(selectedAccount?.icon)
         EntryActionCard(
             icon = accountIcon,

@@ -22,7 +22,7 @@ fun FilterEntrySheets(
             items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
             selectedIds = state.selectedTransactionTypes,
             onSelectionChange = { ids ->
-                onEvent(FilterEntryEvent.SetTransactionTypes(ids))
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetTransactionTypes(ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -41,7 +41,9 @@ fun FilterEntrySheets(
         AeonAccountSelection(
             accounts = state.accounts,
             selectedAccountIds = state.selectedAccountIds,
-            onSelectionChange = { ids -> onEvent(FilterEntryEvent.SetAccountIds(ids)) },
+            onSelectionChange = { ids -> 
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetAccountIds(ids)) 
+            },
             onDismiss = { onEvent(FilterEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Accounts"
@@ -52,7 +54,9 @@ fun FilterEntrySheets(
         AeonCategorySelection(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
-            onSelectionChange = { ids -> onEvent(FilterEntryEvent.SetCategoryIds(ids)) },
+            onSelectionChange = { ids -> 
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCategoryIds(ids)) 
+            },
             onDismiss = { onEvent(FilterEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Categories",
@@ -63,7 +67,9 @@ fun FilterEntrySheets(
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
             selectedMethods = state.selectedPaymentMethods,
-            onSelectionChange = { onEvent(FilterEntryEvent.SetPaymentMethods(it)) },
+            onSelectionChange = { ids -> 
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetPaymentMethods(ids)) 
+            },
             onDismiss = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Payment Methods"
@@ -73,7 +79,9 @@ fun FilterEntrySheets(
     if (state.showStatusSheet) {
         AeonStatusSelection(
             selectedStatuses = state.selectedStatuses,
-            onSelectionChange = { onEvent(FilterEntryEvent.SetStatuses(it)) },
+            onSelectionChange = { ids -> 
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetStatuses(ids)) 
+            },
             onDismiss = { onEvent(FilterEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Statuses"
@@ -116,7 +124,9 @@ fun FilterEntrySheets(
             onDismiss = { onEvent(FilterEntryEvent.ShowCurrencySheet(false)) },
             items = allCurrencies,
             selectedIds = state.selectedCurrencies,
-            onSelectionChange = { ids -> onEvent(FilterEntryEvent.SetCurrencies(ids)) },
+            onSelectionChange = { ids -> 
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCurrencies(ids)) 
+            },
             idMapper = { it },
             labelMapper = { it },
             mode = AeonSelectMode.MULTI,

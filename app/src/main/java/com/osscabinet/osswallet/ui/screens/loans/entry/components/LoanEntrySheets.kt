@@ -40,7 +40,9 @@ fun LoanEntrySheets(
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
             selectedMethods = state.selectedPaymentMethods,
-            onSelectionChange = { onEvent(LoanEntryEvent.SetPaymentMethods(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetPaymentMethods(ids))
+            },
             onDismiss = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Payment Methods"
@@ -50,7 +52,9 @@ fun LoanEntrySheets(
     if (state.showStatusSheet) {
         AeonStatusSelection(
             selectedStatuses = state.selectedStatuses,
-            onSelectionChange = { onEvent(LoanEntryEvent.SetStatuses(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetStatuses(ids))
+            },
             onDismiss = { onEvent(LoanEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Statuses"
@@ -107,7 +111,7 @@ fun LoanEntrySheets(
             items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
-                onEvent(LoanEntryEvent.SetTrackTypes(ids))
+                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetTrackTypes(ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -127,7 +131,7 @@ fun LoanEntrySheets(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
             onSelectionChange = { ids ->
-                onEvent(LoanEntryEvent.SetCategoryIds(ids))
+                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetCategoryIds(ids))
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -156,7 +160,9 @@ fun LoanEntrySheets(
     if (state.showCurrencyFilterSheet) {
         AeonCurrencySelection(
             selectedCurrencies = state.selectedCurrencies,
-            onSelectionChange = { onEvent(LoanEntryEvent.SetCurrencies(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(LoanEntryEvent.SetCurrencies(ids))
+            },
             onDismiss = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Currencies"

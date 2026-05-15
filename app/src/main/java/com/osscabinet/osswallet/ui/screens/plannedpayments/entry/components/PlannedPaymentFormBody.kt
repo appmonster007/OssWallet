@@ -64,9 +64,9 @@ fun PlannedPaymentFormBody(
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+            AeonContextGrid {
                 // Row 1: Template and Schedule
-                AeonContextGrid {
+                EntryActionRow {
                     EntryActionCard(
                         icon = Icons.Rounded.Bookmark,
                         label = "TEMPLATE",
@@ -182,5 +182,8 @@ fun PlannedPaymentFormBody(
                 }
             )
         }
+
+        // Dedicated sheets for selecting multi-value parameters
+        PlannedPaymentEntrySheets(state = state, onEvent = onEvent)
     }
 }

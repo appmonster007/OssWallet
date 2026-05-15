@@ -61,9 +61,9 @@ fun TransactionFormBody(
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+            AeonContextGrid {
                 // Row 1: Template and Date
-                AeonContextGrid {
+                EntryActionRow {
                     if (!state.isEditMode) {
                         EntryActionCard(
                             icon = Icons.Rounded.Bookmark,

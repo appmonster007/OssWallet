@@ -85,7 +85,7 @@ fun BudgetEntrySheets(
             accounts = state.accounts,
             selectedAccountIds = state.selectedAccountIds,
             onSelectionChange = { ids ->
-                onEvent(BudgetEntryEvent.SetAccountIds(ids))
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetAccountIds(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -100,7 +100,7 @@ fun BudgetEntrySheets(
             items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
-                onEvent(BudgetEntryEvent.SetTrackTypes(ids))
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetTrackTypes(ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -120,7 +120,7 @@ fun BudgetEntrySheets(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
             onSelectionChange = { ids ->
-                onEvent(BudgetEntryEvent.SetCategoryIds(ids))
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetCategoryIds(ids))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -149,7 +149,9 @@ fun BudgetEntrySheets(
     if (state.showCurrencyFilterSheet) {
         AeonCurrencySelection(
             selectedCurrencies = state.selectedCurrencies,
-            onSelectionChange = { onEvent(BudgetEntryEvent.SetCurrencies(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetCurrencies(ids))
+            },
             onDismiss = { onEvent(BudgetEntryEvent.ShowCurrencyFilterSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Currencies"
@@ -170,7 +172,9 @@ fun BudgetEntrySheets(
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
             selectedMethods = state.selectedPaymentMethods,
-            onSelectionChange = { onEvent(BudgetEntryEvent.SetPaymentMethods(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetPaymentMethods(ids))
+            },
             onDismiss = { onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Payment Methods"
@@ -180,7 +184,9 @@ fun BudgetEntrySheets(
     if (state.showStatusSheet) {
         AeonStatusSelection(
             selectedStatuses = state.selectedStatuses,
-            onSelectionChange = { onEvent(BudgetEntryEvent.SetStatuses(it)) },
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(BudgetEntryEvent.SetStatuses(ids))
+            },
             onDismiss = { onEvent(BudgetEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Statuses"

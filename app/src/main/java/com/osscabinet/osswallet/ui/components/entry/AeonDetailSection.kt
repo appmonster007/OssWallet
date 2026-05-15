@@ -17,7 +17,9 @@ fun AeonDetailSection(
     onNoteChange: (String) -> Unit,
     payee: String = "",
     onPayeeChange: (String) -> Unit = {},
+    noteLabel: String = "NOTE",
     payeeLabel: String = "PAYEE",
+    showNote: Boolean = true,
     showPayee: Boolean = true,
     selectedTags: Collection<String> = emptyList(),
     onTagClick: () -> Unit = {},
@@ -30,14 +32,16 @@ fun AeonDetailSection(
         title = "ADDITIONAL DETAILS",
         icon = Icons.Rounded.MoreHoriz
     ) {
-        EntryEditorialInput(
-            value = note,
-            onValueChange = onNoteChange,
-            label = "NOTE",
-            icon = Icons.AutoMirrored.Rounded.Notes,
-            suggestions = noteSuggestions,
-            placeholder = "Tap to enter..."
-        )
+        if (showNote) {
+            EntryEditorialInput(
+                value = note,
+                onValueChange = onNoteChange,
+                label = noteLabel,
+                icon = Icons.AutoMirrored.Rounded.Notes,
+                suggestions = noteSuggestions,
+                placeholder = "Tap to enter..."
+            )
+        }
 
         if (showPayee) {
             EntryEditorialInput(

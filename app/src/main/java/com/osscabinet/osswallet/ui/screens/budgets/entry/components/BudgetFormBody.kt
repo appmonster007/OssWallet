@@ -35,6 +35,8 @@ fun BudgetFormBody(
     onAccountClick: () -> Unit,
     selectedTrackTypes: Set<TransactionType>,
     onTrackTypeClick: () -> Unit,
+    selectedCurrencies: Set<String>,
+    onCurrencyFilterClick: () -> Unit,
     selectedCategoryIds: Set<Long>,
     categories: List<Category>,
     onCategoryClick: () -> Unit,
@@ -149,41 +151,57 @@ fun BudgetFormBody(
                 )
             }
 
-            // Row 3: Tracks (Full Width)
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+            // Row 3: Flow & Currencies
+            AeonContextGrid {
                 EntryActionCard(
                     icon = Icons.Rounded.ShowChart,
-                    label = "TRACKS",
-                    value = if (selectedTrackTypes.isEmpty() || selectedTrackTypes.size == TransactionType.entries.size) "All Types"
-                            else if (selectedTrackTypes.size == 1) selectedTrackTypes.first().displayName
-                            else "${selectedTrackTypes.size} Selected",
+                    label = "FLOW",
+                    value = when {
+                        selectedTrackTypes.isEmpty() -> "0 Selected"
+                        selectedTrackTypes.size >= 2 -> "Both"
+                        else -> selectedTrackTypes.first().displayName
+                    },
                     onClick = onTrackTypeClick,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.tertiary
                 )
-                
-                if (filterId != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = if (isFilterShared) "Shared with ${filterUsageCount - 1} other(s)" else "Unique Filter",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        if (isFilterShared) {
-                            TextButton(
-                                onClick = onMakeFilterUnique,
-                                contentPadding = PaddingValues(0.dp),
-                                modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
-                            ) {
-                                Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
-                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
-                                Text("Make Unique", style = MaterialTheme.typography.labelSmall)
-                            }
+
+                EntryActionCard(
+                    icon = Icons.Rounded.CurrencyExchange,
+                    label = "CURRENCIES",
+                    value = when {
+                        selectedCurrencies.isEmpty() -> "All Currencies"
+                        selectedCurrencies.size == 1 -> selectedCurrencies.first()
+                        else -> "${selectedCurrencies.size} Selected"
+                    },
+                    onClick = onCurrencyFilterClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            if (filterId != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (isFilterShared) "Shared with ${filterUsageCount - 1} other(s)" else "Unique Filter",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    if (isFilterShared) {
+                        TextButton(
+                            onClick = onMakeFilterUnique,
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
+                        ) {
+                            Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
+                            Text("Make Unique", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }

@@ -57,7 +57,7 @@ fun FilterEntryScreen(
         FilterFormBody(
             name = state.name,
             onNameChange = { viewModel.onEvent(FilterEntryEvent.SetName(it)) },
-            transactionType = state.transactionType,
+            selectedTransactionTypes = state.selectedTransactionTypes,
             onTypeClick = { viewModel.onEvent(FilterEntryEvent.ShowTypeSheet(true)) },
             selectedAccountIds = state.selectedAccountIds,
             accounts = state.accounts,
@@ -108,19 +108,18 @@ fun FilterEntryScreen(
         // Selection Sheets
         if (state.showTypeSheet) {
             AeonSelectionSheet(
-                title = "Transaction Type",
+                title = "Transaction Types",
                 onDismiss = { viewModel.onEvent(FilterEntryEvent.ShowTypeSheet(false)) },
-                items = listOf(null) + com.osscabinet.ossWallet.domain.model.TransactionType.entries.filter { it != com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER },
-                selectedIds = setOf(state.transactionType),
+                items = com.osscabinet.ossWallet.domain.model.TransactionType.entries.filter { it != com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER },
+                selectedIds = state.selectedTransactionTypes,
                 onSelectionChange = { ids ->
-                    viewModel.onEvent(FilterEntryEvent.SetTransactionType(ids.firstOrNull()))
+                    viewModel.onEvent(FilterEntryEvent.SetTransactionTypes(ids))
                 },
                 idMapper = { it },
-                labelMapper = { it?.displayName ?: "All (Income & Expense)" },
-                mode = AeonSelectMode.SINGLE,
+                labelMapper = { it.displayName },
+                mode = AeonSelectMode.MULTI,
                 iconMapper = {
                     when (it) {
-                        null -> Icons.Rounded.FilterList
                         com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE -> Icons.Rounded.Remove
                         com.osscabinet.ossWallet.domain.model.TransactionType.INCOME -> Icons.Rounded.Add
                         com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz

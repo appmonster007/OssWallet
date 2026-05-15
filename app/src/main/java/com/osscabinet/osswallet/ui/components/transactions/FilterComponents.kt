@@ -135,6 +135,20 @@ fun FilterFields(
                 title = "Filter Statuses"
             )
         }
+        "Types" -> {
+            AeonSelectionSheet(
+                title = "Transaction Types",
+                onDismiss = { activeSheet = null },
+                items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+                selectedIds = filter.transactionTypes.toSet(),
+                onSelectionChange = { ids ->
+                    onFilterChange(filter.copy(transactionTypes = ids.toList()))
+                },
+                idMapper = { it },
+                labelMapper = { it.displayName },
+                mode = AeonSelectMode.MULTI
+            )
+        }
         "LinkedTransactions" -> {
             AeonLinkedTransactionSelection(
                 transactions = allTransactions,
@@ -260,23 +274,21 @@ fun FilterFields(
             ) {
                 // Type Card
                 ContextCard(
-                    title = "Type",
-                    value = filter.transactionType?.displayName ?: "All Types",
-                    icon = when (filter.transactionType) {
-                        TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
-                        TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                        else -> Icons.Default.FilterList
+                    title = "Types",
+                    value = when {
+                        filter.transactionTypes.isEmpty() -> "All"
+                        filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
+                        else -> "${filter.transactionTypes.size} Selected"
                     },
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        val nextType = when (filter.transactionType) {
-                            null -> TransactionType.EXPENSE
-                            TransactionType.EXPENSE -> TransactionType.INCOME
-                            TransactionType.INCOME -> TransactionType.TRANSFER
-                            else -> null
+                    icon = if (filter.transactionTypes.size == 1) {
+                        when (filter.transactionTypes.first()) {
+                            TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                            TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
+                            else -> Icons.Default.FilterList
                         }
-                        onFilterChange(filter.copy(transactionType = nextType))
-                    }
+                    } else Icons.Default.FilterList,
+                    modifier = Modifier.weight(1f),
+                    onClick = { activeSheet = "Types" }
                 )
 
                 // Accounts Card

@@ -240,16 +240,20 @@ fun TransactionEntrySheets(
     // Currency Selection
     if (state.showCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.selectedCurrency,
-            onCurrencySelected = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
+            selectedCurrencies = setOf(state.selectedCurrency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetCurrency(it)) }
+            },
             onDismiss = { onEvent(TransactionEntryEvent.ShowCurrencySheet(false)) }
         )
     }
 
     if (state.showTargetCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.targetCurrency,
-            onCurrencySelected = { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) },
+            selectedCurrencies = setOf(state.targetCurrency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) }
+            },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false)) },
             title = "Select Target Currency"
         )

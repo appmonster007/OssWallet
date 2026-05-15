@@ -72,6 +72,8 @@ fun BudgetEntryScreen(
             onAccountClick = { viewModel.onEvent(BudgetEntryEvent.ShowAccountSheet(true)) },
             selectedTrackTypes = state.selectedTrackTypes,
             onTrackTypeClick = { viewModel.onEvent(BudgetEntryEvent.ShowTrackTypeSheet(true)) },
+            selectedCurrencies = state.selectedCurrencies,
+            onCurrencyFilterClick = { viewModel.onEvent(BudgetEntryEvent.ShowCurrencyFilterSheet(true)) },
             selectedCategoryIds = state.selectedCategoryIds,
             categories = state.categories,
             onCategoryClick = { viewModel.onEvent(BudgetEntryEvent.ShowCategorySheet(true)) },
@@ -259,6 +261,16 @@ fun BudgetEntryScreen(
                 onEditTag = {},
                 onDeleteTag = {},
                 onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowTagSheet(false)) }
+            )
+        }
+
+        if (state.showCurrencyFilterSheet) {
+            AeonCurrencySelection(
+                selectedCurrencies = state.selectedCurrencies,
+                onSelectionChange = { viewModel.onEvent(BudgetEntryEvent.SetCurrencies(it)) },
+                onDismiss = { viewModel.onEvent(BudgetEntryEvent.ShowCurrencyFilterSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Currencies"
             )
         }
 

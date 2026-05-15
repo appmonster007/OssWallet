@@ -23,6 +23,8 @@ fun LoanWithFilter.toDomain(): Loan {
         note = loan.note,
         categoryIds = filterDomain.filter.categoryIds,
         tags = filterDomain.filter.tags,
+        trackTypes = filterDomain.filter.transactionTypes,
+        currencies = filterDomain.filter.currencies,
         paymentMethods = filterDomain.filter.paymentMethods,
         statuses = filterDomain.filter.statuses,
         linkedTransactionIds = filterDomain.filter.linkedTransactionIds

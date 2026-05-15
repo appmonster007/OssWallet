@@ -96,6 +96,7 @@ class BudgetEntryViewModel(
                         currency = budget.currency,
                         period = budget.period,
                         selectedTrackTypes = budget.trackTypes.toSet(),
+                        selectedCurrencies = budget.currencies.toSet(),
                         alertThreshold = budget.alertThreshold,
                         rollover = budget.rollover,
                         selectedCategoryIds = budget.categoryIds.toSet(),
@@ -125,6 +126,7 @@ class BudgetEntryViewModel(
             is BudgetEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is BudgetEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
             is BudgetEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
+            is BudgetEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is BudgetEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
             is BudgetEntryEvent.SetCustomStartDate -> _state.update { it.copy(customStartDate = event.date) }
             is BudgetEntryEvent.SetCustomEndDate -> _state.update { it.copy(customEndDate = event.date) }
@@ -136,6 +138,7 @@ class BudgetEntryViewModel(
             is BudgetEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is BudgetEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is BudgetEntryEvent.ShowPeriodSheet -> _state.update { it.copy(showPeriodSheet = event.show) }
+            is BudgetEntryEvent.ShowCurrencyFilterSheet -> _state.update { it.copy(showCurrencyFilterSheet = event.show) }
             is BudgetEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is BudgetEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is BudgetEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
@@ -155,11 +158,12 @@ class BudgetEntryViewModel(
                             selectedTags = filter.filter.tags.toSet(),
                             selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
                             selectedStatuses = filter.filter.statuses.toSet(),
+                            selectedCurrencies = filter.filter.currencies.toSet(),
                             linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
-                            selectedTrackTypes = when {
-                                filter.filter.transactionTypes.isNotEmpty() -> filter.filter.transactionTypes.toSet()
-                                filter.filter.transactionType != null -> setOf(filter.filter.transactionType)
-                                else -> state.selectedTrackTypes
+                            selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
+                                filter.filter.transactionTypes.toSet()
+                            } else {
+                                state.selectedTrackTypes
                             }
                         )
                     } else {
@@ -193,6 +197,7 @@ class BudgetEntryViewModel(
                     tags = s.selectedTags,
                     paymentMethods = s.selectedPaymentMethods.toList(),
                     statuses = s.selectedStatuses.toList(),
+                    currencies = s.selectedCurrencies.toList(),
                     linkedTransactionIds = s.linkedTransactionIds.toList(),
                     transactionTypes = s.selectedTrackTypes.toList()
                 )

@@ -16,6 +16,7 @@ data class Budget(
     val tags: Set<String> = emptySet(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
+    val currencies: List<String> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,

@@ -440,7 +440,7 @@ private fun AccountItemContent(
                 onRecordsClick?.invoke(
                     filter.copy(
                         accountIds = listOf(account.id),
-                        transactionType = TransactionType.INCOME
+                        transactionTypes = listOf(TransactionType.INCOME)
                     )
                 )
             },
@@ -448,7 +448,7 @@ private fun AccountItemContent(
                 onRecordsClick?.invoke(
                     filter.copy(
                         accountIds = listOf(account.id),
-                        transactionType = TransactionType.EXPENSE
+                        transactionTypes = listOf(TransactionType.EXPENSE)
                     )
                 )
             }

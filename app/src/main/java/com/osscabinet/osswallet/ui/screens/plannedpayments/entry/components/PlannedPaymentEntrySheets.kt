@@ -168,10 +168,9 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.currency,
-            onCurrencySelected = { currency ->
-                onEvent(PlannedPaymentEntryEvent.SetCurrency(currency))
-                onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false))
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) }
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false)) }
         )
@@ -179,10 +178,9 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showTargetCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.targetCurrency ?: "USD",
-            onCurrencySelected = { currency ->
-                onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(currency))
-                onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false))
+            selectedCurrencies = setOf(state.targetCurrency ?: "USD"),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) }
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false)) },
             title = "Select Target Currency"

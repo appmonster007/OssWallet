@@ -104,6 +104,16 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromTransactionTypeList(value: List<TransactionType>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toTransactionTypeList(value: String?): List<TransactionType>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
     fun fromStringSet(value: Set<String>?): String? {
         return value?.joinToString(",")
     }

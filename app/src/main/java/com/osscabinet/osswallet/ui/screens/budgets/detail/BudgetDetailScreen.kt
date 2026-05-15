@@ -130,7 +130,7 @@ fun BudgetDetailScreen(
                 paymentMethods = budget.paymentMethods,
                 statuses = budget.statuses,
                 linkedTransactionIds = budget.linkedTransactionIds,
-                transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null,
+                transactionTypes = budget.trackTypes,
                 timelineRange = TimelineRange.CustomRange(start, end),
                 excludeFuture = false
             )
@@ -327,9 +327,6 @@ fun BudgetDetailScreen(
                             }
                         } else {
                             val now = System.currentTimeMillis()
-                            val transactionType = if (budget.trackTypes.size == 1) {
-                                budget.trackTypes.first()
-                            } else null
 
                             val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {
                                 val groups = TimelineService.getGroupedData(
@@ -358,7 +355,7 @@ fun BudgetDetailScreen(
                                             categoryIds = budget.categoryIds,
                                             tags = budget.tags,
                                             timelineRange = TimelineRange.CustomRange(start, end),
-                                            transactionType = transactionType
+                                            transactionTypes = budget.trackTypes
                                         )
                                     )
                                 },

@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
@@ -51,6 +52,7 @@ class FilterEntryViewModel(
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
+                            selectedTransactionTypes = if (it.isEditMode) it.selectedTransactionTypes else TransactionType.entries.toSet(),
                             selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else transactions.map { t -> t.currency }.distinct().toSet(),
                             selectedTags = if (it.isEditMode) it.selectedTags else tags.map { t -> t.name }.toSet()
                         )
@@ -70,6 +72,7 @@ class FilterEntryViewModel(
                     selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                     selectedPaymentMethods = PaymentMethod.entries.toSet(),
                     selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedTransactionTypes = TransactionType.entries.toSet(),
                     selectedTags = it.availableTags.map { t -> t.name }.toSet()
                 ) 
             }
@@ -85,7 +88,7 @@ class FilterEntryViewModel(
                         isEditMode = true,
                         existingFilter = filter,
                         name = filter.name,
-                        transactionType = tf.transactionType,
+                        selectedTransactionTypes = tf.transactionTypes.toSet(),
                         selectedAccountIds = tf.accountIds.toSet(),
                         selectedCategoryIds = tf.categoryIds.toSet(),
                         selectedPaymentMethods = tf.paymentMethods.toSet(),
@@ -112,7 +115,7 @@ class FilterEntryViewModel(
     fun onEvent(event: FilterEntryEvent) {
         when (event) {
             is FilterEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
-            is FilterEntryEvent.SetTransactionType -> _state.update { it.copy(transactionType = event.type) }
+            is FilterEntryEvent.SetTransactionTypes -> _state.update { it.copy(selectedTransactionTypes = event.types) }
             is FilterEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
             is FilterEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
             is FilterEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
@@ -144,7 +147,7 @@ class FilterEntryViewModel(
             is FilterEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
             FilterEntryEvent.ResetFilter -> _state.update { it.copy(
-                transactionType = null,
+                selectedTransactionTypes = TransactionType.entries.toSet(),
                 selectedAccountIds = it.accounts.map { a -> a.id }.toSet(),
                 selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                 selectedPaymentMethods = PaymentMethod.entries.toSet(),

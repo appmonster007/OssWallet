@@ -87,15 +87,13 @@ fun AdvancedFilterSection(
                         label = { Text(accountNames[id] ?: id) }
                     )
                 }
-                baseFilter.transactionType?.let { type ->
-                    item {
-                        FilterChip(
-                            selected = true,
-                            onClick = { },
-                            enabled = false,
-                            label = { Text(type.displayName) }
-                        )
-                    }
+                items(baseFilter.transactionTypes) { type ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(type.displayName) }
+                    )
                 }
             }
             
@@ -171,16 +169,14 @@ fun AdvancedFilterSection(
                         trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                     )
                 }
-                // Type
-                filter.transactionType?.let { type ->
-                    item {
-                        FilterChip(
-                            selected = true,
-                            onClick = { removeFilter(filter, "transactionType", null, onFilterChange) },
-                            label = { Text(type.displayName) },
-                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
-                        )
-                    }
+                // Types
+                items(filter.transactionTypes) { type ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { removeFilter(filter, "transactionTypes", type, onFilterChange) },
+                        label = { Text(type.displayName) },
+                        trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                    )
                 }
                 // Statuses
                 items(filter.statuses) { status ->

@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Enum representing the type of a transaction.
  *
@@ -8,6 +10,7 @@ package com.osscabinet.ossWallet.domain.model
  * @property iconName Name of the icon to use (maps to AppIconMap in UI layer)
  * @property colorHex Hex color value for the type
  */
+@Serializable
 enum class TransactionType(
     val displayName: String,
     val value: String,

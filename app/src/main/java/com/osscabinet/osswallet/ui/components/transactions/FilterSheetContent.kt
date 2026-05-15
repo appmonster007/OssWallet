@@ -83,7 +83,7 @@ fun FilterSheetContent(
             warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.maxOrNull(),
             minAmount = filters.mapNotNull { it.minAmount }.minOrNull(),
             maxAmount = filters.mapNotNull { it.maxAmount }.maxOrNull(),
-            transactionType = if (filters.mapNotNull { it.transactionType }.distinct().size > 1) null else filters.firstOrNull()?.transactionType,
+            transactionTypes = filters.flatMap { it.transactionTypes }.distinct(),
             currencies = filters.flatMap { it.currencies }.distinct(),
             statuses = filters.flatMap { it.statuses }.distinct()
         )

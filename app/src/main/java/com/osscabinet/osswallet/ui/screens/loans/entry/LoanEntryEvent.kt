@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.loans.entry
 
 import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 
 sealed class LoanEntryEvent {
     data class SetName(val name: String) : LoanEntryEvent()
@@ -10,7 +11,9 @@ sealed class LoanEntryEvent {
     data class SetCounterparty(val counterparty: String) : LoanEntryEvent()
     data class SetInterestRate(val rate: String) : LoanEntryEvent()
     data class SetNote(val note: String) : LoanEntryEvent()
+    data class SetTrackTypes(val types: Set<TransactionType>) : LoanEntryEvent()
     data class SetCategoryIds(val ids: Set<Long>) : LoanEntryEvent()
+    data class SetCurrencies(val currencies: Set<String>) : LoanEntryEvent()
     data class SetTags(val tags: Set<String>) : LoanEntryEvent()
     data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) : LoanEntryEvent()
     data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) : LoanEntryEvent()
@@ -30,8 +33,10 @@ sealed class LoanEntryEvent {
     data class ShowNumpad(val show: Boolean) : LoanEntryEvent()
     data class ShowInterestNumpad(val show: Boolean) : LoanEntryEvent()
     data class ShowAccountSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowTrackTypeSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowCategorySheet(val show: Boolean) : LoanEntryEvent()
     data class ShowTagSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowCurrencyFilterSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowPaymentMethodSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowLinkSheet(val show: Boolean) : LoanEntryEvent()

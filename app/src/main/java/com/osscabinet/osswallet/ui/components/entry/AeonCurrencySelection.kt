@@ -13,9 +13,10 @@ import com.osscabinet.ossWallet.ui.components.*
 
 @Composable
 fun AeonCurrencySelection(
-    selectedCurrency: String,
-    onCurrencySelected: (String) -> Unit,
+    selectedCurrencies: Set<String>,
+    onSelectionChange: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
+    mode: AeonSelectMode = AeonSelectMode.SINGLE,
     title: String = "Select Currency"
 ) {
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
@@ -41,11 +42,11 @@ fun AeonCurrencySelection(
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(
                             items = filtered,
-                            mode = AeonSelectMode.SINGLE,
-                            selectedIds = setOf(selectedCurrency),
+                            mode = mode,
+                            selectedIds = selectedCurrencies,
                             onSelectionChange = { ids ->
-                                ids.firstOrNull()?.let { onCurrencySelected(it) }
-                                onDismiss()
+                                onSelectionChange(ids)
+                                if (mode == AeonSelectMode.SINGLE) onDismiss()
                             },
                             idMapper = { it },
                             labelMapper = { it },

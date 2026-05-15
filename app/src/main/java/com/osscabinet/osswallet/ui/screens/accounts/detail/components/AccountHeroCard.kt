@@ -162,7 +162,7 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = Color(0xFF00695C),
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.copy(transactionType = TransactionType.INCOME)) }
+                    onClick = { onClickIncome(filter.copy(transactionTypes = listOf(TransactionType.INCOME))) }
                 )
                 FlowSummaryItem(
                     label = "Expense",
@@ -171,7 +171,7 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = Color(0xFFC62828),
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.copy(transactionType = TransactionType.EXPENSE)) }
+                    onClick = { onClickExpense(filter.copy(transactionTypes = listOf(TransactionType.EXPENSE))) }
                 )
             }
 

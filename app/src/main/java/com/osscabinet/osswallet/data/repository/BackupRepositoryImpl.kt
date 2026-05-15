@@ -110,9 +110,9 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "loan_payments.csv", listOf("id", "loanId", "amount", "date", "transactionId", "note"), 
             loanPaymentDao.getAllPaymentsSync().map { listOf(it.id, it.loanId, it.amount, it.date, it.transactionId, it.note) })
 
-        writeCsvToZip(zos, "filters.csv", listOf("id", "name", "timelineRange", "queryNote", "isNoteRegex", "queryPayee", "isPayeeRegex", "categoryIds", "accountIds", "startDate", "endDate", "paymentMethods", "hasWarranty", "warrantyExpirationStart", "warrantyExpirationEnd", "minAmount", "maxAmount", "transactionType", "currencies", "statuses"), 
+        writeCsvToZip(zos, "filters.csv", listOf("id", "name", "timelineRange", "queryNote", "isNoteRegex", "queryPayee", "isPayeeRegex", "categoryIds", "accountIds", "startDate", "endDate", "paymentMethods", "hasWarranty", "warrantyExpirationStart", "warrantyExpirationEnd", "minAmount", "maxAmount", "transactionTypes", "currencies", "statuses"), 
             filterDao.getAllFiltersSync().map { 
-                listOf(it.id, it.name, Json.encodeToString(it.timelineRange), it.queryNote, it.isNoteRegex, it.queryPayee, it.isPayeeRegex, it.categoryIds, it.accountIds, it.startDate, it.endDate, it.paymentMethods, it.hasWarranty, it.warrantyExpirationStart, it.warrantyExpirationEnd, it.minAmount, it.maxAmount, it.transactionType, it.currencies, it.statuses) 
+                listOf(it.id, it.name, Json.encodeToString(it.timelineRange), it.queryNote, it.isNoteRegex, it.queryPayee, it.isPayeeRegex, it.categoryIds, it.accountIds, it.startDate, it.endDate, it.paymentMethods, it.hasWarranty, it.warrantyExpirationStart, it.warrantyExpirationEnd, it.minAmount, it.maxAmount, Json.encodeToString(it.transactionTypes), it.currencies, it.statuses) 
             })
 
         writeCsvToZip(zos, "currency_rates.csv", listOf("currencyCode", "baseCurrency", "rate", "timestamp", "nextUpdate"), 
@@ -443,7 +443,9 @@ class BackupRepositoryImpl(
                 warrantyExpirationEnd = p["warrantyExpirationEnd"]?.toLongOrNull(),
                 minAmount = p["minAmount"]?.toBigDecimalOrNull(),
                 maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
-                transactionType = TransactionType.fromValue(p["transactionType"]),
+                transactionTypes = p["transactionTypes"]?.let { 
+                    try { Json.decodeFromString<List<TransactionType>>(it) } catch (_: Exception) { emptyList() }
+                } ?: emptyList(),
                 currencies = p["currencies"] ?: "",
                 statuses = p["statuses"] ?: "",
                 tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet()

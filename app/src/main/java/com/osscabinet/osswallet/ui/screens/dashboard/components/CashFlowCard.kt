@@ -123,7 +123,7 @@ fun CashFlowCard(
                 incomeColor = PositiveAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickIncome(filter.copy(transactionType = TransactionType.INCOME)) }
+                onClick = { onClickIncome(filter.copy(transactionTypes = listOf(TransactionType.INCOME))) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -137,7 +137,7 @@ fun CashFlowCard(
                             onClick = {
                                 onClickIncome(
                                     filter.copy(
-                                        transactionType = TransactionType.INCOME,
+                                        transactionTypes = listOf(TransactionType.INCOME),
                                         currencies = listOf(item.currency)
                                     )
                                 )
@@ -156,7 +156,7 @@ fun CashFlowCard(
                 expenseColor = NegativeAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickExpense(filter.copy(transactionType = TransactionType.EXPENSE)) }
+                onClick = { onClickExpense(filter.copy(transactionTypes = listOf(TransactionType.EXPENSE))) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -170,7 +170,7 @@ fun CashFlowCard(
                             onClick = {
                                 onClickExpense(
                                     filter.copy(
-                                        transactionType = TransactionType.EXPENSE,
+                                        transactionTypes = listOf(TransactionType.EXPENSE),
                                         currencies = listOf(item.currency)
                                     )
                                 )

@@ -156,7 +156,11 @@ class BudgetEntryViewModel(
                             selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
                             selectedStatuses = filter.filter.statuses.toSet(),
                             linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
-                            selectedTrackTypes = if (filter.filter.transactionType != null) setOf(filter.filter.transactionType) else state.selectedTrackTypes
+                            selectedTrackTypes = when {
+                                filter.filter.transactionTypes.isNotEmpty() -> filter.filter.transactionTypes.toSet()
+                                filter.filter.transactionType != null -> setOf(filter.filter.transactionType)
+                                else -> state.selectedTrackTypes
+                            }
                         )
                     } else {
                         state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
@@ -190,7 +194,7 @@ class BudgetEntryViewModel(
                     paymentMethods = s.selectedPaymentMethods.toList(),
                     statuses = s.selectedStatuses.toList(),
                     linkedTransactionIds = s.linkedTransactionIds.toList(),
-                    transactionType = if (s.selectedTrackTypes.size == 1) s.selectedTrackTypes.first() else null
+                    transactionTypes = s.selectedTrackTypes.toList()
                 )
             )
 

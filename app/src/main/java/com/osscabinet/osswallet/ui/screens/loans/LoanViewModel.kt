@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +26,8 @@ class LoanViewModel(
     private val loanRepository: LoanRepository,
     settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null,
+    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository? = null,
+    private val categoryRepository: com.osscabinet.ossWallet.domain.repository.CategoryRepository? = null
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -45,9 +48,30 @@ class LoanViewModel(
         MutableStateFlow(emptyList())
     }
 
+    val categories: StateFlow<List<com.osscabinet.ossWallet.domain.model.Category>> = categoryRepository?.categories
+        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        ?: MutableStateFlow(emptyList())
+
     val availableTags: StateFlow<List<String>> = transactions
         .map { txList -> txList.asSequence().flatMap { it.tags }.distinct().sorted().toList() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _exchangeRates = MutableStateFlow<Map<String, BigDecimal>>(emptyMap())
+    val exchangeRates: StateFlow<Map<String, BigDecimal>> = _exchangeRates.asStateFlow()
+
+    init {
+        if (currencyRepository != null) {
+            viewModelScope.launch {
+                settingsRepository.currency.collect { base ->
+                    try {
+                        val rates = currencyRepository.getExchangeRates(base)
+                        _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }
+    }
 
     fun deleteLoan(loanId: Long) {
         viewModelScope.launch { loanRepository.deleteLoan(loanId) }

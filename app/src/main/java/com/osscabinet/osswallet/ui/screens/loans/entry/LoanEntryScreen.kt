@@ -84,6 +84,10 @@ fun LoanEntryScreen(
             note = state.note,
             onNoteChange = { viewModel.onEvent(LoanEntryEvent.SetNote(it)) },
             onHasSettlementDateChange = { viewModel.onEvent(LoanEntryEvent.SetHasSettlementDate(it)) },
+            selectedTrackTypes = state.selectedTrackTypes,
+            onTrackTypeClick = { viewModel.onEvent(LoanEntryEvent.ShowTrackTypeSheet(true)) },
+            selectedCurrencies = state.selectedCurrencies,
+            onCurrencyFilterClick = { viewModel.onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(true)) },
             selectedTags = state.selectedTags,
             onShowTagSheet = { viewModel.onEvent(LoanEntryEvent.ShowTagSheet(true)) },
             onRemoveTag = { tag -> viewModel.onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) },
@@ -190,6 +194,28 @@ fun LoanEntryScreen(
             )
         }
 
+        if (state.showTrackTypeSheet) {
+            AeonSelectionSheet(
+                title = "Track Transaction Types",
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowTrackTypeSheet(false)) },
+                items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+                selectedIds = state.selectedTrackTypes,
+                onSelectionChange = { ids ->
+                    viewModel.onEvent(LoanEntryEvent.SetTrackTypes(ids))
+                },
+                idMapper = { it },
+                labelMapper = { it.displayName },
+                mode = AeonSelectMode.MULTI,
+                iconMapper = {
+                    when (it) {
+                        TransactionType.EXPENSE -> Icons.Rounded.Remove
+                        TransactionType.INCOME -> Icons.Rounded.Add
+                        TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                    }
+                }
+            )
+        }
+
         if (state.showCategorySheet) {
             AeonCategorySelection(
                 categories = state.categories,
@@ -218,6 +244,16 @@ fun LoanEntryScreen(
                 onEditTag = {},
                 onDeleteTag = {},
                 onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowTagSheet(false)) }
+            )
+        }
+
+        if (state.showCurrencyFilterSheet) {
+            AeonCurrencySelection(
+                selectedCurrencies = state.selectedCurrencies,
+                onSelectionChange = { viewModel.onEvent(LoanEntryEvent.SetCurrencies(it)) },
+                onDismiss = { viewModel.onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(false)) },
+                mode = AeonSelectMode.MULTI,
+                title = "Filter Currencies"
             )
         }
 

@@ -116,7 +116,7 @@ class FilterManager {
             warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.minOrNull(),
             minAmount = filters.mapNotNull { it.minAmount }.maxOrNull(),
             maxAmount = filters.mapNotNull { it.maxAmount }.minOrNull(),
-            transactionType = filters.mapNotNull { it.transactionType }.lastOrNull(),
+            transactionTypes = filters.flatMap { it.transactionTypes }.distinct(),
             currencies = filters.flatMap { it.currencies }.distinct(),
             statuses = filters.flatMap { it.statuses }.distinct(),
             tags = filters.flatMap { it.tags }.toSet(),

@@ -22,8 +22,7 @@ data class TransactionFilter(
     val minAmount: BigDecimal? = null,
     @Serializable(with = NullableBigDecimalSerializer::class)
     val maxAmount: BigDecimal? = null,
-    val transactionType: TransactionType? = null, // null = all
-    val transactionTypes: List<TransactionType> = emptyList(), // if not empty, matches any in list
+    val transactionTypes: List<TransactionType> = emptyList(), // if empty, matches all
     val currencies: List<String> = emptyList(),
     val tags: Set<String> = emptySet(),
     val statuses: List<TransactionStatus> = emptyList(),
@@ -50,7 +49,6 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         paymentMethods = mergeLists(this.paymentMethods, other.paymentMethods),
         statuses = mergeLists(this.statuses, other.statuses),
         linkedTransactionIds = mergeLists(this.linkedTransactionIds, other.linkedTransactionIds),
-        transactionType = other.transactionType ?: this.transactionType,
         transactionTypes = mergeLists(this.transactionTypes, other.transactionTypes),
         queryNote = other.queryNote ?: this.queryNote,
         isNoteRegex = if (other.queryNote != null) other.isNoteRegex else this.isNoteRegex,
@@ -105,13 +103,13 @@ fun TransactionFilter.forCategories(categoryIds: List<Long>): TransactionFilter 
  * Creates a filter for income transactions only.
  */
 fun TransactionFilter.forIncome(): TransactionFilter =
-    copy(transactionType = TransactionType.INCOME)
+    copy(transactionTypes = listOf(TransactionType.INCOME))
 
 /**
  * Creates a filter for expense transactions only.
  */
 fun TransactionFilter.forExpense(): TransactionFilter =
-    copy(transactionType = TransactionType.EXPENSE)
+    copy(transactionTypes = listOf(TransactionType.EXPENSE))
 
 /**
  * Creates a filter with a specific timeline range.

@@ -25,7 +25,7 @@ class CategoryTreemapCardComputer :
                 config.filter.categoryIds,
                 input.categories
             ),
-            transactionType = config.filter.transactionType ?: TransactionType.EXPENSE
+            transactionTypes = if (config.filter.transactionTypes.isEmpty()) listOf(TransactionType.EXPENSE) else config.filter.transactionTypes
         )
         val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 

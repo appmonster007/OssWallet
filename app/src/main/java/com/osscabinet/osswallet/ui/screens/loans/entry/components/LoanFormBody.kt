@@ -45,6 +45,10 @@ fun LoanFormBody(
     note: String,
     onNoteChange: (String) -> Unit,
     onHasSettlementDateChange: (Boolean) -> Unit,
+    selectedTrackTypes: Set<TransactionType>,
+    onTrackTypeClick: () -> Unit,
+    selectedCurrencies: Set<String>,
+    onCurrencyFilterClick: () -> Unit,
     selectedTags: Set<String>,
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
@@ -149,7 +153,38 @@ fun LoanFormBody(
                 )
             }
 
-            // Row 3: Interest (Full Width)
+            // Row 3: Flow & Currencies
+            AeonContextGrid {
+                EntryActionCard(
+                    icon = Icons.Rounded.ShowChart,
+                    label = "FLOW",
+                    value = when {
+                        selectedTrackTypes.isEmpty() -> "0 Selected"
+                        selectedTrackTypes.size >= 2 -> "Both"
+                        else -> selectedTrackTypes.first().displayName
+                    },
+                    onClick = onTrackTypeClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+
+                EntryActionCard(
+                    icon = Icons.Rounded.CurrencyExchange,
+                    label = "CURRENCIES",
+                    value = when {
+                        selectedCurrencies.isEmpty() -> "All Currencies"
+                        selectedCurrencies.size == 1 -> selectedCurrencies.first()
+                        else -> "${selectedCurrencies.size} Selected"
+                    },
+                    onClick = onCurrencyFilterClick,
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // Row 4: Interest (Full Width)
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                 EntryActionCard(
                     icon = Icons.Rounded.Percent,

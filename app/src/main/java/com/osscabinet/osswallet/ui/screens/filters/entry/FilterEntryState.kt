@@ -7,7 +7,7 @@ data class FilterEntryState(
     val name: String = "",
     
     // Filter fields
-    val transactionType: TransactionType? = null,
+    val selectedTransactionTypes: Set<TransactionType> = emptySet(),
     val selectedAccountIds: Set<String> = emptySet(),
     val selectedCategoryIds: Set<Long> = emptySet(),
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
@@ -55,7 +55,7 @@ data class FilterEntryState(
     val canSave: Boolean get() = name.isNotBlank() && !navTriggered
     
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
-        transactionType = transactionType,
+        transactionTypes = selectedTransactionTypes.toList(),
         accountIds = selectedAccountIds.toList(),
         categoryIds = selectedCategoryIds.toList(),
         paymentMethods = selectedPaymentMethods.toList(),

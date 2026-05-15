@@ -98,10 +98,9 @@ fun TemplateEntrySheets(
 
     if (state.showCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.currency,
-            onCurrencySelected = { 
-                onEvent(TemplateEntryEvent.SetCurrency(it))
-                onEvent(TemplateEntryEvent.ShowCurrencySheet(false))
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetCurrency(it)) }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) }
         )
@@ -109,10 +108,9 @@ fun TemplateEntrySheets(
 
     if (state.showTargetCurrencySheet) {
         AeonCurrencySelection(
-            selectedCurrency = state.targetCurrency ?: "USD",
-            onCurrencySelected = { 
-                onEvent(TemplateEntryEvent.SetTargetCurrency(it))
-                onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false))
+            selectedCurrencies = setOf(state.targetCurrency ?: "USD"),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
             title = "Select Target Currency"

@@ -96,7 +96,9 @@ class LoanEntryViewModel(
                         hasSettlementDate = loan.expectedSettlementDate != null,
                         settlementDate = loan.expectedSettlementDate ?: System.currentTimeMillis(),
                         linkedAccountId = loan.linkedAccountId,
+                        selectedTrackTypes = loan.trackTypes.toSet(),
                         selectedCategoryIds = loan.categoryIds.toSet(),
+                        selectedCurrencies = loan.currencies.toSet(),
                         selectedTags = loan.tags.toSet(),
                         selectedPaymentMethods = loan.paymentMethods.toSet(),
                         selectedStatuses = loan.statuses.toSet(),
@@ -117,7 +119,9 @@ class LoanEntryViewModel(
             is LoanEntryEvent.SetCounterparty -> _state.update { it.copy(counterparty = event.counterparty) }
             is LoanEntryEvent.SetInterestRate -> _state.update { it.copy(interestRate = event.rate) }
             is LoanEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
+            is LoanEntryEvent.SetTrackTypes -> _state.update { it.copy(selectedTrackTypes = event.types) }
             is LoanEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
+            is LoanEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is LoanEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
             is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
@@ -134,11 +138,17 @@ class LoanEntryViewModel(
                             filterId = null, // DELINK
                             linkedFilter = null, // DELINK
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
+                            selectedCurrencies = filter.filter.currencies.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
                             selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
                             selectedStatuses = filter.filter.statuses.toSet(),
                             linkedTransactionIds = filter.filter.linkedTransactionIds.toSet(),
-                            linkedAccountId = filter.filter.accountIds.firstOrNull() ?: state.linkedAccountId
+                            linkedAccountId = filter.filter.accountIds.firstOrNull() ?: state.linkedAccountId,
+                            selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
+                                filter.filter.transactionTypes.toSet()
+                            } else {
+                                state.selectedTrackTypes
+                            }
                         )
                     } else {
                         state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
@@ -153,8 +163,10 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
             is LoanEntryEvent.ShowInterestNumpad -> _state.update { it.copy(showInterestNumpad = event.show) }
             is LoanEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
+            is LoanEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
             is LoanEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is LoanEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
+            is LoanEntryEvent.ShowCurrencyFilterSheet -> _state.update { it.copy(showCurrencyFilterSheet = event.show) }
             is LoanEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is LoanEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is LoanEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
@@ -182,7 +194,9 @@ class LoanEntryViewModel(
                     tags = s.selectedTags,
                     paymentMethods = s.selectedPaymentMethods.toList(),
                     statuses = s.selectedStatuses.toList(),
-                    linkedTransactionIds = s.linkedTransactionIds.toList()
+                    currencies = s.selectedCurrencies.toList(),
+                    linkedTransactionIds = s.linkedTransactionIds.toList(),
+                    transactionTypes = s.selectedTrackTypes.toList()
                 )
             )
 
@@ -218,6 +232,8 @@ class LoanEntryViewModel(
                 profileId = s.currentProfileId,
                 note = s.note,
                 categoryIds = s.selectedCategoryIds.toList(),
+                trackTypes = s.selectedTrackTypes.toList(),
+                currencies = s.selectedCurrencies.toList(),
                 tags = s.selectedTags,
                 paymentMethods = s.selectedPaymentMethods.toList(),
                 statuses = s.selectedStatuses.toList(),

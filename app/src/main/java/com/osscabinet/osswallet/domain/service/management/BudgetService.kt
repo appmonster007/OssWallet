@@ -130,6 +130,7 @@ object BudgetService {
             tags = budget.tags,
             paymentMethods = budget.paymentMethods,
             statuses = budget.statuses,
+            currencies = budget.currencies,
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
             timelineRange = TimelineRange.CustomRange(start, end),

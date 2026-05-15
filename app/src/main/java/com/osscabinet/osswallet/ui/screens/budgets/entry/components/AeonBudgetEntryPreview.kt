@@ -30,6 +30,8 @@ fun AeonBudgetEntryPreview() {
             onAccountClick = {},
             selectedTrackTypes = setOf(TransactionType.EXPENSE),
             onTrackTypeClick = {},
+            selectedCurrencies = emptySet(),
+            onCurrencyFilterClick = {},
             selectedCategoryIds = emptySet(),
             categories = emptyList(),
             onCategoryClick = {},

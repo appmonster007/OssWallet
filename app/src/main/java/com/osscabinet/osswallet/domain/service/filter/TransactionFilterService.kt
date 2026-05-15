@@ -64,11 +64,7 @@ object TransactionFilterService {
         val matchesAccounts = filter.accountIds.isEmpty() || tx.accountId in filter.accountIds
         val matchesCategories = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
         
-        val matchesType = when {
-            filter.transactionTypes.isNotEmpty() -> tx.transactionType in filter.transactionTypes
-            filter.transactionType != null -> tx.transactionType == filter.transactionType
-            else -> true
-        }
+        val matchesType = filter.transactionTypes.isEmpty() || tx.transactionType in filter.transactionTypes
 
         // Amount check (absolute value for UI consistency)
         val matchesAmount = (filter.minAmount == null || tx.amount.abs() >= filter.minAmount) &&

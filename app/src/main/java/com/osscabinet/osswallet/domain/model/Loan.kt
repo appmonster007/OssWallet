@@ -21,6 +21,8 @@ data class Loan(
     val note: String = "",
     val categoryIds: List<Long> = emptyList(),
     val tags: Set<String> = emptySet(),
+    val trackTypes: List<TransactionType> = emptyList(),
+    val currencies: List<String> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val statuses: List<TransactionStatus> = emptyList(),
     val linkedTransactionIds: List<Long> = emptyList(),

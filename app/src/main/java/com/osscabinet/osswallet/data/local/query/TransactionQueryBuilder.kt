@@ -127,9 +127,10 @@ class TransactionQueryBuilder {
             where.append(" AND categoryId IN ($placeholders)")
             args.addAll(filter.categoryIds)
         }
-        if (filter.transactionType != null) {
-            where.append(" AND transactionType = ?")
-            args.add(filter.transactionType)
+        if (filter.transactionTypes.isNotEmpty()) {
+            val placeholders = filter.transactionTypes.joinToString(",") { "?" }
+            where.append(" AND transactionType IN ($placeholders)")
+            args.addAll(filter.transactionTypes.map { it.value })
         }
         if (filter.currencies.isNotEmpty()) {
             val placeholders = filter.currencies.joinToString(",") { "?" }

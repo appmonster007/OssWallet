@@ -4,7 +4,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 
 sealed class FilterEntryEvent {
     data class SetName(val name: String) : FilterEntryEvent()
-    data class SetTransactionType(val type: TransactionType?) : FilterEntryEvent()
+    data class SetTransactionTypes(val types: Set<TransactionType>) : FilterEntryEvent()
     data class SetAccountIds(val ids: Set<String>) : FilterEntryEvent()
     data class SetCategoryIds(val ids: Set<Long>) : FilterEntryEvent()
     data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) : FilterEntryEvent()

@@ -77,9 +77,10 @@ class TransactionRepositoryImpl(
             queryBuilder.append(" AND categoryId IN ($placeholders)")
             args.addAll(filter.categoryIds)
         }
-        if (filter.transactionType != null) {
-            queryBuilder.append(" AND transactionType = ?")
-            args.add(filter.transactionType.value)
+        if (filter.transactionTypes.isNotEmpty()) {
+            val placeholders = filter.transactionTypes.joinByComma { "?" }
+            queryBuilder.append(" AND transactionType IN ($placeholders)")
+            args.addAll(filter.transactionTypes.map { it.value })
         }
         if (filter.minAmount != null) {
             queryBuilder.append(" AND amount >= ?")

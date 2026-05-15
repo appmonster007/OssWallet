@@ -141,6 +141,8 @@ object LoanService {
             accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
             paymentMethods = loan.paymentMethods,
             statuses = loan.statuses,
+            currencies = loan.currencies,
+            transactionTypes = loan.trackTypes,
             linkedTransactionIds = loan.linkedTransactionIds
         )
         return TransactionFilterService.filterTransactions(transactions, filter)

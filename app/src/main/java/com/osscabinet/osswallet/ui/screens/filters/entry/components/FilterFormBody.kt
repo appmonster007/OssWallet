@@ -24,7 +24,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 fun FilterFormBody(
     name: String,
     onNameChange: (String) -> Unit,
-    transactionType: com.osscabinet.ossWallet.domain.model.TransactionType?,
+    selectedTransactionTypes: Set<com.osscabinet.ossWallet.domain.model.TransactionType>,
     onTypeClick: () -> Unit,
     selectedAccountIds: Set<String>,
     accounts: List<Account>,
@@ -75,7 +75,7 @@ fun FilterFormBody(
     ) {
         // IMPACT: Header card (Filter Name)
         AeonImpactHeaderCard(
-            transactionType = transactionType ?: com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+            transactionType = if (selectedTransactionTypes.size == 1) selectedTransactionTypes.first() else com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
             onTypeSelected = { onTypeClick() },
             amount = "",
             currency = "",

@@ -25,7 +25,7 @@ data class FilterEntity(
     val warrantyExpirationEnd: Long? = null,
     val minAmount: BigDecimal? = null,
     val maxAmount: BigDecimal? = null,
-    val transactionType: TransactionType? = null, // null for all
+    val transactionTypes: List<TransactionType> = emptyList(),
     val currencies: String = "", // Comma-separated currency codes
     val statuses: String = "", // Comma-separated status values
     val linkedTransactionIds: String = "", // Comma-separated IDs

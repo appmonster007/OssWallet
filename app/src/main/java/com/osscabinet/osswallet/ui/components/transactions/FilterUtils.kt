@@ -20,10 +20,8 @@ fun countActiveFilters(
     // 2. Accounts
     if (filter.accountIds != baseFilter.accountIds) count++
     
-    // 3. Transaction Type (only if not forced)
-    if (rules?.forcedTransactionType == null) {
-        if (filter.transactionType != baseFilter.transactionType) count++
-    }
+    // 3. Transaction Types
+    if (filter.transactionTypes != baseFilter.transactionTypes) count++
     
     // 4. Categories
     if (filter.categoryIds != baseFilter.categoryIds) count++
@@ -61,7 +59,7 @@ fun removeFilter(
 ) {
     val updatedFilter = when (field) {
         "accountIds" -> filter.copy(accountIds = filter.accountIds - (value as String))
-        "transactionType" -> filter.copy(transactionType = null)
+        "transactionTypes" -> filter.copy(transactionTypes = filter.transactionTypes - (value as TransactionType))
         "dateRange" -> filter.copy(timelineRange = TimelineRange.AllTime)
         "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as Long))
         "currencies" -> filter.copy(currencies = filter.currencies - (value as String))

@@ -205,27 +205,27 @@ class DatabaseSeeder @Inject constructor(
             FilterEntity(
                 name = "Food & Dining Expense",
                 categoryIds = categoryNameToId["Food & Dining"]?.toString() ?: "1",
-                transactionType = TransactionType.EXPENSE
+                transactionTypes = listOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Shopping Expense",
                 categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
-                transactionType = TransactionType.EXPENSE
+                transactionTypes = listOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Salary Income",
                 categoryIds = categoryNameToId["Income"]?.toString() ?: "8",
-                transactionType = TransactionType.INCOME
+                transactionTypes = listOf(TransactionType.INCOME)
             ),
             FilterEntity(
                 name = "Transportation Expense",
                 categoryIds = categoryNameToId["Transportation"]?.toString() ?: "2",
-                transactionType = TransactionType.EXPENSE
+                transactionTypes = listOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Entertainment Expense",
                 categoryIds = categoryNameToId["Entertainment"]?.toString() ?: "5",
-                transactionType = TransactionType.EXPENSE
+                transactionTypes = listOf(TransactionType.EXPENSE)
             )
         )
 

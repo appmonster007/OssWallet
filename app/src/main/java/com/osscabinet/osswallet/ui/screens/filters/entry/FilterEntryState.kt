@@ -52,7 +52,15 @@ data class FilterEntryState(
     val availableTags: List<Tag> = emptyList(),
     val existingFilter: Filter? = null
 ) {
-    val canSave: Boolean get() = name.isNotBlank() && !navTriggered
+    val canSave: Boolean 
+        get() = name.isNotBlank() && 
+                !navTriggered &&
+                selectedTransactionTypes.isNotEmpty() &&
+                selectedAccountIds.isNotEmpty() &&
+                selectedCategoryIds.isNotEmpty() &&
+                selectedPaymentMethods.isNotEmpty() &&
+                selectedStatuses.isNotEmpty() &&
+                selectedCurrencies.isNotEmpty()
     
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
         transactionTypes = selectedTransactionTypes.toList(),

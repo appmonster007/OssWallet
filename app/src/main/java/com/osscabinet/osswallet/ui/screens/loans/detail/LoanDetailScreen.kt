@@ -389,7 +389,7 @@ private fun LoanOverviewTab(
                     ScopeSection(
                         label = "TAGS",
                         icon = Icons.AutoMirrored.Rounded.Label,
-                        allText = "All Tags",
+                        allText = "No Tags",
                         isEmpty = loan.tags.isEmpty(),
                         items = loan.tags.map { tag ->
                             {

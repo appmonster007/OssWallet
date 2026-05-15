@@ -439,16 +439,16 @@ private fun AccountItemContent(
             onClickIncome = {
                 onRecordsClick?.invoke(
                     filter.copy(
-                        accountIds = listOf(account.id),
-                        transactionTypes = listOf(TransactionType.INCOME)
+                        accountIds = setOf(account.id),
+                        transactionTypes = setOf(TransactionType.INCOME)
                     )
                 )
             },
             onClickExpense = {
                 onRecordsClick?.invoke(
                     filter.copy(
-                        accountIds = listOf(account.id),
-                        transactionTypes = listOf(TransactionType.EXPENSE)
+                        accountIds = setOf(account.id),
+                        transactionTypes = setOf(TransactionType.EXPENSE)
                     )
                 )
             }

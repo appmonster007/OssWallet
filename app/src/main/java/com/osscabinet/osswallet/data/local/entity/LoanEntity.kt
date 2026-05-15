@@ -6,7 +6,6 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 @Entity(
@@ -46,7 +45,6 @@ data class LoanEntity(
     val status: String = "ACTIVE",
     val profileId: Int,
     val note: String = "",
-    val timelineRange: TimelineRange,
     val filterId: Long
 )
 

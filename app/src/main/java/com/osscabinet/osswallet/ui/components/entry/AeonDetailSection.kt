@@ -21,6 +21,7 @@ fun AeonDetailSection(
     payeeLabel: String = "PAYEE",
     showNote: Boolean = true,
     showPayee: Boolean = true,
+    showTags: Boolean = true,
     selectedTags: Collection<String> = emptyList(),
     onTagClick: () -> Unit = {},
     onRemoveTag: (String) -> Unit = {},
@@ -53,11 +54,13 @@ fun AeonDetailSection(
             )
         }
 
-        EntryTagSection(
-            selectedTags = selectedTags.toList(),
-            onShowTagSheet = onTagClick,
-            onRemoveTag = onRemoveTag
-        )
+        if (showTags) {
+            EntryTagSection(
+                selectedTags = selectedTags.toList(),
+                onShowTagSheet = onTagClick,
+                onRemoveTag = onRemoveTag
+            )
+        }
 
         additionalContent?.invoke(this)
     }

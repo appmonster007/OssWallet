@@ -12,9 +12,9 @@ data class TransactionFilter(
     val isNoteRegex: Boolean = false,
     val queryPayee: String? = null,
     val isPayeeRegex: Boolean = false,
-    val categoryIds: List<Long> = emptyList(),
-    val accountIds: List<String> = emptyList(),
-    val paymentMethods: List<PaymentMethod> = emptyList(),
+    val categoryIds: Set<Long> = emptySet(),
+    val accountIds: Set<String> = emptySet(),
+    val paymentMethods: Set<PaymentMethod> = emptySet(),
     val hasWarranty: Boolean? = null, // null = any, true = has warranty, false = no warranty
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
@@ -22,11 +22,11 @@ data class TransactionFilter(
     val minAmount: BigDecimal? = null,
     @Serializable(with = NullableBigDecimalSerializer::class)
     val maxAmount: BigDecimal? = null,
-    val transactionTypes: List<TransactionType> = emptyList(), // if empty, matches all
-    val currencies: List<String> = emptyList(),
+    val transactionTypes: Set<TransactionType> = emptySet(), // if empty, matches all
+    val currencies: Set<String> = emptySet(),
     val tags: Set<String> = emptySet(),
-    val statuses: List<TransactionStatus> = emptyList(),
-    val linkedTransactionIds: List<Long> = emptyList(),
+    val statuses: Set<TransactionStatus> = emptySet(),
+    val linkedTransactionIds: Set<Long> = emptySet(),
     val excludeFuture: Boolean = true
 )
 
@@ -37,19 +37,19 @@ data class TransactionFilter(
 
 /**
  * Merges two TransactionFilters. The `other` filter's values take precedence where non-default.
- * For list fields, intersects both lists to honor the narrowest scope.
+ * For set fields, intersects both sets to honor the narrowest scope.
  */
 fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
     return this.copy(
         timelineRange = other.timelineRange,
-        accountIds = mergeLists(this.accountIds, other.accountIds),
-        categoryIds = mergeLists(this.categoryIds, other.categoryIds),
-        currencies = mergeLists(this.currencies, other.currencies),
+        accountIds = mergeSets(this.accountIds, other.accountIds),
+        categoryIds = mergeSets(this.categoryIds, other.categoryIds),
+        currencies = mergeSets(this.currencies, other.currencies),
         tags = mergeSets(this.tags, other.tags),
-        paymentMethods = mergeLists(this.paymentMethods, other.paymentMethods),
-        statuses = mergeLists(this.statuses, other.statuses),
-        linkedTransactionIds = mergeLists(this.linkedTransactionIds, other.linkedTransactionIds),
-        transactionTypes = mergeLists(this.transactionTypes, other.transactionTypes),
+        paymentMethods = mergeSets(this.paymentMethods, other.paymentMethods),
+        statuses = mergeSets(this.statuses, other.statuses),
+        linkedTransactionIds = mergeSets(this.linkedTransactionIds, other.linkedTransactionIds),
+        transactionTypes = mergeSets(this.transactionTypes, other.transactionTypes),
         queryNote = other.queryNote ?: this.queryNote,
         isNoteRegex = if (other.queryNote != null) other.isNoteRegex else this.isNoteRegex,
         queryPayee = other.queryPayee ?: this.queryPayee,
@@ -63,12 +63,6 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
     )
 }
 
-private fun <T> mergeLists(base: List<T>, other: List<T>): List<T> {
-    return if (other.isNotEmpty()) {
-        if (base.isEmpty()) other else base.intersect(other.toSet()).toList()
-    } else base
-}
-
 private fun <T> mergeSets(base: Set<T>, other: Set<T>): Set<T> {
     return if (other.isNotEmpty()) {
         if (base.isEmpty()) other else base.intersect(other)
@@ -79,37 +73,37 @@ private fun <T> mergeSets(base: Set<T>, other: Set<T>): Set<T> {
  * Creates a filter for a specific account.
  */
 fun TransactionFilter.forAccount(accountId: String): TransactionFilter =
-    copy(accountIds = listOf(accountId))
+    copy(accountIds = setOf(accountId))
 
 /**
  * Creates a filter for specific accounts.
  */
-fun TransactionFilter.forAccounts(accountIds: List<String>): TransactionFilter =
-    copy(accountIds = accountIds)
+fun TransactionFilter.forAccounts(accountIds: Collection<String>): TransactionFilter =
+    copy(accountIds = accountIds.toSet())
 
 /**
  * Creates a filter for a specific category.
  */
 fun TransactionFilter.forCategory(categoryId: Long): TransactionFilter =
-    copy(categoryIds = listOf(categoryId))
+    copy(categoryIds = setOf(categoryId))
 
 /**
  * Creates a filter for specific categories.
  */
-fun TransactionFilter.forCategories(categoryIds: List<Long>): TransactionFilter =
-    copy(categoryIds = categoryIds)
+fun TransactionFilter.forCategories(categoryIds: Collection<Long>): TransactionFilter =
+    copy(categoryIds = categoryIds.toSet())
 
 /**
  * Creates a filter for income transactions only.
  */
 fun TransactionFilter.forIncome(): TransactionFilter =
-    copy(transactionTypes = listOf(TransactionType.INCOME))
+    copy(transactionTypes = setOf(TransactionType.INCOME))
 
 /**
  * Creates a filter for expense transactions only.
  */
 fun TransactionFilter.forExpense(): TransactionFilter =
-    copy(transactionTypes = listOf(TransactionType.EXPENSE))
+    copy(transactionTypes = setOf(TransactionType.EXPENSE))
 
 /**
  * Creates a filter with a specific timeline range.
@@ -122,13 +116,13 @@ fun TransactionFilter.withTimeline(timelineRange: TimelineRange): TransactionFil
  * Creates a filter for a specific currency.
  */
 fun TransactionFilter.withCurrency(currency: String): TransactionFilter =
-    copy(currencies = listOf(currency))
+    copy(currencies = setOf(currency))
 
 /**
  * Creates a filter for specific currencies.
  */
-fun TransactionFilter.withCurrencies(currencies: List<String>): TransactionFilter =
-    copy(currencies = currencies)
+fun TransactionFilter.withCurrencies(currencies: Collection<String>): TransactionFilter =
+    copy(currencies = currencies.toSet())
 
 /**
  * Creates a filter with a specific date range.
@@ -146,13 +140,13 @@ fun TransactionFilter.withAmountRange(min: BigDecimal?, max: BigDecimal?): Trans
  * Creates a filter with a specific payment method.
  */
 fun TransactionFilter.withPaymentMethod(method: PaymentMethod): TransactionFilter =
-    copy(paymentMethods = listOf(method))
+    copy(paymentMethods = setOf(method))
 
 /**
  * Creates a filter with specific payment methods.
  */
-fun TransactionFilter.withPaymentMethods(methods: List<PaymentMethod>): TransactionFilter =
-    copy(paymentMethods = methods)
+fun TransactionFilter.withPaymentMethods(methods: Collection<PaymentMethod>): TransactionFilter =
+    copy(paymentMethods = methods.toSet())
 
 /**
  * Creates a filter with a note query.
@@ -187,5 +181,5 @@ fun TransactionFilter.withWarrantyExpirationRange(start: Long?, end: Long?): Tra
 /**
  * Creates a filter for specific transaction statuses.
  */
-fun TransactionFilter.withStatuses(statuses: List<TransactionStatus>): TransactionFilter =
-    copy(statuses = statuses)
+fun TransactionFilter.withStatuses(statuses: Collection<TransactionStatus>): TransactionFilter =
+    copy(statuses = statuses.toSet())

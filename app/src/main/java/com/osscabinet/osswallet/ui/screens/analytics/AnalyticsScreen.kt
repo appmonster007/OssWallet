@@ -184,7 +184,7 @@ fun AnalyticsScreen(
             onCardTypeSelected = { cardType ->
                 val defaultFilter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = listOf(TransactionType.EXPENSE)
+                    transactionTypes = setOf(TransactionType.EXPENSE)
                 )
                 when (cardType) {
                     CardType.CATEGORY_PIE_CHART -> viewModel.addCard(

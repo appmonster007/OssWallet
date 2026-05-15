@@ -25,7 +25,7 @@ class CategoryPieChartCardComputer :
                 config.filter.categoryIds,
                 input.categories
             ),
-            transactionTypes = if (config.filter.transactionTypes.isEmpty()) listOf(TransactionType.EXPENSE) else config.filter.transactionTypes
+            transactionTypes = if (config.filter.transactionTypes.isEmpty()) setOf(TransactionType.EXPENSE) else config.filter.transactionTypes
         )
         val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 

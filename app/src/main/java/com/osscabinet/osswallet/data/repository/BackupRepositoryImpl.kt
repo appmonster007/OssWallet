@@ -73,10 +73,10 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"), 
             transactionLinkDao.getAllLinksSync().map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
         
-        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "timelineRange", "alertThreshold", "rollover", "isArchived", "profileId", "filterId"), 
+        writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "alertThreshold", "rollover", "isArchived", "profileId", "filterId"), 
             budgetDao.getAllBudgetsSync().map { 
                 val b = it.budget
-                listOf(b.id, b.name, b.currency, b.limitAmount, Json.encodeToString(b.timelineRange), b.alertThreshold, b.rollover, b.isArchived, b.profileId, b.filterId) 
+                listOf(b.id, b.name, b.currency, b.limitAmount, b.alertThreshold, b.rollover, b.isArchived, b.profileId, b.filterId) 
             })
         
         writeCsvToZip(zos, "templates.csv", listOf("id", "name", "categoryId", "amount", "transactionType", "icon", "colorHex", "accountId", "targetAccountId", "targetCurrency", "transferRate", "note", "payee", "location", "paymentMethod", "currency", "tags", "isStarred", "displayOrder", "profileId", "transactionStatus"), 
@@ -101,18 +101,18 @@ class BackupRepositoryImpl(
         writeCsvToZip(zos, "tags.csv", listOf("id", "name", "colorHex"), 
             tagDao.getAllTagsSync().map { listOf(it.id, it.name, it.colorHex) })
 
-        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note", "timelineRange", "filterId"), 
+        writeCsvToZip(zos, "loans.csv", listOf("id", "name", "principalAmount", "currency", "interestRate", "startDate", "lenderOrBorrowerName", "loanType", "linkedAccountId", "expectedSettlementDate", "status", "profileId", "note", "filterId"), 
             loanDao.getAllLoansSync().map { 
                 val l = it.loan
-                listOf(l.id, l.name, l.principalAmount, l.currency, l.interestRate, l.startDate, l.lenderOrBorrowerName, l.loanType, l.linkedAccountId, l.expectedSettlementDate, l.status, l.profileId, l.note, Json.encodeToString(l.timelineRange), l.filterId) 
+                listOf(l.id, l.name, l.principalAmount, l.currency, l.interestRate, l.startDate, l.lenderOrBorrowerName, l.loanType, l.linkedAccountId, l.expectedSettlementDate, l.status, l.profileId, l.note, l.filterId) 
             })
 
         writeCsvToZip(zos, "loan_payments.csv", listOf("id", "loanId", "amount", "date", "transactionId", "note"), 
             loanPaymentDao.getAllPaymentsSync().map { listOf(it.id, it.loanId, it.amount, it.date, it.transactionId, it.note) })
 
-        writeCsvToZip(zos, "filters.csv", listOf("id", "name", "timelineRange", "queryNote", "isNoteRegex", "queryPayee", "isPayeeRegex", "categoryIds", "accountIds", "startDate", "endDate", "paymentMethods", "hasWarranty", "warrantyExpirationStart", "warrantyExpirationEnd", "minAmount", "maxAmount", "transactionTypes", "currencies", "statuses"), 
+        writeCsvToZip(zos, "filters.csv", listOf("id", "name", "timelineRange", "queryNote", "isNoteRegex", "queryPayee", "isPayeeRegex", "categoryIds", "accountIds", "startDate", "endDate", "paymentMethods", "hasWarranty", "warrantyExpirationStart", "warrantyExpirationEnd", "minAmount", "maxAmount", "transactionTypes", "currencies", "statuses", "linkedTransactionIds", "tags", "excludeFuture"), 
             filterDao.getAllFiltersSync().map { 
-                listOf(it.id, it.name, Json.encodeToString(it.timelineRange), it.queryNote, it.isNoteRegex, it.queryPayee, it.isPayeeRegex, it.categoryIds, it.accountIds, it.startDate, it.endDate, it.paymentMethods, it.hasWarranty, it.warrantyExpirationStart, it.warrantyExpirationEnd, it.minAmount, it.maxAmount, Json.encodeToString(it.transactionTypes), it.currencies, it.statuses) 
+                listOf(it.id, it.name, Json.encodeToString(it.timelineRange), it.queryNote, it.isNoteRegex, it.queryPayee, it.isPayeeRegex, Json.encodeToString(it.categoryIds), Json.encodeToString(it.accountIds), it.startDate, it.endDate, Json.encodeToString(it.paymentMethods), it.hasWarranty, it.warrantyExpirationStart, it.warrantyExpirationEnd, it.minAmount, it.maxAmount, Json.encodeToString(it.transactionTypes), Json.encodeToString(it.currencies), Json.encodeToString(it.statuses), Json.encodeToString(it.linkedTransactionIds), Json.encodeToString(it.tags), it.excludeFuture) 
             })
 
         writeCsvToZip(zos, "currency_rates.csv", listOf("currencyCode", "baseCurrency", "rate", "timestamp", "nextUpdate"), 
@@ -320,19 +320,6 @@ class BackupRepositoryImpl(
                     name = p["name"] ?: "", 
                     currency = p["currency"] ?: "USD", 
                     limitAmount = p["limitAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
-                    timelineRange = p["timelineRange"]?.let { 
-                        try { Json.decodeFromString<TimelineRange>(it) } catch (_: Exception) { TimelineRange.AllTime }
-                    } ?: p["period"]?.let { legacyPeriod ->
-                        // Basic migration from legacy period string
-                        when (legacyPeriod) {
-                            "DAILY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.TODAY)
-                            "WEEKLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.WEEK)
-                            "MONTHLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH)
-                            "YEARLY" -> TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.YEAR)
-                            "CUSTOM" -> TimelineRange.CustomRange(p["customStartDate"]?.toLongOrNull(), p["customEndDate"]?.toLongOrNull())
-                            else -> TimelineRange.AllTime
-                        }
-                    } ?: TimelineRange.AllTime,
                     alertThreshold = p["alertThreshold"]?.toFloatOrNull() ?: 0.8f, 
                     rollover = p["rollover"]?.toBoolean() ?: false, 
                     isArchived = p["isArchived"]?.toBoolean() ?: false, 
@@ -412,9 +399,6 @@ class BackupRepositoryImpl(
                     status = p["status"] ?: "ACTIVE",
                     profileId = p["profileId"]?.toIntOrNull() ?: 1,
                     note = p["note"] ?: "",
-                    timelineRange = p["timelineRange"]?.let { 
-                        try { Json.decodeFromString<TimelineRange>(it) } catch (_: Exception) { TimelineRange.AllTime }
-                    } ?: TimelineRange.AllTime,
                     filterId = filterId
                 ))
             }
@@ -446,22 +430,24 @@ class BackupRepositoryImpl(
                 isNoteRegex = p["isNoteRegex"]?.toBoolean() ?: false,
                 queryPayee = p["queryPayee"],
                 isPayeeRegex = p["isPayeeRegex"]?.toBoolean() ?: false,
-                categoryIds = p["categoryIds"] ?: "",
-                accountIds = p["accountIds"] ?: "",
+                categoryIds = p["categoryIds"]?.let { try { Json.decodeFromString<Set<Long>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
+                accountIds = p["accountIds"]?.let { try { Json.decodeFromString<Set<String>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
                 startDate = p["startDate"]?.toLongOrNull(),
                 endDate = p["endDate"]?.toLongOrNull(),
-                paymentMethods = p["paymentMethods"] ?: "",
+                paymentMethods = p["paymentMethods"]?.let { try { Json.decodeFromString<Set<PaymentMethod>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
                 hasWarranty = p["hasWarranty"]?.let { if (it == "true") true else if (it == "false") false else null },
                 warrantyExpirationStart = p["warrantyExpirationStart"]?.toLongOrNull(),
                 warrantyExpirationEnd = p["warrantyExpirationEnd"]?.toLongOrNull(),
                 minAmount = p["minAmount"]?.toBigDecimalOrNull(),
                 maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
                 transactionTypes = p["transactionTypes"]?.let { 
-                    try { Json.decodeFromString<List<TransactionType>>(it) } catch (_: Exception) { emptyList() }
-                } ?: emptyList(),
-                currencies = p["currencies"] ?: "",
-                statuses = p["statuses"] ?: "",
-                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet()
+                    try { Json.decodeFromString<Set<TransactionType>>(it) } catch (_: Exception) { emptySet() }
+                } ?: emptySet(),
+                currencies = p["currencies"]?.let { try { Json.decodeFromString<Set<String>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
+                statuses = p["statuses"]?.let { try { Json.decodeFromString<Set<TransactionStatus>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
+                linkedTransactionIds = p["linkedTransactionIds"]?.let { try { Json.decodeFromString<Set<Long>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
+                tags = p["tags"]?.let { try { Json.decodeFromString<Set<String>>(it) } catch (_: Exception) { emptySet() } } ?: emptySet(),
+                excludeFuture = p["excludeFuture"]?.toBoolean() ?: true
             ))
         }
     }

@@ -114,12 +114,52 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromTransactionTypeSet(value: Set<TransactionType>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toTransactionTypeSet(value: String?): Set<TransactionType>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromLongSet(value: Set<Long>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toLongSet(value: String?): Set<Long>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromPaymentMethodSet(value: Set<PaymentMethod>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toPaymentMethodSet(value: String?): Set<PaymentMethod>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromTransactionStatusSet(value: Set<TransactionStatus>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toTransactionStatusSet(value: String?): Set<TransactionStatus>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
     fun fromStringSet(value: Set<String>?): String? {
-        return value?.joinToString(",")
+        return value?.let { Json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toStringSet(value: String?): Set<String>? {
-        return value?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+        return value?.let { Json.decodeFromString(it) }
     }
 }

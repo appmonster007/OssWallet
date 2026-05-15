@@ -97,15 +97,12 @@ class BudgetEntryViewModel(
         viewModelScope.launch {
             budgetRepository.getById(budgetId)?.let { budget ->
                 val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
-                val usageCount = budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 val tf = filter?.filter ?: TransactionFilter()
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
                         isEditMode = true,
                         existingBudget = budget,
-                        linkedFilter = filter,
-                        filterUsageCount = usageCount,
                         name = budget.name,
                         limitAmount = budget.limitAmount.toPlainString(),
                         currency = budget.currency,
@@ -114,6 +111,7 @@ class BudgetEntryViewModel(
                         selectedCurrencies = budget.currencies.toSet(),
                         alertThreshold = budget.alertThreshold,
                         rollover = budget.rollover,
+                        note = budget.note,
                         selectedCategoryIds = budget.categoryIds.toSet(),
                         selectedAccountIds = budget.accountIds.toSet(),
                         selectedTags = budget.tags.toSet(),
@@ -181,11 +179,9 @@ class BudgetEntryViewModel(
             is BudgetEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
             is BudgetEntryEvent.SetFilterId -> {
                 val filter = _state.value.availableFilters.find { it.id == event.filterId }
-                _state.update { state ->
-                    if (filter != null) {
+                if (filter != null) {
+                    _state.update { state ->
                         state.copy(
-                            filterId = null, // DELINK
-                            linkedFilter = null, // DELINK
                             selectedAccountIds = filter.filter.accountIds.toSet(),
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
@@ -210,40 +206,59 @@ class BudgetEntryViewModel(
                                 state.selectedTrackTypes
                             }
                         )
-                    } else {
-                        state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
                     }
                 }
             }
-            BudgetEntryEvent.MakeFilterUnique -> _state.update { it.copy(filterId = null, linkedFilter = null) }
-            is BudgetEntryEvent.SetDeleteFilterWithBudget -> _state.update { it.copy(deleteFilterWithBudget = event.delete) }
+            BudgetEntryEvent.MakeFilterUnique -> {}
+            is BudgetEntryEvent.SetDeleteFilterWithBudget -> {}
             is BudgetEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is BudgetEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is BudgetEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
+            is BudgetEntryEvent.ShowSharedFilterDialog -> _state.update { it.copy(showSharedFilterDialog = event.show) }
+            is BudgetEntryEvent.ConfirmSaveWithSharedFilter -> {
+                _state.update { it.copy(showSharedFilterDialog = false) }
+                saveBudget(
+                    onSuccess = { /* Callback handled in saveBudget */ },
+                    forceNewFilter = !event.updateShared
+                )
+            }
             is BudgetEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }
 
-    fun saveBudget(onSuccess: () -> Unit) {
+    fun saveBudget(forceNewFilter: Boolean = false, onSuccess: () -> Unit) {
         val s = _state.value
         if (!s.canSave) return
 
         viewModelScope.launch {
+            // Check for shared filter if not already handled
+            if (s.filterId != null && s.filterId != 0L && s.filterUsageCount > 1 && !forceNewFilter && !s.showSharedFilterDialog) {
+                // Check if any filter criteria actually changed compared to the filter
+                val currentFilter = s.availableFilters.find { it.id == s.filterId }
+                if (currentFilter != null) {
+                    val hasChanged = hasFilterChanged(s, currentFilter)
+                    if (hasChanged) {
+                        _state.update { it.copy(showSharedFilterDialog = true) }
+                        return@launch
+                    }
+                }
+            }
+
             val amount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             
-            // 1. Create or Update Filter
+            // 1. Create or Update the Filter for this budget
             val filter = Filter(
-                id = s.linkedFilter?.id ?: 0L,
-                name = "Filter for Budget: ${s.name}",
+                id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
+                name = "${s.name}-Filter",
                 filter = TransactionFilter(
-                    categoryIds = s.selectedCategoryIds.toList(),
-                    accountIds = s.selectedAccountIds.toList(),
+                    categoryIds = s.selectedCategoryIds,
+                    accountIds = s.selectedAccountIds,
                     tags = s.selectedTags,
-                    paymentMethods = s.selectedPaymentMethods.toList(),
-                    statuses = s.selectedStatuses.toList(),
-                    currencies = s.selectedCurrencies.toList(),
-                    linkedTransactionIds = s.linkedTransactionIds.toList(),
-                    transactionTypes = s.selectedTrackTypes.toList(),
+                    paymentMethods = s.selectedPaymentMethods,
+                    statuses = s.selectedStatuses,
+                    currencies = s.selectedCurrencies,
+                    linkedTransactionIds = s.linkedTransactionIds,
+                    transactionTypes = s.selectedTrackTypes,
                     queryNote = s.queryNote.takeIf { it.isNotBlank() },
                     isNoteRegex = s.isNoteRegex,
                     queryPayee = s.queryPayee.takeIf { it.isNotBlank() },
@@ -258,8 +273,8 @@ class BudgetEntryViewModel(
                 )
             )
 
-            val filterId = if (filter.id == 0L || s.filterUsageCount > 1) {
-                filterRepository.insertFilter(filter.copy(id = 0L))
+            val filterId = if (filter.id == 0L) {
+                filterRepository.insertFilter(filter)
             } else {
                 filterRepository.updateFilter(filter)
                 filter.id
@@ -279,16 +294,17 @@ class BudgetEntryViewModel(
                 limitAmount = amount,
                 currency = s.currency,
                 timelineRange = s.timelineRange,
-                trackTypes = s.selectedTrackTypes.toList().ifEmpty { listOf(TransactionType.EXPENSE) },
+                trackTypes = s.selectedTrackTypes.ifEmpty { setOf(TransactionType.EXPENSE) },
                 alertThreshold = s.alertThreshold,
                 rollover = s.rollover,
-                categoryIds = s.selectedCategoryIds.toList(),
-                accountIds = s.selectedAccountIds.toList(),
+                categoryIds = s.selectedCategoryIds,
+                accountIds = s.selectedAccountIds,
                 tags = s.selectedTags,
-                paymentMethods = s.selectedPaymentMethods.toList(),
-                statuses = s.selectedStatuses.toList(),
-                linkedTransactionIds = s.linkedTransactionIds.toList(),
+                paymentMethods = s.selectedPaymentMethods,
+                statuses = s.selectedStatuses,
+                linkedTransactionIds = s.linkedTransactionIds,
                 profileId = s.currentProfileId,
+                note = s.queryNote,
                 filterId = filterId
             )
 
@@ -301,19 +317,42 @@ class BudgetEntryViewModel(
         }
     }
 
+    private fun hasFilterChanged(s: BudgetEntryState, currentFilter: Filter): Boolean {
+        val f = currentFilter.filter
+        return s.selectedCategoryIds != f.categoryIds ||
+                s.selectedAccountIds != f.accountIds ||
+                s.selectedTags != f.tags ||
+                s.selectedPaymentMethods != f.paymentMethods ||
+                s.selectedStatuses != f.statuses ||
+                s.selectedCurrencies != f.currencies ||
+                s.linkedTransactionIds != f.linkedTransactionIds ||
+                s.selectedTrackTypes != f.transactionTypes ||
+                s.queryNote != (f.queryNote ?: "") ||
+                s.isNoteRegex != f.isNoteRegex ||
+                s.queryPayee != (f.queryPayee ?: "") ||
+                s.isPayeeRegex != f.isPayeeRegex ||
+                s.minAmount != (f.minAmount?.toString() ?: "") ||
+                s.maxAmount != (f.maxAmount?.toString() ?: "") ||
+                s.hasWarranty != f.hasWarranty ||
+                s.warrantyExpirationStart != f.warrantyExpirationStart ||
+                s.warrantyExpirationEnd != f.warrantyExpirationEnd ||
+                s.timelineRange != f.timelineRange ||
+                s.excludeFuture != f.excludeFuture ||
+                "${s.name}-Filter" != currentFilter.name
+    }
+
     fun deleteBudget() {
         val id = _state.value.budgetId ?: return
         val filterId = _state.value.filterId
-        val deleteFilter = _state.value.deleteFilterWithBudget
         
         viewModelScope.launch {
-            if (deleteFilter && filterId != null) {
+            // Always delete the private filter when deleting a budget
+            if (filterId != null) {
                 filterRepository.getFilterById(filterId)?.let { filter ->
                     filterRepository.deleteFilter(filter)
                 }
-            } else {
-                budgetRepository.delete(id)
             }
+            budgetRepository.delete(id)
             _state.update { it.copy(navTriggered = true) }
         }
     }

@@ -298,7 +298,7 @@ class TransactionViewModel(
 
     fun setIncomeTypeFilter(type: com.osscabinet.ossWallet.domain.model.TransactionType?) {
         if (type != null) {
-            recordsFilterManager.setFilter("type", TransactionFilter(transactionTypes = listOf(type)))
+            recordsFilterManager.setFilter("type", TransactionFilter(transactionTypes = setOf(type)))
         } else {
             recordsFilterManager.removeFilter("type")
         }

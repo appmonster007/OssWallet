@@ -34,6 +34,8 @@ sealed class LoanEntryEvent {
     data class SetSettlementDate(val date: Long) : LoanEntryEvent()
     data class SetLinkedAccountId(val id: String) : LoanEntryEvent()
     data class SetFilterId(val filterId: Long?) : LoanEntryEvent()
+    data class ShowSharedFilterDialog(val show: Boolean) : LoanEntryEvent()
+    data class ConfirmSaveWithSharedFilter(val updateShared: Boolean) : LoanEntryEvent()
     data object MakeFilterUnique : LoanEntryEvent()
     data class SetDeleteFilterWithLoan(val delete: Boolean) : LoanEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : LoanEntryEvent()

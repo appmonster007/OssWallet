@@ -123,7 +123,7 @@ fun CashFlowCard(
                 incomeColor = PositiveAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickIncome(filter.copy(transactionTypes = listOf(TransactionType.INCOME))) }
+                onClick = { onClickIncome(filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -137,8 +137,8 @@ fun CashFlowCard(
                             onClick = {
                                 onClickIncome(
                                     filter.copy(
-                                        transactionTypes = listOf(TransactionType.INCOME),
-                                        currencies = listOf(item.currency)
+                                        transactionTypes = setOf(TransactionType.INCOME),
+                                        currencies = setOf(item.currency)
                                     )
                                 )
                             }
@@ -156,7 +156,7 @@ fun CashFlowCard(
                 expenseColor = NegativeAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickExpense(filter.copy(transactionTypes = listOf(TransactionType.EXPENSE))) }
+                onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -170,8 +170,8 @@ fun CashFlowCard(
                             onClick = {
                                 onClickExpense(
                                     filter.copy(
-                                        transactionTypes = listOf(TransactionType.EXPENSE),
-                                        currencies = listOf(item.currency)
+                                        transactionTypes = setOf(TransactionType.EXPENSE),
+                                        currencies = setOf(item.currency)
                                     )
                                 )
                             }

@@ -245,7 +245,7 @@ fun CategoryTreemapCard(
 
                         onRecordsClick(
                             config.filter.copy(
-                                categoryIds = categoryIds.map { it.toLong() }
+                                categoryIds = categoryIds.map { it.toLong() }.toSet()
                             )
                         )
                     }

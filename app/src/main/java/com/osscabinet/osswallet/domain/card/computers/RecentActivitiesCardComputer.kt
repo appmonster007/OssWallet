@@ -19,7 +19,7 @@ class RecentActivitiesCardComputer(
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
         val mergedFilter = input.filter.copy(
             accountIds = if (config.filter.accountIds.isNotEmpty())
-                input.filter.accountIds.intersect(config.filter.accountIds.toSet()).toList()
+                input.filter.accountIds.intersect(config.filter.accountIds)
             else
                 input.filter.accountIds
         )

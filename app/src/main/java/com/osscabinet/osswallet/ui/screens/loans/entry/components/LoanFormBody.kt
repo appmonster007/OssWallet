@@ -9,7 +9,6 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -25,7 +24,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 /**
  * Refactored Loan Entry Form Body.
  * Standardized with other entry screens to use reusable components and a consistent layout.
- * Filter-centric design where the linked filter is a primary context item.
+ * Filter-centric design where the FILTER is a primary context item.
  */
 @Composable
 fun LoanFormBody(
@@ -68,12 +67,12 @@ fun LoanFormBody(
 
             // CONTEXT: Action cards grid for primary loan parameters
             AeonContextGrid {
-                // Row 1: Linked Filter and Period
+                // Row 1: FILTER and Period
                 EntryActionRow {
                     val filterObj = state.availableFilters.find { it.id == state.filterId }
                     EntryActionCard(
                         icon = Icons.Rounded.FilterList,
-                        label = "LINKED FILTER",
+                        label = "FILTER",
                         value = filterObj?.name ?: "None",
                         onClick = { onEvent(LoanEntryEvent.ShowFilterSheet(show = true)) },
                         modifier = Modifier.weight(1f),
@@ -201,10 +200,15 @@ fun LoanFormBody(
             AeonDetailSection(
                 note = state.note,
                 onNoteChange = { onEvent(LoanEntryEvent.SetNote(it)) },
+                payee = state.counterparty,
+                onPayeeChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
+                payeeLabel = if (state.loanType == LoanType.LENT) "BORROWER" else "LENDER",
                 showNote = false,
                 showPayee = false,
+                showTags = false,
                 selectedTags = emptyList(),
                 noteSuggestions = state.uniqueNotes,
+                payeeSuggestions = state.uniquePayees,
                 additionalContent = {
                     Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
                         // Note Filter with Regex Toggle
@@ -237,20 +241,11 @@ fun LoanFormBody(
                             EntryEditorialInput(
                                 value = state.queryPayee,
                                 onValueChange = { onEvent(LoanEntryEvent.SetQueryPayee(it)) },
-                                label = "COUNTERPARTY QUERY",
+                                label = if (state.loanType == LoanType.LENT) "BORROWER QUERY" else "LENDER QUERY",
                                 icon = Icons.Rounded.Person,
                                 placeholder = if (state.isPayeeRegex) "e.g. /Amazon/i" else "e.g. Amazon"
                             )
                         }
-
-                        // Static Counterparty field (Actual Loan field)
-                        EntryEditorialInput(
-                            value = state.counterparty,
-                            onValueChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
-                            label = if (state.loanType == LoanType.LENT) "BORROWER" else "LENDER",
-                            icon = Icons.Rounded.Person,
-                            suggestions = state.uniquePayees
-                        )
 
                         // Tags Selection
                         EntryTagSection(
@@ -258,32 +253,6 @@ fun LoanFormBody(
                             onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
                             onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
                         )
-
-                        // Sharing info and Make Unique action
-                        if (state.filterId != null) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = if (state.filterUsageCount > 1) "Shared with ${state.filterUsageCount - 1} other(s)" else "Unique Filter",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                                if (state.filterUsageCount > 1) {
-                                    TextButton(
-                                        onClick = { onEvent(LoanEntryEvent.MakeFilterUnique) },
-                                        contentPadding = PaddingValues(0.dp),
-                                        modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
-                                    ) {
-                                        Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
-                                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
-                                        Text("Make Unique", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-                            }
-                        }
 
                         // Payment Method and Status multi-selection
                         EntryPaymentMethodStatusRow(
@@ -416,5 +385,13 @@ fun LoanFormBody(
 
         // Dedicated sheets for selecting multi-value parameters
         LoanEntrySheets(state = state, onEvent = onEvent)
+
+        if (state.showSharedFilterDialog) {
+            SharedFilterConfirmationDialog(
+                onDismiss = { onEvent(LoanEntryEvent.ShowSharedFilterDialog(show = false)) },
+                onConfirmUpdateShared = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
+                onConfirmCreateNew = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+            )
+        }
     }
 }

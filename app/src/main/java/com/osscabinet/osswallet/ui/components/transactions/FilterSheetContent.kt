@@ -75,17 +75,17 @@ fun FilterSheetContent(
             isNoteRegex = filters.any { it.isNoteRegex },
             queryPayee = filters.mapNotNull { it.queryPayee }.takeIf { it.isNotEmpty() }?.joinToString("|"),
             isPayeeRegex = filters.any { it.isPayeeRegex },
-            categoryIds = filters.flatMap { it.categoryIds }.distinct(),
-            accountIds = filters.flatMap { it.accountIds }.distinct(),
-            paymentMethods = filters.flatMap { it.paymentMethods }.distinct(),
+            categoryIds = filters.flatMap { it.categoryIds }.toSet(),
+            accountIds = filters.flatMap { it.accountIds }.toSet(),
+            paymentMethods = filters.flatMap { it.paymentMethods }.toSet(),
             hasWarranty = if (filters.any { it.hasWarranty == null }) null else filters.any { it.hasWarranty == true },
             warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.minOrNull(),
             warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.maxOrNull(),
             minAmount = filters.mapNotNull { it.minAmount }.minOrNull(),
             maxAmount = filters.mapNotNull { it.maxAmount }.maxOrNull(),
-            transactionTypes = filters.flatMap { it.transactionTypes }.distinct(),
-            currencies = filters.flatMap { it.currencies }.distinct(),
-            statuses = filters.flatMap { it.statuses }.distinct()
+            transactionTypes = filters.flatMap { it.transactionTypes }.toSet(),
+            currencies = filters.flatMap { it.currencies }.toSet(),
+            statuses = filters.flatMap { it.statuses }.toSet()
         )
     }
 

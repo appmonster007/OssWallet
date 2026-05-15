@@ -27,7 +27,7 @@ class CardRepositoryImpl(
                 title = "CATEGORY PIE CHART",
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = listOf(TransactionType.EXPENSE)
+                    transactionTypes = setOf(TransactionType.EXPENSE)
                 ),
                 showLabels = true,
                 showLegend = true
@@ -38,7 +38,7 @@ class CardRepositoryImpl(
                 title = "CATEGORY TREEMAP",
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = listOf(TransactionType.EXPENSE)
+                    transactionTypes = setOf(TransactionType.EXPENSE)
                 ),
                 showLabels = true
             )

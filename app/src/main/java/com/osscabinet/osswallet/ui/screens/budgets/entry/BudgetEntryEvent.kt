@@ -29,6 +29,8 @@ sealed class BudgetEntryEvent {
     data class SetWarrantyExpirationEnd(val date: Long?) : BudgetEntryEvent()
     data class SetExcludeFuture(val exclude: Boolean) : BudgetEntryEvent()
     data class SetFilterId(val filterId: Long?) : BudgetEntryEvent()
+    data class ShowSharedFilterDialog(val show: Boolean) : BudgetEntryEvent()
+    data class ConfirmSaveWithSharedFilter(val updateShared: Boolean) : BudgetEntryEvent()
     data object MakeFilterUnique : BudgetEntryEvent()
     data class SetDeleteFilterWithBudget(val delete: Boolean) : BudgetEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : BudgetEntryEvent()

@@ -59,14 +59,14 @@ data class FilterEntryState(
         get() = name.isNotBlank() && !navTriggered
     
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
-        transactionTypes = selectedTransactionTypes.toList(),
-        accountIds = selectedAccountIds.toList(),
-        categoryIds = selectedCategoryIds.toList(),
-        paymentMethods = selectedPaymentMethods.toList(),
-        statuses = selectedStatuses.toList(),
-        linkedTransactionIds = linkedTransactionIds.toList(),
+        transactionTypes = selectedTransactionTypes,
+        accountIds = selectedAccountIds,
+        categoryIds = selectedCategoryIds,
+        paymentMethods = selectedPaymentMethods,
+        statuses = selectedStatuses,
+        linkedTransactionIds = linkedTransactionIds,
         tags = selectedTags,
-        currencies = selectedCurrencies.toList(),
+        currencies = selectedCurrencies,
         queryNote = queryNote.takeIf { it.isNotBlank() },
         isNoteRegex = isNoteRegex,
         queryPayee = queryPayee.takeIf { it.isNotBlank() },

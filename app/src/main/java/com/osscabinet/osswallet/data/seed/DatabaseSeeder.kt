@@ -204,28 +204,28 @@ class DatabaseSeeder @Inject constructor(
         val presetFilters = listOf(
             FilterEntity(
                 name = "Food & Dining Expense",
-                categoryIds = categoryNameToId["Food & Dining"]?.toString() ?: "1",
-                transactionTypes = listOf(TransactionType.EXPENSE)
+                categoryIds = setOf(categoryNameToId["Food & Dining"] ?: 1L),
+                transactionTypes = setOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Shopping Expense",
-                categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
-                transactionTypes = listOf(TransactionType.EXPENSE)
+                categoryIds = setOf(categoryNameToId["Shopping"] ?: 3L),
+                transactionTypes = setOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Salary Income",
-                categoryIds = categoryNameToId["Income"]?.toString() ?: "8",
-                transactionTypes = listOf(TransactionType.INCOME)
+                categoryIds = setOf(categoryNameToId["Income"] ?: 8L),
+                transactionTypes = setOf(TransactionType.INCOME)
             ),
             FilterEntity(
                 name = "Transportation Expense",
-                categoryIds = categoryNameToId["Transportation"]?.toString() ?: "2",
-                transactionTypes = listOf(TransactionType.EXPENSE)
+                categoryIds = setOf(categoryNameToId["Transportation"] ?: 2L),
+                transactionTypes = setOf(TransactionType.EXPENSE)
             ),
             FilterEntity(
                 name = "Entertainment Expense",
-                categoryIds = categoryNameToId["Entertainment"]?.toString() ?: "5",
-                transactionTypes = listOf(TransactionType.EXPENSE)
+                categoryIds = setOf(categoryNameToId["Entertainment"] ?: 5L),
+                transactionTypes = setOf(TransactionType.EXPENSE)
             )
         )
 

@@ -68,7 +68,7 @@ fun FilterFields(
                 accounts = accounts,
                 selectedAccountIds = filter.accountIds.toSet(),
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(accountIds = ids.toList()))
+                    onFilterChange(filter.copy(accountIds = ids.toSet()))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -80,7 +80,7 @@ fun FilterFields(
                 categories = allCategories,
                 selectedCategoryIds = filter.categoryIds.toSet(),
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(categoryIds = ids.toList()))
+                    onFilterChange(filter.copy(categoryIds = ids.toSet()))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -106,7 +106,7 @@ fun FilterFields(
                 items = availableCurrencies,
                 selectedIds = filter.currencies.toSet(),
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(currencies = ids.toList()))
+                    onFilterChange(filter.copy(currencies = ids.toSet()))
                 },
                 idMapper = { it },
                 labelMapper = { it },
@@ -117,7 +117,7 @@ fun FilterFields(
             AeonPaymentMethodSelection(
                 selectedMethods = filter.paymentMethods.toSet(),
                 onSelectionChange = { methods ->
-                    onFilterChange(filter.copy(paymentMethods = methods.toList()))
+                    onFilterChange(filter.copy(paymentMethods = methods.toSet()))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -128,7 +128,7 @@ fun FilterFields(
             AeonStatusSelection(
                 selectedStatuses = filter.statuses.toSet(),
                 onSelectionChange = { statuses ->
-                    onFilterChange(filter.copy(statuses = statuses.toList()))
+                    onFilterChange(filter.copy(statuses = statuses.toSet()))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -142,7 +142,7 @@ fun FilterFields(
                 items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
                 selectedIds = filter.transactionTypes.toSet(),
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(transactionTypes = ids.toList()))
+                    onFilterChange(filter.copy(transactionTypes = ids.toSet()))
                 },
                 idMapper = { it },
                 labelMapper = { it.displayName },
@@ -156,8 +156,8 @@ fun FilterFields(
                 linkedIds = filter.linkedTransactionIds.toSet(),
                 accounts = accounts,
                 categories = allCategories,
-                onLinkedTransactionsChanged = { ids ->
-                    onFilterChange(filter.copy(linkedTransactionIds = ids.toList()))
+                    onLinkedTransactionsChanged = { ids ->
+                    onFilterChange(filter.copy(linkedTransactionIds = ids.toSet()))
                 },
                 onDismiss = { activeSheet = null }
             )

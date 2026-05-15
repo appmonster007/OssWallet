@@ -69,17 +69,17 @@ class TransactionRepositoryImpl(
             args.add(System.currentTimeMillis())
         }
         if (filter.accountIds.isNotEmpty()) {
-            val placeholders = filter.accountIds.joinByComma { "?" }
+            val placeholders = filter.accountIds.toList().joinByComma { "?" }
             queryBuilder.append(" AND accountId IN ($placeholders)")
             args.addAll(filter.accountIds)
         }
         if (filter.categoryIds.isNotEmpty()) {
-            val placeholders = filter.categoryIds.joinByComma { "?" }
+            val placeholders = filter.categoryIds.toList().joinByComma { "?" }
             queryBuilder.append(" AND categoryId IN ($placeholders)")
             args.addAll(filter.categoryIds)
         }
         if (filter.transactionTypes.isNotEmpty()) {
-            val placeholders = filter.transactionTypes.joinByComma { "?" }
+            val placeholders = filter.transactionTypes.toList().joinByComma { "?" }
             queryBuilder.append(" AND transactionType IN ($placeholders)")
             args.addAll(filter.transactionTypes.map { it.value })
         }
@@ -92,9 +92,9 @@ class TransactionRepositoryImpl(
             args.add(filter.maxAmount)
         }
         if (filter.paymentMethods.isNotEmpty()) {
-            val placeholders = filter.paymentMethods.joinByComma { "?" }
+            val placeholders = filter.paymentMethods.toList().joinByComma { "?" }
             queryBuilder.append(" AND paymentMethod IN ($placeholders)")
-            args.addAll(filter.paymentMethods)
+            args.addAll(filter.paymentMethods.map { it.name })
         }
         if (filter.hasWarranty == true) {
             queryBuilder.append(" AND warrantyExpiration IS NOT NULL")
@@ -110,7 +110,7 @@ class TransactionRepositoryImpl(
             args.add(filter.warrantyExpirationEnd)
         }
         if (filter.currencies.isNotEmpty()) {
-            val placeholders = filter.currencies.joinByComma { "?" }
+            val placeholders = filter.currencies.toList().joinByComma { "?" }
             queryBuilder.append(" AND currency IN ($placeholders)")
             args.addAll(filter.currencies)
         }
@@ -125,7 +125,7 @@ class TransactionRepositoryImpl(
             args.add("%${filter.queryPayee}%")
         }
         if (filter.statuses.isNotEmpty()) {
-            val placeholders = filter.statuses.joinByComma { "?" }
+            val placeholders = filter.statuses.toList().joinByComma { "?" }
             queryBuilder.append(" AND status IN ($placeholders)")
             args.addAll(filter.statuses.map { it.name })
         }

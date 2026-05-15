@@ -134,8 +134,8 @@ object TransactionFilterService {
     /**
      * Expands selected category IDs to include all their descendants.
      */
-    fun expandCategoryIds(categoryIds: List<Long>, allCategories: List<Category>): List<Long> {
-        if (categoryIds.isEmpty()) return emptyList()
+    fun expandCategoryIds(categoryIds: Collection<Long>, allCategories: List<Category>): Set<Long> {
+        if (categoryIds.isEmpty()) return emptySet()
         val expanded = mutableSetOf<Long>()
         val queue = categoryIds.toMutableList()
 
@@ -145,7 +145,7 @@ object TransactionFilterService {
                 allCategories.filter { it.parentId == id }.forEach { queue.add(it.id) }
             }
         }
-        return expanded.toList()
+        return expanded
     }
 
     /**

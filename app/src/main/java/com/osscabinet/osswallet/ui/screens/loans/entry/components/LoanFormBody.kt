@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -14,202 +16,138 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun LoanFormBody(
-    loanType: LoanType,
-    onTypeSelected: (LoanType) -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-    amount: String,
-    currency: String,
-    onCurrencyChange: (String) -> Unit,
-    supportedCurrencies: List<String>,
-    onAmountClick: () -> Unit,
-    startDateMillis: Long,
-    onStartDateClick: () -> Unit,
-    interestRate: String,
-    onInterestClick: () -> Unit,
-    linkedAccountId: String,
-    accounts: List<Account>,
-    onAccountClick: () -> Unit,
-    hasSettlementDate: Boolean,
-    settlementDateMillis: Long,
-    onSettlementClick: () -> Unit,
-    selectedCategoryIds: Set<Long>,
-    categories: List<Category>,
-    onCategoryClick: () -> Unit,
-    counterparty: String,
-    onCounterpartyChange: (String) -> Unit,
-    note: String,
-    onNoteChange: (String) -> Unit,
-    onHasSettlementDateChange: (Boolean) -> Unit,
-    selectedTrackTypes: Set<TransactionType>,
-    onTrackTypeClick: () -> Unit,
-    selectedCurrencies: Set<String>,
-    onCurrencyFilterClick: () -> Unit,
-    selectedTags: Set<String>,
-    onShowTagSheet: () -> Unit,
-    onRemoveTag: (String) -> Unit,
-    selectedPaymentMethods: Set<PaymentMethod>,
-    onPaymentMethodClick: () -> Unit,
-    selectedStatuses: Set<TransactionStatus>,
-    onStatusClick: () -> Unit,
-    linkedTransactionIds: Set<Long>,
-    onLinkRecordClick: () -> Unit,
-    filterId: Long?,
-    onFilterClick: () -> Unit,
-    availableFilters: List<Filter>,
-    counterpartySuggestions: List<String>,
-    noteSuggestions: List<String>,
-    modifier: Modifier = Modifier,
-    isFilterShared: Boolean = false,
-    filterUsageCount: Int = 0,
-    onMakeFilterUnique: () -> Unit = {}
+    state: LoanEntryState,
+    onEvent: (LoanEntryEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val amountColor = if (loanType == LoanType.LENT) Color(0xFF004D40) else Color(0xFFE65100)
+    val amountColor = if (state.loanType == LoanType.LENT) Color(0xFF004D40) else Color(0xFFE65100)
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = AeonTheme.dimensions.screenPadding,
-                vertical = AeonTheme.dimensions.spacingLg
-            ),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-    ) {
-        // IMPACT: Header card
-        AeonImpactHeaderCard(
-            selectedType = loanType,
-            onTypeSelected = onTypeSelected,
-            types = listOf(
-                Triple(Icons.Rounded.ArrowUpward, "Lent", LoanType.LENT),
-                Triple(Icons.Rounded.ArrowDownward, "Borrowed", LoanType.BORROWED)
-            ),
-            amount = amount,
-            currency = currency,
-            onCurrencyClick = { onCurrencyChange(currency) },
-            onAmountClick = onAmountClick,
-            name = name,
-            onNameChange = onNameChange,
-            nameLabel = "LOAN NAME",
-            amountColor = amountColor,
-            supportedCurrencies = supportedCurrencies
-        )
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = AeonTheme.dimensions.screenPadding,
+                    vertical = AeonTheme.dimensions.spacingLg
+                ),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+        ) {
+            // IMPACT: Header card
+            AeonImpactHeaderCard(
+                selectedType = state.loanType,
+                onTypeSelected = { onEvent(LoanEntryEvent.SetLoanType(it)) },
+                types = listOf(
+                    Triple(Icons.Rounded.ArrowUpward, "Lent", LoanType.LENT),
+                    Triple(Icons.Rounded.ArrowDownward, "Borrowed", LoanType.BORROWED)
+                ),
+                amount = state.principalAmount,
+                currency = state.currency,
+                onCurrencyClick = { onEvent(LoanEntryEvent.ShowNumpad(true)) },
+                onAmountClick = { onEvent(LoanEntryEvent.ShowNumpad(true)) },
+                showName = false,
+                amountColor = amountColor
+            )
 
-        // CONTEXT: Action cards grid
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-            // Row 1: Filter and Start Date
-            AeonContextGrid {
-                val filterObj = availableFilters.find { it.id == filterId }
-                EntryActionCard(
-                    icon = Icons.Rounded.FilterList,
-                    label = "FILTER",
-                    value = filterObj?.name ?: "None",
-                    onClick = onFilterClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
+            // CONTEXT: Action cards grid
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                // Row 1: Start Date and Interest Rate
+                AeonContextGrid {
+                    EntryDateCard(
+                        icon = Icons.Rounded.CalendarToday,
+                        label = "START DATE",
+                        dateMillis = state.startDate,
+                        onClick = { onEvent(LoanEntryEvent.ShowStartDatePicker(true)) },
+                        modifier = Modifier.weight(1f)
+                    )
 
-                EntryDateCard(
-                    icon = Icons.Rounded.CalendarToday,
-                    label = "START DATE",
-                    dateMillis = startDateMillis,
-                    onClick = onStartDateClick,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                    EntryActionCard(
+                        icon = Icons.Rounded.Percent,
+                        label = "INTEREST",
+                        value = if (state.interestRate.isEmpty()) "0%" else "${state.interestRate}%",
+                        onClick = { onEvent(LoanEntryEvent.ShowInterestNumpad(true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
+                }
 
-            // Row 2: Account and Category
-            AeonContextGrid {
-                val accountObj = accounts.find { it.id == linkedAccountId }
-                EntryActionCard(
-                    icon = getAccountIconByName(accountObj?.icon),
-                    label = "ACCOUNT",
-                    value = accountObj?.name ?: "Select Account",
-                    onClick = onAccountClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
+                // Row 2: Account and Settlement Date
+                AeonContextGrid {
+                    val accountObj = state.accounts.find { it.id == state.linkedAccountId }
+                    EntryActionCard(
+                        icon = getAccountIconByName(accountObj?.icon),
+                        label = "ACCOUNT",
+                        value = accountObj?.name ?: "Select Account",
+                        onClick = { onEvent(LoanEntryEvent.ShowAccountSheet(true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.primary
+                    )
 
-                val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
+                    EntryActionCard(
+                        icon = Icons.Rounded.EventAvailable,
+                        label = "SETTLEMENT",
+                        value = if (state.hasSettlementDate) {
+                            val formatter = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+                            formatter.format(java.util.Date(state.settlementDate))
+                        } else "None",
+                        onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.secondary
+                    )
+                }
+
+                // Row 3: Categories (Filters) (Full Width)
+                val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
                 EntryActionCard(
                     icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
-                    label = "CATEGORY",
+                    label = "CATEGORY FILTERS",
                     value = when {
-                        selectedCategoryIds.isEmpty() -> "0 Selected"
-                        (categories.isNotEmpty() && selectedCategoryIds.size == categories.size) -> "All Categories"
+                        state.selectedCategoryIds.isEmpty() -> "0 Selected"
+                        (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
                         categoryObj != null -> categoryObj.name
-                        else -> "${selectedCategoryIds.size} Selected"
+                        else -> "${state.selectedCategoryIds.size} Selected"
                     },
-                    onClick = onCategoryClick,
-                    modifier = Modifier.weight(1f),
+                    onClick = { onEvent(LoanEntryEvent.ShowCategorySheet(true)) },
+                    modifier = Modifier.fillMaxWidth(),
                     iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.secondary
                 )
-            }
 
-            // Row 3: Flow & Currencies
-            AeonContextGrid {
+                // Row 4: Linked Filter
+                val filterObj = state.availableFilters.find { it.id == state.filterId }
                 EntryActionCard(
-                    icon = Icons.Rounded.ShowChart,
-                    label = "FLOW",
-                    value = when {
-                        selectedTrackTypes.isEmpty() -> "0 Selected"
-                        selectedTrackTypes.size >= 2 -> "Both"
-                        else -> selectedTrackTypes.first().displayName
-                    },
-                    onClick = onTrackTypeClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
-
-                EntryActionCard(
-                    icon = Icons.Rounded.CurrencyExchange,
-                    label = "CURRENCIES",
-                    value = when {
-                        selectedCurrencies.isEmpty() -> "All Currencies"
-                        selectedCurrencies.size == 1 -> selectedCurrencies.first()
-                        else -> "${selectedCurrencies.size} Selected"
-                    },
-                    onClick = onCurrencyFilterClick,
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // Row 4: Interest (Full Width)
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                EntryActionCard(
-                    icon = Icons.Rounded.Percent,
-                    label = "INTEREST",
-                    value = if (interestRate.isEmpty()) "0%" else "$interestRate%",
-                    onClick = onInterestClick,
+                    icon = Icons.Rounded.FilterList,
+                    label = "LINKED FILTER",
+                    value = filterObj?.name ?: "None",
+                    onClick = { onEvent(LoanEntryEvent.ShowFilterSheet(true)) },
                     modifier = Modifier.fillMaxWidth(),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.tertiary
                 )
                 
-                if (filterId != null) {
+                if (state.filterId != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = if (isFilterShared) "Shared with ${filterUsageCount - 1} other(s)" else "Unique Filter",
+                            text = if (state.filterUsageCount > 1) "Shared with ${state.filterUsageCount - 1} other(s)" else "Unique Filter",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
-                        if (isFilterShared) {
+                        if (state.filterUsageCount > 1) {
                             TextButton(
-                                onClick = onMakeFilterUnique,
+                                onClick = { onEvent(LoanEntryEvent.MakeFilterUnique) },
                                 contentPadding = PaddingValues(0.dp),
                                 modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
                             ) {
@@ -221,65 +159,98 @@ fun LoanFormBody(
                     }
                 }
             }
-        }
 
-        // DETAIL: Metadata section
-        AeonDetailSection(
-            note = note,
-            onNoteChange = onNoteChange,
-            payee = counterparty,
-            onPayeeChange = onCounterpartyChange,
-            payeeLabel = if (loanType == LoanType.LENT) "BORROWER" else "LENDER",
-            payeeSuggestions = counterpartySuggestions,
-            selectedTags = selectedTags,
-            onTagClick = onShowTagSheet,
-            onRemoveTag = onRemoveTag,
-            noteSuggestions = noteSuggestions,
-            additionalContent = {
-                // Payment Method and Status row
-                EntryPaymentMethodStatusRow(
-                    paymentMethod = when {
-                        selectedPaymentMethods.isEmpty() -> "0 Selected"
-                        selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
-                        else -> "${selectedPaymentMethods.size} Selected"
-                    },
-                    onPaymentMethodClick = onPaymentMethodClick,
-                    statusLabel = when {
-                        selectedStatuses.isEmpty() -> "0 Selected"
-                        selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
-                        else -> "${selectedStatuses.size} Selected"
-                    },
-                    onStatusClick = onStatusClick
-                )
+            // DETAIL: Metadata section
+            AeonDetailSection(
+                note = state.name,
+                onNoteChange = { onEvent(LoanEntryEvent.SetName(it)) },
+                payee = state.counterparty,
+                onPayeeChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
+                payeeLabel = if (state.loanType == LoanType.LENT) "BORROWER" else "LENDER",
+                payeeSuggestions = state.uniquePayees,
+                selectedTags = state.selectedTags,
+                onTagClick = { onEvent(LoanEntryEvent.ShowTagSheet(true)) },
+                onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) },
+                noteSuggestions = state.uniqueNotes,
+                additionalContent = {
+                    // Flow & Currencies
+                    AeonContextGrid {
+                        EntryActionCard(
+                            icon = Icons.Rounded.ShowChart,
+                            label = "FLOW",
+                            value = when {
+                                state.selectedTrackTypes.isEmpty() -> "0 Selected"
+                                state.selectedTrackTypes.size >= 2 -> "Both"
+                                else -> state.selectedTrackTypes.first().displayName
+                            },
+                            onClick = { onEvent(LoanEntryEvent.ShowTrackTypeSheet(true)) },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                            iconTint = MaterialTheme.colorScheme.tertiary
+                        )
 
-                // Linked Transactions
-                EntryActionCard(
-                    icon = Icons.Rounded.Link,
-                    label = "LINKED TRANSACTIONS",
-                    value = if (linkedTransactionIds.isEmpty()) "None" else "${linkedTransactionIds.size} Linked",
-                    onClick = onLinkRecordClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
+                        EntryActionCard(
+                            icon = Icons.Rounded.CurrencyExchange,
+                            label = "CURRENCIES",
+                            value = when {
+                                state.selectedCurrencies.isEmpty() -> "All Currencies"
+                                state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
+                                else -> "${state.selectedCurrencies.size} Selected"
+                            },
+                            onClick = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(true)) },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            iconTint = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
-                // Settlement Date
-                EntrySwitchRow(
-                    label = "Has Settlement Date",
-                    checked = hasSettlementDate,
-                    onCheckedChange = onHasSettlementDateChange,
-                    icon = Icons.Rounded.EventAvailable
-                )
+                    // Payment Method and Status row
+                    EntryPaymentMethodStatusRow(
+                        paymentMethod = when {
+                            state.selectedPaymentMethods.isEmpty() -> "0 Selected"
+                            state.selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
+                            else -> "${state.selectedPaymentMethods.size} Selected"
+                        },
+                        onPaymentMethodClick = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(true)) },
+                        statusLabel = when {
+                            state.selectedStatuses.isEmpty() -> "0 Selected"
+                            state.selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
+                            else -> "${state.selectedStatuses.size} Selected"
+                        },
+                        onStatusClick = { onEvent(LoanEntryEvent.ShowStatusSheet(true)) }
+                    )
 
-                if (hasSettlementDate) {
-                    EntryDateCard(
-                        icon = Icons.Rounded.CalendarToday,
-                        label = "SETTLEMENT DATE",
-                        dateMillis = settlementDateMillis,
-                        onClick = onSettlementClick
+                    // Linked Transactions
+                    EntryActionCard(
+                        icon = Icons.Rounded.Link,
+                        label = "LINKED TRANSACTIONS",
+                        value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
+                        onClick = { onEvent(LoanEntryEvent.ShowLinkSheet(true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
+
+                    // Has Settlement Date Toggle
+                    EntrySwitchRow(
+                        label = "Has Settlement Date",
+                        checked = state.hasSettlementDate,
+                        onCheckedChange = { onEvent(LoanEntryEvent.SetHasSettlementDate(it)) },
+                        icon = Icons.Rounded.NotificationAdd,
+                        subtitle = "Enable to set a repayment deadline"
+                    )
+
+                    // Additional Note field for actual loan note
+                    EntryEditorialInput(
+                        value = state.note,
+                        onValueChange = { onEvent(LoanEntryEvent.SetNote(it)) },
+                        label = "ADDITIONAL NOTES",
+                        icon = Icons.AutoMirrored.Rounded.Notes
                     )
                 }
-            }
-        )
+            )
+        }
+
+        LoanEntrySheets(state = state, onEvent = onEvent)
     }
 }

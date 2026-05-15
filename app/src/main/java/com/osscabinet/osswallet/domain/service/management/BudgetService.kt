@@ -93,11 +93,12 @@ object BudgetService {
 
         // Aggregation logic using currency conversion
         val netAmount = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-            val converted = CurrencyService.convertToBaseCurrency(
+            val converted = CurrencyService.convertAmount(
                 amount = tx.amount, // Use signed amount to correctly handle income vs expense
                 fromCurrency = tx.currency,
                 toCurrency = budget.currency,
-                exchangeRates = exchangeRates
+                exchangeRates = exchangeRates,
+                precision = 10 // Use high precision for intermediate sum
             )
             acc.add(converted)
         }
@@ -119,14 +120,18 @@ object BudgetService {
     ): List<Transaction> {
         val (start, end) = getCurrentPeriodRange(budget, now)
 
+        val expandedCategoryIds = if (allCategories.isNotEmpty() && budget.categoryIds.isNotEmpty()) {
+            TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories)
+        } else budget.categoryIds
+
         val budgetFilter = TransactionFilter(
-            categoryIds = budget.categoryIds,
+            categoryIds = expandedCategoryIds,
             accountIds = budget.accountIds,
             tags = budget.tags,
             paymentMethods = budget.paymentMethods,
             statuses = budget.statuses,
             linkedTransactionIds = budget.linkedTransactionIds,
-            transactionType = if (budget.trackTypes.size == 1) budget.trackTypes.first() else null,
+            transactionTypes = budget.trackTypes,
             timelineRange = TimelineRange.CustomRange(start, end),
             excludeFuture = false
         )
@@ -168,20 +173,19 @@ object BudgetService {
         baseCurrency: String,
         precision: Int,
         now: Long,
-        allCategories: List<Category> = emptyList()
+        allCategories: List<Category> = emptyList(),
+        depth: Int = 0
     ): BigDecimal {
-        if (!budget.rollover) return BigDecimal.ZERO
+        if (!budget.rollover || depth >= 12) return BigDecimal.ZERO
+        
         val previousNow = getPreviousPeriodMidpoint(budget, now)
-        val previousSpent = calculateSpent(
-            budget,
-            transactions,
-            exchangeRates,
-            baseCurrency,
-            precision,
-            previousNow,
-            allCategories
-        )
-        return budget.limitAmount.subtract(previousSpent).max(BigDecimal.ZERO)
+        val previousSpent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories)
+        
+        // Cumulative: Previous period's rollover affects its effective limit
+        val previousRollover = calculateRollover(budget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories, depth + 1)
+        val previousEffectiveLimit = budget.limitAmount.add(previousRollover)
+        
+        return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)
     }
 
     private fun getPreviousPeriodMidpoint(budget: Budget, now: Long): Long {

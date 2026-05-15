@@ -23,6 +23,7 @@ data class TransactionFilter(
     @Serializable(with = NullableBigDecimalSerializer::class)
     val maxAmount: BigDecimal? = null,
     val transactionType: TransactionType? = null, // null = all
+    val transactionTypes: List<TransactionType> = emptyList(), // if not empty, matches any in list
     val currencies: List<String> = emptyList(),
     val tags: Set<String> = emptySet(),
     val statuses: List<TransactionStatus> = emptyList(),
@@ -50,6 +51,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         statuses = mergeLists(this.statuses, other.statuses),
         linkedTransactionIds = mergeLists(this.linkedTransactionIds, other.linkedTransactionIds),
         transactionType = other.transactionType ?: this.transactionType,
+        transactionTypes = mergeLists(this.transactionTypes, other.transactionTypes),
         queryNote = other.queryNote ?: this.queryNote,
         isNoteRegex = if (other.queryNote != null) other.isNoteRegex else this.isNoteRegex,
         queryPayee = other.queryPayee ?: this.queryPayee,

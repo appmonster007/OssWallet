@@ -864,7 +864,10 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         LoanViewModel(
                             appContainer.loanRepository,
-                            appContainer.settingsRepository
+                            appContainer.settingsRepository,
+                            appContainer.transactionRepository,
+                            appContainer.currencyRepository,
+                            appContainer.categoryRepository
                         )
                     }
                 )
@@ -921,7 +924,9 @@ fun OssWalletNavGraph(
                         LoanViewModel(
                             appContainer.loanRepository,
                             appContainer.settingsRepository,
-                            appContainer.transactionRepository
+                            appContainer.transactionRepository,
+                            appContainer.currencyRepository,
+                            appContainer.categoryRepository
                         )
                     }
                 )

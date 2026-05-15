@@ -46,10 +46,7 @@ object CurrencyService {
         toCurrency: String,
         exchangeRates: Map<String, BigDecimal>
     ): BigDecimal {
-        if (fromCurrency == toCurrency) return amount
-        val rate = exchangeRates[fromCurrency]
-        if (rate == null || rate.signum() == 0) return amount
-        return amount.divide(rate, 10, RoundingMode.HALF_UP)
+        return convertAmount(amount, fromCurrency, toCurrency, exchangeRates, 10)
     }
 
     /**

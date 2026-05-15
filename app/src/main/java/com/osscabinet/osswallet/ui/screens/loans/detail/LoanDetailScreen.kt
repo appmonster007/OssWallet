@@ -114,11 +114,13 @@ fun LoanDetailScreen(
     }
 
     val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val exchangeRates by viewModel.exchangeRates.collectAsStateWithLifecycle()
+    val allCategories by viewModel.categories.collectAsStateWithLifecycle()
     val now = System.currentTimeMillis()
 
-    val summary = remember(loan, allTransactions, now) {
+    val summary = remember(loan, allTransactions, exchangeRates, now) {
         if (loan == null) return@remember null
-        LoanService.buildSummaryFromTransactions(loan, allTransactions, now, precision)
+        LoanService.buildSummaryFromTransactions(loan, allTransactions, exchangeRates, now, precision, allCategories)
     }
     
     if (loan == null || summary == null) return

@@ -91,12 +91,27 @@ object LoanService {
     fun buildSummaryFromTransactions(
         loan: Loan,
         transactions: List<Transaction>,
+        exchangeRates: Map<String, BigDecimal>,
         now: Long,
-        precision: Int = 2
+        precision: Int = 2,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
     ): LoanSummary {
-        val filteredTransactions = filterTransactionsForLoan(loan, transactions)
+        val filteredTransactions = filterTransactionsForLoan(loan, transactions, allCategories)
         val totalPaid = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-            acc + tx.amount.abs()
+            val isRepayment = when (loan.loanType) {
+                LoanType.LENT -> tx.amount.signum() > 0 // Received money (Income)
+                LoanType.BORROWED -> tx.amount.signum() < 0 // Paid money (Expense)
+            }
+            if (isRepayment) {
+                val converted = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                    amount = tx.amount.abs(),
+                    fromCurrency = tx.currency,
+                    toCurrency = loan.currency,
+                    exchangeRates = exchangeRates,
+                    precision = 10
+                )
+                acc + converted
+            } else acc
         }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
         val interest = calculateInterestAccrued(loan, now)
@@ -111,9 +126,17 @@ object LoanService {
     /**
      * Filter transactions for a specific loan based on its filter details.
      */
-    fun filterTransactionsForLoan(loan: Loan, transactions: List<Transaction>): List<Transaction> {
+    fun filterTransactionsForLoan(
+        loan: Loan,
+        transactions: List<Transaction>,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
+    ): List<Transaction> {
+        val expandedCategoryIds = if (allCategories.isNotEmpty() && loan.categoryIds.isNotEmpty()) {
+            TransactionFilterService.expandCategoryIds(loan.categoryIds, allCategories)
+        } else loan.categoryIds
+
         val filter = TransactionFilter(
-            categoryIds = loan.categoryIds,
+            categoryIds = expandedCategoryIds,
             tags = loan.tags,
             accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
             paymentMethods = loan.paymentMethods,

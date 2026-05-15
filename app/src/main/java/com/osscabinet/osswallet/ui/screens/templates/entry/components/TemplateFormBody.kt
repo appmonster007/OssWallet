@@ -60,15 +60,17 @@ fun TemplateFormBody(
             )
 
             // CONTEXT: Action cards row: Account, Category
-            AeonEntryContextRow(
-                isTransfer = state.transactionType == TransactionType.TRANSFER,
-                selectedAccount = state.selectedAccount,
-                onAccountClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
-                selectedCategory = state.selectedCategory,
-                onCategoryClick = { onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
-                targetAccount = state.selectedTargetAccount,
-                onTargetAccountClick = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) }
-            )
+            AeonContextGrid {
+                AeonEntryContextRow(
+                    isTransfer = state.transactionType == TransactionType.TRANSFER,
+                    selectedAccount = state.selectedAccount,
+                    onAccountClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
+                    selectedCategory = state.selectedCategory,
+                    onCategoryClick = { onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
+                    targetAccount = state.selectedTargetAccount,
+                    onTargetAccountClick = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) }
+                )
+            }
 
             // DETAIL: Metadata section
             AeonDetailSection(

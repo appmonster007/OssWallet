@@ -21,7 +21,10 @@ fun AeonLoanEntryPreview() {
                 loanType = LoanType.BORROWED,
                 interestRate = "3.5",
                 counterparty = "Bank of America",
-                note = "Main residence mortgage"
+                note = "Mortgage for the new house",
+                startDate = 1715731200000L, // May 15, 2024
+                hasSettlementDate = true,
+                settlementDate = 1778803200000L // May 15, 2026
             ),
             onEvent = {},
             modifier = Modifier.padding(16.dp)

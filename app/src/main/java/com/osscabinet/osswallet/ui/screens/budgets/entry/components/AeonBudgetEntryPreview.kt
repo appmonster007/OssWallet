@@ -24,7 +24,8 @@ fun AeonBudgetEntryPreview() {
                 note = "Try to keep it under 500",
                 alertThreshold = 0.8f,
                 rollover = true,
-                selectedTags = setOf("Grocery", "Monthly")
+                selectedTags = setOf("Grocery", "Monthly"),
+                selectedCategoryIds = setOf(1L) // Simulating a selection
             ),
             onEvent = {},
             modifier = Modifier.padding(16.dp)

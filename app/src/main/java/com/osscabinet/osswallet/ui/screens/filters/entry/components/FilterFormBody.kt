@@ -4,13 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -19,11 +20,16 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryEvent
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
+/**
+ * Refactored Filter Entry Form Body.
+ * Standardized with Budget and Loan entry screens.
+ * Uses consistent sections and reusable components.
+ */
 @Composable
 fun FilterFormBody(
     state: FilterEntryState,
     onEvent: (FilterEntryEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dims = AeonTheme.dimensions
     Box(modifier = modifier.fillMaxSize()) {
@@ -36,12 +42,8 @@ fun FilterFormBody(
         ) {
             // IMPACT: Header card (Filter Name)
             AeonImpactHeaderCard(
-                selectedType = if (state.selectedTransactionTypes.size == 1) state.selectedTransactionTypes.first() else TransactionType.EXPENSE,
-                onTypeSelected = { onEvent(FilterEntryEvent.ShowTypeSheet(true)) },
-                types = listOf(
-                    Triple(Icons.Rounded.Remove, "Expense", TransactionType.EXPENSE),
-                    Triple(Icons.Rounded.Add, "Income", TransactionType.INCOME)
-                ),
+                transactionType = TransactionType.EXPENSE,
+                onTypeSelected = { },
                 amount = "",
                 currency = "",
                 onCurrencyClick = { },
@@ -49,34 +51,25 @@ fun FilterFormBody(
                 name = state.name,
                 onNameChange = { onEvent(FilterEntryEvent.SetName(it)) },
                 nameLabel = "FILTER NAME",
-                showTypeSelector = true,
+                showTypeSelector = false,
                 showAmount = false,
                 showCurrency = false
             )
 
-            // CONTEXT: Action cards grid
-            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                Text(
-                    "CONTEXT",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                )
-                
-                AeonContextGrid {
+            // CONTEXT: Primary filter criteria grid
+            AeonContextGrid {
+                EntryActionRow {
                     // Accounts
                     val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
                     EntryActionCard(
                         icon = getAccountIconByName(accountObj?.icon),
                         label = "ACCOUNTS",
                         value = when {
-                            state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && state.selectedAccountIds.size == state.accounts.size) -> "All Accounts"
+                            state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
                             accountObj != null -> accountObj.name
                             else -> "${state.selectedAccountIds.size} Selected"
                         },
-                        onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(true)) },
+                        onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         iconTint = MaterialTheme.colorScheme.primary
@@ -92,223 +85,190 @@ fun FilterFormBody(
                             categoryObj != null -> categoryObj.name
                             else -> "${state.selectedCategoryIds.size} Selected"
                         },
-                        onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(true)) },
+                        onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(show = true)) },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                         iconTint = MaterialTheme.colorScheme.secondary
                     )
                 }
-            }
 
-            // FILTERS: Multi-selection filters
-            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                Text(
-                    "FILTERS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                )
-
-                // Payment Methods
-                EntryActionCard(
-                    icon = Icons.Rounded.Payments,
-                    label = "PAYMENT METHODS",
-                    value = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${state.selectedPaymentMethods.size} Selected",
-                    onClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
-
-                // Transaction Status
-                EntryActionCard(
-                    icon = Icons.Rounded.CheckCircle,
-                    label = "TRANSACTION STATUS",
-                    value = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
-                    onClick = { onEvent(FilterEntryEvent.ShowStatusSheet(true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.secondary
-                )
-
-                // Linked Transactions
-                EntryActionCard(
-                    icon = Icons.Rounded.Link,
-                    label = "LINKED TRANSACTIONS",
-                    value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
-                    onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
-
-                // Currencies
-                EntryActionCard(
-                    icon = Icons.Rounded.AttachMoney,
-                    label = "CURRENCIES",
-                    value = if (state.selectedCurrencies.isEmpty()) "All Currencies" else "${state.selectedCurrencies.size} Selected",
-                    onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // SEARCH: Query filters
-            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                Text(
-                    "SEARCH",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                )
-
-                // Note Query
-                EntryEditorialInput(
-                    label = "NOTE QUERY",
-                    value = state.queryNote,
-                    onValueChange = { onEvent(FilterEntryEvent.SetQueryNote(it)) },
-                    icon = Icons.Rounded.Note,
-                    placeholder = "Search in notes...",
-                    additionalContent = {
-                        EntrySwitchRow(
-                            label = "Regex",
-                            checked = state.isNoteRegex,
-                            onCheckedChange = { onEvent(FilterEntryEvent.SetNoteRegex(it)) },
-                            icon = Icons.Rounded.Code
-                        )
-                    }
-                )
-
-                // Payee Query
-                EntryEditorialInput(
-                    label = "PAYEE QUERY",
-                    value = state.queryPayee,
-                    onValueChange = { onEvent(FilterEntryEvent.SetQueryPayee(it)) },
-                    icon = Icons.Rounded.Person,
-                    placeholder = "Search in payees...",
-                    additionalContent = {
-                        EntrySwitchRow(
-                            label = "Regex",
-                            checked = state.isPayeeRegex,
-                            onCheckedChange = { onEvent(FilterEntryEvent.SetPayeeRegex(it)) },
-                            icon = Icons.Rounded.Code
-                        )
-                    }
-                )
-            }
-
-            // RANGE: Amount and date ranges
-            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                Text(
-                    "RANGE",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                )
-
-                AeonContextGrid {
-                    // Min Amount
+                EntryActionRow {
+                    // Types
                     EntryActionCard(
-                        icon = Icons.Rounded.ArrowDownward,
-                        label = "MIN AMOUNT",
-                        value = if (state.minAmount.isEmpty()) "Any" else state.minAmount,
-                        onClick = { onEvent(FilterEntryEvent.ShowMinAmountSheet(true)) },
+                        icon = Icons.AutoMirrored.Rounded.ShowChart,
+                        label = "TYPES",
+                        value = when {
+                            state.selectedTransactionTypes.isEmpty() || (state.selectedTransactionTypes.size == (TransactionType.entries.size - 1)) -> "All Types"
+                            state.selectedTransactionTypes.size == 1 -> state.selectedTransactionTypes.first().displayName
+                            else -> "${state.selectedTransactionTypes.size} Selected"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
+
+                    // Currencies
+                    EntryActionCard(
+                        icon = Icons.Rounded.CurrencyExchange,
+                        label = "CURRENCIES",
+                        value = when {
+                            state.selectedCurrencies.isEmpty() -> "All Currencies"
+                            state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
+                            else -> "${state.selectedCurrencies.size} Selected"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         iconTint = MaterialTheme.colorScheme.primary
                     )
-
-                    // Max Amount
-                    EntryActionCard(
-                        icon = Icons.Rounded.ArrowUpward,
-                        label = "MAX AMOUNT",
-                        value = if (state.maxAmount.isEmpty()) "Any" else state.maxAmount,
-                        onClick = { onEvent(FilterEntryEvent.ShowMaxAmountSheet(true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
-                    )
                 }
             }
 
-            // OPTIONS: Additional options
-            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                Text(
-                    "OPTIONS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                )
-
-                // Warranty
-                EntryActionCard(
-                    icon = Icons.Rounded.Verified,
-                    label = "WARRANTY",
-                    value = when (state.hasWarranty) {
-                        null -> "Any"
-                        true -> "Has Warranty"
-                        false -> "No Warranty"
-                    },
-                    onClick = { onEvent(FilterEntryEvent.SetHasWarranty(
-                        when (state.hasWarranty) {
-                            null -> true
-                            true -> false
-                            false -> null
+            // DETAIL: Extended filter criteria and search
+            AeonDetailSection(
+                note = state.queryNote,
+                onNoteChange = { onEvent(FilterEntryEvent.SetQueryNote(it)) },
+                noteLabel = "NOTE QUERY",
+                payee = state.queryPayee,
+                onPayeeChange = { onEvent(FilterEntryEvent.SetQueryPayee(it)) },
+                payeeLabel = "PAYEE QUERY",
+                selectedTags = state.selectedTags,
+                onTagClick = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
+                onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) },
+                additionalContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                        // Regex Toggles for Queries
+                        EntrySection(title = "QUERY OPTIONS", icon = Icons.Rounded.Settings) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = dims.spacingSm),
+                                horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+                            ) {
+                                EntryActionChip(
+                                    icon = Icons.Rounded.Code,
+                                    label = "Regex Note",
+                                    isSelected = state.isNoteRegex,
+                                    onClick = { onEvent(FilterEntryEvent.SetNoteRegex(!state.isNoteRegex)) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                EntryActionChip(
+                                    icon = Icons.Rounded.Code,
+                                    label = "Regex Payee",
+                                    isSelected = state.isPayeeRegex,
+                                    onClick = { onEvent(FilterEntryEvent.SetPayeeRegex(!state.isPayeeRegex)) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
-                    )) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
-                )
 
-                if (state.hasWarranty == true) {
-                    AeonContextGrid {
-                        EntryDateCard(
-                            icon = Icons.Rounded.CalendarToday,
-                            label = "WARRANTY START",
-                            dateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
-                            onClick = { onEvent(FilterEntryEvent.ShowWarrantyStartPicker(true)) },
-                            modifier = Modifier.weight(1f)
+                        // Payment Method and Status
+                        EntryPaymentMethodStatusRow(
+                            paymentMethod = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${state.selectedPaymentMethods.size} Selected",
+                            onPaymentMethodClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(show = true)) },
+                            statusLabel = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
+                            onStatusClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) }
                         )
 
-                        EntryDateCard(
-                            icon = Icons.Rounded.CalendarToday,
-                            label = "WARRANTY END",
-                            dateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
-                            onClick = { onEvent(FilterEntryEvent.ShowWarrantyEndPicker(true)) },
-                            modifier = Modifier.weight(1f)
+                        // Linked Transactions
+                        EntryActionCard(
+                            icon = Icons.Rounded.Link,
+                            label = "LINKED TRANSACTIONS",
+                            value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
+                            onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                            iconTint = MaterialTheme.colorScheme.tertiary
                         )
+
+                        // Section for ranges and additional flags
+                        EntrySection(title = "CONSTRAINTS", icon = Icons.Rounded.Tune) {
+                            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
+                                AeonContextGrid {
+                                    // Min Amount
+                                    EntryActionCard(
+                                        icon = Icons.Rounded.ArrowDownward,
+                                        label = "MIN AMOUNT",
+                                        value = state.minAmount.ifEmpty { "Any" },
+                                        onClick = { onEvent(FilterEntryEvent.ShowMinAmountSheet(show = true)) },
+                                        modifier = Modifier.weight(1f),
+                                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        iconTint = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    // Max Amount
+                                    EntryActionCard(
+                                        icon = Icons.Rounded.ArrowUpward,
+                                        label = "MAX AMOUNT",
+                                        value = state.maxAmount.ifEmpty { "Any" },
+                                        onClick = { onEvent(FilterEntryEvent.ShowMaxAmountSheet(show = true)) },
+                                        modifier = Modifier.weight(1f),
+                                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                        iconTint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+
+                                // Warranty
+                                EntryActionCard(
+                                    icon = Icons.Rounded.Verified,
+                                    label = "WARRANTY",
+                                    value = when (state.hasWarranty) {
+                                        null -> "Any"
+                                        true -> "Has Warranty"
+                                        false -> "No Warranty"
+                                    },
+                                    onClick = {
+                                        onEvent(
+                                            FilterEntryEvent.SetHasWarranty(
+                                                when (state.hasWarranty) {
+                                                    null -> true
+                                                    true -> false
+                                                    false -> null
+                                                }
+                                            )
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                                    iconTint = MaterialTheme.colorScheme.tertiary
+                                )
+
+                                if (state.hasWarranty == true) {
+                                    val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+                                    AeonContextGrid {
+                                        EntryActionCard(
+                                            icon = Icons.Rounded.CalendarToday,
+                                            label = "WARRANTY START",
+                                            value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                            onClick = { onEvent(FilterEntryEvent.ShowWarrantyStartPicker(show = true)) },
+                                            modifier = Modifier.weight(1f),
+                                            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                            iconTint = MaterialTheme.colorScheme.secondary
+                                        )
+
+                                        EntryActionCard(
+                                            icon = Icons.Rounded.CalendarToday,
+                                            label = "WARRANTY END",
+                                            value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                            onClick = { onEvent(FilterEntryEvent.ShowWarrantyEndPicker(show = true)) },
+                                            modifier = Modifier.weight(1f),
+                                            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                            iconTint = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
+                                }
+
+                                // Exclude Future
+                                EntrySwitchRow(
+                                    label = "Exclude Future",
+                                    checked = state.excludeFuture,
+                                    onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
+                                    icon = Icons.Rounded.Schedule,
+                                    subtitle = "Don't include future transactions"
+                                )
+                            }
+                        }
                     }
                 }
-
-                // Exclude Future
-                EntrySwitchRow(
-                    label = "Exclude Future",
-                    checked = state.excludeFuture,
-                    onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
-                    icon = Icons.Rounded.Schedule,
-                    subtitle = "Don't include future transactions"
-                )
-            }
-
-            // DETAIL: Metadata section
-            AeonDetailSection(
-                note = "",
-                onNoteChange = { },
-                showPayee = false,
-                selectedTags = state.selectedTags,
-                onTagClick = { onEvent(FilterEntryEvent.ShowTagSheet(true)) },
-                onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) },
-                noteSuggestions = emptyList()
             )
         }
 

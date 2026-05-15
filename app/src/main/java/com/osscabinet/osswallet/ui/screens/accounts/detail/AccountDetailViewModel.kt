@@ -50,7 +50,7 @@ class AccountDetailViewModel(
 
     // Lock the account ID for this screen
     private val filterManager = FilterManager().apply {
-        setFilter("account_scope", TransactionFilter(accountIds = listOf(accountId)))
+        setFilter("account_scope", TransactionFilter(accountIds = setOf(accountId)))
     }
 
     // Expose merged filter as StateFlow
@@ -62,7 +62,7 @@ class AccountDetailViewModel(
 
     fun updateFilter(newFilter: TransactionFilter) {
         // Enforce the locked account ID
-        val lockedFilter = newFilter.copy(accountIds = listOf(accountId))
+        val lockedFilter = newFilter.copy(accountIds = setOf(accountId))
         filterManager.setFilter("manual", lockedFilter)
     }
 
@@ -73,7 +73,7 @@ class AccountDetailViewModel(
     fun clearFilters() {
         filterManager.clear()
         // Re-apply scope lock after clear
-        filterManager.setFilter("account_scope", TransactionFilter(accountIds = listOf(accountId)))
+        filterManager.setFilter("account_scope", TransactionFilter(accountIds = setOf(accountId)))
     }
 
     fun updateShowPlannedPayments(show: Boolean) {

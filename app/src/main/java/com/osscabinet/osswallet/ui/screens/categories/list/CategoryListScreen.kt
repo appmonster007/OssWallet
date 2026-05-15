@@ -91,10 +91,10 @@ fun CategoryListScreen(
 
     if (showAddDialog || selectedCategoryForEdit != null) {
         val editingCategory = selectedCategoryForEdit
-        val descendants: List<Long> = if (editingCategory != null && editingCategory.id != 0L) {
-            TransactionFilterService.expandCategoryIds(listOf(editingCategory.id), categories)
+        val descendants: Set<Long> = if (editingCategory != null && editingCategory.id != 0L) {
+            TransactionFilterService.expandCategoryIds(setOf(editingCategory.id), categories)
         } else {
-            emptyList()
+            emptySet()
         }
         val eligibleParents = categories.filter {
             it.id != (editingCategory?.id ?: 0L) && !descendants.contains(it.id)

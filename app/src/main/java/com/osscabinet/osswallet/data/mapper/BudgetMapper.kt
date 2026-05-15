@@ -11,7 +11,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         name = budget.name,
         currency = budget.currency,
         limitAmount = budget.limitAmount,
-        timelineRange = budget.timelineRange,
+        timelineRange = filterDomain.filter.timelineRange,
         categoryIds = filterDomain.filter.categoryIds,
         accountIds = filterDomain.filter.accountIds,
         tags = filterDomain.filter.tags,
@@ -24,6 +24,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         trackTypes = filterDomain.filter.transactionTypes,
         isArchived = budget.isArchived,
         profileId = budget.profileId,
+        note = budget.note,
         filterId = budget.filterId
     )
 }
@@ -33,10 +34,10 @@ fun Budget.toEntity(filterId: Long): BudgetEntity = BudgetEntity(
     name = name,
     currency = currency,
     limitAmount = limitAmount,
-    timelineRange = timelineRange,
     alertThreshold = alertThreshold,
     rollover = rollover,
     isArchived = isArchived,
     profileId = profileId,
+    note = note,
     filterId = filterId
 )

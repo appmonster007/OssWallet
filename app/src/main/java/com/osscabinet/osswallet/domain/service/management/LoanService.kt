@@ -86,7 +86,7 @@ object LoanService {
 
     /**
      * Calculate loan summary from transactions instead of loan payments.
-     * Filters transactions based on loan's linked filter.
+     * Filters transactions based on loan's filter.
      */
     fun buildSummaryFromTransactions(
         loan: Loan,
@@ -132,13 +132,13 @@ object LoanService {
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
     ): List<Transaction> {
         val expandedCategoryIds = if (allCategories.isNotEmpty() && loan.categoryIds.isNotEmpty()) {
-            TransactionFilterService.expandCategoryIds(loan.categoryIds, allCategories)
+            TransactionFilterService.expandCategoryIds(loan.categoryIds.toList(), allCategories).toSet()
         } else loan.categoryIds
 
         val filter = TransactionFilter(
             categoryIds = expandedCategoryIds,
             tags = loan.tags,
-            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+            accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(loan.linkedAccountId),
             paymentMethods = loan.paymentMethods,
             statuses = loan.statuses,
             currencies = loan.currencies,

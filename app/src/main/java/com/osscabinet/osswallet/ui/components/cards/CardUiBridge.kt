@@ -158,7 +158,7 @@ fun rememberCardWithCallbacks(
                         },
                         onCurrencyClick = { currency, range ->
                             val drillDown = TransactionFilter(
-                                currencies = listOf(currency),
+                                currencies = setOf(currency),
                                 timelineRange = range
                             )
                             onRecordsClick(
@@ -310,7 +310,7 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickCurrency = { currency ->
-                            val drillDown = TransactionFilter(currencies = listOf(currency))
+                            val drillDown = TransactionFilter(currencies = setOf(currency))
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )

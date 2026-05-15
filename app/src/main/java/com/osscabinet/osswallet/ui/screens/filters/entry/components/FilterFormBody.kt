@@ -152,6 +152,7 @@ fun FilterFormBody(
                 payeeLabel = "PAYEE QUERY",
                 showNote = false,
                 showPayee = false,
+                showTags = false,
                 selectedTags = emptyList(),
                 additionalContent = {
                     Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {

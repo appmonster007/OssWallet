@@ -158,7 +158,7 @@ fun LoanDetailScreen(
             val loanFilter = TransactionFilter(
                 categoryIds = loan.categoryIds,
                 tags = loan.tags,
-                accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+                accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(loan.linkedAccountId),
                 paymentMethods = loan.paymentMethods,
                 statuses = loan.statuses,
                 linkedTransactionIds = loan.linkedTransactionIds
@@ -268,7 +268,7 @@ fun LoanDetailScreen(
                                 onRecordsClick = { _ ->
                                     onRecordsClick(
                                         TransactionFilter(
-                                            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(
+                                            accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(
                                                 loan.linkedAccountId
                                             ),
                                             categoryIds = loan.categoryIds,

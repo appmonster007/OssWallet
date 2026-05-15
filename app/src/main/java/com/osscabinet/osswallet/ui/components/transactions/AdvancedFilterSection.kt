@@ -71,7 +71,7 @@ fun AdvancedFilterSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Render base filters as DISABLED (non-removable) chips
-                items(baseFilter.categoryIds) { id ->
+                items(baseFilter.categoryIds.toList()) { id ->
                     FilterChip(
                         selected = true,
                         onClick = { },
@@ -79,7 +79,7 @@ fun AdvancedFilterSection(
                         label = { Text(categoryMap[id]?.name ?: "Cat: $id") }
                     )
                 }
-                items(baseFilter.accountIds) { id ->
+                items(baseFilter.accountIds.toList()) { id ->
                     FilterChip(
                         selected = true,
                         onClick = { },
@@ -87,7 +87,7 @@ fun AdvancedFilterSection(
                         label = { Text(accountNames[id] ?: id) }
                     )
                 }
-                items(baseFilter.transactionTypes) { type ->
+                items(baseFilter.transactionTypes.toList()) { type ->
                     FilterChip(
                         selected = true,
                         onClick = { },
@@ -152,7 +152,7 @@ fun AdvancedFilterSection(
             ) {
                 // We reuse countActiveFilters and removeFilter logic but render as chips here
                 // Categories
-                items(filter.categoryIds) { id ->
+                items(filter.categoryIds.toList()) { id ->
                     FilterChip(
                         selected = true,
                         onClick = { removeFilter(filter, "categoryIds", id, onFilterChange) },
@@ -161,7 +161,7 @@ fun AdvancedFilterSection(
                     )
                 }
                 // Accounts
-                items(filter.accountIds) { id ->
+                items(filter.accountIds.toList()) { id ->
                     FilterChip(
                         selected = true,
                         onClick = { removeFilter(filter, "accountIds", id, onFilterChange) },
@@ -170,7 +170,7 @@ fun AdvancedFilterSection(
                     )
                 }
                 // Types
-                items(filter.transactionTypes) { type ->
+                items(filter.transactionTypes.toList()) { type ->
                     FilterChip(
                         selected = true,
                         onClick = { removeFilter(filter, "transactionTypes", type, onFilterChange) },
@@ -179,7 +179,7 @@ fun AdvancedFilterSection(
                     )
                 }
                 // Statuses
-                items(filter.statuses) { status ->
+                items(filter.statuses.toList()) { status ->
                     FilterChip(
                         selected = true,
                         onClick = { removeFilter(filter, "statuses", status, onFilterChange) },
@@ -279,7 +279,7 @@ fun AdvancedFilterSectionPreview() {
                 onFilterChange = {},
                 accounts = emptyList(),
                 allCategories = emptyList(),
-                baseFilter = TransactionFilter(accountIds = listOf("1"))
+                baseFilter = TransactionFilter(accountIds = setOf("1"))
             )
         }
     }

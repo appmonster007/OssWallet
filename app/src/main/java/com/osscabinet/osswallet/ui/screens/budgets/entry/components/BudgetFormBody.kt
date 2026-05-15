@@ -26,7 +26,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 /**
  * Refactored Budget Entry Form Body.
  * Standardized with other entry screens to use reusable components and a consistent layout.
- * Filter-centric design where the linked filter is a primary context item.
+ * Filter-centric design where the FILTER is a primary context item.
  */
 @Composable
 fun BudgetFormBody(
@@ -63,12 +63,12 @@ fun BudgetFormBody(
 
             // CONTEXT: Action cards grid for primary budget parameters
             AeonContextGrid {
-                // Row 1: Linked Filter and Period
+                // Row 1: FILTER and Period
                 EntryActionRow {
                     val filterObj = state.availableFilters.find { it.id == state.filterId }
                     EntryActionCard(
                         icon = Icons.Rounded.FilterList,
-                        label = "LINKED FILTER",
+                        label = "FILTER",
                         value = filterObj?.name ?: "None",
                         onClick = { onEvent(BudgetEntryEvent.ShowFilterSheet(show = true)) },
                         modifier = Modifier.weight(1f),
@@ -163,9 +163,10 @@ fun BudgetFormBody(
             AeonDetailSection(
                 note = state.note,
                 onNoteChange = { onEvent(BudgetEntryEvent.SetNote(it)) },
-                showNote = false, // We'll render manual note with regex below
+                showNote = false,
                 showPayee = false,
-                selectedTags = emptyList(), // Manual tags below
+                showTags = false,
+                selectedTags = emptyList(),
                 noteSuggestions = state.uniqueNotes,
                 additionalContent = {
                     Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
@@ -211,32 +212,6 @@ fun BudgetFormBody(
                             onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
                             onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) }
                         )
-
-                        // Sharing info and Make Unique action
-                        if (state.filterId != null) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXs),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = if (state.filterUsageCount > 1) "Shared with ${state.filterUsageCount - 1} other(s)" else "Unique Filter",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                                if (state.filterUsageCount > 1) {
-                                    TextButton(
-                                        onClick = { onEvent(BudgetEntryEvent.MakeFilterUnique) },
-                                        contentPadding = PaddingValues(0.dp),
-                                        modifier = Modifier.height(AeonTheme.dimensions.spacingXl)
-                                    ) {
-                                        Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs))
-                                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
-                                        Text("Make Unique", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-                            }
-                        }
 
                         // Payment Method and Status multi-selection
                         EntryPaymentMethodStatusRow(
@@ -404,5 +379,13 @@ fun BudgetFormBody(
 
         // Dedicated sheets for selecting multi-value parameters
         BudgetEntrySheets(state = state, onEvent = onEvent)
+
+        if (state.showSharedFilterDialog) {
+            SharedFilterConfirmationDialog(
+                onDismiss = { onEvent(BudgetEntryEvent.ShowSharedFilterDialog(show = false)) },
+                onConfirmUpdateShared = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
+                onConfirmCreateNew = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+            )
+        }
     }
 }

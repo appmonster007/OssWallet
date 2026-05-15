@@ -432,14 +432,14 @@ fun DynamicAccountDetailCards(
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
             precision = state.decimalPrecision,
-            filter = TransactionFilter(accountIds = listOf(accountId), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime)
         )
     }
 
     val heroConfig = remember(accountId) {
         AccountHeroCardConfig(
             cardId = "hero_$accountId",
-            filter = TransactionFilter(accountIds = listOf(accountId), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime)
         )
     }
     val heroCard = rememberCardWithCallbacks(

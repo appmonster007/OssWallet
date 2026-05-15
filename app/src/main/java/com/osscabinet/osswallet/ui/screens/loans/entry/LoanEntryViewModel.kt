@@ -92,15 +92,12 @@ class LoanEntryViewModel(
         viewModelScope.launch {
             loanRepository.getLoanById(loanId)?.let { loan: Loan ->
                 val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
-                val usageCount = loan.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 val tf = filter?.filter ?: TransactionFilter()
                 _state.update {
                     it.copy(
                         loanId = loanId,
                         isEditMode = true,
                         existingLoan = loan,
-                        linkedFilter = filter,
-                        filterUsageCount = usageCount,
                         name = loan.name,
                         principalAmount = loan.principalAmount.toPlainString(),
                         currency = loan.currency,
@@ -169,11 +166,9 @@ class LoanEntryViewModel(
             is LoanEntryEvent.SetLinkedAccountId -> _state.update { it.copy(linkedAccountId = event.id) }
             is LoanEntryEvent.SetFilterId -> {
                 val filter = _state.value.availableFilters.find { it.id == event.filterId }
-                _state.update { state ->
-                    if (filter != null) {
+                if (filter != null) {
+                    _state.update { state ->
                         state.copy(
-                            filterId = null, // DELINK
-                            linkedFilter = null, // DELINK
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
                             selectedCurrencies = filter.filter.currencies.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
@@ -198,13 +193,11 @@ class LoanEntryViewModel(
                                 state.selectedTrackTypes
                             }
                         )
-                    } else {
-                        state.copy(filterId = null, linkedFilter = null, filterUsageCount = 0)
                     }
                 }
             }
-            LoanEntryEvent.MakeFilterUnique -> _state.update { it.copy(filterId = null, linkedFilter = null) }
-            is LoanEntryEvent.SetDeleteFilterWithLoan -> _state.update { it.copy(deleteFilterWithLoan = event.delete) }
+            LoanEntryEvent.MakeFilterUnique -> {}
+            is LoanEntryEvent.SetDeleteFilterWithLoan -> {}
             is LoanEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is LoanEntryEvent.ShowStartDatePicker -> _state.update { it.copy(showStartDatePicker = event.show) }
             is LoanEntryEvent.ShowSettlementDatePicker -> _state.update { it.copy(showSettlementDatePicker = event.show) }
@@ -226,30 +219,51 @@ class LoanEntryViewModel(
             is LoanEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
             is LoanEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is LoanEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
+            is LoanEntryEvent.ShowSharedFilterDialog -> _state.update { it.copy(showSharedFilterDialog = event.show) }
+            is LoanEntryEvent.ConfirmSaveWithSharedFilter -> {
+                _state.update { it.copy(showSharedFilterDialog = false) }
+                saveLoan(
+                    onSuccess = { /* Callback handled in saveLoan */ },
+                    forceNewFilter = !event.updateShared
+                )
+            }
             is LoanEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }
 
-    fun saveLoan(onSuccess: () -> Unit) {
+    fun saveLoan(forceNewFilter: Boolean = false, onSuccess: () -> Unit) {
         val s = _state.value
         if (!s.canSave) return
 
         viewModelScope.launch {
+            // Check for shared filter if not already handled
+            if (s.filterId != null && s.filterId != 0L && s.filterUsageCount > 1 && !forceNewFilter && !s.showSharedFilterDialog) {
+                // Check if any filter criteria actually changed compared to the filter
+                val currentFilter = s.availableFilters.find { it.id == s.filterId }
+                if (currentFilter != null) {
+                    val hasChanged = hasFilterChanged(s, currentFilter)
+                    if (hasChanged) {
+                        _state.update { it.copy(showSharedFilterDialog = true) }
+                        return@launch
+                    }
+                }
+            }
+
             val amount = s.principalAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             
-            // 1. Create or Update Filter
+            // 1. Create or Update Filter for this loan
             val filter = Filter(
-                id = s.linkedFilter?.id ?: 0L,
-                name = "Filter for Loan: ${s.name}",
+                id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
+                name = "${s.name}-Filter",
                 filter = TransactionFilter(
-                    categoryIds = s.selectedCategoryIds.toList(),
-                    accountIds = if (s.linkedAccountId.isBlank()) emptyList() else listOf(s.linkedAccountId),
+                    categoryIds = s.selectedCategoryIds,
+                    accountIds = if (s.linkedAccountId.isBlank()) emptySet() else setOf(s.linkedAccountId),
                     tags = s.selectedTags,
-                    paymentMethods = s.selectedPaymentMethods.toList(),
-                    statuses = s.selectedStatuses.toList(),
-                    currencies = s.selectedCurrencies.toList(),
-                    linkedTransactionIds = s.linkedTransactionIds.toList(),
-                    transactionTypes = s.selectedTrackTypes.toList(),
+                    paymentMethods = s.selectedPaymentMethods,
+                    statuses = s.selectedStatuses,
+                    currencies = s.selectedCurrencies,
+                    linkedTransactionIds = s.linkedTransactionIds,
+                    transactionTypes = s.selectedTrackTypes,
                     queryNote = s.queryNote.takeIf { it.isNotBlank() },
                     isNoteRegex = s.isNoteRegex,
                     queryPayee = s.queryPayee.takeIf { it.isNotBlank() },
@@ -264,8 +278,8 @@ class LoanEntryViewModel(
                 )
             )
 
-            val filterId = if (filter.id == 0L || s.filterUsageCount > 1) {
-                filterRepository.insertFilter(filter.copy(id = 0L))
+            val filterId = if (filter.id == 0L) {
+                filterRepository.insertFilter(filter)
             } else {
                 filterRepository.updateFilter(filter)
                 filter.id
@@ -278,7 +292,7 @@ class LoanEntryViewModel(
                 principalAmount = amount,
                 currency = s.currency,
                 startDate = s.startDate,
-                lenderOrBorrowerName = s.counterparty,
+                lenderOrBorrowerName = s.queryPayee,
                 loanType = s.loanType,
                 linkedAccountId = s.linkedAccountId,
                 profileId = s.currentProfileId,
@@ -290,19 +304,20 @@ class LoanEntryViewModel(
                 currency = s.currency,
                 interestRate = s.interestRate.toFloatOrNull(),
                 startDate = s.startDate,
-                lenderOrBorrowerName = s.counterparty,
+                lenderOrBorrowerName = s.queryPayee,
                 loanType = s.loanType,
                 linkedAccountId = s.linkedAccountId,
                 expectedSettlementDate = if (s.hasSettlementDate) s.settlementDate else null,
+                status = s.existingLoan?.status ?: LoanStatus.ACTIVE,
                 profileId = s.currentProfileId,
-                note = s.note,
-                categoryIds = s.selectedCategoryIds.toList(),
-                trackTypes = s.selectedTrackTypes.toList(),
-                currencies = s.selectedCurrencies.toList(),
+                note = s.queryNote,
+                categoryIds = s.selectedCategoryIds,
+                trackTypes = s.selectedTrackTypes,
+                currencies = s.selectedCurrencies,
                 tags = s.selectedTags,
-                paymentMethods = s.selectedPaymentMethods.toList(),
-                statuses = s.selectedStatuses.toList(),
-                linkedTransactionIds = s.linkedTransactionIds.toList(),
+                paymentMethods = s.selectedPaymentMethods,
+                statuses = s.selectedStatuses,
+                linkedTransactionIds = s.linkedTransactionIds,
                 timelineRange = s.timelineRange,
                 filterId = filterId
             )
@@ -316,19 +331,42 @@ class LoanEntryViewModel(
         }
     }
 
+    private fun hasFilterChanged(s: LoanEntryState, currentFilter: Filter): Boolean {
+        val f = currentFilter.filter
+        return s.selectedCategoryIds != f.categoryIds ||
+                (if (s.linkedAccountId.isBlank()) emptySet<String>() else setOf(s.linkedAccountId)) != f.accountIds ||
+                s.selectedTags != f.tags ||
+                s.selectedPaymentMethods != f.paymentMethods ||
+                s.selectedStatuses != f.statuses ||
+                s.selectedCurrencies != f.currencies ||
+                s.linkedTransactionIds != f.linkedTransactionIds ||
+                s.selectedTrackTypes != f.transactionTypes ||
+                s.queryNote != (f.queryNote ?: "") ||
+                s.isNoteRegex != f.isNoteRegex ||
+                s.queryPayee != (f.queryPayee ?: "") ||
+                s.isPayeeRegex != f.isPayeeRegex ||
+                s.minAmount != (f.minAmount?.toString() ?: "") ||
+                s.maxAmount != (f.maxAmount?.toString() ?: "") ||
+                s.hasWarranty != f.hasWarranty ||
+                s.warrantyExpirationStart != f.warrantyExpirationStart ||
+                s.warrantyExpirationEnd != f.warrantyExpirationEnd ||
+                s.timelineRange != f.timelineRange ||
+                s.excludeFuture != f.excludeFuture ||
+                "${s.name}-Filter" != currentFilter.name
+    }
+
     fun deleteLoan() {
         val id = _state.value.loanId ?: return
         val filterId = _state.value.filterId
-        val deleteFilter = _state.value.deleteFilterWithLoan
         
         viewModelScope.launch {
-            if (deleteFilter && filterId != null) {
+            // Always delete the private filter when deleting a loan
+            if (filterId != null) {
                 filterRepository.getFilterById(filterId)?.let { filter ->
                     filterRepository.deleteFilter(filter)
                 }
-            } else {
-                loanRepository.deleteLoan(id)
             }
+            loanRepository.deleteLoan(id)
             _state.update { it.copy(navTriggered = true) }
         }
     }

@@ -180,18 +180,24 @@ fun BudgetEntrySheets(
     if (state.showWarrantyStartPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
-            onDateSelected = { onEvent(BudgetEntryEvent.SetWarrantyExpirationStart(it)) },
+            onDateSelected = { 
+                onEvent(BudgetEntryEvent.SetWarrantyExpirationStart(it))
+                onEvent(BudgetEntryEvent.ShowWarrantyStartPicker(false))
+            },
             onDismiss = { onEvent(BudgetEntryEvent.ShowWarrantyStartPicker(false)) },
-            label = "Warranty Expiration Start"
+            label = "Warranty Start"
         )
     }
 
     if (state.showWarrantyEndPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
-            onDateSelected = { onEvent(BudgetEntryEvent.SetWarrantyExpirationEnd(it)) },
+            onDateSelected = { 
+                onEvent(BudgetEntryEvent.SetWarrantyExpirationEnd(it))
+                onEvent(BudgetEntryEvent.ShowWarrantyEndPicker(false))
+            },
             onDismiss = { onEvent(BudgetEntryEvent.ShowWarrantyEndPicker(false)) },
-            label = "Warranty Expiration End"
+            label = "Warranty End"
         )
     }
 }

@@ -214,18 +214,24 @@ fun LoanEntrySheets(
     if (state.showWarrantyStartPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
-            onDateSelected = { onEvent(LoanEntryEvent.SetWarrantyExpirationStart(it)) },
+            onDateSelected = { 
+                onEvent(LoanEntryEvent.SetWarrantyExpirationStart(it))
+                onEvent(LoanEntryEvent.ShowWarrantyStartPicker(false))
+            },
             onDismiss = { onEvent(LoanEntryEvent.ShowWarrantyStartPicker(false)) },
-            label = "Warranty Expiration Start"
+            label = "Warranty Start"
         )
     }
 
     if (state.showWarrantyEndPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
-            onDateSelected = { onEvent(LoanEntryEvent.SetWarrantyExpirationEnd(it)) },
+            onDateSelected = { 
+                onEvent(LoanEntryEvent.SetWarrantyExpirationEnd(it))
+                onEvent(LoanEntryEvent.ShowWarrantyEndPicker(false))
+            },
             onDismiss = { onEvent(LoanEntryEvent.ShowWarrantyEndPicker(false)) },
-            label = "Warranty Expiration End"
+            label = "Warranty End"
         )
     }
 }

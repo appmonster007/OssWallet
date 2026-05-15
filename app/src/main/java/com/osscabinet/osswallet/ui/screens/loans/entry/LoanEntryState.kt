@@ -36,6 +36,7 @@ data class LoanEntryState(
     val filterId: Long? = null,
     val linkedFilter: Filter? = null,
     val filterUsageCount: Int = 0,
+    val showSharedFilterDialog: Boolean = false,
     val deleteFilterWithLoan: Boolean = false,
     val showDeleteDialog: Boolean = false,
 

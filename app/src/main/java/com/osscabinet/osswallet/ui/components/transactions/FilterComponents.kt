@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.entry.*
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -199,10 +200,10 @@ fun FilterFields(
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
         // Search (Note/Payee)
         if (filterRules.allowSearch) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Text(
                     "SEARCH",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -213,7 +214,7 @@ fun FilterFields(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
                     CompactTextField(
                         value = filter.queryNote ?: "",
@@ -242,7 +243,7 @@ fun FilterFields(
         }
 
         // Primary Context Grid (Type and Accounts/Categories)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             Text(
                 "CONTEXT",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -255,7 +256,7 @@ fun FilterFields(
             // 2-Column Grid for Primary Dimensions
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 // Type Card
                 ContextCard(
@@ -292,7 +293,7 @@ fun FilterFields(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 // Categories Card
                 if (filterRules.allowCategorySelection) {
@@ -320,29 +321,29 @@ fun FilterFields(
             // Future Transactions Toggle
             Surface(
                 onClick = { onFilterChange(filter.copy(excludeFuture = !filter.excludeFuture)) },
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 border = androidx.compose.foundation.BorderStroke(
-                    0.5.dp,
+                    (AeonTheme.dimensions.spacingXs / 8),
                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
                 )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                        .padding(horizontal = AeonTheme.dimensions.containerCornerRadius, vertical = AeonTheme.dimensions.spacingMd),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         Icon(
                             Icons.Default.Update,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
                         )
                         Text(
                             "Show Future Transactions",
@@ -359,7 +360,7 @@ fun FilterFields(
 
         // Status
         if (filterRules.allowStatusSelection) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Text(
                     "STATUS",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -379,7 +380,7 @@ fun FilterFields(
 
         // Amount Range
         if (filterRules.allowAmountRange) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Text(
                     "AMOUNT RANGE",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -390,7 +391,7 @@ fun FilterFields(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ContextCard(
@@ -413,7 +414,7 @@ fun FilterFields(
 
         // Methods Card (Full Width)
         if (filterRules.allowPaymentMethodSelection) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Text(
                     "PAYMENT METHODS",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -432,7 +433,7 @@ fun FilterFields(
         }
 
         // Linked Records Card (Full Width)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             Text(
                 "LINKED RECORDS",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -450,7 +451,7 @@ fun FilterFields(
         }
 
         // Warranty Expiry Range
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             Text(
                 "WARRANTY EXPIRY",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -481,22 +482,22 @@ fun ContextCard(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(84.dp),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.height(AeonTheme.dimensions.iconSize3xl + AeonTheme.dimensions.spacingLg),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = androidx.compose.foundation.BorderStroke(
-            0.5.dp,
+            (AeonTheme.dimensions.spacingXs / 8),
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.spacingLg),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             Surface(
-                modifier = Modifier.size(40.dp),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -504,7 +505,7 @@ fun ContextCard(
                         icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
                     )
                 }
             }
@@ -541,12 +542,12 @@ fun CompactTextField(
     enabled: Boolean = true
 ) {
     Surface(
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(AeonTheme.dimensions.iconSize2xl),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (leadingIcon != null) {
@@ -554,9 +555,9 @@ fun CompactTextField(
                     leadingIcon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
             }
             androidx.compose.foundation.text.BasicTextField(
                 value = value,

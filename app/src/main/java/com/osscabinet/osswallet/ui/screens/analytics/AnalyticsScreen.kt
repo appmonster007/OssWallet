@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
@@ -129,7 +130,10 @@ fun AnalyticsScreen(
                                 onDelete = { viewModel.removeCard(it) },
                                 onRecordsClick = onRecordsClick,
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                contentPadding = PaddingValues(
+                                    horizontal = AeonTheme.dimensions.screenPadding,
+                                    vertical = AeonTheme.dimensions.spacingMd
+                                ),
                                 animateCards = cardAnimationEnabled,
                                 currentTheme = currentTheme,
                                 accounts = state.accounts,

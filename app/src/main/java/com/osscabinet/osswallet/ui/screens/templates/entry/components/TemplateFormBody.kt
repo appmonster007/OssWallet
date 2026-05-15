@@ -14,6 +14,8 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+
 /**
  * Main content layout for template entry screen.
  * Optimized with shared components and unified metadata section.
@@ -31,8 +33,11 @@ fun TemplateFormBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(
+                    horizontal = AeonTheme.dimensions.screenPadding,
+                    vertical = AeonTheme.dimensions.spacingLg
+                ),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(

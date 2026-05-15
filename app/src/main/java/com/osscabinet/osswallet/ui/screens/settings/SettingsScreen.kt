@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCur
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.ui.util.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 
@@ -191,22 +192,22 @@ fun SettingsScreen(
         BasicAlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.fillMaxWidth().padding(24.dp)
+            modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.spacingXl)
         ) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(24.dp)
+                        .padding(AeonTheme.dimensions.spacingXl)
                         .fillMaxWidth()
                 ) {
                     Text(
                         "Select Base Currency",
                         style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg)
                     )
                     
                     OutlinedTextField(
@@ -222,15 +223,15 @@ fun SettingsScreen(
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                         singleLine = true
                     )
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     
                     Box(modifier = Modifier.heightIn(max = 400.dp)) {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                         ) {
                             items(filteredCurrencies) { code ->
                                 val symbol = getCurrencySymbol(code)
@@ -240,17 +241,17 @@ fun SettingsScreen(
                                         viewModel.setCurrency(code)
                                         showCurrencyDialog = false
                                     },
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                     color = if (code == currencyCode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(AeonTheme.dimensions.spacingMd),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Surface(
-                                            modifier = Modifier.size(40.dp),
+                                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                             shape = CircleShape,
                                             color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondaryContainer
                                         ) {
@@ -262,7 +263,7 @@ fun SettingsScreen(
                                                 )
                                             }
                                         }
-                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 name, 
@@ -289,7 +290,7 @@ fun SettingsScreen(
                     }
                     
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingLg),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showCurrencyDialog = false }) {
@@ -316,7 +317,7 @@ fun SettingsScreen(
                                     viewModel.setTheme(t)
                                     showThemeDialog = false
                                 }
-                                .padding(16.dp),
+                                .padding(AeonTheme.dimensions.cardPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val icon = when(t) {
@@ -325,8 +326,8 @@ fun SettingsScreen(
                                 "Amoled" -> Icons.Rounded.Contrast
                                 else -> Icons.Rounded.SettingsSuggest
                             }
-                            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                             Text(t, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                             if (t == theme) {
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -360,8 +361,8 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+                .padding(AeonTheme.dimensions.screenPadding),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
         ) {
             SettingsSection("PREFERENCE") {
                 SettingsItem(
@@ -370,14 +371,14 @@ fun SettingsScreen(
                     icon = Icons.Rounded.CurrencyExchange,
                     onClick = { showCurrencyDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "App Appearance",
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Auto-save Exchange Rates",
                     subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
@@ -395,7 +396,7 @@ fun SettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Card Animations",
@@ -414,7 +415,7 @@ fun SettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Expandable Action Button",
@@ -433,7 +434,7 @@ fun SettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "24-Hour Time Format",
@@ -452,7 +453,7 @@ fun SettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Decimal Precision",
                     subtitle = "Toggle between 2 and 3 places",
@@ -460,7 +461,7 @@ fun SettingsScreen(
                     trailingContent = {
                         Row(
                             modifier = Modifier
-                                .height(32.dp)
+                                .height(AeonTheme.dimensions.spacing2xl)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                     CircleShape
@@ -472,7 +473,7 @@ fun SettingsScreen(
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxHeight()
-                                        .width(40.dp)
+                                        .width(AeonTheme.dimensions.iconSizeXl)
                                         .clickable {
                                             if (decimalPrecision != p) {
                                                 viewModel.setDecimalPrecision(p)
@@ -495,7 +496,7 @@ fun SettingsScreen(
                         }
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Location Auto-fill",
@@ -523,35 +524,35 @@ fun SettingsScreen(
                     icon = Icons.Rounded.AccountBalance,
                     onClick = { navigate(onManageAccountsClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Tags",
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
                     onClick = { navigate(onManageTagsClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Categories",
                     subtitle = "Organize income and expenses",
                     icon = Icons.Rounded.Category,
                     onClick = { navigate(onManageCategoriesClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Transaction Templates",
                     subtitle = "Quick shortcuts for frequent entries",
                     icon = Icons.Rounded.AutoAwesome,
                     onClick = { navigate(onTemplatesClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Saved Filters",
                     subtitle = "Templates for quick transaction searching",
                     icon = Icons.Rounded.FilterList,
                     onClick = { navigate(onManageFiltersClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Smart Suggestions",
                     subtitle = "Discover recurring transactions automatically",
@@ -567,14 +568,14 @@ fun SettingsScreen(
                     icon = Icons.Rounded.CloudSync,
                     onClick = { showImportDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Export Data",
                     subtitle = "Download all records and database",
                     icon = Icons.Rounded.FileDownload,
                     onClick = { showExportDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Delete All Data",
                     subtitle = "Permanently clear your account",
@@ -584,7 +585,7 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.screenPadding))
             
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -592,7 +593,7 @@ fun SettingsScreen(
             ) {
                 Text("OssWallet v1.1.0", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 Text("Built for the Modern Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 Text(
                     "Currency rates provided by",
                     style = MaterialTheme.typography.labelSmall,
@@ -615,7 +616,7 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge.copy(
@@ -623,10 +624,10 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 1.2.sp
             ),
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
         )
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         ) {
@@ -651,19 +652,19 @@ fun SettingsItem(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(16.dp),
+            .padding(AeonTheme.dimensions.cardPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
             shape = CircleShape,
             color = color.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
             }
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = color)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)

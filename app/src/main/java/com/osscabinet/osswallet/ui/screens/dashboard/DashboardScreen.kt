@@ -77,6 +77,7 @@ import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
@@ -227,7 +228,7 @@ fun DashboardScreen(
                     title = {
                         Column(
                             modifier = Modifier.clickable { navigate(onSettingsClick) },
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                         ) {
                             Text(
                                 currentProfile?.name ?: "Intelligence",
@@ -358,7 +359,7 @@ fun DashboardContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -369,13 +370,13 @@ fun DashboardContent(
                     )
                     IconButton(
                         onClick = { onShowAddCardDialogChange(true) },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add card",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     }
                 }
@@ -404,9 +405,9 @@ fun DashboardContent(
                         onRecordsClick = onRecordsClick,
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(
-                            start = 12.dp,
-                            end = 12.dp,
-                            top = 6.dp,
+                            start = AeonTheme.dimensions.screenPadding,
+                            end = AeonTheme.dimensions.screenPadding,
+                            top = AeonTheme.dimensions.spacingMd,
                             bottom = calculateScrollBottomPadding()
                         ),
                         animateCards = cardAnimationEnabled,
@@ -488,19 +489,19 @@ fun DashboardViewIndicator(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Visibility,
                 contentDescription = "View focus",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
             )
             Text(
                 text = getDashboardContextDisplayName(context),

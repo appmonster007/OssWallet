@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -96,14 +97,14 @@ fun SwipeableTransactionItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
         // Actions Layer (Background)
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = AeonTheme.dimensions.listPadding),
             contentAlignment = Alignment.Center
         ) {
             // Right Swipe Content (Reveals Status Actions on the Left)
@@ -200,7 +201,7 @@ fun SwipeableTransactionItem(
                         }
                     )
                 },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = if (animatedOffset != 0f) 8.dp else 0.dp,
             shadowElevation = if (animatedOffset != 0f) 4.dp else 0.dp
@@ -220,7 +221,7 @@ fun StatusActionsRow(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val statuses = TransactionStatus.values().filter { it != currentStatus }
@@ -256,7 +257,7 @@ fun TransactionActionsRow(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val actions = listOf(
@@ -309,7 +310,7 @@ fun ExpressiveActionButton(
             contentColor = contentColor
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = label, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
             }
         }
         Text(
@@ -319,7 +320,7 @@ fun ExpressiveActionButton(
                 fontSize = 10.sp
             ),
             color = contentColor.copy(alpha = 0.9f),
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
         )
     }
 }
@@ -330,7 +331,7 @@ fun ExpressiveActionButton(
 @Composable
 fun PreviewSwipeableTransactionItem_None() {
     MaterialTheme {
-        Box(Modifier.padding(16.dp)) {
+        Box(Modifier.padding(AeonTheme.dimensions.screenPadding)) {
             SwipeableTransactionItem(
                 transaction = mockTransactionPreview(),
                 isRevealed = false,
@@ -347,27 +348,27 @@ fun PreviewSwipeableTransactionItem_None() {
 @Composable
 fun PreviewSwipeableTransactionItem_LeftSwipe() {
     MaterialTheme {
-        Box(Modifier.padding(16.dp)) {
+        Box(Modifier.padding(AeonTheme.dimensions.screenPadding)) {
             val density = LocalDensity.current
             val offsetPx = with(density) { -192.dp.toPx() }
             
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 TransactionActionsRow(
                     onSplit = {}, onClone = {}, onDelete = {},
                     progress = 1f,
                     onCollapse = {},
-                    modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 12.dp)
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = AeonTheme.dimensions.listPadding)
                 )
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .offset { IntOffset(offsetPx.roundToInt(), 0) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 8.dp,
                     shadowElevation = 4.dp
@@ -383,14 +384,14 @@ fun PreviewSwipeableTransactionItem_LeftSwipe() {
 @Composable
 fun PreviewSwipeableTransactionItem_RightSwipe() {
     MaterialTheme {
-        Box(Modifier.padding(16.dp)) {
+        Box(Modifier.padding(AeonTheme.dimensions.screenPadding)) {
             val density = LocalDensity.current
             val offsetPx = with(density) { 128.dp.toPx() }
             
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 StatusActionsRow(
@@ -398,13 +399,13 @@ fun PreviewSwipeableTransactionItem_RightSwipe() {
                     onStatusChange = {},
                     progress = 1f,
                     onCollapse = {},
-                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = AeonTheme.dimensions.listPadding)
                 )
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .offset { IntOffset(offsetPx.roundToInt(), 0) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 8.dp,
                     shadowElevation = 4.dp
@@ -419,16 +420,16 @@ fun PreviewSwipeableTransactionItem_RightSwipe() {
 @Composable
 private fun MockContentPreview() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.cardPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Box(Modifier.size(AeonTheme.dimensions.iconSizeXl).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
         Column(Modifier.weight(1f)) {
             Box(Modifier.size(140.dp, 16.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp)))
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
             Box(Modifier.size(90.dp, 12.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
         }
         Text("$ 45.00", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)

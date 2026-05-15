@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Editorial-style text input with icon and label for entry screens.
@@ -63,31 +64,31 @@ fun EntryEditorialInput(
     ) {
         Surface(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
             color = MaterialTheme.colorScheme.surfaceContainerLowest,
             border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
             onClick = { focusRequester.requestFocus() }
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
                 verticalAlignment = Alignment.Top
             ) {
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

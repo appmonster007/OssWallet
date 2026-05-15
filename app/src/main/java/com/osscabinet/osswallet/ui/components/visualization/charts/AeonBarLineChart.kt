@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
@@ -61,6 +62,7 @@ fun AeonBarLineChart(
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val density = LocalDensity.current
+    val dims = AeonTheme.dimensions
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(barData, lineData) {
@@ -143,7 +145,7 @@ fun AeonBarLineChart(
             }
             
             // Zero Line
-            drawLine(color = Color.Gray.copy(alpha = 0.3f), start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = 1.dp.toPx())
+            drawLine(color = Color.Gray.copy(alpha = 0.3f), start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
 
             // 2. Draw Bars
             val barWidth = (widthPx - 2 * padding) / barData.size * 0.5f
@@ -161,7 +163,7 @@ fun AeonBarLineChart(
                     color = color.copy(alpha = 0.8f),
                     topLeft = Offset(x - barWidth / 2, top),
                     size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                    cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
                 )
             }
 
@@ -178,7 +180,7 @@ fun AeonBarLineChart(
             drawPath(
                 path = linePath,
                 color = lineColor,
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                style = Stroke(width = (dims.spacingXs * 0.75f).toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
             // 4. Draw SMA (Smooth Moving Average)
@@ -193,7 +195,7 @@ fun AeonBarLineChart(
                 drawPath(
                     path = smaPath,
                     color = lineColor.copy(alpha = 0.5f),
-                    style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    style = Stroke(width = (dims.spacingXs * 1.25f).toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
             }
 
@@ -204,7 +206,7 @@ fun AeonBarLineChart(
                     color = Color.Gray.copy(alpha = 0.5f),
                     start = Offset(x, padding),
                     end = Offset(x, heightPx - padding),
-                    strokeWidth = 1.dp.toPx(),
+                    strokeWidth = (dims.spacingXs / 4).toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
             }
@@ -229,15 +231,15 @@ fun AeonBarLineChart(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(dims.spacingMd)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                border = androidx.compose.foundation.BorderStroke(1.dp, lineColor.copy(alpha = 0.5f))
+                tonalElevation = dims.spacingSm,
+                shadowElevation = dims.spacingSm,
+                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), lineColor.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(10.dp)) {
+                Column(modifier = Modifier.padding(dims.spacingSm)) {
                     Text("Period ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(dims.spacingXs))
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("Flow:", style = MaterialTheme.typography.labelSmall)
                         Text(formatCurrencyRight(barVal, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
@@ -248,16 +250,16 @@ fun AeonBarLineChart(
                     }
                     
                     if (onNavigateToRecords != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(dims.spacingSm))
                         OutlinedButton(
                             onClick = { onNavigateToRecords(index) },
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, lineColor.copy(alpha = 0.5f))
+                            modifier = Modifier.height(dims.spacing2xl),
+                            contentPadding = PaddingValues(horizontal = dims.spacingMd, vertical = 0.dp),
+                            shape = RoundedCornerShape(dims.spacingSm),
+                            border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), lineColor.copy(alpha = 0.5f))
                         ) {
-                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = lineColor)
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(dims.iconSizeLg / 2), tint = lineColor)
+                            Spacer(modifier = Modifier.width(dims.spacingXs))
                             Text("See Records", style = MaterialTheme.typography.labelSmall, color = lineColor)
                         }
                     }
@@ -271,7 +273,7 @@ fun AeonBarLineChart(
 @Composable
 fun AeonBarLineChartPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonBarLineChart(
                 barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800"), BigDecimal("400")),
                 lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100"), BigDecimal("1500"))

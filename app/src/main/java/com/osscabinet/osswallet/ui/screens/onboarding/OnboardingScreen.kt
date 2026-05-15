@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
@@ -94,14 +95,14 @@ fun OnboardingScreen(
                     // Progress indicator
                     LinearProgressIndicator(
                         progress = { (step + 1).toFloat() / steps.size },
-                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                        modifier = Modifier.fillMaxWidth().height(AeonTheme.dimensions.spacingXs),
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                     )
 
                     Row(
                         modifier = Modifier
-                            .padding(24.dp)
+                            .padding(AeonTheme.dimensions.spacingXl)
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
@@ -132,15 +133,15 @@ fun OnboardingScreen(
                             }
                         },
                             modifier = Modifier.height(56.dp),
-                            shape = RoundedCornerShape(28.dp),
-                            contentPadding = PaddingValues(horizontal = 32.dp)
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                            contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.dialogCornerRadius)
                         ) {
                             Text(
                                 if (step < steps.size - 1) "NEXT" else "GET STARTED",
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
                         }
                     }
                 }
@@ -155,7 +156,7 @@ fun OnboardingScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = AeonTheme.dimensions.spacingXl),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -184,11 +185,11 @@ fun OnboardingScreen(
                 ModalBottomSheet(
                     onDismissRequest = { isCurrencyMenuExpanded = false },
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    shape = RoundedCornerShape(topStart = AeonTheme.dimensions.dialogCornerRadius, topEnd = AeonTheme.dimensions.dialogCornerRadius),
                     dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) },
                     modifier = Modifier.fillMaxHeight(0.9f)
                 ) {
-                    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).verticalScroll(rememberScrollState())) {
+                    Column(modifier = Modifier.fillMaxSize().padding(horizontal = AeonTheme.dimensions.spacingXl).verticalScroll(rememberScrollState())) {
                         CurrencyManagementSection(
                             primaryCurrency = currency,
                             onPrimaryCurrencyChange = { viewModel.setCurrency(it) },
@@ -228,10 +229,10 @@ fun CurrencyStep(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = AeonTheme.dimensions.screenPadding),
             placeholder = { Text("Search currencies...") },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
-            shape = RoundedCornerShape(16.dp),
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) },
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             singleLine = true,
             colors = TextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -243,29 +244,29 @@ fun CurrencyStep(
 
         Surface(
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 items(filteredCurrencies) { code ->
                     val isSelected = selectedCurrency == code
                     Surface(
                         onClick = { onCurrencySelected(code) },
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                         color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
                         border = if (isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) else null
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.screenPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainerHighest
                             ) {
@@ -277,7 +278,7 @@ fun CurrencyStep(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.screenPadding))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     getCurrencyName(code),
@@ -287,8 +288,8 @@ fun CurrencyStep(
                             }
                             if (isSelected) {
                                 when (syncState) {
-                                    is SyncState.Loading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                    else -> Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                    is SyncState.Loading -> CircularProgressIndicator(modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd), strokeWidth = 2.dp)
+                                    else -> Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
                                 }
                             }
                         }
@@ -296,7 +297,7 @@ fun CurrencyStep(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.dialogCornerRadius))
     }
 }
 
@@ -316,12 +317,12 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
             Triple("Dark", "Easier on the eyes", Icons.Rounded.DarkMode)
         )
         
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
             themes.forEach { (name, desc, icon) ->
                 val isSelected = selectedTheme == name
                 Surface(
                     onClick = { onThemeSelected(name) },
-                    shape = RoundedCornerShape(32.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                     color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
                     border = BorderStroke(
                         width = if (isSelected) 1.5.dp else 0.5.dp,
@@ -330,11 +331,11 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(AeonTheme.dimensions.spacingXl),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                             shape = CircleShape,
                             color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
                         ) {
@@ -342,7 +343,7 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                                 Icon(icon, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        Spacer(modifier = Modifier.width(20.dp))
+                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.containerCornerRadius))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                             Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
@@ -354,7 +355,7 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                 }
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.dialogCornerRadius))
     }
 }
 
@@ -369,14 +370,14 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             listOf(2, 3).forEach { p ->
                 val isSelected = selectedPrecision == p
                 Surface(
                     onClick = { onPrecisionSelected(p) },
                     modifier = Modifier.weight(1f).height(120.dp),
-                    shape = RoundedCornerShape(32.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                     color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
                     border = BorderStroke(
                         width = if (isSelected) 1.5.dp else 0.5.dp,
@@ -407,17 +408,17 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
             border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
         ) {
             Row(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(AeonTheme.dimensions.spacingXl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(12.dp))
+                Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                 Text(
                     text = "Example: ${formatAmount(BigDecimal("1234.5678"), selectedPrecision)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
@@ -425,7 +426,7 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.dialogCornerRadius))
     }
 }
 
@@ -445,7 +446,7 @@ fun AccountStep(
 
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
     ) {
         StepHeader(
             icon = Icons.Rounded.AccountBalanceWallet,
@@ -459,7 +460,7 @@ fun AccountStep(
                 onValueChange = onAccountNameChange,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Account Name (e.g. Savings)") },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
@@ -474,12 +475,12 @@ fun AccountStep(
             Surface(
                 onClick = onCurrencyMenuOpen,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
                 border = BorderStroke(1.dp, if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.error.copy(alpha = 0.3f) else Color.Transparent)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(AeonTheme.dimensions.screenPadding),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -504,7 +505,7 @@ fun AccountStep(
 
         if (allowedCurrencies.isNotEmpty()) {
             SectionCard(title = "STARTING BALANCES", icon = Icons.Rounded.AccountBalance) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                     allowedCurrencies.forEach { code ->
                         BalanceInputCard(
                             currencyCode = code,
@@ -517,7 +518,7 @@ fun AccountStep(
             }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.dialogCornerRadius))
     }
 
     if (activeCurrencyField != null) {
@@ -545,25 +546,25 @@ private fun BalanceEditSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = RoundedCornerShape(topStart = AeonTheme.dimensions.dialogCornerRadius, topEnd = AeonTheme.dimensions.dialogCornerRadius),
         dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 40.dp)
+                .padding(horizontal = AeonTheme.dimensions.spacingXl)
+                .padding(bottom = AeonTheme.dimensions.spacing3xl)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.containerCornerRadius)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                     Surface(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     ) {
@@ -581,12 +582,12 @@ private fun BalanceEditSheet(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
                 border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.spacingXl),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("STARTING BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
@@ -617,8 +618,8 @@ private fun SectionCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
             Text(
                 title.uppercase(),
@@ -640,7 +641,7 @@ private fun BalanceInputCard(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(
             width = if (isActive) 1.5.dp else 0.5.dp,
@@ -648,13 +649,13 @@ private fun BalanceInputCard(
         )
     ) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.containerCornerRadius),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                 Surface(
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHighest
                 ) {
@@ -684,23 +685,23 @@ private fun BalanceInputCard(
 fun StepHeader(icon: ImageVector, title: String, description: String) {
     Column(
         horizontalAlignment = Alignment.Start,
-        modifier = Modifier.padding(bottom = 32.dp).fillMaxWidth()
+        modifier = Modifier.padding(bottom = AeonTheme.dimensions.dialogCornerRadius).fillMaxWidth()
     ) {
         Surface(
-            modifier = Modifier.size(64.dp),
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
+            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg), tint = MaterialTheme.colorScheme.primary)
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
         Text(
             description,
             style = MaterialTheme.typography.bodyLarge,

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +51,7 @@ fun FilterListScreen(
                 onClick = onAddFilterClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Filter")
             }
@@ -67,10 +68,10 @@ fun FilterListScreen(
                     Icon(
                         Icons.Rounded.FilterList,
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
                         tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No saved filters yet",
                         style = MaterialTheme.typography.bodyLarge,
@@ -83,9 +84,9 @@ fun FilterListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 20.dp)
+                    .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding),
+                contentPadding = PaddingValues(vertical = AeonTheme.dimensions.screenPadding)
             ) {
                 items(filters) { filter ->
                     FilterItem(
@@ -107,18 +108,18 @@ fun FilterItem(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(AeonTheme.dimensions.cardPadding)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             ) {
@@ -131,7 +132,7 @@ fun FilterItem(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     filter.name,

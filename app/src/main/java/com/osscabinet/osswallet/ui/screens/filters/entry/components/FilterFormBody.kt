@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
@@ -64,12 +65,13 @@ fun FilterFormBody(
     onExcludeFutureChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dims = AeonTheme.dimensions
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+        verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
     ) {
         // IMPACT: Header card (Filter Name)
         AeonImpactHeaderCard(
@@ -88,7 +90,7 @@ fun FilterFormBody(
         )
 
         // CONTEXT: Action cards grid
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
             Text(
                 "CONTEXT",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -134,7 +136,7 @@ fun FilterFormBody(
         }
 
         // FILTERS: Multi-selection filters
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
             Text(
                 "FILTERS",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -190,7 +192,7 @@ fun FilterFormBody(
         }
 
         // SEARCH: Query filters
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
             Text(
                 "SEARCH",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -236,7 +238,7 @@ fun FilterFormBody(
         }
 
         // RANGE: Amount and date ranges
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
             Text(
                 "RANGE",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -272,7 +274,7 @@ fun FilterFormBody(
         }
 
         // OPTIONS: Additional options
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
             Text(
                 "OPTIONS",
                 style = MaterialTheme.typography.labelSmall.copy(

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Standardized amount display with auto-resizing text and currency selector.
@@ -35,12 +36,12 @@ fun EntryAmountDisplay(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onAmountClick() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = AeonTheme.dimensions.spacingSm),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
@@ -55,7 +56,7 @@ fun EntryAmountDisplay(
                     supportedCurrencies = supportedCurrencies
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
             }
 
             val amountDisplay = if (amount.isEmpty()) "0.00" else amount

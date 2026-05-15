@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
@@ -27,6 +28,7 @@ fun AeonAccountSelection(
     description: String? = null
 ) {
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val dims = AeonTheme.dimensions
 
     AeonSelectionSheet(
         title = title,
@@ -47,7 +49,7 @@ fun AeonAccountSelection(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = dims.spacingSm)
                 )
             }
             
@@ -67,8 +69,8 @@ fun AeonAccountSelection(
                     colorMapper = { tertiaryColor }
                 )
                 HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(vertical = dims.spacingSm),
+                    thickness = (dims.spacingXs / 8),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
                 )
             }

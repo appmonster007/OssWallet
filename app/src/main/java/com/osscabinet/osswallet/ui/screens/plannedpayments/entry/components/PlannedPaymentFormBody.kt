@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Main content layout for planned payment entry screen.
@@ -36,8 +37,11 @@ fun PlannedPaymentFormBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(
+                    horizontal = AeonTheme.dimensions.screenPadding,
+                    vertical = AeonTheme.dimensions.spacingLg
+                ),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
@@ -60,7 +64,7 @@ fun PlannedPaymentFormBody(
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 // Row 1: Template and Schedule
                 AeonContextGrid {
                     EntryActionCard(

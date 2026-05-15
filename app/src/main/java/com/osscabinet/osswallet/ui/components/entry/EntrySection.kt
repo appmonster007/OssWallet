@@ -12,6 +12,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.rounded.*
 
 /**
  * Standard container for metadata/details in entry screens.
@@ -26,30 +33,30 @@ fun EntrySection(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             // Section Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             icon,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -66,6 +73,121 @@ fun EntrySection(
             }
 
             content()
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
+@Composable
+fun EntrySectionLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
+        ) {
+            EntrySection(
+                title = "Date Information",
+                icon = Icons.Default.CalendarToday
+            ) {
+                Text(
+                    text = "Sample content inside the section",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "More content can be added here",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Amoled Mode")
+@Composable
+fun EntrySectionAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
+        ) {
+            EntrySection(
+                title = "Metadata Details",
+                icon = Icons.Rounded.Info
+            ) {
+                Text(
+                    text = "Premium Amoled rendering with Carbon Slate container.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                LinearProgressIndicator(
+                    progress = { 0.6f },
+                    modifier = Modifier.fillMaxWidth(),
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Transaction Entry Details")
+@Composable
+fun TransactionEntrySectionPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
+        ) {
+            AeonDetailSection(
+                note = "Dinner with friends at the new Italian place",
+                onNoteChange = {},
+                payee = "Luigi's Italian",
+                onPayeeChange = {},
+                selectedTags = listOf("Food", "Social"),
+                additionalContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+                        // Linked Transactions mock
+                        EntryLinkedTransactionsSection(
+                            linkedTransactions = emptyList(),
+                            accounts = emptyList(),
+                            categories = emptyList(),
+                            is24Hour = true,
+                            onShowSheet = {},
+                            onRemoveLink = {}
+                        )
+
+                        EntryPaymentMethodStatusRow(
+                            paymentMethod = "Cash",
+                            onPaymentMethodClick = {},
+                            statusLabel = "Cleared",
+                            onStatusClick = {},
+                            paymentMethodIcon = Icons.Rounded.Payments,
+                            statusIcon = Icons.Rounded.CheckCircle,
+                            statusIconTint = MaterialTheme.colorScheme.primary,
+                            statusContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
+                            thickness = (AeonTheme.dimensions.spacingXs / 8),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                        )
+
+                        EntryWarrantySection(
+                            enabled = true,
+                            onToggle = {},
+                            expirationMillis = System.currentTimeMillis() + 31536000000L,
+                            onDateClick = {}
+                        )
+
+                        EntryLocationRow(
+                            coords = null,
+                            onShowLocationSheet = {},
+                            label = "Transaction Location"
+                        )
+                    }
+                }
+            )
         }
     }
 }

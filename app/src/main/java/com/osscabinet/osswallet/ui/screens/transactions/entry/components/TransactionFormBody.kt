@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
  * Main content layout for transaction entry screen.
@@ -28,8 +29,11 @@ fun TransactionFormBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(
+                    horizontal = AeonTheme.dimensions.screenPadding,
+                    vertical = AeonTheme.dimensions.spacingLg
+                ),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             // IMPACT: Header card containing transaction type selector and amount input
             AeonImpactHeaderCard(
@@ -57,7 +61,7 @@ fun TransactionFormBody(
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 // Row 1: Template and Date
                 AeonContextGrid {
                     if (!state.isEditMode) {

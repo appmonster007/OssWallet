@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -130,13 +131,13 @@ fun <T> AeonImpactHeaderCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (showTypeSelector) {
@@ -145,10 +146,10 @@ fun <T> AeonImpactHeaderCard(
                     onTypeSelected = onTypeSelected,
                     types = types,
                     selectedColor = activeAmountColor,
-                    itemWidth = 100.dp
+                    itemWidth = (AeonTheme.dimensions.spacingXl * 3f)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
             }
 
             if (showAmount) {
@@ -166,11 +167,11 @@ fun <T> AeonImpactHeaderCard(
                     if (onSplitClick != null && !isTransfer) {
                         IconButton(
                             onClick = onSplitClick,
-                            modifier = Modifier.padding(end = 8.dp).size(32.dp)
+                            modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm).size(AeonTheme.dimensions.iconSizeLg)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(AeonTheme.dimensions.iconSizeLg)
                                     .clip(CircleShape)
                                     .background(
                                         if (isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
@@ -181,7 +182,7 @@ fun <T> AeonImpactHeaderCard(
                                 Icon(
                                     Icons.AutoMirrored.Rounded.CallSplit,
                                     contentDescription = "Split Transaction",
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                                     tint = if (isSplitMode) MaterialTheme.colorScheme.primary 
                                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                                 )
@@ -192,23 +193,23 @@ fun <T> AeonImpactHeaderCard(
             }
 
             if (isTransfer && targetAccountId != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 Surface(
                     onClick = onExchangeRateClick,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingSm)
                     ) {
                         Icon(
                             Icons.Rounded.CurrencyExchange,
                             contentDescription = "Edit Exchange Rate",
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
@@ -219,7 +220,7 @@ fun <T> AeonImpactHeaderCard(
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 EntryAmountDisplay(
                     amount = (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate).setScale(2, RoundingMode.HALF_UP).toPlainString(),
@@ -233,8 +234,8 @@ fun <T> AeonImpactHeaderCard(
 
             if (showName) {
                 HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingMd),
+                    thickness = (AeonTheme.dimensions.spacingXs / 8),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                 )
 

@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -97,6 +98,8 @@ fun AeonPieChart(
         }
         return
     }
+
+    val dims = AeonTheme.dimensions
 
     BoxWithConstraints(modifier = modifier) {
         val widthPx = with(density) { maxWidth.toPx() }
@@ -178,7 +181,7 @@ fun AeonPieChart(
                 if (isDonut) {
                     drawCircle(
                         color = Color.Black.copy(alpha = 0.05f),
-                        radius = radius + 4.dp.toPx(),
+                        radius = radius + dims.spacingXs.toPx(),
                         center = center,
                         style = Stroke(width = radius * 0.45f)
                     )
@@ -192,7 +195,7 @@ fun AeonPieChart(
                     val gapAngle = if (rounded) (if (sliceSweep < 1f) 0.1f else 1.5f) else 0f
                     val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
                     
-                    val explodedRadius = if (isSelected) 14.dp.toPx() else 0f
+                    val explodedRadius = if (isSelected) dims.spacingMd.toPx() else 0f
                     val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
                     val offset = Offset(
                         cos(midAngle.toDouble()).toFloat() * explodedRadius,
@@ -216,7 +219,7 @@ fun AeonPieChart(
 
                     // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
                     if (isDonut && sliceSweep > 5f) {
-                        val highlightWidth = 3.dp.toPx()
+                        val highlightWidth = (dims.spacingXs * 0.75f).toPx()
                         drawArc(
                             color = Color.White.copy(alpha = 0.25f),
                             startAngle = currentAngle + (gapAngle / 2),
@@ -224,7 +227,7 @@ fun AeonPieChart(
                             useCenter = false,
                             topLeft = Offset(center.x - radius + offset.x + highlightWidth, center.y - radius + offset.y + highlightWidth),
                             size = Size((radius - highlightWidth) * 2, (radius - highlightWidth) * 2),
-                            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Butt)
+                            style = Stroke(width = (dims.spacingXs * 0.4f).toPx(), cap = StrokeCap.Butt)
                         )
                     }
 
@@ -240,7 +243,7 @@ fun AeonPieChart(
                             style = if (isDonut) {
                                 Stroke(width = radius * 0.42f, cap = StrokeCap.Butt)
                             } else {
-                                Stroke(width = 4.dp.toPx())
+                                Stroke(width = dims.spacingXs.toPx())
                             }
                         )
                     }
@@ -248,7 +251,7 @@ fun AeonPieChart(
                     // Visual marker for subcategories (Modern Radial Tick)
                     if (slice.hasSubcategories && sliceSweep > 10f) {
                         val tickRadius = radius * 1.05f
-                        val tickLength = 6.dp.toPx()
+                        val tickLength = dims.spacingSm.toPx()
                         
                         val startX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius) + offset.x
                         val startY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius) + offset.y
@@ -259,7 +262,7 @@ fun AeonPieChart(
                             color = slice.color.copy(alpha = 0.8f),
                             start = Offset(startX, startY),
                             end = Offset(endX, endY),
-                            strokeWidth = 2.dp.toPx(),
+                            strokeWidth = (dims.spacingXs / 2).toPx(),
                             cap = StrokeCap.Round
                         )
                     }
@@ -317,7 +320,7 @@ fun AeonPieChart(
 @Composable
 fun AeonPieChartPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.size(300.dp).padding(16.dp)) {
+        Box(modifier = Modifier.size(300.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonPieChart(
                 slices = listOf(
                     AeonPieChartSlice(BigDecimal("450.00"), "Food", Color(0xFFFF5722), hasSubcategories = true, subcategoryCount = 3),

@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
@@ -70,14 +71,15 @@ fun AeonLineChart(
     }
 
     val verticalGuideColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val dims = AeonTheme.dimensions
     
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val leftPadding = with(density) { 50.dp.toPx() }
-        val bottomPadding = with(density) { 30.dp.toPx() }
-        val topPadding = with(density) { 15.dp.toPx() }
-        val rightPadding = with(density) { 15.dp.toPx() }
+        val leftPadding = with(density) { 50.dp.toPx() } // Keep specific chart layout constant or use dims.spacing3xl + dims.spacingSm
+        val bottomPadding = with(density) { dims.spacing2xl.toPx() }
+        val topPadding = with(density) { dims.spacingLg.toPx() }
+        val rightPadding = with(density) { dims.spacingLg.toPx() }
         
         val chartWidth = w - leftPadding - rightPadding
         val chartHeight = h - bottomPadding - topPadding
@@ -183,13 +185,13 @@ fun AeonLineChart(
                         color = gridColor,
                         start = Offset(leftPadding, yPos),
                         end = Offset(w - rightPadding, yPos),
-                        strokeWidth = 0.5.dp.toPx()
+                        strokeWidth = (dims.spacingXs / 8).toPx()
                     )
 
                     drawContext.canvas.nativeCanvas.drawText(
                         formatShortNumber(yValue),
-                        leftPadding - 12.dp.toPx(),
-                        yPos + 4.dp.toPx(),
+                        leftPadding - dims.spacingMd.toPx(),
+                        yPos + dims.spacingXs.toPx(),
                         labelPaint
                     )
                 }
@@ -263,7 +265,7 @@ fun AeonLineChart(
                     path = linePath,
                     color = s.color,
                     style = Stroke(
-                        width = 3.5.dp.toPx(),
+                        width = (dims.spacingXs * 0.9f).toPx(),
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round,
                         pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(15f, 15f)) else null
@@ -280,7 +282,7 @@ fun AeonLineChart(
                     color = verticalGuideColor,
                     start = Offset(x, topPadding),
                     end = Offset(x, topPadding + chartHeight),
-                    strokeWidth = 1.dp.toPx(),
+                    strokeWidth = (dims.spacingXs / 4).toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
                 
@@ -289,8 +291,8 @@ fun AeonLineChart(
                     if (selectedIndex < s.dataPoints.size) {
                         val p = s.dataPoints[selectedIndex]
                         val y = valueToY(p.y)
-                        drawCircle(color = Color.White, radius = 5.dp.toPx(), center = Offset(x, y))
-                        drawCircle(color = s.color, radius = 5.dp.toPx(), center = Offset(x, y), style = Stroke(width = 2.dp.toPx()))
+                        drawCircle(color = Color.White, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y))
+                        drawCircle(color = s.color, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y), style = Stroke(width = (dims.spacingXs / 2).toPx()))
                     }
                 }
             }
@@ -317,19 +319,19 @@ fun AeonLineChart(
                     modifier = Modifier
                         .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                         .width(tooltipWidth)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(RoundedCornerShape(dims.spacingMd)),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp,
-                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    tonalElevation = dims.spacingSm,
+                    shadowElevation = dims.spacingSm,
+                    border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(dims.spacingMd)) {
                         if (label != null) {
                             Text(
                                 text = label,
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(bottom = 8.dp)
+                                modifier = Modifier.padding(bottom = dims.spacingSm)
                             )
                         }
                         
@@ -337,17 +339,17 @@ fun AeonLineChart(
                             if (selectedIndex < s.dataPoints.size) {
                                 val p = s.dataPoints[selectedIndex]
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = (dims.spacingXs / 2)),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(
                                             modifier = Modifier
-                                                .size(8.dp)
-                                                .background(s.color, RoundedCornerShape(2.dp))
+                                                .size(dims.spacingSm)
+                                                .background(s.color, RoundedCornerShape(dims.spacingXs / 2))
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(dims.spacingSm))
                                         Text(
                                             text = s.name,
                                             style = MaterialTheme.typography.labelSmall,
@@ -373,7 +375,7 @@ fun AeonLineChart(
 @Composable
 fun AeonLineChartPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonLineChart(
                 series = listOf(
                     AeonLineChartSeries(

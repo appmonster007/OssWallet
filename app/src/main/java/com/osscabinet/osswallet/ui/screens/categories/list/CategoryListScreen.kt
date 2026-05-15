@@ -15,8 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.*
- import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
+import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,11 +58,11 @@ fun CategoryListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
             AeonHierarchicalHybridSelector(
                 items = categories,
                 mode = AeonSelectMode.MANAGEMENT,
@@ -84,7 +85,7 @@ fun CategoryListScreen(
                     )
                 }
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
     }
 

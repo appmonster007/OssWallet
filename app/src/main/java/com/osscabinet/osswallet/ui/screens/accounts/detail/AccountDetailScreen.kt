@@ -57,6 +57,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterShee
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
@@ -183,7 +184,7 @@ fun AccountDetailScreen(
             onDismissRequest = { showSettingsDialog = false },
             title = { Text("Transaction Settings") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -291,7 +292,7 @@ fun AccountDetailScreen(
                                 navigate = navigate,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 16.dp),
+                                    .padding(horizontal = AeonTheme.dimensions.screenPadding),
                                 screenPadding = PaddingValues(),
                                 showAddCardDialog = showAddCardDialog,
                                 onShowAddCardDialogChange = { showAddCardDialog = it },
@@ -312,10 +313,10 @@ fun AccountDetailScreen(
                                         Icon(
                                             Icons.Rounded.History,
                                             contentDescription = null,
-                                            modifier = Modifier.size(64.dp),
+                                            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
                                             tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                                         )
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                                         Text(
                                             "No transactions yet",
                                             style = MaterialTheme.typography.bodyLarge,
@@ -479,7 +480,7 @@ fun DynamicAccountDetailCards(
             contentPadding = PaddingValues(
                 start = 0.dp,
                 end = 0.dp,
-                top = 8.dp,
+                top = AeonTheme.dimensions.spacingMd,
                 bottom = calculateScrollBottomPadding()
             ),
             animateCards = cardAnimationEnabled,
@@ -509,7 +510,7 @@ fun DynamicAccountDetailCards(
                         cardWithCallbacks = heroCard,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = screenPadding.calculateTopPadding() + 16.dp, bottom = 4.dp),
+                            .padding(top = screenPadding.calculateTopPadding() + AeonTheme.dimensions.spacingLg, bottom = AeonTheme.dimensions.spacingXs),
                         showTitle = false,
                         currentTheme = currentTheme,
                         accounts = listOf(state.account),
@@ -564,12 +565,12 @@ fun DeleteAccountDetailCardsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 300.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 Text("Select cards to delete:")
                 
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                 ) {
                     items(cardsConfig.sortedBy { it.order }) { card ->
                         Row(
@@ -594,7 +595,7 @@ fun DeleteAccountDetailCardsDialog(
                                     }
                                 }
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
                             Text(card.title)
                         }
                     }

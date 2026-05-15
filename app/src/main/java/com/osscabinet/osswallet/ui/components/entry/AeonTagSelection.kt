@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
@@ -90,6 +91,7 @@ fun AeonTagSelectionContent(
     var currentSelection by remember { mutableStateOf(selectedTags) }
     var isManagementMode by remember { mutableStateOf(!isSelectionModeEnabled) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val dims = AeonTheme.dimensions
     
     // Track newly added tags locally for immediate feedback
     var localTags by remember { mutableStateOf(emptyList<Tag>()) }
@@ -153,7 +155,7 @@ fun AeonTagSelectionContent(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = dims.spacingXl)
         ) {
             // Selected Tags Area
             AnimatedVisibility(
@@ -164,8 +166,8 @@ fun AeonTagSelectionContent(
                 Column {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(dims.spacingSm),
+                        verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         currentSelection.forEach { tagName ->
                             val tagColor = allTags.find { it.name == tagName }?.colorHex?.let { Color(it) } 
@@ -175,8 +177,8 @@ fun AeonTagSelectionContent(
                                 selected = true,
                                 onClick = { currentSelection = currentSelection - tagName },
                                 label = { Text(tagName, style = MaterialTheme.typography.labelLarge) },
-                                trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(16.dp)) },
-                                shape = RoundedCornerShape(12.dp),
+                                trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(dims.iconSizeXs + 4.dp)) },
+                                shape = RoundedCornerShape(dims.spacingMd),
                                 colors = InputChipDefaults.inputChipColors(
                                     selectedContainerColor = tagColor.copy(alpha = 0.12f),
                                     selectedLabelColor = tagColor,
@@ -186,12 +188,12 @@ fun AeonTagSelectionContent(
                                     selected = true,
                                     enabled = true,
                                     selectedBorderColor = tagColor.copy(alpha = 0.4f),
-                                    selectedBorderWidth = 1.dp
+                                    selectedBorderWidth = (dims.spacingXs / 4)
                                 )
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(dims.containerCornerRadius))
                 }
             }
 
@@ -199,9 +201,9 @@ fun AeonTagSelectionContent(
             var selectedColor by remember { mutableStateOf(TagPresetColors.first()) }
             
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(dims.spacingXl),
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                border = BorderStroke((dims.spacingXs / 4), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
             ) {
                 Column {
                     AeonSearchField(
@@ -215,21 +217,21 @@ fun AeonTagSelectionContent(
                     AnimatedVisibility(visible = searchQuery.isNotBlank() && !exactMatchExists) {
                         Column {
                             HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                thickness = 0.5.dp,
+                                modifier = Modifier.padding(horizontal = dims.spacingLg),
+                                thickness = (dims.spacingXs / 8),
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
                             )
                             
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(dims.spacingLg)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(24.dp)
+                                            .size(dims.spacingXl)
                                             .background(selectedColor, CircleShape)
-                                            .border(1.dp, Color.Black.copy(alpha = 0.1f), CircleShape)
+                                            .border((dims.spacingXs / 4), Color.Black.copy(alpha = 0.1f), CircleShape)
                                     )
                                     Text(
                                         "Create \"${searchQuery.trim()}\"",
@@ -247,27 +249,27 @@ fun AeonTagSelectionContent(
                                             onAddTag(newTag.name, newTag.colorHex)
                                             searchQuery = ""
                                         },
-                                        shape = RoundedCornerShape(12.dp),
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                                        modifier = Modifier.height(36.dp)
+                                        shape = RoundedCornerShape(dims.spacingMd),
+                                        contentPadding = PaddingValues(horizontal = dims.spacingLg, vertical = 0.dp),
+                                        modifier = Modifier.height(dims.spacingXl + dims.spacingMd)
                                     ) {
                                         Text("CREATE", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black))
                                     }
                                 }
                                 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(dims.spacingLg))
                                 
                                 LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
                                 ) {
                                     items(TagPresetColors) { color ->
                                         Box(
                                             modifier = Modifier
-                                                .size(32.dp)
+                                                .size(dims.spacing2xl)
                                                 .background(color, CircleShape)
                                                 .clickable { selectedColor = color }
                                                 .border(
-                                                    width = if (selectedColor == color) 2.5.dp else 0.dp,
+                                                    width = if (selectedColor == color) (dims.spacingXs * 0.625f) else 0.dp,
                                                     color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
                                                     shape = CircleShape
                                                 )
@@ -280,13 +282,13 @@ fun AeonTagSelectionContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(dims.spacingXl))
 
             // Tags List
             Box(modifier = Modifier.weight(1f)) {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                 ) {
                     filteredTags.forEach { tag ->
                         val isSelected = isSelectionModeEnabled && tag.name in currentSelection
@@ -308,16 +310,16 @@ fun AeonTagSelectionContent(
                             },
                             trailingContent = {
                                 if (isManagementMode) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)) {
                                         IconButton(
                                             onClick = { onEditTag(tag) },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(dims.spacing2xl)
                                         ) {
                                             Icon(
                                                 Icons.Rounded.Edit, 
                                                 null, 
                                                 tint = MaterialTheme.colorScheme.primary, 
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
                                         IconButton(
@@ -326,13 +328,13 @@ fun AeonTagSelectionContent(
                                                 localTags = localTags.filter { it.name != tag.name }
                                                 currentSelection = currentSelection - tag.name
                                             },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(dims.spacing2xl)
                                         ) {
                                             Icon(
                                                 Icons.Rounded.DeleteOutline, 
                                                 null, 
                                                 tint = MaterialTheme.colorScheme.error, 
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
                                     }
@@ -341,11 +343,11 @@ fun AeonTagSelectionContent(
                                         Icons.Rounded.CheckCircle, 
                                         null, 
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(dims.spacingXl)
                                     )
                                 } else {
                                     // Empty spacer to maintain layout
-                                    Spacer(modifier = Modifier.size(24.dp))
+                                    Spacer(modifier = Modifier.size(dims.spacingXl))
                                 }
                             }
                         )
@@ -355,7 +357,7 @@ fun AeonTagSelectionContent(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 40.dp),
+                                .padding(vertical = dims.spacing3xl),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -363,9 +365,9 @@ fun AeonTagSelectionContent(
                                     Icons.AutoMirrored.Rounded.Label, 
                                     null, 
                                     tint = MaterialTheme.colorScheme.outlineVariant,
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(dims.iconSize2xl)
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(dims.spacingSm))
                                 Text(
                                     if (searchQuery.isBlank()) "No tags found" else "No match for \"$searchQuery\"",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -376,7 +378,7 @@ fun AeonTagSelectionContent(
                     }
                     
                     // Bottom padding for scroll
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(dims.spacingXl))
                 }
             }
 
@@ -387,13 +389,13 @@ fun AeonTagSelectionContent(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
-                        .padding(bottom = 8.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .height(dims.iconSize3xl)
+                        .padding(bottom = dims.spacingSm),
+                    shape = RoundedCornerShape(dims.spacingXl),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = dims.spacingXs / 2)
                 ) {
                     Text(
                         "Done (${currentSelection.size} selected)",

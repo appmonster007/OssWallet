@@ -63,5 +63,8 @@ data class LoanEntryState(
                  principalAmount.toBigDecimalOrNull() != null &&
                  selectedCategoryIds.isNotEmpty() &&
                  selectedPaymentMethods.isNotEmpty() &&
-                 selectedStatuses.isNotEmpty()
+                 selectedStatuses.isNotEmpty() &&
+                 selectedTrackTypes.isNotEmpty() &&
+                 selectedCurrencies.isNotEmpty() &&
+                 linkedAccountId.isNotBlank()
 }

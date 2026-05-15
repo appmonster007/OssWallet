@@ -39,6 +39,8 @@ class LoanEntryViewModel(
                 ) { accounts, categories, tags, transactions, filters ->
                     val uniquePayees = transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted()
                     val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
+                    val usedCurrencies = transactions.map { it.currency }.distinct().toSet()
+                    val allCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies
                     _state.update {
                         it.copy(
                             accounts = accounts,
@@ -52,7 +54,9 @@ class LoanEntryViewModel(
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else if (it.selectedCategoryIds.isEmpty()) categories.map { c -> c.id }.toSet() else it.selectedCategoryIds,
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else if (it.selectedPaymentMethods.isEmpty()) PaymentMethod.entries.toSet() else it.selectedPaymentMethods,
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else if (it.selectedStatuses.isEmpty()) TransactionStatus.entries.toSet() else it.selectedStatuses,
-                            selectedTags = if (it.isEditMode) it.selectedTags else it.selectedTags
+                            selectedTrackTypes = if (it.isEditMode) it.selectedTrackTypes else if (it.selectedTrackTypes.isEmpty()) setOf(TransactionType.EXPENSE, TransactionType.INCOME) else it.selectedTrackTypes,
+                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else if (it.selectedCurrencies.isEmpty()) allCurrencies else it.selectedCurrencies,
+                            selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
                         )
                     }
                 }
@@ -63,12 +67,15 @@ class LoanEntryViewModel(
     fun initialize(loanId: Long? = null) {
         if (loanId == null) {
             _state.update { 
+                val usedCurrencies = it.allTransactions.map { t -> t.currency }.distinct().toSet()
                 it.copy(
                     isEditMode = false, 
                     loanId = null,
                     selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                     selectedPaymentMethods = PaymentMethod.entries.toSet(),
                     selectedStatuses = TransactionStatus.entries.toSet(),
+                    selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                    selectedCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies,
                     selectedTags = emptySet()
                 ) 
             }

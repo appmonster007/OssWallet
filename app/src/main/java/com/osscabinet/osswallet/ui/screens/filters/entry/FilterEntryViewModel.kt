@@ -43,6 +43,8 @@ class FilterEntryViewModel(
                     tagRepository.getAllTags()
                 ) { accounts, categories, transactions, tags ->
                     _state.update { 
+                        val usedCurrencies = transactions.map { t -> t.currency }.distinct().toSet()
+                        val allCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies
                         it.copy(
                             accounts = accounts,
                             categories = categories,
@@ -52,9 +54,9 @@ class FilterEntryViewModel(
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else categories.map { c -> c.id }.toSet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else PaymentMethod.entries.toSet(),
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else TransactionStatus.entries.toSet(),
-                            selectedTransactionTypes = if (it.isEditMode) it.selectedTransactionTypes else TransactionType.entries.toSet(),
-                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else transactions.map { t -> t.currency }.distinct().toSet(),
-                            selectedTags = if (it.isEditMode) it.selectedTags else tags.map { t -> t.name }.toSet()
+                            selectedTransactionTypes = if (it.isEditMode) it.selectedTransactionTypes else TransactionType.entries.filter { t -> t != TransactionType.TRANSFER }.toSet(),
+                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else allCurrencies,
+                            selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
                         )
                     }
                 }
@@ -65,6 +67,7 @@ class FilterEntryViewModel(
     fun initialize(filterId: Long? = null) {
         if (filterId == null || filterId == -1L) {
             _state.update { 
+                val usedCurrencies = it.allTransactions.map { t -> t.currency }.distinct().toSet()
                 it.copy(
                     isEditMode = false, 
                     filterId = null,
@@ -72,8 +75,9 @@ class FilterEntryViewModel(
                     selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                     selectedPaymentMethods = PaymentMethod.entries.toSet(),
                     selectedStatuses = TransactionStatus.entries.toSet(),
-                    selectedTransactionTypes = TransactionType.entries.toSet(),
-                    selectedTags = it.availableTags.map { t -> t.name }.toSet()
+                    selectedTransactionTypes = TransactionType.entries.filter { t -> t != TransactionType.TRANSFER }.toSet(),
+                    selectedCurrencies = if (usedCurrencies.isEmpty()) setOf("USD") else usedCurrencies,
+                    selectedTags = emptySet()
                 ) 
             }
             return
@@ -147,14 +151,14 @@ class FilterEntryViewModel(
             is FilterEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
             FilterEntryEvent.ResetFilter -> _state.update { it.copy(
-                selectedTransactionTypes = TransactionType.entries.toSet(),
+                selectedTransactionTypes = TransactionType.entries.filter { t -> t != TransactionType.TRANSFER }.toSet(),
                 selectedAccountIds = it.accounts.map { a -> a.id }.toSet(),
                 selectedCategoryIds = it.categories.map { c -> c.id }.toSet(),
                 selectedPaymentMethods = PaymentMethod.entries.toSet(),
                 selectedStatuses = TransactionStatus.entries.toSet(),
                 linkedTransactionIds = emptySet(),
-                selectedTags = it.availableTags.map { t -> t.name }.toSet(),
-                selectedCurrencies = it.allTransactions.map { t -> t.currency }.distinct().toSet(),
+                selectedTags = emptySet(),
+                selectedCurrencies = if (it.allTransactions.isEmpty()) setOf("USD") else it.allTransactions.map { t -> t.currency }.distinct().toSet(),
                 queryNote = "",
                 isNoteRegex = false,
                 queryPayee = "",

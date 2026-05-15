@@ -63,5 +63,7 @@ data class BudgetEntryState(
                  selectedAccountIds.isNotEmpty() &&
                  selectedCategoryIds.isNotEmpty() &&
                  selectedPaymentMethods.isNotEmpty() &&
-                 selectedStatuses.isNotEmpty()
+                 selectedStatuses.isNotEmpty() &&
+                 selectedTrackTypes.isNotEmpty() &&
+                 selectedCurrencies.isNotEmpty()
 }

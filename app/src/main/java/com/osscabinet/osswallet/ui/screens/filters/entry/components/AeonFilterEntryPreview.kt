@@ -9,16 +9,17 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 1600)
 @Composable
 fun AeonFilterEntryPreview() {
-    OssWalletTheme {
+    OssWalletTheme() {
         FilterFormBody(
             state = FilterEntryState(
                 name = "High Expenses",
                 selectedTransactionTypes = setOf(TransactionType.EXPENSE),
                 minAmount = "100",
-                isNoteRegex = true
+                isNoteRegex = true,
+                hasWarranty = true
             ),
             onEvent = {},
             modifier = Modifier.padding(16.dp)

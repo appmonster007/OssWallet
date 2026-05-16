@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
@@ -37,11 +38,13 @@ fun AdvancedFilterSection(
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTags: List<Tag> = emptyList(),
     allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     modifier: Modifier = Modifier,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
-    baseFilter: TransactionFilter = TransactionFilter()
+    baseFilter: TransactionFilter = TransactionFilter(),
+    onAddTag: (String, Int) -> Unit = { _, _ -> }
 ) {
     var expandedFilters by remember { mutableStateOf(false) }
     var presetsExpanded by remember { mutableStateOf(false) }
@@ -189,6 +192,15 @@ fun AdvancedFilterSection(
                         trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                     )
                 }
+                // Tags
+                items(filter.tags.toList()) { tag ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { removeFilter(filter, "tags", tag, onFilterChange) },
+                        label = { Text(tag) },
+                        trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                    )
+                }
             }
         }
 
@@ -261,9 +273,11 @@ fun AdvancedFilterSection(
                     onFilterChange = onFilterChange,
                     accounts = accounts,
                     allCategories = allCategories,
+                    allTags = allTags,
                     allTransactions = allTransactions,
                     showAccountFilter = filterRules.allowAccountSelection,
                     onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) },
+                    onAddTag = onAddTag,
                     filterRules = filterRules
                 )
             }

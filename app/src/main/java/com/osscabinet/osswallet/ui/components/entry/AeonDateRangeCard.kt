@@ -24,21 +24,23 @@ fun AeonDateRangeCard(
     startLabel: String = "FROM",
     endLabel: String = "TO"
 ) {
-    AeonContextGrid(modifier = modifier) {
+    EntryActionRow(modifier = modifier) {
         EntryDateCard(
             icon = Icons.Rounded.CalendarToday,
             label = startLabel,
-            dateMillis = startDateMillis ?: System.currentTimeMillis(),
+            dateMillis = startDateMillis,
             onClick = onStartClick,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            placeholder = "Start date..."
         )
 
         EntryDateCard(
             icon = Icons.Rounded.CalendarToday,
             label = endLabel,
-            dateMillis = endDateMillis ?: System.currentTimeMillis(),
+            dateMillis = endDateMillis,
             onClick = onEndClick,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            placeholder = "End date..."
         )
     }
 }

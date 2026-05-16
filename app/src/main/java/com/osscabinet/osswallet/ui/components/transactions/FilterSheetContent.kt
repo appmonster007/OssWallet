@@ -26,12 +26,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
@@ -41,6 +43,7 @@ fun FilterSheetContent(
     filter: TransactionFilter,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTags: List<Tag> = emptyList(),
     allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     onUpdateTimelineRange: (TimelineRange) -> Unit,
@@ -50,7 +53,8 @@ fun FilterSheetContent(
     backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
-    onResetToInitial: (() -> Unit)? = null
+    onResetToInitial: (() -> Unit)? = null,
+    onAddTag: (String, Int) -> Unit = { _, _ -> }
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -120,6 +124,7 @@ fun FilterSheetContent(
             .fillMaxSize()
             .background(backgroundColor)
             .verticalScroll(scrollState)
+            .padding(AeonTheme.dimensions.screenPadding)
     ) {
         AeonTimelinePeriodSelector(
             currentRange = localFilter.timelineRange,
@@ -129,18 +134,16 @@ fun FilterSheetContent(
                 selectedFilterIds = emptySet()
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
-            swipeEntireComponent = true,
-            modifier = Modifier.padding(16.dp)
+            swipeEntireComponent = true
         )
 
-        HorizontalDivider()
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(backgroundColor)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(backgroundColor),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -149,7 +152,10 @@ fun FilterSheetContent(
             ) {
                 Text(
                     "Filter Transactions",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.5).sp
+                    )
                 )
                 TextButton(
                     onClick = {
@@ -161,62 +167,90 @@ fun FilterSheetContent(
                             applyFilterWithDebounce(localFilter, debounceMs = 0)
                         }
                     },
-                    contentPadding = PaddingValues(horizontal = 8.dp)
+                    contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
+                    colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
                 ) {
-                    Text("Reset All", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        "Reset All",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
             }
 
             if (savedFilters.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                     Text(
-                        "FILTER PRESET",
+                        "FILTER PRESETS",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
                         ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        color = AppColors.primary.copy(alpha = 0.7f)
                     )
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = AppColors.insetSurface.copy(alpha = 0.5f),
+                                .height(56.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                            color = AppColors.cardSurface,
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
                                 if (selectedFilterIds.isNotEmpty()) AppColors.primary
-                                else AppColors.border.copy(alpha = 0.2f)
+                                else AppColors.divider.copy(alpha = 0.15f)
                             ),
                             onClick = { filtersExpanded = !filtersExpanded }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp),
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 val selectedNames = savedFilters.filter { it.id in selectedFilterIds }.map { it.name }
-                                val selectedName = if (selectedNames.isEmpty()) "Select presets..." else selectedNames.joinToString(", ")
-                                Text(
-                                    text = selectedName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selectedFilterIds.isNotEmpty()) AppColors.primary
-                                    else AppColors.contentSecondary,
-                                    maxLines = 1
+                                val selectedName = if (selectedNames.isEmpty()) "Select a preset..." else selectedNames.joinToString(", ")
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                    Icon(
+                                        Icons.Default.Bookmark,
+                                        contentDescription = null,
+                                        tint = if (selectedFilterIds.isNotEmpty()) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = selectedName,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = if (selectedFilterIds.isNotEmpty()) FontWeight.Bold else FontWeight.Normal
+                                        ),
+                                        color = if (selectedFilterIds.isNotEmpty()) AppColors.primary
+                                        else AppColors.contentSecondary,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
+                                Icon(
+                                    if (filtersExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    null,
+                                    tint = AppColors.contentSecondary.copy(alpha = 0.4f)
                                 )
-                                Icon(Icons.Default.ArrowDropDown, null, tint = AppColors.contentSecondary)
                             }
                         }
 
                         DropdownMenu(
                             expanded = filtersExpanded,
                             onDismissRequest = { filtersExpanded = false },
-                            modifier = Modifier.background(AppColors.cardSurfaceProminent)
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .background(AppColors.cardSurfaceProminent)
                         ) {
                             savedFilters.forEach { savedFilter ->
                                 DropdownMenuItem(
-                                    text = { Text(savedFilter.name) },
+                                    text = { 
+                                        Text(
+                                            savedFilter.name,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = if (savedFilter.id in selectedFilterIds) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        ) 
+                                    },
                                     onClick = {
                                         selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
                                             selectedFilterIds - savedFilter.id
@@ -226,8 +260,11 @@ fun FilterSheetContent(
                                         updateFilterFromSelectedPresets()
                                     },
                                     trailingIcon = if (savedFilter.id in selectedFilterIds) {
-                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                                    } else null
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp), tint = AppColors.primary) }
+                                    } else null,
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = if (savedFilter.id in selectedFilterIds) AppColors.primary else AppColors.contentPrimary
+                                    )
                                 )
                             }
                         }
@@ -244,6 +281,7 @@ fun FilterSheetContent(
                 },
                 accounts = accounts,
                 allCategories = allCategories,
+                allTags = allTags,
                 allTransactions = allTransactions,
                 showAccountFilter = showAccountFilter,
                 allAvailableCurrencies = accounts.flatMap { account ->
@@ -252,7 +290,8 @@ fun FilterSheetContent(
                 }.distinct().sorted(),
                 onImmediateApply = { newFilter, debounceMs ->
                     applyFilterWithDebounce(newFilter, debounceMs)
-                }
+                },
+                onAddTag = onAddTag
             )
         }
 
@@ -317,7 +356,7 @@ internal fun FilterSheetDragHandle(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Filter Sheet - Single Data")
 @Composable
 fun FilterSheetContentPreview() {
     val sampleAccounts = listOf(
@@ -345,7 +384,55 @@ fun FilterSheetContentPreview() {
                 onApplyFilter = {},
                 onToggleExpand = {},
                 onClose = {},
-                backgroundColor = AppColors.tertiary,
+                backgroundColor = AppColors.insetSurface,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Filter Sheet - Long Content", heightDp = 1600)
+@Composable
+fun FilterSheetContentLongPreview() {
+    val sampleAccounts = listOf(
+        Account(id = "1", name = "Main Checking", currencyCode = "USD", structureType = "Checking", colorHex = "#4CAF50", icon = "account_balance"),
+        Account(id = "2", name = "Savings", currencyCode = "USD", structureType = "Savings", colorHex = "#2196F3", icon = "savings"),
+        Account(id = "3", name = "Credit Card", currencyCode = "USD", structureType = "Credit", colorHex = "#F44336", icon = "credit_card"),
+        Account(id = "4", name = "Cash Wallet", currencyCode = "USD", structureType = "Cash", colorHex = "#FFC107", icon = "payments")
+    )
+    val sampleCategories = listOf(
+        Category(id = 1, name = "Housing", iconName = "home", colorHex = 0xFF2196F3.toInt(), isDefault = true, parentId = null),
+        Category(id = 2, name = "Food", iconName = "restaurant", colorHex = 0xFFFF9800.toInt(), isDefault = true, parentId = null),
+        Category(id = 3, name = "Transport", iconName = "directions_car", colorHex = 0xFF4CAF50.toInt(), isDefault = true, parentId = null),
+        Category(id = 4, name = "Entertainment", iconName = "movie", colorHex = 0xFF9C27B0.toInt(), isDefault = true, parentId = null),
+        Category(id = 5, name = "Health", iconName = "medical_services", colorHex = 0xFFF44336.toInt(), isDefault = true, parentId = null)
+    )
+    val samplePresets = listOf(
+        Filter(id = 1, name = "High Value Expenses", filter = TransactionFilter(minAmount = java.math.BigDecimal(500))),
+        Filter(id = 2, name = "Tax Deductible", filter = TransactionFilter(categoryIds = setOf(1, 5))),
+        Filter(id = 3, name = "Uncleared Transfers", filter = TransactionFilter(statuses = setOf(com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED)))
+    )
+    val sampleTags = listOf(
+        Tag(1, "Essential", 0xFF004D5F.toInt()),
+        Tag(2, "Leisure", 0xFF1A237E.toInt()),
+        Tag(3, "Work", 0xFF1B5E20.toInt())
+    )
+
+    OssWalletTheme {
+        Surface {
+            FilterSheetContent(
+                filter = TransactionFilter(
+                    hasWarranty = true,
+                    warrantyExpirationStart = System.currentTimeMillis()
+                ),
+                accounts = sampleAccounts,
+                allCategories = sampleCategories,
+                allTags = sampleTags,
+                savedFilters = samplePresets,
+                onUpdateTimelineRange = { },
+                onApplyFilter = {},
+                onToggleExpand = {},
+                onClose = {},
+                backgroundColor = AppColors.insetSurface,
             )
         }
     }

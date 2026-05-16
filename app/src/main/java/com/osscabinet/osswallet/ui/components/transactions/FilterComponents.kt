@@ -52,12 +52,14 @@ fun FilterFields(
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
     allCategories: List<Category>,
+    allTags: List<Tag> = emptyList(),
     allTransactions: List<Transaction> = emptyList(),
     showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
     // Callback for immediate apply with custom debounce time
     onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null,
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
     var activeSheet by remember { mutableStateOf<String?>(null) }
@@ -184,10 +186,16 @@ fun FilterFields(
             DatePickerDialog(
                 onDismissRequest = { activeSheet = null },
                 confirmButton = {
-                    TextButton(onClick = {
-                        onFilterChange(filter.copy(warrantyExpirationStart = datePickerState.selectedDateMillis))
-                        activeSheet = null
-                    }) { Text("OK") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            onFilterChange(filter.copy(warrantyExpirationStart = null))
+                            activeSheet = null
+                        }) { Text("Clear") }
+                        TextButton(onClick = {
+                            onFilterChange(filter.copy(warrantyExpirationStart = datePickerState.selectedDateMillis))
+                            activeSheet = null
+                        }) { Text("OK") }
+                    }
                 },
                 dismissButton = {
                     TextButton(onClick = { activeSheet = null }) { Text("Cancel") }
@@ -201,10 +209,16 @@ fun FilterFields(
             DatePickerDialog(
                 onDismissRequest = { activeSheet = null },
                 confirmButton = {
-                    TextButton(onClick = {
-                        onFilterChange(filter.copy(warrantyExpirationEnd = datePickerState.selectedDateMillis))
-                        activeSheet = null
-                    }) { Text("OK") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            onFilterChange(filter.copy(warrantyExpirationEnd = null))
+                            activeSheet = null
+                        }) { Text("Clear") }
+                        TextButton(onClick = {
+                            onFilterChange(filter.copy(warrantyExpirationEnd = datePickerState.selectedDateMillis))
+                            activeSheet = null
+                        }) { Text("OK") }
+                    }
                 },
                 dismissButton = {
                     TextButton(onClick = { activeSheet = null }) { Text("Cancel") }
@@ -213,64 +227,76 @@ fun FilterFields(
                 DatePicker(state = datePickerState)
             }
         }
+        "Tags" -> {
+            AeonTagSelectionDialog(
+                tags = allTags,
+                selectedTags = filter.tags.toSet(),
+                onTagsSelected = { tags ->
+                    onFilterChange(filter.copy(tags = tags.toSet()))
+                },
+                onAddTag = onAddTag,
+                onDismiss = { activeSheet = null },
+                allowCreation = filterRules.allowTagCreation
+            )
+        }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
+    Column(
+        modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+    ) {
         // Search (Note/Payee)
         if (filterRules.allowSearch) {
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                Text(
-                    "SEARCH",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.primary.copy(alpha = 0.7f)
-                )
-
-                // Regex Toggles
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                ) {
-                    Surface(
-                        onClick = { onFilterChange(filter.copy(isNoteRegex = !filter.isNoteRegex)) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (filter.isNoteRegex) AppColors.selectionContainer else AppColors.insetSurface.copy(alpha = 0.5f)
+            EntrySection(
+                title = "SEARCH",
+                icon = Icons.Default.Search
+            ) {
+                // Note Row
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                        Text(
+                            "NOTE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                fontSize = 10.sp
+                            ),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        )
+                        
+                        Surface(
+                            onClick = { onFilterChange(filter.copy(isNoteRegex = !filter.isNoteRegex)) },
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (filter.isNoteRegex) AppColors.primary.copy(alpha = 0.12f) else Color.Transparent,
+                            border = androidx.compose.foundation.BorderStroke(
+                                0.5.dp,
+                                if (filter.isNoteRegex) AppColors.primary.copy(alpha = 0.3f) else AppColors.divider.copy(alpha = 0.1f)
+                            )
                         ) {
-                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isNoteRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Note Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isNoteRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Code, 
+                                    null, 
+                                    modifier = Modifier.size(12.dp), 
+                                    tint = if (filter.isNoteRegex) AppColors.primary else AppColors.contentSecondary
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "REGEX", 
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp), 
+                                    color = if (filter.isNoteRegex) AppColors.primary else AppColors.contentSecondary
+                                )
+                            }
                         }
                     }
-                    Surface(
-                        onClick = { onFilterChange(filter.copy(isPayeeRegex = !filter.isPayeeRegex)) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (filter.isPayeeRegex) AppColors.selectionContainer else AppColors.insetSurface.copy(alpha = 0.5f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isPayeeRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Payee Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isPayeeRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                ) {
+                    
                     CompactTextField(
                         value = filter.queryNote ?: "",
                         onValueChange = {
@@ -278,10 +304,58 @@ fun FilterFields(
                             onFilterChange(newFilter)
                             onImmediateApply?.invoke(newFilter, 500)
                         },
-                        placeholder = if (filter.isNoteRegex) "/regex/i" else "Note...",
-                        modifier = Modifier.weight(1f),
-                        leadingIcon = Icons.Default.Search
+                        placeholder = if (filter.isNoteRegex) "Enter note regex pattern..." else "Search by note keyword...",
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Default.Description
                     )
+                }
+
+                // Payee Row
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "PAYEE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                fontSize = 10.sp
+                            ),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        )
+                        
+                        Surface(
+                            onClick = { onFilterChange(filter.copy(isPayeeRegex = !filter.isPayeeRegex)) },
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (filter.isPayeeRegex) AppColors.secondary.copy(alpha = 0.12f) else Color.Transparent,
+                            border = androidx.compose.foundation.BorderStroke(
+                                0.5.dp,
+                                if (filter.isPayeeRegex) AppColors.secondary.copy(alpha = 0.3f) else AppColors.divider.copy(alpha = 0.1f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Code, 
+                                    null, 
+                                    modifier = Modifier.size(12.dp), 
+                                    tint = if (filter.isPayeeRegex) AppColors.secondary else AppColors.contentSecondary
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "REGEX", 
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp), 
+                                    color = if (filter.isPayeeRegex) AppColors.secondary else AppColors.contentSecondary
+                                )
+                            }
+                        }
+                    }
+                    
                     CompactTextField(
                         value = filter.queryPayee ?: "",
                         onValueChange = {
@@ -289,299 +363,246 @@ fun FilterFields(
                             onFilterChange(newFilter)
                             onImmediateApply?.invoke(newFilter, 500)
                         },
-                        placeholder = if (filter.isPayeeRegex) "/regex/i" else "Payee...",
-                        modifier = Modifier.weight(1f),
-                        leadingIcon = Icons.Default.Search
+                        placeholder = if (filter.isPayeeRegex) "Enter payee regex pattern..." else "Search by payee keyword...",
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Rounded.Person
                     )
                 }
             }
         }
 
         // Primary Context Grid (Type and Accounts/Categories)
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-            Text(
-                "CONTEXT",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
-                ),
-                color = AppColors.primary.copy(alpha = 0.7f)
-            )
-            
-            // 2-Column Grid for Primary Dimensions
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-            ) {
-                // Type Card
-                ContextCard(
-                    title = "Types",
-                    value = when {
-                        filter.transactionTypes.isEmpty() -> "All"
-                        filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
-                        else -> "${filter.transactionTypes.size} Selected"
-                    },
-                    icon = if (filter.transactionTypes.size == 1) {
-                        when (filter.transactionTypes.first()) {
-                            TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
-                            TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                            else -> Icons.Default.FilterList
-                        }
-                    } else Icons.Default.FilterList,
-                    modifier = Modifier.weight(1f),
-                    onClick = { activeSheet = "Types" }
-                )
-
-                // Accounts Card
-                if (filterRules.allowAccountSelection && showAccountFilter) {
-                    ContextCard(
-                        title = "Accounts",
-                        value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
-                        icon = Icons.Default.AccountBalance,
+        EntrySection(
+            title = "CONTEXT",
+            icon = Icons.Rounded.Explore
+        ) {
+            AeonContextGrid {
+                EntryActionRow {
+                    // Type Card
+                    EntryActionCard(
+                        icon = if (filter.transactionTypes.size == 1) {
+                            when (filter.transactionTypes.first()) {
+                                TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                                TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
+                                else -> Icons.Default.FilterList
+                            }
+                        } else Icons.Default.FilterList,
+                        label = "TYPES",
+                        value = when {
+                            filter.transactionTypes.isEmpty() -> "All"
+                            filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
+                            else -> "${filter.transactionTypes.size} Selected"
+                        },
+                        isSelected = filter.transactionTypes.isNotEmpty(),
                         modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Accounts" }
+                        onClick = { activeSheet = "Types" },
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
                     )
-                }
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-            ) {
-                // Categories Card
-                if (filterRules.allowCategorySelection) {
-                    ContextCard(
-                        title = "Categories",
-                        value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
-                        icon = Icons.Default.Category,
-                        modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Categories" }
-                    )
+                    // Accounts Card
+                    if (filterRules.allowAccountSelection && showAccountFilter) {
+                        EntryActionCard(
+                            icon = Icons.Default.AccountBalance,
+                            label = "ACCOUNTS",
+                            value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
+                            isSelected = filter.accountIds.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "Accounts" },
+                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                            iconTint = AppColors.primary
+                        )
+                    }
                 }
 
-                // Currency Card
-                if (filterRules.allowCurrencySelection) {
-                    ContextCard(
-                        title = "Currencies",
-                        value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
-                        icon = Icons.Default.MonetizationOn,
-                        modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Currencies" }
-                    )
+                EntryActionRow {
+                    // Categories Card
+                    if (filterRules.allowCategorySelection) {
+                        EntryActionCard(
+                            icon = Icons.Default.Category,
+                            label = "CATEGORIES",
+                            value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
+                            isSelected = filter.categoryIds.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "Categories" },
+                            iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                            iconTint = AppColors.tertiary
+                        )
+                    }
+
+                    // Currency Card
+                    if (filterRules.allowCurrencySelection) {
+                        EntryActionCard(
+                            icon = Icons.Default.MonetizationOn,
+                            label = "CURRENCIES",
+                            value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
+                            isSelected = filter.currencies.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "Currencies" },
+                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                            iconTint = AppColors.primary
+                        )
+                    }
+                }
+
+                // Tags Card
+                if (filterRules.allowTagSelection) {
+                    EntryActionRow {
+                        EntryActionCard(
+                            icon = Icons.Default.Label,
+                            label = "TAGS",
+                            value = if (filter.tags.isEmpty()) "All" else "${filter.tags.size} Selected",
+                            isSelected = filter.tags.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { activeSheet = "Tags" },
+                            iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                            iconTint = AppColors.secondary
+                        )
+                    }
                 }
             }
 
             // Future Transactions Toggle
-            Surface(
-                onClick = { onFilterChange(filter.copy(excludeFuture = !filter.excludeFuture)) },
-                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                color = AppColors.cardSurface,
-                border = androidx.compose.foundation.BorderStroke(
-                    (AeonTheme.dimensions.spacingXs / 8),
-                    AppColors.divider.copy(alpha = 0.2f)
-                )
+            EntrySwitchRow(
+                icon = Icons.Default.Update,
+                label = "Show Future Transactions",
+                checked = !filter.excludeFuture,
+                onCheckedChange = { onFilterChange(filter.copy(excludeFuture = !it)) }
+            )
+        }
+
+        // Status & Methods
+        if (filterRules.allowStatusSelection || filterRules.allowPaymentMethodSelection) {
+            EntrySection(
+                title = "STATUS & METHODS",
+                icon = Icons.AutoMirrored.Rounded.FactCheck
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AeonTheme.dimensions.containerCornerRadius, vertical = AeonTheme.dimensions.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                    ) {
-                        Icon(
-                            Icons.Default.Update,
-                            contentDescription = null,
-                            tint = AppColors.primary,
-                            modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
+                AeonContextGrid {
+                    EntryActionRow {
+                        if (filterRules.allowStatusSelection) {
+                            EntryActionCard(
+                                icon = Icons.AutoMirrored.Rounded.FactCheck,
+                                label = "STATUS",
+                                value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
+                                isSelected = filter.statuses.isNotEmpty(),
+                                modifier = Modifier.weight(1f),
+                                onClick = { activeSheet = "Statuses" },
+                                iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
+                                iconTint = AppColors.secondary
+                            )
+                        }
+
+                        if (filterRules.allowPaymentMethodSelection) {
+                            EntryActionCard(
+                                icon = Icons.Default.Payments,
+                                label = "METHODS",
+                                value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
+                                isSelected = filter.paymentMethods.isNotEmpty(),
+                                modifier = Modifier.weight(1f),
+                                onClick = { activeSheet = "PaymentMethods" },
+                                iconContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                                iconTint = AppColors.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Amount & Records
+        EntrySection(
+            title = "AMOUNT & RECORDS",
+            icon = Icons.Rounded.AttachMoney
+        ) {
+            if (filterRules.allowAmountRange) {
+                AeonContextGrid {
+                    EntryActionRow {
+                        EntryActionCard(
+                            icon = Icons.Rounded.Remove,
+                            label = "MIN AMOUNT",
+                            value = filter.minAmount?.toString() ?: "No Min",
+                            isSelected = filter.minAmount != null,
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "MinAmount" }
                         )
-                        Text(
-                            "Show Future Transactions",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                        EntryActionCard(
+                            icon = Icons.Rounded.Add,
+                            label = "MAX AMOUNT",
+                            value = filter.maxAmount?.toString() ?: "No Max",
+                            isSelected = filter.maxAmount != null,
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "MaxAmount" }
                         )
                     }
-                    Switch(
-                        checked = !filter.excludeFuture,
-                        onCheckedChange = { onFilterChange(filter.copy(excludeFuture = !it)) }
-                    )
                 }
             }
-        }
 
-        // Status
-        if (filterRules.allowStatusSelection) {
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                Text(
-                    "STATUS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.primary.copy(alpha = 0.7f)
-                )
-                ContextCard(
-                    title = "Statuses",
-                    value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
-                    icon = Icons.AutoMirrored.Rounded.FactCheck,
-                    onClick = { activeSheet = "Statuses" }
-                )
-            }
-        }
-
-        // Amount Range
-        if (filterRules.allowAmountRange) {
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                Text(
-                    "AMOUNT RANGE",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.primary.copy(alpha = 0.7f)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ContextCard(
-                        title = "Min Amount",
-                        value = filter.minAmount?.toString() ?: "No Min",
-                        icon = Icons.Rounded.Remove,
-                        modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "MinAmount" }
-                    )
-                    ContextCard(
-                        title = "Max Amount",
-                        value = filter.maxAmount?.toString() ?: "No Max",
-                        icon = Icons.Rounded.Add,
-                        modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "MaxAmount" }
-                    )
-                }
-            }
-        }
-
-        // Methods Card (Full Width)
-        if (filterRules.allowPaymentMethodSelection) {
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                Text(
-                    "PAYMENT METHODS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.primary.copy(alpha = 0.7f)
-                )
-                ContextCard(
-                    title = "Methods",
-                    value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
-                    icon = Icons.Default.Payments,
-                    onClick = { activeSheet = "PaymentMethods" }
-                )
-            }
-        }
-
-        // Linked Records Card (Full Width)
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-            Text(
-                "LINKED RECORDS",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
-                ),
-                color = AppColors.primary.copy(alpha = 0.7f)
-            )
-            ContextCard(
-                title = "Linked",
-                value = if (filter.linkedTransactionIds.isEmpty()) "None" else "${filter.linkedTransactionIds.size} Linked",
+            EntryActionCard(
                 icon = Icons.Rounded.Link,
-                onClick = { activeSheet = "LinkedTransactions" }
+                label = "LINKED RECORDS",
+                value = if (filter.linkedTransactionIds.isEmpty()) "None Linked" else "${filter.linkedTransactionIds.size} Linked",
+                isSelected = filter.linkedTransactionIds.isNotEmpty(),
+                onClick = { activeSheet = "LinkedTransactions" },
+                iconContainerColor = AppColors.tertiary.copy(alpha = 0.1f),
+                iconTint = AppColors.tertiary
             )
         }
 
-        // Warranty Expiry Range
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-            Text(
-                "WARRANTY EXPIRY",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
-                ),
-                color = AppColors.primary.copy(alpha = 0.7f)
-            )
-            AeonDateRangeCard(
-                startDateMillis = filter.warrantyExpirationStart,
-                endDateMillis = filter.warrantyExpirationEnd,
-                onStartClick = { activeSheet = "WarrantyStart" },
-                onEndClick = { activeSheet = "WarrantyEnd" },
-                startLabel = "EXPIRY FROM",
-                endLabel = "EXPIRY TO"
-            )
-        }
-    }
-}
-
-@Composable
-fun ContextCard(
-    title: String,
-    value: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(AeonTheme.dimensions.iconSize3xl + AeonTheme.dimensions.spacingLg),
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.cardSurface,
-        border = androidx.compose.foundation.BorderStroke(
-            (AeonTheme.dimensions.spacingXs / 8),
-            AppColors.divider.copy(alpha = 0.2f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(AeonTheme.dimensions.spacingLg),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        // Warranty Section
+        EntrySection(
+            title = "WARRANTY",
+            icon = Icons.Rounded.VerifiedUser
         ) {
-            Surface(
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
-                color = AppColors.primary.copy(alpha = 0.1f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = AppColors.primary,
-                        modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
-                    )
+            AeonContextGrid {
+                EntryActionCard(
+                    icon = Icons.Rounded.Verified,
+                    label = "PROTECTION STATUS",
+                    value = when (filter.hasWarranty) {
+                        null -> "Any Status"
+                        true -> "Has Warranty"
+                        false -> "No Warranty"
+                    },
+                    isSelected = filter.hasWarranty != null,
+                    onClick = {
+                        val next = when (filter.hasWarranty) {
+                            null -> true
+                            true -> false
+                            false -> null
+                        }
+                        onFilterChange(filter.copy(hasWarranty = next))
+                    },
+                    iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
+                    iconTint = AppColors.secondary
+                )
+
+                if (filter.hasWarranty == true) {
+                    EntryActionRow {
+                        EntryActionCard(
+                            icon = Icons.Rounded.CalendarToday,
+                            label = "WARRANTY START",
+                            value = filter.warrantyExpirationStart?.let { 
+                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                            } ?: "Select",
+                            onClick = { activeSheet = "WarrantyStart" },
+                            modifier = Modifier.weight(1f)
+                        )
+                        EntryActionCard(
+                            icon = Icons.Rounded.CalendarToday,
+                            label = "WARRANTY END",
+                            value = filter.warrantyExpirationEnd?.let { 
+                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                            } ?: "Select",
+                            onClick = { activeSheet = "WarrantyEnd" },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
-            Column(verticalArrangement = Arrangement.Center) {
-                Text(
-                    title.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                )
-                Text(
-                    value,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
         }
     }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

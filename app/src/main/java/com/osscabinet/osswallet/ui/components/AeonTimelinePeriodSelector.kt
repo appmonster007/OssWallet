@@ -87,9 +87,13 @@ fun AeonTimelinePeriodSelector(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = AppColors.cardSurface,
-        tonalElevation = 1.dp
+        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            (AeonTheme.dimensions.spacingXs / 8),
+            AppColors.divider.copy(alpha = 0.15f)
+        )
     ) {
         if (swipeEntireComponent) {
             // 1. Full Component Pager (Tactile Experience)

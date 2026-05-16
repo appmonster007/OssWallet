@@ -41,7 +41,7 @@ fun AeonTimelinePeriodSelector(
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
-    swipeEntireComponent: Boolean = true
+    swipeEntireComponent: Boolean = false
 ) {
     val initialPage = remember(currentRange) {
         when (currentRange) {
@@ -318,6 +318,49 @@ private fun DateDisplayArea(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AeonDateRangePicker(
+    initialStart: Long?,
+    initialEnd: Long?,
+    onDismiss: () -> Unit,
+    onConfirmed: (Long, Long) -> Unit
+) {
+    val state = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = initialStart,
+        initialSelectedEndDateMillis = initialEnd
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val start = state.selectedStartDateMillis
+                    val end = state.selectedEndDateMillis
+                    if (start != null && end != null) {
+                        onConfirmed(start, end)
+                    }
+                },
+                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DateRangePicker(
+            state = state,
+            title = { Text("Select Date Range", modifier = Modifier.padding(16.dp)) },
+            modifier = Modifier.height(450.dp)
+        )
     }
 }
 

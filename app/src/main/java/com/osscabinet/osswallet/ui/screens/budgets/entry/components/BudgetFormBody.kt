@@ -65,7 +65,8 @@ fun BudgetFormBody(
                     // Period is a high-priority structural parameter
                     AeonTimelinePeriodSelector(
                         currentRange = state.timelineRange,
-                        onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) }
+                        onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
+                        swipeEntireComponent = false
                     )
 
                     // Budget's own note

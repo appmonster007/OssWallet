@@ -61,7 +61,6 @@ import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
@@ -120,23 +119,12 @@ fun BudgetDetailScreen(
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
 
     val budgetTransactions =
-        remember(budget, absoluteTransactionsWithBalance) {
+        remember(budget, absoluteTransactionsWithBalance, categoriesList) {
             if (budget == null) return@remember emptyList()
-            val (start, end) = BudgetService.getCurrentPeriodRange(budget, System.currentTimeMillis())
-            val budgetFilter = TransactionFilter(
-                categoryIds = budget.categoryIds,
-                accountIds = budget.accountIds,
-                tags = budget.tags,
-                paymentMethods = budget.paymentMethods,
-                statuses = budget.statuses,
-                linkedTransactionIds = budget.linkedTransactionIds,
-                transactionTypes = budget.trackTypes,
-                timelineRange = TimelineRange.CustomRange(start, end),
-                excludeFuture = false
-            )
-            absoluteTransactionsWithBalance.filter { item ->
-                TransactionFilterService.matches(item.transaction, budgetFilter, start, end)
-            }
+            val filter = BudgetService.buildTransactionFilter(budget, System.currentTimeMillis(), categoriesList)
+            android.util.Log.d("BudgetDetail", "[${budget.name}] linked filterId=${budget.filterId} | budget fields: categories=${budget.categoryIds} accounts=${budget.accountIds} tags=${budget.tags} trackTypes=${budget.trackTypes} currencies=${budget.currencies} paymentMethods=${budget.paymentMethods} statuses=${budget.statuses} linkedTxIds=${budget.linkedTransactionIds} timelineRange=${budget.timelineRange}")
+            android.util.Log.d("BudgetDetail", "[${budget.name}] activity filter: $filter")
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
         }
 
     val selectedAccounts = remember(accounts, budget?.accountIds) {
@@ -345,18 +333,8 @@ fun BudgetDetailScreen(
                             RecentActivitiesScreen(
                                 listState = budgetListState,
                                 onRecordsClick = { _ ->
-                                    val (start, end) = BudgetService.getCurrentPeriodRange(
-                                        budget,
-                                        now
-                                    )
                                     onRecordsClick(
-                                        TransactionFilter(
-                                            accountIds = budget.accountIds,
-                                            categoryIds = budget.categoryIds,
-                                            tags = budget.tags,
-                                            timelineRange = TimelineRange.CustomRange(start, end),
-                                            transactionTypes = budget.trackTypes
-                                        )
+                                        BudgetService.buildTransactionFilter(budget, now, categoriesList)
                                     )
                                 },
                                 onTransactionClick = onTransactionClick,

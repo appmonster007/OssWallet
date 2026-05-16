@@ -54,19 +54,26 @@ object BudgetService {
         return spent.setScale(precision, RoundingMode.HALF_UP)
     }
 
-    fun filterTransactionsForBudget(
+    fun buildTransactionFilter(
         budget: Budget,
-        transactions: List<Transaction>,
         now: Long,
         allCategories: List<Category> = emptyList()
-    ): List<Transaction> {
-        val (start, end) = getCurrentPeriodRange(budget, now)
+    ): TransactionFilter {
+        // AllTime has no defined start/end — keep it as AllTime so the filter engine
+        // skips the date-range check entirely. Resolving it via getCurrentPeriodRange
+        // collapses AllTime to (now, now), which matches nothing.
+        val resolvedRange: TimelineRange = if (budget.timelineRange is TimelineRange.AllTime) {
+            TimelineRange.AllTime
+        } else {
+            val (start, end) = getCurrentPeriodRange(budget, now)
+            TimelineRange.CustomRange(start, end)
+        }
 
         val expandedCategoryIds = if (allCategories.isNotEmpty() && budget.categoryIds.isNotEmpty()) {
             TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories)
         } else budget.categoryIds
 
-        val budgetFilter = TransactionFilter(
+        return TransactionFilter(
             categoryIds = expandedCategoryIds,
             accountIds = budget.accountIds,
             tags = budget.tags,
@@ -75,11 +82,21 @@ object BudgetService {
             currencies = budget.currencies,
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
-            timelineRange = TimelineRange.CustomRange(start, end),
+            timelineRange = resolvedRange,
             excludeFuture = false
         )
+    }
 
-        return TransactionFilterService.filterTransactions(transactions, budgetFilter)
+    fun filterTransactionsForBudget(
+        budget: Budget,
+        transactions: List<Transaction>,
+        now: Long,
+        allCategories: List<Category> = emptyList()
+    ): List<Transaction> {
+        return TransactionFilterService.filterTransactions(
+            transactions,
+            buildTransactionFilter(budget, now, allCategories)
+        )
     }
 
     fun buildProgress(

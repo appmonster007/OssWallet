@@ -85,7 +85,7 @@ fun LoanFormBody(
                         label = "PERIOD",
                         value = when (val range = state.timelineRange) {
                             is TimelineRange.AllTime -> "All Time"
-                            is TimelineRange.ThisPeriod -> "This ${range.period.label}"
+                            is TimelineRange.ThisPeriod -> range.period.label
                             is TimelineRange.LastPeriod -> range.period.label
                             is TimelineRange.CustomRange -> "Custom"
                         },

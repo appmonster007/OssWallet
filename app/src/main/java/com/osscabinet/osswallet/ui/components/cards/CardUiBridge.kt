@@ -38,18 +38,7 @@ fun rememberCardWithCallbacks(
     updateHandler: CardUpdateHandler,
     onDelete: (String) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit,
-    onManageAccountsClick: () -> Unit = {},
-    onAccountClick: (String) -> Unit = {},
-    onTransactionClick: (Long) -> Unit = {},
-    onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
-    onPlannedPaymentSkip: ((Long) -> Unit)? = null,
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDeleteTransaction: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
+    callbacks: CardListCallbacks = CardListCallbacks(),
     currentTheme: String = "light",
     preComputedData: CardRenderData? = null
 ): CardWithCallbacks? {
@@ -79,18 +68,7 @@ fun rememberCardWithCallbacks(
         updateHandler,
         onDelete,
         onRecordsClick,
-        onManageAccountsClick,
-        onAccountClick,
-        onTransactionClick,
-        onPlannedPaymentConfirm,
-        onPlannedPaymentSkip,
-        onItemExpanded,
-        onItemCollapsed,
-        onStatusChange,
-        onClone,
-        onDeleteTransaction,
-        onSplit,
-        onFullSwipeRight,
+        callbacks,
         currentTheme,
         renderData
     ) {
@@ -233,8 +211,8 @@ fun rememberCardWithCallbacks(
                                 show
                             )
                         },
-                        onManageClick = onManageAccountsClick,
-                        onAccountClick = onAccountClick,
+                        onManageClick = callbacks.onManageAccountsClick,
+                        onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
@@ -315,7 +293,7 @@ fun rememberCardWithCallbacks(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
-                        onClick = { onAccountClick(renderData.account.id) }
+                        onClick = { callbacks.onAccountClick(renderData.account.id) }
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter
@@ -333,8 +311,8 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onItemClick = {},
-                        onConfirm = onPlannedPaymentConfirm,
-                        onSkip = onPlannedPaymentSkip,
+                        onConfirm = callbacks.onPlannedPaymentConfirm,
+                        onSkip = callbacks.onPlannedPaymentSkip,
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -388,20 +366,20 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
-                        onTransactionClick = onTransactionClick,
+                        onTransactionClick = callbacks.onTransactionClick,
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
                         onDelete = { onDelete(config.cardId) },
-                        onItemExpanded = onItemExpanded,
-                        onItemCollapsed = onItemCollapsed,
-                        onStatusChange = onStatusChange,
-                        onClone = onClone,
-                        onDeleteTransaction = onDeleteTransaction,
-                        onSplit = onSplit,
-                        onFullSwipeRight = onFullSwipeRight
+                        onItemExpanded = callbacks.onItemExpanded,
+                        onItemCollapsed = callbacks.onItemCollapsed,
+                        onStatusChange = callbacks.onStatusChange,
+                        onClone = callbacks.onClone,
+                        onDeleteTransaction = callbacks.onDeleteTransaction,
+                        onSplit = callbacks.onSplit,
+                        onFullSwipeRight = callbacks.onFullSwipeRight
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter

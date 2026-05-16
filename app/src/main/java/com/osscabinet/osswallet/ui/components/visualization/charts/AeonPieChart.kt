@@ -50,6 +50,7 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity, interactive pie/donut chart with tooltips.
@@ -69,7 +70,7 @@ fun AeonPieChart(
 ) {
     if (slices.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data available", style = MaterialTheme.typography.bodySmall)
+            Text("No data available", style = AppTextStyles.caption)
         }
         return
     }
@@ -92,7 +93,7 @@ fun AeonPieChart(
     val total = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
     if (total.signum() == 0) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data to display", style = MaterialTheme.typography.bodySmall)
+            Text("No data to display", style = AppTextStyles.caption)
         }
         return
     }

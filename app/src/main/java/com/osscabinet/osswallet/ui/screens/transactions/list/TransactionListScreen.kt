@@ -15,11 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.accounts.*
 import com.osscabinet.ossWallet.ui.screens.transactions.*
 import com.osscabinet.ossWallet.ui.screens.templates.*
@@ -100,7 +101,18 @@ fun TransactionListScreen(
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
-        onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
+        onTransactionEvent = { event ->
+            when (event) {
+                is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
+                is TransactionItemEvent.Expand -> viewModel.onItemExpanded(event.id)
+                is TransactionItemEvent.Collapse -> viewModel.onItemCollapsed(event.id)
+                is TransactionItemEvent.StatusChange -> viewModel.quickUpdateStatus(event.id, event.status)
+                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                is TransactionItemEvent.Delete -> viewModel.quickDeleteTransaction(event.id)
+                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(event.id)
+            }
+        },
         onBackClick = {
             navigate {
                 viewModel.clearRecordsFilters()
@@ -109,18 +121,15 @@ fun TransactionListScreen(
         },
         onMenuClick = onMenuClick,
         isTopLevel = isTopLevel,
-        onUpdateFilter = { viewModel.updateRecordsFilter(it) },
-        onUpdateTimelineRange = { viewModel.updateRecordsTimelineRange(it) },
-        onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
-        onResetToInitial = { viewModel.resetToInitialFilter() },
+        onFilterEvent = { event ->
+            when (event) {
+                is FilterEvent.Apply -> viewModel.updateRecordsFilter(event.filter)
+                is FilterEvent.UpdateTimeline -> viewModel.updateRecordsTimelineRange(event.range)
+                is FilterEvent.UpdateSettings -> viewModel.updateRecordsSettings { event.settings }
+                is FilterEvent.Reset -> viewModel.resetToInitialFilter()
+            }
+        },
         revealedCardIds = revealedCardIds,
-        onItemExpanded = { viewModel.onItemExpanded(it) },
-        onItemCollapsed = { viewModel.onItemCollapsed(it) },
-        onStatusChange = { transactionId, status -> viewModel.quickUpdateStatus(transactionId, status) },
-        onClone = { onCloneTransactionClick(it) },
-        onDelete = { viewModel.quickDeleteTransaction(it) },
-        onSplit = { onSplitTransactionClick(it) },
-        onFullSwipeRight = { viewModel.toggleStatusClearedUncleared(it) },
         is24Hour = use24HourFormat
     )
 }

@@ -59,6 +59,7 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,12 +127,12 @@ fun BudgetListScreen(
                         }
                         Text(
                             "No Budgets Yet",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = AppTextStyles.calculatorKey,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             "Create a budget to track\nyour spending goals",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
@@ -237,7 +238,7 @@ private fun BudgetListItem(
         trailingContent = {
             Text(
                 "${budget.limitAmount.toPlainString()} ${budget.currency}",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                style = AppTextStyles.listItemTitle,
                 color = progressColor
             )
         },
@@ -273,12 +274,12 @@ private fun BudgetListItem(
                 ) {
                     Text(
                         "$spentText spent",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.transactionSwipeAction,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         "${(progressFraction * 100).toInt()}%",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.formSectionLabel,
                         color = progressColor
                     )
                 }

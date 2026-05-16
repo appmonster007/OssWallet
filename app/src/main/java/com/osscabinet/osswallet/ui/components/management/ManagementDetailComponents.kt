@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Shared chip for displaying scope/context items (Accounts, Categories, Tags)
@@ -31,7 +32,7 @@ fun ScopeChip(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = AppTextStyles.cardDelta,
             color = color,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
@@ -74,7 +75,7 @@ fun ScopeSection(
             }
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
@@ -85,7 +86,7 @@ fun ScopeSection(
         if (isEmpty) {
             Text(
                 allText,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = AppTextStyles.transactionAmount,
                 color = AppColors.contentPrimary,
                 modifier = Modifier.padding(start = 56.dp)
             )
@@ -110,7 +111,7 @@ fun ScopeSection(
                     ) {
                         Text(
                             text = "+${items.size - 5} more",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = AppTextStyles.cardDelta,
                             color = AppColors.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )

@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,12 +70,12 @@ fun SmartSuggestionsScreen(
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No suggestions available yet",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = AppTextStyles.listItemTitle,
                         color = AppColors.border
                     )
                     Text(
                         "Continue tracking to see patterns",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AppTextStyles.caption,
                         color = AppColors.border
                     )
                 }
@@ -151,7 +152,7 @@ private fun SuggestionListItem(
                         )
                         Text(
                             "Smart Suggestion",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = AppColors.onSecondaryContainer,
                             fontWeight = FontWeight.Bold
                         )
@@ -181,7 +182,7 @@ private fun SuggestionListItem(
             ) {
                 Text(
                     text = pattern.payee.ifEmpty { pattern.name },
-                    style = MaterialTheme.typography.titleLarge,
+                    style = AppTextStyles.screenTitle,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f)
                 )
@@ -192,7 +193,7 @@ private fun SuggestionListItem(
                 }
                 Text(
                     text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = AppTextStyles.screenTitle,
                     fontWeight = FontWeight.Black,
                     color = amountColor
                 )
@@ -207,7 +208,7 @@ private fun SuggestionListItem(
 
             Text(
                 text = recommendation,
-                style = MaterialTheme.typography.bodyMedium,
+                style = AppTextStyles.transactionTitle,
                 color = AppColors.contentSecondary
             )
 
@@ -241,7 +242,7 @@ private fun SuggestionListItem(
             
             Text(
                 text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
-                style = MaterialTheme.typography.labelSmall,
+                style = AppTextStyles.transactionSwipeAction,
                 color = AppColors.border
             )
 
@@ -258,11 +259,11 @@ private fun SuggestionListItem(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(AeonTheme.dimensions.listPadding)
                         ) {
-                            Text("Save Planned", style = MaterialTheme.typography.labelSmall)
+                            Text("Save Planned", style = AppTextStyles.transactionSwipeAction)
                         }
                         Text(
                             "Auto-creates records for future occurrences",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = AppColors.border,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
@@ -277,11 +278,11 @@ private fun SuggestionListItem(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(AeonTheme.dimensions.listPadding)
                         ) {
-                            Text("Save Template", style = MaterialTheme.typography.labelSmall)
+                            Text("Save Template", style = AppTextStyles.transactionSwipeAction)
                         }
                         Text(
                             "Shortcut for one-tap manual entry",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = AppColors.border,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
@@ -296,8 +297,8 @@ private fun SuggestionListItem(
 @Composable
 private fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = AppColors.border)
-        Text(value, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        Text(label, style = AppTextStyles.transactionSwipeAction, color = AppColors.border)
+        Text(value, style = AppTextStyles.caption, maxLines = 1)
     }
 }
 

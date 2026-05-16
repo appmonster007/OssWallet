@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CalculatorDialog(
@@ -33,7 +34,7 @@ fun CalculatorDialog(
             ) {
                 Text(
                     text = expression.ifEmpty { "0" },
-                    style = MaterialTheme.typography.displayMedium,
+                    style = AppTextStyles.calculatorDisplay,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
@@ -87,7 +88,7 @@ fun CalculatorDialog(
                         ) {
                             Text(
                                 text = button,
-                                style = MaterialTheme.typography.titleLarge
+                                style = AppTextStyles.screenTitle
                             )
                         }
                     }

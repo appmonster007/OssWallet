@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Unified transaction header composable that can be used for both weekly and daily transaction summaries.
@@ -302,30 +303,30 @@ private data class TransactionHeaderStyles(
             outlineColor = AppColors.border,
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,
-            titleStyle = MaterialTheme.typography.labelSmall.copy(
+            titleStyle = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = AppColors.border,
                 letterSpacing = 1.sp,
             ),
-            subtitleStyle = MaterialTheme.typography.labelExtraSmall.copy(
+            subtitleStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Medium,
                 color = AppColors.border,
                 letterSpacing = 0.5.sp,
             ),
-            columnHeaderStyle = MaterialTheme.typography.labelExtraSmall.copy(
+            columnHeaderStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp
             ),
-            totalLabelStyle = MaterialTheme.typography.labelExtraSmall.copy(
+            totalLabelStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Black,
             ),
-            baseValueStyle = MaterialTheme.typography.labelSmall.copy(
+            baseValueStyle = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Bold,
             ),
-            breakdownLabelStyle = MaterialTheme.typography.labelExtraSmall.copy(
+            breakdownLabelStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Bold,
             ),
-            breakdownValueStyle = MaterialTheme.typography.labelExtraSmall.copy()
+            breakdownValueStyle = AppTextStyles.metaLabel
         )
     }
 }

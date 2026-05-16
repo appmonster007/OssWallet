@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.AdvancedFilterSection
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * A standardized bottom sheet for configuring analytical and dashboard cards.
@@ -62,7 +63,7 @@ fun AeonCardSettingsSheet(
             ) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.heroAmount
                 )
                 
                 IconButton(
@@ -90,8 +91,8 @@ fun AeonCardSettingsSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Include future transactions", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
-                                Text("Show scheduled entries in this card", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                                Text("Include future transactions", style = AppTextStyles.chartTooltipValue)
+                                Text("Show scheduled entries in this card", style = AppTextStyles.caption, color = AppColors.border)
                             }
                             Switch(
                                 checked = !filter.excludeFuture,

@@ -43,6 +43,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.util.generateShade
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity treemap visualization for categorical distribution.
@@ -61,7 +62,7 @@ fun AeonTreemap(
 ) {
     if (nodes.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data available", style = MaterialTheme.typography.bodySmall)
+            Text("No data available", style = AppTextStyles.caption)
         }
         return
     }
@@ -247,7 +248,7 @@ fun AeonTreemap(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             node.name,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                            style = AppTextStyles.transactionBadge,
                                             color = labelColor,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
@@ -264,7 +265,7 @@ fun AeonTreemap(
                                     }
                                     Text(
                                         formatCurrencyRight(node.value, currency, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
+                                        style = AppTextStyles.chartLegendLabel,
                                         color = labelColor.copy(alpha = 0.85f),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis

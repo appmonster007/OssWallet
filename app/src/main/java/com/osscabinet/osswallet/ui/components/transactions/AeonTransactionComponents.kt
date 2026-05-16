@@ -53,12 +53,13 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AeonTransactionList(
     listState: TransactionListState,
-    onTransactionClick: (Transaction) -> Unit,
+    onTransactionEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     precision: Int = 2,
@@ -68,13 +69,6 @@ fun AeonTransactionList(
     showOnlyActiveCurrencies: Boolean = false,
     baseCurrency: String,
     revealedCardIds: List<Long> = emptyList(),
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
     LazyColumn(
@@ -113,14 +107,7 @@ fun AeonTransactionList(
                 SwipeableTransactionItem(
                     transaction = tx,
                     isRevealed = revealedCardIds.contains(tx.id),
-                    onExpandLeft = { onItemExpanded(tx.id) },
-                    onExpandRight = { onItemExpanded(tx.id) },
-                    onCollapse = { onItemCollapsed(tx.id) },
-                    onFullSwipeRight = { onFullSwipeRight(tx.id) },
-                    onStatusChange = { onStatusChange(tx.id, it) },
-                    onClone = { onClone(tx.id) },
-                    onDelete = { onDelete(tx.id) },
-                    onSplit = { onSplit(tx.id) }
+                    onEvent = onTransactionEvent
                 ) {
                     AeonTransactionItem(
                         category = enriched.categoryName,
@@ -156,7 +143,7 @@ fun AeonTransactionList(
                         showOpeningBalance = showOpeningBalance,
                         showClosingBalance = showClosingBalance,
                         status = tx.status
-                    ) { onTransactionClick(tx) }
+                    ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
                 }
             }
         }
@@ -274,7 +261,7 @@ fun AeonTransactionItem(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 headerText,
-                                style = MaterialTheme.typography.bodyMedium.copy(
+                                style = AppTextStyles.transactionTitle.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 ),
@@ -283,7 +270,7 @@ fun AeonTransactionItem(
                             )
                             Text(
                                 account,
-                                style = MaterialTheme.typography.labelSmall.copy(
+                                style = AppTextStyles.transactionSwipeAction.copy(
                                     fontSize = 10.sp
                                 ),
                                 color = AppColors.border,
@@ -293,7 +280,7 @@ fun AeonTransactionItem(
                             if (!bottomText.isNullOrBlank()) {
                                 Text(
                                     bottomText,
-                                    style = MaterialTheme.typography.bodySmall.copy(
+                                    style = AppTextStyles.caption.copy(
                                         fontSize = 11.sp
                                     ),
                                     color = AppColors.contentSecondary.copy(alpha = 0.8f),
@@ -307,7 +294,7 @@ fun AeonTransactionItem(
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = amount,
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = AppTextStyles.listItemTitle.copy(
                                     fontWeight = FontWeight.Black,
                                     fontSize = 13.sp,
                                     color = if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error
@@ -317,7 +304,7 @@ fun AeonTransactionItem(
                             if (convertedAmount != null) {
                                 Text(
                                     text = convertedAmount,
-                                    style = MaterialTheme.typography.labelSmall.copy(
+                                    style = AppTextStyles.transactionSwipeAction.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp
                                     ),
@@ -333,14 +320,14 @@ fun AeonTransactionItem(
                                 }
                                 Text(
                                     balanceText,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                    style = AppTextStyles.transactionAmountMeta,
                                     color = AppColors.contentSecondary.copy(alpha = 0.8f)
                                 )
                             }
 
                             Text(
                                 timestamp,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                style = AppTextStyles.transactionAmountMeta,
                                 color = AppColors.contentSecondary.copy(alpha = 0.8f),
                                 modifier = Modifier.padding(top = 2.dp)
                             )
@@ -361,7 +348,7 @@ fun AeonTransactionItem(
                             ) {
                                 Text(
                                     text = tag,
-                                    style = MaterialTheme.typography.labelSmall.copy(
+                                    style = AppTextStyles.transactionSwipeAction.copy(
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = AppColors.onSecondaryContainer

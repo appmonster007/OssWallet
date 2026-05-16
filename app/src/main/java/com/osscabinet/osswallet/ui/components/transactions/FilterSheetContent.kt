@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,14 +47,12 @@ fun FilterSheetContent(
     allTags: List<Tag> = emptyList(),
     allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    onUpdateTimelineRange: (TimelineRange) -> Unit,
-    onApplyFilter: (TransactionFilter) -> Unit,
+    onFilterEvent: (FilterEvent) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
-    onResetToInitial: (() -> Unit)? = null,
     onAddTag: (String, Int) -> Unit = { _, _ -> }
 ) {
     var localFilter by remember { mutableStateOf(filter) }
@@ -68,7 +67,7 @@ fun FilterSheetContent(
         debounceJob.value?.cancel()
         debounceJob.value = filterSheetScope.launch {
             delay(debounceMs)
-            onApplyFilter(newFilter)
+            onFilterEvent(FilterEvent.Apply(newFilter))
         }
     }
 
@@ -130,7 +129,7 @@ fun FilterSheetContent(
             currentRange = localFilter.timelineRange,
             onRangeSelected = { range ->
                 localFilter = localFilter.copy(timelineRange = range)
-                onUpdateTimelineRange(range)
+                onFilterEvent(FilterEvent.UpdateTimeline(range))
                 selectedFilterIds = emptySet()
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
@@ -152,27 +151,23 @@ fun FilterSheetContent(
             ) {
                 Text(
                     "Filter Transactions",
-                    style = MaterialTheme.typography.titleLarge.copy(
+                    style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
                     )
                 )
                 TextButton(
                     onClick = {
-                        if (onResetToInitial != null) {
-                            onResetToInitial.invoke()
-                        } else {
-                            localFilter = TransactionFilter()
-                            selectedFilterIds = emptySet()
-                            applyFilterWithDebounce(localFilter, debounceMs = 0)
-                        }
+                        localFilter = TransactionFilter()
+                        selectedFilterIds = emptySet()
+                        onFilterEvent(FilterEvent.Reset)
                     },
                     contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
                     colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
                 ) {
                     Text(
                         "Reset All",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.listSectionHeader
                     )
                 }
             }
@@ -181,7 +176,7 @@ fun FilterSheetContent(
                 Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                     Text(
                         "FILTER PRESETS",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.sp
                         ),
@@ -217,7 +212,7 @@ fun FilterSheetContent(
                                     )
                                     Text(
                                         text = selectedName,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                        style = AppTextStyles.listItemTitle.copy(
                                             fontWeight = if (selectedFilterIds.isNotEmpty()) FontWeight.Bold else FontWeight.Normal
                                         ),
                                         color = if (selectedFilterIds.isNotEmpty()) AppColors.primary
@@ -246,7 +241,7 @@ fun FilterSheetContent(
                                     text = { 
                                         Text(
                                             savedFilter.name,
-                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                            style = AppTextStyles.listItemTitle.copy(
                                                 fontWeight = if (savedFilter.id in selectedFilterIds) FontWeight.Bold else FontWeight.Normal
                                             )
                                         ) 
@@ -380,8 +375,7 @@ fun FilterSheetContentPreview() {
                 filter = TransactionFilter(),
                 accounts = sampleAccounts,
                 allCategories = sampleCategories,
-                onUpdateTimelineRange = { },
-                onApplyFilter = {},
+                onFilterEvent = {},
                 onToggleExpand = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,
@@ -428,8 +422,7 @@ fun FilterSheetContentLongPreview() {
                 allCategories = sampleCategories,
                 allTags = sampleTags,
                 savedFilters = samplePresets,
-                onUpdateTimelineRange = { },
-                onApplyFilter = {},
+                onFilterEvent = {},
                 onToggleExpand = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,

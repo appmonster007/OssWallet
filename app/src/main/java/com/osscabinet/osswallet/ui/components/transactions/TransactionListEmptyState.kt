@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun TransactionListEmptyState(
@@ -20,7 +21,7 @@ fun TransactionListEmptyState(
     ) {
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyLarge,
+            style = AppTextStyles.listItemTitle,
             color = AppColors.border
         )
     }

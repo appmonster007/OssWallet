@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.util.Currency.getAvailableCurrencies
 import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -83,7 +84,7 @@ fun CurrencyManagementSection(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = AppColors.contentPrimary),
+                        textStyle = AppTextStyles.listItemTitle.copy(color = AppColors.contentPrimary),
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) Text("Search ISO codes...", color = AppColors.contentSecondary.copy(alpha = 0.6f))
@@ -212,7 +213,7 @@ fun CurrencyManagementSection(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                Text(code, style = AppTextStyles.listSectionHeader)
                                 if (isPrimary) {
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
@@ -229,7 +230,7 @@ fun CurrencyManagementSection(
                     val isInvalid = primaryCurrency.isBlank()
                     Text(
                         "Primary Currency" + if (isInvalid) " (Required)" else "",
-                        style = MaterialTheme.typography.titleSmall,
+                        style = AppTextStyles.managementItemTitle,
                         color = if (isInvalid) AppColors.error else AppColors.contentPrimary
                     )
                     var isExpanded by remember { mutableStateOf(false) }
@@ -281,14 +282,14 @@ fun CurrencyManagementSection(
                 // If only one, it's already primary, but we can show a confirmation label
                 Text(
                     "Primary Currency: $primaryCurrency",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = AppTextStyles.drawerItemLabel,
                     color = AppColors.primary,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
 
             if (isEditMode) {
-                Text("Note: Currencies with existing transactions cannot be removed.", style = MaterialTheme.typography.labelSmall, color = AppColors.border)
+                Text("Note: Currencies with existing transactions cannot be removed.", style = AppTextStyles.transactionSwipeAction, color = AppColors.border)
             }
         }
     }
@@ -328,7 +329,7 @@ fun CurrencyGridItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     code,
-                    style = MaterialTheme.typography.labelLarge.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )

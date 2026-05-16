@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.graphics.Color as AndroidColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AppDrawerContent(
@@ -91,11 +92,11 @@ fun AppDrawerContent(
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
                     Text(
                         currentProfile?.name ?: "Intelligence",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.heroAmount
                     )
                     Text(
                         "Personal Account",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AppTextStyles.transactionTitle,
                         color = AppColors.contentSecondary
                     )
                 }
@@ -120,7 +121,7 @@ fun AppDrawerContent(
                         label = {
                             Text(
                                 label,
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                style = AppTextStyles.listSectionHeader
                             )
                         },
                         selected = selectedDestination == route,
@@ -148,7 +149,7 @@ fun AppDrawerContent(
 
                 Text(
                     "PLANNING",
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
@@ -167,7 +168,7 @@ fun AppDrawerContent(
                         label = {
                             Text(
                                 label,
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                style = AppTextStyles.listSectionHeader
                             )
                         },
                         selected = selectedDestination == route,
@@ -195,7 +196,7 @@ fun AppDrawerContent(
 
                     Text(
                         "QUICK ACCESS",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
@@ -205,7 +206,7 @@ fun AppDrawerContent(
 
                     starredTemplates.forEach { template ->
                         NavigationDrawerItem(
-                            label = { Text(template.name, style = MaterialTheme.typography.labelLarge) },
+                            label = { Text(template.name, style = AppTextStyles.drawerItemLabel) },
                             selected = false,
                             onClick = { onNavigate { onTemplateClick(template) } },
                             icon = {
@@ -234,7 +235,7 @@ fun AppDrawerContent(
 
                 Text(
                     "ACCOUNTS",
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
@@ -252,14 +253,14 @@ fun AppDrawerContent(
                             ) {
                                 Text(
                                     account.name,
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = AppTextStyles.drawerItemLabel,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
                                     account.currencyCode,
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = AppTextStyles.transactionSwipeAction,
                                     color = AppColors.contentSecondary
                                 )
                             }
@@ -300,7 +301,7 @@ fun AppDrawerContent(
                     label = {
                         Text(
                             "SETTINGS",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            style = AppTextStyles.listSectionHeader
                         )
                     },
                     selected = selectedDestination == "settings",

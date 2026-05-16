@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Editorial-style text input with icon and label for entry screens.
@@ -94,7 +95,7 @@ fun EntryEditorialInput(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                             fontSize = 10.sp
@@ -106,14 +107,14 @@ fun EntryEditorialInput(
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = AppTextStyles.listItemTitle,
                                 color = AppColors.contentSecondary.copy(alpha = 0.3f)
                             )
                         }
                         BasicTextField(
                             value = value,
                             onValueChange = onValueChange,
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            textStyle = AppTextStyles.listItemTitle.copy(
                                 color = AppColors.contentPrimary,
                                 fontWeight = FontWeight.Medium
                             ),

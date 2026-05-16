@@ -42,6 +42,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AccountHeroCard(
@@ -97,7 +98,7 @@ fun AccountHeroCard(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = "TOTAL BALANCE",
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp
                     ),
@@ -125,7 +126,7 @@ fun AccountHeroCard(
                             append(symbolText)
                         }
                     },
-                    style = MaterialTheme.typography.headlineLarge.copy(
+                    style = AppTextStyles.heroAmount.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 32.sp,
                         letterSpacing = (-1).sp
@@ -143,7 +144,7 @@ fun AccountHeroCard(
                                 shorten = true
                             )
                         }",
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        style = AppTextStyles.transactionTitle.copy(
                             fontWeight = FontWeight.Medium,
                             color = AppColors.contentSecondary.copy(alpha = 0.7f)
                         )
@@ -181,7 +182,7 @@ fun AccountHeroCard(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "DISTRIBUTION",
-                        style = MaterialTheme.typography.labelMedium.copy(
+                        style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
                             color = AppColors.contentSecondary.copy(alpha = 0.8f)
@@ -212,14 +213,14 @@ fun AccountHeroCard(
                                 ) {
                                     Text(
                                         curr,
-                                        style = MaterialTheme.typography.labelSmall.copy(
+                                        style = AppTextStyles.transactionSwipeAction.copy(
                                             fontWeight = FontWeight.Black,
                                             color = accountColor
                                         )
                                     )
                                     Text(
                                         formatAmount(bal, precision = precision),
-                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                        style = AppTextStyles.transactionTitle.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = (-0.2).sp
                                         )
@@ -266,7 +267,7 @@ private fun FlowSummaryItem(
                 )
                 Text(
                     text = label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
@@ -275,7 +276,7 @@ private fun FlowSummaryItem(
             }
             Text(
                 text = formatAmount(amount),
-                style = MaterialTheme.typography.titleMedium.copy(
+                style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold
                 ),
                 color = AppColors.contentPrimary

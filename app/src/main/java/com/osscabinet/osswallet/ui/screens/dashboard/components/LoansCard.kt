@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun LoansCard(
@@ -88,7 +89,7 @@ fun LoansCard(
         if (items.isEmpty()) {
             Text(
                 text = "No loans yet",
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -133,7 +134,7 @@ private fun LoanSummaryRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = summary.loan.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.2).sp
                         ),
@@ -142,7 +143,7 @@ private fun LoanSummaryRow(
                     Text(
                         text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}" 
                                else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
                         ),
@@ -152,7 +153,7 @@ private fun LoanSummaryRow(
                 
                 Text(
                     text = "${(progress * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelLarge.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Black,
                         fontFeatureSettings = "tnum"
                     ),
@@ -180,7 +181,7 @@ private fun LoanSummaryRow(
                 Column {
                     Text(
                         text = "REMAINING",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
@@ -188,7 +189,7 @@ private fun LoanSummaryRow(
                     )
                     Text(
                         text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision, shorten = true),
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),
                         color = AppColors.contentPrimary
@@ -201,7 +202,7 @@ private fun LoanSummaryRow(
                 ) {
                     Text(
                         text = "Principal: ${formatAmount(summary.loan.principalAmount, precision)}",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum"
                         ),

@@ -37,6 +37,7 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Interactive pie wheel chart for category breakdown.
@@ -170,21 +171,21 @@ fun CategoryBreakdownPieChart(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = displaySegment?.category ?: "Total",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AppTextStyles.screenSubTitle,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
                     if (displaySegment != null) {
                         Text(
                             text = formatAmount(displaySegment.amount.abs()),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             textAlign = TextAlign.Center,
                             color = AppColors.contentPrimary
                         )
                         if (displaySegment.hasSubcategories && !showSubcategories) {
                             Text(
                                 text = "Double tap for subcategories",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 textAlign = TextAlign.Center,
                                 color = AppColors.contentSecondary
                             )

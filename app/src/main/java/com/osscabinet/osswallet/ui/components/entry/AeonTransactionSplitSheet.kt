@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Generic bottom sheet to manage transaction splitting.
@@ -72,7 +73,7 @@ fun AeonTransactionSplitSheet(
                 Column {
                     Text(
                         text = "SPLIT TRANSACTION",
-                        style = MaterialTheme.typography.labelLarge.copy(
+                        style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
@@ -80,7 +81,7 @@ fun AeonTransactionSplitSheet(
                     )
                     Text(
                         text = "Divide amount into multiple transactions",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.transactionSwipeAction,
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
@@ -116,14 +117,14 @@ fun AeonTransactionSplitSheet(
                     Column {
                         Text(
                             text = "TOTAL AMOUNT",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         )
                         Text(
                             text = "$currency ${totalAmount.toPlainString()}",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black)
+                            style = AppTextStyles.heroAmount
                         )
                     }
 
@@ -131,7 +132,7 @@ fun AeonTransactionSplitSheet(
                         val isOver = remainingAmount < BigDecimal.ZERO
                         Text(
                             text = if (isFullyAllocated) "ALLOCATED" else if (isOver) "OVER ALLOCATED" else "REMAINING",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = if (isFullyAllocated) PositiveAmountColor
                                 else if (isOver) AppColors.error
@@ -140,7 +141,7 @@ fun AeonTransactionSplitSheet(
                         )
                         Text(
                             text = "$currency ${remainingAmount.abs().toPlainString()}",
-                            style = MaterialTheme.typography.headlineSmall.copy(
+                            style = AppTextStyles.calculatorKey.copy(
                                 fontWeight = FontWeight.Black,
                                 color = if (isFullyAllocated) PositiveAmountColor
                                 else if (isOver) AppColors.error
@@ -178,7 +179,7 @@ fun AeonTransactionSplitSheet(
                         .fillMaxWidth()
                         .padding(start = dims.spacingXl, end = dims.spacingXl, bottom = dims.spacingMd),
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.chipLabel,
                     color = AppColors.error
                 )
             }
@@ -209,7 +210,7 @@ fun AeonTransactionSplitSheet(
                 ) {
                     Text(
                         text = "REVERT",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.managementItemTitle
                     )
                 }
 
@@ -227,7 +228,7 @@ fun AeonTransactionSplitSheet(
                 ) {
                     Text(
                         text = "CONFIRM SPLIT",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.managementItemTitle
                     )
                 }
             }
@@ -285,7 +286,7 @@ private fun SplitItem(
                         Spacer(modifier = Modifier.width(dims.spacingMd))
                         Text(
                             text = category?.name ?: "Select Category",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            style = AppTextStyles.cardSecondaryAmount,
                             maxLines = 1,
                             color = if (category == null) AppColors.contentSecondary.copy(alpha = 0.6f) else AppColors.contentPrimary
                         )
@@ -298,7 +299,7 @@ private fun SplitItem(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "AMOUNT",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.contentSecondary.copy(alpha = 0.5f)
@@ -321,7 +322,7 @@ private fun SplitItem(
                         ),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        textStyle = MaterialTheme.typography.titleMedium.copy(
+                        textStyle = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.Black,
                             textAlign = TextAlign.End
                         )
@@ -348,7 +349,7 @@ private fun SplitItem(
                 value = split.note,
                 onValueChange = { onUpdate(null, it, null) },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Add a note for this split...", style = MaterialTheme.typography.bodySmall) },
+                placeholder = { Text("Add a note for this split...", style = AppTextStyles.caption) },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = AppColors.cardSurface.copy(alpha = 0.4f),
                     unfocusedContainerColor = AppColors.cardSurface.copy(alpha = 0.2f),
@@ -357,7 +358,7 @@ private fun SplitItem(
                 ),
                 shape = RoundedCornerShape(dims.spacingMd),
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
+                textStyle = AppTextStyles.caption,
                 leadingIcon = {
                     Icon(
                         Icons.AutoMirrored.Rounded.Notes,

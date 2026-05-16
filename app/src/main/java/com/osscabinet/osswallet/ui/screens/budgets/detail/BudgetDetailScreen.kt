@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
@@ -71,6 +72,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,7 +161,7 @@ fun BudgetDetailScreen(
                 title = {
                     Text(
                         budget.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.cardTitle
                     )
                 },
                 navigationIcon = {
@@ -274,14 +276,14 @@ fun BudgetDetailScreen(
                                             Column {
                                                 Text(
                                                     "Rollover Applied",
-                                                    style = MaterialTheme.typography.titleSmall.copy(
+                                                    style = AppTextStyles.managementItemTitle.copy(
                                                         fontWeight = FontWeight.Bold
                                                     ),
                                                     color = AppColors.primary
                                                 )
                                                 Text(
                                                     "+${progress.rolloverAmount.toPlainString()} ${budget.currency} carried forward",
-                                                    style = MaterialTheme.typography.bodySmall,
+                                                    style = AppTextStyles.caption,
                                                     color = AppColors.primary.copy(alpha = 0.7f)
                                                 )
                                             }
@@ -306,7 +308,7 @@ fun BudgetDetailScreen(
                                 Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
                                     Text(
                                         "No activity in this period",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = AppTextStyles.transactionTitle,
                                         color = AppColors.contentSecondary.copy(
                                             alpha = 0.6f
                                         )
@@ -337,25 +339,20 @@ fun BudgetDetailScreen(
                                         BudgetService.buildTransactionFilter(budget, now, categoriesList)
                                     )
                                 },
-                                onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
-                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                onStatusChange = { id, status ->
-                                    transactionViewModel.quickUpdateStatus(
-                                        id,
-                                        status
-                                    )
-                                },
-                                onClone = { onCloneTransactionClick(it) },
-                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = {
-                                    transactionViewModel.toggleStatusClearedUncleared(
-                                        it
-                                    )
+                                onTransactionEvent = { event ->
+                                    when (event) {
+                                        is TransactionItemEvent.Click -> onTransactionClick(event.id)
+                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                                        is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                    }
                                 },
                                 precision = precision
                             )

@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CategoryEditSheet(
@@ -102,7 +103,7 @@ fun CategoryEditSheet(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "This is a system category and cannot be modified or deleted.",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.onErrorContainer
                             )
                         }
@@ -198,7 +199,7 @@ fun CategoryEditSheet(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "Inheriting color from parent category.",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.onSecondaryContainer
                             )
                         }

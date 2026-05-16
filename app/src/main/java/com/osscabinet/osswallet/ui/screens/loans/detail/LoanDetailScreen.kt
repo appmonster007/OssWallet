@@ -63,6 +63,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
@@ -78,6 +79,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,7 +164,7 @@ fun LoanDetailScreen(
                 title = {
                     Text(
                         loan.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.cardTitle
                     )
                 },
                 navigationIcon = {
@@ -220,7 +222,7 @@ fun LoanDetailScreen(
                                 ) {
                                     Text(
                                         "No related transactions",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = AppTextStyles.transactionTitle,
                                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                     )
                                 }
@@ -245,19 +247,21 @@ fun LoanDetailScreen(
                                 onRecordsClick = { _ ->
                                     onRecordsClick(LoanService.buildTransactionFilter(loan, categoriesList))
                                 },
-                                onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
-                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                onStatusChange = { id, status ->
-                                    transactionViewModel.quickUpdateStatus(id, status)
+                                onTransactionEvent = { event ->
+                                    when (event) {
+                                        is TransactionItemEvent.Click -> onTransactionClick(event.id)
+                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                                        is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                    }
                                 },
-                                onClone = { onCloneTransactionClick(it) },
-                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                 precision = precision
                             )
                         }
@@ -420,27 +424,27 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
         ) {
             Text(
                 "${entry.period}",
-                style = MaterialTheme.typography.labelSmall,
+                style = AppTextStyles.transactionSwipeAction,
                 modifier = Modifier.width(AeonTheme.dimensions.spacingXl),
                 color = AppColors.contentSecondary
             )
             Text(
                 dateStr,
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 modifier = Modifier.width(AeonTheme.dimensions.iconSize3xl)
             )
             Text(
                 entry.principal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                style = MaterialTheme.typography.bodySmall
+                style = AppTextStyles.caption
             )
             Text(
                 entry.interest.toPlainString(),
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.error
             )
             Text(
                 entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.primary
             )
         }

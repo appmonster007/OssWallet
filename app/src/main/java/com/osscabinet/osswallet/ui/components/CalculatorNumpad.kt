@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.calculator.*
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Enhanced Financial Expression Engine UI.
@@ -175,7 +176,7 @@ private fun CalculatorDisplay(
             if (expression.isNotEmpty()) {
                 Text(
                     text = expression,
-                    style = MaterialTheme.typography.bodyLarge.copy(
+                    style = AppTextStyles.listItemTitle.copy(
                         letterSpacing = 0.5.sp
                     ),
                     color = AppColors.contentSecondary.copy(alpha = 0.6f),
@@ -187,7 +188,7 @@ private fun CalculatorDisplay(
             // Result line
             Text(
                 text = displayResult,
-                style = MaterialTheme.typography.headlineLarge.copy(
+                style = AppTextStyles.heroAmount.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp
                 ),
@@ -201,7 +202,7 @@ private fun CalculatorDisplay(
             if (ghostResult.isNotEmpty() && ghostResult != result) {
                 Text(
                     text = if (transactionType == TransactionType.EXPENSE) "−$ghostResult" else ghostResult,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    style = AppTextStyles.chartTooltipValue,
                     color = AppColors.primary.copy(alpha = 0.4f),
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
@@ -319,7 +320,7 @@ private fun CalculatorKey(
             } else {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.titleLarge.copy(
+                    style = AppTextStyles.screenTitle.copy(
                         fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.SemiBold,
                         letterSpacing = if (label.length > 1) 0.sp else 0.5.sp
                     ),
@@ -358,7 +359,7 @@ private fun CalculatorHistorySheet(
             ) {
                 Text(
                     "History",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.heroAmount
                 )
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
@@ -376,7 +377,7 @@ private fun CalculatorHistorySheet(
                 ) {
                     Text(
                         "No calculations yet",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = AppTextStyles.listItemTitle,
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
@@ -399,12 +400,12 @@ private fun CalculatorHistorySheet(
                             ) {
                                 Text(
                                     item.expression,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = AppTextStyles.transactionTitle,
                                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                                 Text(
                                     "= ${item.result}",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = AppTextStyles.screenTitle,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.primary
                                 )

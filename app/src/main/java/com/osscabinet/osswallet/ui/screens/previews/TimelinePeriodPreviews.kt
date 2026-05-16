@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Preview(showBackground = true, name = "Aeon Timeline Period Selector - All Modes")
 @Composable
@@ -31,14 +32,14 @@ fun AeonTimelinePeriodSelectorAllModesPreview() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Value Swiping (Fixed Controls)", style = MaterialTheme.typography.labelLarge)
+                Text("Value Swiping (Fixed Controls)", style = AppTextStyles.drawerItemLabel)
                 AeonTimelinePeriodSelector(
                     currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
                     onRangeSelected = {},
                     swipeEntireComponent = false
                 )
                 
-                Text("Custom Range (Value Swipe)", style = MaterialTheme.typography.labelSmall)
+                Text("Custom Range (Value Swipe)", style = AppTextStyles.transactionSwipeAction)
                 AeonTimelinePeriodSelector(
                     currentRange = TimelineRange.CustomRange(
                         start = 1715731200000L, // May 15, 2024
@@ -50,7 +51,7 @@ fun AeonTimelinePeriodSelectorAllModesPreview() {
 
                 Spacer(Modifier.height(16.dp))
 
-                Text("Component Swiping (Optional)", style = MaterialTheme.typography.labelLarge)
+                Text("Component Swiping (Optional)", style = AppTextStyles.drawerItemLabel)
                 AeonTimelinePeriodSelector(
                     currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
                     onRangeSelected = {},

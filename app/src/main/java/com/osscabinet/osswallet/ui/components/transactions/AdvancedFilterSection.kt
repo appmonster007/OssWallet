@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +64,7 @@ fun AdvancedFilterSection(
         if (hasBaseFilters) {
             Text(
                 "BASE SCOPE",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
@@ -108,7 +109,7 @@ fun AdvancedFilterSection(
         if (filterRules.allowTimelineSelection) {
             Text(
                 "TIMELINE",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
@@ -132,7 +133,7 @@ fun AdvancedFilterSection(
         ) {
             Text(
                 "ADVANCED FILTERS",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
@@ -144,7 +145,7 @@ fun AdvancedFilterSection(
                     onClick = { onFilterChange(baseFilter) },
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    Text("Clear All", style = MaterialTheme.typography.labelSmall)
+                    Text("Clear All", style = AppTextStyles.transactionSwipeAction)
                 }
             }
         }
@@ -221,7 +222,7 @@ fun AdvancedFilterSection(
             ) {
                 Icon(if (expandedFilters) Icons.Default.ExpandLess else Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (expandedFilters) "Fewer Filters" else "More Filters", style = MaterialTheme.typography.labelLarge)
+                Text(if (expandedFilters) "Fewer Filters" else "More Filters", style = AppTextStyles.drawerItemLabel)
             }
 
             // Load Preset Button
@@ -234,7 +235,7 @@ fun AdvancedFilterSection(
                     ) {
                         Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Presets", style = MaterialTheme.typography.labelLarge)
+                        Text("Presets", style = AppTextStyles.drawerItemLabel)
                     }
 
                     DropdownMenu(

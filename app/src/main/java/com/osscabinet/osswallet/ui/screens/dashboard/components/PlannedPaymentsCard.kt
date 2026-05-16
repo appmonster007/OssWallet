@@ -60,6 +60,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +106,7 @@ fun PlannedPaymentsCard(
                         PlannedPaymentsViewMode.FUTURE_ONLY -> "No upcoming payments"
                         PlannedPaymentsViewMode.BOTH -> "No upcoming payments"
                     },
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AppTextStyles.caption,
                     color = AppColors.contentSecondary,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
@@ -179,7 +180,7 @@ private fun PlannedPaymentsSettingsSheet(
             ) {
                 Text(
                     "Planned Payments",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.heroAmount
                 )
                 IconButton(
                     onClick = { onDelete(); onDismiss() },
@@ -201,7 +202,7 @@ private fun PlannedPaymentsSettingsSheet(
                 ) {
                     Text(
                         "SHOW",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.sp,
                             fontSize = 11.sp
@@ -219,7 +220,7 @@ private fun PlannedPaymentsSettingsSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                            Text(label, style = AppTextStyles.transactionTitle)
                             RadioButton(
                                 selected = config.viewMode == mode,
                                 onClick = { onUpdate(config.copy(viewMode = mode)) }
@@ -241,7 +242,7 @@ private fun PlannedPaymentsSettingsSheet(
                 ) {
                     Text(
                         "DISPLAY",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.sp,
                             fontSize = 11.sp
@@ -254,10 +255,10 @@ private fun PlannedPaymentsSettingsSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Look-ahead window", style = MaterialTheme.typography.bodyMedium)
+                            Text("Look-ahead window", style = AppTextStyles.transactionTitle)
                             Text(
                                 "${config.daysAhead} days",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = AppTextStyles.caption,
                                 color = AppColors.contentSecondary
                             )
                         }
@@ -269,7 +270,7 @@ private fun PlannedPaymentsSettingsSheet(
                                     label = {
                                         Text(
                                             "${days}d",
-                                            style = MaterialTheme.typography.labelSmall
+                                            style = AppTextStyles.transactionSwipeAction
                                         )
                                     }
                                 )
@@ -285,7 +286,7 @@ private fun PlannedPaymentsSettingsSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Max items", style = MaterialTheme.typography.bodyMedium)
+                        Text("Max items", style = AppTextStyles.transactionTitle)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(3, 5, 7, 10).forEach { n ->
                                 FilterChip(
@@ -294,7 +295,7 @@ private fun PlannedPaymentsSettingsSheet(
                                     label = {
                                         Text(
                                             "$n",
-                                            style = MaterialTheme.typography.labelSmall
+                                            style = AppTextStyles.transactionSwipeAction
                                         )
                                     }
                                 )
@@ -368,14 +369,14 @@ private fun PlannedPaymentRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall.copy(
+                    style = AppTextStyles.managementItemTitle.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp
                     )
                 )
                 Text(
                     text = dateLabel.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.sp,
                         letterSpacing = 0.5.sp,
@@ -386,7 +387,7 @@ private fun PlannedPaymentRow(
             }
             Text(
                 text = "${formatAmount(amount, precision)} $currency",
-                style = MaterialTheme.typography.titleMedium.copy(
+                style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = if (isOverdue) AppColors.error

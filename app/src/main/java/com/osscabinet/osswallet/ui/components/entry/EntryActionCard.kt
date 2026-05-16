@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Shared action card for entry screens.
@@ -104,7 +105,7 @@ fun EntryActionCard(
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
@@ -113,7 +114,7 @@ fun EntryActionCard(
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.bodyLarge.copy(
+                    style = AppTextStyles.listItemTitle.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
                     color = if (isSelected) selectedColor else AppColors.contentPrimary,

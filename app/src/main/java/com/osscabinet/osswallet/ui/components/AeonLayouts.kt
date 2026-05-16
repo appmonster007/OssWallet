@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import androidx.compose.ui.input.pointer.pointerInput
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonSectionHeader(
@@ -38,7 +39,7 @@ fun AeonSectionHeader(
     ) {
         Text(
             title,
-            style = MaterialTheme.typography.titleSmall.copy(
+            style = AppTextStyles.managementItemTitle.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = AppColors.contentPrimary
             )
@@ -123,7 +124,7 @@ fun DetailDrawer(
                         }
                         Text(
                             "Additional Details",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = AppTextStyles.screenSubTitle,
                             fontWeight = FontWeight.Bold
                         )
                     }

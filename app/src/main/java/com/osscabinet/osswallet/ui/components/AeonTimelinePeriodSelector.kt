@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Optimized Timeline Period Selector.
@@ -257,7 +258,7 @@ private fun IconIndicators(
                     Text(
                         text = labels[index],
                         modifier = Modifier.padding(start = 4.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp, fontSize = 8.sp),
+                        style = AppTextStyles.timelineTabLabel,
                         color = AppColors.primary
                     )
                 }
@@ -297,7 +298,7 @@ private fun DateDisplayArea(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = getRangeSubtitleText(currentRange),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                style = AppTextStyles.timelinePeriodValue,
                 color = AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -324,7 +325,7 @@ private fun DateDisplayArea(
                 if (page == 1) {
                     ThisPeriodType.entries.forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
+                            text = { Text(type.label, style = AppTextStyles.drawerItemLabel) },
                             onClick = {
                                 onRangeSelected(TimelineRange.ThisPeriod(type))
                                 onDropdownShow(false)
@@ -334,7 +335,7 @@ private fun DateDisplayArea(
                 } else if (page == 2) {
                     LastPeriodType.entries.forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
+                            text = { Text(type.label, style = AppTextStyles.drawerItemLabel) },
                             onClick = {
                                 onRangeSelected(TimelineRange.LastPeriod(type))
                                 onDropdownShow(false)

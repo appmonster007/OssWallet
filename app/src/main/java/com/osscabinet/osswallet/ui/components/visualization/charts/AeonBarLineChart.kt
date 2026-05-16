@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity, interactive bar + line chart for dual-axis visualization.
@@ -54,7 +55,7 @@ fun AeonBarLineChart(
 ) {
     if (barData.isEmpty() || lineData.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data available", style = MaterialTheme.typography.bodySmall)
+            Text("No data available", style = AppTextStyles.caption)
         }
         return
     }
@@ -81,7 +82,7 @@ fun AeonBarLineChart(
         val allValues = barData + lineData
         if (allValues.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No data available", style = MaterialTheme.typography.bodySmall)
+                Text("No data available", style = AppTextStyles.caption)
             }
             return@BoxWithConstraints
         }
@@ -237,15 +238,15 @@ fun AeonBarLineChart(
                 border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), lineColor.copy(alpha = 0.5f))
             ) {
                 Column(modifier = Modifier.padding(dims.spacingSm)) {
-                    Text("Period ${index + 1}", style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary)
+                    Text("Period ${index + 1}", style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
                     Spacer(modifier = Modifier.height(dims.spacingXs))
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Text("Flow:", style = MaterialTheme.typography.labelSmall)
-                        Text(formatCurrencyRight(barVal, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
+                        Text("Flow:", style = AppTextStyles.transactionSwipeAction)
+                        Text(formatCurrencyRight(barVal, currency, precision), style = AppTextStyles.managementItemSubtitle, color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
                     }
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Text("Trend:", style = MaterialTheme.typography.labelSmall)
-                        Text(formatCurrencyRight(lineVal, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = lineColor)
+                        Text("Trend:", style = AppTextStyles.transactionSwipeAction)
+                        Text(formatCurrencyRight(lineVal, currency, precision), style = AppTextStyles.managementItemSubtitle, color = lineColor)
                     }
                     
                     if (onNavigateToRecords != null) {
@@ -259,7 +260,7 @@ fun AeonBarLineChart(
                         ) {
                             Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(dims.iconSizeLg / 2), tint = lineColor)
                             Spacer(modifier = Modifier.width(dims.spacingXs))
-                            Text("See Records", style = MaterialTheme.typography.labelSmall, color = lineColor)
+                            Text("See Records", style = AppTextStyles.transactionSwipeAction, color = lineColor)
                         }
                     }
                 }

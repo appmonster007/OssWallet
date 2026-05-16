@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Dialog wrapping [AeonTimelinePeriodSelector] for selecting a [TimelineRange] in entry screens
@@ -49,7 +50,7 @@ fun AeonTimelineSheet(
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = AppTextStyles.screenTitle,
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 8.dp)
                 )
 

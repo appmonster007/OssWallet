@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,8 +85,8 @@ fun AccountListScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(account.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text(formatCurrencyRight(BigDecimal.ZERO, account.currencyCode), style = MaterialTheme.typography.bodySmall)
+                        Text(account.name, style = AppTextStyles.transactionTitle, fontWeight = FontWeight.Bold)
+                        Text(formatCurrencyRight(BigDecimal.ZERO, account.currencyCode), style = AppTextStyles.caption)
                     }
                 }
             }
@@ -98,7 +99,7 @@ fun AccountListScreen(
                 title = { 
                     Text(
                         if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.cardSectionTitle
                     ) 
                 },
                 navigationIcon = {
@@ -270,14 +271,14 @@ fun AccountManagementListItem(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         account.name,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = AppTextStyles.managementItemTitle,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         account.structureType,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.transactionSwipeAction,
                         color = AppColors.border
                     )
                 }

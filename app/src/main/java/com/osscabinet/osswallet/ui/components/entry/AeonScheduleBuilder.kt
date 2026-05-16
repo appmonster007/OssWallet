@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -87,7 +88,7 @@ fun AeonScheduleBuilder(
         AlertDialog(
             onDismissRequest = onDismiss,
             shape = RoundedCornerShape(28.dp),
-            title = { Text("Frequency", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            title = { Text("Frequency", style = AppTextStyles.cardTitle) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -192,7 +193,7 @@ fun AeonScheduleBuilder(
                                         ) {
                                             Text(
                                                 "Cron Usage Guide",
-                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                                style = AppTextStyles.listSectionHeader
                                             )
                                             IconButton(
                                                 onClick = { showCronHelp = false },
@@ -215,7 +216,7 @@ fun AeonScheduleBuilder(
                                             • 0 12 * * 1-5 : Noon on weekdays
                                             • 0 0 */2 * * : Every 2 days
                                         """.trimIndent()
-                                        Text(helpText, style = MaterialTheme.typography.bodySmall)
+                                        Text(helpText, style = AppTextStyles.caption)
                                     }
                                 }
                             }
@@ -260,10 +261,10 @@ fun AeonScheduleBuilder(
         AlertDialog(
             onDismissRequest = onDismiss,
             shape = RoundedCornerShape(28.dp),
-            title = { Text("Confirm Schedule", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            title = { Text("Confirm Schedule", style = AppTextStyles.cardTitle) },
             text = { 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Verify your recurrence settings before saving.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Verify your recurrence settings before saving.", style = AppTextStyles.transactionTitle)
                     Surface(
                         color = AppColors.accentContainer.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(16.dp),
@@ -272,7 +273,7 @@ fun AeonScheduleBuilder(
                         Text(
                             text = summary,
                             modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            style = AppTextStyles.listItemTitle,
                             color = AppColors.primary
                         )
                     }
@@ -281,7 +282,7 @@ fun AeonScheduleBuilder(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 "Next occurrences:",
-                                style = MaterialTheme.typography.labelMedium.copy(color = AppColors.border)
+                                style = AppTextStyles.drawerItemLabel.copy(color = AppColors.border)
                             )
                             previewDates.forEach { date ->
                                 Row(
@@ -297,7 +298,7 @@ fun AeonScheduleBuilder(
                                     )
                                     Text(
                                         date,
-                                        style = MaterialTheme.typography.bodySmall.copy(color = AppColors.contentSecondary)
+                                        style = AppTextStyles.caption.copy(color = AppColors.contentSecondary)
                                     )
                                 }
                             }

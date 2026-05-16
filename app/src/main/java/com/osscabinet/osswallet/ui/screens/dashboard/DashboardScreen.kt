@@ -65,10 +65,12 @@ import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
+import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
@@ -97,6 +99,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -247,11 +250,11 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 currentProfile?.name ?: "Intelligence",
-                                style = MaterialTheme.typography.titleLarge
+                                style = AppTextStyles.screenTitle
                             )
                             Text(
                                 "Personal Account",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.border
                             )
                         }
@@ -380,7 +383,7 @@ fun DashboardContent(
                 ) {
                     Text(
                         text = "Glance",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AppTextStyles.screenTitle,
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(
@@ -430,23 +433,20 @@ fun DashboardContent(
                         accounts = state.accounts,
                         allCategories = state.allCategories,
                         savedFilters = savedFilters,
-                        onManageAccountsClick = onManageAccountsClick,
-                        onAccountClick = onAccountClick,
-                        onTransactionClick = onEditTransactionClick,
-                        onPlannedPaymentConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
-                        onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) },
-                        onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                        onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                        onStatusChange = { transactionId, status ->
-                            transactionViewModel.quickUpdateStatus(
-                                transactionId,
-                                status
-                            )
-                        },
-                        onClone = { onCloneTransactionClick(it) },
-                        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                        onSplit = { onSplitTransactionClick(it) },
-                        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                        callbacks = CardListCallbacks(
+                            onManageAccountsClick = onManageAccountsClick,
+                            onAccountClick = onAccountClick,
+                            onTransactionClick = onEditTransactionClick,
+                            onPlannedPaymentConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
+                            onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) },
+                            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                            onClone = { onCloneTransactionClick(it) },
+                            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                            onSplit = { onSplitTransactionClick(it) },
+                            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                        ),
                     )
                 }
             }
@@ -457,23 +457,22 @@ fun DashboardContent(
                 RecentActivitiesScreen(
                     listState = state.recentActivitiesState,
                     onRecordsClick = onRecordsClick,
-                    onTransactionClick = onEditTransactionClick,
                     baseCurrency = state.baseCurrency,
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                     modifier = Modifier.fillMaxSize(),
                     revealedCardIds = revealedCardIds,
-                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                    onStatusChange = { transactionId, status ->
-                        transactionViewModel.quickUpdateStatus(
-                            transactionId,
-                            status
-                        )
+                    onTransactionEvent = { event ->
+                        when (event) {
+                            is TransactionItemEvent.Click -> onEditTransactionClick(event.id)
+                            is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                            is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                            is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                            is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                        }
                     },
-                    onClone = { onCloneTransactionClick(it) },
-                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                    onSplit = { onSplitTransactionClick(it) },
-                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                     precision = state.decimalPrecision,
                     is24Hour = state.use24HourFormat
                 )
@@ -520,7 +519,7 @@ fun DashboardViewIndicator(
             )
             Text(
                 text = getDashboardContextDisplayName(context),
-                style = MaterialTheme.typography.bodyMedium,
+                style = AppTextStyles.transactionTitle,
                 color = AppColors.primary
             )
         }

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionContent
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
 import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Screen for managing tags in settings.
@@ -107,7 +108,7 @@ fun EditTagDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Text("Tag Color", style = MaterialTheme.typography.labelLarge)
+                Text("Tag Color", style = AppTextStyles.drawerItemLabel)
                 
                 TagPresetColors.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

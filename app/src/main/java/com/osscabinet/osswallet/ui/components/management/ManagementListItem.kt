@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Generic list item container for management screens.
@@ -79,14 +80,14 @@ fun ManagementListItem(
                 ) {
                     Text(
                         title,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        style = AppTextStyles.managementItemTitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (subtitle != null) {
                         Text(
                             subtitle,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = AppColors.contentSecondary.copy(alpha = 0.6f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis

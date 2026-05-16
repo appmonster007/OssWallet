@@ -42,6 +42,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CategoryPieChartCard(
@@ -133,7 +134,7 @@ fun CategoryPieChartCard(
                     ) {
                         Text(
                             name.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp
                             )
@@ -237,7 +238,7 @@ fun CategoryPieChartCard(
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No category data", style = MaterialTheme.typography.bodySmall, color = AppColors.contentSecondary)
+                    Text("No category data", style = AppTextStyles.caption, color = AppColors.contentSecondary)
                 }
             }
         }
@@ -316,7 +317,7 @@ private fun CategoryPieChartDisplaySettingsDialog(
         title = {
             Text(
                 "Breakdown Display",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
@@ -385,7 +386,7 @@ fun CategoryLegend(
                 
                 Text(
                     text = item.category,
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Medium,
                         fontSize = 12.sp
                     ),
@@ -394,7 +395,7 @@ fun CategoryLegend(
                 
                 Text(
                     text = formatAmount(item.amount, precision),
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     ),
@@ -406,7 +407,7 @@ fun CategoryLegend(
         if (data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
                 ),

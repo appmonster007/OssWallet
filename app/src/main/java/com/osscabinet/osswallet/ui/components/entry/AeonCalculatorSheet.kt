@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Calculator bottom sheet using the full CalculatorNumpad component.
@@ -50,7 +51,7 @@ fun AeonCalculatorSheet(
             if (title != null) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = AppTextStyles.cardSectionTitle,
                     modifier = Modifier.padding(bottom = dims.spacingLg, start = dims.spacingSm)
                 )
             }

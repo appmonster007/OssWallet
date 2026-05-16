@@ -38,6 +38,7 @@ import java.math.BigDecimal
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 const val ANIMATION_DURATION = 400
 const val ACTION_ITEM_SIZE = 64
@@ -52,14 +53,7 @@ enum class SwipeDirection {
 fun SwipeableTransactionItem(
     transaction: Transaction,
     isRevealed: Boolean,
-    onExpandLeft: () -> Unit,
-    onExpandRight: () -> Unit,
-    onCollapse: () -> Unit,
-    onFullSwipeRight: () -> Unit,
-    onStatusChange: (TransactionStatus) -> Unit,
-    onClone: () -> Unit,
-    onDelete: () -> Unit,
-    onSplit: () -> Unit,
+    onEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
@@ -115,9 +109,9 @@ fun SwipeableTransactionItem(
             if (animatedOffset > 0) {
                 StatusActionsRow(
                     currentStatus = transaction.status,
-                    onStatusChange = onStatusChange,
+                    onStatusChange = { status -> onEvent(TransactionItemEvent.StatusChange(transaction.id, status)) },
                     progress = progress,
-                    onCollapse = onCollapse,
+                    onCollapse = { onEvent(TransactionItemEvent.Collapse(transaction.id)) },
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
@@ -125,11 +119,11 @@ fun SwipeableTransactionItem(
             // Left Swipe Content (Reveals Item Actions on the Right)
             if (animatedOffset < 0) {
                 TransactionActionsRow(
-                    onSplit = onSplit,
-                    onClone = onClone,
-                    onDelete = onDelete,
+                    onSplit = { onEvent(TransactionItemEvent.Split(transaction.id)) },
+                    onClone = { onEvent(TransactionItemEvent.Clone(transaction.id)) },
+                    onDelete = { onEvent(TransactionItemEvent.Delete(transaction.id)) },
                     progress = progress,
-                    onCollapse = onCollapse,
+                    onCollapse = { onEvent(TransactionItemEvent.Collapse(transaction.id)) },
                     modifier = Modifier.align(Alignment.CenterEnd)
                 )
             }
@@ -170,38 +164,38 @@ fun SwipeableTransactionItem(
                                 SwipeDirection.RIGHT -> {
                                     if (offsetX >= fullSwipeThresholdPx) {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onFullSwipeRight()
+                                        onEvent(TransactionItemEvent.FullSwipeRight(transaction.id))
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
                                     } else if (offsetX > rightSwipeThresholdPx / 2) {
                                         offsetX = rightSwipeThresholdPx
-                                        onExpandRight()
+                                        onEvent(TransactionItemEvent.Expand(transaction.id))
                                     } else {
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
-                                        onCollapse()
+                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
                                     }
                                 }
                                 SwipeDirection.LEFT -> {
                                     if (abs(offsetX) > leftSwipeThresholdPx / 2) {
                                         offsetX = -leftSwipeThresholdPx
-                                        onExpandLeft()
+                                        onEvent(TransactionItemEvent.Expand(transaction.id))
                                     } else {
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
-                                        onCollapse()
+                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
                                     }
                                 }
                                 else -> {
                                     offsetX = 0f
-                                    onCollapse()
+                                    onEvent(TransactionItemEvent.Collapse(transaction.id))
                                 }
                             }
                         },
                         onDragCancel = {
                             offsetX = 0f
                             swipeDirection = SwipeDirection.NONE
-                            onCollapse()
+                            onEvent(TransactionItemEvent.Collapse(transaction.id))
                         }
                     )
                 },
@@ -319,7 +313,7 @@ fun ExpressiveActionButton(
         }
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 10.sp
             ),
@@ -339,8 +333,7 @@ fun PreviewSwipeableTransactionItem_None() {
             SwipeableTransactionItem(
                 transaction = mockTransactionPreview(),
                 isRevealed = false,
-                onExpandLeft = {}, onExpandRight = {}, onCollapse = {}, onFullSwipeRight = {},
-                onStatusChange = {}, onClone = {}, onDelete = {}, onSplit = {}
+                onEvent = {}
             ) {
                 MockContentPreview()
             }

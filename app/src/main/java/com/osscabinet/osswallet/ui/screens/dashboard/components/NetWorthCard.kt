@@ -64,6 +64,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun NetWorthCard(
@@ -147,7 +148,7 @@ fun NetWorthCard(
             Column {
                 Text(
                     text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision, shorten = true),
-                    style = MaterialTheme.typography.titleLarge.copy(
+                    style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = baseFontSize,
                         letterSpacing = (-0.5).sp
@@ -173,7 +174,7 @@ fun NetWorthCard(
                             )
                             Text(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage% from prev. period",
-                                style = MaterialTheme.typography.labelSmall.copy(
+                                style = AppTextStyles.transactionSwipeAction.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp
                                 ),
@@ -278,7 +279,7 @@ private fun FlowBadge(
 //                )
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             letterSpacing = 0.5.sp
@@ -304,7 +305,7 @@ private fun FlowBadge(
                             )
                             Text(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage%",
-                                style = MaterialTheme.typography.labelSmall.copy(
+                                style = AppTextStyles.transactionSwipeAction.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp
                                 ),
@@ -316,7 +317,7 @@ private fun FlowBadge(
             }
             Text(
                 text = formatCurrencyRight(amount, currency, precision, shorten = true),
-                style = MaterialTheme.typography.titleSmall.copy(
+                style = AppTextStyles.managementItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
@@ -365,7 +366,7 @@ private fun NetWorthDisplaySettingsDialog(
         title = {
             Text(
                 "Net Worth Display",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
@@ -383,7 +384,7 @@ private fun NetWorthDisplaySettingsDialog(
                     ) {
                         Text(
                             "FONT SIZE",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             ),
@@ -432,7 +433,7 @@ private fun NetWorthDisplaySettingsDialog(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "SHOW COMPARISON",
-                                style = MaterialTheme.typography.labelSmall.copy(
+                                style = AppTextStyles.transactionSwipeAction.copy(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.sp
                                 ),
@@ -440,7 +441,7 @@ private fun NetWorthDisplaySettingsDialog(
                             )
                             Text(
                                 "Show change from previous period",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = AppTextStyles.caption,
                                 color = AppColors.contentSecondary
                             )
                         }

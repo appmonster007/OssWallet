@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import kotlin.math.roundToInt
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @Composable
@@ -86,7 +87,7 @@ fun AeonChartInteractionPopup(
                 )
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.labelLarge.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
@@ -101,7 +102,7 @@ fun AeonChartInteractionPopup(
             Column {
                 Text(
                     text = formatCurrencyRight(value, currency, precision),
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    style = AppTextStyles.screenSubTitle.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp
                     ),
@@ -113,7 +114,7 @@ fun AeonChartInteractionPopup(
                 ) {
                     Text(
                         text = "GLOBAL SHARE",
-                        style = MaterialTheme.typography.labelExtraSmall.copy(
+                        style = AppTextStyles.metaLabel.copy(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.contentSecondary.copy(alpha = 0.4f)
@@ -121,7 +122,7 @@ fun AeonChartInteractionPopup(
                     )
                     Text(
                         text = "${"%.1f".format(percentageOfTotal * 100)}%",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.formSectionLabel,
                         color = AppColors.contentSecondary
                     )
                 }
@@ -151,7 +152,7 @@ fun AeonChartInteractionPopup(
                         Spacer(modifier = Modifier.width(dims.spacingXs))
                         Text(
                             "DIVE IN ($subcategoryCount)", 
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             )
@@ -173,7 +174,7 @@ fun AeonChartInteractionPopup(
                     Spacer(modifier = Modifier.width(dims.spacingXs))
                     Text(
                         "RECORDS", 
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp
                         )

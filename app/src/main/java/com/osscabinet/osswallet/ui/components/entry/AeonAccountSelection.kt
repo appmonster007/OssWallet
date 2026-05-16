@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonAccountSelection(
@@ -48,7 +49,7 @@ fun AeonAccountSelection(
             if (description != null) {
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = AppTextStyles.transactionTitle,
                     color = AppColors.contentSecondary.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = dims.spacingSm)
                 )

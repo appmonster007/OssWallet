@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun SharedFilterConfirmationDialog(
@@ -24,14 +25,14 @@ fun SharedFilterConfirmationDialog(
         title = {
             Text(
                 text = "Shared Filter Detected",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.heroAmount
             )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Text(
                     text = "This filter is also used by other budgets or loans. How would you like to save your changes?",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AppTextStyles.transactionTitle
                 )
                 
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
@@ -49,8 +50,8 @@ fun SharedFilterConfirmationDialog(
                     ) {
                         Icon(Icons.Rounded.Share, contentDescription = null)
                         Column {
-                            Text(text = "Update Shared Filter", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                            Text(text = "Apply changes to all linked entities", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Update Shared Filter", style = AppTextStyles.listSectionHeader)
+                            Text(text = "Apply changes to all linked entities", style = AppTextStyles.caption)
                         }
                     }
                 }
@@ -68,8 +69,8 @@ fun SharedFilterConfirmationDialog(
                     ) {
                         Icon(Icons.AutoMirrored.Rounded.CallSplit, contentDescription = null)
                         Column {
-                            Text(text = "Create Private Copy", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                            Text(text = "Only apply changes to this item", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Create Private Copy", style = AppTextStyles.listSectionHeader)
+                            Text(text = "Only apply changes to this item", style = AppTextStyles.caption)
                         }
                     }
                 }

@@ -26,7 +26,6 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -37,14 +36,12 @@ fun TransactionFilterSheet(
     accounts: List<Account>,
     categories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
-    onUpdateTimelineRange: (TimelineRange) -> Unit,
-    onUpdateFilter: (TransactionFilter) -> Unit,
+    onFilterEvent: (FilterEvent) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.primaryContainer,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
-    onResetToInitial: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier.wrapContentHeight()
@@ -54,14 +51,12 @@ fun TransactionFilterSheet(
             accounts = accounts,
             allCategories = categories,
             savedFilters = savedFilters,
-            onUpdateTimelineRange = onUpdateTimelineRange,
-            onApplyFilter = onUpdateFilter,
+            onFilterEvent = onFilterEvent,
             onToggleExpand = onToggleExpand,
             onClose = onClose,
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
             accountNames = accountNames,
-            onResetToInitial = onResetToInitial
         )
     }
 }
@@ -111,8 +106,7 @@ fun TransactionFilterSheetPreview() {
                             parentId = null
                         )
                     ),
-                    onUpdateTimelineRange = { },
-                    onUpdateFilter = {},
+                    onFilterEvent = {},
                     onToggleExpand = {},
                     onClose = {}
                 )

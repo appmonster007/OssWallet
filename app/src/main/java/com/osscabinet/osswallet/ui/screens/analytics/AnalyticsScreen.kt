@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
+import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
@@ -30,6 +31,7 @@ import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
@@ -67,7 +69,7 @@ fun AnalyticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
+                title = { Text("Intelligence", style = AppTextStyles.calculatorKey) },
                 navigationIcon = {
                     if (isTopLevel) {
                         IconButton(onClick = onMenuClick) {
@@ -140,12 +142,14 @@ fun AnalyticsScreen(
                                 accounts = state.accounts,
                                 allCategories = state.allCategories,
                                 savedFilters = savedFilters,
-                                onAccountClick = onAccountClick,
-                                onTransactionClick = onEditTransactionClick,
-                                onClone = { onCloneTransactionClick(it) },
-                                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                                callbacks = CardListCallbacks(
+                                    onAccountClick = onAccountClick,
+                                    onTransactionClick = onEditTransactionClick,
+                                    onClone = { onCloneTransactionClick(it) },
+                                    onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                                    onSplit = { onSplitTransactionClick(it) },
+                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                ),
                             )
                         }
                     }

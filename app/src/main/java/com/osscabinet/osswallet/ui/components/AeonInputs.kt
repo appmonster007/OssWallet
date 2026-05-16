@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CurrencySelector(
@@ -40,7 +41,7 @@ fun CurrencySelector(
             ) {
                 Text(
                     selectedCurrency.ifEmpty { "USD" },
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         color = AppColors.contentSecondary
                     )

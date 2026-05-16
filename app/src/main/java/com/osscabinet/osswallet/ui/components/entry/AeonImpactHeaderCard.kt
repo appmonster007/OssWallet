@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Convenience overload for TransactionType.
@@ -215,7 +216,7 @@ fun <T> AeonImpactHeaderCard(
                         )
                         Text(
                             text = "1:${transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = AppTextStyles.chipLabel,
                             color = AppColors.primary
                         )
                     }

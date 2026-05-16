@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * A unified hierarchical selector that supports single-select, multi-select, parent-selection, and management modes.
@@ -94,7 +95,7 @@ fun <T, ID> AeonHierarchicalHybridSelector(
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         noneLabel,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AppTextStyles.screenSubTitle,
                         fontWeight = if (isNoneSelected) FontWeight.Bold else FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
@@ -335,7 +336,7 @@ private fun <T, ID> HybridSelectItem(
             // Item Label
             Text(
                 labelMapper(item),
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = AppTextStyles.listItemTitle.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                 ),
                 color = if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary,

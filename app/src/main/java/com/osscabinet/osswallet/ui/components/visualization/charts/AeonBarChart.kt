@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity, interactive bar chart for single-axis visualization.
@@ -41,7 +42,7 @@ fun AeonBarChart(
 ) {
     if (data.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data available", style = MaterialTheme.typography.bodySmall)
+            Text("No data available", style = AppTextStyles.caption)
         }
         return
     }
@@ -166,8 +167,8 @@ fun AeonBarChart(
                 border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), barColor.copy(alpha = 0.5f))
             ) {
                 Column(modifier = Modifier.padding(dims.spacingSm), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                    Text(pair.first, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary)
-                    Text(formatCurrencyRight(pair.second, currency, precision), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = barColor)
+                    Text(pair.first, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
+                    Text(formatCurrencyRight(pair.second, currency, precision), style = AppTextStyles.cardSecondaryAmount, color = barColor)
                 }
             }
         }

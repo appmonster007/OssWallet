@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +72,7 @@ fun SharedWalletScreen(
                 item {
                     Text(
                         "Collaborate on expenses with family or friends in real-time.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AppTextStyles.transactionTitle,
                         color = AppColors.secondary
                     )
                 }
@@ -156,12 +157,12 @@ fun WalletItem(wallet: SharedWallet) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = wallet.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = AppTextStyles.screenSubTitle,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "${wallet.memberIds.size} members",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AppTextStyles.caption,
                     color = AppColors.secondary
                 )
             }

@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun LoanHeroCard(
@@ -64,7 +65,7 @@ fun LoanHeroCard(
                     Column {
                         Text(
                             text = "REMAINING BALANCE",
-                            style = MaterialTheme.typography.labelMedium.copy(
+                            style = AppTextStyles.drawerItemLabel.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.2.sp
                             ),
@@ -87,7 +88,7 @@ fun LoanHeroCard(
                                     append(symbolText)
                                 }
                             },
-                            style = MaterialTheme.typography.headlineLarge.copy(
+                            style = AppTextStyles.heroAmount.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 32.sp,
                                 letterSpacing = (-1).sp
@@ -98,7 +99,7 @@ fun LoanHeroCard(
                     
                     Text(
                         text = "${(progress * 100).toInt()}%",
-                        style = MaterialTheme.typography.displaySmall.copy(
+                        style = AppTextStyles.heroAmountDisplay.copy(
                             fontWeight = FontWeight.Black,
                             fontFeatureSettings = "tnum"
                         ),
@@ -120,12 +121,12 @@ fun LoanHeroCard(
                 ) {
                     Text(
                         text = "${formatAmount(summary.totalPaid, precision)} repaid",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, precision, shorten = true)}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                 }
@@ -187,7 +188,7 @@ private fun LoanMetricItem(
                 )
                 Text(
                     text = label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
@@ -196,7 +197,7 @@ private fun LoanMetricItem(
             }
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium.copy(
+                style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold
                 ),
                 color = AppColors.contentPrimary,

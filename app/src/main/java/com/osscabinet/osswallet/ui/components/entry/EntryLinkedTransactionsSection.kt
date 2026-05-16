@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun EntryLinkedTransactionsSection(
@@ -64,7 +65,7 @@ fun EntryLinkedTransactionsSection(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Link Transaction",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.transactionAmount,
                     color = AppColors.primary
                 )
                 Spacer(modifier = Modifier.weight(1f))

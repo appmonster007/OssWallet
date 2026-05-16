@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CurrencyBalancesCard(
@@ -108,7 +109,7 @@ fun CurrencyBalancesCard(
         if (currencyTotals.isEmpty()) {
             Text(
                 text = "No data for selected filter",
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -232,7 +233,7 @@ private fun CurrencyDisplaySettingsDialog(
         title = {
             Text(
                 "Currency Display",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
@@ -279,7 +280,7 @@ fun CurrencyBalanceItem(
         ) {
             Text(
                 curr,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.ExtraBold,
                     color = AppColors.primary,
                     letterSpacing = 0.5.sp
@@ -289,7 +290,7 @@ fun CurrencyBalanceItem(
             
             Text(
                 formatCurrencyRight(amount, curr, precision, shorten = true),
-                style = MaterialTheme.typography.titleMedium.copy(
+                style = AppTextStyles.screenSubTitle.copy(
                     fontFeatureSettings = "tnum",
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
@@ -300,7 +301,7 @@ fun CurrencyBalanceItem(
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     ),

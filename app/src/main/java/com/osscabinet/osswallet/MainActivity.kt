@@ -79,6 +79,7 @@ class MainActivity : FragmentActivity() {
                     val navController = rememberNavController()
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                     val scope = rememberCoroutineScope()
+                    var isDrawerNavigating by remember { mutableStateOf(false) }
                     
                     val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
                     val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
@@ -103,6 +104,7 @@ class MainActivity : FragmentActivity() {
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
+                        gesturesEnabled = !isDrawerNavigating,
                         drawerContent = {
                             AppDrawerContent(
                                 currentProfile = currentProfile,
@@ -160,7 +162,6 @@ class MainActivity : FragmentActivity() {
                                 onTemplateClick = { template ->
                                     navController.navigate(Screen.TransactionEntry.createRoute(type = template.transactionType, templateId = template.id))
                                 },
-                                onCloseDrawer = { scope.launch { drawerState.close() } },
                                 onPlannedPaymentsClick = {
                                     navController.navigate(Screen.PlannedPaymentList.route)
                                 },
@@ -169,6 +170,16 @@ class MainActivity : FragmentActivity() {
                                 },
                                 onLoansClick = {
                                     navController.navigate(Screen.LoanList.route)
+                                },
+                                onNavigate = { action ->
+                                    if (!isDrawerNavigating) {
+                                        isDrawerNavigating = true
+                                        scope.launch {
+                                            drawerState.close()
+                                            action()
+                                            isDrawerNavigating = false
+                                        }
+                                    }
                                 }
                             )
                         }

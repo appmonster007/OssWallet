@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,10 +45,12 @@ fun AppDrawerContent(
     onExchangeRatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onTemplateClick: (Template) -> Unit,
-    onCloseDrawer: () -> Unit,
     onPlannedPaymentsClick: () -> Unit = {},
     onBudgetsClick: () -> Unit = {},
-    onLoansClick: () -> Unit = {}
+    onLoansClick: () -> Unit = {},
+    // Caller closes the drawer first, then invokes the action — eliminates the
+    // navigate-while-animating race that caused inconsistent tap behaviour.
+    onNavigate: (() -> Unit) -> Unit
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(280.dp),
@@ -55,7 +58,7 @@ fun AppDrawerContent(
         drawerShape = RoundedCornerShape(topEnd = AeonTheme.dimensions.cardCornerRadius, bottomEnd = AeonTheme.dimensions.cardCornerRadius)
     ) {
         val scrollState = rememberScrollState()
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -122,16 +125,18 @@ fun AppDrawerContent(
                         },
                         selected = selectedDestination == route,
                         onClick = {
-                            when (route) {
-                                "dashboard" -> onDashboardClick()
-                                "list" -> onRecordsClick()
-                                "analytics" -> onAnalyticsClick()
-                                "exchange_rates" -> onExchangeRatesClick()
+                            onNavigate {
+                                when (route) {
+                                    "dashboard" -> onDashboardClick()
+                                    "list" -> onRecordsClick()
+                                    "analytics" -> onAnalyticsClick()
+                                    "exchange_rates" -> onExchangeRatesClick()
+                                }
                             }
-                            onCloseDrawer()
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
@@ -167,15 +172,17 @@ fun AppDrawerContent(
                         },
                         selected = selectedDestination == route,
                         onClick = {
-                            when (route) {
-                                "planned_payments" -> onPlannedPaymentsClick()
-                                "budgets" -> onBudgetsClick()
-                                "loans" -> onLoansClick()
+                            onNavigate {
+                                when (route) {
+                                    "planned_payments" -> onPlannedPaymentsClick()
+                                    "budgets" -> onBudgetsClick()
+                                    "loans" -> onLoansClick()
+                                }
                             }
-                            onCloseDrawer()
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
@@ -200,10 +207,7 @@ fun AppDrawerContent(
                         NavigationDrawerItem(
                             label = { Text(template.name, style = MaterialTheme.typography.labelLarge) },
                             selected = false,
-                            onClick = {
-                                onTemplateClick(template)
-                                onCloseDrawer()
-                            },
+                            onClick = { onNavigate { onTemplateClick(template) } },
                             icon = {
                                 Icon(
                                     when (template.transactionType) {
@@ -216,7 +220,8 @@ fun AppDrawerContent(
                                     tint = AppColors.primary
                                 )
                             },
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RectangleShape,
                             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                         )
                     }
@@ -260,10 +265,7 @@ fun AppDrawerContent(
                             }
                         },
                         selected = false,
-                        onClick = {
-                            onAccountClick(account.id)
-                            onCloseDrawer()
-                        },
+                        onClick = { onNavigate { onAccountClick(account.id) } },
                         icon = {
                             val accountColor = try {
                                 Color(AndroidColor.parseColor(account.colorHex))
@@ -277,7 +279,8 @@ fun AppDrawerContent(
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
@@ -301,12 +304,10 @@ fun AppDrawerContent(
                         )
                     },
                     selected = selectedDestination == "settings",
-                    onClick = {
-                        onSettingsClick()
-                        onCloseDrawer()
-                    },
+                    onClick = { onNavigate { onSettingsClick() } },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RectangleShape,
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                 )
             }

@@ -116,7 +116,7 @@ fun AeonTimelinePeriodSelector(
                 centerContent = {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxWidth().height(26.dp)
+                        modifier = Modifier.fillMaxWidth().height(22.dp)
                     ) { page ->
                         DateDisplayArea(
                             page = page,
@@ -195,7 +195,7 @@ private fun TimelineSelectorLayout(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
@@ -244,7 +244,7 @@ private fun IconIndicators(
     val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
 
     Row(
-        modifier = Modifier.padding(bottom = 2.dp).animateContentSize(),
+        modifier = Modifier.animateContentSize(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -290,7 +290,7 @@ private fun DateDisplayArea(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(26.dp)
+            .height(22.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable {
                 when (page) {

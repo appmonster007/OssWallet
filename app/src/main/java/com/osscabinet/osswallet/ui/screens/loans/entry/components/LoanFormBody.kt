@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -138,6 +139,12 @@ fun LoanFormBody(
             // TRACKING FILTER: Criteria for identifying repayments
             EntrySection(title = "REPAYMENT TRACKING", icon = Icons.Rounded.FilterList) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Optimized Period Selection
+                    AeonTimelinePeriodSelector(
+                        currentRange = state.timelineRange,
+                        onRangeSelected = { onEvent(LoanEntryEvent.SetTimelineRange(it)) }
+                    )
+
                     // Filter Preset
                     val filterObj = state.availableFilters.find { it.id == state.filterId }
                     EntryActionCard(
@@ -151,23 +158,8 @@ fun LoanFormBody(
                     )
 
                     AeonContextGrid {
-                        // Repayment Period & Currencies
+                        // Repayment Currencies
                         EntryActionRow {
-                            EntryActionCard(
-                                icon = Icons.Rounded.DateRange,
-                                label = "TRACKING PERIOD",
-                                value = when (val range = state.timelineRange) {
-                                    is TimelineRange.AllTime -> "All Time"
-                                    is TimelineRange.ThisPeriod -> range.period.label
-                                    is TimelineRange.LastPeriod -> range.period.label
-                                    is TimelineRange.CustomRange -> "Custom Period"
-                                },
-                                onClick = { onEvent(LoanEntryEvent.ShowTimelineSheet(show = true)) },
-                                modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.secondary
-                            )
-
                             EntryActionCard(
                                 icon = Icons.Rounded.CurrencyExchange,
                                 label = "CURRENCIES",

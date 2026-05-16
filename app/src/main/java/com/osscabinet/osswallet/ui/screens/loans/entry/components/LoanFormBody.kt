@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -22,9 +23,9 @@ import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
- * Refactored Loan Entry Form Body.
- * Standardized with other entry screens to use reusable components and a consistent layout.
- * Filter-centric design where the FILTER is a primary context item.
+ * Loan Entry Form Body with Optimized Information Hierarchy.
+ * LOAN CONTEXT (Top): Identity, Dates, Principal Account, and Loan Note.
+ * REPAYMENT TRACKING (Below): Detailed filter criteria for repayment transactions.
  */
 @Composable
 fun LoanFormBody(
@@ -34,19 +35,17 @@ fun LoanFormBody(
 ) {
     val amountColor = if (state.loanType == LoanType.LENT) Color(0xFF004D40) else Color(0xFFE65100)
     val dims = AeonTheme.dimensions
+    val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = dims.screenPadding,
-                    vertical = dims.spacingLg
-                ),
+                .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
             verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
-            // IMPACT: Header card containing loan type and principal amount
+            // IMPACT: Primary Identity (Loan Type & Principal)
             AeonImpactHeaderCard(
                 selectedType = state.loanType,
                 onTypeSelected = { onEvent(LoanEntryEvent.SetLoanType(it)) },
@@ -65,325 +64,289 @@ fun LoanFormBody(
                 amountColor = amountColor
             )
 
-            // CONTEXT: Action cards grid for primary loan parameters
-            AeonContextGrid {
-                // Row 1: FILTER and Period
-                EntryActionRow {
-                    val filterObj = state.availableFilters.find { it.id == state.filterId }
-                    EntryActionCard(
-                        icon = Icons.Rounded.FilterList,
-                        label = "FILTER",
-                        value = filterObj?.name ?: "None",
-                        onClick = { onEvent(LoanEntryEvent.ShowFilterSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
+            // LOAN CONTEXT: Core parameters of the loan agreement
+            EntrySection(title = "LOAN PARAMETERS", icon = Icons.Rounded.Info) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Counterparty identity
+                    EntryEditorialInput(
+                        value = state.counterparty,
+                        onValueChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
+                        label = if (state.loanType == LoanType.LENT) "BORROWER NAME" else "LENDER NAME",
+                        icon = Icons.Rounded.Person,
+                        placeholder = "Who is the other party?"
                     )
 
-                    EntryActionCard(
-                        icon = Icons.Rounded.DateRange,
-                        label = "PERIOD",
-                        value = when (val range = state.timelineRange) {
-                            is TimelineRange.AllTime -> "All Time"
-                            is TimelineRange.ThisPeriod -> range.period.label
-                            is TimelineRange.LastPeriod -> range.period.label
-                            is TimelineRange.CustomRange -> "Custom"
-                        },
-                        onClick = { onEvent(LoanEntryEvent.ShowTimelineSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-
-                // Row 2: Account and Interest
-                EntryActionRow {
-                    val accountObj = state.accounts.find { it.id == state.linkedAccountId }
-                    EntryActionCard(
-                        icon = getAccountIconByName(accountObj?.icon),
-                        label = "ACCOUNT",
-                        value = accountObj?.name ?: "Select",
-                        onClick = { onEvent(LoanEntryEvent.ShowAccountSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-
-                    EntryActionCard(
-                        icon = Icons.Rounded.Percent,
-                        label = "INTEREST",
-                        value = if (state.interestRate.isEmpty()) "0%" else "${state.interestRate}%",
-                        onClick = { onEvent(LoanEntryEvent.ShowInterestNumpad(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-
-                // Row 3: Categories and Start Date
-                EntryActionRow {
-                    val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
-                    EntryActionCard(
-                        icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
-                        label = "CATEGORIES",
-                        value = when {
-                            state.selectedCategoryIds.isEmpty() -> "All Categories"
-                            (state.categories.isNotEmpty() && (state.selectedCategoryIds.size == state.categories.size)) -> "All Categories"
-                            categoryObj != null -> categoryObj.name
-                            else -> "${state.selectedCategoryIds.size} Selected"
-                        },
-                        onClick = { onEvent(LoanEntryEvent.ShowCategorySheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
-                    )
-
-                    val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
-                    EntryActionCard(
-                        icon = Icons.Rounded.CalendarToday,
-                        label = "START DATE",
-                        value = formatter.format(java.util.Date(state.startDate)),
-                        onClick = { onEvent(LoanEntryEvent.ShowStartDatePicker(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-
-                // Row 4: Settlement and Flows
-                EntryActionRow {
-                    val formatter = remember { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()) }
-                    EntryActionCard(
-                        icon = Icons.Rounded.EventAvailable,
-                        label = "SETTLEMENT",
-                        value = if (state.hasSettlementDate) {
-                            formatter.format(java.util.Date(state.settlementDate))
-                        } else "None",
-                        onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
-                    )
-
-                    EntryActionCard(
-                        icon = Icons.AutoMirrored.Rounded.ShowChart,
-                        label = "FLOWS",
-                        value = when {
-                            state.selectedTrackTypes.isEmpty() -> "All Flows"
-                            state.selectedTrackTypes.size >= 2 -> "All Flows"
-                            else -> state.selectedTrackTypes.first().displayName
-                        },
-                        onClick = { onEvent(LoanEntryEvent.ShowTrackTypeSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-
-                // Row 5: Currencies
-                EntryActionCard(
-                    icon = Icons.Rounded.CurrencyExchange,
-                    label = "CURRENCIES",
-                    value = when {
-                        state.selectedCurrencies.isEmpty() -> "All Currencies"
-                        state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
-                        else -> "${state.selectedCurrencies.size} Selected"
-                    },
-                    onClick = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(show = true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // DETAIL: Metadata and extended filter criteria
-            AeonDetailSection(
-                note = state.note,
-                onNoteChange = { onEvent(LoanEntryEvent.SetNote(it)) },
-                payee = state.counterparty,
-                onPayeeChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
-                payeeLabel = if (state.loanType == LoanType.LENT) "BORROWER" else "LENDER",
-                showNote = false,
-                showPayee = false,
-                showTags = false,
-                selectedTags = emptyList(),
-                noteSuggestions = state.uniqueNotes,
-                payeeSuggestions = state.uniquePayees,
-                additionalContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                        // Note Filter with Regex Toggle
-                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
-                            EntrySwitchRow(
-                                label = "Use Regex for Note",
-                                checked = state.isNoteRegex,
-                                onCheckedChange = { onEvent(LoanEntryEvent.SetNoteRegex(it)) },
-                                icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
-                            )
-                            EntryEditorialInput(
-                                value = state.queryNote,
-                                onValueChange = { onEvent(LoanEntryEvent.SetQueryNote(it)) },
-                                label = "NOTE QUERY",
-                                icon = Icons.AutoMirrored.Rounded.Notes,
-                                placeholder = if (state.isNoteRegex) "e.g. /coffee/i or /^Rent/m" else "e.g. Starbucks coffee"
-                            )
-                        }
-
-                        // Payee Filter with Regex Toggle
-                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
-                            EntrySwitchRow(
-                                label = "Use Regex for Counterparty",
-                                checked = state.isPayeeRegex,
-                                onCheckedChange = { onEvent(LoanEntryEvent.SetPayeeRegex(it)) },
-                                icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
-                            )
-                            EntryEditorialInput(
-                                value = state.queryPayee,
-                                onValueChange = { onEvent(LoanEntryEvent.SetQueryPayee(it)) },
-                                label = if (state.loanType == LoanType.LENT) "BORROWER QUERY" else "LENDER QUERY",
-                                icon = Icons.Rounded.Person,
-                                placeholder = if (state.isPayeeRegex) "e.g. /Amazon/i" else "e.g. Amazon"
-                            )
-                        }
-
-                        // Tags Selection
-                        EntryTagSection(
-                            selectedTags = state.selectedTags.toList(),
-                            onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
-                            onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
-                        )
-
-                        // Payment Method and Status multi-selection
-                        EntryPaymentMethodStatusRow(
-                            paymentMethod = when {
-                                state.selectedPaymentMethods.isEmpty() -> "All Methods"
-                                state.selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
-                                else -> "${state.selectedPaymentMethods.size} Selected"
-                            },
-                            onPaymentMethodClick = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(show = true)) },
-                            statusLabel = when {
-                                state.selectedStatuses.isEmpty() -> "All Statuses"
-                                state.selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
-                                else -> "${state.selectedStatuses.size} Selected"
-                            },
-                            onStatusClick = { onEvent(LoanEntryEvent.ShowStatusSheet(show = true)) }
-                        )
-
-                        // Linked Transactions
-                        EntryActionCard(
-                            icon = Icons.Rounded.Link,
-                            label = "LINKED TRANSACTIONS",
-                            value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
-                            onClick = { onEvent(LoanEntryEvent.ShowLinkSheet(show = true)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
-
-                        // Amount Constraints
-                        AeonContextGrid {
-                            // Min Amount
+                    AeonContextGrid {
+                        // Core Agreement parameters
+                        EntryActionRow {
                             EntryActionCard(
-                                icon = Icons.Rounded.ArrowDownward,
-                                label = "MIN AMOUNT",
-                                value = state.minAmount.ifEmpty { "Any" },
-                                onClick = { onEvent(LoanEntryEvent.ShowMinAmountSheet(show = true)) },
+                                icon = Icons.Rounded.CalendarToday,
+                                label = "START DATE",
+                                value = formatter.format(java.util.Date(state.startDate)),
+                                onClick = { onEvent(LoanEntryEvent.ShowStartDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.primary
+                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.secondary
                             )
 
-                            // Max Amount
                             EntryActionCard(
-                                icon = Icons.Rounded.ArrowUpward,
-                                label = "MAX AMOUNT",
-                                value = state.maxAmount.ifEmpty { "Any" },
-                                onClick = { onEvent(LoanEntryEvent.ShowMaxAmountSheet(show = true)) },
+                                icon = Icons.Rounded.EventAvailable,
+                                label = "SETTLEMENT",
+                                value = if (state.hasSettlementDate) formatter.format(java.util.Date(state.settlementDate)) else "None Set",
+                                onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
                                 iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                                 iconTint = MaterialTheme.colorScheme.secondary
                             )
                         }
 
-                        // Warranty
-                        EntryActionCard(
-                            icon = Icons.Rounded.Verified,
-                            label = "WARRANTY",
-                            value = when (state.hasWarranty) {
-                                null -> "Any"
-                                true -> "Has Warranty"
-                                false -> "No Warranty"
-                            },
-                            onClick = {
-                                onEvent(
-                                    LoanEntryEvent.SetHasWarranty(
-                                        when (state.hasWarranty) {
-                                            null -> true
-                                            true -> false
-                                            false -> null
-                                        }
-                                    )
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
+                        EntryActionRow {
+                            val accountObj = state.accounts.find { it.id == state.linkedAccountId }
+                            EntryActionCard(
+                                icon = getAccountIconByName(accountObj?.icon),
+                                label = "PRINCIPAL ACCOUNT",
+                                value = accountObj?.name ?: "Select...",
+                                onClick = { onEvent(LoanEntryEvent.ShowAccountSheet(show = true)) },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.primary
+                            )
 
-                        if (state.hasWarranty == true) {
-                            val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
-                            AeonContextGrid {
+                            EntryActionCard(
+                                icon = Icons.Rounded.Percent,
+                                label = "INTEREST RATE",
+                                value = if (state.interestRate.isEmpty()) "0%" else "${state.interestRate}%",
+                                onClick = { onEvent(LoanEntryEvent.ShowInterestNumpad(show = true)) },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
+
+                    // Loan's own note
+                    EntryEditorialInput(
+                        value = state.note,
+                        onValueChange = { onEvent(LoanEntryEvent.SetNote(it)) },
+                        label = "LOAN NOTE",
+                        icon = Icons.AutoMirrored.Rounded.Notes,
+                        placeholder = "Terms, conditions, or reminders..."
+                    )
+                }
+            }
+
+            // TRACKING FILTER: Criteria for identifying repayments
+            EntrySection(title = "REPAYMENT TRACKING", icon = Icons.Rounded.FilterList) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Filter Preset
+                    val filterObj = state.availableFilters.find { it.id == state.filterId }
+                    EntryActionCard(
+                        icon = Icons.Rounded.Tune,
+                        label = "FILTER PRESET",
+                        value = filterObj?.name ?: "No Preset Applied",
+                        onClick = { onEvent(LoanEntryEvent.ShowFilterSheet(show = true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.primary
+                    )
+
+                    AeonContextGrid {
+                        // Repayment Period & Currencies
+                        EntryActionRow {
+                            EntryActionCard(
+                                icon = Icons.Rounded.DateRange,
+                                label = "TRACKING PERIOD",
+                                value = when (val range = state.timelineRange) {
+                                    is TimelineRange.AllTime -> "All Time"
+                                    is TimelineRange.ThisPeriod -> range.period.label
+                                    is TimelineRange.LastPeriod -> range.period.label
+                                    is TimelineRange.CustomRange -> "Custom Period"
+                                },
+                                onClick = { onEvent(LoanEntryEvent.ShowTimelineSheet(show = true)) },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                iconTint = MaterialTheme.colorScheme.secondary
+                            )
+
+                            EntryActionCard(
+                                icon = Icons.Rounded.CurrencyExchange,
+                                label = "CURRENCIES",
+                                value = if (state.selectedCurrencies.isEmpty()) "All Currencies" else if (state.selectedCurrencies.size == 1) state.selectedCurrencies.first() else "${state.selectedCurrencies.size} Selected",
+                                onClick = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        // Categories & Flows
+                        EntryActionRow {
+                            val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                            EntryActionCard(
+                                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                                label = "CATEGORIES",
+                                value = if (state.selectedCategoryIds.isEmpty()) "All Categories" else categoryObj?.name ?: "${state.selectedCategoryIds.size} Selected",
+                                onClick = { onEvent(LoanEntryEvent.ShowCategorySheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            EntryActionCard(
+                                icon = Icons.AutoMirrored.Rounded.ShowChart,
+                                label = "FLOWS",
+                                value = if (state.selectedTrackTypes.size >= 2 || state.selectedTrackTypes.isEmpty()) "All Flows" else state.selectedTrackTypes.first().displayName,
+                                onClick = { onEvent(LoanEntryEvent.ShowTrackTypeSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    // RESTORED: Advanced Search Queries with Regex Toggles
+                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
+                        // Note Query
+                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
+                            EntrySwitchRow(
+                                label = "Regex for Note",
+                                checked = state.isNoteRegex,
+                                onCheckedChange = { onEvent(LoanEntryEvent.SetNoteRegex(it)) },
+                                icon = Icons.Rounded.Code,
+                                subtitle = "Supports /pattern/flags"
+                            )
+                            EntryEditorialInput(
+                                value = state.queryNote,
+                                onValueChange = { onEvent(LoanEntryEvent.SetQueryNote(it)) },
+                                label = "NOTE QUERY",
+                                icon = Icons.AutoMirrored.Rounded.Notes,
+                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Match note text..."
+                            )
+                        }
+
+                        // Counterparty Query
+                        Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
+                            EntrySwitchRow(
+                                label = "Regex for Counterparty",
+                                checked = state.isPayeeRegex,
+                                onCheckedChange = { onEvent(LoanEntryEvent.SetPayeeRegex(it)) },
+                                icon = Icons.Rounded.Code,
+                                subtitle = "Supports /pattern/flags"
+                            )
+                            EntryEditorialInput(
+                                value = state.queryPayee,
+                                onValueChange = { onEvent(LoanEntryEvent.SetQueryPayee(it)) },
+                                label = "COUNTERPARTY QUERY",
+                                icon = Icons.Rounded.Person,
+                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Match name..."
+                            )
+                        }
+                    }
+
+                    // Tags
+                    EntryTagSection(
+                        selectedTags = state.selectedTags.toList(),
+                        onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
+                        onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
+                    )
+
+                    // RESTORED: Payment Method and Status Filters
+                    EntryPaymentMethodStatusRow(
+                        paymentMethod = when {
+                            state.selectedPaymentMethods.isEmpty() -> "All Methods"
+                            state.selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
+                            else -> "${state.selectedPaymentMethods.size} Selected"
+                        },
+                        onPaymentMethodClick = { onEvent(LoanEntryEvent.ShowPaymentMethodSheet(show = true)) },
+                        statusLabel = when {
+                            state.selectedStatuses.isEmpty() -> "All Statuses"
+                            state.selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
+                            else -> "${state.selectedStatuses.size} Selected"
+                        },
+                        onStatusClick = { onEvent(LoanEntryEvent.ShowStatusSheet(show = true)) }
+                    )
+
+                    // Repayment Linking
+                    EntryActionCard(
+                        icon = Icons.Rounded.Link,
+                        label = "LINKED REPAYMENTS",
+                        value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
+                        onClick = { onEvent(LoanEntryEvent.ShowLinkSheet(show = true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
+
+                    // Constraints
+                    AeonContextGrid {
+                        EntryActionRow {
+                            EntryActionCard(
+                                icon = Icons.Rounded.ArrowDownward,
+                                label = "MIN AMOUNT",
+                                value = state.minAmount.ifEmpty { "Any" },
+                                onClick = { onEvent(LoanEntryEvent.ShowMinAmountSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            EntryActionCard(
+                                icon = Icons.Rounded.ArrowUpward,
+                                label = "MAX AMOUNT",
+                                value = state.maxAmount.ifEmpty { "Any" },
+                                onClick = { onEvent(LoanEntryEvent.ShowMaxAmountSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    // Warranty
+                    EntryActionCard(
+                        icon = Icons.Rounded.Verified,
+                        label = "WARRANTY STATUS",
+                        value = when (state.hasWarranty) {
+                            null -> "Any"
+                            true -> "Has Warranty"
+                            false -> "No Warranty"
+                        },
+                        onClick = { onEvent(LoanEntryEvent.SetHasWarranty(if (state.hasWarranty == true) false else if (state.hasWarranty == false) null else true)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (state.hasWarranty == true) {
+                        AeonContextGrid {
+                            EntryActionRow {
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY START",
                                     value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
                                     onClick = { onEvent(LoanEntryEvent.ShowWarrantyStartPicker(show = true)) },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                    iconTint = MaterialTheme.colorScheme.secondary
+                                    modifier = Modifier.weight(1f)
                                 )
-
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY END",
                                     value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
                                     onClick = { onEvent(LoanEntryEvent.ShowWarrantyEndPicker(show = true)) },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                    iconTint = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                        }
-
-                        // Exclude Future
-                        EntrySwitchRow(
-                            label = "Exclude Future",
-                            checked = state.excludeFuture,
-                            onCheckedChange = { onEvent(LoanEntryEvent.SetExcludeFuture(it)) },
-                            icon = Icons.Rounded.Schedule,
-                            subtitle = "Don't include future transactions"
-                        )
-
-                        // Management settings for the loan itself
-                        EntrySection(title = "MANAGEMENT", icon = Icons.Rounded.Settings) {
-                            Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                                // Has Settlement Date Toggle
-                                EntrySwitchRow(
-                                    label = "Has Settlement Date",
-                                    checked = state.hasSettlementDate,
-                                    onCheckedChange = { onEvent(LoanEntryEvent.SetHasSettlementDate(it)) },
-                                    icon = Icons.Rounded.NotificationAdd,
-                                    subtitle = "Enable to set a repayment deadline"
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
                     }
+
+                    EntrySwitchRow(
+                        label = "Exclude Future",
+                        checked = state.excludeFuture,
+                        onCheckedChange = { onEvent(LoanEntryEvent.SetExcludeFuture(it)) },
+                        icon = Icons.Rounded.Schedule,
+                        subtitle = "Ignore future transactions"
+                    )
                 }
-            )
+            }
+
+            // MANAGEMENT: Configuration
+            EntrySection(title = "MANAGEMENT", icon = Icons.Rounded.Settings) {
+                EntrySwitchRow(
+                    label = "Settlement Deadline",
+                    checked = state.hasSettlementDate,
+                    onCheckedChange = { onEvent(LoanEntryEvent.SetHasSettlementDate(it)) },
+                    icon = Icons.Rounded.NotificationAdd,
+                    subtitle = "Set a date for full repayment"
+                )
+            }
         }
 
-        // Dedicated sheets for selecting multi-value parameters
         LoanEntrySheets(state = state, onEvent = onEvent)
 
         if (state.showSharedFilterDialog) {

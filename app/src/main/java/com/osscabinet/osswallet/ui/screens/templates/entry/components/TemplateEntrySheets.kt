@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
@@ -85,13 +86,11 @@ fun TemplateEntrySheets(
     }
 
     if (state.showTagSheet) {
-        AeonTagSelection(
+        AeonTagSelectionDialog(
             tags = state.allTags,
             selectedTags = state.tags,
             onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
             onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
-            onEditTag = { onEvent(TemplateEntryEvent.UpdateTag(it)) },
-            onDeleteTag = { onEvent(TemplateEntryEvent.DeleteTag(it)) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTagSheet(false)) }
         )
     }

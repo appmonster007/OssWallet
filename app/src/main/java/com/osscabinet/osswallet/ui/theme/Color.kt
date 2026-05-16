@@ -156,6 +156,13 @@ val TagPresetColors = listOf(
     Color(0xFFFFEE58), Color(0xFFFFCA28), Color(0xFFFFA726), Color(0xFFFF7043)
 )
 
+val BrandPresetColorHexes = listOf(
+    "#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", 
+    "#E65100", "#006064", "#212121", "#795548", "#607D8B"
+)
+
+const val DefaultAccentColorHex = "#004D5F"
+
 // =============================================================================
 // APP COLORS
 // Single entry point for all dynamic theme colors in @Composable functions.

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,7 +29,8 @@ fun AeonSearchField(
     modifier: Modifier = Modifier,
     placeholder: String = "Search...",
     focusRequester: FocusRequester? = null,
-    showBorder: Boolean = true
+    showBorder: Boolean = true,
+    trailingAction: @Composable (() -> Unit)? = null
 ) {
     val fieldModifier = modifier
         .fillMaxWidth()
@@ -41,14 +44,17 @@ fun AeonSearchField(
             placeholder = { Text(placeholder) },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Clear search",
-                            modifier = Modifier.size(20.dp)
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Clear search",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
+                    trailingAction?.invoke()
                 }
             },
             singleLine = true,
@@ -68,14 +74,17 @@ fun AeonSearchField(
             placeholder = { Text(placeholder) },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Clear search",
-                            modifier = Modifier.size(20.dp)
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Clear search",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
+                    trailingAction?.invoke()
                 }
             },
             singleLine = true,

@@ -234,7 +234,9 @@ fun LoanFormBody(
 
                     // Tags
                     EntryTagSection(
-                        selectedTags = state.selectedTags.toList(),
+                        tags = state.selectedTags.map { name -> 
+                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                        },
                         onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
                     )

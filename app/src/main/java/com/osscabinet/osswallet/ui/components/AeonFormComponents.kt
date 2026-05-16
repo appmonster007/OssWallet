@@ -347,7 +347,7 @@ fun AdvancedColorPickerDialog(
         try {
             android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(initialColorHex), hsvOut)
         } catch (e: Exception) {
-            android.graphics.Color.colorToHSV(android.graphics.Color.parseColor("#004D5F"), hsvOut)
+            android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(DefaultAccentColorHex), hsvOut)
         }
         mutableStateOf(Triple(hsvOut[0], hsvOut[1], hsvOut[2]))
     }
@@ -515,7 +515,7 @@ fun AdvancedColorPickerDialog(
                                 }
                             }
                         },
-                        placeholder = "#004D5F",
+                        placeholder = DefaultAccentColorHex,
                         prefix = "HEX",
                         modifier = Modifier.weight(1f)
                     )
@@ -523,6 +523,106 @@ fun AdvancedColorPickerDialog(
             }
         }
     )
+}
+
+@Composable
+fun AeonColorSelection(
+    accentColorHex: String,
+    onColorSelected: (String) -> Unit,
+    isColorLocked: Boolean = false,
+    presetColors: List<String> = BrandPresetColorHexes,
+    showTitle: Boolean = true
+) {
+    var showColorPicker by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+        if (showTitle) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+                AeonFlowSectionHeader(title = "ACCENT BRAND COLOR")
+                if (isColorLocked) {
+                    Icon(
+                        Icons.Rounded.Lock,
+                        contentDescription = "Locked",
+                        modifier = Modifier.size(14.dp),
+                        tint = AppColors.border
+                    )
+                }
+            }
+        }
+        
+        val alpha = if (isColorLocked) 0.5f else 1f
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .alpha(alpha),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            presetColors.forEach { colorHex ->
+                val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
+                val color = try { Color(android.graphics.Color.parseColor(colorHex)) } catch (e: Exception) { Color.Gray }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
+                            else AppColors.transparent
+                        )
+                        .clickable(enabled = !isColorLocked) { onColorSelected(colorHex) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(color),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = if (color.isDark()) ColorOnDark else ColorOnLight,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.alpha(alpha),
+            verticalAlignment = Alignment.CenterVertically, 
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+        ) {
+            val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
+            Box(modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clip(CircleShape).background(color))
+            AeonTextField(
+                value = accentColorHex,
+                onValueChange = { if (!isColorLocked && it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
+                placeholder = DefaultAccentColorHex,
+                prefix = "HEX",
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = { if (!isColorLocked) showColorPicker = true },
+                modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
+            ) {
+                Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
+            }
+        }
+    }
+
+    if (showColorPicker) {
+        AdvancedColorPickerDialog(
+            initialColorHex = accentColorHex,
+            onColorSelected = { onColorSelected(it) },
+            onDismiss = { showColorPicker = false }
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -534,10 +634,8 @@ fun VisualIdentitySection(
     onColorSelected: (String) -> Unit,
     isColorLocked: Boolean = false
 ) {
-    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
     val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
-    var showColorPicker by remember { mutableStateOf(false) }
     var showAllIcons by remember { mutableStateOf(false) }
 
     Surface(
@@ -603,84 +701,11 @@ fun VisualIdentitySection(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                    AeonFlowSectionHeader(title = "ACCENT BRAND COLOR")
-                    if (isColorLocked) {
-                        Icon(
-                            Icons.Rounded.Lock,
-                            contentDescription = "Locked",
-                            modifier = Modifier.size(14.dp),
-                            tint = AppColors.border
-                        )
-                    }
-                }
-                
-                val alpha = if (isColorLocked) 0.5f else 1f
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .alpha(alpha),
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    presetColors.forEach { colorHex ->
-                        val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
-                        val color = Color(android.graphics.Color.parseColor(colorHex))
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
-                                    else AppColors.transparent
-                                )
-                                .clickable(enabled = !isColorLocked) { onColorSelected(colorHex) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(color),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = if (color.isDark()) ColorOnDark else ColorOnLight,
-                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.alpha(alpha),
-                    verticalAlignment = Alignment.CenterVertically, 
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-                ) {
-                    val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
-                    Box(modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clip(CircleShape).background(color))
-                    AeonTextField(
-                        value = accentColorHex,
-                        onValueChange = { if (!isColorLocked && it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
-                        placeholder = "#004D5F",
-                        prefix = "HEX",
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(
-                        onClick = { if (!isColorLocked) showColorPicker = true },
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
-                    ) {
-                        Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
-                    }
-                }
-            }
+            AeonColorSelection(
+                accentColorHex = accentColorHex,
+                onColorSelected = onColorSelected,
+                isColorLocked = isColorLocked
+            )
         }
     }
 
@@ -716,14 +741,6 @@ fun VisualIdentitySection(
             confirmButton = {
                 TextButton(onClick = { showAllIcons = false }) { Text("Close") }
             }
-        )
-    }
-
-    if (showColorPicker) {
-        AdvancedColorPickerDialog(
-            initialColorHex = accentColorHex,
-            onColorSelected = onColorSelected,
-            onDismiss = { showColorPicker = false }
         )
     }
 }

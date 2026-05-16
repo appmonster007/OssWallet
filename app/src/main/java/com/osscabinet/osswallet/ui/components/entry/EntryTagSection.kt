@@ -10,8 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
@@ -21,7 +23,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EntryTagSection(
-    selectedTags: Collection<String>,
+    tags: List<Tag>,
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -59,11 +61,13 @@ fun EntryTagSection(
         }
 
         // Selected Tags
-        selectedTags.forEach { tag ->
+        tags.forEach { tag ->
+            val tagColor = if (tag.colorHex != -1) Color(tag.colorHex) else AppColors.primary
+            
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = AppColors.secondary.copy(alpha = 0.1f),
-                border = BorderStroke(0.5.dp, AppColors.secondary.copy(alpha = 0.2f)),
+                color = tagColor.copy(alpha = 0.12f),
+                border = BorderStroke(0.5.dp, tagColor.copy(alpha = 0.4f)),
                 modifier = Modifier.height(32.dp)
             ) {
                 Row(
@@ -71,19 +75,20 @@ fun EntryTagSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = tag,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+                        text = tag.name,
+                        color = tagColor,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(
-                        onClick = { onRemoveTag(tag) },
+                        onClick = { onRemoveTag(tag.name) },
                         modifier = Modifier.size(20.dp)
                     ) {
                         Icon(
                             Icons.Rounded.Close,
                             contentDescription = "Remove tag",
                             modifier = Modifier.size(12.dp),
-                            tint = AppColors.secondary
+                            tint = tagColor
                         )
                     }
                 }

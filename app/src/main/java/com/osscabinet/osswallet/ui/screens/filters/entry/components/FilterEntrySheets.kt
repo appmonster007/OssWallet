@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryEvent
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
@@ -101,18 +102,15 @@ fun FilterEntrySheets(
     }
 
     if (state.showTagSheet) {
-        AeonTagSelection(
+        AeonTagSelectionDialog(
             tags = state.availableTags,
             selectedTags = state.selectedTags,
             onTagsSelected = {
                 onEvent(FilterEntryEvent.SetTags(it))
-                onEvent(FilterEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { name, _ -> 
                 onEvent(FilterEntryEvent.SetTags(state.selectedTags + name))
             },
-            onEditTag = {},
-            onDeleteTag = {},
             onDismiss = { onEvent(FilterEntryEvent.ShowTagSheet(false)) }
         )
     }

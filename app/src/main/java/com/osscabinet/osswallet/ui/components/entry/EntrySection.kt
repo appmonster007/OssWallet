@@ -144,7 +144,10 @@ fun TransactionEntrySectionPreview() {
                 onNoteChange = {},
                 payee = "Luigi's Italian",
                 onPayeeChange = {},
-                selectedTags = listOf("Food", "Social"),
+                selectedTags = listOf(
+                    com.osscabinet.ossWallet.domain.model.Tag(name = "Food", colorHex = 0xFFEF5350.toInt()),
+                    com.osscabinet.ossWallet.domain.model.Tag(name = "Social", colorHex = 0xFFAB47BC.toInt())
+                ),
                 additionalContent = {
                     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                         // Linked Transactions mock

@@ -78,7 +78,9 @@ fun TemplateFormBody(
                 onNoteChange = { onEvent(TemplateEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(TemplateEntryEvent.SetPayee(it)) },
-                selectedTags = state.tags,
+                selectedTags = state.tags.map { name -> 
+                    state.allTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                },
                 onTagClick = { onEvent(TemplateEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
                 noteSuggestions = state.uniqueNotes,

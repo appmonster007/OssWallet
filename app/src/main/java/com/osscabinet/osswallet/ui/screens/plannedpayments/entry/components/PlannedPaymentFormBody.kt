@@ -112,7 +112,9 @@ fun PlannedPaymentFormBody(
                 onNoteChange = { onEvent(PlannedPaymentEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(PlannedPaymentEntryEvent.SetPayee(it)) },
-                selectedTags = state.selectedTagNames,
+                selectedTags = state.selectedTagNames.map { name -> 
+                    state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                },
                 onTagClick = { onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
                 noteSuggestions = state.uniqueNotes,

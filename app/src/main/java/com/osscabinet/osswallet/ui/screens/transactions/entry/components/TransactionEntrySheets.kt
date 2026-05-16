@@ -112,16 +112,13 @@ fun TransactionEntrySheets(
 
     // Tag Selection
     if (state.showTagSheet) {
-        AeonTagSelection(
+        AeonTagSelectionDialog(
             tags = state.allTags,
             selectedTags = state.selectedTags,
             onTagsSelected = { tags ->
                 onEvent(TransactionEntryEvent.SetTags(tags))
-                onEvent(TransactionEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { tag, color -> onEvent(TransactionEntryEvent.AddTag(tag, color)) },
-            onEditTag = { _ -> /* Support edit if needed */ },
-            onDeleteTag = { tag -> onEvent(TransactionEntryEvent.DeleteTag(tag)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTagSheet(false)) }
         )
     }

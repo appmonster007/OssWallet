@@ -1,21 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.loans
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.LoanPayment
-import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -26,8 +28,8 @@ class LoanViewModel(
     private val loanRepository: LoanRepository,
     settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null,
-    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository? = null,
-    private val categoryRepository: com.osscabinet.ossWallet.domain.repository.CategoryRepository? = null
+    private val currencyRepository: CurrencyRepository? = null,
+    private val categoryRepository: CategoryRepository? = null
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +42,7 @@ class LoanViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val transactions: StateFlow<List<Transaction>> = if (transactionRepository != null) {
+    private val transactions: StateFlow<List<Transaction>> = if (transactionRepository != null) {
         settingsRepository.currentProfileId
             .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -48,7 +50,7 @@ class LoanViewModel(
         MutableStateFlow(emptyList())
     }
 
-    val categories: StateFlow<List<com.osscabinet.ossWallet.domain.model.Category>> = categoryRepository?.categories
+    private val categories: StateFlow<List<Category>> = categoryRepository?.categories
         ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         ?: MutableStateFlow(emptyList())
 
@@ -57,7 +59,22 @@ class LoanViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _exchangeRates = MutableStateFlow<Map<String, BigDecimal>>(emptyMap())
-    val exchangeRates: StateFlow<Map<String, BigDecimal>> = _exchangeRates.asStateFlow()
+
+    /** Precomputed summaries for every loan — mirrors BudgetViewModel.budgetProgress. */
+    val loanSummaries: StateFlow<Map<Long, LoanSummary>> = combine(
+        loans,
+        transactions,
+        _exchangeRates,
+        settingsRepository.decimalPrecision,
+        categories
+    ) { loansList, transactionsList, rates, precision, categoriesList ->
+        val now = System.currentTimeMillis()
+        loansList.associate { loan ->
+            loan.id to LoanService.buildSummaryFromTransactions(
+                loan, transactionsList, rates, now, precision, categoriesList
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     init {
         if (currencyRepository != null) {

@@ -4,46 +4,26 @@ import android.content.Context
 import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-/**
- * Central configuration for database seeding.
- * 
- * TO DISABLE SEEDING:
- * 1. Set ENABLE_SEEDING = false in app/build.gradle.kts
- * 2. Or comment out the seeding call in MainActivity
- * 
- * TO REMOVE SEEDING COMPLETELY:
- * 1. Delete the entire /data/seed package
- * 2. Remove the seeding call from MainActivity
- * 3. Remove ENABLE_SEEDING from build.gradle.kts
- */
 object SeedingConfig {
 
-    /**
-     * Master toggle for seeding functionality.
-     * Change this to false to disable seeding globally.
-     */
-    val SEEDING_ENABLED = BuildConfig.ENABLE_SEEDING && BuildConfig.DEBUG
+    private val seedingEnabled = BuildConfig.ENABLE_SEEDING
 
-    /**
-     * Check if seeding should run based on configuration
-     */
-    fun shouldSeed(): Boolean = SEEDING_ENABLED
-
-    /**
-     * Creates a DatabaseSeeder instance only if seeding is enabled.
-     * Returns null if seeding is disabled.
-     */
-    fun createSeeder(
+    fun launchSeedingIfEnabled(
         database: AppDatabase,
         settingsDataStore: SettingsDataStore,
         context: Context
-    ): DatabaseSeeder? {
-        return if (shouldSeed()) {
+    ) {
+        if (!seedingEnabled) return
+        CoroutineScope(Dispatchers.IO).launch {
             DatabaseSeeder(
                 accountDao = database.accountDao(),
                 categoryDao = database.categoryDao(),
                 transactionDao = database.transactionDao(),
+                transactionLinkDao = database.transactionLinkDao(),
                 filterDao = database.filterDao(),
                 profileDao = database.profileDao(),
                 budgetDao = database.budgetDao(),
@@ -52,9 +32,7 @@ object SeedingConfig {
                 plannedPaymentDao = database.plannedPaymentDao(),
                 context = context,
                 settingsDataStore = settingsDataStore
-            )
-        } else {
-            null
+            ).seed()
         }
     }
 }

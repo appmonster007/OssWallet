@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Monthly Rent",
+    "categoryName": "Rent",
+    "amount": "1850.00",
+    "transactionType": "expense",
+    "currency": "USD",
+    "paymentMethod": "BANK_TRANSFER",
+    "payee": "Property Management",
+    "note": "Monthly rent payment",
+    "tags": ["Housing", "Essential"]
+  },
+  {
+    "name": "Quick Coffee",
+    "categoryName": "Coffee & Snacks",
+    "amount": "6.50",
+    "transactionType": "expense",
+    "currency": "USD",
+    "paymentMethod": "CASH",
+    "payee": "Starbucks",
+    "note": "Latte",
+    "tags": ["Social"]
+  },
+  {
+    "name": "Salary Deposit",
+    "categoryName": "Salary",
+    "amount": "5250.00",
+    "transactionType": "income",
+    "currency": "USD",
+    "paymentMethod": "BANK_TRANSFER",
+    "payee": "TechCorp Inc",
+    "note": "Monthly salary",
+    "tags": ["Work"]
+  },
+  {
+    "name": "Gojek Bali",
+    "categoryName": "Rideshare",
+    "amount": "35000.00",
+    "transactionType": "expense",
+    "currency": "IDR",
+    "paymentMethod": "DIGITAL_WALLET",
+    "payee": "Gojek",
+    "note": "Ride in Bali",
+    "tags": ["Travel"]
+  }
+]

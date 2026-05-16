@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Car Loan",
+    "principalAmount": "25000.00",
+    "currency": "USD",
+    "interestRate": 3.5,
+    "startDaysAgo": 100,
+    "lenderOrBorrowerName": "Chase Auto",
+    "loanType": "BORROWED",
+    "linkedAccountId": "acc_bank",
+    "filter": {
+      "name": "Car Loan Filter",
+      "tags": ["CarLoan"]
+    }
+  },
+  {
+    "name": "Lent to John",
+    "principalAmount": "500.00",
+    "currency": "USD",
+    "startDaysAgo": 10,
+    "lenderOrBorrowerName": "John Doe",
+    "loanType": "LENT",
+    "linkedAccountId": "acc_cash",
+    "filter": {
+      "name": "Friend Loan Filter",
+      "queryPayee": "John Doe"
+    }
+  }
+]

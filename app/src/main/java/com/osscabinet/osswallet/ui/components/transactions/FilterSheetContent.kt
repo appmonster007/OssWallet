@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,17 +120,16 @@ fun FilterSheetContent(
             .background(backgroundColor)
             .verticalScroll(scrollState)
     ) {
-        AeonPeriodSelector(
-            filter = localFilter,
-            onSetDateRange = { range ->
+        AeonTimelinePeriodSelector(
+            currentRange = localFilter.timelineRange,
+            onRangeSelected = { range ->
                 localFilter = localFilter.copy(timelineRange = range)
                 onUpdateTimelineRange(range)
                 selectedFilterIds = emptySet()
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
-            onClick = onToggleExpand,
-            showArcTab = false,
-            backgroundColor = backgroundColor
+            swipeEntireComponent = true,
+            modifier = Modifier.padding(16.dp)
         )
 
         HorizontalDivider()

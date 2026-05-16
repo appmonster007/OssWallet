@@ -22,8 +22,8 @@ class BudgetServiceTest {
     private fun makeBudget(
         timelineRange: TimelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
         limit: BigDecimal = BigDecimal("1000"),
-        categoryIds: List<Long> = emptyList(),
-        accountIds: List<String> = emptyList(),
+        categoryIds: Set<Long> = emptySet(),
+        accountIds: Set<String> = emptySet(),
         alertThreshold: Float = 0.8f,
         rollover: Boolean = false,
         currency: String = "USD"
@@ -37,7 +37,7 @@ class BudgetServiceTest {
         accountIds = accountIds,
         alertThreshold = alertThreshold,
         rollover = rollover,
-        trackTypes = listOf(TransactionType.EXPENSE),
+        trackTypes = setOf(TransactionType.EXPENSE),
         isArchived = false,
         profileId = 1
     )
@@ -172,7 +172,7 @@ class BudgetServiceTest {
 
     @Test
     fun `calculateSpent filters by categoryId when set`() {
-        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), categoryIds = listOf(1L))
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), categoryIds = setOf(1L))
         val now = epochOf(2024, 3, 15)
         val inPeriod = epochOf(2024, 3, 10)
 

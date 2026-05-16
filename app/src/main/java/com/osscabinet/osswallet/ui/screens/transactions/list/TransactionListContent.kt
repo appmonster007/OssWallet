@@ -142,7 +142,7 @@ fun TransactionListContent(
                     }
                 },
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
-                backgroundColor = AppColors.cardSurfaceProminent,
+                backgroundColor = AppColors.primary,
                 accountNames = accountNames,
                 onResetToInitial = onResetToInitial
             )

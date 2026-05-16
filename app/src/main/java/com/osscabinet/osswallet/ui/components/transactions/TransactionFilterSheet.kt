@@ -41,7 +41,7 @@ fun TransactionFilterSheet(
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
-    backgroundColor: Color = AppColors.sheetSurface,
+    backgroundColor: Color = AppColors.primaryContainer,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null

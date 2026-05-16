@@ -344,7 +344,8 @@ fun FilterSheetContentPreview() {
                 onUpdateTimelineRange = { },
                 onApplyFilter = {},
                 onToggleExpand = {},
-                onClose = {}
+                onClose = {},
+                backgroundColor = AppColors.tertiary,
             )
         }
     }

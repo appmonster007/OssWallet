@@ -194,7 +194,6 @@ fun NetWorthCard(
                     currency = baseCurrency,
                     precision = precision,
                     color = PositiveAmountColor,
-                    isIncome = true,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickIncome(filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
@@ -205,7 +204,6 @@ fun NetWorthCard(
                     currency = baseCurrency,
                     precision = precision,
                     color = AppColors.error,
-                    isIncome = false,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
@@ -249,7 +247,6 @@ private fun FlowBadge(
     currency: String,
     precision: Int,
     color: Color,
-    isIncome: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     previousAmount: BigDecimal? = null

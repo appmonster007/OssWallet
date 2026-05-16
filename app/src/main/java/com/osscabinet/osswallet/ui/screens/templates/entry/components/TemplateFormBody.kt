@@ -89,9 +89,7 @@ fun TemplateFormBody(
                     AeonEntryMetadataSection(
                         state = AeonMetadataState(
                             paymentMethod = state.paymentMethod,
-                            statusLabel = state.transactionStatus.displayName,
-                            statusIcon = state.transactionStatus.iconName,
-                            statusColor = state.transactionStatus.colorHex,
+                            status = state.transactionStatus,
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
                             location = if (state.latitude != null && state.longitude != null) state.latitude!! to state.longitude!! else null,
@@ -103,7 +101,7 @@ fun TemplateFormBody(
                         onShowLinkedTransactions = { onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(TemplateEntryEvent.RemoveLinkedTransaction(state.templateId ?: -1L, txId)) },
                         onPaymentMethodClick = { onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(true)) },
-                        onStatusClick = { onEvent(TemplateEntryEvent.ShowStatusSheet(true)) },
+                        onStatusClick = { onEvent(TemplateEntryEvent.SetTransactionStatus(it)) },
                         onWarrantyToggle = { onEvent(TemplateEntryEvent.SetWarrantyEnabled(it)) },
                         onWarrantyDateClick = { onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(true)) },
                         onLocationClick = { onEvent(TemplateEntryEvent.ShowLocationSheet(true)) },

@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -97,9 +98,7 @@ fun AeonEntryContextRow(
  */
 data class AeonMetadataState(
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val statusLabel: String = "Completed",
-    val statusIcon: String = "CheckCircle",
-    val statusColor: String = "#4CAF50",
+    val status: TransactionStatus = TransactionStatus.CLEARED,
     val isWarrantyEnabled: Boolean = false,
     val warrantyExpiration: Long = System.currentTimeMillis(),
     val location: Pair<Double, Double>? = null,
@@ -118,7 +117,7 @@ fun AeonEntryMetadataSection(
     onShowLinkedTransactions: () -> Unit,
     onRemoveLink: (Long) -> Unit,
     onPaymentMethodClick: () -> Unit,
-    onStatusClick: () -> Unit,
+    onStatusClick: (TransactionStatus) -> Unit,
     onWarrantyToggle: (Boolean) -> Unit,
     onWarrantyDateClick: () -> Unit,
     onLocationClick: () -> Unit,
@@ -140,15 +139,15 @@ fun AeonEntryMetadataSection(
         )
 
         // Payment Method and Status row
-        val statusColor = Color(android.graphics.Color.parseColor(state.statusColor))
-        val statusIcon = AppIconMap[state.statusIcon] ?: Icons.Rounded.CheckCircle
+        val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
+        val statusIcon = AppIconMap[state.status.iconName] ?: Icons.Rounded.CheckCircle
         val paymentIcon = AppIconMap[state.paymentMethod.iconName] ?: Icons.Rounded.Payments
 
         EntryPaymentMethodStatusRow(
             paymentMethod = state.paymentMethod.displayName,
             onPaymentMethodClick = onPaymentMethodClick,
-            statusLabel = state.statusLabel,
-            onStatusClick = onStatusClick,
+            statusLabel = state.status.displayName,
+            onStatusClick = { onStatusClick(TransactionStatus.next(state.status)) },
             paymentMethodIcon = paymentIcon,
             statusIcon = statusIcon,
             statusIconTint = statusColor,

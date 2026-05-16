@@ -51,6 +51,14 @@ enum class TransactionStatus(
 
     companion object {
         /**
+         * Get the next status in the rotation sequence.
+         */
+        fun next(current: TransactionStatus): TransactionStatus {
+            val nextIndex = (current.ordinal + 1) % entries.size
+            return entries[nextIndex]
+        }
+
+        /**
          * Convert string to TransactionStatus enum
          * Defaults to CLEARED if string doesn't match any status
          */

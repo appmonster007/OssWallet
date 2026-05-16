@@ -123,9 +123,7 @@ fun PlannedPaymentFormBody(
                     AeonEntryMetadataSection(
                         state = AeonMetadataState(
                             paymentMethod = state.paymentMethod,
-                            statusLabel = state.transactionStatus.displayName,
-                            statusIcon = state.transactionStatus.iconName,
-                            statusColor = state.transactionStatus.colorHex,
+                            status = state.transactionStatus,
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
                             location = if (state.latitude != null && state.longitude != null) state.latitude to state.longitude else null,
@@ -137,7 +135,7 @@ fun PlannedPaymentFormBody(
                         onShowLinkedTransactions = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId)) },
                         onPaymentMethodClick = { onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
-                        onStatusClick = { onEvent(PlannedPaymentEntryEvent.ShowTransactionStatusSheet(true)) },
+                        onStatusClick = { onEvent(PlannedPaymentEntryEvent.SetTransactionStatus(it)) },
                         onWarrantyToggle = { onEvent(PlannedPaymentEntryEvent.SetWarrantyEnabled(it)) },
                         onWarrantyDateClick = { onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(true)) },
                         onLocationClick = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },

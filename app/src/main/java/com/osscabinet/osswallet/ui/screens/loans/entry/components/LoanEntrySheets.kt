@@ -86,7 +86,7 @@ fun LoanEntrySheets(
         AeonSelectionSheet(
             title = "Track Transaction Types",
             onDismiss = { onEvent(LoanEntryEvent.ShowTrackTypeSheet(false)) },
-            items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+            items = TransactionType.entries,
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
                 onEvent(LoanEntryEvent.SetTrackTypes(ids))

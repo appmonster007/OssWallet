@@ -16,4 +16,10 @@
     <color name="widget_income_stroke">#1A69F0AE</color>
     <color name="widget_expense_fill">#14FF5449</color>
     <color name="widget_expense_stroke">#1AFF5449</color>
+    <color name="widget_transfer_color">#FF90CAF9</color>
+    <color name="widget_transfer_label">#CC90CAF9</color>
+    <color name="widget_transfer_comparison">#B390CAF9</color>
+    <color name="widget_badge_transfer_bg">#1490CAF9</color>
+    <color name="widget_transfer_fill">#1490CAF9</color>
+    <color name="widget_transfer_stroke">#1A90CAF9</color>
 </resources>

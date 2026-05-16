@@ -10,6 +10,7 @@ import java.math.BigDecimal
 data class CashFlowResult(
     val totalIncomeInBase: BigDecimal,
     val totalExpensesInBase: BigDecimal,
+    val totalTransfersInBase: BigDecimal,
     val netInBase: BigDecimal,
     val breakdown: List<CashFlowBreakdownItem>,
     val filteredTransactions: List<Transaction>
@@ -18,6 +19,7 @@ data class CashFlowResult(
         fun empty() = CashFlowResult(
             totalIncomeInBase = BigDecimal.ZERO,
             totalExpensesInBase = BigDecimal.ZERO,
+            totalTransfersInBase = BigDecimal.ZERO,
             netInBase = BigDecimal.ZERO,
             breakdown = emptyList(),
             filteredTransactions = emptyList()
@@ -33,7 +35,9 @@ data class CashFlowBreakdownItem(
     val income: BigDecimal,
     val incomeInBase: BigDecimal,
     val expense: BigDecimal,
-    val expenseInBase: BigDecimal
+    val expenseInBase: BigDecimal,
+    val transfer: BigDecimal,
+    val transferInBase: BigDecimal
 )
 
 /**
@@ -62,5 +66,6 @@ data class AccountSummaryItem(
     val balance: BigDecimal, // Total balance in account currency
     val balanceInBase: BigDecimal,
     val incomeInAccountCurrency: BigDecimal,
-    val expenseInAccountCurrency: BigDecimal
+    val expenseInAccountCurrency: BigDecimal,
+    val transferInAccountCurrency: BigDecimal
 )

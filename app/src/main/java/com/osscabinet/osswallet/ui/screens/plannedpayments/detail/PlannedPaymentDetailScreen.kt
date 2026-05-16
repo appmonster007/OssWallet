@@ -154,7 +154,11 @@ fun PlannedPaymentDetailScreen(
             // Hero card
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == TransactionType.INCOME) AppColors.primary else AppColors.error
+                    PlannedPaymentStatus.ACTIVE -> when (payment.transactionType) {
+                        TransactionType.INCOME -> AppColors.primary
+                        TransactionType.TRANSFER -> AccentBlue
+                        else -> AppColors.error
+                    }
                     PlannedPaymentStatus.PAUSED -> NeutralStatusColor
                     else -> NeutralStatusColor
                 }

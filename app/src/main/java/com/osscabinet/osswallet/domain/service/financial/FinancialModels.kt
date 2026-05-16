@@ -13,6 +13,7 @@ data class FinancialSummary(
     val totalAmount: BigDecimal,
     val income: BigDecimal,
     val expense: BigDecimal,
+    val transfer: BigDecimal,
     val transactionCount: Int
 ) {
     /**
@@ -28,6 +29,7 @@ data class FinancialSummary(
             totalAmount = BigDecimal.ZERO,
             income = BigDecimal.ZERO,
             expense = BigDecimal.ZERO,
+            transfer = BigDecimal.ZERO,
             transactionCount = 0
         )
 
@@ -40,6 +42,7 @@ data class FinancialSummary(
                 totalAmount = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.totalAmount) },
                 income = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.income) },
                 expense = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.expense) },
+                transfer = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transfer) },
                 transactionCount = summaries.sumOf { it.transactionCount }
             )
         }

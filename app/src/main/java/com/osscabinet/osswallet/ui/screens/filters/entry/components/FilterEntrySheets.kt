@@ -20,7 +20,7 @@ fun FilterEntrySheets(
         AeonSelectionSheet(
             title = "Transaction Types",
             onDismiss = { onEvent(FilterEntryEvent.ShowTypeSheet(false)) },
-            items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+            items = TransactionType.entries,
             selectedIds = state.selectedTransactionTypes,
             onSelectionChange = { ids ->
                 if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetTransactionTypes(ids))

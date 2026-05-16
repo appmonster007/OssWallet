@@ -1,12 +1,14 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.financial.IncomeExpenseBreakdown
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import java.math.BigDecimal
@@ -51,35 +53,41 @@ object AggregationService {
 
         val breakdown = calculateIncomeExpenseBreakdown(transactions, exchangeRates, baseCurrency)
 
-        val cashFlowBreakdown =
-            (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
-                .distinct().sorted().map { curr ->
-                    val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                    val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                    CashFlowBreakdownItem(
-                        currency = curr,
-                        income = inc.totalAmount.setScale(precision, RoundingMode.HALF_UP),
-                        incomeInBase = CurrencyService.convertAmount(
-                            inc.totalAmount,
-                            curr,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        ).setScale(precision, RoundingMode.HALF_UP),
-                        expense = exp.totalAmount.setScale(precision, RoundingMode.HALF_UP),
-                        expenseInBase = CurrencyService.convertAmount(
-                            exp.totalAmount,
-                            curr,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        ).setScale(precision, RoundingMode.HALF_UP)
-                    )
-                }
+        val transferByCurrency = calculateSummaryByCurrency(
+            transactions.filter { it.transactionType == TransactionType.TRANSFER }
+        )
+
+        val allCurrencies = (breakdown.incomeCurrencyBreakdown.keys +
+                breakdown.expenseCurrencyBreakdown.keys +
+                transferByCurrency.keys)
+            .distinct().sorted()
+
+        var totalTransferInBase = BigDecimal.ZERO
+
+        val cashFlowBreakdown = allCurrencies.map { curr ->
+            val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+            val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+            val tr = transferByCurrency[curr] ?: FinancialSummary.EMPTY
+            val transferInBase = CurrencyService.convertAmount(tr.transfer.abs(), curr, baseCurrency, exchangeRates, 10)
+                .setScale(precision, RoundingMode.HALF_UP)
+            totalTransferInBase = totalTransferInBase.add(transferInBase)
+            CashFlowBreakdownItem(
+                currency = curr,
+                income = inc.totalAmount.setScale(precision, RoundingMode.HALF_UP),
+                incomeInBase = CurrencyService.convertAmount(inc.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                    .setScale(precision, RoundingMode.HALF_UP),
+                expense = exp.totalAmount.setScale(precision, RoundingMode.HALF_UP),
+                expenseInBase = CurrencyService.convertAmount(exp.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                    .setScale(precision, RoundingMode.HALF_UP),
+                transfer = tr.transfer.abs().setScale(precision, RoundingMode.HALF_UP),
+                transferInBase = transferInBase
+            )
+        }
 
         return CashFlowResult(
             totalIncomeInBase = breakdown.totalIncome.setScale(precision, RoundingMode.HALF_UP),
             totalExpensesInBase = breakdown.totalExpense.setScale(precision, RoundingMode.HALF_UP),
+            totalTransfersInBase = totalTransferInBase,
             netInBase = breakdown.netFlow.setScale(precision, RoundingMode.HALF_UP),
             breakdown = cashFlowBreakdown,
             filteredTransactions = transactions
@@ -118,11 +126,14 @@ object AggregationService {
         if (transactions.isEmpty()) return EMPTY_SUMMARY
         
         val total = transactions.sumOf { it.amount }
-        val (incomeTransactions, expenseTransactions) = transactions.partition { it.amount.signum() >= 0 }
+        val incomeTransactions = transactions.filter { it.transactionType == TransactionType.INCOME }
+        val expenseTransactions = transactions.filter { it.transactionType == TransactionType.EXPENSE }
+        val transferTransactions = transactions.filter { it.transactionType == TransactionType.TRANSFER }
         val income = incomeTransactions.sumOf { it.amount }
         val expense = expenseTransactions.sumOf { it.amount }
+        val transfer = transferTransactions.sumOf { it.amount }
 
-        return FinancialSummary(total, income, expense, transactions.size)
+        return FinancialSummary(total, income, expense, transfer, transactions.size)
     }
 
     /**
@@ -132,10 +143,10 @@ object AggregationService {
         return transactions.groupBy { it.currency }
             .mapValues { (_, txs) ->
                 val total = txs.sumOf { it.amount }
-                val (incomeTransactions, expenseTransactions) = txs.partition { it.amount.signum() >= 0 }
-                val income = incomeTransactions.sumOf { it.amount }
-                val expense = expenseTransactions.sumOf { it.amount }
-                FinancialSummary(total, income, expense, txs.size)
+                val income = txs.filter { it.transactionType == TransactionType.INCOME }.sumOf { it.amount }
+                val expense = txs.filter { it.transactionType == TransactionType.EXPENSE }.sumOf { it.amount }
+                val transfer = txs.filter { it.transactionType == TransactionType.TRANSFER }.sumOf { it.amount }
+                FinancialSummary(total, income, expense, transfer, txs.size)
             }
     }
 
@@ -155,7 +166,8 @@ object AggregationService {
     ): IncomeExpenseBreakdown {
         if (transactions.isEmpty()) return IncomeExpenseBreakdown.empty()
 
-        val (income, expenses) = transactions.partition { it.amount.signum() >= 0 }
+        val income = transactions.filter { it.transactionType == TransactionType.INCOME }
+        val expenses = transactions.filter { it.transactionType == TransactionType.EXPENSE }
         val incomeCurrencyBreakdown = calculateSummaryByCurrency(income)
         val expenseCurrencyBreakdown = calculateSummaryByCurrency(expenses)
 
@@ -176,7 +188,7 @@ object AggregationService {
         }
 
         return IncomeExpenseBreakdown(
-            financialSummary = FinancialSummary(netFlow, totalIncome, totalExpense, transactions.size),
+            financialSummary = FinancialSummary(netFlow, totalIncome, totalExpense, BigDecimal.ZERO, transactions.size),
             incomeTransactions = income,
             expenseTransactions = expenses,
             incomeCurrencyBreakdown = incomeCurrencyBreakdown,
@@ -238,7 +250,7 @@ object AggregationService {
      */
     fun buildCategoryTree(
         transactions: List<Transaction>,
-        allCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
+        allCategories: List<Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null,
         precision: Int = 2
@@ -255,6 +267,7 @@ object AggregationService {
                         totalAmount = summaries.values.sumOf { it.totalAmount },
                         income = summaries.values.sumOf { it.income },
                         expense = summaries.values.sumOf { it.expense },
+                        transfer = summaries.values.sumOf { it.transfer },
                         transactionCount = summaries.values.sumOf { it.transactionCount }
                     ),
                     currencyBreakdown = summaries

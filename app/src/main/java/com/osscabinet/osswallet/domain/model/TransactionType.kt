@@ -61,6 +61,7 @@ enum class TransactionType(
          * Get TransactionType from boolean (for backward compatibility).
          * true = INCOME, false = EXPENSE
          */
+        @Deprecated("Use TransactionType directly to support Transfers", ReplaceWith("this"))
         fun fromBoolean(isIncome: Boolean): TransactionType {
             return if (isIncome) INCOME else EXPENSE
         }
@@ -83,7 +84,9 @@ enum class TransactionType(
 
     /**
      * Convert to boolean (for backward compatibility).
-     * INCOME = true, EXPENSE = false
+     * INCOME = true, EXPENSE = false.
+     * Note: Returns false for TRANSFER.
      */
+    @Deprecated("Use equality check with INCOME to support Transfers", ReplaceWith("this == TransactionType.INCOME"))
     fun toBoolean(): Boolean = this == INCOME
 }

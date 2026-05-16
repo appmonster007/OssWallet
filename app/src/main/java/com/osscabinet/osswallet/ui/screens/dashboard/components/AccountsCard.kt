@@ -62,13 +62,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsCard(
     onManageClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
+    onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
@@ -578,11 +579,11 @@ fun AccountsCardPreview() {
         Account("2", "Travel Fund", "EUR", "Savings", "#B3261E", "Travel", emptyList())
     )
     val stats = mapOf(
-        "1" to AccountSummaryItem(accounts[0], mapOf("USD" to BigDecimal("5000.00")), BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("1000.00"), BigDecimal("200.00")),
-        "2" to AccountSummaryItem(accounts[1], mapOf("EUR" to BigDecimal("1200.00")), BigDecimal("1200.00"), BigDecimal("1320.00"), BigDecimal("500.00"), BigDecimal("100.00"))
+        "1" to AccountSummaryItem(accounts[0], mapOf("USD" to BigDecimal("5000.00")), BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("1000.00"), BigDecimal("200.00"), BigDecimal.ZERO),
+        "2" to AccountSummaryItem(accounts[1], mapOf("EUR" to BigDecimal("1200.00")), BigDecimal("1200.00"), BigDecimal("1320.00"), BigDecimal("500.00"), BigDecimal("100.00"), BigDecimal.ZERO)
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             AccountsCard(
                 onManageClick = {},

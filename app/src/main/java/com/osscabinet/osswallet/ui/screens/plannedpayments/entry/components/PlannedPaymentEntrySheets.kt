@@ -135,7 +135,7 @@ fun PlannedPaymentEntrySheets(
                 onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
             },
             onTypeChanged = { newType ->
-                onEvent(PlannedPaymentEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
+                onEvent(PlannedPaymentEntryEvent.SetTransactionType(newType))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) }
         )

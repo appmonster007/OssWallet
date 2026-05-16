@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -120,10 +121,15 @@ fun AeonTemplateSelection(
                                     Text(category?.name ?: "Unknown", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
+                                    val (prefix, color) = when (template.transactionType) {
+                                        TransactionType.INCOME -> "+" to PositiveAmountColor
+                                        TransactionType.TRANSFER -> "⇄" to AccentBlue
+                                        else -> "-" to AppColors.error
+                                    }
                                     Text(
-                                        "${if (template.transactionType == TransactionType.INCOME) "+" else "-"}${template.amount} ${template.currency ?: ""}",
+                                        "$prefix${template.amount} ${template.currency ?: ""}",
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = if (template.transactionType == TransactionType.INCOME) PositiveAmountColor else AppColors.error,
+                                        color = color,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }

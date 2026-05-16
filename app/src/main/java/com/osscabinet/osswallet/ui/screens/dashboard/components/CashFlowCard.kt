@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
@@ -39,9 +40,10 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @Composable
 fun CashFlowCard(
@@ -363,18 +365,19 @@ fun AeonFlowCard(
 @Composable
 fun CashFlowCardPreview() {
     val sampleBreakdown = listOf(
-        com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem("USD", BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("3500.00"), BigDecimal("3500.00")),
-        com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem("EUR", BigDecimal("1000.00"), BigDecimal("1100.00"), BigDecimal("800.00"), BigDecimal("880.00"))
+        CashFlowBreakdownItem("USD", BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("3500.00"), BigDecimal("3500.00"), BigDecimal.ZERO, BigDecimal.ZERO),
+        CashFlowBreakdownItem("EUR", BigDecimal("1000.00"), BigDecimal("1100.00"), BigDecimal("800.00"), BigDecimal("880.00"), BigDecimal.ZERO, BigDecimal.ZERO)
     )
-    val result = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult(
+    val result = CashFlowResult(
         totalIncomeInBase = BigDecimal("6100.00"),
         totalExpensesInBase = BigDecimal("4380.00"),
+        totalTransfersInBase = BigDecimal.ZERO,
         netInBase = BigDecimal("1720.00"),
         breakdown = sampleBreakdown,
         filteredTransactions = emptyList()
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             CashFlowCard(
                 cashFlowResult = result,

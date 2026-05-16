@@ -9,8 +9,9 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -22,9 +23,9 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 /**
- * Refactored Filter Entry Form Body.
- * Standardized with Budget and Loan entry screens.
- * Uses consistent sections and reusable components.
+ * Filter Entry Form Body.
+ * Standardized with Budget, Loan, and Template entry screens following the "Architect Slate" design.
+ * Clear separation between Core Criteria and Advanced Search.
  */
 @Composable
 fun FilterFormBody(
@@ -41,7 +42,7 @@ fun FilterFormBody(
                 .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
             verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
-            // IMPACT: Header card (Filter Name)
+            // IMPACT: Header card for the Filter Name
             AeonImpactHeaderCard(
                 transactionType = TransactionType.EXPENSE,
                 onTypeSelected = { },
@@ -54,256 +55,224 @@ fun FilterFormBody(
                 nameLabel = "FILTER NAME",
                 showTypeSelector = false,
                 showAmount = false,
-                showCurrency = false
+                showCurrency = false,
+                amountColor = MaterialTheme.colorScheme.primary
             )
 
-            // CONTEXT: Primary filter criteria grid
-            AeonContextGrid {
-                EntryActionRow {
-                    // Period
+            // CORE CRITERIA: Primary structural filter logic
+            EntrySection(title = "CORE CRITERIA", icon = Icons.Rounded.Tune) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Default Period for this filter
                     EntryActionCard(
                         icon = Icons.Rounded.DateRange,
-                        label = "PERIOD",
+                        label = "DEFAULT PERIOD",
                         value = when (val range = state.timelineRange) {
                             is TimelineRange.AllTime -> "All Time"
                             is TimelineRange.ThisPeriod -> "This ${range.period.label}"
                             is TimelineRange.LastPeriod -> range.period.label
-                            is TimelineRange.CustomRange -> "Custom"
+                            is TimelineRange.CustomRange -> "Custom Period"
                         },
                         onClick = { onEvent(FilterEntryEvent.ShowTimelineSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-
-                    // Flows (renamed from Types)
-                    EntryActionCard(
-                        icon = Icons.AutoMirrored.Rounded.ShowChart,
-                        label = "FLOWS",
-                        value = when {
-                            state.selectedTransactionTypes.isEmpty() || (state.selectedTransactionTypes.size == (TransactionType.entries.size - 1)) -> "All Flows"
-                            state.selectedTransactionTypes.size == 1 -> state.selectedTransactionTypes.first().displayName
-                            else -> "${state.selectedTransactionTypes.size} Selected"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-
-                EntryActionRow {
-                    // Accounts
-                    val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
-                    EntryActionCard(
-                        icon = getAccountIconByName(accountObj?.icon),
-                        label = "ACCOUNTS",
-                        value = when {
-                            state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
-                            accountObj != null -> accountObj.name
-                            else -> "${state.selectedAccountIds.size} Selected"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
-                    )
-
-                    // Categories
-                    val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
-                    EntryActionCard(
-                        icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
-                        label = "CATEGORIES",
-                        value = when {
-                            state.selectedCategoryIds.isEmpty() || (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
-                            categoryObj != null -> categoryObj.name
-                            else -> "${state.selectedCategoryIds.size} Selected"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(show = true)) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                         iconTint = MaterialTheme.colorScheme.secondary
                     )
-                }
 
-                // Currencies Standalone card
-                EntryActionCard(
-                    icon = Icons.Rounded.CurrencyExchange,
-                    label = "CURRENCIES",
-                    value = when {
-                        state.selectedCurrencies.isEmpty() -> "All Currencies"
-                        state.selectedCurrencies.size == 1 -> state.selectedCurrencies.first()
-                        else -> "${state.selectedCurrencies.size} Selected"
-                    },
-                    onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
+                    AeonContextGrid {
+                        // Accounts & Categories selection
+                        EntryActionRow {
+                            val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
+                            EntryActionCard(
+                                icon = getAccountIconByName(accountObj?.icon),
+                                label = "ACCOUNTS",
+                                value = when {
+                                    state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
+                                    accountObj != null -> accountObj.name
+                                    else -> "${state.selectedAccountIds.size} Selected"
+                                },
+                                onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                            EntryActionCard(
+                                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                                label = "CATEGORIES",
+                                value = when {
+                                    state.selectedCategoryIds.isEmpty() || (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
+                                    categoryObj != null -> categoryObj.name
+                                    else -> "${state.selectedCategoryIds.size} Selected"
+                                },
+                                onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        // Flows & Currencies selection
+                        EntryActionRow {
+                            EntryActionCard(
+                                icon = Icons.AutoMirrored.Rounded.ShowChart,
+                                label = "FLOWS",
+                                value = if (state.selectedTransactionTypes.size >= 2 || state.selectedTransactionTypes.isEmpty()) "All Flows" else state.selectedTransactionTypes.first().displayName,
+                                onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            EntryActionCard(
+                                icon = Icons.Rounded.CurrencyExchange,
+                                label = "CURRENCIES",
+                                value = if (state.selectedCurrencies.isEmpty()) "All Currencies" else if (state.selectedCurrencies.size == 1) state.selectedCurrencies.first() else "${state.selectedCurrencies.size} Selected",
+                                onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
             }
 
-            // DETAIL: Extended filter criteria and search
-            AeonDetailSection(
-                note = state.queryNote,
-                onNoteChange = { onEvent(FilterEntryEvent.SetQueryNote(it)) },
-                noteLabel = "NOTE QUERY",
-                payee = state.queryPayee,
-                onPayeeChange = { onEvent(FilterEntryEvent.SetQueryPayee(it)) },
-                payeeLabel = "PAYEE QUERY",
-                showNote = false,
-                showPayee = false,
-                showTags = false,
-                selectedTags = emptyList(),
-                additionalContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                        // Note Filter with Regex Toggle
+            // ADVANCED SEARCH: Detailed text queries and constraints
+            EntrySection(title = "ADVANCED SEARCH", icon = Icons.Rounded.FilterList) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Note and Payee Queries with Regex support
+                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
+                        // Note Query
                         Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
                             EntrySwitchRow(
-                                label = "Use Regex for Note",
+                                label = "Regex for Note",
                                 checked = state.isNoteRegex,
                                 onCheckedChange = { onEvent(FilterEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
+                                subtitle = "Matches notes with regex"
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
                                 onValueChange = { onEvent(FilterEntryEvent.SetQueryNote(it)) },
                                 label = "NOTE QUERY",
                                 icon = Icons.AutoMirrored.Rounded.Notes,
-                                placeholder = if (state.isNoteRegex) "e.g. /coffee/i or /^Rent/m" else "e.g. Starbucks coffee"
+                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Search note..."
                             )
                         }
 
-                        // Payee Filter with Regex Toggle
+                        // Payee Query
                         Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
                             EntrySwitchRow(
-                                label = "Use Regex for Payee",
+                                label = "Regex for Payee",
                                 checked = state.isPayeeRegex,
                                 onCheckedChange = { onEvent(FilterEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags (i, m, s, x, d, c, l)"
+                                subtitle = "Matches payees with regex"
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,
                                 onValueChange = { onEvent(FilterEntryEvent.SetQueryPayee(it)) },
                                 label = "PAYEE QUERY",
                                 icon = Icons.Rounded.Person,
-                                placeholder = if (state.isPayeeRegex) "e.g. /Amazon/i" else "e.g. Amazon"
+                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Search payee..."
                             )
                         }
+                    }
 
-                        // Tags Selection
-                        EntryTagSection(
-                            selectedTags = state.selectedTags.toList(),
-                            onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
-                            onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
-                        )
+                    // Multi-select Tags
+                    EntryTagSection(
+                        selectedTags = state.selectedTags.toList(),
+                        onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
+                        onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
+                    )
 
-                        // Payment Method and Status
-                        EntryPaymentMethodStatusRow(
-                            paymentMethod = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${state.selectedPaymentMethods.size} Selected",
-                            onPaymentMethodClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(show = true)) },
-                            statusLabel = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
-                            onStatusClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) }
-                        )
+                    // Multi-select PM and Status
+                    EntryPaymentMethodStatusRow(
+                        paymentMethod = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${state.selectedPaymentMethods.size} Selected",
+                        onPaymentMethodClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(show = true)) },
+                        statusLabel = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
+                        onStatusClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) }
+                    )
 
-                        // Linked Transactions
-                        EntryActionCard(
-                            icon = Icons.Rounded.Link,
-                            label = "LINKED TRANSACTIONS",
-                            value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
-                            onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
+                    // Linked Items
+                    EntryActionCard(
+                        icon = Icons.Rounded.Link,
+                        label = "LINKED TRANSACTIONS",
+                        value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
+                        onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
+                    )
 
-                        // Amount Constraints
-                        AeonContextGrid {
-                            // Min Amount
+                    // Numerical Constraints
+                    AeonContextGrid {
+                        EntryActionRow {
                             EntryActionCard(
                                 icon = Icons.Rounded.ArrowDownward,
                                 label = "MIN AMOUNT",
                                 value = state.minAmount.ifEmpty { "Any" },
                                 onClick = { onEvent(FilterEntryEvent.ShowMinAmountSheet(show = true)) },
-                                modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.primary
+                                modifier = Modifier.weight(1f)
                             )
-
-                            // Max Amount
                             EntryActionCard(
                                 icon = Icons.Rounded.ArrowUpward,
                                 label = "MAX AMOUNT",
                                 value = state.maxAmount.ifEmpty { "Any" },
                                 onClick = { onEvent(FilterEntryEvent.ShowMaxAmountSheet(show = true)) },
-                                modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.secondary
+                                modifier = Modifier.weight(1f)
                             )
                         }
+                    }
 
-                        // Warranty
-                        EntryActionCard(
-                            icon = Icons.Rounded.Verified,
-                            label = "WARRANTY",
-                            value = when (state.hasWarranty) {
-                                null -> "Any"
-                                true -> "Has Warranty"
-                                false -> "No Warranty"
-                            },
-                            onClick = {
-                                onEvent(
-                                    FilterEntryEvent.SetHasWarranty(
-                                        when (state.hasWarranty) {
-                                            null -> true
-                                            true -> false
-                                            false -> null
-                                        }
-                                    )
+                    // Warranty Constraints
+                    EntryActionCard(
+                        icon = Icons.Rounded.Verified,
+                        label = "WARRANTY STATUS",
+                        value = when (state.hasWarranty) {
+                            null -> "Any"
+                            true -> "Has Warranty"
+                            false -> "No Warranty"
+                        },
+                        onClick = {
+                            onEvent(
+                                FilterEntryEvent.SetHasWarranty(
+                                    when (state.hasWarranty) {
+                                        null -> true
+                                        true -> false
+                                        false -> null
+                                    }
                                 )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.tertiary
-                        )
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                        if (state.hasWarranty == true) {
-                            val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
-                            AeonContextGrid {
+                    if (state.hasWarranty == true) {
+                        val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+                        AeonContextGrid {
+                            EntryActionRow {
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY START",
                                     value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
                                     onClick = { onEvent(FilterEntryEvent.ShowWarrantyStartPicker(show = true)) },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                    iconTint = MaterialTheme.colorScheme.secondary
+                                    modifier = Modifier.weight(1f)
                                 )
-
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY END",
                                     value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
                                     onClick = { onEvent(FilterEntryEvent.ShowWarrantyEndPicker(show = true)) },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                    iconTint = MaterialTheme.colorScheme.secondary
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
-
-                        // Exclude Future
-                        EntrySwitchRow(
-                            label = "Exclude Future",
-                            checked = state.excludeFuture,
-                            onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
-                            icon = Icons.Rounded.Schedule,
-                            subtitle = "Don't include future transactions"
-                        )
                     }
+
+                    // Future transactions exclusion
+                    EntrySwitchRow(
+                        label = "Exclude Future",
+                        checked = state.excludeFuture,
+                        onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
+                        icon = Icons.Rounded.Schedule,
+                        subtitle = "Exclude future dated transactions"
+                    )
                 }
-            )
+            }
         }
 
         FilterEntrySheets(state = state, onEvent = onEvent)

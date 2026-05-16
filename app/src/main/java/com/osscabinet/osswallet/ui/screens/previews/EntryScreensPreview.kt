@@ -6,6 +6,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
+import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
+import com.osscabinet.ossWallet.ui.screens.filters.entry.components.FilterFormBody
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanFormBody
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -66,6 +68,33 @@ fun FullBudgetEntryPreview() {
                     isPayeeRegex = true,
                     minAmount = "10",
                     maxAmount = "2000"
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 400, heightDp = 3500, name = "Full Filter Entry Screen")
+@Composable
+fun FullFilterEntryPreview() {
+    OssWalletTheme {
+        Surface {
+            FilterFormBody(
+                state = FilterEntryState(
+                    name = "Business Meals & Coffee",
+                    selectedTransactionTypes = setOf(TransactionType.EXPENSE),
+                    selectedCategoryIds = setOf(1L, 2L, 3L),
+                    selectedCurrencies = setOf("USD", "EUR"),
+                    queryNote = "Lunch|Dinner|Coffee",
+                    isNoteRegex = true,
+                    queryPayee = "Starbucks|Subway",
+                    isPayeeRegex = true,
+                    selectedTags = setOf("Business", "Food"),
+                    minAmount = "5",
+                    maxAmount = "500",
+                    hasWarranty = false,
+                    excludeFuture = true
                 ),
                 onEvent = {}
             )

@@ -16,9 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
@@ -95,10 +98,11 @@ fun AeonTimelinePeriodSelector(
             ) { page ->
                 TimelineSelectorLayout(
                     page = page,
-                    activePage = page,
+                    activePage = pagerState.currentPage,
                     currentRange = currentRange,
                     onRangeSelected = onRangeSelected,
                     onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                    showDropdown = showDropdown,
                     onDropdownShow = { showDropdown = it },
                     onDatePickerShow = { showDatePicker = it }
                 )
@@ -111,6 +115,7 @@ fun AeonTimelinePeriodSelector(
                 currentRange = currentRange,
                 onRangeSelected = onRangeSelected,
                 onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                showDropdown = showDropdown,
                 onDropdownShow = { showDropdown = it },
                 onDatePickerShow = { showDatePicker = it },
                 centerContent = {
@@ -120,9 +125,12 @@ fun AeonTimelinePeriodSelector(
                     ) { page ->
                         DateDisplayArea(
                             page = page,
+                            activePage = pagerState.currentPage,
                             currentRange = currentRange,
+                            showDropdown = showDropdown,
                             onDropdownShow = { showDropdown = it },
-                            onDatePickerShow = { showDatePicker = it }
+                            onDatePickerShow = { showDatePicker = it },
+                            onRangeSelected = onRangeSelected
                         )
                     }
                 }
@@ -141,37 +149,6 @@ fun AeonTimelinePeriodSelector(
             }
         )
     }
-
-    if (showDropdown) {
-        DropdownMenu(
-            expanded = showDropdown,
-            onDismissRequest = { showDropdown = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-        ) {
-            val page = pagerState.currentPage
-            if (page == 1) {
-                ThisPeriodType.entries.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type.label) },
-                        onClick = {
-                            onRangeSelected(TimelineRange.ThisPeriod(type))
-                            showDropdown = false
-                        }
-                    )
-                }
-            } else if (page == 2) {
-                LastPeriodType.entries.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type.label) },
-                        onClick = {
-                            onRangeSelected(TimelineRange.LastPeriod(type))
-                            showDropdown = false
-                        }
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -181,14 +158,18 @@ private fun TimelineSelectorLayout(
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     onIconClick: (Int) -> Unit,
+    showDropdown: Boolean,
     onDropdownShow: (Boolean) -> Unit,
     onDatePickerShow: (Boolean) -> Unit,
     centerContent: @Composable ColumnScope.() -> Unit = {
         DateDisplayArea(
             page = page,
+            activePage = activePage,
             currentRange = currentRange,
+            showDropdown = showDropdown,
             onDropdownShow = onDropdownShow,
-            onDatePickerShow = onDatePickerShow
+            onDatePickerShow = onDatePickerShow,
+            onRangeSelected = onRangeSelected
         )
     }
 ) {
@@ -283,15 +264,22 @@ private fun IconIndicators(
 @Composable
 private fun DateDisplayArea(
     page: Int,
+    activePage: Int,
     currentRange: TimelineRange,
+    showDropdown: Boolean,
     onDropdownShow: (Boolean) -> Unit,
-    onDatePickerShow: (Boolean) -> Unit
+    onDatePickerShow: (Boolean) -> Unit,
+    onRangeSelected: (TimelineRange) -> Unit
 ) {
+    var width by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(22.dp)
             .clip(RoundedCornerShape(8.dp))
+            .onGloballyPositioned { width = it.size.width }
             .clickable {
                 when (page) {
                     1, 2 -> onDropdownShow(true)
@@ -316,6 +304,39 @@ private fun DateDisplayArea(
                     modifier = Modifier.size(14.dp).padding(start = 2.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        if (showDropdown && page == activePage && (page == 1 || page == 2)) {
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { onDropdownShow(false) },
+                offset = DpOffset(0.dp, 4.dp),
+                modifier = Modifier
+                    .width(with(density) { width.toDp() })
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                if (page == 1) {
+                    ThisPeriodType.entries.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
+                            onClick = {
+                                onRangeSelected(TimelineRange.ThisPeriod(type))
+                                onDropdownShow(false)
+                            }
+                        )
+                    }
+                } else if (page == 2) {
+                    LastPeriodType.entries.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
+                            onClick = {
+                                onRangeSelected(TimelineRange.LastPeriod(type))
+                                onDropdownShow(false)
+                            }
+                        )
+                    }
+                }
             }
         }
     }

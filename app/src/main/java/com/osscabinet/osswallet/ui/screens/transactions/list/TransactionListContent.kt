@@ -91,7 +91,7 @@ fun TransactionListContent(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier.background(Color.Transparent),
-        sheetPeekHeight = 90.dp,
+        sheetPeekHeight = 110.dp,
         sheetContainerColor = Color.Transparent,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetTonalElevation = 0.dp,

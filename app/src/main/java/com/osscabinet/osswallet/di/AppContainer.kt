@@ -62,9 +62,6 @@ import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.widget.WorkManagerWidgetRefreshTrigger
 import com.osscabinet.ossWallet.data.local.WidgetInvalidationObserver
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 /**
  * Dependency container for the application.
  * Follows the Dependency Injection pattern manually to keep the app lightweight
@@ -80,17 +77,12 @@ class AppContainer(private val context: Context) {
         AppDatabase.getDatabase(context, securePassphraseManager.getOrGeneratePassphrase())
     }
 
-    init {
-        // Run database seeding if enabled (debug builds only)
-        if (SeedingConfig.shouldSeed()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                SeedingConfig.createSeeder(db, settingsDataStore, context)?.seed()
-            }
-        }
-    }
-
     val settingsDataStore: SettingsDataStore by lazy {
         SettingsDataStore(context)
+    }
+
+    init {
+        SeedingConfig.launchSeedingIfEnabled(db, settingsDataStore, context)
     }
 
     val settingsRepository: SettingsRepository by lazy {

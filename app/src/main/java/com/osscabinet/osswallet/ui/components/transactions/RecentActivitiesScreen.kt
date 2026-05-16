@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -51,17 +52,10 @@ fun RecentActivitiesScreen(
     listState: TransactionListState,
     onRecordsClick: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
-    onTransactionClick: (Long) -> Unit = {},
+    onTransactionEvent: (TransactionItemEvent) -> Unit = {},
     baseCurrency: String = "USD",
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
     revealedCardIds: List<Long> = emptyList(),
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
     precision: Int = 2,
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
@@ -93,7 +87,7 @@ fun RecentActivitiesScreen(
                     )
                     Text(
                         text = headerTitle,
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -105,7 +99,7 @@ fun RecentActivitiesScreen(
                 ) {
                     Text(
                         "VIEW ALL",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                             fontSize = 12.sp
@@ -132,7 +126,7 @@ fun RecentActivitiesScreen(
                     ) {
                         Text(
                             "No recent activities",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             color = AppColors.contentSecondary,
                         )
                     }
@@ -172,14 +166,7 @@ fun RecentActivitiesScreen(
                         SwipeableTransactionItem(
                             transaction = transaction,
                             isRevealed = revealedCardIds.contains(transaction.id),
-                            onExpandLeft = { onItemExpanded(transaction.id) },
-                            onExpandRight = { onItemExpanded(transaction.id) },
-                            onCollapse = { onItemCollapsed(transaction.id) },
-                            onFullSwipeRight = { onFullSwipeRight(transaction.id) },
-                            onStatusChange = { onStatusChange(transaction.id, it) },
-                            onClone = { onClone(transaction.id) },
-                            onDelete = { onDelete(transaction.id) },
-                            onSplit = { onSplit(transaction.id) }
+                            onEvent = onTransactionEvent
                         ) {
                             AeonTransactionItem(
                                 category = enriched.categoryName,
@@ -213,7 +200,7 @@ fun RecentActivitiesScreen(
                                 icon = getIconByName(enriched.categoryIcon),
                                 iconBg = Color(enriched.categoryColor),
                                 status = transaction.status
-                            ) { onTransactionClick(transaction.id) }
+                            ) { onTransactionEvent(TransactionItemEvent.Click(transaction.id)) }
                         }
                     }
                 }

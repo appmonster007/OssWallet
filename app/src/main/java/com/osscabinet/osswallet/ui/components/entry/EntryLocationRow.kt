@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun EntryLocationRow(
@@ -50,14 +51,14 @@ fun EntryLocationRow(
             Column {
                 Text(
                     label,
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 )
                 Text(
                     text = coords?.let { "Coordinates: ${it.first.toString().take(6)}, ${it.second.toString().take(6)}" }
                         ?: "Add Location",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                    style = AppTextStyles.transactionAmount
                 )
             }
             Spacer(modifier = Modifier.weight(1f))

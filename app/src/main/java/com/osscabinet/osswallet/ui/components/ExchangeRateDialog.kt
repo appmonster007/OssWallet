@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Dialog for entering exchange rate between currencies.
@@ -34,7 +35,7 @@ fun ExchangeRateDialog(
         title = { 
             Text(
                 "Exchange Rate",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.heroAmount
             ) 
         },
         text = {
@@ -45,7 +46,7 @@ fun ExchangeRateDialog(
             ) {
                 Text(
                     "Enter the exchange rate for this transfer",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = AppTextStyles.transactionTitle,
                     color = AppColors.contentSecondary
                 )
 

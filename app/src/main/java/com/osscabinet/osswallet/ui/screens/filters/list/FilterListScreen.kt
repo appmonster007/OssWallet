@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +40,7 @@ fun FilterListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Saved Filters", style = MaterialTheme.typography.headlineSmall) },
+                title = { Text("Saved Filters", style = AppTextStyles.calculatorKey) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -75,7 +76,7 @@ fun FilterListScreen(
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No saved filters yet",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = AppTextStyles.listItemTitle,
                         color = AppColors.border
                     )
                 }
@@ -137,7 +138,7 @@ fun FilterItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     filter.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.cardSectionTitle
                 )
             }
             IconButton(onClick = onDelete) {

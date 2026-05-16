@@ -80,6 +80,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -265,12 +266,12 @@ fun PlannedPaymentListScreen(
                         }
                         Text(
                             "No Planned Payments",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = AppTextStyles.calculatorKey,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
@@ -476,12 +477,12 @@ private fun PlannedPaymentListItem(
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     formattedAmount,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    style = AppTextStyles.listItemTitle,
                     color = typeColor
                 )
                 Text(
                     payment.currency,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
@@ -510,7 +511,7 @@ private fun PlannedPaymentListItem(
         additionalContent = {
             Text(
                 relativeDateLabel,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold
                 ),

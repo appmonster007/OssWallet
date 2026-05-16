@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlin.math.roundToInt
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -80,7 +81,7 @@ fun AeonTagSelectionDialog(
             ) {
                 Text(
                     text = "Select Tags",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = AppTextStyles.calculatorKey,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.contentPrimary
                 )
@@ -128,7 +129,7 @@ fun AeonTagSelectionDialog(
                                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                                             ) {
                                                 Icon(Icons.Rounded.Add, null, tint = AppColors.primary, modifier = Modifier.size(20.dp))
-                                                Text("Create \"${searchQuery.trim()}\"", color = AppColors.primary, style = MaterialTheme.typography.bodyLarge)
+                                                Text("Create \"${searchQuery.trim()}\"", color = AppColors.primary, style = AppTextStyles.listItemTitle)
                                             }
                                         }
                                     }
@@ -155,7 +156,7 @@ fun AeonTagSelectionDialog(
                                                 Text(
                                                     tag.name, 
                                                     color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
-                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    style = AppTextStyles.listItemTitle,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 if (isSelected) {
@@ -266,7 +267,7 @@ fun AeonTagCreateDialog(
             ) {
                 Text(
                     text = "Create New Tag",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = AppTextStyles.calculatorKey,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.contentPrimary
                 )

@@ -47,13 +47,16 @@ import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHer
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
+import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailUiState
@@ -63,6 +66,7 @@ import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -169,13 +173,18 @@ fun AccountDetailScreen(
             accounts = accounts,
             categories = categories,
             savedFilters = savedFilters,
-            onUpdateTimelineRange = { accountDetailViewModel.updateTimelineRange(it) },
-            onUpdateFilter = { accountDetailViewModel.updateFilter(it) },
+            onFilterEvent = { event ->
+                when (event) {
+                    is FilterEvent.Apply -> accountDetailViewModel.updateFilter(event.filter)
+                    is FilterEvent.UpdateTimeline -> accountDetailViewModel.updateTimelineRange(event.range)
+                    is FilterEvent.Reset -> accountDetailViewModel.clearFilters()
+                    is FilterEvent.UpdateSettings -> {}
+                }
+            },
             onToggleExpand = { /* Handle if needed */ },
             onClose = { showFilterSheet = false },
-            showAccountFilter = false, // Locked to current account
+            showAccountFilter = false,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
-            onResetToInitial = { accountDetailViewModel.clearFilters() }
         )
     }
 
@@ -192,8 +201,8 @@ fun AccountDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Show Planned Payments", style = MaterialTheme.typography.bodyLarge)
-                            Text("Include future transactions", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                            Text("Show Planned Payments", style = AppTextStyles.listItemTitle)
+                            Text("Include future transactions", style = AppTextStyles.caption, color = AppColors.border)
                         }
                         Switch(
                             checked = state.showPlannedPayments,
@@ -206,8 +215,8 @@ fun AccountDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Use Note as Header", style = MaterialTheme.typography.bodyLarge)
-                            Text("Primary header will show transaction note", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                            Text("Use Note as Header", style = AppTextStyles.listItemTitle)
+                            Text("Primary header will show transaction note", style = AppTextStyles.caption, color = AppColors.border)
                         }
                         Switch(
                             checked = state.useNoteAsHeader,
@@ -228,7 +237,7 @@ fun AccountDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Account Details", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Account Details", style = AppTextStyles.cardSectionTitle)
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigate { onBackClick() } }) {
@@ -320,7 +329,7 @@ fun AccountDetailScreen(
                                         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                                         Text(
                                             "No transactions yet",
-                                            style = MaterialTheme.typography.bodyLarge,
+                                            style = AppTextStyles.listItemTitle,
                                             color = AppColors.border
                                         )
                                     }
@@ -331,18 +340,22 @@ fun AccountDetailScreen(
                                     onRecordsClick = { drillDown ->
                                         onRecordsClick(state.currentFilter.merge(drillDown))
                                     },
-                                    onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
                                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                                     modifier = Modifier.fillMaxSize(),
                                     revealedCardIds = revealedCardIds,
-                                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                    onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
-                                    onClone = { onCloneTransactionClick(it) },
-                                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                    onSplit = { onSplitTransactionClick(it) },
-                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                    onTransactionEvent = { event ->
+                                        when (event) {
+                                            is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
+                                            is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                                            is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                                            is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                                            is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                        }
+                                    },
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
                                     filter = state.currentFilter
@@ -450,18 +463,15 @@ fun DynamicAccountDetailCards(
         updateHandler = accountDetailViewModel,
         onDelete = {},
         onRecordsClick = onRecordsClick,
-        onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-        onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-        onStatusChange = { transactionId, status ->
-            transactionViewModel.quickUpdateStatus(
-                transactionId,
-                status
-            )
-        },
-        onClone = { onCloneTransactionClick(it) },
-        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-        onSplit = { onSplitTransactionClick(it) },
-        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+        callbacks = CardListCallbacks(
+            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+            onClone = { onCloneTransactionClick(it) },
+            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+            onSplit = { onSplitTransactionClick(it) },
+            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+        ),
         currentTheme = currentTheme
     )
 
@@ -489,20 +499,17 @@ fun DynamicAccountDetailCards(
             accounts = listOf(state.account),
             allCategories = state.allCategories,
             savedFilters = savedFilters,
-            onAccountClick = { id -> navigate { onAccountClick(id) } },
-            onTransactionClick = onEditTransactionClick,
-            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-            onStatusChange = { transactionId, status ->
-                transactionViewModel.quickUpdateStatus(
-                    transactionId,
-                    status
-                )
-            },
-            onClone = { onCloneTransactionClick(it) },
-            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-            onSplit = { onSplitTransactionClick(it) },
-            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+            callbacks = CardListCallbacks(
+                onAccountClick = { id -> navigate { onAccountClick(id) } },
+                onTransactionClick = onEditTransactionClick,
+                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                onClone = { onCloneTransactionClick(it) },
+                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                onSplit = { onSplitTransactionClick(it) },
+                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+            ),
             baseFilter = accountScopeFilter,
             forceDisableAccountSelection = true,
             header = {

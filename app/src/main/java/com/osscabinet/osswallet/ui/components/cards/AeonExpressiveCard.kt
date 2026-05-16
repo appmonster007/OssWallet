@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * A reusable card component following the "Architect Slate" design specification.
@@ -123,7 +124,7 @@ fun AeonExpressiveCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             letterSpacing = 0.sp
@@ -133,7 +134,7 @@ fun AeonExpressiveCard(
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            style = MaterialTheme.typography.labelMedium.copy(
+                            style = AppTextStyles.drawerItemLabel.copy(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 12.sp
                             ),

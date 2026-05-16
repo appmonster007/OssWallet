@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun BudgetsCard(
@@ -83,7 +84,7 @@ fun BudgetsCard(
         if (items.isEmpty()) {
             Text(
                 text = "No budgets yet",
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -136,7 +137,7 @@ private fun BudgetProgressRow(
                     )
                     Text(
                         text = progress.budget.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.2).sp
                         ),
@@ -145,7 +146,7 @@ private fun BudgetProgressRow(
                 }
                 Text(
                     text = "${(progress.percentage * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelLarge.copy(
+                    style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Black,
                         fontFeatureSettings = "tnum"
                     ),
@@ -173,7 +174,7 @@ private fun BudgetProgressRow(
                 Column {
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
                             fontSize = 12.sp
@@ -186,7 +187,7 @@ private fun BudgetProgressRow(
                         } else {
                             formatCurrencyRight(progress.remaining, progress.budget.currency, precision, shorten = true)
                         },
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
                             color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary
                         )
@@ -200,7 +201,7 @@ private fun BudgetProgressRow(
                 ) {
                     Text(
                         text = "${formatAmount(progress.spent, precision)} / ${formatAmount(progress.limit, precision)}",
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",
                             fontSize = 12.sp

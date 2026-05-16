@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,12 +34,12 @@ fun TransactionListTopAppBar(
             Column {
                 Text(
                     "Records",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = AppTextStyles.screenTitle,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.border
                 )
             }

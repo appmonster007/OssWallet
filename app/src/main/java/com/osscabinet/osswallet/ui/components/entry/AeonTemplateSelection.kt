@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonTemplateSelection(
@@ -117,8 +118,8 @@ fun AeonTemplateSelection(
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(template.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text(category?.name ?: "Unknown", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                                    Text(template.name, style = AppTextStyles.screenSubTitle, fontWeight = FontWeight.Bold)
+                                    Text(category?.name ?: "Unknown", style = AppTextStyles.caption, color = AppColors.border)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     val (prefix, color) = when (template.transactionType) {
@@ -128,7 +129,7 @@ fun AeonTemplateSelection(
                                     }
                                     Text(
                                         "$prefix${template.amount} ${template.currency ?: ""}",
-                                        style = MaterialTheme.typography.titleSmall,
+                                        style = AppTextStyles.managementItemTitle,
                                         color = color,
                                         fontWeight = FontWeight.Bold
                                     )

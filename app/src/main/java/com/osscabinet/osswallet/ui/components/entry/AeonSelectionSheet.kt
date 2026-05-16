@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * A generic full-screen selection sheet that provides a unified search and selection experience.
@@ -118,7 +119,7 @@ fun <T, ID> AeonSelectionSheet(
                             ) {
                                 Text(
                                     text = emptyMessage ?: "No matches found for \"$query\"",
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = AppTextStyles.listItemTitle,
                                     color = AppColors.contentSecondary
                                 )
                             }

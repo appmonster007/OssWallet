@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
@@ -55,6 +56,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun RecentActivitiesCard(
@@ -112,19 +114,23 @@ fun RecentActivitiesCard(
         RecentActivitiesScreen(
             listState = listState,
             onRecordsClick = onRecordsClick,
-            onTransactionClick = onTransactionClick,
             baseCurrency = baseCurrency,
-            modifier = Modifier.height(300.dp), // Limit height in card
-            showHeader = false, // We use card header
+            modifier = Modifier.height(300.dp),
+            showHeader = false,
             precision = precision,
-            revealedCardIds = emptyList(), // Should be passed if needed
-            onItemExpanded = onItemExpanded,
-            onItemCollapsed = onItemCollapsed,
-            onStatusChange = onStatusChange,
-            onClone = onClone,
-            onDelete = onDeleteTransaction,
-            onSplit = onSplit,
-            onFullSwipeRight = onFullSwipeRight
+            revealedCardIds = emptyList(),
+            onTransactionEvent = { event ->
+                when (event) {
+                    is TransactionItemEvent.Click -> onTransactionClick(event.id)
+                    is TransactionItemEvent.Expand -> onItemExpanded(event.id)
+                    is TransactionItemEvent.Collapse -> onItemCollapsed(event.id)
+                    is TransactionItemEvent.StatusChange -> onStatusChange(event.id, event.status)
+                    is TransactionItemEvent.Clone -> onClone(event.id)
+                    is TransactionItemEvent.Delete -> onDeleteTransaction(event.id)
+                    is TransactionItemEvent.Split -> onSplit(event.id)
+                    is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(event.id)
+                }
+            }
         )
     }
 
@@ -188,7 +194,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
         title = {
             Text(
                 "Recent Activities Display",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
@@ -205,7 +211,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
                     ) {
                         Text(
                             "GROUP BY",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             ),

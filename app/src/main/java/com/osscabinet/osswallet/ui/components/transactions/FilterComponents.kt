@@ -44,6 +44,7 @@ import java.util.Locale
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -260,7 +261,7 @@ fun FilterFields(
                     ) {
                         Text(
                             "NOTE",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp,
                                 fontSize = 10.sp
@@ -290,7 +291,7 @@ fun FilterFields(
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     "REGEX", 
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp), 
+                                    style = AppTextStyles.transactionStatusMicro, 
                                     color = if (filter.isNoteRegex) AppColors.primary else AppColors.contentSecondary
                                 )
                             }
@@ -319,7 +320,7 @@ fun FilterFields(
                     ) {
                         Text(
                             "PAYEE",
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp,
                                 fontSize = 10.sp
@@ -349,7 +350,7 @@ fun FilterFields(
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     "REGEX", 
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp), 
+                                    style = AppTextStyles.transactionStatusMicro, 
                                     color = if (filter.isPayeeRegex) AppColors.secondary else AppColors.contentSecondary
                                 )
                             }
@@ -638,14 +639,14 @@ fun CompactTextField(
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 enabled = enabled,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppColors.contentPrimary),
+                textStyle = AppTextStyles.transactionTitle.copy(color = AppColors.contentPrimary),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(AppColors.primary),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) {
                         Text(
                             placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }

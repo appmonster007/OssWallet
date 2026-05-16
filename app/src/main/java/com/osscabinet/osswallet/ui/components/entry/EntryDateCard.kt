@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Compact date selection card for entry screens.
@@ -59,12 +60,12 @@ fun EntryDateCard(
                 }
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    style = AppTextStyles.chartAxisLabel,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     text = dateLabel,
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    style = AppTextStyles.transactionTitle.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = if (dateMillis != null) AppColors.contentPrimary else AppColors.contentSecondary.copy(alpha = 0.5f)
                     )

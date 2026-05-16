@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -138,7 +139,7 @@ fun AeonTagSelectionContent(
                             InputChip(
                                 selected = true,
                                 onClick = { currentSelection = currentSelection - tagName },
-                                label = { Text(tagName, style = MaterialTheme.typography.labelLarge) },
+                                label = { Text(tagName, style = AppTextStyles.drawerItemLabel) },
                                 trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(dims.iconSizeXs + 4.dp)) },
                                 shape = RoundedCornerShape(dims.spacingMd),
                                 colors = InputChipDefaults.inputChipColors(
@@ -197,7 +198,7 @@ fun AeonTagSelectionContent(
                                     )
                                     Text(
                                         "Create \"${searchQuery.trim()}\"",
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = AppTextStyles.listItemTitle,
                                         modifier = Modifier.weight(1f),
                                         maxLines = 1
                                     )
@@ -215,7 +216,7 @@ fun AeonTagSelectionContent(
                                         contentPadding = PaddingValues(horizontal = dims.spacingLg, vertical = 0.dp),
                                         modifier = Modifier.height(dims.spacingXl + dims.spacingMd)
                                     ) {
-                                        Text("CREATE", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black))
+                                        Text("CREATE", style = AppTextStyles.listSectionHeader)
                                     }
                                 }
                                 
@@ -329,7 +330,7 @@ fun AeonTagSelectionContent(
                                 Spacer(modifier = Modifier.height(dims.spacingSm))
                                 Text(
                                     if (searchQuery.isBlank()) "No tags found" else "No match for \"$searchQuery\"",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = AppTextStyles.transactionTitle,
                                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                             }
@@ -358,7 +359,7 @@ fun AeonTagSelectionContent(
                 ) {
                     Text(
                         "Done (${currentSelection.size} selected)",
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.5.sp
                         )

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
@@ -38,7 +39,7 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             name,
-            style = MaterialTheme.typography.labelSmall,
+            style = AppTextStyles.transactionSwipeAction,
             color = if (isSelected) AppColors.primary else AppColors.contentSecondary
         )
     }

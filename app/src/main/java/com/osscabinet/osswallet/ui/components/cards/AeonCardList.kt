@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Robust, unified card list component for all analytical screens.
@@ -39,18 +40,7 @@ fun AeonCardList(
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    onManageAccountsClick: () -> Unit = {},
-    onAccountClick: (String) -> Unit = {},
-    onTransactionClick: (Long) -> Unit = {},
-    onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
-    onPlannedPaymentSkip: ((Long) -> Unit)? = null,
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDeleteTransaction: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
+    callbacks: CardListCallbacks = CardListCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
@@ -78,18 +68,7 @@ fun AeonCardList(
             updateHandler = cardUpdateHandler,
             onDelete = onDelete,
             onRecordsClick = onRecordsClick,
-            onManageAccountsClick = onManageAccountsClick,
-            onAccountClick = onAccountClick,
-            onTransactionClick = onTransactionClick,
-            onPlannedPaymentConfirm = onPlannedPaymentConfirm,
-            onPlannedPaymentSkip = onPlannedPaymentSkip,
-            onItemExpanded = onItemExpanded,
-            onItemCollapsed = onItemCollapsed,
-            onStatusChange = onStatusChange,
-            onClone = onClone,
-            onDeleteTransaction = onDeleteTransaction,
-            onSplit = onSplit,
-            onFullSwipeRight = onFullSwipeRight,
+            callbacks = callbacks,
             currentTheme = currentTheme,
             preComputedData = preComputedData
         )
@@ -165,7 +144,7 @@ private fun CardErrorState(message: String?) {
             )
             Text(
                 text = message ?: "Failed to load card",
-                style = MaterialTheme.typography.bodyMedium,
+                style = AppTextStyles.transactionTitle,
                 color = AppColors.onErrorContainer
             )
         }

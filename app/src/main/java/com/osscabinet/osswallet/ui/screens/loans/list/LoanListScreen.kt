@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,12 +97,12 @@ fun LoanListScreen(
                         }
                         Text(
                             "No Loans Tracked",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = AppTextStyles.calculatorKey,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             "Track money you've lent or borrowed",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.transactionTitle,
                             color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
@@ -180,7 +181,7 @@ private fun LoanItem(
         trailingContent = {
             Text(
                 "${loan.principalAmount.toPlainString()} ${loan.currency}",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                style = AppTextStyles.listItemTitle,
                 color = accentColor
             )
             Surface(
@@ -190,7 +191,7 @@ private fun LoanItem(
             ) {
                 Text(
                     if (loan.status == LoanStatus.ACTIVE) "Active" else "Settled",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    style = AppTextStyles.formSectionLabel,
                     color = accentColor,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )

@@ -38,6 +38,7 @@ import org.json.JSONArray
 import org.osmdroid.util.GeoPoint
 import java.net.URLEncoder
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -292,7 +293,7 @@ fun AeonLocationSelectionContent(
                             value = searchQuery,
                             onValueChange = onSearchQueryChange,
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search location...", style = MaterialTheme.typography.bodyLarge) },
+                            placeholder = { Text("Search location...", style = AppTextStyles.listItemTitle) },
                             leadingIcon = { 
                                 if (isSearching) {
                                     CircularProgressIndicator(
@@ -319,7 +320,7 @@ fun AeonLocationSelectionContent(
                                 unfocusedIndicatorColor = AppColors.transparent,
                             ),
                             singleLine = true,
-                            textStyle = MaterialTheme.typography.bodyLarge
+                            textStyle = AppTextStyles.listItemTitle
                         )
 
                         val displayResults = if (searchQuery.isEmpty()) searchHistory else searchResults
@@ -331,7 +332,7 @@ fun AeonLocationSelectionContent(
                                 Text(
                                     text = searchError,
                                     color = AppColors.error,
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = AppTextStyles.caption,
                                     modifier = Modifier.padding(16.dp)
                                 )
                             }
@@ -346,7 +347,7 @@ fun AeonLocationSelectionContent(
                                 ) {
                                     Text(
                                         "RECENT SEARCHES",
-                                        style = MaterialTheme.typography.labelSmall.copy(
+                                        style = AppTextStyles.transactionSwipeAction.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 0.5.sp
                                         ),
@@ -357,7 +358,7 @@ fun AeonLocationSelectionContent(
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         modifier = Modifier.height(24.dp)
                                     ) {
-                                        Text("Clear All", style = MaterialTheme.typography.labelSmall)
+                                        Text("Clear All", style = AppTextStyles.transactionSwipeAction)
                                     }
                                 }
                             }
@@ -373,14 +374,14 @@ fun AeonLocationSelectionContent(
                                             Text(
                                                 result.mainText, 
                                                 maxLines = 1,
-                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                                                style = AppTextStyles.formFieldValue
                                             ) 
                                         },
                                         supportingContent = {
                                             Text(
                                                 result.secondaryText,
                                                 maxLines = 1,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = AppTextStyles.caption,
                                                 color = AppColors.contentSecondary
                                             )
                                         },
@@ -473,13 +474,13 @@ fun AeonLocationSelectionContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = selectedAddress?.split(",")?.firstOrNull() ?: "Selected Location",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = AppTextStyles.cardSectionTitle,
                                         maxLines = 1,
                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords.first, selectedCoords.second),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = AppTextStyles.caption,
                                         color = AppColors.contentSecondary,
                                         maxLines = 1,
                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -510,7 +511,7 @@ fun AeonLocationSelectionContent(
                             ) {
                                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
-                                Text("Confirm Location", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                Text("Confirm Location", style = AppTextStyles.managementItemTitle)
                             }
                         }
                     }

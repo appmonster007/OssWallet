@@ -32,6 +32,7 @@ import java.math.BigDecimal
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonSettingsToggle(
@@ -57,7 +58,7 @@ fun AeonSettingsToggle(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
@@ -66,7 +67,7 @@ fun AeonSettingsToggle(
                 if (description != null) {
                     Text(
                         description,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AppTextStyles.caption,
                         color = AppColors.contentSecondary
                     )
                 }
@@ -145,7 +146,7 @@ fun AeonGridColumnsSettings(
         ) {
             Text(
                 "GRID COLUMNS",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
@@ -190,7 +191,7 @@ fun AeonFlowSectionHeader(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     title.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp,
                         fontSize = 12.sp
@@ -235,7 +236,7 @@ fun AeonFlowSectionHeader(
                     )
                     Text(
                         text = crumb.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontSize = 11.sp,
                             fontWeight = if (index == breadcrumbs.size - 1) FontWeight.Bold else FontWeight.Normal
                         ),
@@ -267,7 +268,7 @@ fun FilterActiveIndicator(count: Int) {
         Box(contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                 Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(12.dp))
-                Text(count.toString(), style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                Text(count.toString(), style = AppTextStyles.chipLabel)
             }
         }
     }
@@ -295,7 +296,7 @@ fun AeonFlowBadge(
         Text(
             text = formatCurrencyRight(amount, currency, precision, shorten = true).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Black,
                 fontSize = 11.sp,
                 fontFeatureSettings = "tnum"
@@ -380,7 +381,7 @@ fun AeonFlowSectionHeaderPreview() {
             trailing = {
                 Text(
                     "SEE ALL",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.primary
                 )
             }

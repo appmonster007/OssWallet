@@ -38,6 +38,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -180,12 +181,12 @@ fun PlannedPaymentDetailScreen(
                     ) {
                         Text(
                             formattedAmount,
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                            style = AppTextStyles.heroAmountDisplay,
                             color = accentColor
                         )
                         Text(
                             payment.currency,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                            style = AppTextStyles.screenSubTitle,
                             color = accentColor.copy(alpha = 0.7f),
                             modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingXs)
                         )
@@ -206,7 +207,7 @@ fun PlannedPaymentDetailScreen(
                         ) {
                             Text(
                                 statusLabel,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.formSectionLabel,
                                 color = statusColor,
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
                             )
@@ -218,7 +219,7 @@ fun PlannedPaymentDetailScreen(
                         ) {
                             Text(
                                 typeLabel,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.contentSecondary,
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
                             )
@@ -244,7 +245,7 @@ fun PlannedPaymentDetailScreen(
                         )
                         Text(
                             recurrenceText,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = AppTextStyles.drawerItemLabel,
                             color = AppColors.contentSecondary,
                             modifier = Modifier.weight(1f)
                         )
@@ -256,14 +257,14 @@ fun PlannedPaymentDetailScreen(
                         )
                         Text(
                             "Next: $nextRelative",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = AppTextStyles.chipLabel,
                             color = accentColor
                         )
                     }
                     Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
                     Text(
                         "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.schedule.startDate))}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AppTextStyles.caption,
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
@@ -395,7 +396,7 @@ private fun DetailMetaRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 10.sp,
                     letterSpacing = 0.5.sp,
                     fontWeight = FontWeight.Bold
@@ -404,7 +405,7 @@ private fun DetailMetaRow(
             )
             Text(
                 value,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                style = AppTextStyles.chartTooltipValue,
                 color = AppColors.contentPrimary,
                 maxLines = if (singleLine) 1 else 4,
                 overflow = TextOverflow.Ellipsis
@@ -470,12 +471,12 @@ private fun OccurrenceItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     dateLabel,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.transactionAmount,
                     color = if (item.isOverdue) AppColors.error else AppColors.contentPrimary
                 )
                 Text(
                     "$formattedAmount ${item.plannedPayment.currency}",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
@@ -496,7 +497,7 @@ private fun OccurrenceItem(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("Skip", style = MaterialTheme.typography.labelMedium)
+                                Text("Skip", style = AppTextStyles.drawerItemLabel)
                             }
                         }
                         if (canConfirmToday) {
@@ -519,7 +520,7 @@ private fun OccurrenceItem(
                                     )
                                     Text(
                                         "Confirm",
-                                        style = MaterialTheme.typography.labelMedium.copy(
+                                        style = AppTextStyles.drawerItemLabel.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = ColorOnDark
                                         )
@@ -550,7 +551,7 @@ private fun OccurrenceItem(
                                     )
                                     Text(
                                         hintLabel,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = AppTextStyles.transactionSwipeAction,
                                         color = AppColors.contentSecondary.copy(
                                             alpha = 0.5f
                                         )
@@ -574,7 +575,7 @@ private fun OccurrenceItem(
                         )
                         Text(
                             "Confirmed",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = AppTextStyles.chipLabel,
                             color = AppColors.primary
                         )
                     }
@@ -593,7 +594,7 @@ private fun OccurrenceItem(
                         )
                         Text(
                             "Skipped",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = AppColors.contentSecondary.copy(alpha = 0.4f)
                         )
                     }
@@ -651,11 +652,11 @@ private fun PastOccurrenceItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     dateLabel,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                    style = AppTextStyles.transactionAmount
                 )
                 Text(
                     "$formattedAmount ${payment.currency}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AppTextStyles.caption,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
@@ -671,7 +672,7 @@ private fun PastOccurrenceItem(
                 )
                 Text(
                     statusLabel,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.chipLabel,
                     color = statusColor
                 )
             }

@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -207,7 +208,7 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "Select Base Currency",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = AppTextStyles.calculatorKey,
                         modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg)
                     )
                     
@@ -259,7 +260,7 @@ fun SettingsScreen(
                                             Box(contentAlignment = Alignment.Center) {
                                                 Text(
                                                     symbol,
-                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                    style = AppTextStyles.cardSectionTitle,
                                                     color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.onSecondaryContainer
                                                 )
                                             }
@@ -268,12 +269,12 @@ fun SettingsScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 name, 
-                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
                                                 color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.contentPrimary
                                             )
                                             Text(
                                                 code, 
-                                                style = MaterialTheme.typography.labelSmall, 
+                                                style = AppTextStyles.transactionSwipeAction, 
                                                 color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.7f) else AppColors.border
                                             )
                                         }
@@ -329,7 +330,7 @@ fun SettingsScreen(
                             }
                             Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                            Text(t, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            Text(t, modifier = Modifier.weight(1f), style = AppTextStyles.listItemTitle)
                             if (t == theme) {
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
                             }
@@ -347,7 +348,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", style = MaterialTheme.typography.headlineSmall) },
+                title = { Text("Settings", style = AppTextStyles.calculatorKey) },
                 navigationIcon = {
                     IconButton(onClick = { navigate { onBackClick() } }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -487,7 +488,7 @@ fun SettingsScreen(
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
                                             p.toString(),
-                                            style = MaterialTheme.typography.labelLarge,
+                                            style = AppTextStyles.drawerItemLabel,
                                             fontWeight = FontWeight.Bold,
                                             color = if (decimalPrecision == p) AppColors.onPrimary else AppColors.contentSecondary
                                         )
@@ -592,12 +593,12 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("OssWallet v1.1.0", style = MaterialTheme.typography.labelSmall, color = AppColors.border)
-                Text("Built for the Modern Account", style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.5f))
+                Text("OssWallet v1.1.0", style = AppTextStyles.transactionSwipeAction, color = AppColors.border)
+                Text("Built for the Modern Account", style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary.copy(alpha = 0.5f))
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 Text(
                     "Currency rates provided by",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 Text(
@@ -605,7 +606,7 @@ fun SettingsScreen(
                     modifier = Modifier.clickable {
                         // In a real app, use Context to open the URL
                     },
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         color = AppColors.primary
                     )
@@ -620,7 +621,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelLarge.copy(
+            style = AppTextStyles.drawerItemLabel.copy(
                 fontWeight = FontWeight.Bold,
                 color = AppColors.primary,
                 letterSpacing = 1.2.sp
@@ -667,8 +668,8 @@ fun SettingsItem(
         }
         Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = color)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+            Text(title, style = AppTextStyles.managementItemTitle, color = color)
+            Text(subtitle, style = AppTextStyles.caption, color = AppColors.border)
         }
         
         if (trailingContent != null) {

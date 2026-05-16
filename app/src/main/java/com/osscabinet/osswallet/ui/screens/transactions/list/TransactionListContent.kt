@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetDragHandle
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
@@ -27,8 +28,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -62,22 +63,12 @@ fun TransactionListContent(
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     savedFilters: List<Filter> = emptyList(),
-    onEditTransactionClick: (Long) -> Unit,
+    onTransactionEvent: (TransactionItemEvent) -> Unit,
     onBackClick: () -> Unit,
     onMenuClick: () -> Unit = {},
     isTopLevel: Boolean = true,
-    onUpdateFilter: (TransactionFilter) -> Unit,
-    onUpdateTimelineRange: (TimelineRange) -> Unit,
-    onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
-    onResetToInitial: (() -> Unit)? = null,
+    onFilterEvent: (FilterEvent) -> Unit,
     revealedCardIds: List<Long> = emptyList(),
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
     val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -120,7 +111,7 @@ fun TransactionListContent(
                 onBackClick = onBackClick,
                 onMenuClick = onMenuClick,
                 isTopLevel = isTopLevel,
-                onUpdateRecordsSettings = onUpdateRecordsSettings
+                onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
             )
         },
         sheetContent = {
@@ -130,8 +121,7 @@ fun TransactionListContent(
                 allCategories = categories,
                 allTransactions = allTransactions,
                 savedFilters = savedFilters,
-                onUpdateTimelineRange = onUpdateTimelineRange,
-                onApplyFilter = onUpdateFilter,
+                onFilterEvent = onFilterEvent,
                 onToggleExpand = {
                     scope.launch {
                         if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
@@ -144,7 +134,6 @@ fun TransactionListContent(
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
                 backgroundColor = AppColors.primary,
                 accountNames = accountNames,
-                onResetToInitial = onResetToInitial
             )
         }
     ) { innerPadding ->
@@ -159,7 +148,7 @@ fun TransactionListContent(
             } else {
                 AeonTransactionList(
                     listState = listState,
-                    onTransactionClick = { onEditTransactionClick(it.id) },
+                    onTransactionEvent = onTransactionEvent,
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                     precision = decimalPrecision,
                     useNoteAsHeader = recordsSettings.useNoteAsHeader,
@@ -168,13 +157,6 @@ fun TransactionListContent(
                     showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
                     baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
                     revealedCardIds = revealedCardIds,
-                    onItemExpanded = onItemExpanded,
-                    onItemCollapsed = onItemCollapsed,
-                    onStatusChange = onStatusChange,
-                    onClone = onClone,
-                    onDelete = onDelete,
-                    onSplit = onSplit,
-                    onFullSwipeRight = onFullSwipeRight,
                     is24Hour = is24Hour
                 )
             }
@@ -217,18 +199,16 @@ fun TransactionListContentPreview() {
         OssWalletTheme(theme = theme) {
             TransactionListContent(
                 listState = TransactionListState(isEmpty = false),
+                allTransactions = emptyList(),
                 accounts = listOf(sampleAccount),
                 categories = listOf(sampleCategory),
                 decimalPrecision = 2,
                 analyticsState = AnalyticsUiState.Loading,
                 filter = TransactionFilter(),
                 recordsSettings = TransactionSectionSettings(),
-                onEditTransactionClick = {},
+                onTransactionEvent = {},
                 onBackClick = {},
-                onUpdateFilter = {},
-                onUpdateTimelineRange = { },
-                onUpdateRecordsSettings = {},
-                allTransactions = emptyList()
+                onFilterEvent = {},
             )
         }
     }

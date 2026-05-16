@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Compact action chip for metadata actions.
@@ -56,7 +57,7 @@ fun ActionChip(
             }
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge.copy(
+                style = AppTextStyles.drawerItemLabel.copy(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.2.sp
                 ),

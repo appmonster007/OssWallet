@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Shared 72dp action card used on all entry screens (planned payments, budgets, loans).
@@ -82,7 +83,7 @@ fun AeonEntryActionCard(
             Column(verticalArrangement = Arrangement.Center) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
@@ -91,7 +92,7 @@ fun AeonEntryActionCard(
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.formFieldValue,
                     maxLines = 1
                 )
             }

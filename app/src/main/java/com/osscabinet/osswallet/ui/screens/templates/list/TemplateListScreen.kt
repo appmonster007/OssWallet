@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -216,7 +217,7 @@ fun ReorderTemplateItem(
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Icon(Icons.Rounded.Star, contentDescription = null, tint = AppColors.primary)
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            Text(template.name, modifier = Modifier.weight(1f), style = AppTextStyles.screenSubTitle)
         }
     }
 }
@@ -283,8 +284,8 @@ fun TemplateItem(
             }
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Column(modifier = Modifier.weight(1f)) {
-                Text(template.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text(categoryName, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                Text(template.name, style = AppTextStyles.cardSectionTitle)
+                Text(categoryName, style = AppTextStyles.caption, color = AppColors.border)
             }
             IconButton(onClick = onCreatePlannedPayment) {
                 Icon(

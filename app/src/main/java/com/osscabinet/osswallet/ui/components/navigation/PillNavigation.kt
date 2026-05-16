@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * NavigationTab - Data class for navigation tab
@@ -389,7 +390,7 @@ fun FabMenuItem(
                 Text(
                     label,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = AppTextStyles.drawerItemLabel,
                     color = AppColors.contentPrimary,
                     fontWeight = FontWeight.Medium
                 )

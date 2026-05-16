@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Compact action chip for entry screens.
@@ -96,7 +97,7 @@ fun EntryActionChip(
             }
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge.copy(
+                style = AppTextStyles.drawerItemLabel.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                     letterSpacing = 0.2.sp
                 ),

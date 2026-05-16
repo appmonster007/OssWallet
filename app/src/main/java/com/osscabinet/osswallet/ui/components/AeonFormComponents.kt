@@ -41,6 +41,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.PI
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonHeroHeader(
@@ -84,14 +85,14 @@ fun AeonHeroHeader(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = title.ifBlank { "Untitled" },
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = AppTextStyles.heroAmount,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        style = AppTextStyles.listItemTitle.copy(
                             color = AppColors.primary,
                             fontWeight = FontWeight.Medium
                         )
@@ -124,7 +125,7 @@ fun AeonFormHeader(
     ) {
         Text(
             title,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            style = AppTextStyles.heroAmount
         )
 
         Surface(
@@ -136,7 +137,7 @@ fun AeonFormHeader(
             Text(
                 saveButtonText,
                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXl, vertical = AeonTheme.dimensions.spacingSm),
-                style = MaterialTheme.typography.labelLarge.copy(
+                style = AppTextStyles.drawerItemLabel.copy(
                     fontWeight = FontWeight.Bold,
                     color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.border
                 )
@@ -170,7 +171,7 @@ fun AeonTextField(
             if (prefix != null) {
                 Text(
                     prefix,
-                    style = MaterialTheme.typography.bodyLarge.copy(
+                    style = AppTextStyles.listItemTitle.copy(
                         color = AppColors.border,
                         fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Bold
                     )
@@ -181,7 +182,7 @@ fun AeonTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                textStyle = AppTextStyles.listItemTitle.copy(
                     color = AppColors.contentPrimary,
                     fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Normal
                 ),
@@ -463,7 +464,7 @@ fun AdvancedColorPickerDialog(
                                 )
                                 Text(
                                     "${(hsv.third * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = AppTextStyles.drawerItemLabel,
                                     modifier = Modifier.width(36.dp)
                                 )
                             }
@@ -696,7 +697,7 @@ fun VisualIdentitySection(
                         ) {
                             Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
                         }
-                        Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = AppColors.border)
+                        Text(selectedIconName, style = AppTextStyles.transactionTitle, color = AppColors.border)
                     }
                 }
             }

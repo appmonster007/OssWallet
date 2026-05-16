@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonAccountCardSmall(
@@ -82,7 +83,7 @@ fun AeonAccountCardSmall(
             ) {
                 Text(
                     account.name.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Black,
                         fontSize = 9.sp,
                         letterSpacing = 0.5.sp
@@ -94,13 +95,13 @@ fun AeonAccountCardSmall(
                 Column {
                     Text(
                         formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                        style = AppTextStyles.transactionSubtitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        style = AppTextStyles.metaLabel,
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -163,7 +164,7 @@ fun AeonAccountCardMedium(
                     )
                     Text(
                         account.name.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Black,
                             fontSize = 10.sp,
                             letterSpacing = 0.5.sp
@@ -176,13 +177,13 @@ fun AeonAccountCardMedium(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                    style = AppTextStyles.cardSectionTitle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    style = AppTextStyles.tagLabel,
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -261,7 +262,7 @@ fun AeonAccountCardLarge(
                         )
                         Text(
                             account.name.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = AppTextStyles.transactionSwipeAction,
                             color = contentColor.copy(alpha = 0.7f)
                         )
                     }
@@ -295,7 +296,7 @@ fun AeonAccountCardLarge(
                 ) {
                     Text(
                         formatCurrencyRight(balance, account.currencyCode, precision = precision, shorten = true),
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.calculatorDisplay,
                         color = contentColor
                     )
                 }
@@ -318,7 +319,7 @@ fun AeonAccountCardLarge(
                             Text(
                                 account.structureType.uppercase(),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.transactionBadge,
                                 color = contentColor
                             )
                         }
@@ -339,12 +340,12 @@ fun AeonAccountCardLarge(
                                 ) {
                                     Text(
                                         curr,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
+                                        style = AppTextStyles.transactionBadge,
                                         color = contentColor.copy(alpha = 0.6f)
                                     )
                                     Text(
                                         formatAmount(bal, precision = precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                        style = AppTextStyles.transactionBadge,
                                         color = contentColor
                                     )
                                 }
@@ -358,14 +359,14 @@ fun AeonAccountCardLarge(
                         if (cardNumber != null) {
                             Text(
                                 cardNumber, 
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), 
+                                style = AppTextStyles.formSectionLabel, 
                                 color = contentColor.copy(alpha = 0.5f)
                             )
                         }
                         if (extraLabel != null) {
                             Text(
                                 extraLabel, 
-                                style = MaterialTheme.typography.labelSmall, 
+                                style = AppTextStyles.transactionSwipeAction, 
                                 color = contentColor.copy(alpha = 0.5f)
                             )
                         }

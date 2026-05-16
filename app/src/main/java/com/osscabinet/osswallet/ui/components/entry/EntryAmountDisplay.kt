@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Standardized amount display with auto-resizing text and currency selector.
@@ -65,10 +66,10 @@ fun EntryAmountDisplay(
 
             Text(
                 text = amountDisplay,
-                style = MaterialTheme.typography.displayMedium.copy(
+                style = AppTextStyles.calculatorDisplay.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,
-                    fontSize = (MaterialTheme.typography.displayMedium.fontSize.value * multiplier).sp
+                    fontSize = (AppTextStyles.calculatorDisplay.fontSize.value * multiplier).sp
                 ),
                 maxLines = 1,
                 softWrap = false,

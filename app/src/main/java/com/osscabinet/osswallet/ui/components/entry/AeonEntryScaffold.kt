@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.
@@ -40,7 +41,7 @@ fun AeonEntryScaffold(
                 title = {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge.copy(
+                        style = AppTextStyles.screenTitle.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.5).sp
                         )

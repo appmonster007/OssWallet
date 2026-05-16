@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentFormBody
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +78,7 @@ fun PlannedPaymentEntryScreen(
                             checked = state.deleteTemplateWithPayment,
                             onCheckedChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(it)) }
                         )
-                        Text("Also delete linked template", style = MaterialTheme.typography.bodyMedium)
+                        Text("Also delete linked template", style = AppTextStyles.transactionTitle)
                     }
                     
                     if (state.deleteTemplateWithPayment && state.templateUsageCount > 1) {
@@ -99,7 +100,7 @@ fun PlannedPaymentEntryScreen(
                                 )
                                 Text(
                                     "Warning: This template is shared with ${state.templateUsageCount - 1} other payment(s). Deleting it will also delete those payments.",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = AppTextStyles.transactionSwipeAction,
                                     color = AppColors.onErrorContainer
                                 )
                             }

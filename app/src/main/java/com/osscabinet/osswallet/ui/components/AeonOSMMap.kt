@@ -37,6 +37,7 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import java.io.File
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * A wrapper for OpenStreetMap using osmdroid.
@@ -266,7 +267,7 @@ fun AeonOSMMap(
                     )
                     Text(
                         "Release to set location",
-                        style = MaterialTheme.typography.labelLarge,
+                        style = AppTextStyles.drawerItemLabel,
                         color = AppColors.onAccentContainer
                     )
                 }

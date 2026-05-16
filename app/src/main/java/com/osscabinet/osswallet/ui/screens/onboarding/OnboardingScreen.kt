@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.screens.settings.SyncState
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +69,7 @@ fun OnboardingScreen(
                 title = {
                     Text(
                         text = "Step ${step + 1} of ${steps.size}",
-                        style = MaterialTheme.typography.labelLarge.copy(
+                        style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
@@ -140,7 +141,7 @@ fun OnboardingScreen(
                         ) {
                             Text(
                                 if (step < steps.size - 1) "NEXT" else "GET STARTED",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold)
+                                style = AppTextStyles.listSectionHeader
                             )
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
@@ -275,7 +276,7 @@ fun CurrencyStep(
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         getCurrencySymbol(code),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = AppTextStyles.cardSectionTitle,
                                         color = if (isSelected) AppColors.primary else AppColors.contentSecondary
                                     )
                                 }
@@ -284,9 +285,9 @@ fun CurrencyStep(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     getCurrencyName(code),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
+                                    style = AppTextStyles.listItemTitle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
                                 )
-                                Text(code, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                                Text(code, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                             }
                             if (isSelected) {
                                 when (syncState) {
@@ -347,8 +348,8 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                         }
                         Spacer(modifier = Modifier.width(AeonTheme.dimensions.containerCornerRadius))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text(desc, style = MaterialTheme.typography.bodySmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                            Text(name, style = AppTextStyles.cardSectionTitle)
+                            Text(desc, style = AppTextStyles.caption, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                         }
                         if (isSelected) {
                             Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = AppColors.primary)
@@ -393,12 +394,12 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                     ) {
                         Text(
                             p.toString(),
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
+                            style = AppTextStyles.heroAmountDisplay,
                             color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         )
                         Text(
                             "DECIMALS",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                            style = AppTextStyles.transactionGroupTitle,
                             color = if (isSelected) AppColors.primary.copy(alpha = 0.6f) else AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }
@@ -423,7 +424,7 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                 Text(
                     text = "Example: ${formatAmount(BigDecimal("1234.5678"), selectedPrecision)}",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
                     color = AppColors.contentPrimary
                 )
             }
@@ -490,12 +491,12 @@ fun AccountStep(
                         Text(
                             if (allowedCurrencies.isEmpty()) "Select currencies"
                             else "${allowedCurrencies.size} Selected",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            style = AppTextStyles.listItemTitle
                         )
                         if (allowedCurrencies.isNotEmpty()) {
                             Text(
                                 allowedCurrencies.joinToString(", "),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         }
@@ -571,12 +572,12 @@ private fun BalanceEditSheet(
                         color = AppColors.primary.copy(alpha = 0.15f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = AppColors.primary)
+                            Text(getCurrencySymbol(currencyCode), style = AppTextStyles.cardTitle, color = AppColors.primary)
                         }
                     }
                     Column {
-                        Text(getCurrencyName(currencyCode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(currencyCode, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                        Text(getCurrencyName(currencyCode), style = AppTextStyles.cardSectionTitle)
+                        Text(currencyCode, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                     }
                 }
                 IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = "Close") }
@@ -592,10 +593,10 @@ private fun BalanceEditSheet(
                     modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.spacingXl),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("STARTING BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = AppColors.contentSecondary.copy(alpha = 0.5f))
+                    Text("STARTING BALANCE", style = AppTextStyles.transactionGroupTitle, color = AppColors.contentSecondary.copy(alpha = 0.5f))
                     Text(
                         if (currentBalance.isEmpty()) "0.00" else currentBalance,
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black, letterSpacing = (-1).sp),
+                        style = AppTextStyles.calculatorDisplay,
                         color = if (currentBalance.startsWith("-")) AppColors.error else AppColors.primary
                     )
                 }
@@ -625,7 +626,7 @@ private fun SectionCard(
             Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = AppColors.primary.copy(alpha = 0.7f))
             Text(
                 title.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp),
+                style = AppTextStyles.chipLabelBold,
                 color = AppColors.primary.copy(alpha = 0.7f)
             )
         }
@@ -662,21 +663,21 @@ private fun BalanceInputCard(
                     color = AppColors.componentOnCard
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(getCurrencySymbol(currencyCode), style = AppTextStyles.cardSectionTitle)
                     }
                 }
                 Column {
-                    Text(currencyCode, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text(currencyCode, style = AppTextStyles.managementItemTitle)
                     Text(
                         if (currentBalance.isEmpty()) "Tap to set" else "Balance set",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.transactionSwipeAction,
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             }
             Text(
                 if (currentBalance.isEmpty()) "0.00" else currentBalance,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                style = AppTextStyles.cardTitle,
                 color = if (currentBalance.startsWith("-")) AppColors.error else if (currentBalance.isEmpty()) AppColors.contentSecondary.copy(alpha = 0.3f) else AppColors.primary
             )
         }
@@ -701,12 +702,12 @@ fun StepHeader(icon: ImageVector, title: String, description: String) {
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
         Text(
             title,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp)
+            style = AppTextStyles.heroAmount
         )
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
         Text(
             description,
-            style = MaterialTheme.typography.bodyLarge,
+            style = AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary.copy(alpha = 0.7f),
             lineHeight = 24.sp
         )

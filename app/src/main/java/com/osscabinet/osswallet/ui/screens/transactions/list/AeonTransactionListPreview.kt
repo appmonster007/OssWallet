@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import java.math.BigDecimal
 import java.util.*
+import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800, name = "Filtered Transactions")
 @Composable
@@ -34,12 +35,10 @@ fun AeonTransactionListFilteredPreview() {
             decimalPrecision = 2,
             analyticsState = AnalyticsUiState.Success(selectedCurrency = "USD"),
             filter = TransactionFilter(queryPayee = "Burger"),
-            recordsSettings = com.osscabinet.ossWallet.data.local.TransactionSectionSettings(),
-            onEditTransactionClick = {},
+            recordsSettings = TransactionSectionSettings(),
+            onTransactionEvent = {},
             onBackClick = {},
-            onUpdateFilter = {},
-            onUpdateTimelineRange = {},
-            onUpdateRecordsSettings = {}
+            onFilterEvent = {},
         )
     }
 }

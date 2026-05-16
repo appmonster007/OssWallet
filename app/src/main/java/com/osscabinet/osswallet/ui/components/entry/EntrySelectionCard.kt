@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 enum class EntrySelectionMode {
     SINGLE, MULTI, MANAGEMENT
@@ -96,7 +97,7 @@ fun EntrySelectionCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(
+                    style = AppTextStyles.listItemTitle.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
                     color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary
@@ -104,7 +105,7 @@ fun EntrySelectionCard(
                 if (detail != null) {
                     Text(
                         text = detail,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = AppTextStyles.transactionSwipeAction.copy(
                             fontSize = 11.sp,
                             color = AppColors.contentSecondary.copy(alpha = 0.7f)
                         )

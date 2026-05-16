@@ -31,6 +31,7 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Full-screen selection for Linking Transactions.
@@ -75,7 +76,7 @@ fun AeonLinkedTransactionSelection(
             actions = {
                 if (selectedIds.isNotEmpty()) {
                     TextButton(onClick = { selectedIds = emptySet() }) {
-                        Text("CLEAR ALL", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text("CLEAR ALL", style = AppTextStyles.listSectionHeader)
                     }
                 }
             }
@@ -84,7 +85,7 @@ fun AeonLinkedTransactionSelection(
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
                         text = "Select related activities from your history to link them to this record.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AppTextStyles.transactionTitle,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
@@ -195,7 +196,7 @@ fun AeonLinkedTransactionSelection(
                         ) {
                             Text(
                                 "Link ${selectedIds.size} Record${if (selectedIds.size != 1) "s" else ""}",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                style = AppTextStyles.listItemTitle
                             )
                         }
                     }

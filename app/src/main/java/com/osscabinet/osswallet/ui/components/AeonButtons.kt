@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonDashedButton(
@@ -81,7 +82,7 @@ fun AeonDashedButton(
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text,
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = AppTextStyles.listItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 ),
@@ -132,7 +133,7 @@ fun AeonExtendedFloatingActionButton(
         text = { 
             Text(
                 text, 
-                style = MaterialTheme.typography.labelLarge.copy(
+                style = AppTextStyles.drawerItemLabel.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 )

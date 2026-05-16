@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.rounded.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Standard container for metadata/details in entry screens.
@@ -64,7 +65,7 @@ fun EntrySection(
                 }
                 Text(
                     text = title.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         fontSize = 10.sp
@@ -92,11 +93,11 @@ fun EntrySectionLightPreview() {
             ) {
                 Text(
                     text = "Sample content inside the section",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AppTextStyles.transactionTitle
                 )
                 Text(
                     text = "More content can be added here",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AppTextStyles.caption,
                     color = AppColors.contentSecondary
                 )
             }
@@ -118,7 +119,7 @@ fun EntrySectionAmoledPreview() {
             ) {
                 Text(
                     text = "Premium Amoled rendering with Carbon Slate container.",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AppTextStyles.transactionTitle
                 )
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 LinearProgressIndicator(

@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AeonFilterSelection(
@@ -115,7 +116,7 @@ fun AeonFilterSelection(
                                 }
                                 Spacer(modifier = Modifier.width(dims.spacingLg))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(filter.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(filter.name, style = AppTextStyles.screenSubTitle, fontWeight = FontWeight.Bold)
                                     val detailText = buildString {
                                         if (filter.filter.categoryIds.isEmpty()) append("All Categories")
                                         else append("${filter.filter.categoryIds.size} Categories")
@@ -125,7 +126,7 @@ fun AeonFilterSelection(
                                         if (filter.filter.accountIds.isEmpty()) append("All Accounts")
                                         else append("${filter.filter.accountIds.size} Accounts")
                                     }
-                                    Text(detailText, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
+                                    Text(detailText, style = AppTextStyles.caption, color = AppColors.border)
                                 }
                                 if (filter.id == selectedFilterId) {
                                     Icon(

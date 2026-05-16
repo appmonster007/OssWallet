@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Shared section header for management list screens (Budgets, Loans, etc.)
@@ -38,7 +39,7 @@ fun ManagementSectionHeader(
         )
         Text(
             text = title.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 10.sp,
                 letterSpacing = 1.5.sp
@@ -53,7 +54,7 @@ fun ManagementSectionHeader(
             ) {
                 Text(
                     text = count.toString(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp
                     ),

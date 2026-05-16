@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity, interactive line chart with area gradients and dashed grids.
@@ -51,7 +52,7 @@ fun AeonLineChart(
 ) {
     if (series.isEmpty() || series.all { it.dataPoints.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data available", style = MaterialTheme.typography.bodySmall)
+            Text("No data available", style = AppTextStyles.caption)
         }
         return
     }
@@ -90,7 +91,7 @@ fun AeonLineChart(
         
         if (allValues.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No data available", style = MaterialTheme.typography.bodySmall)
+                Text("No data available", style = AppTextStyles.caption)
             }
             return@BoxWithConstraints
         }
@@ -328,7 +329,7 @@ fun AeonLineChart(
                         if (label != null) {
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.cardDelta,
                                 color = AppColors.contentPrimary,
                                 modifier = Modifier.padding(bottom = dims.spacingSm)
                             )
@@ -351,13 +352,13 @@ fun AeonLineChart(
                                         Spacer(modifier = Modifier.width(dims.spacingSm))
                                         Text(
                                             text = s.name,
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = AppTextStyles.transactionSwipeAction,
                                             color = AppColors.contentSecondary
                                         )
                                     }
                                     Text(
                                         text = formatCurrencyRight(p.y, currency, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
                                 }

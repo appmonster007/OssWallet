@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 fun CardType.toIcon(): ImageVector = when (this) {
     CardType.NET_WORTH -> Icons.Default.AccountBalance
@@ -120,11 +121,11 @@ fun CardTypeOption(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium
+                    style = AppTextStyles.screenSubTitle
                 )
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AppTextStyles.caption,
                     color = AppColors.contentSecondary
                 )
             }

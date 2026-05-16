@@ -63,6 +63,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -296,7 +297,7 @@ private fun AccountsDisplaySettingsDialog(
             ) {
                 Text(
                     "Accounts Display",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.cardTitle
                 )
                 IconButton(
                     onClick = {

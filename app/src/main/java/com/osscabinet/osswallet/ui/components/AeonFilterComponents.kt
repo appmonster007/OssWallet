@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 data class AeonTimelineOption(val label: String, val icon: ImageVector)
 
@@ -68,7 +69,7 @@ fun AeonSegmentedControl(
                         )
                         Text(
                             text = option.label,
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -107,7 +108,7 @@ fun <T> AeonDropdown(
             label = { 
                 Text(
                     label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     )
@@ -123,7 +124,7 @@ fun <T> AeonDropdown(
                 unfocusedContainerColor = AppColors.insetSurface.copy(alpha = 0.2f),
                 focusedContainerColor = AppColors.insetSurface.copy(alpha = 0.1f)
             ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+            textStyle = AppTextStyles.listItemTitle
         )
 
         ExposedDropdownMenu(
@@ -139,7 +140,7 @@ fun <T> AeonDropdown(
                     text = { 
                         Text(
                             labelProvider(option),
-                            style = MaterialTheme.typography.bodyLarge.copy(
+                            style = AppTextStyles.listItemTitle.copy(
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                             ),
                             color = if (isSelected) AppColors.primary else AppColors.contentPrimary

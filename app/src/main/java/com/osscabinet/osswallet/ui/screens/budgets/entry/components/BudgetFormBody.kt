@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryEvent
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Budget Entry Form Body with Optimized Information Hierarchy.
@@ -294,7 +295,7 @@ fun BudgetFormBody(
                     Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
                         Text(
                             text = "Alert threshold at ${(state.alertThreshold * 100).toInt()}%",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                            style = AppTextStyles.transactionAmount
                         )
                         Slider(
                             value = state.alertThreshold,

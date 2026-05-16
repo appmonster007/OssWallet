@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun BudgetHeroCard(
@@ -60,7 +61,7 @@ fun BudgetHeroCard(
                     Column {
                         Text(
                             text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
-                            style = MaterialTheme.typography.labelMedium.copy(
+                            style = AppTextStyles.drawerItemLabel.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.2.sp
                             ),
@@ -90,7 +91,7 @@ fun BudgetHeroCard(
 //                                    append(symbolText)
 //                                }
                             },
-                            style = MaterialTheme.typography.headlineLarge.copy(
+                            style = AppTextStyles.heroAmount.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 32.sp,
                                 letterSpacing = (-1).sp
@@ -101,7 +102,7 @@ fun BudgetHeroCard(
                     
                     Text(
                         text = "${(progress.percentage * 100).toInt()}%",
-                        style = MaterialTheme.typography.displaySmall.copy(
+                        style = AppTextStyles.heroAmountDisplay.copy(
                             fontWeight = FontWeight.Black,
                             fontFeatureSettings = "tnum"
                         ),
@@ -123,12 +124,12 @@ fun BudgetHeroCard(
                 ) {
                     Text(
                         text = "${formatAmount(progress.spent, precision)} spent",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, precision, shorten = true)}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                 }
@@ -154,12 +155,12 @@ fun BudgetHeroCard(
                         Column {
                             Text(
                                 text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "Budget Exceeded" else "Approaching Limit",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.managementItemTitle,
                                 color = AppColors.error
                             )
                             Text(
                                 text = "Alert threshold set at ${(budget.alertThreshold * 100).toInt()}%",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = AppTextStyles.caption,
                                 color = AppColors.error.copy(alpha = 0.7f)
                             )
                         }

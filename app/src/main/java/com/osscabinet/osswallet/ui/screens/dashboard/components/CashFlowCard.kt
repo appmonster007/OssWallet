@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CashFlowCard(
@@ -250,7 +251,7 @@ private fun CashFlowDisplaySettingsDialog(
         title = {
             Text(
                 "Cash Flow Display",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
@@ -286,7 +287,7 @@ internal fun AeonFlowBreakdownItem(
     ) {
         Text(
             curr,
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = AppTextStyles.transactionSwipeAction.copy(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             ),
@@ -295,7 +296,7 @@ internal fun AeonFlowBreakdownItem(
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 formatCurrencyRight(amount, curr, precision, shorten = true),
-                style = MaterialTheme.typography.bodyMedium.copy(
+                style = AppTextStyles.transactionTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -303,7 +304,7 @@ internal fun AeonFlowBreakdownItem(
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     ),
@@ -346,7 +347,7 @@ fun AeonFlowCard(
             ) {
                 Text(
                     label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                         fontSize = 12.sp

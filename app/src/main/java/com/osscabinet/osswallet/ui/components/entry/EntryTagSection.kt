@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Reusable tag selection section for entry screens.
@@ -55,7 +56,7 @@ fun EntryTagSection(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.formSectionLabel
                 )
             }
         }
@@ -77,7 +78,7 @@ fun EntryTagSection(
                     Text(
                         text = tag.name,
                         color = tagColor,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        style = AppTextStyles.cardDelta
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(

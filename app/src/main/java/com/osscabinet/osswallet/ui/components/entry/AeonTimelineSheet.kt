@@ -57,7 +57,8 @@ fun AeonTimelineSheet(
                 AeonTimelinePeriodSelector(
                     currentRange = currentRange,
                     onRangeSelected = { currentRange = it },
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    swipeEntireComponent = false
                 )
 
                 Spacer(Modifier.height(8.dp))

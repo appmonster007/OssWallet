@@ -128,7 +128,7 @@ fun FilterSheetContent(
                 selectedFilterIds = emptySet()
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
-            swipeEntireComponent = true,
+            swipeEntireComponent = false,
             modifier = Modifier.padding(16.dp)
         )
 

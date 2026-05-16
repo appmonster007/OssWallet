@@ -24,7 +24,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import kotlinx.coroutines.delay
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -111,10 +111,11 @@ fun AdvancedFilterSection(
                 color = MaterialTheme.colorScheme.primary
             )
             
-            TimelineFilterBar(
+            AeonTimelinePeriodSelector(
                 currentRange = filter.timelineRange,
                 onRangeSelected = { range -> onFilterChange(filter.copy(timelineRange = range)) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                swipeEntireComponent = false
             )
 
             Spacer(Modifier.height(8.dp))

@@ -1,12 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.loans.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -32,6 +28,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,34 +46,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanStatus
-import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -86,8 +80,6 @@ import java.util.Locale
 
 private val TealHealthy = Color(0xFF004D40)
 private val RedWarning = Color(0xFFB3261E)
-private val LentColor = Color(0xFF004D40)
-private val BorrowedColor = Color(0xFFE65100)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,32 +98,47 @@ fun LoanDetailScreen(
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
+    val loanSummaries by viewModel.loanSummaries.collectAsStateWithLifecycle()
     val loan = remember(loanId, loans) { loans.find { it.id == loanId } }
-    
+
     LaunchedEffect(loans) {
-        if (loans.isNotEmpty() && loan == null) {
-            onBackClick()
+        if (loans.isNotEmpty() && loan == null) onBackClick()
+    }
+
+    if (loan == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
+        return
     }
 
-    val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
-    val exchangeRates by viewModel.exchangeRates.collectAsStateWithLifecycle()
-    val allCategories by viewModel.categories.collectAsStateWithLifecycle()
-    val now = System.currentTimeMillis()
+    // Single category source — always populated via TransactionViewModel.
+    val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
+    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-    val summary = remember(loan, allTransactions, exchangeRates, now) {
-        if (loan == null) return@remember null
-        LoanService.buildSummaryFromTransactions(loan, allTransactions, exchangeRates, now, precision, allCategories)
+    // Use precomputed summary from ViewModel (matches BudgetViewModel.budgetProgress pattern).
+    // Fall back to empty summary while the combine flow first emits.
+    val summary = loanSummaries[loanId] ?: LoanService.buildSummary(
+        loan, emptyList(), System.currentTimeMillis(), precision
+    )
+
+    // Activity tab — canonical filter from LoanService guarantees consistency with summary.
+    val loanTransactions = remember(loan, absoluteTransactionsWithBalance, categoriesList) {
+        val filter = LoanService.buildTransactionFilter(loan, categoriesList)
+        android.util.Log.d("LoanDetail", "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}")
+        android.util.Log.d("LoanDetail", "[${loan.name}] activity filter: $filter")
+        TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
     }
-    
-    if (loan == null || summary == null) return
 
-    if (loan.principalAmount > BigDecimal.ZERO)
-        (summary.totalPaid.divide(loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat()
-            .coerceIn(0f, 1f)
-    else 0f
-    if (loan.loanType == LoanType.LENT) LentColor else BorrowedColor
-
+    val selectedAccount = remember(accounts, loan.linkedAccountId) {
+        accounts.find { it.id == loan.linkedAccountId }
+    }
+    val selectedCategories = remember(categoriesList, loan.categoryIds) {
+        if (loan.categoryIds.isEmpty()) emptyList()
+        else categoriesList.filter { it.id in loan.categoryIds }
+    }
 
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -149,30 +156,6 @@ fun LoanDetailScreen(
             contentDescription = "Activity tab"
         )
     )
-
-    val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
-
-    // Get loan-related transactions for Activity tab — uses the same canonical filter as
-    // LoanService.buildSummaryFromTransactions() to guarantee the activity list matches the balance.
-    val loanTransactions =
-        remember(loan, absoluteTransactionsWithBalance, allCategories) {
-            val filter = LoanService.buildTransactionFilter(loan, allCategories)
-            android.util.Log.d("LoanDetail", "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}")
-            android.util.Log.d("LoanDetail", "[${loan.name}] activity filter: $filter")
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
-        }
-
-    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-
-    val selectedAccount = remember(accounts, loan.linkedAccountId) {
-        accounts.find { it.id == loan.linkedAccountId }
-    }
-    val selectedCategories = remember(categoriesList, loan.categoryIds) {
-        if (loan.categoryIds.isEmpty()) emptyList()
-        else categoriesList.filter { it.id in loan.categoryIds }
-    }
 
     Scaffold(
         topBar = {
@@ -232,13 +215,14 @@ fun LoanDetailScreen(
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                 )
                             ) {
-                                Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
+                                Box(
+                                    Modifier.padding(AeonTheme.dimensions.spacing2xl),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
                                         "No related transactions",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f
-                                        )
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                     )
                                 }
                             }
@@ -260,9 +244,7 @@ fun LoanDetailScreen(
                             RecentActivitiesScreen(
                                 listState = loanListState,
                                 onRecordsClick = { _ ->
-                                    onRecordsClick(
-                                        LoanService.buildTransactionFilter(loan, allCategories)
-                                    )
+                                    onRecordsClick(LoanService.buildTransactionFilter(loan, categoriesList))
                                 },
                                 onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
@@ -271,19 +253,12 @@ fun LoanDetailScreen(
                                 onItemExpanded = { transactionViewModel.onItemExpanded(it) },
                                 onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
                                 onStatusChange = { id, status ->
-                                    transactionViewModel.quickUpdateStatus(
-                                        id,
-                                        status
-                                    )
+                                    transactionViewModel.quickUpdateStatus(id, status)
                                 },
                                 onClone = { onCloneTransactionClick(it) },
                                 onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                 onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = {
-                                    transactionViewModel.toggleStatusClearedUncleared(
-                                        it
-                                    )
-                                },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                 precision = precision
                             )
                         }
@@ -293,9 +268,7 @@ fun LoanDetailScreen(
 
             UnifiedPillNavigation(
                 selectedTab = pagerState.currentPage,
-                onTabSelected = { index ->
-                    scope.launch { pagerState.animateScrollToPage(index) }
-                },
+                onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                 tabs = tabs,
                 showFab = false
             )
@@ -306,7 +279,7 @@ fun LoanDetailScreen(
 @Composable
 private fun LoanOverviewTab(
     loan: com.osscabinet.ossWallet.domain.model.Loan,
-    summary: com.osscabinet.ossWallet.domain.model.LoanSummary,
+    summary: LoanSummary,
     selectedAccount: com.osscabinet.ossWallet.domain.model.Account?,
     selectedCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
     allCategoriesCount: Int,
@@ -318,8 +291,7 @@ private fun LoanOverviewTab(
     val amortizationSchedule = remember(loan, showAmortization) {
         if (!showAmortization || loan.interestRate == null) emptyList()
         else {
-            val monthlyPayment =
-                loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+            val monthlyPayment = loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
             LoanService.getAmortizationSchedule(loan, monthlyPayment, loan.startDate)
         }
     }
@@ -338,7 +310,6 @@ private fun LoanOverviewTab(
             )
         }
 
-        // SCOPE & CONTEXT Card
         item {
             AeonExpressiveCard(
                 title = "SCOPE & CONTEXT",
@@ -366,11 +337,14 @@ private fun LoanOverviewTab(
                         label = "CATEGORIES",
                         icon = Icons.Rounded.Category,
                         allText = "All Categories",
-                        isEmpty = loan.categoryIds.isEmpty() || (allCategoriesCount > 0 && loan.categoryIds.size == allCategoriesCount),
+                        isEmpty = loan.categoryIds.isEmpty() ||
+                                (allCategoriesCount > 0 && loan.categoryIds.size == allCategoriesCount),
                         items = selectedCategories.map { category ->
                             {
-                                val color = Color(category.colorHex)
-                                ScopeChip(text = category.name, color = color)
+                                ScopeChip(
+                                    text = category.name,
+                                    color = Color(category.colorHex)
+                                )
                             }
                         }
                     )
@@ -380,9 +354,7 @@ private fun LoanOverviewTab(
                         allText = "No Tags",
                         isEmpty = loan.tags.isEmpty(),
                         items = loan.tags.map { tag ->
-                            {
-                                ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
-                            }
+                            { ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary) }
                         }
                     )
                 }
@@ -411,8 +383,7 @@ private fun LoanOverviewTab(
         }
 
         if (showAmortization && amortizationSchedule.isNotEmpty()) {
-            val displayRows =
-                if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
+            val displayRows = if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
             items(displayRows, key = { it.period }) { entry ->
                 AmortizationRow(entry = entry, currency = loan.currency)
             }
@@ -427,31 +398,6 @@ private fun LoanOverviewTab(
                 }
             }
         }
-    }
-}
-
-
-@Composable
-private fun DataRow(
-    label: String,
-    value: String,
-    valueColor: Color? = null
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface
-        )
     }
 }
 
@@ -501,5 +447,3 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
         }
     }
 }
-
-

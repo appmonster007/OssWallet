@@ -216,7 +216,7 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetAmount(amount))
             },
             onTypeChanged = { newType ->
-                onEvent(TransactionEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
+                onEvent(TransactionEntryEvent.SetTransactionType(newType))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowNumpad(false)) }
         )

@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.calculator.*
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.*
@@ -36,8 +37,8 @@ import com.osscabinet.ossWallet.ui.theme.*
 @Composable
 fun CalculatorNumpad(
     amount: String,
-    onAmountChange: (String, String) -> Unit,
-    transactionType: String = "income",
+    onAmountChange: (String, TransactionType) -> Unit,
+    transactionType: TransactionType = TransactionType.INCOME,
     decimalPrecision: Int = 2,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -50,7 +51,7 @@ fun CalculatorNumpad(
     LaunchedEffect(transactionType, amount) {
         if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
             val initialTokens = mutableListOf<Token>()
-            if (transactionType == "expense") initialTokens.add(Token.UnaryMinus)
+            if (transactionType == TransactionType.EXPENSE) initialTokens.add(Token.UnaryMinus)
             
             val amountNum = amount.toBigDecimalOrNull()?.abs()
             if (amountNum != null && amountNum != BigDecimal.ZERO) {
@@ -151,11 +152,11 @@ private fun CalculatorDisplay(
     expression: String,
     result: String,
     ghostResult: String,
-    transactionType: String,
+    transactionType: TransactionType,
     isError: Boolean,
     onSave: () -> Unit
 ) {
-    val displayResult = if (transactionType == "expense" && result != "0" && !result.startsWith("-")) {
+    val displayResult = if (transactionType == TransactionType.EXPENSE && result != "0" && !result.startsWith("-")) {
         "−$result"
     } else {
         result.replace("-", "−")
@@ -199,7 +200,7 @@ private fun CalculatorDisplay(
             // Ghost Result
             if (ghostResult.isNotEmpty() && ghostResult != result) {
                 Text(
-                    text = if (transactionType == "expense") "−$ghostResult" else ghostResult,
+                    text = if (transactionType == TransactionType.EXPENSE) "−$ghostResult" else ghostResult,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = AppColors.primary.copy(alpha = 0.4f),
                     textAlign = TextAlign.End,
@@ -419,11 +420,11 @@ private fun CalculatorHistorySheet(
 @Preview(showBackground = true)
 @Composable
 fun CalculatorNumpadPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         CalculatorNumpad(
             amount = "100",
             onAmountChange = { _, _ -> },
-            transactionType = "expense",
+            transactionType = TransactionType.EXPENSE,
             onDone = {}
         )
     }

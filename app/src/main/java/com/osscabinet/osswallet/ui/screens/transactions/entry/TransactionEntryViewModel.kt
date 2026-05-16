@@ -156,7 +156,7 @@ class TransactionEntryViewModel(
         if (txType == TransactionType.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
                 tx.categoryId == 1003L &&
-                        tx.transactionType == TransactionType.INCOME &&
+                        tx.transactionType == TransactionType.TRANSFER && tx.amount.signum() > 0 &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 1000
             }
             targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
@@ -511,7 +511,7 @@ class TransactionEntryViewModel(
             },
             transactionType = when {
                 currentState.isIncome -> TransactionType.INCOME
-                currentState.isTransfer -> TransactionType.EXPENSE // Transfer is stored as expense with link
+                currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
             accountId = currentState.selectedAccount?.id ?: "",
@@ -651,7 +651,7 @@ class TransactionEntryViewModel(
             amount = BigDecimal.ZERO, // To be set by caller
             transactionType = when {
                 currentState.isIncome -> TransactionType.INCOME
-                currentState.isTransfer -> TransactionType.EXPENSE
+                currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
             accountId = currentState.selectedAccount?.id ?: "",

@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SyncState
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.domain.model.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -603,7 +604,7 @@ private fun BalanceEditSheet(
             CalculatorNumpad(
                 amount = currentBalance,
                 onAmountChange = { newAmount, _ -> onBalanceChange(newAmount) },
-                transactionType = "income",
+                transactionType = TransactionType.INCOME,
                 decimalPrecision = decimalPrecision,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()

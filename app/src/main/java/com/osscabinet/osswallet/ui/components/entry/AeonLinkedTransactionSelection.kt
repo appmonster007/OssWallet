@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
@@ -129,7 +130,11 @@ fun AeonLinkedTransactionSelection(
                                         amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
                                         balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),
                                         balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
-                                        type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                        type = when (tx.transactionType) {
+                                            TransactionType.TRANSFER -> CashFlowType.TRANSFER
+                                            TransactionType.INCOME -> CashFlowType.INCOME
+                                            else -> CashFlowType.EXPENSE
+                                        },
                                         timestamp = sdf.format(Date(tx.timestamp)),
                                         note = tx.note,
                                         tags = tx.tags,

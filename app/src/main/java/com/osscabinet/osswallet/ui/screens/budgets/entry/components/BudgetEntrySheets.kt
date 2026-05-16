@@ -52,7 +52,7 @@ fun BudgetEntrySheets(
         AeonSelectionSheet(
             title = "Track Transaction Types",
             onDismiss = { onEvent(BudgetEntryEvent.ShowTrackTypeSheet(false)) },
-            items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+            items = TransactionType.entries,
             selectedIds = state.selectedTrackTypes,
             onSelectionChange = { ids ->
                 onEvent(BudgetEntryEvent.SetTrackTypes(ids))

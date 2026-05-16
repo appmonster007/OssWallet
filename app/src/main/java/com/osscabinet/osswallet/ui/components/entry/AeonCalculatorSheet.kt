@@ -23,11 +23,10 @@ fun AeonCalculatorSheet(
     transactionType: TransactionType = TransactionType.INCOME,
     decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
-    onTypeChanged: (String) -> Unit = {},
+    onTypeChanged: (TransactionType) -> Unit = {},
     onDismiss: () -> Unit,
     title: String? = null
 ) {
-    val transactionTypeStr = transactionType.value
     val dims = AeonTheme.dimensions
 
     val sheetState = rememberModalBottomSheetState(
@@ -62,7 +61,7 @@ fun AeonCalculatorSheet(
                     onAmountChanged(amount)
                     onTypeChanged(type)
                 },
-                transactionType = transactionTypeStr,
+                transactionType = transactionType,
                 decimalPrecision = decimalPrecision,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()

@@ -73,6 +73,7 @@ class TransactionQueryBuilder {
                 val filterExpr = when (metric.filter) {
                     MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType = 'transfer' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column

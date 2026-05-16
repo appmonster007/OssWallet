@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.util
 
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 /**
@@ -12,19 +13,19 @@ import java.math.BigDecimal
  * Determines transaction type based on the sign of the amount.
  * 
  * @param amount The transaction amount
- * @return "income" if amount is positive or zero, "expense" if negative
+ * @return TransactionType.INCOME if amount is positive or zero, TransactionType.EXPENSE if negative
  */
-fun determineTransactionType(amount: BigDecimal): String {
-    return if (amount.signum() >= 0) "income" else "expense"
+fun determineTransactionType(amount: BigDecimal): TransactionType {
+    return if (amount.signum() >= 0) TransactionType.INCOME else TransactionType.EXPENSE
 }
 
 /**
  * Determines transaction type from a string amount.
  * 
  * @param amountStr The transaction amount as a string
- * @return "income" if amount is positive or zero, "expense" if negative
+ * @return TransactionType.INCOME if amount is positive or zero, TransactionType.EXPENSE if negative
  */
-fun determineTransactionType(amountStr: String): String {
+fun determineTransactionType(amountStr: String): TransactionType {
     val amount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
     return determineTransactionType(amount)
 }
@@ -47,6 +48,16 @@ fun isExpense(amount: BigDecimal): Boolean {
  */
 fun isIncome(amount: BigDecimal): Boolean {
     return amount.signum() >= 0
+}
+
+/**
+ * Checks if a transaction type represents a transfer.
+ * 
+ * @param type The transaction type
+ * @return true if TRANSFER, false otherwise
+ */
+fun isTransfer(type: TransactionType): Boolean {
+    return type == TransactionType.TRANSFER
 }
 
 /**

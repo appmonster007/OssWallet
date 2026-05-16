@@ -51,12 +51,12 @@ class TransactionManager(
             amount = BigDecimal.ZERO,
             timestamp = request.timestamp,
             currency = request.currency,
-            transactionType = TransactionType.EXPENSE,
+            transactionType = TransactionType.TRANSFER,
             accountId = request.accountId,
             categoryId = 1003L
         )).copy(
             amount = request.amount.negate(),
-            transactionType = TransactionType.EXPENSE,
+            transactionType = TransactionType.TRANSFER,
             accountId = request.accountId,
             currency = request.currency,
             categoryId = 1003L, // Transfer category ID
@@ -86,7 +86,7 @@ class TransactionManager(
         val targetTransaction = sourceTransaction.copy(
             id = 0,
             amount = request.amount.multiply(request.transferRate),
-            transactionType = TransactionType.INCOME,
+            transactionType = TransactionType.TRANSFER,
             accountId = targetAccountId,
             currency = request.targetCurrency ?: request.currency
         )

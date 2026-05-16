@@ -72,13 +72,14 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -450,6 +451,7 @@ private fun PlannedPaymentListItem(
     val typeColor = when {
         isOverdue -> AppColors.error
         payment.transactionType == TransactionType.INCOME -> AppColors.primary
+        payment.transactionType == TransactionType.TRANSFER -> AccentBlue
         else -> AppColors.error
     }
     val dateColor =

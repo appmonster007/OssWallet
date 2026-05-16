@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -184,11 +185,16 @@ private fun SuggestionListItem(
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f)
                 )
+                val amountColor = when (pattern.transactionType) {
+                    TransactionType.INCOME -> PositiveAmountColor
+                    TransactionType.TRANSFER -> AccentBlue
+                    else -> AppColors.error
+                }
                 Text(
                     text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
-                    color = if (pattern.transactionType == TransactionType.INCOME) PositiveAmountColor else AppColors.error
+                    color = amountColor
                 )
             }
 
@@ -313,7 +319,7 @@ private fun SmartSuggestionsScreenPreview() {
             latitude = null,
             longitude = null,
             warrantyExpiration = null,
-            recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY),
+            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
             confidence = 0.95f,
             occurrences = 5,
             lastDate = System.currentTimeMillis()
@@ -332,7 +338,7 @@ private fun SmartSuggestionsScreenPreview() {
             latitude = null,
             longitude = null,
             warrantyExpiration = null,
-            recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(com.osscabinet.ossWallet.domain.model.RecurrenceType.WEEKLY),
+            recurrenceRule = RecurrenceRule(RecurrenceType.WEEKLY),
             confidence = 0.8f,
             occurrences = 12,
             lastDate = System.currentTimeMillis()

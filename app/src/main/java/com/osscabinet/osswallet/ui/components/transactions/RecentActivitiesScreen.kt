@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -55,7 +57,7 @@ fun RecentActivitiesScreen(
     revealedCardIds: List<Long> = emptyList(),
     onItemExpanded: (Long) -> Unit = {},
     onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
     onClone: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
@@ -197,7 +199,11 @@ fun RecentActivitiesScreen(
                                     enriched.accountCurrency,
                                     precision
                                 ),
-                                type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                type = when (transaction.transactionType) {
+                                    TransactionType.TRANSFER -> CashFlowType.TRANSFER
+                                    TransactionType.INCOME -> CashFlowType.INCOME
+                                    else -> CashFlowType.EXPENSE
+                                },
                                 timestamp = SimpleDateFormat(
                                     if (is24Hour) "HH:mm" else "hh:mm a",
                                     Locale.getDefault()

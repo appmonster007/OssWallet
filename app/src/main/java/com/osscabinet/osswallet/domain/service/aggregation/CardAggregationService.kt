@@ -5,8 +5,10 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -105,26 +107,32 @@ object CardAggregationService {
 
         var totalIncomeInBase = BigDecimal.ZERO
         var totalExpenseInBase = BigDecimal.ZERO
+        var totalTransferInBase = BigDecimal.ZERO
 
         val breakdownItems = summariesByCurrency.map { (curr, summary) ->
             val incomeInBase = CurrencyService.convertAmount(summary.income, curr, input.baseCurrency, input.exchangeRates, 10)
             val expenseInBase = CurrencyService.convertAmount(summary.expense.abs(), curr, input.baseCurrency, input.exchangeRates, 10)
+            val transferInBase = CurrencyService.convertAmount(summary.transfer, curr, input.baseCurrency, input.exchangeRates, 10)
 
             totalIncomeInBase = totalIncomeInBase.add(incomeInBase)
             totalExpenseInBase = totalExpenseInBase.add(expenseInBase)
+            totalTransferInBase = totalTransferInBase.add(transferInBase)
 
             CashFlowBreakdownItem(
                 currency = curr,
                 income = summary.income.setScale(input.precision, RoundingMode.HALF_UP),
                 incomeInBase = incomeInBase.setScale(input.precision, RoundingMode.HALF_UP),
                 expense = summary.expense.abs().setScale(input.precision, RoundingMode.HALF_UP),
-                expenseInBase = expenseInBase.setScale(input.precision, RoundingMode.HALF_UP)
+                expenseInBase = expenseInBase.setScale(input.precision, RoundingMode.HALF_UP),
+                transfer = summary.transfer.setScale(input.precision, RoundingMode.HALF_UP),
+                transferInBase = transferInBase.setScale(input.precision, RoundingMode.HALF_UP)
             )
         }
 
         return CashFlowResult(
             totalIncomeInBase = totalIncomeInBase.setScale(input.precision, RoundingMode.HALF_UP),
             totalExpensesInBase = totalExpenseInBase.setScale(input.precision, RoundingMode.HALF_UP),
+            totalTransfersInBase = totalTransferInBase.setScale(input.precision, RoundingMode.HALF_UP),
             netInBase = totalIncomeInBase.subtract(totalExpenseInBase).setScale(input.precision, RoundingMode.HALF_UP),
             breakdown = breakdownItems,
             filteredTransactions = emptyList()
@@ -142,7 +150,7 @@ object CardAggregationService {
             .getOrDefault(emptyMap())
 
         val balances = summariesByCurrency.map { (curr, summary) ->
-            com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem(
+            CurrencyAggregationItem(
                 currency = curr,
                 amount = summary.totalAmount.setScale(input.precision, RoundingMode.HALF_UP),
                 amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, input.baseCurrency, input.exchangeRates, 10)
@@ -182,13 +190,14 @@ object CardAggregationService {
 
             val currencyBalances = currencySummaries.mapValues { it.value.totalAmount }
 
-            account.id to com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem(
+            account.id to AccountSummaryItem(
                 account = account,
                 currencyBalances = currencyBalances,
                 balance = totalSummaryInAccountCurrency.totalAmount,
                 balanceInBase = balanceInBase,
                 incomeInAccountCurrency = totalSummaryInAccountCurrency.income,
-                expenseInAccountCurrency = totalSummaryInAccountCurrency.expense.abs()
+                expenseInAccountCurrency = totalSummaryInAccountCurrency.expense.abs(),
+                transferInAccountCurrency = totalSummaryInAccountCurrency.transfer
             )
         }
 
@@ -216,7 +225,7 @@ object CardAggregationService {
             ?: error("Account not found: $targetAccountId")
 
         // Lifetime balance (base scope)
-        val baseFilter = input.filter.merge(config.filter).copy(excludeFuture = true, timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        val baseFilter = input.filter.merge(config.filter).copy(excludeFuture = true, timelineRange = TimelineRange.AllTime)
         val lifetimeSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
             .getOrDefault(emptyMap())
         

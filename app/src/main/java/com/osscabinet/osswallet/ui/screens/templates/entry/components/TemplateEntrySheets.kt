@@ -22,7 +22,7 @@ fun TemplateEntrySheets(
             decimalPrecision = state.decimalPrecision,
             onAmountChanged = { onEvent(TemplateEntryEvent.SetAmount(it)) },
             onTypeChanged = { newType ->
-                onEvent(TemplateEntryEvent.SetTransactionType(TransactionType.fromValue(newType)))
+                onEvent(TemplateEntryEvent.SetTransactionType(newType))
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowNumpad(false)) }
         )

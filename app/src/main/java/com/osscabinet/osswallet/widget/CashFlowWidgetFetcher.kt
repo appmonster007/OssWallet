@@ -54,10 +54,12 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         val result = renderData?.result
         val incomeInBase = result?.totalIncomeInBase ?: BigDecimal.ZERO
         val expenseInBase = result?.totalExpensesInBase ?: BigDecimal.ZERO
+        val transferInBase = result?.totalTransfersInBase ?: BigDecimal.ZERO
         val netInBase = result?.netInBase ?: BigDecimal.ZERO
 
         val incomeFormatted = formatCurrencyRight(incomeInBase, common.baseCurrency, common.precision, shorten = true)
         val expenseFormatted = formatCurrencyRight(expenseInBase, common.baseCurrency, common.precision, shorten = true)
+        val transferFormatted = formatCurrencyRight(transferInBase, common.baseCurrency, common.precision, shorten = true)
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
             val currentFilter = TransactionFilter(
@@ -101,6 +103,8 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                         put("incomeBase", formatCurrencyRight(item.incomeInBase, common.baseCurrency, common.precision, shorten = true))
                         put("expense", formatCurrencyRight(item.expense, item.currency, common.precision, shorten = true))
                         put("expenseBase", formatCurrencyRight(item.expenseInBase, common.baseCurrency, common.precision, shorten = true))
+                        put("transfer", formatCurrencyRight(item.transfer, item.currency, common.precision, shorten = true))
+                        put("transferBase", formatCurrencyRight(item.transferInBase, common.baseCurrency, common.precision, shorten = true))
                     }
                 )
             }
@@ -109,6 +113,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         prefs[CashFlowGlanceWidget.Keys.IS_LOADED] = "true"
         prefs[CashFlowGlanceWidget.Keys.INCOME_TOTAL] = incomeFormatted
         prefs[CashFlowGlanceWidget.Keys.EXPENSE_TOTAL] = expenseFormatted
+        prefs[CashFlowGlanceWidget.Keys.TRANSFER_TOTAL] = transferFormatted
         prefs[CashFlowGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
         prefs[CashFlowGlanceWidget.Keys.BASE_CURRENCY] = common.baseCurrency
         prefs[CashFlowGlanceWidget.Keys.SHOW_BASE_CONVERSION] = if (config.showBaseConversion) "true" else "false"

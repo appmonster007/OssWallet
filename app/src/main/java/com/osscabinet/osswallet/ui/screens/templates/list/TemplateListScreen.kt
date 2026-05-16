@@ -25,8 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -42,7 +43,7 @@ fun TemplateListScreen(
     onBackClick: () -> Unit,
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
-    categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
+    categoryMap: Map<Long, Category>,
     onAddTemplateClick: (Long?) -> Unit,
     onCreatePlannedPayment: (Template) -> Unit
 ) {
@@ -233,7 +234,7 @@ fun TemplateItem(
     val (badgeColor, badgeIcon) = when (template.transactionType) {
         TransactionType.EXPENSE -> AppColors.error to Icons.Rounded.ArrowDownward
         TransactionType.INCOME -> PositiveAmountColor to Icons.Rounded.ArrowUpward
-        else -> AppColors.secondary to Icons.Rounded.Sync
+        TransactionType.TRANSFER -> AccentBlue to Icons.Rounded.SwapHoriz
     }
 
     Card(
@@ -310,7 +311,7 @@ fun TemplateItem(
 @Composable
 fun TemplateDialog(
     template: Template?,
-    accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+    accounts: List<Account>,
     onDismiss: () -> Unit,
     onConfirm: (String, Long, Double, TransactionType, String?, String?) -> Unit
 ) {
@@ -514,7 +515,7 @@ fun TemplatesScreenPreview() {
     val sampleCategories = mapOf(
         1001L to Category(1001L, "Food & Dining", "restaurant", -14513374, false, null),
         1002L to Category(1002L, "Housing", "home", -16726016, false, null),
-        1003L to Category(1003L, "Income", "trending_up", -14513374, false, null),
+        1003L to Category(1003L, "Transfer", "swap_horiz", -14513374, false, null),
         1004L to Category(1004L, "Groceries", "shopping_cart", -26513, false, null),
         1005L to Category(1005L, "Transfer", "sync_alt", -769226, false, null)
     )

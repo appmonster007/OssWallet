@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import kotlinx.serialization.Serializable
@@ -45,7 +48,7 @@ data class TransactionPrefillDTO(
          * Used for cloning or splitting existing transactions.
          */
         fun fromTransaction(
-            transaction: com.osscabinet.ossWallet.domain.model.Transaction,
+            transaction: Transaction,
             clonedFromId: Long? = null,
             isSplitMode: Boolean = false
         ): TransactionPrefillDTO {
@@ -53,7 +56,7 @@ data class TransactionPrefillDTO(
                 name = "", // Transactions don't have names
                 amount = transaction.amount.abs().toPlainString(),
                 categoryId = transaction.categoryId,
-                transactionType = if (transaction.categoryId == 1003L) TransactionType.TRANSFER else transaction.transactionType,
+                transactionType = transaction.transactionType,
                 accountId = transaction.accountId,
                 currency = transaction.currency,
                 tags = transaction.tags,
@@ -74,7 +77,7 @@ data class TransactionPrefillDTO(
          * Create a TransactionPrefillDTO from a Template domain model.
          */
         fun fromTemplate(
-            template: com.osscabinet.ossWallet.domain.model.Template
+            template: Template
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(
                 name = template.name,
@@ -96,7 +99,7 @@ data class TransactionPrefillDTO(
          * This is used when manually confirming a planned payment.
          */
         fun fromPlannedPayment(
-            payment: com.osscabinet.ossWallet.domain.model.PlannedPayment,
+            payment: PlannedPayment,
             scheduledDate: Long? = null
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(

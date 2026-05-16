@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.calculator
 
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 /**
@@ -44,7 +45,7 @@ data class CalculatorState(
     val ghostResult: String = "",
     val isError: Boolean = false,
     val isCalculated: Boolean = false,
-    val transactionType: String = "income",
+    val transactionType: TransactionType = TransactionType.INCOME,
     val history: List<CalculationHistoryItem> = emptyList()
 ) {
     val expression: String get() = tokens.joinToString("") { it.toInternalString() }
@@ -65,7 +66,7 @@ sealed class CalculatorAction {
     object Backspace : CalculatorAction()
     object Equals : CalculatorAction()
     object Percent : CalculatorAction()
-    data class SetInitialType(val type: String) : CalculatorAction()
+    data class SetInitialType(val type: TransactionType) : CalculatorAction()
     data class LoadFromHistory(val item: CalculationHistoryItem) : CalculatorAction()
     object ClearHistory : CalculatorAction()
 }
@@ -80,11 +81,11 @@ fun calculatorReducer(
 ): CalculatorState {
     return when (action) {
         is CalculatorAction.SetInitialType -> {
-            val initialTokens = if (action.type == "expense") listOf(Token.UnaryMinus) else emptyList()
+            val initialTokens = if (action.type == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
             state.copy(
                 transactionType = action.type,
                 tokens = initialTokens,
-                display = if (action.type == "expense") "-0" else "0"
+                display = if (action.type == TransactionType.EXPENSE) "-0" else "0"
             )
         }
 
@@ -118,12 +119,12 @@ fun calculatorReducer(
         is CalculatorAction.AppendOperator -> {
             if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
                 // Empty or just UnaryMinus + Operator toggles type
-                val newType = if (action.operator == '-') "expense" else "income"
-                val newTokens = if (newType == "expense") listOf(Token.UnaryMinus) else emptyList()
+                val newType = if (action.operator == '-') TransactionType.EXPENSE else TransactionType.INCOME
+                val newTokens = if (newType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
                 return state.copy(
                     transactionType = newType, 
                     tokens = newTokens, 
-                    display = if (newType == "expense") "-0" else "0",
+                    display = if (newType == TransactionType.EXPENSE) "-0" else "0",
                     isCalculated = false
                 )
             }
@@ -184,10 +185,10 @@ fun calculatorReducer(
         }
 
         CalculatorAction.Clear -> {
-            val initialTokens = if (state.transactionType == "expense") listOf(Token.UnaryMinus) else emptyList()
+            val initialTokens = if (state.transactionType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
             state.copy(
                 tokens = initialTokens,
-                display = if (state.transactionType == "expense") "-0" else "0",
+                display = if (state.transactionType == TransactionType.EXPENSE) "-0" else "0",
                 ghostResult = "",
                 isError = false,
                 isCalculated = false
@@ -217,7 +218,11 @@ fun calculatorReducer(
                 state.copy(isError = true, display = "Error")
             } else {
                 val absoluteResult = result.abs().stripTrailingZeros().toPlainString()
-                val newType = if (result.signum() < 0) "expense" else "income"
+                val newType = when {
+                    state.transactionType == TransactionType.TRANSFER -> TransactionType.TRANSFER
+                    result.signum() < 0 -> TransactionType.EXPENSE
+                    else -> TransactionType.INCOME
+                }
                 
                 val newHistoryItem = CalculationHistoryItem(
                     expression = state.displayExpression,
@@ -259,7 +264,7 @@ fun calculatorReducer(
                 display = absVal,
                 tokens = newTokens,
                 isCalculated = true,
-                transactionType = if (isNegative) "expense" else "income",
+                transactionType = if (isNegative) TransactionType.EXPENSE else TransactionType.INCOME,
                 ghostResult = ""
             )
         }

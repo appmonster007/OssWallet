@@ -3,8 +3,10 @@ package com.osscabinet.ossWallet.domain.service.filter
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import java.math.BigDecimal
@@ -109,9 +111,9 @@ object TransactionFilterService {
     }
 
     fun filterTransactionsWithBalance(
-        items: List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>,
+        items: List<TransactionWithBalance>,
         filter: TransactionFilter
-    ): List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance> {
+    ): List<TransactionWithBalance> {
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
         val now = System.currentTimeMillis()
 
@@ -124,7 +126,7 @@ object TransactionFilterService {
     fun getPreviousPeriodFilter(currentFilter: TransactionFilter): TransactionFilter {
         val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
         return currentFilter.copy(
-            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
+            timelineRange = TimelineRange.CustomRange(
                 start = prevStart ?: 0L,
                 end = prevEnd ?: System.currentTimeMillis()
             )
@@ -151,8 +153,8 @@ object TransactionFilterService {
     /**
      * Common filters for semantic clarity.
      */
-    fun filterIncome(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.amount.signum() >= 0 }
-    fun filterExpense(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.amount.signum() < 0 }
+    fun filterIncome(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.transactionType == TransactionType.INCOME }
+    fun filterExpense(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.transactionType == TransactionType.EXPENSE }
 
     // ==================== Additional Convenience Filter Methods ====================
 

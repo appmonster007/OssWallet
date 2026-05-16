@@ -63,6 +63,7 @@ object CurrencyService {
             totalAmount = convertAmount(summary.totalAmount, fromCurrency, toCurrency, exchangeRates, precision),
             income = convertAmount(summary.income, fromCurrency, toCurrency, exchangeRates, precision),
             expense = convertAmount(summary.expense, fromCurrency, toCurrency, exchangeRates, precision),
+            transfer = convertAmount(summary.transfer, fromCurrency, toCurrency, exchangeRates, precision),
             transactionCount = summary.transactionCount
         )
     }
@@ -84,6 +85,7 @@ object CurrencyService {
                 totalAmount = acc.totalAmount + summary.totalAmount,
                 income = acc.income + summary.income,
                 expense = acc.expense + summary.expense,
+                transfer = acc.transfer + summary.transfer,
                 transactionCount = acc.transactionCount + summary.transactionCount
             )
         }

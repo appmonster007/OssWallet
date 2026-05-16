@@ -52,6 +52,7 @@ data class MetricConfig(
     enum class MetricFilter {
         INCOME_ONLY,    // transactionType = 'income'
         EXPENSE_ONLY,   // transactionType = 'expense'
+        TRANSFER_ONLY,  // transactionType = 'transfer'
         POSITIVE_ONLY,  // amount > 0
         NEGATIVE_ONLY,  // amount < 0
         NONE
@@ -75,6 +76,12 @@ object StandardMetrics {
         filter = MetricConfig.MetricFilter.EXPENSE_ONLY,
         transform = MetricConfig.MetricTransform.ABS
     )
+    val TRANSFER_SUM = MetricConfig(
+        name = "transfer",
+        function = AggregationFunction.SUM,
+        filter = MetricConfig.MetricFilter.TRANSFER_ONLY,
+        transform = MetricConfig.MetricTransform.ABS
+    )
     val NET_FLOW = MetricConfig(
         name = "netFlow",
         function = AggregationFunction.SUM,
@@ -88,7 +95,7 @@ object StandardMetrics {
         column = "*"
     )
 
-    fun defaultSet() = listOf(INCOME_SUM, EXPENSE_SUM, COUNT)
+    fun defaultSet() = listOf(INCOME_SUM, EXPENSE_SUM, TRANSFER_SUM, COUNT)
 }
 
 /**

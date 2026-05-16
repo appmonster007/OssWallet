@@ -44,6 +44,7 @@ class CashFlowGlanceWidget : BaseOssWalletWidget() {
         val IS_LOADED = stringPreferencesKey("cf_is_loaded")
         val INCOME_TOTAL = stringPreferencesKey("cf_income_total")
         val EXPENSE_TOTAL = stringPreferencesKey("cf_expense_total")
+        val TRANSFER_TOTAL = stringPreferencesKey("cf_transfer_total")
         val COMPARISON = stringPreferencesKey("cf_comparison")
         val PERIOD_LABEL = stringPreferencesKey("cf_period_label")
         val BASE_CURRENCY = stringPreferencesKey("cf_base_currency")
@@ -62,7 +63,9 @@ internal data class CurrencyRow(
     val income: String,
     val incomeBase: String,
     val expense: String,
-    val expenseBase: String
+    val expenseBase: String,
+    val transfer: String = "",
+    val transferBase: String = ""
 )
 
 internal fun parseCurrencyList(json: String?): List<CurrencyRow> {
@@ -78,7 +81,9 @@ internal fun parseCurrencyList(json: String?): List<CurrencyRow> {
                 income = obj.optString("income", ""),
                 incomeBase = obj.optString("incomeBase", ""),
                 expense = obj.optString("expense", ""),
-                expenseBase = obj.optString("expenseBase", "")
+                expenseBase = obj.optString("expenseBase", ""),
+                transfer = obj.optString("transfer", ""),
+                transferBase = obj.optString("transferBase", "")
             )
         }
     } catch (_: JSONException) {
@@ -133,6 +138,7 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
 
     val incomeTotal = prefs[keys.INCOME_TOTAL] ?: ""
     val expenseTotal = prefs[keys.EXPENSE_TOTAL] ?: ""
+    val transferTotal = prefs[keys.TRANSFER_TOTAL] ?: ""
     val periodLabel = prefs[keys.PERIOD_LABEL] ?: ""
     val comparison = prefs[keys.COMPARISON]?.takeIf { it.isNotEmpty() }
     val subText = comparison ?: periodLabel.takeIf { it.isNotBlank() }
@@ -194,6 +200,14 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
                             color = ColorProvider(R.color.widget_expense_color)
                         )
                     )
+                    Text(
+                        text = transferTotal,
+                        style = TextStyle(
+                            fontSize = TextUnit(totalSp, TextUnitType.Sp),
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(R.color.widget_transfer_color)
+                        )
+                    )
                 }
             }
         }
@@ -201,7 +215,7 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
         Spacer(modifier = GlanceModifier.height(5.dp))
 
         if (isCompact) {
-            CompactTotalsRow(incomeTotal, expenseTotal, scale)
+            CompactTotalsRow(incomeTotal, expenseTotal, transferTotal, scale)
         } else {
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
@@ -231,6 +245,19 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
                             fontSize = TextUnit(colHeaderSp, TextUnitType.Sp),
                             fontWeight = FontWeight.Bold,
                             color = ColorProvider(R.color.widget_expense_label)
+                        )
+                    )
+                }
+                Column(
+                    modifier = GlanceModifier.defaultWeight(),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "TRANSFER",
+                        style = TextStyle(
+                            fontSize = TextUnit(colHeaderSp, TextUnitType.Sp),
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(R.color.widget_transfer_label)
                         )
                     )
                 }
@@ -330,13 +357,35 @@ private fun CurrencyTableRow(
                     )
                 }
             }
+            Column(
+                modifier = GlanceModifier.defaultWeight(),
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = row.transfer,
+                    style = TextStyle(
+                        fontSize = TextUnit(amountSp, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(R.color.widget_transfer_color)
+                    )
+                )
+                if (showConversion) {
+                    Text(
+                        text = "≈ ${row.transferBase}",
+                        style = TextStyle(
+                            fontSize = TextUnit(baseSp, TextUnitType.Sp),
+                            color = ColorProvider(R.color.widget_transfer_comparison)
+                        )
+                    )
+                }
+            }
         }
         Spacer(modifier = GlanceModifier.height((3f * scale).dp))
     }
 }
 
 @Composable
-private fun CompactTotalsRow(incomeTotal: String, expenseTotal: String, scale: Float) {
+private fun CompactTotalsRow(incomeTotal: String, expenseTotal: String, transferTotal: String, scale: Float) {
     val sp = 9f * scale
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
@@ -375,6 +424,24 @@ private fun CompactTotalsRow(incomeTotal: String, expenseTotal: String, scale: F
                 fontSize = TextUnit(sp, TextUnitType.Sp),
                 fontWeight = FontWeight.Bold,
                 color = ColorProvider(R.color.widget_expense_color)
+            )
+        )
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        Text(
+            text = "TR",
+            style = TextStyle(
+                fontSize = TextUnit(7f * scale, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(R.color.widget_transfer_label)
+            )
+        )
+        Spacer(modifier = GlanceModifier.width(4.dp))
+        Text(
+            text = transferTotal,
+            style = TextStyle(
+                fontSize = TextUnit(sp, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(R.color.widget_transfer_color)
             )
         )
     }

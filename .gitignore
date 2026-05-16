@@ -1,6 +1,6 @@
 *.iml
 .gradle
-/.claude
+/.claude/worktrees
 /local.properties
 /.idea/caches
 /.idea/libraries

@@ -22,9 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import kotlin.math.roundToInt
@@ -66,10 +64,10 @@ fun AeonChartInteractionPopup(
             .offset { IntOffset(xPos.roundToInt(), yPos.roundToInt()) }
             .width(tooltipWidth)
             .clip(RoundedCornerShape(dims.containerCornerRadius)),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(dims.spacingSm),
+        color = AppColors.cardSurfaceProminent,
         tonalElevation = dims.spacingSm,
         shadowElevation = dims.spacingMd,
-        border = BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        border = BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.3f))
     ) {
         Column(
             modifier = Modifier.padding(dims.spacingMd),
@@ -92,7 +90,7 @@ fun AeonChartInteractionPopup(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = AppColors.contentPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
@@ -107,7 +105,7 @@ fun AeonChartInteractionPopup(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.primary
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -118,13 +116,13 @@ fun AeonChartInteractionPopup(
                         style = MaterialTheme.typography.labelExtraSmall.copy(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.4f)
                         )
                     )
                     Text(
                         text = "${"%.1f".format(percentageOfTotal * 100)}%",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
             }
@@ -143,9 +141,9 @@ fun AeonChartInteractionPopup(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = color,
                             contentColor = if (ColorUtils.calculateLuminance(color.toArgb()) > 0.5) {
-                                Color.Black
+                                ColorOnLight
                             } else {
-                                Color.White
+                                ColorOnDark
                             }
                         )
                     ) {
@@ -167,8 +165,8 @@ fun AeonChartInteractionPopup(
                     contentPadding = PaddingValues(horizontal = dims.spacingSm),
                     shape = RoundedCornerShape(dims.spacingSm),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        contentColor = MaterialTheme.colorScheme.primary
+                        containerColor = AppColors.primary.copy(alpha = 0.1f),
+                        contentColor = AppColors.primary
                     )
                 ) {
                     Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(dims.iconSizeXs + 2.dp))
@@ -194,7 +192,7 @@ fun AeonChartInteractionPopupPreview() {
             AeonChartInteractionPopup(
                 name = "Food & Dining",
                 value = BigDecimal("450.75"),
-                color = Color(0xFFFF5722),
+                color = ChartColorOrange,
                 percentageOfTotal = 0.225f,
                 hasSubcategories = true,
                 subcategoryCount = 5,

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Compact date selection card for entry screens.
@@ -32,8 +33,8 @@ fun EntryDateCard(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        color = AppColors.recessedSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -44,7 +45,7 @@ fun EntryDateCard(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = AppColors.secondary
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -54,7 +55,7 @@ fun EntryDateCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     text = dateLabel,
@@ -65,7 +66,7 @@ fun EntryDateCard(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
             )
         }
     }

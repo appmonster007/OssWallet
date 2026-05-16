@@ -59,6 +59,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +91,7 @@ fun PlannedPaymentsCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Card settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -105,7 +106,7 @@ fun PlannedPaymentsCard(
                         PlannedPaymentsViewMode.BOTH -> "No upcoming payments"
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = AppColors.contentSecondary,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -160,7 +161,7 @@ private fun PlannedPaymentsSettingsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = AppColors.cardSurfaceProminent,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
@@ -182,7 +183,7 @@ private fun PlannedPaymentsSettingsSheet(
                 )
                 IconButton(
                     onClick = { onDelete(); onDismiss() },
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
                 ) {
                     Icon(Icons.Filled.Delete, contentDescription = "Delete card")
                 }
@@ -190,7 +191,7 @@ private fun PlannedPaymentsSettingsSheet(
 
             // View mode selector
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                color = AppColors.insetSurface.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -205,7 +206,7 @@ private fun PlannedPaymentsSettingsSheet(
                             letterSpacing = 1.sp,
                             fontSize = 11.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     val viewModes = listOf(
                         PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
@@ -230,7 +231,7 @@ private fun PlannedPaymentsSettingsSheet(
 
             // Days-ahead and max-items controls
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                color = AppColors.insetSurface.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -245,7 +246,7 @@ private fun PlannedPaymentsSettingsSheet(
                             letterSpacing = 1.sp,
                             fontSize = 11.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -257,7 +258,7 @@ private fun PlannedPaymentsSettingsSheet(
                             Text(
                                 "${config.daysAhead} days",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = AppColors.contentSecondary
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -277,7 +278,7 @@ private fun PlannedPaymentsSettingsSheet(
                     }
                     HorizontalDivider(
                         thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        color = AppColors.divider.copy(alpha = 0.3f)
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -351,12 +352,12 @@ private fun PlannedPaymentRow(
                 )
             },
         shape = RoundedCornerShape(20.dp),
-        color = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-        else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+        color = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.2f)
+        else AppColors.cardSurfaceProminent.copy(alpha = 0.3f),
         border = BorderStroke(
             0.5.dp,
-            if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f)
+            if (isOverdue) AppColors.error.copy(alpha = 0.2f)
+            else AppColors.divider.copy(alpha = 0.1f)
         )
     ) {
         Row(
@@ -378,8 +379,8 @@ private fun PlannedPaymentRow(
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.sp,
                         letterSpacing = 0.5.sp,
-                        color = if (isOverdue) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = if (isOverdue) AppColors.error
+                        else AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 )
             }
@@ -388,8 +389,8 @@ private fun PlannedPaymentRow(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = if (isOverdue) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurface
+                    color = if (isOverdue) AppColors.error
+                    else AppColors.contentPrimary
                 )
             )
             if (onConfirm != null || onSkip != null) {
@@ -404,7 +405,7 @@ private fun PlannedPaymentRow(
                             Icons.Default.MoreVert,
                             contentDescription = "Actions",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            tint = AppColors.contentSecondary.copy(alpha = 0.5f)
                         )
                     }
                     DropdownMenu(
@@ -418,7 +419,7 @@ private fun PlannedPaymentRow(
                                     Icon(
                                         Icons.Rounded.CheckCircle,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = AppColors.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 },
@@ -436,7 +437,7 @@ private fun PlannedPaymentRow(
                                     Icon(
                                         Icons.Rounded.SkipNext,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = AppColors.contentSecondary,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 },

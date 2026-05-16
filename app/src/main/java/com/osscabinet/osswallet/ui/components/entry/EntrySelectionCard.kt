@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 enum class EntrySelectionMode {
     SINGLE, MULTI, MANAGEMENT
@@ -38,21 +39,21 @@ fun EntrySelectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     detail: String? = null,
-    iconColor: Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = AppColors.primary,
     selectionMode: EntrySelectionMode = EntrySelectionMode.SINGLE,
     trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
     
     val backgroundColor by animateColorAsState(
-        if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        else MaterialTheme.colorScheme.surfaceContainerLowest,
+        if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(alpha = 0.08f)
+        else AppColors.recessedSurface,
         label = "bgColor"
     )
     
     val borderColor by animateColorAsState(
-        if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+        if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary
+        else AppColors.divider.copy(alpha = 0.2f),
         label = "borderColor"
     )
     
@@ -98,14 +99,14 @@ fun EntrySelectionCard(
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
-                    color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary
                 )
                 if (detail != null) {
                     Text(
                         text = detail,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -120,7 +121,7 @@ fun EntrySelectionCard(
                             Icon(
                                 imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = "Selected",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = AppColors.primary,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -133,8 +134,8 @@ fun EntrySelectionCard(
                                 onClick() 
                             },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                                checkedThumbColor = AppColors.switchThumbOn,
+                                checkedTrackColor = AppColors.primary
                             )
                         )
                     }
@@ -142,7 +143,7 @@ fun EntrySelectionCard(
                         Icon(
                             imageVector = Icons.Rounded.Edit,
                             contentDescription = "Edit",
-                            tint = MaterialTheme.colorScheme.outline,
+                            tint = AppColors.border,
                             modifier = Modifier.size(20.dp)
                         )
                     }

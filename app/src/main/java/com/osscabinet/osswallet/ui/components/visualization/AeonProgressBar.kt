@@ -17,13 +17,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
-    trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    color: Color = AppColors.primary,
+    trackColor: Color = AppColors.insetSurface,
     height: Dp = 12.dp,
     animate: Boolean = true
 ) {

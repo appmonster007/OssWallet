@@ -22,8 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -37,7 +36,7 @@ fun AeonBarChart(
     modifier: Modifier = Modifier,
     currency: String = "USD",
     precision: Int = 2,
-    barColor: Color = Color(0xFF2979FF),
+    barColor: Color = ChartColorBlue,
     animate: Boolean = true
 ) {
     if (data.isEmpty()) {
@@ -113,14 +112,14 @@ fun AeonBarChart(
                 }
         ) {
             // Draw Grid
-            val gridColor = Color.Gray.copy(alpha = 0.1f)
+            val gridColor = ChartGridColor
             for (i in 0..4) {
                 val y = padding + (i * (heightPx - 2 * padding) / 4)
                 drawLine(color = gridColor, start = Offset(padding, y), end = Offset(widthPx - padding, y), strokeWidth = 1f)
             }
             
             // Zero Line
-            drawLine(color = Color.Gray.copy(alpha = 0.3f), start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
+            drawLine(color = ChartZeroLineColor, start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
 
             // Draw Bars
             val barWidth = (widthPx - 2 * padding) / data.size * 0.7f
@@ -161,13 +160,13 @@ fun AeonBarChart(
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
                     .clip(RoundedCornerShape(dims.spacingMd)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = AppColors.insetSurface,
                 tonalElevation = dims.spacingSm,
                 shadowElevation = dims.spacingSm,
                 border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), barColor.copy(alpha = 0.5f))
             ) {
                 Column(modifier = Modifier.padding(dims.spacingSm), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                    Text(pair.first, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(pair.first, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary)
                     Text(formatCurrencyRight(pair.second, currency, precision), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = barColor)
                 }
             }

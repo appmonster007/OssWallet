@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A standardized search field for selection screens.
@@ -54,9 +55,9 @@ fun AeonSearchField(
             shape = RoundedCornerShape(24.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                unfocusedBorderColor = AppColors.border.copy(alpha = 0.3f),
+                focusedContainerColor = AppColors.insetSurface.copy(alpha = 0.1f),
+                unfocusedContainerColor = AppColors.insetSurface.copy(alpha = 0.05f)
             )
         )
     } else {
@@ -80,11 +81,11 @@ fun AeonSearchField(
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
+                focusedContainerColor = AppColors.transparent,
+                unfocusedContainerColor = AppColors.transparent,
+                disabledContainerColor = AppColors.transparent,
+                focusedIndicatorColor = AppColors.transparent,
+                unfocusedIndicatorColor = AppColors.transparent,
             )
         )
     }

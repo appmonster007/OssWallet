@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -159,7 +160,7 @@ fun AeonScheduleBuilder(
                                     isError = isError,
                                     supportingText = {
                                         if (isError) {
-                                            Text("Invalid cron expression", color = MaterialTheme.colorScheme.error)
+                                            Text("Invalid cron expression", color = AppColors.error)
                                         } else {
                                             Text("Unix format: Min Hour Day Month Weekday")
                                         }
@@ -172,14 +173,14 @@ fun AeonScheduleBuilder(
                                     Icon(
                                         Icons.AutoMirrored.Rounded.HelpOutline,
                                         contentDescription = "Cron Help",
-                                        tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        tint = if (isError) AppColors.error else AppColors.primary
                                     )
                                 }
                             }
 
                             if (showCronHelp) {
                                 Surface(
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                    color = AppColors.secondaryContainer.copy(alpha = 0.5f),
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -264,7 +265,7 @@ fun AeonScheduleBuilder(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Verify your recurrence settings before saving.", style = MaterialTheme.typography.bodyMedium)
                     Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        color = AppColors.accentContainer.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -272,7 +273,7 @@ fun AeonScheduleBuilder(
                             text = summary,
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
+                            color = AppColors.primary
                         )
                     }
 
@@ -280,7 +281,7 @@ fun AeonScheduleBuilder(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 "Next occurrences:",
-                                style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.outline)
+                                style = MaterialTheme.typography.labelMedium.copy(color = AppColors.border)
                             )
                             previewDates.forEach { date ->
                                 Row(
@@ -292,11 +293,11 @@ fun AeonScheduleBuilder(
                                         Icons.Rounded.Event,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
-                                        tint = MaterialTheme.colorScheme.outline
+                                        tint = AppColors.border
                                     )
                                     Text(
                                         date,
-                                        style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        style = MaterialTheme.typography.bodySmall.copy(color = AppColors.contentSecondary)
                                     )
                                 }
                             }

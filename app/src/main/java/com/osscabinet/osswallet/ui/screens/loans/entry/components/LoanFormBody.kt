@@ -22,6 +22,8 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.WarningColor
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Loan Entry Form Body with Optimized Information Hierarchy.
@@ -34,7 +36,7 @@ fun LoanFormBody(
     onEvent: (LoanEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val amountColor = if (state.loanType == LoanType.LENT) Color(0xFF004D40) else Color(0xFFE65100)
+    val amountColor = if (state.loanType == LoanType.LENT) AppColors.primary else WarningColor
     val dims = AeonTheme.dimensions
     val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
@@ -86,8 +88,8 @@ fun LoanFormBody(
                                 value = formatter.format(java.util.Date(state.startDate)),
                                 onClick = { onEvent(LoanEntryEvent.ShowStartDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.secondary
+                                iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                                iconTint = AppColors.secondary
                             )
 
                             EntryActionCard(
@@ -96,8 +98,8 @@ fun LoanFormBody(
                                 value = if (state.hasSettlementDate) formatter.format(java.util.Date(state.settlementDate)) else "None Set",
                                 onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.secondary
+                                iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                                iconTint = AppColors.secondary
                             )
                         }
 
@@ -109,8 +111,8 @@ fun LoanFormBody(
                                 value = accountObj?.name ?: "Select...",
                                 onClick = { onEvent(LoanEntryEvent.ShowAccountSheet(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.primary
+                                iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                                iconTint = AppColors.primary
                             )
 
                             EntryActionCard(
@@ -119,8 +121,8 @@ fun LoanFormBody(
                                 value = if (state.interestRate.isEmpty()) "0%" else "${state.interestRate}%",
                                 onClick = { onEvent(LoanEntryEvent.ShowInterestNumpad(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                                iconTint = MaterialTheme.colorScheme.tertiary
+                                iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                                iconTint = AppColors.tertiary
                             )
                         }
                     }
@@ -154,8 +156,8 @@ fun LoanFormBody(
                         value = filterObj?.name ?: "No Preset Applied",
                         onClick = { onEvent(LoanEntryEvent.ShowFilterSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
                     )
 
                     AeonContextGrid {
@@ -260,8 +262,8 @@ fun LoanFormBody(
                         value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
                         onClick = { onEvent(LoanEntryEvent.ShowLinkSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
+                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = AppColors.tertiary
                     )
 
                     // Constraints

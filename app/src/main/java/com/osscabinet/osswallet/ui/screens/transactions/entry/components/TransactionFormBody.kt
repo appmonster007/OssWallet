@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Main content layout for transaction entry screen.
@@ -71,8 +72,8 @@ fun TransactionFormBody(
                             value = state.selectedTemplateName ?: "None",
                             onClick = { onEvent(TransactionEntryEvent.ShowTemplateSheet(true)) },
                             modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.primary
+                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                            iconTint = AppColors.primary
                         )
                     }
 
@@ -82,8 +83,8 @@ fun TransactionFormBody(
                         value = formatDate(state.selectedDateMillis),
                         onClick = { onEvent(TransactionEntryEvent.ShowDatePicker(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                        iconTint = AppColors.secondary
                     )
                 }
 

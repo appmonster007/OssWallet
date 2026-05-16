@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentFormBody
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +82,7 @@ fun PlannedPaymentEntryScreen(
                     
                     if (state.deleteTemplateWithPayment && state.templateUsageCount > 1) {
                         Surface(
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            color = AppColors.errorContainer.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
@@ -93,13 +94,13 @@ fun PlannedPaymentEntryScreen(
                                 Icon(
                                     Icons.Rounded.Warning,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
+                                    tint = AppColors.error,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
                                     "Warning: This template is shared with ${state.templateUsageCount - 1} other payment(s). Deleting it will also delete those payments.",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                    color = AppColors.onErrorContainer
                                 )
                             }
                         }

@@ -36,6 +36,7 @@ import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import java.io.File
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A wrapper for OpenStreetMap using osmdroid.
@@ -200,7 +201,7 @@ fun AeonOSMMap(
                 .align(Alignment.CenterEnd)
                 .padding(end = 16.dp)
                 .background(
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    AppColors.panelSurface.copy(alpha = 0.9f),
                     RoundedCornerShape(16.dp)
                 )
                 .padding(4.dp),
@@ -214,8 +215,8 @@ fun AeonOSMMap(
                 },
                 modifier = Modifier.size(40.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary
+                    containerColor = AppColors.transparent,
+                    contentColor = AppColors.primary
                 )
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Zoom In")
@@ -224,7 +225,7 @@ fun AeonOSMMap(
             HorizontalDivider(
                 modifier = Modifier.width(24.dp),
                 thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = AppColors.divider
             )
 
             FilledIconButton(
@@ -234,8 +235,8 @@ fun AeonOSMMap(
                 },
                 modifier = Modifier.size(40.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary
+                    containerColor = AppColors.transparent,
+                    contentColor = AppColors.primary
                 )
             ) {
                 Icon(Icons.Rounded.Remove, contentDescription = "Zoom Out")
@@ -249,7 +250,7 @@ fun AeonOSMMap(
                     .align(Alignment.TopCenter)
                     .padding(top = 16.dp)
                     .background(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f), 
+                        AppColors.accentContainer.copy(alpha = 0.9f), 
                         CircleShape
                     )
                     .padding(horizontal = 20.dp, vertical = 10.dp)
@@ -261,12 +262,12 @@ fun AeonOSMMap(
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                     Text(
                         "Release to set location",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = AppColors.onAccentContainer
                     )
                 }
             }
@@ -279,13 +280,13 @@ private fun MapPlaceholder(modifier: Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(AppColors.insetSurface),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             Icons.Rounded.Map,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            tint = AppColors.contentSecondary.copy(alpha = 0.5f)
         )
     }
 }

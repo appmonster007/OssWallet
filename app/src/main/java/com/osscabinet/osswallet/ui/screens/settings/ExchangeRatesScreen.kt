@@ -30,6 +30,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +73,7 @@ fun ExchangeRatesScreen(
                     Text("New rates fetched. Do you want to save them?", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = AppColors.insetSurface,
                         shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -80,7 +81,7 @@ fun ExchangeRatesScreen(
                             text = jsonPreview,
                             modifier = Modifier.padding(AeonTheme.dimensions.spacingSm),
                             style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = AppColors.contentSecondary
                         )
                     }
                 }
@@ -146,7 +147,7 @@ fun ExchangeRatesScreen(
                                     Text(
                                         text = lastUpdatedStr,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
+                                        color = AppColors.border
                                     )
                                 }
                                 IconButton(onClick = { viewModel.refreshRates() }) {
@@ -162,12 +163,12 @@ fun ExchangeRatesScreen(
                 )
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = AppColors.panelSurface,
                     indicator = { tabPositions ->
                         if (pagerState.currentPage < tabPositions.size) {
                             TabRowDefaults.SecondaryIndicator(
                                 modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                color = MaterialTheme.colorScheme.primary
+                                color = AppColors.primary
                             )
                         }
                     }
@@ -228,8 +229,8 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
             shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                focusedContainerColor = AppColors.panelSurface,
+                unfocusedContainerColor = AppColors.panelSurface
             )
         )
 
@@ -241,11 +242,11 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                 .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Currency", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Text("Rate (1 ${uiState.baseCurrency})", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text("Currency", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = AppColors.primary)
+            Text("Rate (1 ${uiState.baseCurrency})", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = AppColors.primary)
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(color = AppColors.divider)
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(filteredRates) { rate ->
@@ -259,11 +260,11 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            color = AppColors.primaryContainer.copy(alpha = 0.5f),
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(rate.currencyCode.take(2), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Text(rate.currencyCode.take(2), fontWeight = FontWeight.Bold, color = AppColors.onPrimaryContainer)
                             }
                         }
                         Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
@@ -277,7 +278,7 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                         )
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), color = AppColors.divider.copy(alpha = 0.5f))
             }
         }
     }
@@ -311,7 +312,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            color = AppColors.secondaryContainer.copy(alpha = 0.5f)
         ) {
             Column(
                 modifier = Modifier
@@ -323,13 +324,13 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     Text(
                         text = amountText.ifEmpty { "0" },
                         style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = AppColors.onSecondaryContainer,
                         textAlign = TextAlign.Start
                     )
                     Text(
                         text = fromCurrency,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                 }
 
@@ -339,7 +340,7 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     modifier = Modifier
                         .padding(vertical = AeonTheme.dimensions.spacingMd)
                         .align(Alignment.CenterHorizontally),
-                    tint = MaterialTheme.colorScheme.outline
+                    tint = AppColors.border
                 )
 
                 // Destination - Align Right
@@ -350,13 +351,13 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
                     Text(
                         text = String.format(Locale.US, "%.2f", conversionResult),
                         style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = AppColors.onSecondaryContainer,
                         textAlign = TextAlign.End
                     )
                     Text(
                         text = toCurrency,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                 }
             }

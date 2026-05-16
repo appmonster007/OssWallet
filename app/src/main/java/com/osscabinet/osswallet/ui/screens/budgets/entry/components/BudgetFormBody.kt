@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryEvent
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Budget Entry Form Body with Optimized Information Hierarchy.
@@ -56,7 +57,7 @@ fun BudgetFormBody(
                 onNameChange = { onEvent(BudgetEntryEvent.SetName(it)) },
                 nameLabel = "BUDGET NAME",
                 showTypeSelector = false,
-                amountColor = Color(0xFF004D40) // Budget Teal
+                amountColor = AppColors.primary
             )
 
             // BUDGET CONTEXT: The core parameters of the budget itself
@@ -91,8 +92,8 @@ fun BudgetFormBody(
                         value = filterObj?.name ?: "No Preset Applied",
                         onClick = { onEvent(BudgetEntryEvent.ShowFilterSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
                     )
 
                     AeonContextGrid {
@@ -216,8 +217,8 @@ fun BudgetFormBody(
                         value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
                         onClick = { onEvent(BudgetEntryEvent.ShowLinkSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
+                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = AppColors.tertiary
                     )
 
                     // Constraints

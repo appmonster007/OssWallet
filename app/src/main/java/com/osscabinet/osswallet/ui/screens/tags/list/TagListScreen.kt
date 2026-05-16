@@ -15,8 +15,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionContent
-import com.osscabinet.ossWallet.ui.components.entry.TagPresetColors
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
+import com.osscabinet.ossWallet.ui.theme.*
 
 /**
  * Screen for managing tags in settings.
@@ -119,7 +119,7 @@ fun EditTagDialog(
                                     .clickable { selectedColor = color }
                                     .border(
                                         width = if (selectedColor == color) 2.dp else 0.dp,
-                                        color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        color = if (selectedColor == color) AppColors.primary else AppColors.transparent,
                                         shape = CircleShape
                                     )
                             )

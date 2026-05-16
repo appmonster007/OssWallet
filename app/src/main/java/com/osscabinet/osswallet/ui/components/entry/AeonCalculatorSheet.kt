@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Calculator bottom sheet using the full CalculatorNumpad component.
@@ -37,8 +38,8 @@ fun AeonCalculatorSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = dims.dialogCornerRadius, topEnd = dims.dialogCornerRadius),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
+        containerColor = AppColors.cardSurface,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
     ) {
         Column(
             modifier = Modifier

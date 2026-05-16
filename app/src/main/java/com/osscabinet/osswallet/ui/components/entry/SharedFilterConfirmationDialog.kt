@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun SharedFilterConfirmationDialog(
@@ -39,7 +40,7 @@ fun SharedFilterConfirmationDialog(
                 Surface(
                     onClick = onConfirmUpdateShared,
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = AppColors.accentContainer.copy(alpha = 0.5f)
                 ) {
                     Row(
                         modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
@@ -58,7 +59,7 @@ fun SharedFilterConfirmationDialog(
                 Surface(
                     onClick = onConfirmCreateNew,
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    color = AppColors.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Row(
                         modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),

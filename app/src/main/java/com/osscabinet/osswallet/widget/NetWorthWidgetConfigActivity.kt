@@ -47,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 class NetWorthWidgetConfigActivity : ComponentActivity() {
@@ -160,7 +161,7 @@ private fun NetWorthWidgetConfigScreen(
                     Text(
                         "Compare with previous period",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
                 Switch(
@@ -188,7 +189,7 @@ private fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary
+        color = AppColors.primary
     )
 }
 

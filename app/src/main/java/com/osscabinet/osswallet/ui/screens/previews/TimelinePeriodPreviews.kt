@@ -18,12 +18,13 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Preview(showBackground = true, name = "Aeon Timeline Period Selector - All Modes")
 @Composable
 fun AeonTimelinePeriodSelectorAllModesPreview() {
     OssWalletTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

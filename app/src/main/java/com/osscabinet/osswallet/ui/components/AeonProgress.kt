@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonBudgetProgress(
@@ -38,12 +39,12 @@ fun AeonBudgetProgress(
                 Text(
                     label,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppColors.contentPrimary
                 )
                 Text(
                     "${formatCurrencyRight(current, baseCurrency, precision, shorten = true)} / ${formatCurrencyRight(total, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.border
                     )
                 )
             }
@@ -54,7 +55,7 @@ fun AeonBudgetProgress(
                 .fillMaxWidth()
                 .height(12.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .background(AppColors.insetSurface.copy(alpha = 0.3f))
         ) {
             Box(
                 modifier = Modifier

@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 class CashFlowWidgetConfigActivity : ComponentActivity() {
@@ -137,7 +138,7 @@ private fun CashFlowWidgetConfigScreen(
             Text(
                 text = "Timeline",
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = AppColors.primary
             )
             CashFlowTimelineOptions(
                 selected = config.timelineRange,
@@ -156,7 +157,7 @@ private fun CashFlowWidgetConfigScreen(
                     Text(
                         "Show ≈ equivalent in base currency",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
                 Switch(
@@ -177,7 +178,7 @@ private fun CashFlowWidgetConfigScreen(
                     Text(
                         "Show TOTAL footer below currency list",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
                 Switch(
@@ -198,7 +199,7 @@ private fun CashFlowWidgetConfigScreen(
                     Text(
                         "Compare net flow with previous period",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
                 Switch(

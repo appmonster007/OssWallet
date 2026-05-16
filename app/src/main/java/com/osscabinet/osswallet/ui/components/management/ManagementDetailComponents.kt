@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Shared chip for displaying scope/context items (Accounts, Categories, Tags)
@@ -58,7 +59,7 @@ fun ScopeSection(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                color = AppColors.primary.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.size(40.dp)
             ) {
@@ -66,7 +67,7 @@ fun ScopeSection(
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -77,7 +78,7 @@ fun ScopeSection(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                color = AppColors.primary.copy(alpha = 0.6f)
             )
         }
 
@@ -85,7 +86,7 @@ fun ScopeSection(
             Text(
                 allText,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = AppColors.contentPrimary,
                 modifier = Modifier.padding(start = 56.dp)
             )
         } else {
@@ -100,17 +101,17 @@ fun ScopeSection(
                 if (items.size > 5 && !isExpanded) {
                     Surface(
                         onClick = { isExpanded = true },
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                        color = AppColors.primary.copy(alpha = 0.05f),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(
                             0.5.dp,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            AppColors.primary.copy(alpha = 0.1f)
                         )
                     ) {
                         Text(
                             text = "+${items.size - 5} more",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = AppColors.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }

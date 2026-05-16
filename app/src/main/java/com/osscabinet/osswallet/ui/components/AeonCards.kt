@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
@@ -23,13 +24,13 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Surface(
             modifier = Modifier.size(64.dp),
             shape = CircleShape,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            color = if (isSelected) AppColors.primary else AppColors.insetSurface.copy(alpha = 0.5f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
                     contentDescription = name,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -38,7 +39,7 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Text(
             name,
             style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isSelected) AppColors.primary else AppColors.contentSecondary
         )
     }
 }

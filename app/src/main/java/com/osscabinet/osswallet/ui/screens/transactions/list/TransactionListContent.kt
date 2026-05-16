@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -90,10 +91,10 @@ fun TransactionListContent(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        modifier = Modifier.background(Color.Transparent),
+        modifier = Modifier.background(AppColors.transparent),
         sheetPeekHeight = 110.dp,
-        sheetContainerColor = Color.Transparent,
-        sheetContentColor = MaterialTheme.colorScheme.onSurface,
+        sheetContainerColor = AppColors.transparent,
+        sheetContentColor = AppColors.contentPrimary,
         sheetTonalElevation = 0.dp,
         sheetShadowElevation = 0.dp,
         sheetShape = RectangleShape,
@@ -109,7 +110,7 @@ fun TransactionListContent(
                         }
                     }
                 },
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                backgroundColor = AppColors.cardSurfaceProminent
             )
         },
         topBar = {
@@ -141,7 +142,7 @@ fun TransactionListContent(
                     }
                 },
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                backgroundColor = AppColors.cardSurfaceProminent,
                 accountNames = accountNames,
                 onResetToInitial = onResetToInitial
             )
@@ -151,7 +152,7 @@ fun TransactionListContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
-                .background(MaterialTheme.colorScheme.background)
+                .background(AppColors.screenBackground)
         ) {
             if (listState.isEmpty) {
                 TransactionListEmptyState()
@@ -206,7 +207,7 @@ fun TransactionListContentPreview() {
     var theme by remember { mutableStateOf("System") }
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
+            modifier = Modifier.fillMaxWidth().background(AppColors.insetSurface).padding(8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(onClick = { theme = "Light" }) { Text("Light") }

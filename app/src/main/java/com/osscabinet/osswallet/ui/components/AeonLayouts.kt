@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import androidx.compose.ui.input.pointer.pointerInput
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonSectionHeader(
@@ -39,7 +40,7 @@ fun AeonSectionHeader(
             title,
             style = MaterialTheme.typography.titleSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = AppColors.contentPrimary
             )
         )
         trailing?.invoke()
@@ -79,7 +80,7 @@ fun DetailDrawer(
                         }
                     },
                 shape = RoundedCornerShape(topStart = AeonTheme.dimensions.cardCornerRadius, bottomStart = AeonTheme.dimensions.cardCornerRadius),
-                color = Color(0xFFC2D2FF),
+                color = AppColors.accentContainer,
                 shadowElevation = 8.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -107,7 +108,7 @@ fun DetailDrawer(
                             }
                         }
                     },
-                color = MaterialTheme.colorScheme.surface,
+                color = AppColors.panelSurface,
                 shadowElevation = 24.dp
             ) {
                 Column {
@@ -145,9 +146,9 @@ fun AeonShimmer(
     showBudgets: Boolean = false
 ) {
     val shimmerColors = listOf(
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        AppColors.insetSurface.copy(alpha = 0.6f),
+        AppColors.insetSurface.copy(alpha = 0.2f),
+        AppColors.insetSurface.copy(alpha = 0.6f),
     )
 
     val transition = rememberInfiniteTransition(label = "shimmer")

@@ -35,18 +35,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
-
-val TagPresetColors = listOf(
-    Color(0xFFEF5350), Color(0xFFEC407A), Color(0xFFAB47BC), Color(0xFF7E57C2),
-    Color(0xFF5C6BC0), Color(0xFF42A5F5), Color(0xFF29B6F6), Color(0xFF26C6DA),
-    Color(0xFF26A69A), Color(0xFF66BB6A), Color(0xFF9CCC65), Color(0xFFD4E157),
-    Color(0xFFFFEE58), Color(0xFFFFCA28), Color(0xFFFFA726), Color(0xFFFF7043)
-)
 
 /**
  * Full-screen selection for Transaction Tags.
@@ -146,7 +139,7 @@ fun AeonTagSelectionContent(
                     Icon(
                         if (isManagementMode) Icons.Rounded.Check else Icons.Rounded.Edit,
                         contentDescription = if (isManagementMode) "Done" else "Edit Tags",
-                        tint = if (isManagementMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        tint = if (isManagementMode) AppColors.primary else AppColors.contentPrimary
                     )
                 }
             }
@@ -171,7 +164,7 @@ fun AeonTagSelectionContent(
                     ) {
                         currentSelection.forEach { tagName ->
                             val tagColor = allTags.find { it.name == tagName }?.colorHex?.let { Color(it) } 
-                                ?: MaterialTheme.colorScheme.primary
+                                ?: AppColors.primary
                             
                             InputChip(
                                 selected = true,
@@ -202,8 +195,8 @@ fun AeonTagSelectionContent(
             
             Surface(
                 shape = RoundedCornerShape(dims.spacingXl),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke((dims.spacingXs / 4), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                color = AppColors.recessedSurface,
+                border = BorderStroke((dims.spacingXs / 4), AppColors.divider.copy(alpha = 0.3f))
             ) {
                 Column {
                     AeonSearchField(
@@ -219,7 +212,7 @@ fun AeonTagSelectionContent(
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = dims.spacingLg),
                                 thickness = (dims.spacingXs / 8),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                color = AppColors.divider.copy(alpha = 0.2f)
                             )
                             
                             Column(modifier = Modifier.padding(dims.spacingLg)) {
@@ -231,7 +224,7 @@ fun AeonTagSelectionContent(
                                         modifier = Modifier
                                             .size(dims.spacingXl)
                                             .background(selectedColor, CircleShape)
-                                            .border((dims.spacingXs / 4), Color.Black.copy(alpha = 0.1f), CircleShape)
+                                            .border((dims.spacingXs / 4), AppColors.divider.copy(alpha = 0.3f), CircleShape)
                                     )
                                     Text(
                                         "Create \"${searchQuery.trim()}\"",
@@ -270,7 +263,7 @@ fun AeonTagSelectionContent(
                                                 .clickable { selectedColor = color }
                                                 .border(
                                                     width = if (selectedColor == color) (dims.spacingXs * 0.625f) else 0.dp,
-                                                    color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                                    color = if (selectedColor == color) AppColors.primary else AppColors.transparent,
                                                     shape = CircleShape
                                                 )
                                         )
@@ -318,7 +311,7 @@ fun AeonTagSelectionContent(
                                             Icon(
                                                 Icons.Rounded.Edit, 
                                                 null, 
-                                                tint = MaterialTheme.colorScheme.primary, 
+                                                tint = AppColors.primary, 
                                                 modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
@@ -333,7 +326,7 @@ fun AeonTagSelectionContent(
                                             Icon(
                                                 Icons.Rounded.DeleteOutline, 
                                                 null, 
-                                                tint = MaterialTheme.colorScheme.error, 
+                                                tint = AppColors.error, 
                                                 modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
@@ -342,7 +335,7 @@ fun AeonTagSelectionContent(
                                     Icon(
                                         Icons.Rounded.CheckCircle, 
                                         null, 
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = AppColors.primary,
                                         modifier = Modifier.size(dims.spacingXl)
                                     )
                                 } else {
@@ -364,14 +357,14 @@ fun AeonTagSelectionContent(
                                 Icon(
                                     Icons.AutoMirrored.Rounded.Label, 
                                     null, 
-                                    tint = MaterialTheme.colorScheme.outlineVariant,
+                                    tint = AppColors.divider,
                                     modifier = Modifier.size(dims.iconSize2xl)
                                 )
                                 Spacer(modifier = Modifier.height(dims.spacingSm))
                                 Text(
                                     if (searchQuery.isBlank()) "No tags found" else "No match for \"$searchQuery\"",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                             }
                         }
@@ -393,7 +386,7 @@ fun AeonTagSelectionContent(
                         .padding(bottom = dims.spacingSm),
                     shape = RoundedCornerShape(dims.spacingXl),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = AppColors.primary
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = dims.spacingXs / 2)
                 ) {

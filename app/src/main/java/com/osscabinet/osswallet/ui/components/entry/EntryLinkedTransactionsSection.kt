@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun EntryLinkedTransactionsSection(
@@ -36,8 +37,8 @@ fun EntryLinkedTransactionsSection(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+            color = AppColors.primary.copy(alpha = 0.05f),
+            border = BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.15f)),
             modifier = Modifier.fillMaxWidth(),
             onClick = onShowSheet
         ) {
@@ -47,7 +48,7 @@ fun EntryLinkedTransactionsSection(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    color = AppColors.primary.copy(alpha = 0.1f),
                     modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -55,7 +56,7 @@ fun EntryLinkedTransactionsSection(
                             Icons.Rounded.Link,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = AppColors.primary
                         )
                     }
                 }
@@ -63,14 +64,14 @@ fun EntryLinkedTransactionsSection(
                 Text(
                     text = "Link Transaction",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.primary
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = AppColors.primary
                 )
             }
         }
@@ -109,8 +110,8 @@ private fun EntryLinkedTransactionItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        color = AppColors.insetSurface.copy(alpha = 0.2f),
+        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f))
     ) {
         Box {
             AeonTransactionItem(
@@ -129,7 +130,7 @@ private fun EntryLinkedTransactionItem(
                 showClosingBalance = false,
                 showDividers = false,
                 status = tx.status,
-                containerColor = Color.Transparent,
+                containerColor = AppColors.transparent,
                 onClick = { /* Read-only */ },
                 modifier = Modifier.padding(end = 48.dp)
             )
@@ -140,12 +141,12 @@ private fun EntryLinkedTransactionItem(
                     .align(Alignment.CenterEnd)
                     .padding(end = 8.dp)
                     .size(32.dp)
-                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f), CircleShape)
+                    .background(AppColors.errorContainer.copy(alpha = 0.1f), CircleShape)
             ) {
                 Icon(
                     Icons.Rounded.LinkOff,
                     contentDescription = "Remove link",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = AppColors.error,
                     modifier = Modifier.size(18.dp)
                 )
             }

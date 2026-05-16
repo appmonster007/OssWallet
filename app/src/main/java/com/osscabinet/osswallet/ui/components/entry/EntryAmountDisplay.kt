@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Standardized amount display with auto-resizing text and currency selector.
@@ -29,7 +30,7 @@ fun EntryAmountDisplay(
     onCurrencyClick: (String) -> Unit,
     onAmountClick: () -> Unit,
     modifier: Modifier = Modifier,
-    amountColor: Color = MaterialTheme.colorScheme.primary,
+    amountColor: Color = AppColors.primary,
     supportedCurrencies: List<String> = listOf("USD"),
     showCurrency: Boolean = true
 ) {

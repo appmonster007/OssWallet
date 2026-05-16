@@ -33,6 +33,7 @@ import androidx.compose.ui.zIndex
 import kotlinx.coroutines.isActive
 import kotlin.math.max
 import kotlin.math.min
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A robust, Material 3-compliant reorderable list component designed for dashboard sections
@@ -286,7 +287,7 @@ fun <T> CardReorderableList(
                 ) {
                     if (isDragging) {
                         // Ghost Placeholder with dashed outline
-                        val outlineColor = MaterialTheme.colorScheme.outlineVariant
+                        val outlineColor = AppColors.divider
                         val cornerRadius = with(density) { 16.dp.toPx() }
                         val strokeWidth = with(density) { 2.dp.toPx() }
                         Box(
@@ -343,7 +344,7 @@ fun <T> CardReorderableList(
                     tonalElevation = elevation,
                     shadowElevation = 0.dp, // Elevation handled by graphicsLayer for better performance during animation
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface
+                    color = AppColors.panelSurface
                 ) {
                     // Provide LazyItemScope via a single-item LazyColumn
                     LazyColumn(

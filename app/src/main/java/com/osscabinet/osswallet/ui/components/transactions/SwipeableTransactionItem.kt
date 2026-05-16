@@ -17,6 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -34,6 +37,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 const val ANIMATION_DURATION = 400
 const val ACTION_ITEM_SIZE = 64
@@ -98,7 +102,7 @@ fun SwipeableTransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(AppColors.cardSurface)
     ) {
         // Actions Layer (Background)
         Box(
@@ -202,7 +206,7 @@ fun SwipeableTransactionItem(
                     )
                 },
             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            color = MaterialTheme.colorScheme.surface,
+            color = AppColors.panelSurface,
             tonalElevation = if (animatedOffset != 0f) 8.dp else 0.dp,
             shadowElevation = if (animatedOffset != 0f) 4.dp else 0.dp
         ) {
@@ -227,9 +231,9 @@ fun StatusActionsRow(
         val statuses = TransactionStatus.values().filter { it != currentStatus }
         statuses.forEachIndexed { index, status ->
             val (icon, color) = when (status) {
-                TransactionStatus.CLEARED -> Icons.Rounded.CheckCircle to Color(0xFF4CAF50)
-                TransactionStatus.RECONCILE -> Icons.Rounded.AccountBalance to Color(0xFF2196F3)
-                TransactionStatus.UNCLEARED -> Icons.Rounded.Pending to Color(0xFFFF9800)
+                TransactionStatus.CLEARED -> Icons.Rounded.CheckCircle to PositiveAmountColor
+                TransactionStatus.RECONCILE -> Icons.Rounded.AccountBalance to AccentBlue
+                TransactionStatus.UNCLEARED -> Icons.Rounded.Pending to WarningColor
             }
 
             val itemProgress = (progress * 1.5f - (index * 0.2f)).coerceIn(0f, 1f)
@@ -261,9 +265,9 @@ fun TransactionActionsRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val actions = listOf(
-            Triple(Icons.Rounded.CallSplit, "Split", MaterialTheme.colorScheme.primary),
-            Triple(Icons.Rounded.ContentCopy, "Clone", MaterialTheme.colorScheme.tertiary),
-            Triple(Icons.Rounded.DeleteForever, "Delete", MaterialTheme.colorScheme.error)
+            Triple(Icons.Rounded.CallSplit, "Split", AppColors.primary),
+            Triple(Icons.Rounded.ContentCopy, "Clone", AppColors.tertiary),
+            Triple(Icons.Rounded.DeleteForever, "Delete", AppColors.error)
         )
 
         actions.forEachIndexed { index, (icon, label, color) ->
@@ -356,7 +360,7 @@ fun PreviewSwipeableTransactionItem_LeftSwipe() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .background(AppColors.cardSurface)
             ) {
                 TransactionActionsRow(
                     onSplit = {}, onClone = {}, onDelete = {},
@@ -369,7 +373,7 @@ fun PreviewSwipeableTransactionItem_LeftSwipe() {
                         .fillMaxWidth()
                         .offset { IntOffset(offsetPx.roundToInt(), 0) },
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = MaterialTheme.colorScheme.surface,
+                    color = AppColors.panelSurface,
                     tonalElevation = 8.dp,
                     shadowElevation = 4.dp
                 ) {
@@ -392,7 +396,7 @@ fun PreviewSwipeableTransactionItem_RightSwipe() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .background(AppColors.cardSurface)
             ) {
                 StatusActionsRow(
                     currentStatus = TransactionStatus.CLEARED,
@@ -406,7 +410,7 @@ fun PreviewSwipeableTransactionItem_RightSwipe() {
                         .fillMaxWidth()
                         .offset { IntOffset(offsetPx.roundToInt(), 0) },
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = MaterialTheme.colorScheme.surface,
+                    color = AppColors.panelSurface,
                     tonalElevation = 8.dp,
                     shadowElevation = 4.dp
                 ) {
@@ -423,16 +427,16 @@ private fun MockContentPreview() {
         modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.cardPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(AeonTheme.dimensions.iconSizeXl).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
+        Box(Modifier.size(AeonTheme.dimensions.iconSizeXl).background(AppColors.accentContainer.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ShoppingBag, null, tint = AppColors.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
         }
         Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
         Column(Modifier.weight(1f)) {
-            Box(Modifier.size(140.dp, 16.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp)))
+            Box(Modifier.size(140.dp, 16.dp).background(AppColors.divider.copy(alpha = 0.5f), RoundedCornerShape(4.dp)))
             Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
-            Box(Modifier.size(90.dp, 12.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
+            Box(Modifier.size(90.dp, 12.dp).background(AppColors.divider.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
         }
-        Text("$ 45.00", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)
+        Text("$ 45.00", fontWeight = FontWeight.Black, color = AppColors.error)
     }
 }
 

@@ -62,6 +62,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -192,7 +193,7 @@ fun AccountDetailScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Show Planned Payments", style = MaterialTheme.typography.bodyLarge)
-                            Text("Include future transactions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                            Text("Include future transactions", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                         }
                         Switch(
                             checked = state.showPlannedPayments,
@@ -206,7 +207,7 @@ fun AccountDetailScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Use Note as Header", style = MaterialTheme.typography.bodyLarge)
-                            Text("Primary header will show transaction note", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                            Text("Primary header will show transaction note", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                         }
                         Switch(
                             checked = state.useNoteAsHeader,
@@ -314,13 +315,13 @@ fun AccountDetailScreen(
                                             Icons.Rounded.History,
                                             contentDescription = null,
                                             modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                            tint = AppColors.contentSecondary.copy(alpha = 0.2f)
                                         )
                                         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                                         Text(
                                             "No transactions yet",
                                             style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.outline
+                                            color = AppColors.border
                                         )
                                     }
                                 }
@@ -466,7 +467,7 @@ fun DynamicAccountDetailCards(
 
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
+            .background(AppColors.screenBackground)
     ) {
         AeonCardList(
             cards = cardsConfig.cards.filter { it !is AccountHeroCardConfig },

@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CashFlowCard(
@@ -104,7 +105,7 @@ fun CashFlowCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -227,7 +228,7 @@ private fun CashFlowDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -260,7 +261,7 @@ private fun CashFlowDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }
 
@@ -284,27 +285,27 @@ internal fun AeonFlowBreakdownItem(
         Text(
             curr,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            color = AppColors.contentSecondary // Level 3 token
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 formatCurrencyRight(amount, curr, precision, shorten = true),
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    fontSize = 14.sp
                 )
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary
                 )
             }
         }
@@ -319,8 +320,8 @@ fun AeonFlowCard(
     type: CashFlowType,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
-    incomeColor: Color = Color(0xFF004D40), // Teal (#004D40) for positive/healthy
-    expenseColor: Color = Color(0xFFB3261E), // Red (#B3261E) for warnings
+    incomeColor: Color = PositiveAmountColor,
+    expenseColor: Color = NegativeAmountColor,
     precision: Int = 2,
     onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
@@ -328,9 +329,8 @@ fun AeonFlowCard(
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
     
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+        color = AppColors.cardSurfaceProminent,
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(0.5.dp, color.copy(alpha = 0.1f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
@@ -347,7 +347,7 @@ fun AeonFlowCard(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
+                        fontSize = 12.sp
                     ),
                     color = color
                 )

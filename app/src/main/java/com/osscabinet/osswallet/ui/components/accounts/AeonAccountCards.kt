@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonAccountCardSmall(
@@ -50,7 +51,7 @@ fun AeonAccountCardSmall(
     modifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -123,7 +124,7 @@ fun AeonAccountCardMedium(
     modifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -211,7 +212,7 @@ fun AeonAccountCardLarge(
     onClickIncome: (() -> Unit)? = null,
     onClickExpense: (() -> Unit)? = null
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance

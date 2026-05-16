@@ -29,8 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
 import java.math.BigDecimal
@@ -70,7 +69,7 @@ fun AeonLineChart(
         }
     }
 
-    val verticalGuideColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val verticalGuideColor = ChartZeroLineColor
     val dims = AeonTheme.dimensions
     
     BoxWithConstraints(modifier = modifier) {
@@ -167,9 +166,9 @@ fun AeonLineChart(
         ) {
             // 1. Draw Grid System and Y-Axis Labels
             if (showGrid) {
-                val gridColor = Color.Gray.copy(alpha = 0.2f)
+                val gridColor = ChartGridColor
                 val labelPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.GRAY
+                    color = android.graphics.Color.argb(140, 158, 158, 158)
                     textSize = 10.sp.toPx()
                     textAlign = android.graphics.Paint.Align.RIGHT
                     isAntiAlias = true
@@ -254,7 +253,7 @@ fun AeonLineChart(
                     drawPath(
                         path = areaPath,
                         brush = Brush.verticalGradient(
-                            colors = listOf(s.color.copy(alpha = 0.2f), Color.Transparent),
+                            colors = listOf(s.color.copy(alpha = 0.2f), ColorTransparent),
                             startY = topPadding,
                             endY = topPadding + chartHeight
                         )
@@ -291,7 +290,7 @@ fun AeonLineChart(
                     if (selectedIndex < s.dataPoints.size) {
                         val p = s.dataPoints[selectedIndex]
                         val y = valueToY(p.y)
-                        drawCircle(color = Color.White, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y))
+                        drawCircle(color = ChartDotHighlight, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y))
                         drawCircle(color = s.color, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y), style = Stroke(width = (dims.spacingXs / 2).toPx()))
                     }
                 }
@@ -320,17 +319,17 @@ fun AeonLineChart(
                         .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                         .width(tooltipWidth)
                         .clip(RoundedCornerShape(dims.spacingMd)),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    color = AppColors.insetSurface.copy(alpha = 0.95f),
                     tonalElevation = dims.spacingSm,
                     shadowElevation = dims.spacingSm,
-                    border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.border.copy(alpha = 0.2f))
                 ) {
                     Column(modifier = Modifier.padding(dims.spacingMd)) {
                         if (label != null) {
                             Text(
                                 text = label,
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = AppColors.contentPrimary,
                                 modifier = Modifier.padding(bottom = dims.spacingSm)
                             )
                         }
@@ -353,13 +352,13 @@ fun AeonLineChart(
                                         Text(
                                             text = s.name,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = AppColors.contentSecondary
                                         )
                                     }
                                     Text(
                                         text = formatCurrencyRight(p.y, currency, precision),
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = AppColors.contentPrimary
                                     )
                                 }
                             }
@@ -380,7 +379,7 @@ fun AeonLineChartPreview() {
                 series = listOf(
                     AeonLineChartSeries(
                         name = "Balance",
-                        color = Color(0xFF2979FF),
+                        color = ChartColorBlue,
                         dataPoints = listOf(
                             AeonLineChartPoint(0f, BigDecimal("1200.00"), "Jan"),
                             AeonLineChartPoint(1f, BigDecimal("1500.00"), "Feb"),
@@ -392,7 +391,7 @@ fun AeonLineChartPreview() {
                     ),
                     AeonLineChartSeries(
                         name = "Expense",
-                        color = Color(0xFFF44336),
+                        color = TagPresetColors[0],
                         isDashed = true,
                         fillGradient = false,
                         dataPoints = listOf(

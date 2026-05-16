@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 data class AeonTimelineOption(val label: String, val icon: ImageVector)
 
@@ -27,7 +28,7 @@ fun AeonSegmentedControl(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        color = AppColors.cardSurface,
         shape = RoundedCornerShape(20.dp),
         modifier = modifier.fillMaxWidth().height(60.dp)
     ) {
@@ -38,11 +39,11 @@ fun AeonSegmentedControl(
             options.forEachIndexed { index, option ->
                 val isSelected = selectedOption == index
                 val backgroundColor by animateColorAsState(
-                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    if (isSelected) AppColors.primary else AppColors.transparent,
                     label = "bgColor"
                 )
                 val contentColor by animateColorAsState(
-                    if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
                     label = "contentColor"
                 )
                 
@@ -116,11 +117,11 @@ fun <T> AeonDropdown(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                focusedBorderColor = AppColors.primary,
+                unfocusedBorderColor = AppColors.divider,
+                focusedLabelColor = AppColors.primary,
+                unfocusedContainerColor = AppColors.insetSurface.copy(alpha = 0.2f),
+                focusedContainerColor = AppColors.insetSurface.copy(alpha = 0.1f)
             ),
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
         )
@@ -129,7 +130,7 @@ fun <T> AeonDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
+                .background(AppColors.panelSurface)
                 .clip(RoundedCornerShape(16.dp))
         ) {
             options.forEach { option ->
@@ -141,7 +142,7 @@ fun <T> AeonDropdown(
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                             ),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         ) 
                     },
                     onClick = {

@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonFilterSelection(
@@ -60,8 +61,8 @@ fun AeonFilterSelection(
                     Surface(
                         onClick = { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        border = BorderStroke((dims.spacingXs / 4), MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        color = AppColors.primary.copy(alpha = 0.1f),
+                        border = BorderStroke((dims.spacingXs / 4), AppColors.primary.copy(alpha = 0.2f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -69,9 +70,9 @@ fun AeonFilterSelection(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
                             Spacer(modifier = Modifier.width(dims.spacingSm))
-                            Text("Create New Filter", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text("Create New Filter", color = AppColors.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -89,9 +90,9 @@ fun AeonFilterSelection(
                             shape = RoundedCornerShape(dims.componentCornerRadius),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (filter.id == selectedFilterId) 
-                                    MaterialTheme.colorScheme.primaryContainer 
+                                    AppColors.selectionContainer 
                                 else 
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                    AppColors.insetSurface.copy(alpha = 0.3f)
                             )
                         ) {
                             Row(
@@ -101,13 +102,13 @@ fun AeonFilterSelection(
                                 Surface(
                                     modifier = Modifier.size(dims.iconSizeXl),
                                     shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    color = AppColors.primary.copy(alpha = 0.1f)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             Icons.Rounded.FilterList,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = AppColors.primary,
                                             modifier = Modifier.size(dims.containerCornerRadius)
                                         )
                                     }
@@ -124,13 +125,13 @@ fun AeonFilterSelection(
                                         if (filter.filter.accountIds.isEmpty()) append("All Accounts")
                                         else append("${filter.filter.accountIds.size} Accounts")
                                     }
-                                    Text(detailText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                    Text(detailText, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                                 }
                                 if (filter.id == selectedFilterId) {
                                     Icon(
                                         Icons.Rounded.FilterList, // Or Check
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = AppColors.primary
                                     )
                                 }
                             }

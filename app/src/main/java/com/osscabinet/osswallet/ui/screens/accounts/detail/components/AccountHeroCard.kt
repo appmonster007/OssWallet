@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AccountHeroCard(
@@ -64,7 +65,7 @@ fun AccountHeroCard(
     val accountColor = try {
         Color(account.colorHex.toColorInt())
     } catch (_: Exception) {
-        MaterialTheme.colorScheme.primary
+        AppColors.primary
     }
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -100,7 +101,7 @@ fun AccountHeroCard(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
 
                 val balanceParts =
@@ -117,7 +118,7 @@ fun AccountHeroCard(
                         withStyle(
                             SpanStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                color = AppColors.contentSecondary.copy(alpha = 0.5f),
                                 fontSize = 18.sp
                             )
                         ) {
@@ -129,7 +130,7 @@ fun AccountHeroCard(
                         fontSize = 32.sp,
                         letterSpacing = (-1).sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppColors.contentPrimary
                 )
 
                 if (account.currencyCode != baseCurrency) {
@@ -144,7 +145,7 @@ fun AccountHeroCard(
                         }",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -160,7 +161,7 @@ fun AccountHeroCard(
                     amount = income,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                    color = Color(0xFF00695C),
+                    color = AppColors.primary,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickIncome(filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
                 )
@@ -169,7 +170,7 @@ fun AccountHeroCard(
                     amount = expense,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                    color = Color(0xFFC62828),
+                    color = AppColors.error,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
                 )
@@ -183,7 +184,7 @@ fun AccountHeroCard(
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
                         )
                     )
 
@@ -193,11 +194,11 @@ fun AccountHeroCard(
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                color = AppColors.sheetSurface,
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                    AppColors.divider.copy(alpha = 0.2f)
                                 ),
                                 modifier = Modifier.clickable { onClickCurrency(curr) }
                             ) {
@@ -277,7 +278,7 @@ private fun FlowSummaryItem(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = AppColors.contentPrimary
             )
         }
     }

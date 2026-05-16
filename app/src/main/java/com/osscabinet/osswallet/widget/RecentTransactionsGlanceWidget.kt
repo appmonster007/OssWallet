@@ -45,6 +45,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import kotlinx.serialization.json.Json
 
@@ -175,7 +176,7 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float, primaryDisplay:
         ColorProvider(R.color.widget_expense_color)
     }
 
-    val categoryColor = tx.categoryColor?.let { Color(it) } ?: Color(0xFF9E9E9E)
+    val categoryColor = tx.categoryColor?.let { Color(it) } ?: NeutralStatusColor
     val iconBgColor = categoryColor.copy(alpha = 0.15f)
     val iconTextColor = categoryColor
 

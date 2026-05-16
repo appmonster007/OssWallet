@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Robust, unified card list component for all analytical screens.
@@ -146,9 +147,9 @@ private fun CardErrorState(message: String?) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            containerColor = AppColors.errorContainer.copy(alpha = 0.2f)
         ),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f)),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, AppColors.error.copy(alpha = 0.2f)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
@@ -159,13 +160,13 @@ private fun CardErrorState(message: String?) {
             Icon(
                 imageVector = Icons.Rounded.ErrorOutline,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
+                tint = AppColors.onErrorContainer,
                 modifier = Modifier.size(20.dp)
             )
             Text(
                 text = message ?: "Failed to load card",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = AppColors.onErrorContainer
             )
         }
     }

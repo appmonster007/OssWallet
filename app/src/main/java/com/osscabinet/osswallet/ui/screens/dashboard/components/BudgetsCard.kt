@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun BudgetsCard(
@@ -54,7 +56,7 @@ fun BudgetsCard(
                     Icon(
                         Icons.Default.MoreVert,
                         contentDescription = "Options",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -82,7 +84,7 @@ fun BudgetsCard(
             Text(
                 text = "No budgets yet",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
@@ -105,20 +107,16 @@ private fun BudgetProgressRow(
     onClick: () -> Unit,
     precision: Int = 2
 ) {
-    val healthyColor = Color(0xFF00695C)
-    val warningColor = Color(0xFFC62828)
-    
     val trackColor = when (progress.alertLevel) {
-        BudgetAlertLevel.EXCEEDED -> warningColor
-        BudgetAlertLevel.WARNING -> warningColor.copy(alpha = 0.8f)
-        BudgetAlertLevel.NONE -> healthyColor
+        BudgetAlertLevel.EXCEEDED -> AppColors.error
+        BudgetAlertLevel.WARNING -> AppColors.error.copy(alpha = 0.8f)
+        BudgetAlertLevel.NONE -> PositiveAmountColor
     }
 
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+        color = AppColors.cardSurfaceProminent, // Level 2: Sub-Section Unit
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -134,7 +132,7 @@ private fun BudgetProgressRow(
                         if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) Icons.Rounded.ErrorOutline else Icons.Rounded.Savings,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = trackColor.copy(alpha = 0.7f)
+                        tint = trackColor.copy(alpha = 0.8f)
                     )
                     Text(
                         text = progress.budget.name,
@@ -142,7 +140,7 @@ private fun BudgetProgressRow(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.2).sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = AppColors.contentPrimary
                     )
                 }
                 Text(
@@ -161,7 +159,7 @@ private fun BudgetProgressRow(
                 progress = { progress.percentage.coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().height(10.dp),
                 color = trackColor,
-                trackColor = trackColor.copy(alpha = 0.1f),
+                trackColor = AppColors.componentOnCard,
                 strokeCap = StrokeCap.Round
             )
             
@@ -177,9 +175,10 @@ private fun BudgetProgressRow(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
                         ),
-                        color = trackColor.copy(alpha = 0.6f)
+                        color = trackColor
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
@@ -189,23 +188,25 @@ private fun BudgetProgressRow(
                         },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) warningColor else MaterialTheme.colorScheme.onSurface
+                            color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary
                         )
                     )
                 }
                 
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(8.dp)
+                    color = AppColors.insetSurface, // Level 3: Deepest unit
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, AppColors.border) // Mandatory for Level 3
                 ) {
                     Text(
                         text = "${formatAmount(progress.spent, precision)} / ${formatAmount(progress.limit, precision)}",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
+                            fontFeatureSettings = "tnum",
+                            fontSize = 12.sp
                         ),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary // Paired with SurfaceVariant
                     )
                 }
             }

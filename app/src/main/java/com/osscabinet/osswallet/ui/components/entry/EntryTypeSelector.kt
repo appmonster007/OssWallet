@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.*
 
 /**
  * Animated type selector for entry screens.
@@ -28,7 +29,7 @@ fun <T> EntryTypeSelector(
     selectedType: T,
     onTypeSelected: (T) -> Unit,
     types: List<Triple<ImageVector, String, T>>,
-    selectedColor: Color = MaterialTheme.colorScheme.primary,
+    selectedColor: Color = AppColors.primary,
     itemWidth: androidx.compose.ui.unit.Dp = 80.dp
 ) {
     val selectedIndex = types.indexOfFirst { it.third == selectedType }.coerceAtLeast(0)
@@ -52,8 +53,8 @@ fun <T> EntryTypeSelector(
         modifier = Modifier
             .height(44.dp)
             .clip(RoundedCornerShape(32.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
+            .background(AppColors.recessedSurface)
+            .border(0.5.dp, AppColors.divider.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
             .padding(4.dp)
     ) {
         Box(
@@ -91,7 +92,7 @@ fun <T> EntryTypeSelector(
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        tint = if (isSelected) ColorOnDark else AppColors.contentSecondary.copy(alpha = 0.6f),
                         modifier = Modifier
                             .size(26.dp)
                             .graphicsLayer(scaleX = scale, scaleY = scale)

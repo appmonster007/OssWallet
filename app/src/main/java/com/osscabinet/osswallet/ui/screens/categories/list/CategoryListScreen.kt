@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OutlineLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +73,7 @@ fun CategoryListScreen(
                 labelMapper = { it.name },
                 parentIdMapper = { it.parentId },
                 iconMapper = { AppIconMap[it.iconName] },
-                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
+                colorMapper = { if (it.colorHex == -1) OutlineLight else Color(it.colorHex) },
                 onEditClick = { selectedCategoryForEdit = it },
                 onAddChildClick = { parent ->
                     selectedCategoryForEdit = Category(

@@ -41,6 +41,7 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -86,7 +87,7 @@ fun RecentActivitiesScreen(
                     Icon(
                         imageVector = Icons.Rounded.History,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = AppColors.primary
                     )
                     Text(
                         text = headerTitle,
@@ -105,7 +106,7 @@ fun RecentActivitiesScreen(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
-                            fontSize = 9.sp
+                            fontSize = 12.sp
                         )
                     )
                 }
@@ -129,8 +130,8 @@ fun RecentActivitiesScreen(
                     ) {
                         Text(
                             "No recent activities",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AppColors.contentSecondary,
                         )
                     }
                 }
@@ -140,7 +141,7 @@ fun RecentActivitiesScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
+                                .background(AppColors.screenBackground)
                         ) {
                             TransactionHeader(
                                 title = group.headerData.title,

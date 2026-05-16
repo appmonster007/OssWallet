@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Standardized row with an icon, label, and switch for entry screens.
@@ -23,8 +24,8 @@ fun EntrySwitchRow(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    iconContainerColor: Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-    iconTint: Color = MaterialTheme.colorScheme.secondary
+    iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
+    iconTint: Color = AppColors.secondary
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -54,7 +55,7 @@ fun EntrySwitchRow(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
         }
@@ -62,7 +63,7 @@ fun EntrySwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = Color(0xFF004D40)
+                checkedTrackColor = AppColors.switchTrackOn
             )
         )
     }

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Compact action chip for entry screens.
@@ -39,7 +40,7 @@ fun EntryActionChip(
     isSelected: Boolean = false,
     iconTint: Color? = null,
     iconContainerColor: Color? = null,
-    selectedColor: Color = MaterialTheme.colorScheme.primary
+    selectedColor: Color = AppColors.primary
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -48,13 +49,13 @@ fun EntryActionChip(
     
     val backgroundColor by animateColorAsState(
         if (isSelected) selectedColor.copy(alpha = 0.08f)
-        else MaterialTheme.colorScheme.surfaceContainerLowest,
+        else AppColors.recessedSurface,
         label = "bgColor"
     )
     
     val borderColor by animateColorAsState(
         if (isSelected) selectedColor
-        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+        else AppColors.divider.copy(alpha = 0.2f),
         label = "borderColor"
     )
 
@@ -81,7 +82,7 @@ fun EntryActionChip(
         ) {
             Surface(
                 shape = CircleShape,
-                color = iconContainerColor ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                color = iconContainerColor ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else AppColors.primary.copy(alpha = 0.08f)),
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -89,7 +90,7 @@ fun EntryActionChip(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconTint ?: (if (isSelected) selectedColor else MaterialTheme.colorScheme.primary)
+                        tint = iconTint ?: (if (isSelected) selectedColor else AppColors.primary)
                     )
                 }
             }
@@ -99,7 +100,7 @@ fun EntryActionChip(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                     letterSpacing = 0.2.sp
                 ),
-                color = if (isSelected) selectedColor else MaterialTheme.colorScheme.onSurface,
+                color = if (isSelected) selectedColor else AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )

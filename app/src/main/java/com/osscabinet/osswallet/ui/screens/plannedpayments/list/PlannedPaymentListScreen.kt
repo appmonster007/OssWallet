@@ -78,6 +78,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,9 +130,9 @@ private fun SwipeablePaymentItem(
             val isStartToEnd = direction == SwipeToDismissBoxValue.StartToEnd
             val bgColor by animateColorAsState(
                 targetValue = when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF004D40).copy(alpha = 0.15f)
-                    SwipeToDismissBoxValue.EndToStart -> Color(0xFFB3261E).copy(alpha = 0.15f)
-                    else -> MaterialTheme.colorScheme.surfaceContainerLow
+                    SwipeToDismissBoxValue.StartToEnd -> AppColors.primary.copy(alpha = 0.15f)
+                    SwipeToDismissBoxValue.EndToStart -> AppColors.error.copy(alpha = 0.15f)
+                    else -> AppColors.cardSurface
                 },
                 label = "swipeBg"
             )
@@ -147,14 +148,14 @@ private fun SwipeablePaymentItem(
                     SwipeToDismissBoxValue.StartToEnd -> Icon(
                         Icons.Rounded.CheckCircle,
                         contentDescription = "Confirm",
-                        tint = Color(0xFF004D40),
+                        tint = AppColors.primary,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                     )
 
                     SwipeToDismissBoxValue.EndToStart -> Icon(
                         Icons.Rounded.SkipNext,
                         contentDescription = "Skip",
-                        tint = Color(0xFFB3261E),
+                        tint = AppColors.error,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                     )
 
@@ -177,8 +178,6 @@ private fun SwipeablePaymentItem(
     }
 }
 
-private val TealHealthy = Color(0xFF004D40)
-private val RedWarning = Color(0xFFB3261E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -232,7 +231,7 @@ fun PlannedPaymentListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = AppColors.screenBackground
                 )
             )
         }
@@ -251,7 +250,7 @@ fun PlannedPaymentListScreen(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            color = AppColors.primary.copy(alpha = 0.08f),
                             modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -259,7 +258,7 @@ fun PlannedPaymentListScreen(
                                     Icons.Rounded.Repeat,
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = AppColors.primary
                                 )
                             }
                         }
@@ -271,7 +270,7 @@ fun PlannedPaymentListScreen(
                         Text(
                             "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -289,7 +288,7 @@ fun PlannedPaymentListScreen(
                             ManagementSectionHeader(
                                 title = "OVERDUE",
                                 count = overdue.size,
-                                sectionColor = RedWarning
+                                sectionColor = AppColors.error
                             )
                         }
                         items(overdue, key = { it.id }) { payment ->
@@ -326,7 +325,7 @@ fun PlannedPaymentListScreen(
                                 ManagementSectionHeader(
                                     title = "UPCOMING",
                                     count = upcomingNonOverdue.size,
-                                    sectionColor = MaterialTheme.colorScheme.primary
+                                    sectionColor = AppColors.primary
                                 )
                             }
                             items(
@@ -365,7 +364,7 @@ fun PlannedPaymentListScreen(
                             ManagementSectionHeader(
                                 title = "SCHEDULED",
                                 count = scheduled.size,
-                                sectionColor = MaterialTheme.colorScheme.secondary
+                                sectionColor = AppColors.secondary
                             )
                         }
                         items(scheduled, key = { it.id }) { payment ->
@@ -400,7 +399,7 @@ fun PlannedPaymentListScreen(
                             ManagementSectionHeader(
                                 title = "PAUSED",
                                 count = paused.size,
-                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                sectionColor = AppColors.contentSecondary.copy(alpha = 0.4f)
                             )
                         }
                         items(paused, key = { it.id }) { payment ->
@@ -449,20 +448,20 @@ private fun PlannedPaymentListItem(
     val relativeDateLabel = remember(dateToShow, now) { formatRelativeDate(dateToShow, now) }
 
     val typeColor = when {
-        isOverdue -> RedWarning
-        payment.transactionType == TransactionType.INCOME -> TealHealthy
-        else -> RedWarning
+        isOverdue -> AppColors.error
+        payment.transactionType == TransactionType.INCOME -> AppColors.primary
+        else -> AppColors.error
     }
     val dateColor =
-        if (isOverdue) RedWarning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        if (isOverdue) AppColors.error else AppColors.contentSecondary.copy(alpha = 0.6f)
 
     val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
     val formattedAmount = remember(payment.amount) {
         payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
-    
+
     val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat
-    val statusColor = if (isOverdue) RedWarning else Color(android.graphics.Color.parseColor(payment.status.colorHex))
+    val statusColor = if (isOverdue) AppColors.error else Color(android.graphics.Color.parseColor(payment.status.colorHex))
 
     ManagementListItem(
         onClick = onTap,
@@ -481,7 +480,7 @@ private fun PlannedPaymentListItem(
                 Text(
                     payment.currency,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
         },
@@ -502,7 +501,7 @@ private fun PlannedPaymentListItem(
                 )
             }
             DropdownMenuItem(
-                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                text = { Text("Delete", color = AppColors.error) },
                 onClick = { onDismiss(); onDelete() }
             )
         },

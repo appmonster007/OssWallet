@@ -36,6 +36,7 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Interactive pie wheel chart for category breakdown.
@@ -52,8 +53,8 @@ fun CategoryBreakdownPieChart(
     var selectedSegment by remember { mutableStateOf<CategoryPieChartData?>(null) }
     var showSubcategories by remember { mutableStateOf(false) }
     var currentData by remember { mutableStateOf(data) }
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val backgroundColor = AppColors.screenBackground
+    val surfaceColor = AppColors.panelSurface
     
     // When data changes, reset to top-level view
     if (data != currentData && !showSubcategories) {
@@ -178,14 +179,14 @@ fun CategoryBreakdownPieChart(
                             text = formatAmount(displaySegment.amount.abs()),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = AppColors.contentPrimary
                         )
                         if (displaySegment.hasSubcategories && !showSubcategories) {
                             Text(
                                 text = "Double tap for subcategories",
                                 style = MaterialTheme.typography.labelSmall,
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = AppColors.contentSecondary
                             )
                         }
                     }

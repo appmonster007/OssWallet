@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun EntryLocationRow(
@@ -23,8 +24,8 @@ fun EntryLocationRow(
     Surface(
         onClick = onShowLocationSheet,
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        color = AppColors.recessedSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -33,7 +34,7 @@ fun EntryLocationRow(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                color = AppColors.tertiary.copy(alpha = 0.1f),
                 modifier = Modifier.size(32.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -41,7 +42,7 @@ fun EntryLocationRow(
                         Icons.Rounded.LocationOn,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.tertiary
+                        tint = AppColors.tertiary
                     )
                 }
             }
@@ -50,7 +51,7 @@ fun EntryLocationRow(
                 Text(
                     label,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 )
                 Text(
@@ -63,7 +64,7 @@ fun EntryLocationRow(
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
             )
         }
     }

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Dialog wrapping [AeonTimelinePeriodSelector] for selecting a [TimelineRange] in entry screens
@@ -37,7 +38,7 @@ fun AeonTimelineSheet(
     title: String = "Select Period"
 ) {
     var currentRange by remember(selectedRange) { mutableStateOf(selectedRange) }
-    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val surfaceColor = AppColors.cardSurfaceProminent
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

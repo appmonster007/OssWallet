@@ -31,7 +31,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
@@ -152,7 +152,7 @@ fun TemplateListScreenContent(
                     onDragEnd = { newList -> onUpdateOrder(newList) },
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(AppColors.screenBackground),
                     contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                 ) {
@@ -168,7 +168,7 @@ fun TemplateListScreenContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(AppColors.screenBackground),
                 contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {
@@ -195,9 +195,9 @@ fun ReorderTemplateItem(
 ) {
     Surface(
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = if (isDragging) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        border = if (isDragging) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        color = if (isDragging) AppColors.selectionContainer.copy(alpha = 0.9f)
+        else AppColors.insetSurface.copy(alpha = 0.3f),
+        border = if (isDragging) BorderStroke(1.dp, AppColors.primary) else null,
         shadowElevation = if (isDragging) 8.dp else 0.dp
     ) {
         Row(
@@ -209,11 +209,11 @@ fun ReorderTemplateItem(
             Icon(
                 Icons.Rounded.DragHandle,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
+                tint = AppColors.border,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
             )
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Icon(Icons.Rounded.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Rounded.Star, contentDescription = null, tint = AppColors.primary)
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
         }
@@ -231,15 +231,15 @@ fun TemplateItem(
     onCreatePlannedPayment: () -> Unit
 ) {
     val (badgeColor, badgeIcon) = when (template.transactionType) {
-        TransactionType.EXPENSE -> MaterialTheme.colorScheme.error to Icons.Rounded.ArrowDownward
-        TransactionType.INCOME -> Color(0xFF2E7D32) to Icons.Rounded.ArrowUpward
-        else -> MaterialTheme.colorScheme.secondary to Icons.Rounded.Sync
+        TransactionType.EXPENSE -> AppColors.error to Icons.Rounded.ArrowDownward
+        TransactionType.INCOME -> PositiveAmountColor to Icons.Rounded.ArrowUpward
+        else -> AppColors.secondary to Icons.Rounded.Sync
     }
 
     Card(
         onClick = onEdit,
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        colors = CardDefaults.cardColors(containerColor = AppColors.insetSurface.copy(alpha = 0.3f))
     ) {
         Row(
             modifier = Modifier
@@ -251,13 +251,13 @@ fun TemplateItem(
                 Surface(
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    color = AppColors.primary.copy(alpha = 0.1f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = getIconByName(categoryIconName),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = AppColors.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -268,12 +268,12 @@ fun TemplateItem(
                         .offset(x = (-4).dp, y = 4.dp),
                     shape = CircleShape,
                     color = badgeColor,
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
+                    border = BorderStroke(2.dp, AppColors.panelSurface)
                 ) {
                     Icon(
                         imageVector = badgeIcon,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = ColorOnDark,
                         modifier = Modifier
                             .size(16.dp)
                             .padding(2.dp)
@@ -283,24 +283,24 @@ fun TemplateItem(
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Column(modifier = Modifier.weight(1f)) {
                 Text(template.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text(categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                Text(categoryName, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
             }
             IconButton(onClick = onCreatePlannedPayment) {
                 Icon(
                     imageVector = Icons.Rounded.Schedule,
                     contentDescription = "Create Planned Payment",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = AppColors.primary
                 )
             }
             IconButton(onClick = onToggleStar) {
                 Icon(
                     imageVector = if (template.isStarred) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                     contentDescription = "Star",
-                    tint = if (template.isStarred) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    tint = if (template.isStarred) AppColors.primary else AppColors.border
                 )
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Delete", tint = AppColors.error)
             }
         }
     }
@@ -358,7 +358,7 @@ fun TemplateDialog(
                 Surface(
                     onClick = { showAccountPicker = true },
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    border = BorderStroke(1.dp, AppColors.border),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -366,7 +366,7 @@ fun TemplateDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(selectedAccount?.name ?: "Default Account (Optional)", color = if (selectedAccount != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
+                        Text(selectedAccount?.name ?: "Default Account (Optional)", color = if (selectedAccount != null) AppColors.contentPrimary else AppColors.border)
                         Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
                     }
                 }

@@ -26,6 +26,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.theme.OutlineLight
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CategoryEditSheet(
@@ -56,7 +58,7 @@ fun CategoryEditSheet(
             actions = {
                 if (isEditMode && !isMandatory && onDelete != null) {
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = AppColors.error)
                     }
                 }
                 
@@ -67,7 +69,7 @@ fun CategoryEditSheet(
                     Icon(
                         Icons.Rounded.Done,
                         contentDescription = "Save",
-                        tint = if (name.isNotBlank() && !isMandatory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        tint = if (name.isNotBlank() && !isMandatory) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.38f)
                     )
                 }
             }
@@ -85,7 +87,7 @@ fun CategoryEditSheet(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                        color = AppColors.errorContainer.copy(alpha = 0.2f)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -95,13 +97,13 @@ fun CategoryEditSheet(
                                 Icons.Rounded.Lock,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
+                                tint = AppColors.error
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "This is a system category and cannot be modified or deleted.",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = AppColors.onErrorContainer
                             )
                         }
                     }
@@ -136,8 +138,8 @@ fun CategoryEditSheet(
                         label = "PARENT CATEGORY",
                         value = parentCategory?.name ?: "None",
                         onClick = { if (!isMandatory) showParentPicker = true },
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                        iconTint = AppColors.secondary
                     )
 
                     if (showParentPicker && !isMandatory) {
@@ -162,7 +164,7 @@ fun CategoryEditSheet(
                                                 labelMapper = { it.name },
                                                 parentIdMapper = { it.parentId },
                                                 iconMapper = { AppIconMap[it.iconName] },
-                                                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
+                                                colorMapper = { if (it.colorHex == -1) OutlineLight else Color(it.colorHex) },
                                                 noneLabel = "None (Primary Category)",
                                                 onParentSelected = {
                                                     selectedParentId = it
@@ -181,7 +183,7 @@ fun CategoryEditSheet(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
+                        color = AppColors.secondaryContainer.copy(alpha = 0.2f)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -191,13 +193,13 @@ fun CategoryEditSheet(
                                 Icons.Rounded.Info,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = AppColors.primary
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "Inheriting color from parent category.",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                color = AppColors.onSecondaryContainer
                             )
                         }
                     }

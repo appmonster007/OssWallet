@@ -5,7 +5,6 @@ import com.osscabinet.ossWallet.ui.screens.transactions.*
 import com.osscabinet.ossWallet.ui.screens.templates.*
 import com.osscabinet.ossWallet.ui.screens.settings.*
 import com.osscabinet.ossWallet.ui.screens.analytics.*
-import com.osscabinet.ossWallet.ui.screens.dashboard.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
 
@@ -82,6 +81,22 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
+import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -237,7 +252,7 @@ fun DashboardScreen(
                             Text(
                                 "Personal Account",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
+                                color = AppColors.border
                             )
                         }
                     }
@@ -353,7 +368,7 @@ fun DashboardContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(AppColors.screenBackground)
                 ) {
                 // Header row with Add Card button
                 Row(
@@ -375,7 +390,7 @@ fun DashboardContent(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add card",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = AppColors.primary,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     }
@@ -488,7 +503,7 @@ fun DashboardViewIndicator(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(AppColors.accentContainer)
             .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -500,13 +515,13 @@ fun DashboardViewIndicator(
             Icon(
                 imageVector = Icons.Default.Visibility,
                 contentDescription = "View focus",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = AppColors.primary,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
             )
             Text(
                 text = getDashboardContextDisplayName(context),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = AppColors.primary
             )
         }
         TextButton(onClick = onReset) {
@@ -520,5 +535,91 @@ private fun getDashboardContextDisplayName(context: DashboardViewContext): Strin
         is DashboardViewContext.None -> "Default"
         is DashboardViewContext.FocusCard -> "Card: ${context.cardId}"
         is DashboardViewContext.FocusSection -> "Section: ${context.section.name}"
+    }
+}
+
+// --- PREVIEWS ---
+
+@Composable
+private fun DashboardReviewContent() {
+    val netWorthMetrics = NetWorthMetrics(
+        netWorth = BigDecimal("125000.50"),
+        cashFlow = CashFlowResult.empty().copy(
+            totalIncomeInBase = BigDecimal("5000.00"),
+            totalExpensesInBase = BigDecimal("3200.00")
+        )
+    )
+
+    val budget1 = Budget(
+        id = 1L, name = "Food", currency = "USD", limitAmount = BigDecimal("1000.00"),
+        timelineRange = TimelineRange.AllTime, profileId = 1
+    )
+    val budgets = listOf(
+        BudgetProgress(
+            budget = budget1,
+            spent = BigDecimal("450.00"),
+            limit = BigDecimal("1000.00"),
+            remaining = BigDecimal("550.00"),
+            percentage = 0.45f,
+            alertLevel = BudgetAlertLevel.NONE
+        )
+    )
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        NetWorthCard(
+            currentMetrics = netWorthMetrics,
+            baseCurrency = "USD",
+            precision = 2,
+            cardId = "networth",
+            fontSize = "Medium",
+            showComparison = true,
+            filter = TransactionFilter(),
+            onFontSizeChange = { _, _ -> },
+            onShowComparisonChange = { _, _ -> },
+            onFilterChange = { _, _ -> }
+        )
+
+        BudgetsCard(
+            items = budgets,
+            config = BudgetsCardConfig(cardId = "budgets", title = "Budgets"),
+            onUpdate = {},
+            onBudgetClick = {},
+            onDelete = {}
+        )
+    }
+}
+
+@Preview(name = "Dashboard - Light Mode", showBackground = true)
+@Composable
+fun DashboardLightPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Light") {
+        Surface(color = AppColors.screenBackground) {
+            DashboardReviewContent()
+        }
+    }
+}
+
+@Preview(name = "Dashboard - Dark Mode", showBackground = true)
+@Composable
+fun DashboardDarkPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Dark") {
+        Surface(color = AppColors.screenBackground) {
+            DashboardReviewContent()
+        }
+    }
+}
+
+@Preview(name = "Dashboard - Amoled Mode", showBackground = true)
+@Composable
+fun DashboardAmoledPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Amoled") {
+        Surface(color = AppColors.screenBackground) {
+            DashboardReviewContent()
+        }
     }
 }

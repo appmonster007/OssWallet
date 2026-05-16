@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 fun CardType.toIcon(): ImageVector = when (this) {
     CardType.NET_WORTH -> Icons.Default.AccountBalance
@@ -96,7 +97,7 @@ fun CardTypeOption(
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = AppColors.insetSurface
         )
     ) {
         Row(
@@ -110,7 +111,7 @@ fun CardTypeOption(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -124,7 +125,7 @@ fun CardTypeOption(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AppColors.contentSecondary
                 )
             }
         }

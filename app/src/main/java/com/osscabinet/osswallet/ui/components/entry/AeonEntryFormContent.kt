@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Shared Context grid for Account and Category/Target account selection.
@@ -42,8 +43,8 @@ fun AeonEntryContextRow(
             value = selectedAccount?.name ?: "Select",
             onClick = onAccountClick,
             modifier = Modifier.weight(1f),
-            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.primary
+            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+            iconTint = AppColors.primary
         )
 
         if (isTransfer) {
@@ -55,8 +56,8 @@ fun AeonEntryContextRow(
                 value = targetDisplay,
                 onClick = onTargetAccountClick,
                 modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.tertiary
+                iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                iconTint = AppColors.tertiary
             )
         } else {
             val displayCategoryName = if (isSplitMode) {
@@ -77,14 +78,14 @@ fun AeonEntryContextRow(
                 onClick = if (isSplitMode) onSplitClick else onCategoryClick,
                 modifier = Modifier.weight(1f),
                 iconContainerColor = if (isSplitMode) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    AppColors.primary.copy(alpha = 0.1f)
                 } else {
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                    AppColors.tertiary.copy(alpha = 0.1f)
                 },
                 iconTint = if (isSplitMode) {
-                    MaterialTheme.colorScheme.primary
+                    AppColors.primary
                 } else {
-                    MaterialTheme.colorScheme.tertiary
+                    AppColors.tertiary
                 }
             )
         }
@@ -157,7 +158,7 @@ fun AeonEntryMetadataSection(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
             thickness = (AeonTheme.dimensions.spacingXs / 8),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            color = AppColors.divider.copy(alpha = 0.2f)
         )
 
         additionalBottomContent?.invoke(this)

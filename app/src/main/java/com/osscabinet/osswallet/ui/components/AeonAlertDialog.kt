@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Standardized Delete Confirmation Dialog.
@@ -34,7 +35,7 @@ fun AeonConfirmDeleteDialog(
             },
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text(confirmButtonText, color = MaterialTheme.colorScheme.error)
+                    Text(confirmButtonText, color = AppColors.error)
                 }
             },
             dismissButton = {

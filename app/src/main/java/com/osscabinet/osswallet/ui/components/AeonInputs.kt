@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CurrencySelector(
@@ -30,7 +31,7 @@ fun CurrencySelector(
         Surface(
             modifier = Modifier.clickable { showDialog = true },
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            color = AppColors.insetSurface.copy(alpha = 0.4f)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -41,14 +42,14 @@ fun CurrencySelector(
                     selectedCurrency.ifEmpty { "USD" },
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 )
                 Icon(
                     Icons.Rounded.KeyboardArrowDown,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = AppColors.contentSecondary
                 )
             }
         }

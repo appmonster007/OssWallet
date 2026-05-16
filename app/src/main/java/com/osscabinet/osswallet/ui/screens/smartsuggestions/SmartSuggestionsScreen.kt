@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,18 +63,18 @@ fun SmartSuggestionsScreen(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = AppColors.border
                     )
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No suggestions available yet",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.border
                     )
                     Text(
                         "Continue tracking to see patterns",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.border
                     )
                 }
             }
@@ -121,7 +123,7 @@ private fun SuggestionListItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+            containerColor = AppColors.cardSurface
         )
     ) {
         Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
@@ -133,7 +135,7 @@ private fun SuggestionListItem(
             ) {
                 Surface(
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    color = AppColors.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingXs),
@@ -144,12 +146,12 @@ private fun SuggestionListItem(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            tint = AppColors.onSecondaryContainer
                         )
                         Text(
                             "Smart Suggestion",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            color = AppColors.onSecondaryContainer,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -163,7 +165,7 @@ private fun SuggestionListItem(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Dismiss",
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = AppColors.border
                     )
                 }
             }
@@ -186,7 +188,7 @@ private fun SuggestionListItem(
                     text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
-                    color = if (pattern.transactionType == TransactionType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                    color = if (pattern.transactionType == TransactionType.INCOME) PositiveAmountColor else AppColors.error
                 )
             }
 
@@ -200,7 +202,7 @@ private fun SuggestionListItem(
             Text(
                 text = recommendation,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = AppColors.contentSecondary
             )
 
             // Detailed Preview Section
@@ -209,7 +211,7 @@ private fun SuggestionListItem(
                     .fillMaxWidth()
                     .padding(vertical = AeonTheme.dimensions.spacingMd),
                 shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                color = AppColors.insetSurface.copy(alpha = 0.3f)
             ) {
                 Column(modifier = Modifier.padding(AeonTheme.dimensions.spacingMd)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
@@ -234,7 +236,7 @@ private fun SuggestionListItem(
             Text(
                 text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
+                color = AppColors.border
             )
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
@@ -255,7 +257,7 @@ private fun SuggestionListItem(
                         Text(
                             "Auto-creates records for future occurrences",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = AppColors.border,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
                         )
@@ -274,7 +276,7 @@ private fun SuggestionListItem(
                         Text(
                             "Shortcut for one-tap manual entry",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = AppColors.border,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
                         )
@@ -288,7 +290,7 @@ private fun SuggestionListItem(
 @Composable
 private fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = AppColors.border)
         Text(value, style = MaterialTheme.typography.bodySmall, maxLines = 1)
     }
 }

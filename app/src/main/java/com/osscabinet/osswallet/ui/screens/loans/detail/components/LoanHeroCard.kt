@@ -26,7 +26,9 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun LoanHeroCard(
@@ -35,9 +37,7 @@ fun LoanHeroCard(
     modifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    val lentColor = Color(0xFF00695C)
-    val borrowedColor = Color(0xFFE65100)
-    val accentColor = if (loan.loanType == LoanType.LENT) lentColor else borrowedColor
+    val accentColor = if (loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
     
     val progress = if (loan.principalAmount > BigDecimal.ZERO)
         (summary.totalPaid.divide(loan.principalAmount, 4, java.math.RoundingMode.HALF_UP)).toFloat().coerceIn(0f, 1f)
@@ -81,7 +81,7 @@ fun LoanHeroCard(
                                 append(" ")
                                 withStyle(SpanStyle(
                                     fontWeight = FontWeight.Light,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    color = AppColors.contentSecondary.copy(alpha = 0.5f),
                                     fontSize = 18.sp
                                 )) {
                                     append(symbolText)
@@ -92,7 +92,7 @@ fun LoanHeroCard(
                                 fontSize = 32.sp,
                                 letterSpacing = (-1).sp
                             ),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = AppColors.contentPrimary
                         )
                     }
                     
@@ -121,12 +121,12 @@ fun LoanHeroCard(
                     Text(
                         text = "${formatAmount(summary.totalPaid, precision)} repaid",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, precision, shorten = true)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -148,7 +148,7 @@ fun LoanHeroCard(
                         label = "Interest",
                         value = "${loan.interestRate}%",
                         icon = Icons.Rounded.TrendingUp,
-                        color = MaterialTheme.colorScheme.error,
+                        color = AppColors.error,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -199,7 +199,7 @@ private fun LoanMetricItem(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )

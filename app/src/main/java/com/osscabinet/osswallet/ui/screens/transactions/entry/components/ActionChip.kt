@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Compact action chip for metadata actions.
@@ -30,8 +31,8 @@ fun ActionChip(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        color = AppColors.recessedSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
         modifier = modifier.height(48.dp)
     ) {
         Row(
@@ -41,7 +42,7 @@ fun ActionChip(
         ) {
             Surface(
                 shape = CircleShape,
-                color = iconContainerColor ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                color = iconContainerColor ?: AppColors.primary.copy(alpha = 0.08f),
                 modifier = Modifier.size(28.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -49,7 +50,7 @@ fun ActionChip(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = iconTint ?: MaterialTheme.colorScheme.primary
+                        tint = iconTint ?: AppColors.primary
                     )
                 }
             }
@@ -59,7 +60,7 @@ fun ActionChip(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.2.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = AppColors.contentPrimary
             )
         }
     }

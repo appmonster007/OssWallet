@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.
@@ -28,7 +29,7 @@ fun AeonEntryScaffold(
     isEditMode: Boolean = false,
     onDeleteClick: (() -> Unit)? = null,
     onResetClick: (() -> Unit)? = null,
-    containerColor: Color = MaterialTheme.colorScheme.background,
+    containerColor: Color = AppColors.screenBackground,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -67,7 +68,7 @@ fun AeonEntryScaffold(
                             Icon(
                                 Icons.Rounded.Delete,
                                 contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = AppColors.error
                             )
                         }
                     }
@@ -79,9 +80,9 @@ fun AeonEntryScaffold(
                             Icons.Rounded.Done,
                             contentDescription = "Save",
                             tint = if (canSave) {
-                                MaterialTheme.colorScheme.primary
+                                AppColors.primary
                             } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                AppColors.contentSecondary.copy(alpha = 0.38f)
                             }
                         )
                     }

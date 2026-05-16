@@ -124,18 +124,18 @@ object LoanService {
     }
 
     /**
-     * Filter transactions for a specific loan based on its filter details.
+     * Builds the canonical TransactionFilter for a loan. Use this everywhere transactions
+     * need to be filtered for a loan — service layer and UI — to guarantee consistency.
      */
-    fun filterTransactionsForLoan(
+    fun buildTransactionFilter(
         loan: Loan,
-        transactions: List<Transaction>,
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
-    ): List<Transaction> {
+    ): TransactionFilter {
         val expandedCategoryIds = if (allCategories.isNotEmpty() && loan.categoryIds.isNotEmpty()) {
             TransactionFilterService.expandCategoryIds(loan.categoryIds.toList(), allCategories).toSet()
         } else loan.categoryIds
 
-        val filter = TransactionFilter(
+        return TransactionFilter(
             categoryIds = expandedCategoryIds,
             tags = loan.tags,
             accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(loan.linkedAccountId),
@@ -143,9 +143,24 @@ object LoanService {
             statuses = loan.statuses,
             currencies = loan.currencies,
             transactionTypes = loan.trackTypes,
-            linkedTransactionIds = loan.linkedTransactionIds
+            linkedTransactionIds = loan.linkedTransactionIds,
+            timelineRange = loan.timelineRange,
+            excludeFuture = false
         )
-        return TransactionFilterService.filterTransactions(transactions, filter)
+    }
+
+    /**
+     * Filter transactions for a specific loan based on its filter details.
+     */
+    fun filterTransactionsForLoan(
+        loan: Loan,
+        transactions: List<Transaction>,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
+    ): List<Transaction> {
+        return TransactionFilterService.filterTransactions(
+            transactions,
+            buildTransactionFilter(loan, allCategories)
+        )
     }
 
     fun settledCopy(loan: Loan): Loan = loan.copy(status = LoanStatus.SETTLED)

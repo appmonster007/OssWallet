@@ -152,20 +152,14 @@ fun LoanDetailScreen(
 
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
 
-    // Get loan-related transactions for Activity tab
+    // Get loan-related transactions for Activity tab — uses the same canonical filter as
+    // LoanService.buildSummaryFromTransactions() to guarantee the activity list matches the balance.
     val loanTransactions =
-        remember(loan, absoluteTransactionsWithBalance) {
-            val loanFilter = TransactionFilter(
-                categoryIds = loan.categoryIds,
-                tags = loan.tags,
-                accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(loan.linkedAccountId),
-                paymentMethods = loan.paymentMethods,
-                statuses = loan.statuses,
-                linkedTransactionIds = loan.linkedTransactionIds
-            )
-            absoluteTransactionsWithBalance.filter { item ->
-                TransactionFilterService.matches(item.transaction, loanFilter)
-            }
+        remember(loan, absoluteTransactionsWithBalance, allCategories) {
+            val filter = LoanService.buildTransactionFilter(loan, allCategories)
+            android.util.Log.d("LoanDetail", "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}")
+            android.util.Log.d("LoanDetail", "[${loan.name}] activity filter: $filter")
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
         }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
@@ -267,13 +261,7 @@ fun LoanDetailScreen(
                                 listState = loanListState,
                                 onRecordsClick = { _ ->
                                     onRecordsClick(
-                                        TransactionFilter(
-                                            accountIds = if (loan.linkedAccountId.isBlank()) emptySet() else setOf(
-                                                loan.linkedAccountId
-                                            ),
-                                            categoryIds = loan.categoryIds,
-                                            tags = loan.tags
-                                        )
+                                        LoanService.buildTransactionFilter(loan, allCategories)
                                     )
                                 },
                                 onTransactionClick = onTransactionClick,

@@ -1,20 +1,35 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
-import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
+import androidx.compose.ui.window.Dialog
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.AeonDateRangePicker
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.components.transactions.AeonPeriodSelector
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Dialog wrapping [AeonPeriodSelector] for selecting a [TimelineRange] in entry screens
+ * (budget, loan, filter). The selection is buffered locally and only committed on Confirm.
+ */
 @Composable
 fun AeonTimelineSheet(
     selectedRange: TimelineRange,
@@ -22,130 +37,47 @@ fun AeonTimelineSheet(
     onDismiss: () -> Unit,
     title: String = "Select Period"
 ) {
-    var showCustomPicker by remember { mutableStateOf(false) }
+    var currentRange by remember(selectedRange) { mutableStateOf(selectedRange) }
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = AeonTheme.dimensions.spacingXl)
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = surfaceColor,
+            tonalElevation = 6.dp
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 8.dp)
+                )
 
-            // Mode 1: All Time
-            ListItem(
-                headlineContent = { Text("All Time") },
-                leadingContent = { Icon(Icons.Rounded.AllInclusive, null) },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedRange is TimelineRange.AllTime,
-                        onClick = { onRangeSelected(TimelineRange.AllTime); onDismiss() }
-                    )
-                },
-                modifier = Modifier.clickable { onRangeSelected(TimelineRange.AllTime); onDismiss() }
-            )
+                Spacer(Modifier.height(4.dp))
 
-            // Mode 2: This Period
-            var showThisPeriodOptions by remember { mutableStateOf(selectedRange is TimelineRange.ThisPeriod) }
-            ListItem(
-                headlineContent = { Text("This Period") },
-                supportingContent = {
-                    if (selectedRange is TimelineRange.ThisPeriod) {
-                        Text(selectedRange.period.label)
-                    }
-                },
-                leadingContent = { Icon(Icons.Rounded.Today, null) },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedRange is TimelineRange.ThisPeriod,
-                        onClick = { showThisPeriodOptions = !showThisPeriodOptions }
-                    )
-                },
-                modifier = Modifier.clickable { showThisPeriodOptions = !showThisPeriodOptions }
-            )
-            
-            if (showThisPeriodOptions) {
+                AeonPeriodSelector(
+                    filter = TransactionFilter(timelineRange = currentRange),
+                    onSetDateRange = { currentRange = it },
+                    onClick = {},
+                    showArcTab = false,
+                    backgroundColor = surfaceColor,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(Modifier.height(8.dp))
+
                 Row(
-                    modifier = Modifier.padding(horizontal = 56.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ThisPeriodType.entries.forEach { type ->
-                        FilterChip(
-                            selected = selectedRange is TimelineRange.ThisPeriod && selectedRange.period == type,
-                            onClick = { onRangeSelected(TimelineRange.ThisPeriod(type)); onDismiss() },
-                            label = { Text(type.label) }
-                        )
-                    }
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = { onRangeSelected(currentRange); onDismiss() }) { Text("Confirm") }
                 }
             }
-
-            // Mode 3: Last Period
-            var showLastPeriodOptions by remember { mutableStateOf(selectedRange is TimelineRange.LastPeriod) }
-            ListItem(
-                headlineContent = { Text("Last X Days") },
-                supportingContent = {
-                    if (selectedRange is TimelineRange.LastPeriod) {
-                        Text(selectedRange.period.label)
-                    }
-                },
-                leadingContent = { Icon(Icons.Rounded.History, null) },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedRange is TimelineRange.LastPeriod,
-                        onClick = { showLastPeriodOptions = !showLastPeriodOptions }
-                    )
-                },
-                modifier = Modifier.clickable { showLastPeriodOptions = !showLastPeriodOptions }
-            )
-
-            if (showLastPeriodOptions) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 56.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    LastPeriodType.entries.forEach { type ->
-                        FilterChip(
-                            selected = selectedRange is TimelineRange.LastPeriod && selectedRange.period == type,
-                            onClick = { onRangeSelected(TimelineRange.LastPeriod(type)); onDismiss() },
-                            label = { Text(type.label) }
-                        )
-                    }
-                }
-            }
-
-            // Mode 4: Custom Range
-            ListItem(
-                headlineContent = { Text("Custom Range") },
-                leadingContent = { Icon(Icons.Rounded.DateRange, null) },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedRange is TimelineRange.CustomRange,
-                        onClick = { showCustomPicker = true }
-                    )
-                },
-                modifier = Modifier.clickable { showCustomPicker = true }
-            )
         }
-    }
-
-    if (showCustomPicker) {
-        AeonDateRangePicker(
-            initialStart = (selectedRange as? TimelineRange.CustomRange)?.start,
-            initialEnd = (selectedRange as? TimelineRange.CustomRange)?.end,
-            onDismiss = { showCustomPicker = false },
-            onConfirmed = { start, end ->
-                onRangeSelected(TimelineRange.CustomRange(start, end))
-                showCustomPicker = false
-                onDismiss()
-            }
-        )
     }
 }

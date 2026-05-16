@@ -304,7 +304,7 @@ class BudgetEntryViewModel(
                 statuses = s.selectedStatuses,
                 linkedTransactionIds = s.linkedTransactionIds,
                 profileId = s.currentProfileId,
-                note = s.queryNote,
+                note = s.note,
                 filterId = filterId
             )
 

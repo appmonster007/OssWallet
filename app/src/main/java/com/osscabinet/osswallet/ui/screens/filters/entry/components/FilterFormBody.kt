@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -63,19 +64,9 @@ fun FilterFormBody(
             EntrySection(title = "CORE CRITERIA", icon = Icons.Rounded.Tune) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
                     // Default Period for this filter
-                    EntryActionCard(
-                        icon = Icons.Rounded.DateRange,
-                        label = "DEFAULT PERIOD",
-                        value = when (val range = state.timelineRange) {
-                            is TimelineRange.AllTime -> "All Time"
-                            is TimelineRange.ThisPeriod -> "This ${range.period.label}"
-                            is TimelineRange.LastPeriod -> range.period.label
-                            is TimelineRange.CustomRange -> "Custom Period"
-                        },
-                        onClick = { onEvent(FilterEntryEvent.ShowTimelineSheet(show = true)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
+                    AeonTimelinePeriodSelector(
+                        currentRange = state.timelineRange,
+                        onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) }
                     )
 
                     AeonContextGrid {

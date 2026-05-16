@@ -22,12 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.transactions.AeonPeriodSelector
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 
 /**
- * Dialog wrapping [AeonPeriodSelector] for selecting a [TimelineRange] in entry screens
+ * Dialog wrapping [AeonTimelinePeriodSelector] for selecting a [TimelineRange] in entry screens
  * (budget, loan, filter). The selection is buffered locally and only committed on Confirm.
  */
 @Composable
@@ -46,7 +45,7 @@ fun AeonTimelineSheet(
             color = surfaceColor,
             tonalElevation = 6.dp
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
@@ -55,13 +54,10 @@ fun AeonTimelineSheet(
 
                 Spacer(Modifier.height(4.dp))
 
-                AeonPeriodSelector(
-                    filter = TransactionFilter(timelineRange = currentRange),
-                    onSetDateRange = { currentRange = it },
-                    onClick = {},
-                    showArcTab = false,
-                    backgroundColor = surfaceColor,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                AeonTimelinePeriodSelector(
+                    currentRange = currentRange,
+                    onRangeSelected = { currentRange = it },
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -69,7 +65,7 @@ fun AeonTimelineSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

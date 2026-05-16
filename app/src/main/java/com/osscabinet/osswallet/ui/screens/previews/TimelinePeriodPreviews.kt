@@ -2,7 +2,9 @@ package com.osscabinet.ossWallet.ui.screens.previews
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -123,31 +125,30 @@ fun AeonTimelinePeriodSelectorAllModesPreview() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("All Time", style = MaterialTheme.typography.labelMedium)
-                AeonTimelinePeriodSelector(
-                    currentRange = TimelineRange.AllTime,
-                    onRangeSelected = {}
-                )
-
-                Text("This Month", style = MaterialTheme.typography.labelMedium)
+                Text("Component Swiping (Default)", style = MaterialTheme.typography.labelLarge)
                 AeonTimelinePeriodSelector(
                     currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
-                    onRangeSelected = {}
+                    onRangeSelected = {},
+                    swipeEntireComponent = true
                 )
 
-                Text("Last 30 Days", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(16.dp))
+
+                Text("Value Swiping (Fixed Controls)", style = MaterialTheme.typography.labelLarge)
                 AeonTimelinePeriodSelector(
-                    currentRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    onRangeSelected = {}
+                    currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+                    onRangeSelected = {},
+                    swipeEntireComponent = false
                 )
-
-                Text("Custom Range", style = MaterialTheme.typography.labelMedium)
+                
+                Text("Custom Range (Value Swipe)", style = MaterialTheme.typography.labelSmall)
                 AeonTimelinePeriodSelector(
                     currentRange = TimelineRange.CustomRange(
                         start = 1715731200000L, // May 15, 2024
                         end = 1718409600000L   // June 15, 2024
                     ),
-                    onRangeSelected = {}
+                    onRangeSelected = {},
+                    swipeEntireComponent = false
                 )
             }
         }

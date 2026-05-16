@@ -39,7 +39,8 @@ fun AeonTagSelectionDialog(
     selectedTags: Set<String>,
     onTagsSelected: (Set<String>) -> Unit,
     onAddTag: (String, Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    allowCreation: Boolean = true
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var currentSelection by remember { mutableStateOf(selectedTags) }
@@ -116,7 +117,7 @@ fun AeonTagSelectionDialog(
                                 border = BorderStroke(0.5.dp, AppColors.outlineVariant)
                             ) {
                                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                                    if (!exactMatchExists) {
+                                    if (!exactMatchExists && allowCreation) {
                                         TextButton(
                                             onClick = { showCreateDialog = true },
                                             modifier = Modifier.fillMaxWidth()

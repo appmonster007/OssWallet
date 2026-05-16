@@ -26,9 +26,10 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 fun EntryDateCard(
     icon: ImageVector,
     label: String,
-    dateMillis: Long,
+    dateMillis: Long?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = "Select Date"
 ) {
     Surface(
         onClick = onClick,
@@ -50,7 +51,11 @@ fun EntryDateCard(
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 val dateLabel = remember(dateMillis) {
-                    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(dateMillis))
+                    if (dateMillis != null) {
+                        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(dateMillis))
+                    } else {
+                        placeholder
+                    }
                 }
                 Text(
                     text = label,
@@ -59,7 +64,10 @@ fun EntryDateCard(
                 )
                 Text(
                     text = dateLabel,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (dateMillis != null) AppColors.contentPrimary else AppColors.contentSecondary.copy(alpha = 0.5f)
+                    )
                 )
             }
             Icon(

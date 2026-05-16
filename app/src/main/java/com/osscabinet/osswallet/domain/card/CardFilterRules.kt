@@ -66,6 +66,16 @@ data class CardFilterRules(
     val allowTimelineCustomRange: Boolean = true,
 
     /**
+     * Whether tag selection is allowed.
+     */
+    val allowTagSelection: Boolean = true,
+
+    /**
+     * Whether tag creation is allowed from the selection dialog.
+     */
+    val allowTagCreation: Boolean = true,
+
+    /**
      * Whether the "Include future transactions" toggle is shown.
      * Set to false for cards whose computer enforces excludeFuture=true regardless of config.
      */

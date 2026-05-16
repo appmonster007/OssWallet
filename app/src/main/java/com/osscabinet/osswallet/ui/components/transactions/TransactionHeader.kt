@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 
 /**
  * Unified transaction header composable that can be used for both weekly and daily transaction summaries.
@@ -305,34 +306,26 @@ private data class TransactionHeaderStyles(
                 fontWeight = FontWeight.ExtraBold,
                 color = AppColors.border,
                 letterSpacing = 1.sp,
-                fontSize = 12.sp
             ),
-            subtitleStyle = MaterialTheme.typography.labelSmall.copy(
+            subtitleStyle = MaterialTheme.typography.labelExtraSmall.copy(
                 fontWeight = FontWeight.Medium,
                 color = AppColors.border,
                 letterSpacing = 0.5.sp,
-                fontSize = 11.sp
             ),
-            columnHeaderStyle = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
+            columnHeaderStyle = MaterialTheme.typography.labelExtraSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp
             ),
-            totalLabelStyle = MaterialTheme.typography.labelSmall.copy(
+            totalLabelStyle = MaterialTheme.typography.labelExtraSmall.copy(
                 fontWeight = FontWeight.Black,
-                fontSize = 11.sp
             ),
             baseValueStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
             ),
-            breakdownLabelStyle = MaterialTheme.typography.labelSmall.copy(
+            breakdownLabelStyle = MaterialTheme.typography.labelExtraSmall.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
             ),
-            breakdownValueStyle = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp
-            )
+            breakdownValueStyle = MaterialTheme.typography.labelExtraSmall.copy()
         )
     }
 }

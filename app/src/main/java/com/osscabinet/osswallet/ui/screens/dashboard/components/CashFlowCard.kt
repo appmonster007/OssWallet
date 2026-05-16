@@ -331,7 +331,7 @@ fun AeonFlowCard(
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
     
     Surface(
-        color = AppColors.cardSurfaceProminent,
+        color = AppColors.insetSurface,
         shape = RoundedCornerShape(24.dp),
         modifier = modifier.clickable { onClick() }
     ) {

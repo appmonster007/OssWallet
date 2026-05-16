@@ -109,7 +109,9 @@ fun TransactionFormBody(
                 onNoteChange = { if (!state.isSplitMode) onEvent(TransactionEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
-                selectedTags = state.selectedTags,
+                selectedTags = state.selectedTags.map { name -> 
+                    state.allTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                },
                 onTagClick = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) },
                 noteSuggestions = state.allNotes,

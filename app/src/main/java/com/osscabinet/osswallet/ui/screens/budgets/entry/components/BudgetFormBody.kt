@@ -189,7 +189,9 @@ fun BudgetFormBody(
 
                     // Tags
                     EntryTagSection(
-                        selectedTags = state.selectedTags.toList(),
+                        tags = state.selectedTags.map { name -> 
+                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                        },
                         onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) }
                     )

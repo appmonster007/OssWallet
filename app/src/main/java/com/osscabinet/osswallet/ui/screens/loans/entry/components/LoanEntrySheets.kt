@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
@@ -118,18 +119,15 @@ fun LoanEntrySheets(
     }
 
     if (state.showTagSheet) {
-        AeonTagSelection(
+        AeonTagSelectionDialog(
             tags = state.availableTags,
             selectedTags = state.selectedTags,
             onTagsSelected = {
                 onEvent(LoanEntryEvent.SetTags(it))
-                onEvent(LoanEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { name, _ -> 
                 onEvent(LoanEntryEvent.SetTags(state.selectedTags + name))
             },
-            onEditTag = {},
-            onDeleteTag = {},
             onDismiss = { onEvent(LoanEntryEvent.ShowTagSheet(false)) }
         )
     }

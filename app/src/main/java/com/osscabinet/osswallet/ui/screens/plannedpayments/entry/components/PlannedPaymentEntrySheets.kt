@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
@@ -91,16 +92,13 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showTagSheet) {
-        AeonTagSelection(
+        AeonTagSelectionDialog(
             tags = state.availableTags,
             selectedTags = state.selectedTagNames,
             onTagsSelected = { tags ->
                 onEvent(PlannedPaymentEntryEvent.SetTags(tags))
-                onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { _, _ -> },
-            onEditTag = { },
-            onDeleteTag = { },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false)) }
         )
     }

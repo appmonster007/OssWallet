@@ -166,7 +166,9 @@ fun FilterFormBody(
 
                     // Multi-select Tags
                     EntryTagSection(
-                        selectedTags = state.selectedTags.toList(),
+                        tags = state.selectedTags.map { name -> 
+                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
+                        },
                         onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
                     )

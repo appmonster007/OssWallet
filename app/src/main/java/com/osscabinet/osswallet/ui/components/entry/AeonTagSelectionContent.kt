@@ -14,17 +14,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
-import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Flip
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,35 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
-
-/**
- * Full-screen selection for Transaction Tags.
- */
-@Composable
-fun AeonTagSelection(
-    tags: List<Tag>,
-    selectedTags: Set<String>,
-    onTagsSelected: (Set<String>) -> Unit,
-    onAddTag: (String, Int) -> Unit,
-    onEditTag: (Tag) -> Unit,
-    onDeleteTag: (Tag) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AeonFullScreenDialog(onDismissRequest = onDismiss) {
-        AeonTagSelectionContent(
-            tags = tags,
-            selectedTags = selectedTags,
-            onTagsSelected = onTagsSelected,
-            onAddTag = onAddTag,
-            onEditTag = onEditTag,
-            onDeleteTag = onDeleteTag,
-            onDismiss = onDismiss
-        )
-    }
-}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -134,7 +103,7 @@ fun AeonTagSelectionContent(
                 }
             }
 
-            if (isSelectionModeEnabled) {
+            if (isSelectionModeEnabled || true) { // Always allow edit in management mode
                 IconButton(onClick = { isManagementMode = !isManagementMode }) {
                     Icon(
                         if (isManagementMode) Icons.Rounded.Check else Icons.Rounded.Edit,
@@ -294,9 +263,8 @@ fun AeonTagSelectionContent(
                             selectionMode = if (isManagementMode) EntrySelectionMode.MANAGEMENT else EntrySelectionMode.SINGLE,
                             onClick = {
                                 if (isManagementMode) {
-                                    onDeleteTag(tag)
-                                    localTags = localTags.filter { it.name != tag.name }
-                                    currentSelection = currentSelection - tag.name
+                                    // In management mode, clicking selects for delete/edit? 
+                                    // Usually we use the trailing icons.
                                 } else if (isSelectionModeEnabled) {
                                     currentSelection = if (isSelected) currentSelection - tag.name else currentSelection + tag.name
                                 }
@@ -318,8 +286,6 @@ fun AeonTagSelectionContent(
                                         IconButton(
                                             onClick = { 
                                                 onDeleteTag(tag)
-                                                localTags = localTags.filter { it.name != tag.name }
-                                                currentSelection = currentSelection - tag.name
                                             },
                                             modifier = Modifier.size(dims.spacing2xl)
                                         ) {

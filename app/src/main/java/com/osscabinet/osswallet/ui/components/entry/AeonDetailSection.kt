@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.runtime.Composable
+import com.osscabinet.ossWallet.domain.model.Tag
 
 /**
  * Standardized Detail tier component for entry screens.
@@ -22,7 +23,7 @@ fun AeonDetailSection(
     showNote: Boolean = true,
     showPayee: Boolean = true,
     showTags: Boolean = true,
-    selectedTags: Collection<String> = emptyList(),
+    selectedTags: List<Tag> = emptyList(),
     onTagClick: () -> Unit = {},
     onRemoveTag: (String) -> Unit = {},
     noteSuggestions: List<String> = emptyList(),
@@ -56,7 +57,7 @@ fun AeonDetailSection(
 
         if (showTags) {
             EntryTagSection(
-                selectedTags = selectedTags.toList(),
+                tags = selectedTags,
                 onShowTagSheet = onTagClick,
                 onRemoveTag = onRemoveTag
             )

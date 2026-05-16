@@ -1,6 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,11 +13,10 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -191,15 +194,20 @@ fun ExchangeRatesScreen(
                 .padding(paddingValues)
         ) { page ->
             when (page) {
-                0 -> RatesTab(uiState, viewModel)
-                1 -> ConverterTab(uiState, viewModel)
+                0 -> RatesTab(uiState)
+                1 -> ConverterTab(
+                    uiState = uiState,
+                    onConvert = { amount, from, to, callback ->
+                        viewModel.convert(amount, from, to, callback)
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
+fun RatesTab(uiState: CurrencyUiState) {
     var searchQuery by remember { mutableStateOf("") }
     
     val filteredRates = remember(uiState.rates, searchQuery) {
@@ -211,92 +219,183 @@ fun RatesTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(AeonTheme.dimensions.screenPadding)
     ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search currencies...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear")
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search currencies...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppColors.primary) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                        }
                     }
-                }
-            },
-            shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppColors.panelSurface,
-                unfocusedContainerColor = AppColors.panelSurface
+                },
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AppColors.inputSurface,
+                    unfocusedContainerColor = AppColors.inputSurface,
+                    focusedBorderColor = AppColors.primary,
+                    unfocusedBorderColor = AppColors.divider
+                )
             )
-        )
-
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.screenPadding))
+        }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .background(AppColors.recessedSurface.copy(alpha = 0.6f))
+                .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Currency", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = AppColors.primary)
-            Text("Rate (1 ${uiState.baseCurrency})", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = AppColors.primary)
+            Text(
+                "CURRENCY", 
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp), 
+                color = AppColors.contentSecondary.copy(alpha = 0.8f)
+            )
+            Text(
+                "VALUE (1 ${uiState.baseCurrency})", 
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp), 
+                color = AppColors.contentSecondary.copy(alpha = 0.8f)
+            )
         }
 
         HorizontalDivider(color = AppColors.divider)
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = AeonTheme.dimensions.screenPadding)
+        ) {
             items(filteredRates) { rate ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AeonTheme.dimensions.screenPadding),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                val isBase = rate.currencyCode == uiState.baseCurrency
+                Surface(
+                    onClick = { /* Set as base logic */ },
+                    color = if (isBase) AppColors.primaryContainer.copy(alpha = 0.1f) else Color.Transparent,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
-                            color = AppColors.primaryContainer.copy(alpha = 0.5f),
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(rate.currencyCode.take(2), fontWeight = FontWeight.Bold, color = AppColors.onPrimaryContainer)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = if (isBase) AppColors.primary else Color.White,
+                                modifier = Modifier.size(40.dp),
+                                border = if (!isBase) BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)) else null,
+                                tonalElevation = if (isBase) 2.dp else 1.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = rate.currencyCode.take(2),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = if (isBase) AppColors.onPrimary else AppColors.contentPrimary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                            Column(verticalArrangement = Arrangement.Center) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        rate.currencyCode,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isBase) AppColors.primary else AppColors.contentPrimary
+                                    )
+                                    if (isBase) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Surface(
+                                            color = AppColors.primary,
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                "BASE",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Black),
+                                                color = AppColors.onPrimary,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    "1 ${uiState.baseCurrency} = ${String.format(Locale.US, "%.4f", rate.rate)}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+                                    color = AppColors.contentSecondary,
+                                    modifier = Modifier.padding(top = 1.dp)
+                                )
                             }
                         }
-                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                        Text(rate.currencyCode, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                    Text(
-                        text = String.format(Locale.US, "%.4f", rate.rate),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
+                        Text(
+                            text = String.format(Locale.US, "%.4f", rate.rate),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontFeatureSettings = "tnum",
+                                color = if (isBase) AppColors.primary else AppColors.contentPrimary,
+                                letterSpacing = (-0.5).sp
+                            )
                         )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), 
+                    color = AppColors.divider.copy(alpha = 0.2f)
+                )
+            }
+            
+            item {
+                if (uiState.lastUpdated > 0) {
+                    val pattern = if (uiState.use24HourFormat) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
+                    val dateFormat = remember(pattern) { SimpleDateFormat(pattern, Locale.getDefault()) }
+                    val lastUpdatedStr = remember(uiState.lastUpdated, dateFormat) { dateFormat.format(Date(uiState.lastUpdated)) }
+                    
+                    Text(
+                        text = "Last updated: $lastUpdatedStr",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AeonTheme.dimensions.screenPadding),
+                        textAlign = TextAlign.Center
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), color = AppColors.divider.copy(alpha = 0.5f))
             }
         }
     }
 }
 
 @Composable
-fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
+fun ConverterTab(
+    uiState: CurrencyUiState,
+    onConvert: (Double, String, String, (Double) -> Unit) -> Unit
+) {
     var amountText by remember { mutableStateOf("1") }
-    var fromCurrency by remember { mutableStateOf("USD") }
+    var fromCurrency by remember { mutableStateOf(uiState.baseCurrency.ifEmpty { "USD" }) }
     var toCurrency by remember { mutableStateOf("EUR") }
     
     val currencies = uiState.rates.map { it.currencyCode }.sorted()
-    
     var conversionResult by remember { mutableStateOf(0.0) }
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    
+    // Calculate current rate for display
+    val currentRate = remember(fromCurrency, toCurrency, uiState.rates) {
+        val fromRate = uiState.rates.find { it.currencyCode == fromCurrency }?.rate ?: 1.0
+        val toRate = uiState.rates.find { it.currencyCode == toCurrency }?.rate ?: 1.0
+        if (fromRate != 0.0) toRate / fromRate else 0.0
+    }
     
     LaunchedEffect(amountText, fromCurrency, toCurrency, uiState.rates) {
         val amount = amountText.toDoubleOrNull() ?: 0.0
-        viewModel.convert(amount, fromCurrency, toCurrency) { result ->
+        onConvert(amount, fromCurrency, toCurrency) { result ->
             conversionResult = result
         }
     }
@@ -304,188 +403,340 @@ fun ConverterTab(uiState: CurrencyUiState, viewModel: CurrencyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(AeonTheme.dimensions.spacingXl),
+            .padding(AeonTheme.dimensions.screenPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // Big Display
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-            color = AppColors.secondaryContainer.copy(alpha = 0.5f)
+        // High-Precision Instrument Display
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(AppColors.panelSurface, RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius))
+                .border(BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.5f)), RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius))
+                .padding(AeonTheme.dimensions.cardPadding),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
         ) {
-            Column(
+            // Source Section
+            ConversionUnit(
+                label = "FROM",
+                amount = amountText.ifEmpty { "0" },
+                currencyCode = fromCurrency,
+                currencies = currencies,
+                onCurrencyChange = { fromCurrency = it },
+                isSource = true,
                 modifier = Modifier
-                    .padding(AeonTheme.dimensions.spacing2xl)
-                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
+                    .border(BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
+                    .padding(AeonTheme.dimensions.spacingLg)
+            )
+
+            // Dynamic Interaction Layer with Rate Badge
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Source - Align Left
-                Column(horizontalAlignment = Alignment.Start) {
+                // Rate Badge (Floating above)
+                Surface(
+                    color = AppColors.primaryContainer.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.1f))
+                ) {
                     Text(
-                        text = amountText.ifEmpty { "0" },
-                        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-                        color = AppColors.onSecondaryContainer,
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = fromCurrency,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = AppColors.primary
+                        text = "1 $fromCurrency = ${String.format(Locale.US, "%.4f", currentRate)} $toCurrency",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AppColors.primary,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
 
-                Icon(
-                    imageVector = Icons.Default.ArrowDownward,
-                    contentDescription = null,
+                Box(
                     modifier = Modifier
-                        .padding(vertical = AeonTheme.dimensions.spacingMd)
-                        .align(Alignment.CenterHorizontally),
-                    tint = AppColors.border
-                )
-
-                // Destination - Align Right
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.End
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = String.format(Locale.US, "%.2f", conversionResult),
-                        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-                        color = AppColors.onSecondaryContainer,
-                        textAlign = TextAlign.End
-                    )
-                    Text(
-                        text = toCurrency,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = AppColors.primary
-                    )
+                    // Background Connector Lines
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingXl),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.width(72.dp))
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
+                    }
+                    
+                    // Swap Button (Elevated)
+                    Surface(
+                        onClick = {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            val temp = fromCurrency
+                            fromCurrency = toCurrency
+                            toCurrency = temp
+                        },
+                        shape = RoundedCornerShape(50),
+                        color = AppColors.primary,
+                        contentColor = AppColors.onPrimary,
+                        modifier = Modifier.size(44.dp),
+                        shadowElevation = 6.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.SwapVert,
+                                contentDescription = "Swap",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Target Section
+            ConversionUnit(
+                label = "TO",
+                amount = String.format(Locale.US, "%,.2f", conversionResult),
+                currencyCode = toCurrency,
+                currencies = currencies,
+                onCurrencyChange = { toCurrency = it },
+                isSource = false,
+                onCopy = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(String.format(Locale.US, "%,.2f", conversionResult)))
+                },
+                modifier = Modifier
+                    .background(AppColors.primaryContainer.copy(alpha = 0.08f), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
+                    .border(BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.15f)), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
+                    .padding(AeonTheme.dimensions.spacingLg)
+            )
+        }
+
+        // Professional Keypad Container
+        Surface(
+            modifier = Modifier.weight(1f),
+            color = AppColors.recessedSurface.copy(alpha = 0.4f),
+            shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+            border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f))
+        ) {
+            Column(
+                modifier = Modifier.padding(AeonTheme.dimensions.spacingLg),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            ) {
+                val keys = listOf(
+                    listOf("1", "2", "3"),
+                    listOf("4", "5", "6"),
+                    listOf("7", "8", "9"),
+                    listOf(".", "0", "C")
+                )
+                
+                keys.forEach { row ->
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                    ) {
+                        row.forEach { key ->
+                            KeyButton(
+                                text = key,
+                                onClick = {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                    when (key) {
+                                        "C" -> if (amountText.isNotEmpty()) amountText = amountText.dropLast(1)
+                                        "." -> if (!amountText.contains(".")) amountText += "."
+                                        else -> if (amountText == "0" && key != ".") amountText = key
+                                                else if (amountText.length < 10) amountText += key
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
 
-        // Controls
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-            CurrencySelector(
-                label = "From",
-                selected = fromCurrency,
-                currencies = currencies,
-                onSelected = { fromCurrency = it },
-                modifier = Modifier.weight(1f)
-            )
-            CurrencySelector(
-                label = "To",
-                selected = toCurrency,
-                currencies = currencies,
-                onSelected = { toCurrency = it },
-                modifier = Modifier.weight(1f)
-            )
-        }
 
-        // Keypad for "Big numbered UI"
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-            val keys = listOf(
-                listOf("1", "2", "3"),
-                listOf("4", "5", "6"),
-                listOf("7", "8", "9"),
-                listOf(".", "0", "C")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConversionUnit(
+    label: String,
+    amount: String,
+    currencyCode: String,
+    currencies: List<String>,
+    onCurrencyChange: (String) -> Unit,
+    isSource: Boolean,
+    modifier: Modifier = Modifier,
+    onCopy: (() -> Unit)? = null
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        // Label and Copy
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp),
+                color = if (isSource) AppColors.contentSecondary else AppColors.primary
             )
             
-            keys.forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                    row.forEach { key ->
-                        KeyButton(
-                            text = key,
-                            onClick = {
-                                when (key) {
-                                    "C" -> amountText = ""
-                                    "." -> if (!amountText.contains(".")) amountText += "."
-                                    else -> amountText += key
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
+            if (onCopy != null) {
+                Surface(
+                    onClick = onCopy,
+                    color = AppColors.primaryContainer.copy(alpha = 0.25f),
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy",
+                            tint = AppColors.primary,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             }
         }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CurrencySelector(
-    label: String,
-    selected: String,
-    currencies: List<String>,
-    onSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var textValue by remember(selected) { mutableStateOf(selected) }
-
-    val filteredCurrencies = remember(currencies, textValue, expanded) {
-        if (expanded) {
-            currencies.filter { it.contains(textValue, ignoreCase = true) }
-        } else {
-            currencies
-        }
-    }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
-    ) {
-        OutlinedTextField(
-            value = textValue,
-            onValueChange = { 
-                textValue = it
-                expanded = true
-            },
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true),
-            singleLine = true
-        )
-        
-        if (filteredCurrencies.isNotEmpty()) {
-            ExposedDropdownMenu(
+        // Selector and Value
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Currency Selector Pill
+            ExposedDropdownMenuBox(
                 expanded = expanded,
-                onDismissRequest = { 
-                    expanded = false
-                    if (!currencies.contains(textValue)) {
-                        textValue = selected
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.wrapContentWidth()
+            ) {
+                Surface(
+                    onClick = { expanded = true },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                    color = Color.White,
+                    shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+                    border = BorderStroke(1.5.dp, if (isSource) AppColors.divider.copy(alpha = 0.6f) else AppColors.primary.copy(alpha = 0.4f)),
+                    tonalElevation = 2.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = currencyCode,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = AppColors.contentPrimary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            tint = AppColors.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
-            ) {
-                filteredCurrencies.forEach { curr ->
-                    DropdownMenuItem(
-                        text = { Text(curr) },
-                        onClick = {
-                            onSelected(curr)
-                            textValue = curr
-                            expanded = false
-                        }
-                    )
+                
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(AppColors.popupSurface)
+                ) {
+                    currencies.forEach { currency ->
+                        DropdownMenuItem(
+                            text = { 
+                                Text(
+                                    currency, 
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (currency == currencyCode) FontWeight.Bold else FontWeight.Normal
+                                ) 
+                            },
+                            onClick = {
+                                onCurrencyChange(currency)
+                                expanded = false
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = if (currency == currencyCode) AppColors.primary else AppColors.contentPrimary
+                            )
+                        )
+                    }
                 }
+            }
+
+            // Big Number Display
+            androidx.compose.animation.AnimatedContent(
+                targetState = amount,
+                transitionSpec = {
+                    (androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically { it / 2 })
+                        .togetherWith(androidx.compose.animation.fadeOut() + androidx.compose.animation.slideOutVertically { -it / 2 })
+                },
+                label = "AmountAnimation",
+                modifier = Modifier.weight(1f)
+            ) { targetAmount ->
+                Text(
+                    text = targetAmount,
+                    style = (if (targetAmount.length > 10) MaterialTheme.typography.displaySmall 
+                            else if (targetAmount.length > 7) MaterialTheme.typography.displayMedium 
+                            else MaterialTheme.typography.displayLarge).copy(
+                        fontFeatureSettings = "tnum",
+                        letterSpacing = (-1.5).sp
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSource) AppColors.contentPrimary else AppColors.primary,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)
+                )
             }
         }
     }
 }
 
+
+
+
 @Composable
 fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    FilledTonalButton(
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    Surface(
         onClick = onClick,
-        modifier = modifier.height(AeonTheme.dimensions.iconSize3xl),
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        contentPadding = PaddingValues(0.dp)
+        modifier = modifier,
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+        color = if (isPressed) AppColors.primary.copy(alpha = 0.1f) else Color.White,
+        contentColor = AppColors.contentPrimary,
+        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.2f)),
+        tonalElevation = if (isPressed) 2.dp else 0.dp,
+        interactionSource = interactionSource
     ) {
-        if (text == "C") {
-            Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = "Clear")
-        } else {
-            Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            if (text == "C") {
+                Icon(
+                    Icons.AutoMirrored.Rounded.Backspace, 
+                    contentDescription = "Clear",
+                    modifier = Modifier.size(26.dp),
+                    tint = AppColors.error.copy(alpha = 0.7f)
+                )
+            } else {
+                Text(
+                    text = text, 
+                    style = MaterialTheme.typography.headlineMedium, 
+                    fontWeight = FontWeight.Bold,
+                    color = if (text == ".") AppColors.primary else AppColors.contentPrimary
+                )
+            }
         }
     }
 }
+
+
+

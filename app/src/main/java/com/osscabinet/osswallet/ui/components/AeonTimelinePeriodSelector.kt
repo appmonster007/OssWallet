@@ -1,11 +1,11 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,15 +27,23 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Optimized Timeline Period Selector.
+ * 
+ * @param swipeEntireComponent If true, the entire bar (including buttons and icons) swipes.
+ *                            If false, buttons and icons are fixed and only the date value swipes.
+ */
 @Composable
 fun AeonTimelinePeriodSelector(
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    swipeEntireComponent: Boolean = false
 ) {
     val initialPage = remember(currentRange) {
         when (currentRange) {
@@ -75,178 +83,81 @@ fun AeonTimelinePeriodSelector(
     var showDropdown by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val icons = listOf(
-        Icons.Default.History,
-        Icons.Default.CalendarToday,
-        Icons.Default.Schedule,
-        Icons.Default.DateRange
-    )
-    val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
-
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Previous Button
-            IconButton(
-                onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, -1)) },
-                enabled = pagerState.currentPage > 0,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.ChevronLeft, 
-                    contentDescription = "Previous",
-                    modifier = Modifier.size(18.dp),
-                    tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+        if (swipeEntireComponent) {
+            // Full Component Pager (Tactile Experience)
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                TimelineSelectorRow(
+                    page = page,
+                    currentRange = currentRange,
+                    onRangeSelected = onRangeSelected,
+                    onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                    onDropdownShow = { showDropdown = it },
+                    onDatePickerShow = { showDatePicker = it }
                 )
             }
-
-            // Integrated Content Block
+        } else {
+            // Value-Only Pager (Fixed Controls Experience)
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. Integrated Header Indicators
+                // Fixed Header Icons
+                IconIndicators(
+                    activePage = pagerState.currentPage,
+                    onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+                )
+
                 Row(
-                    modifier = Modifier.animateContentSize(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth().height(32.dp).padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    icons.forEachIndexed { index, icon ->
-                        val isSelected = pagerState.currentPage == index
-                        
-                        Row(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable { scope.launch { pagerState.animateScrollToPage(index) } }
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary 
-                                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            )
-                            
-                            AnimatedVisibility(
-                                visible = isSelected,
-                                enter = fadeIn() + expandHorizontally(),
-                                exit = fadeOut() + shrinkHorizontally()
-                            ) {
-                                Text(
-                                    text = labels[index],
-                                    modifier = Modifier.padding(start = 4.dp),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        letterSpacing = 0.5.sp,
-                                        fontSize = 8.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 2. Date Pager
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(26.dp)
-                ) { page ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                when (page) {
-                                    1, 2 -> showDropdown = true
-                                    3 -> showDatePicker = true
-                                    else -> {}
-                                }
-                            },
-                        contentAlignment = Alignment.Center
+                    IconButton(
+                        onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, -1)) },
+                        enabled = pagerState.currentPage > 0,
+                        modifier = Modifier.size(32.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = getRangeSubtitleText(currentRange),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (page in 1..2) {
-                                Icon(
-                                    Icons.Default.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp).padding(start = 2.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        Icon(
+                            Icons.Default.ChevronLeft, 
+                            null, 
+                            modifier = Modifier.size(16.dp),
+                            tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                        )
+                    }
 
-                        if (showDropdown && pagerState.currentPage == page) {
-                            DropdownMenu(
-                                expanded = showDropdown,
-                                onDismissRequest = { showDropdown = false },
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                            ) {
-                                if (page == 1) {
-                                    ThisPeriodType.entries.forEach { type ->
-                                        DropdownMenuItem(
-                                            text = { Text(type.label) },
-                                            onClick = {
-                                                onRangeSelected(TimelineRange.ThisPeriod(type))
-                                                showDropdown = false
-                                            }
-                                        )
-                                    }
-                                } else if (page == 2) {
-                                    LastPeriodType.entries.forEach { type ->
-                                        DropdownMenuItem(
-                                            text = { Text(type.label) },
-                                            onClick = {
-                                                onRangeSelected(TimelineRange.LastPeriod(type))
-                                                showDropdown = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f)
+                    ) { page ->
+                        DateDisplayArea(
+                            page = page,
+                            currentRange = currentRange,
+                            onDropdownShow = { showDropdown = it },
+                            onDatePickerShow = { showDatePicker = it }
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, 1)) },
+                        enabled = pagerState.currentPage < pagerState.pageCount - 1,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ChevronRight, 
+                            null, 
+                            modifier = Modifier.size(16.dp),
+                            tint = if (pagerState.currentPage < pagerState.pageCount - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                        )
                     }
                 }
-            }
-
-            // Next Button
-            IconButton(
-                onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, 1)) },
-                enabled = pagerState.currentPage > 0,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.ChevronRight, 
-                    contentDescription = "Next",
-                    modifier = Modifier.size(18.dp),
-                    tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
-                )
             }
         }
     }
@@ -262,6 +173,181 @@ fun AeonTimelinePeriodSelector(
             }
         )
     }
+
+    // Dropdown (Shared for both implementations)
+    if (showDropdown) {
+        DropdownMenu(
+            expanded = showDropdown,
+            onDismissRequest = { showDropdown = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+        ) {
+            val page = pagerState.currentPage
+            if (page == 1) {
+                ThisPeriodType.entries.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type.label) },
+                        onClick = {
+                            onRangeSelected(TimelineRange.ThisPeriod(type))
+                            showDropdown = false
+                        }
+                    )
+                }
+            } else if (page == 2) {
+                LastPeriodType.entries.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type.label) },
+                        onClick = {
+                            onRangeSelected(TimelineRange.LastPeriod(type))
+                            showDropdown = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimelineSelectorRow(
+    page: Int,
+    currentRange: TimelineRange,
+    onRangeSelected: (TimelineRange) -> Unit,
+    onIconClick: (Int) -> Unit,
+    onDropdownShow: (Boolean) -> Unit,
+    onDatePickerShow: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, -1)) },
+            enabled = page > 0,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                Icons.Default.ChevronLeft, 
+                null, 
+                modifier = Modifier.size(18.dp),
+                tint = if (page > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            )
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            IconIndicators(activePage = page, onIconClick = onIconClick)
+            DateDisplayArea(
+                page = page,
+                currentRange = currentRange,
+                onDropdownShow = onDropdownShow,
+                onDatePickerShow = onDatePickerShow
+            )
+        }
+
+        IconButton(
+            onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, 1)) },
+            enabled = page > 0,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                Icons.Default.ChevronRight, 
+                null, 
+                modifier = Modifier.size(18.dp),
+                tint = if (page > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun IconIndicators(
+    activePage: Int,
+    onIconClick: (Int) -> Unit
+) {
+    val icons = listOf(Icons.Default.History, Icons.Default.CalendarToday, Icons.Default.Schedule, Icons.Default.DateRange)
+    val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
+
+    Row(
+        modifier = Modifier.padding(top = 2.dp, bottom = 2.dp).animateContentSize(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        icons.forEachIndexed { index, icon ->
+            val isSelected = activePage == index
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onIconClick(index) }
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = fadeIn() + expandHorizontally(),
+                    exit = fadeOut() + shrinkHorizontally()
+                ) {
+                    Text(
+                        text = labels[index],
+                        modifier = Modifier.padding(start = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp, fontSize = 8.sp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DateDisplayArea(
+    page: Int,
+    currentRange: TimelineRange,
+    onDropdownShow: (Boolean) -> Unit,
+    onDatePickerShow: (Boolean) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(26.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable {
+                when (page) {
+                    1, 2 -> onDropdownShow(true)
+                    3 -> onDatePickerShow(true)
+                    else -> {}
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = getRangeSubtitleText(currentRange),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (page in 1..2) {
+                Icon(
+                    Icons.Default.KeyboardArrowDown,
+                    null,
+                    modifier = Modifier.size(14.dp).padding(start = 2.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 private fun getRangeSubtitleText(range: TimelineRange): String {
@@ -275,7 +361,6 @@ private fun getRangeSubtitleText(range: TimelineRange): String {
     val yearFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     
-    // Check if it's a full month
     if (startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
         endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH) &&
         startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
@@ -284,11 +369,6 @@ private fun getRangeSubtitleText(range: TimelineRange): String {
         return SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(start))
     }
 
-    val displayFormat = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) {
-        dateFormat
-    } else {
-        yearFormat
-    }
-
+    val displayFormat = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) dateFormat else yearFormat
     return "${displayFormat.format(Date(start))} - ${displayFormat.format(Date(end))}"
 }

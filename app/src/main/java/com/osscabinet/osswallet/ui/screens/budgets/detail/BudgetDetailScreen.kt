@@ -70,8 +70,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
-private val TealHealthy = Color(0xFF004D40)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -216,7 +216,7 @@ fun BudgetDetailScreen(
                                                     val color = try {
                                                         Color(account.colorHex.toColorInt())
                                                     } catch (_: Exception) {
-                                                        MaterialTheme.colorScheme.primary
+                                                        AppColors.primary
                                                     }
                                                     ScopeChip(text = account.name, color = color)
                                                 }
@@ -243,7 +243,7 @@ fun BudgetDetailScreen(
                                                 {
                                                     ScopeChip(
                                                         text = tag,
-                                                        color = MaterialTheme.colorScheme.secondary
+                                                        color = AppColors.secondary
                                                     )
                                                 }
                                             }
@@ -255,9 +255,9 @@ fun BudgetDetailScreen(
                             if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
                                 item {
                                     Surface(
-                                        color = TealHealthy.copy(alpha = 0.05f),
+                                        color = AppColors.primary.copy(alpha = 0.05f),
                                         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                                        border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
+                                        border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.1f))
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -269,7 +269,7 @@ fun BudgetDetailScreen(
                                             Icon(
                                                 Icons.Rounded.Autorenew,
                                                 contentDescription = null,
-                                                tint = TealHealthy
+                                                tint = AppColors.primary
                                             )
                                             Column {
                                                 Text(
@@ -277,12 +277,12 @@ fun BudgetDetailScreen(
                                                     style = MaterialTheme.typography.titleSmall.copy(
                                                         fontWeight = FontWeight.Bold
                                                     ),
-                                                    color = TealHealthy
+                                                    color = AppColors.primary
                                                 )
                                                 Text(
                                                     "+${progress.rolloverAmount.toPlainString()} ${budget.currency} carried forward",
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    color = TealHealthy.copy(alpha = 0.7f)
+                                                    color = AppColors.primary.copy(alpha = 0.7f)
                                                 )
                                             }
                                         }
@@ -297,17 +297,17 @@ fun BudgetDetailScreen(
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                color = AppColors.cardSurface,
                                 border = BorderStroke(
                                     0.5.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                                    AppColors.divider.copy(alpha = 0.15f)
                                 )
                             ) {
                                 Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
                                     Text(
                                         "No activity in this period",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        color = AppColors.contentSecondary.copy(
                                             alpha = 0.6f
                                         )
                                     )

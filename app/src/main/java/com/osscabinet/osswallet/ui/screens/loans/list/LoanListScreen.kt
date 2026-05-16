@@ -34,9 +34,8 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-
-private val LentColor = Color(0xFF004D40)
-private val BorrowedColor = Color(0xFFE65100)
+import com.osscabinet.ossWallet.ui.theme.WarningColor
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +65,7 @@ fun LoanListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = AppColors.screenBackground
                 )
             )
         }
@@ -83,7 +82,7 @@ fun LoanListScreen(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            color = AppColors.primary.copy(alpha = 0.08f),
                             modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -91,7 +90,7 @@ fun LoanListScreen(
                                     Icons.Rounded.AccountBalance,
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = AppColors.primary
                                 )
                             }
                         }
@@ -103,7 +102,7 @@ fun LoanListScreen(
                         Text(
                             "Track money you've lent or borrowed",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -118,7 +117,7 @@ fun LoanListScreen(
                         item {
                             ManagementSectionHeader(
                                 title = "ACTIVE",
-                                sectionColor = MaterialTheme.colorScheme.primary
+                                sectionColor = AppColors.primary
                             )
                         }
                         items(active, key = { it.id }) { loan ->
@@ -134,7 +133,7 @@ fun LoanListScreen(
                         item {
                             ManagementSectionHeader(
                                 title = "SETTLED",
-                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                sectionColor = AppColors.contentSecondary.copy(alpha = 0.4f)
                             )
                         }
                         items(settled, key = { it.id }) { loan ->
@@ -169,7 +168,7 @@ private fun LoanItem(
     onSettle: () -> Unit
 ) {
     val typeLabel = if (loan.loanType == LoanType.LENT) "Lent to" else "Borrowed from"
-    val accentColor = if (loan.loanType == LoanType.LENT) LentColor else BorrowedColor
+    val accentColor = if (loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
     val loanIcon = if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
 
     ManagementListItem(
@@ -205,7 +204,7 @@ private fun LoanItem(
                 )
             }
             DropdownMenuItem(
-                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                text = { Text("Delete", color = AppColors.error) },
                 onClick = { onDismiss(); onDelete() }
             )
         }

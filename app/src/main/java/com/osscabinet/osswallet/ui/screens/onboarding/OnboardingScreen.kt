@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SyncState
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +61,7 @@ fun OnboardingScreen(
     val steps = listOf("Currency", "Appearance", "Precision", "Account")
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = AppColors.screenBackground,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -70,7 +71,7 @@ fun OnboardingScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                 },
                 navigationIcon = {
@@ -81,14 +82,14 @@ fun OnboardingScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
+                    containerColor = AppColors.transparent
                 )
             )
         },
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.background,
+                color = AppColors.screenBackground,
                 tonalElevation = 0.dp
             ) {
                 Column {
@@ -96,8 +97,8 @@ fun OnboardingScreen(
                     LinearProgressIndicator(
                         progress = { (step + 1).toFloat() / steps.size },
                         modifier = Modifier.fillMaxWidth().height(AeonTheme.dimensions.spacingXs),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        color = AppColors.primary,
+                        trackColor = AppColors.componentOnCard
                     )
 
                     Row(
@@ -184,9 +185,9 @@ fun OnboardingScreen(
             if (isCurrencyMenuExpanded) {
                 ModalBottomSheet(
                     onDismissRequest = { isCurrencyMenuExpanded = false },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    containerColor = AppColors.cardSurface,
                     shape = RoundedCornerShape(topStart = AeonTheme.dimensions.dialogCornerRadius, topEnd = AeonTheme.dimensions.dialogCornerRadius),
-                    dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) },
+                    dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) },
                     modifier = Modifier.fillMaxHeight(0.9f)
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(horizontal = AeonTheme.dimensions.spacingXl).verticalScroll(rememberScrollState())) {
@@ -235,18 +236,18 @@ fun CurrencyStep(
             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             singleLine = true,
             colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                unfocusedContainerColor = AppColors.cardSurface,
+                focusedContainerColor = AppColors.cardSurface,
+                unfocusedIndicatorColor = AppColors.transparent,
+                focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f)
             )
         )
 
         Surface(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+            color = AppColors.cardSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -258,8 +259,8 @@ fun CurrencyStep(
                     Surface(
                         onClick = { onCurrencySelected(code) },
                         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-                        border = if (isSelected) BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) else null
+                        color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
+                        border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.screenPadding),
@@ -268,13 +269,13 @@ fun CurrencyStep(
                             Surface(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                 shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                                color = if (isSelected) AppColors.primary.copy(alpha = 0.2f) else AppColors.componentOnCard
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         getCurrencySymbol(code),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (isSelected) AppColors.primary else AppColors.contentSecondary
                                     )
                                 }
                             }
@@ -284,12 +285,12 @@ fun CurrencyStep(
                                     getCurrencyName(code),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
                                 )
-                                Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                Text(code, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                             }
                             if (isSelected) {
                                 when (syncState) {
                                     is SyncState.Loading -> CircularProgressIndicator(modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd), strokeWidth = 2.dp)
-                                    else -> Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                                    else -> Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = AppColors.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
                                 }
                             }
                         }
@@ -323,10 +324,10 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                 Surface(
                     onClick = { onThemeSelected(name) },
                     shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
+                    color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
                     border = BorderStroke(
                         width = if (isSelected) 1.5.dp else 0.5.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                        color = if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -337,19 +338,19 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                         Surface(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                             shape = CircleShape,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                            color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.componentOnCard
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(icon, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(icon, contentDescription = null, tint = if (isSelected) AppColors.primary else AppColors.contentSecondary)
                             }
                         }
                         Spacer(modifier = Modifier.width(AeonTheme.dimensions.containerCornerRadius))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                            Text(desc, style = MaterialTheme.typography.bodySmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                         }
                         if (isSelected) {
-                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = AppColors.primary)
                         }
                     }
                 }
@@ -378,10 +379,10 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                     onClick = { onPrecisionSelected(p) },
                     modifier = Modifier.weight(1f).height(120.dp),
                     shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
+                    color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
                     border = BorderStroke(
                         width = if (isSelected) 1.5.dp else 0.5.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                        color = if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
                     )
                 ) {
                     Column(
@@ -392,12 +393,12 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                         Text(
                             p.toString(),
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         )
                         Text(
                             "DECIMALS",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = if (isSelected) AppColors.primary.copy(alpha = 0.6f) else AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -409,20 +410,20 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            color = AppColors.componentOnCard.copy(alpha = 0.3f),
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f))
         ) {
             Row(
                 modifier = Modifier.padding(AeonTheme.dimensions.spacingXl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                Icon(Icons.Rounded.Info, contentDescription = null, tint = AppColors.primary, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                 Text(
                     text = "Example: ${formatAmount(BigDecimal("1234.5678"), selectedPrecision)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppColors.contentPrimary
                 )
             }
         }
@@ -463,10 +464,10 @@ fun AccountStep(
                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    unfocusedContainerColor = AppColors.componentOnCard.copy(alpha = 0.3f),
+                    focusedContainerColor = AppColors.componentOnCard.copy(alpha = 0.3f),
+                    unfocusedIndicatorColor = AppColors.transparent,
+                    focusedIndicatorColor = AppColors.primary
                 )
             )
         }
@@ -476,8 +477,8 @@ fun AccountStep(
                 onClick = onCurrencyMenuOpen,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
-                border = BorderStroke(1.dp, if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.error.copy(alpha = 0.3f) else Color.Transparent)
+                color = AppColors.componentOnCard.copy(alpha = 0.3f),
+                border = BorderStroke(1.dp, if (allowedCurrencies.isEmpty()) AppColors.error.copy(alpha = 0.3f) else AppColors.transparent)
             ) {
                 Row(
                     modifier = Modifier.padding(AeonTheme.dimensions.screenPadding),
@@ -494,11 +495,11 @@ fun AccountStep(
                             Text(
                                 allowedCurrencies.joinToString(", "),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         }
                     }
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = AppColors.primary)
                 }
             }
         }
@@ -545,9 +546,9 @@ private fun BalanceEditSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = AppColors.cardSurface,
         shape = RoundedCornerShape(topStart = AeonTheme.dimensions.dialogCornerRadius, topEnd = AeonTheme.dimensions.dialogCornerRadius),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
     ) {
         Column(
             modifier = Modifier
@@ -566,15 +567,15 @@ private fun BalanceEditSheet(
                     Surface(
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        color = AppColors.primary.copy(alpha = 0.15f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = AppColors.primary)
                         }
                     }
                     Column {
                         Text(getCurrencyName(currencyCode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(currencyCode, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                        Text(currencyCode, style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                     }
                 }
                 IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = "Close") }
@@ -583,18 +584,18 @@ private fun BalanceEditSheet(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                color = AppColors.recessedSurface,
+                border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.spacingXl),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("STARTING BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                    Text("STARTING BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = AppColors.contentSecondary.copy(alpha = 0.5f))
                     Text(
                         if (currentBalance.isEmpty()) "0.00" else currentBalance,
                         style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black, letterSpacing = (-1).sp),
-                        color = if (currentBalance.startsWith("-")) Color(0xFFB3261E) else Color(0xFF004D40)
+                        color = if (currentBalance.startsWith("-")) AppColors.error else AppColors.primary
                     )
                 }
             }
@@ -620,11 +621,11 @@ private fun SectionCard(
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = AppColors.primary.copy(alpha = 0.7f))
             Text(
                 title.uppercase(),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                color = AppColors.primary.copy(alpha = 0.7f)
             )
         }
         content()
@@ -642,10 +643,10 @@ private fun BalanceInputCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow,
+        color = if (isActive) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
         border = BorderStroke(
             width = if (isActive) 1.5.dp else 0.5.dp,
-            color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            color = if (isActive) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
         )
     ) {
         Row(
@@ -657,7 +658,7 @@ private fun BalanceInputCard(
                 Surface(
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    color = AppColors.componentOnCard
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
@@ -668,14 +669,14 @@ private fun BalanceInputCard(
                     Text(
                         if (currentBalance.isEmpty()) "Tap to set" else "Balance set",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             }
             Text(
                 if (currentBalance.isEmpty()) "0.00" else currentBalance,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                color = if (currentBalance.startsWith("-")) Color(0xFFB3261E) else if (currentBalance.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f) else Color(0xFF004D40)
+                color = if (currentBalance.startsWith("-")) AppColors.error else if (currentBalance.isEmpty()) AppColors.contentSecondary.copy(alpha = 0.3f) else AppColors.primary
             )
         }
     }
@@ -690,10 +691,10 @@ fun StepHeader(icon: ImageVector, title: String, description: String) {
         Surface(
             modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+            color = AppColors.primary.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg), tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg), tint = AppColors.primary)
             }
         }
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
@@ -705,7 +706,7 @@ fun StepHeader(icon: ImageVector, title: String, description: String) {
         Text(
             description,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            color = AppColors.contentSecondary.copy(alpha = 0.7f),
             lineHeight = 24.sp
         )
     }

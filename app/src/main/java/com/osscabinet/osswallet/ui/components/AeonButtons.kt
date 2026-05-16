@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonDashedButton(
@@ -32,15 +33,15 @@ fun AeonDashedButton(
     enabled: Boolean = true
 ) {
     val contentColor = if (isError) {
-        if (enabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
+        if (enabled) AppColors.error else AppColors.error.copy(alpha = 0.3f)
     } else {
-        if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.3f)
     }
 
     val borderColor = if (isError) {
-        if (enabled) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+        if (enabled) AppColors.error.copy(alpha = 0.5f) else AppColors.error.copy(alpha = 0.1f)
     } else {
-        if (enabled) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+        if (enabled) AppColors.border.copy(alpha = 0.4f) else AppColors.border.copy(alpha = 0.1f)
     }
 
     Box(
@@ -96,8 +97,8 @@ fun AeonFloatingActionButton(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Rounded.Add,
     contentDescription: String? = null,
-    containerColor: Color = MaterialTheme.colorScheme.primary,
-    contentColor: Color = MaterialTheme.colorScheme.onPrimary
+    containerColor: Color = AppColors.primary,
+    contentColor: Color = AppColors.onPrimary
 ) {
     FloatingActionButton(
         onClick = onClick,
@@ -117,8 +118,8 @@ fun AeonExtendedFloatingActionButton(
     text: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.primary,
-    contentColor: Color = MaterialTheme.colorScheme.onPrimary
+    containerColor: Color = AppColors.primary,
+    contentColor: Color = AppColors.onPrimary
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,

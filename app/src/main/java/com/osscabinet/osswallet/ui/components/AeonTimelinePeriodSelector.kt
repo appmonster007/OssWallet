@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Optimized Timeline Period Selector.
@@ -87,7 +88,7 @@ fun AeonTimelinePeriodSelector(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = AppColors.cardSurface,
         tonalElevation = 1.dp
     ) {
         if (swipeEntireComponent) {
@@ -188,7 +189,7 @@ private fun TimelineSelectorLayout(
                 Icons.Default.ChevronLeft, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (currentRange !is TimelineRange.AllTime) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.2f)
             )
         }
 
@@ -210,7 +211,7 @@ private fun TimelineSelectorLayout(
                 Icons.Default.ChevronRight, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (currentRange !is TimelineRange.AllTime) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.2f)
             )
         }
     }
@@ -242,7 +243,7 @@ private fun IconIndicators(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
                 )
                 AnimatedVisibility(
                     visible = isSelected,
@@ -253,7 +254,7 @@ private fun IconIndicators(
                         text = labels[index],
                         modifier = Modifier.padding(start = 4.dp),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp, fontSize = 8.sp),
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                 }
             }
@@ -293,7 +294,7 @@ private fun DateDisplayArea(
             Text(
                 text = getRangeSubtitleText(currentRange),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -302,7 +303,7 @@ private fun DateDisplayArea(
                     Icons.Default.KeyboardArrowDown,
                     null,
                     modifier = Modifier.size(14.dp).padding(start = 2.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = AppColors.contentSecondary
                 )
             }
         }
@@ -314,7 +315,7 @@ private fun DateDisplayArea(
                 offset = DpOffset(0.dp, 4.dp),
                 modifier = Modifier
                     .width(with(density) { width.toDp() })
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(AppColors.panelSurface)
             ) {
                 if (page == 1) {
                     ThisPeriodType.entries.forEach { type ->

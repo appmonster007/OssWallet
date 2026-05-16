@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A dialog that behaves like a full screen, allowing "screen" transitions without
@@ -29,7 +30,7 @@ fun AeonFullScreenDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface
+            color = AppColors.panelSurface
         ) {
             content()
         }
@@ -44,7 +45,7 @@ fun AeonFullScreenDialog(
 fun AeonSelectionScreen(
     title: String,
     onBack: () -> Unit,
-    containerColor: Color = MaterialTheme.colorScheme.surface,
+    containerColor: Color = AppColors.panelSurface,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit

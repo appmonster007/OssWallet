@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import android.content.Intent
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
 import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 class MainActivity : FragmentActivity() {
     private var keepSplashOnScreen = true
@@ -73,7 +74,7 @@ class MainActivity : FragmentActivity() {
             OssWalletTheme(theme = theme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = AppColors.screenBackground
                 ) {
                     val navController = rememberNavController()
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

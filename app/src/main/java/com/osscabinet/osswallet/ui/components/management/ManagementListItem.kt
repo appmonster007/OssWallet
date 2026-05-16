@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Generic list item container for management screens.
@@ -37,12 +38,12 @@ fun ManagementListItem(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = if (isWarning) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
-                else MaterialTheme.colorScheme.surfaceContainerLow,
+        color = if (isWarning) AppColors.errorContainer.copy(alpha = 0.15f)
+                else AppColors.cardSurface,
         border = BorderStroke(
             0.5.dp,
-            if (isWarning) MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            if (isWarning) AppColors.error.copy(alpha = 0.2f)
+            else AppColors.divider.copy(alpha = 0.15f)
         ),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -86,7 +87,7 @@ fun ManagementListItem(
                         Text(
                             subtitle,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -114,7 +115,7 @@ fun ManagementListItem(
                                 Icons.Rounded.MoreVert,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         }
                         DropdownMenu(

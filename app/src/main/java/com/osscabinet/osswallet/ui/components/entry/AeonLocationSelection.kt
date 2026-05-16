@@ -37,6 +37,7 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.osmdroid.util.GeoPoint
 import java.net.URLEncoder
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -281,10 +282,10 @@ fun AeonLocationSelectionContent(
             ) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                    color = AppColors.panelSurface.copy(alpha = 0.95f),
                     tonalElevation = 8.dp,
                     shadowElevation = 12.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.5f))
                 ) {
                     Column {
                         TextField(
@@ -297,10 +298,10 @@ fun AeonLocationSelectionContent(
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(20.dp),
                                         strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = AppColors.primary
                                     )
                                 } else {
-                                    Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.primary)
                                 }
                             },
                             trailingIcon = {
@@ -311,11 +312,11 @@ fun AeonLocationSelectionContent(
                                 }
                             },
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = AppColors.transparent,
+                                unfocusedContainerColor = AppColors.transparent,
+                                disabledContainerColor = AppColors.transparent,
+                                focusedIndicatorColor = AppColors.transparent,
+                                unfocusedIndicatorColor = AppColors.transparent,
                             ),
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodyLarge
@@ -324,12 +325,12 @@ fun AeonLocationSelectionContent(
                         val displayResults = if (searchQuery.isEmpty()) searchHistory else searchResults
                         
                         if (displayResults.isNotEmpty() || searchError != null) {
-                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider)
                             
                             if (searchError != null) {
                                 Text(
                                     text = searchError,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = AppColors.error,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(16.dp)
                                 )
@@ -349,7 +350,7 @@ fun AeonLocationSelectionContent(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 0.5.sp
                                         ),
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = AppColors.primary
                                     )
                                     TextButton(
                                         onClick = onClearHistory,
@@ -380,7 +381,7 @@ fun AeonLocationSelectionContent(
                                                 result.secondaryText,
                                                 maxLines = 1,
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = AppColors.contentSecondary
                                             )
                                         },
                                         modifier = Modifier.clickable { onSearchResultClick(result) },
@@ -388,9 +389,9 @@ fun AeonLocationSelectionContent(
                                             Surface(
                                                 shape = CircleShape,
                                                 color = if (searchQuery.isEmpty()) 
-                                                    MaterialTheme.colorScheme.secondaryContainer 
+                                                    AppColors.secondaryContainer 
                                                 else 
-                                                    MaterialTheme.colorScheme.primaryContainer,
+                                                    AppColors.accentContainer,
                                                 modifier = Modifier.size(36.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
@@ -399,9 +400,9 @@ fun AeonLocationSelectionContent(
                                                         contentDescription = null,
                                                         modifier = Modifier.size(20.dp),
                                                         tint = if (searchQuery.isEmpty())
-                                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                                            AppColors.onSecondaryContainer
                                                         else
-                                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                                            AppColors.onAccentContainer
                                                     )
                                                 }
                                             }
@@ -420,8 +421,8 @@ fun AeonLocationSelectionContent(
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
                     .padding(bottom = if (selectedCoords != null) 210.dp else 24.dp),
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = AppColors.accentContainer,
+                contentColor = AppColors.onPrimaryContainer,
                 shape = CircleShape
             ) {
                 Icon(Icons.Rounded.MyLocation, contentDescription = "My Location")
@@ -435,11 +436,11 @@ fun AeonLocationSelectionContent(
             ) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
+                    color = AppColors.panelSurface,
                     tonalElevation = 8.dp,
                     shadowElevation = 24.dp,
                     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -456,14 +457,14 @@ fun AeonLocationSelectionContent(
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    color = AppColors.primary.copy(alpha = 0.1f),
                                     modifier = Modifier.size(56.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             Icons.Rounded.Place,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = AppColors.primary,
                                             modifier = Modifier.size(28.dp)
                                         )
                                     }
@@ -479,7 +480,7 @@ fun AeonLocationSelectionContent(
                                     Text(
                                         text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords.first, selectedCoords.second),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = AppColors.contentSecondary,
                                         maxLines = 1,
                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
@@ -496,9 +497,9 @@ fun AeonLocationSelectionContent(
                                 onClick = onClear,
                                 modifier = Modifier.size(56.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, AppColors.divider)
                             ) {
-                                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Clear", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Clear", tint = AppColors.error)
                             }
 
                             Button(

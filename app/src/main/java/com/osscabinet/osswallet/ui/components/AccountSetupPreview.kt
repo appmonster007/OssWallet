@@ -16,12 +16,13 @@ import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Preview(showBackground = true)
 @Composable
 fun AeonHeroHeaderPreview() {
     OssWalletTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -48,7 +49,7 @@ fun AeonHeroHeaderPreview() {
 @Composable
 fun VisualIdentitySectionPreview() {
     OssWalletTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Column(modifier = Modifier.padding(16.dp)) {
                 VisualIdentitySection(
                     selectedIconName = "AccountBalance",

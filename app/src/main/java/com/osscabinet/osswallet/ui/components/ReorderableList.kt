@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -242,7 +243,7 @@ fun <T> ReorderableList(
                         tonalElevation = elevation,
                         shadowElevation = elevation,
                         shape = RoundedCornerShape(if (isDragging) 16.dp else 0.dp),
-                        color = Color.Transparent
+                        color = AppColors.transparent
                     ) {
                         itemContent(item, isDragging)
                     }

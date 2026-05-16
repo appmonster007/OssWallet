@@ -24,7 +24,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import java.math.BigDecimal
@@ -140,8 +140,8 @@ fun AccountListScreen(
                         onClick = { showMultiDeleteDialog = true },
                         icon = Icons.Rounded.Delete,
                         text = "Delete Selected (${selectedAccountIds.size})",
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
+                        containerColor = AppColors.error,
+                        contentColor = AppColors.onError
                     )
                 }
             } else {
@@ -165,7 +165,7 @@ fun AccountListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
-                .background(MaterialTheme.colorScheme.background)
+                .background(AppColors.screenBackground)
                 .graphicsLayer(clip = false),
             contentPadding = PaddingValues(
                 top = AeonTheme.dimensions.screenPadding,
@@ -204,8 +204,8 @@ fun AccountManagementListItem(
     onToggleArchive: () -> Unit,
     onAccountClick: () -> Unit
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-    val contentColor = if (accountColor.isDark()) Color.White else Color.Black
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { AppColors.primary }
+    val contentColor = if (accountColor.isDark()) ColorOnDark else ColorOnLight
 
     Surface(
         modifier = Modifier
@@ -214,13 +214,13 @@ fun AccountManagementListItem(
             .clickable(enabled = isSelectionMode) { onSelect() },
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = when {
-            isDragging -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
-            isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            isDragging -> AppColors.selectionContainer.copy(alpha = 0.9f)
+            isSelected -> AppColors.selectionContainer.copy(alpha = 0.5f)
+            else -> AppColors.insetSurface.copy(alpha = 0.5f)
         },
         border = BorderStroke(
             1.dp, 
-            if (isSelected || isDragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+            if (isSelected || isDragging) AppColors.primary else AppColors.insetSurface
         ),
         shadowElevation = if (isDragging) AeonTheme.dimensions.spacingSm else 0.dp
     ) {
@@ -239,7 +239,7 @@ fun AccountManagementListItem(
                     Icons.Rounded.DragHandle,
                     contentDescription = "Drag to reorder",
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                    tint = MaterialTheme.colorScheme.outline
+                    tint = AppColors.border
                 )
             }
 
@@ -278,7 +278,7 @@ fun AccountManagementListItem(
                     Text(
                         account.structureType,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.border
                     )
                 }
             }

@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import java.math.BigDecimal
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonSettingsToggle(
@@ -42,7 +43,7 @@ fun AeonSettingsToggle(
     thumbContent: (@Composable () -> Unit)? = null
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        color = AppColors.insetSurface.copy(alpha = 0.3f),
         shape = RoundedCornerShape(20.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -60,13 +61,13 @@ fun AeonSettingsToggle(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.primary
                 )
                 if (description != null) {
                     Text(
                         description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AppColors.contentSecondary
                     )
                 }
             }
@@ -134,7 +135,7 @@ fun AeonGridColumnsSettings(
     maxColumns: Int = 3
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        color = AppColors.insetSurface.copy(alpha = 0.3f),
         shape = RoundedCornerShape(20.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -148,7 +149,7 @@ fun AeonGridColumnsSettings(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary
+                color = AppColors.primary
             )
 
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -192,9 +193,9 @@ fun AeonFlowSectionHeader(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp,
-                        fontSize = 11.sp
+                        fontSize = 12.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    color = AppColors.primary.copy(alpha = 0.9f)
                 )
 
                 if (activeFilterCount > 0) {
@@ -222,7 +223,7 @@ fun AeonFlowSectionHeader(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onBreadcrumbClick(-1) 
                         },
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = AppColors.contentSecondary
                 )
                 
                 breadcrumbs.forEachIndexed { index, crumb ->
@@ -230,18 +231,18 @@ fun AeonFlowSectionHeader(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        tint = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
                     Text(
                         text = crumb.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (index == breadcrumbs.size - 1) FontWeight.Bold else FontWeight.Normal
                         ),
                         color = if (index == breadcrumbs.size - 1) 
-                            MaterialTheme.colorScheme.primary 
+                            AppColors.primary 
                         else 
-                            MaterialTheme.colorScheme.onSurfaceVariant,
+                            AppColors.contentSecondary,
                         modifier = Modifier.clickable { 
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onBreadcrumbClick(index) 
@@ -258,15 +259,15 @@ fun AeonFlowSectionHeader(
 @Composable
 fun FilterActiveIndicator(count: Int) {
     Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = AppColors.selectionContainer,
+        contentColor = AppColors.onSelectionContainer,
         shape = CircleShape,
         modifier = Modifier.size(24.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                 Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(12.dp))
-                Text(count.toString(), style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
+                Text(count.toString(), style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
             }
         }
     }
@@ -285,10 +286,10 @@ fun AeonFlowBadge(
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
     Surface(
-        color = color.copy(alpha = 0.1f),
+        color = color.copy(alpha = 0.15f),
         contentColor = color,
         shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, color.copy(alpha = 0.2f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.4f)),
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
     ) {
         Text(
@@ -296,7 +297,7 @@ fun AeonFlowBadge(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontFeatureSettings = "tnum"
             )
         )
@@ -380,7 +381,7 @@ fun AeonFlowSectionHeaderPreview() {
                 Text(
                     "SEE ALL",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.primary
                 )
             }
         )

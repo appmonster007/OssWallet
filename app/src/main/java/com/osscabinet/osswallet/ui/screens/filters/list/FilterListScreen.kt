@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,8 +50,8 @@ fun FilterListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddFilterClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = AppColors.primary,
+                contentColor = AppColors.onPrimary,
                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Filter")
@@ -69,13 +70,13 @@ fun FilterListScreen(
                         Icons.Rounded.FilterList,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        tint = AppColors.contentSecondary.copy(alpha = 0.3f)
                     )
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                     Text(
                         "No saved filters yet",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.border
                     )
                 }
             }
@@ -109,7 +110,7 @@ fun FilterItem(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        color = AppColors.insetSurface.copy(alpha = 0.3f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -121,13 +122,13 @@ fun FilterItem(
             Surface(
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                color = AppColors.primary.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.FilterList,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -143,7 +144,7 @@ fun FilterItem(
                 Icon(
                     Icons.Rounded.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    tint = AppColors.error.copy(alpha = 0.7f)
                 )
             }
         }

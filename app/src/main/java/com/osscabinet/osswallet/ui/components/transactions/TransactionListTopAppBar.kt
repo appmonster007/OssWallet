@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +39,7 @@ fun TransactionListTopAppBar(
                 Text(
                     if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = AppColors.border
                 )
             }
         },

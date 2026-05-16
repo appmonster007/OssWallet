@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.*
 import java.text.SimpleDateFormat
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +80,7 @@ fun AeonDateTimePicker(
                 }
             },
             shape = RoundedCornerShape(32.dp),
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AppColors.panelSurface
         )
     }
 }

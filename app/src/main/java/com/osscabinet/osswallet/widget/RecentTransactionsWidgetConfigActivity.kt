@@ -40,6 +40,7 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 class RecentTransactionsWidgetConfigActivity : ComponentActivity() {
@@ -133,7 +134,7 @@ private fun RecentTransactionsWidgetConfigScreen(
             Text(
                 "Choose what to show as the primary text for each transaction.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = AppColors.contentSecondary
             )
             
             Row(
@@ -187,6 +188,6 @@ private fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary
+        color = AppColors.primary
     )
 }

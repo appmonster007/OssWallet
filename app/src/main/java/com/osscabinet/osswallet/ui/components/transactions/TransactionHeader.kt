@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Unified transaction header composable that can be used for both weekly and daily transaction summaries.
@@ -136,14 +138,14 @@ fun TransactionHeader(
                         Text(
                             text = "TOTAL",
                             style = styles.totalLabelStyle,
-                            color = MaterialTheme.colorScheme.primary
+                            color = AppColors.primary
                         )
                         if (canExpand) {
                             Icon(
                                 if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(10.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                tint = AppColors.primary.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -187,7 +189,7 @@ fun TransactionHeader(
                                 .weight(balanceWeight)
                                 .padding(start = 8.dp),
                             textAlign = TextAlign.End,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = AppColors.contentPrimary,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -258,7 +260,7 @@ fun TransactionHeader(
                                             .weight(balanceWeight)
                                             .padding(start = 8.dp),
                                         textAlign = TextAlign.End,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        color = AppColors.contentPrimary.copy(alpha = 0.6f),
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -293,43 +295,43 @@ private data class TransactionHeaderStyles(
     companion object {
         @Composable
         fun default() = TransactionHeaderStyles(
-            positiveColor = Color(0xFF4CAF50),
-            negativeColor = MaterialTheme.colorScheme.error,
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainer,
-            outlineColor = MaterialTheme.colorScheme.outline,
-            dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            positiveColor = PositiveAmountColor,
+            negativeColor = AppColors.error,
+            surfaceColor = AppColors.sheetSurface,
+            outlineColor = AppColors.border,
+            dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,
             titleStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.outline,
+                color = AppColors.border,
                 letterSpacing = 1.sp,
-                fontSize = 8.sp
+                fontSize = 12.sp
             ),
             subtitleStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                color = AppColors.border,
                 letterSpacing = 0.5.sp,
-                fontSize = 7.sp
+                fontSize = 11.sp
             ),
             columnHeaderStyle = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 7.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp
             ),
             totalLabelStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,
-                fontSize = 8.sp
+                fontSize = 11.sp
             ),
             baseValueStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 9.sp
+                fontSize = 12.sp
             ),
             breakdownLabelStyle = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 8.sp
+                fontSize = 11.sp
             ),
             breakdownValueStyle = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 8.sp
+                fontSize = 11.sp
             )
         )
     }

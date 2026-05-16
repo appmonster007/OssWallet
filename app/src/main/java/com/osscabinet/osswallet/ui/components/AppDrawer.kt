@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.graphics.Color as AndroidColor
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AppDrawerContent(
@@ -50,7 +51,7 @@ fun AppDrawerContent(
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(280.dp),
-        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        drawerContainerColor = AppColors.drawerSurface,
         drawerShape = RoundedCornerShape(topEnd = AeonTheme.dimensions.cardCornerRadius, bottomEnd = AeonTheme.dimensions.cardCornerRadius)
     ) {
         val scrollState = rememberScrollState()
@@ -73,14 +74,14 @@ fun AppDrawerContent(
                     Surface(
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
+                        color = AppColors.primaryContainer
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                tint = AppColors.onPrimaryContainer
                             )
                         }
                     }
@@ -92,13 +93,13 @@ fun AppDrawerContent(
                     Text(
                         "Personal Account",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
+                        color = AppColors.contentSecondary
                     )
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
@@ -131,13 +132,13 @@ fun AppDrawerContent(
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
                 Text(
@@ -146,7 +147,7 @@ fun AppDrawerContent(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.outline,
+                    color = AppColors.contentSecondary,
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
                 )
 
@@ -175,14 +176,14 @@ fun AppDrawerContent(
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
 
                 if (starredTemplates.isNotEmpty()) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        color = AppColors.insetSurface.copy(alpha = 0.5f)
                     )
 
                     Text(
@@ -191,7 +192,7 @@ fun AppDrawerContent(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = MaterialTheme.colorScheme.outline,
+                        color = AppColors.contentSecondary,
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
                     )
 
@@ -212,18 +213,18 @@ fun AppDrawerContent(
                                     },
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = AppColors.primary
                                 )
                             },
                             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
-                            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                         )
                     }
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
                 Text(
@@ -232,7 +233,7 @@ fun AppDrawerContent(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.outline,
+                    color = AppColors.contentSecondary,
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
                 )
 
@@ -254,7 +255,7 @@ fun AppDrawerContent(
                                 Text(
                                     account.currencyCode,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
+                                    color = AppColors.contentSecondary
                                 )
                             }
                         },
@@ -267,7 +268,7 @@ fun AppDrawerContent(
                             val accountColor = try {
                                 Color(AndroidColor.parseColor(account.colorHex))
                             } catch (_: Exception) {
-                                MaterialTheme.colorScheme.primary
+                                AppColors.primary
                             }
                             Box(
                                 modifier = Modifier
@@ -277,7 +278,7 @@ fun AppDrawerContent(
                             )
                         },
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm),
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
             }
@@ -286,10 +287,10 @@ fun AppDrawerContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(AppColors.panelSurface)
             ) {
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    color = AppColors.insetSurface.copy(alpha = 0.5f),
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
                 )
                 NavigationDrawerItem(
@@ -306,7 +307,7 @@ fun AppDrawerContent(
                     },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingSm),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                 )
             }
         }

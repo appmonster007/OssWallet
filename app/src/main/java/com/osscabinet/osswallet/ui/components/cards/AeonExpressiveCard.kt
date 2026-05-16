@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A reusable card component following the "Architect Slate" design specification.
@@ -46,7 +47,7 @@ fun AeonExpressiveCard(
     headerModifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    iconColor: Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = AppColors.primary,
     filter: TransactionFilter? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
     filterRules: CardFilterRules? = null,
@@ -77,14 +78,14 @@ fun AeonExpressiveCard(
             ),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = AppColors.cardSurface
         ),
         border = BorderStroke(
             width = if (accentColor != null) 1.dp else 0.5.dp,
             color = when {
-                isWarning -> MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
+                isWarning -> AppColors.error.copy(alpha = 0.3f)
                 accentColor != null -> accentColor.copy(alpha = 0.4f)
-                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                else -> AppColors.divider.copy(alpha = 0.15f)
             }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -127,16 +128,16 @@ fun AeonExpressiveCard(
                             fontSize = 14.sp,
                             letterSpacing = 0.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = AppColors.contentPrimary
                     )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp
+                                fontSize = 12.sp
                             ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = AppColors.contentSecondary
                         )
                     }
                 }
@@ -175,17 +176,17 @@ fun AeonCardFilterButton(
         onClick = onClick,
         modifier = modifier.size(28.dp),
         shape = CircleShape,
-        color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) 
-                else Color.Transparent,
-        border = if (isActive) BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        color = if (isActive) AppColors.primary.copy(alpha = 0.15f) 
+                else AppColors.transparent,
+        border = if (isActive) BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.5f))
                  else null
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = if (isActive) activeIcon else icon,
                 contentDescription = "Filter",
-                tint = if (isActive) MaterialTheme.colorScheme.primary 
-                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                tint = if (isActive) AppColors.primary 
+                       else AppColors.contentSecondary.copy(alpha = 0.6f),
                 modifier = Modifier.size(16.dp)
             )
         }

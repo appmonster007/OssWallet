@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Convenience overload for TransactionType.
@@ -127,13 +128,13 @@ fun <T> AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList()
 ) {
-    val activeAmountColor = amountColor ?: MaterialTheme.colorScheme.primary
+    val activeAmountColor = amountColor ?: AppColors.primary
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        color = AppColors.cardSurface,
+        border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), AppColors.divider.copy(alpha = 0.15f)),
         shadowElevation = 0.dp
     ) {
         Column(
@@ -174,8 +175,8 @@ fun <T> AeonImpactHeaderCard(
                                     .size(AeonTheme.dimensions.iconSizeLg)
                                     .clip(CircleShape)
                                     .background(
-                                        if (isSplitMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                        else Color.Transparent
+                                        if (isSplitMode) AppColors.primary.copy(alpha = 0.12f)
+                                        else AppColors.transparent
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -183,8 +184,8 @@ fun <T> AeonImpactHeaderCard(
                                     Icons.AutoMirrored.Rounded.CallSplit,
                                     contentDescription = "Split Transaction",
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                    tint = if (isSplitMode) MaterialTheme.colorScheme.primary 
-                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    tint = if (isSplitMode) AppColors.primary 
+                                           else AppColors.contentSecondary.copy(alpha = 0.4f)
                                 )
                             }
                         }
@@ -198,8 +199,8 @@ fun <T> AeonImpactHeaderCard(
                 Surface(
                     onClick = onExchangeRateClick,
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    color = AppColors.primary.copy(alpha = 0.08f),
+                    border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), AppColors.primary.copy(alpha = 0.15f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -210,12 +211,12 @@ fun <T> AeonImpactHeaderCard(
                             Icons.Rounded.CurrencyExchange,
                             contentDescription = "Edit Exchange Rate",
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = AppColors.primary
                         )
                         Text(
                             text = "1:${transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.primary
+                            color = AppColors.primary
                         )
                     }
                 }
@@ -227,7 +228,7 @@ fun <T> AeonImpactHeaderCard(
                     currency = targetCurrency ?: currency,
                     onCurrencyClick = { onTargetCurrencyClick() },
                     onAmountClick = onAmountClick,
-                    amountColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    amountColor = AppColors.contentPrimary.copy(alpha = 0.8f),
                     supportedCurrencies = targetSupportedCurrencies.ifEmpty { supportedCurrencies }
                 )
             }
@@ -236,7 +237,7 @@ fun <T> AeonImpactHeaderCard(
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingMd),
                     thickness = (AeonTheme.dimensions.spacingXs / 8),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                    color = AppColors.divider.copy(alpha = 0.15f)
                 )
 
                 EntryEditorialInput(

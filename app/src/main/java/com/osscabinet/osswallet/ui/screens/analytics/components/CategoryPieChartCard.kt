@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CategoryPieChartCard(
@@ -91,7 +92,7 @@ fun CategoryPieChartCard(
                 activeFilterCount = activeCount
             )
             IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Rounded.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Rounded.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = AppColors.primary)
             }
         }
     ) {
@@ -110,7 +111,7 @@ fun CategoryPieChartCard(
                         imageVector = Icons.Default.Home,
                         contentDescription = "Home",
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = AppColors.primary
                     )
                 }
                 
@@ -119,7 +120,7 @@ fun CategoryPieChartCard(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = AppColors.border
                     )
                     
                     val prevStack = navigationStack[index]
@@ -236,7 +237,7 @@ fun CategoryPieChartCard(
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No category data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No category data", style = MaterialTheme.typography.bodySmall, color = AppColors.contentSecondary)
                 }
             }
         }
@@ -295,7 +296,7 @@ private fun CategoryPieChartDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -339,7 +340,7 @@ private fun CategoryPieChartDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }
 
@@ -379,7 +380,7 @@ fun CategoryLegend(
                     modifier = Modifier.size(10.dp),
                     shape = RoundedCornerShape(2.dp),
                     color = displayColor,
-                    border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.05f))
+                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
                 ) {}
                 
                 Text(
@@ -397,7 +398,7 @@ fun CategoryLegend(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppColors.contentPrimary
                 )
             }
         }
@@ -409,7 +410,7 @@ fun CategoryLegend(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                color = AppColors.contentSecondary.copy(alpha = 0.5f),
                 modifier = Modifier.padding(start = 22.dp)
             )
         }

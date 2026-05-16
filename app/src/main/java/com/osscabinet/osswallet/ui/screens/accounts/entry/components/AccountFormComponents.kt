@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.util.Currency.getAvailableCurrencies
+import com.osscabinet.ossWallet.ui.theme.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -64,7 +65,7 @@ fun CurrencyManagementSection(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(40.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        color = AppColors.insetSurface.copy(alpha = 0.2f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             AeonFlowSectionHeader(title = "CURRENCY MANAGEMENT")
@@ -73,19 +74,19 @@ fun CurrencyManagementSection(
             Surface(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface
+                color = AppColors.panelSurface
             ) {
                 Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.border, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = AppColors.contentPrimary),
+                        cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) Text("Search ISO codes...", color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                            if (searchQuery.isEmpty()) Text("Search ISO codes...", color = AppColors.contentSecondary.copy(alpha = 0.6f))
                             innerTextField()
                         }
                     )
@@ -93,7 +94,7 @@ fun CurrencyManagementSection(
             }
 
             // Top 10 Currencies in 5x2 grid or search results
-            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
 
             if (searchQuery.isBlank()) {
                 val topCurrencies = commonCurrencies.take(10)
@@ -199,12 +200,12 @@ fun CurrencyManagementSection(
                             color = when {
                                 isPrimary -> accentColor
                                 isSelected -> accentColor.copy(alpha = 0.3f)
-                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else -> AppColors.insetSurface.copy(alpha = 0.5f)
                             },
                             contentColor = when {
-                                isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
-                                isSelected -> MaterialTheme.colorScheme.onSurface
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                isPrimary -> if (accentColor.isDark()) ColorOnDark else ColorOnLight
+                                isSelected -> AppColors.contentPrimary
+                                else -> AppColors.contentSecondary
                             }
                         ) {
                             Row(
@@ -229,7 +230,7 @@ fun CurrencyManagementSection(
                     Text(
                         "Primary Currency" + if (isInvalid) " (Required)" else "",
                         style = MaterialTheme.typography.titleSmall,
-                        color = if (isInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                        color = if (isInvalid) AppColors.error else AppColors.contentPrimary
                     )
                     var isExpanded by remember { mutableStateOf(false) }
                     Box {
@@ -239,27 +240,27 @@ fun CurrencyManagementSection(
                                 .height(56.dp)
                                 .border(
                                     width = if (isInvalid) 2.dp else 0.dp,
-                                    color = if (isInvalid) MaterialTheme.colorScheme.error else Color.Transparent,
+                                    color = if (isInvalid) AppColors.error else AppColors.transparent,
                                     shape = RoundedCornerShape(28.dp)
                                 )
                                 .clickable { isExpanded = true },
                             shape = RoundedCornerShape(28.dp),
-                            color = MaterialTheme.colorScheme.surface,
+                            color = AppColors.panelSurface,
                             tonalElevation = if (isInvalid) 2.dp else 0.dp
                         ) {
                             Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(
                                     primaryCurrency.ifEmpty { "Select Primary Currency" },
-                                    color = if (primaryCurrency.isEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
+                                    color = if (primaryCurrency.isEmpty()) AppColors.border else AppColors.contentPrimary,
                                     fontWeight = if (primaryCurrency.isEmpty()) FontWeight.Normal else FontWeight.Bold
                                 )
-                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = if (isInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = if (isInvalid) AppColors.error else AppColors.contentPrimary)
                             }
                         }
                         DropdownMenu(
                             expanded = isExpanded,
                             onDismissRequest = { isExpanded = false },
-                            modifier = Modifier.fillMaxWidth(0.8f).background(MaterialTheme.colorScheme.surface)
+                            modifier = Modifier.fillMaxWidth(0.8f).background(AppColors.popupSurface)
                         ) {
                             allowedCurrencies.forEach { code ->
                                 DropdownMenuItem(
@@ -281,13 +282,13 @@ fun CurrencyManagementSection(
                 Text(
                     "Primary Currency: $primaryCurrency",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = AppColors.primary,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
 
             if (isEditMode) {
-                Text("Note: Currencies with existing transactions cannot be removed.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Text("Note: Currencies with existing transactions cannot be removed.", style = MaterialTheme.typography.labelSmall, color = AppColors.border)
             }
         }
     }
@@ -312,12 +313,12 @@ fun CurrencyGridItem(
         color = when {
             isPrimary -> accentColor
             isSelected -> accentColor.copy(alpha = 0.3f)
-            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            else -> AppColors.insetSurface.copy(alpha = 0.5f)
         },
         contentColor = when {
-            isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
-            isSelected -> MaterialTheme.colorScheme.onSurface
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
+            isPrimary -> if (accentColor.isDark()) ColorOnDark else ColorOnLight
+            isSelected -> AppColors.contentPrimary
+            else -> AppColors.contentSecondary
         }
     ) {
         Box(

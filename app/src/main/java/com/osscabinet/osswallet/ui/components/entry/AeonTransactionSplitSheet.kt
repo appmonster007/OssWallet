@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Generic bottom sheet to manage transaction splitting.
@@ -47,7 +49,7 @@ fun AeonTransactionSplitSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = AppColors.cardSurfaceProminent,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         val currentSplitSum = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
@@ -74,25 +76,25 @@ fun AeonTransactionSplitSheet(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                     Text(
                         text = "Divide amount into multiple transactions",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
 
                 Surface(
                     onClick = onAddSplit,
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    color = AppColors.primary.copy(alpha = 0.1f)
                 ) {
                     Icon(
                         Icons.Rounded.Add,
                         contentDescription = "Add Split",
                         modifier = Modifier.padding(dims.spacingSm).size(dims.containerCornerRadius),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = AppColors.primary
                     )
                 }
             }
@@ -102,9 +104,9 @@ fun AeonTransactionSplitSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = dims.spacingXl, vertical = dims.spacingLg),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                color = AppColors.recessedSurface,
                 shape = RoundedCornerShape(dims.cardCornerRadius),
-                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier.padding(dims.containerCornerRadius),
@@ -116,7 +118,7 @@ fun AeonTransactionSplitSheet(
                             text = "TOTAL AMOUNT",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         )
                         Text(
@@ -131,18 +133,18 @@ fun AeonTransactionSplitSheet(
                             text = if (isFullyAllocated) "ALLOCATED" else if (isOver) "OVER ALLOCATED" else "REMAINING",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = if (isFullyAllocated) Color(0xFF4CAF50)
-                                else if (isOver) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.primary
+                                color = if (isFullyAllocated) PositiveAmountColor
+                                else if (isOver) AppColors.error
+                                else AppColors.primary
                             )
                         )
                         Text(
                             text = "$currency ${remainingAmount.abs().toPlainString()}",
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Black,
-                                color = if (isFullyAllocated) Color(0xFF4CAF50)
-                                else if (isOver) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.primary
+                                color = if (isFullyAllocated) PositiveAmountColor
+                                else if (isOver) AppColors.error
+                                else AppColors.primary
                             )
                         )
                     }
@@ -177,7 +179,7 @@ fun AeonTransactionSplitSheet(
                         .padding(start = dims.spacingXl, end = dims.spacingXl, bottom = dims.spacingMd),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.error
+                    color = AppColors.error
                 )
             }
 
@@ -199,10 +201,10 @@ fun AeonTransactionSplitSheet(
                     shape = RoundedCornerShape(dims.containerCornerRadius),
                     border = androidx.compose.foundation.BorderStroke(
                         (dims.spacingXs / 8),
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                        AppColors.error.copy(alpha = 0.5f)
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
+                        contentColor = AppColors.error
                     )
                 ) {
                     Text(
@@ -219,8 +221,8 @@ fun AeonTransactionSplitSheet(
                     enabled = isFullyAllocated && splits.size >= 2,
                     shape = RoundedCornerShape(dims.containerCornerRadius),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = AppColors.primary,
+                        contentColor = AppColors.onPrimary
                     )
                 ) {
                     Text(
@@ -246,9 +248,9 @@ private fun SplitItem(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        color = AppColors.recessedSurface,
         shape = RoundedCornerShape(dims.cardCornerRadius),
-        border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(dims.spacingLg)) {
             Row(
@@ -259,7 +261,7 @@ private fun SplitItem(
                 Surface(
                     onClick = onShowCategory,
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f),
+                    color = AppColors.cardSurface.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(dims.componentCornerRadius)
                 ) {
                     Row(
@@ -268,7 +270,7 @@ private fun SplitItem(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = (category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.1f),
+                            color = (category?.colorHex?.let { Color(it) } ?: AppColors.primary).copy(alpha = 0.1f),
                             modifier = Modifier.size(dims.spacing2xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -276,7 +278,7 @@ private fun SplitItem(
                                     getIconByName(category?.iconName),
                                     contentDescription = null,
                                     modifier = Modifier.size(dims.iconSizeSm),
-                                    tint = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+                                    tint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
                                 )
                             }
                         }
@@ -285,7 +287,7 @@ private fun SplitItem(
                             text = category?.name ?: "Select Category",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
-                            color = if (category == null) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                            color = if (category == null) AppColors.contentSecondary.copy(alpha = 0.6f) else AppColors.contentPrimary
                         )
                     }
                 }
@@ -299,7 +301,7 @@ private fun SplitItem(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.5f)
                         )
                     )
                     TextField(
@@ -312,10 +314,10 @@ private fun SplitItem(
                         modifier = Modifier.width(dims.iconSize3xl + dims.spacingXl),
                         placeholder = { Text("0.00", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth()) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            unfocusedIndicatorColor = Color.Transparent
+                            focusedContainerColor = AppColors.transparent,
+                            unfocusedContainerColor = AppColors.transparent,
+                            focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f),
+                            unfocusedIndicatorColor = AppColors.transparent
                         ),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -333,7 +335,7 @@ private fun SplitItem(
                     Icon(
                         Icons.Rounded.DeleteOutline,
                         contentDescription = "Remove",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                        tint = AppColors.error.copy(alpha = 0.7f),
                         modifier = Modifier.size(dims.containerCornerRadius + 2.dp)
                     )
                 }
@@ -348,10 +350,10 @@ private fun SplitItem(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Add a note for this split...", style = MaterialTheme.typography.bodySmall) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.4f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.2f),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    focusedContainerColor = AppColors.cardSurface.copy(alpha = 0.4f),
+                    unfocusedContainerColor = AppColors.cardSurface.copy(alpha = 0.2f),
+                    focusedIndicatorColor = AppColors.transparent,
+                    unfocusedIndicatorColor = AppColors.transparent
                 ),
                 shape = RoundedCornerShape(dims.spacingMd),
                 singleLine = true,
@@ -361,7 +363,7 @@ private fun SplitItem(
                         Icons.AutoMirrored.Rounded.Notes,
                         contentDescription = null,
                         modifier = Modifier.size(dims.spacingLg),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        tint = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
                 }
             )

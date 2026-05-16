@@ -54,7 +54,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -64,6 +63,7 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun NetWorthCard(
@@ -126,7 +126,7 @@ fun NetWorthCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -152,7 +152,7 @@ fun NetWorthCard(
                         fontSize = baseFontSize,
                         letterSpacing = (-0.5).sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppColors.contentPrimary
                 )
                 
                 if (showComparison && previousMetrics != null) {
@@ -169,15 +169,15 @@ fun NetWorthCard(
                                 if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                tint = AppColors.contentSecondary
                             )
                             Text(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage% from prev. period",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = 11.sp
+                                    fontSize = 12.sp
                                 ),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = AppColors.contentSecondary
                             )
                         }
                     }
@@ -204,7 +204,7 @@ fun NetWorthCard(
                     amount = currentMetrics.cashFlow.totalExpensesInBase,
                     currency = baseCurrency,
                     precision = precision,
-                    color = NegativeAmountColor,
+                    color = AppColors.error,
                     isIncome = false,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
@@ -256,9 +256,9 @@ private fun FlowBadge(
 ) {
     Surface(
         modifier = modifier.clickable(onClick = onClick),
-        color = color.copy(alpha = 0.08f),
+        color = AppColors.insetSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        border = BorderStroke(0.5.dp, color.copy(alpha = 0.1f))
+//        border = BorderStroke(1.dp, AppColors.border)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
@@ -283,10 +283,10 @@ private fun FlowBadge(
                         text = label,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             letterSpacing = 0.5.sp
                         ),
-                        color = color.copy(alpha = 0.8f)
+                        color = AppColors.contentSecondary // Level 3 Label pairing
                     )
                 }
                 if (previousAmount != null) {
@@ -303,15 +303,15 @@ private fun FlowBadge(
                                 if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                                tint = color.copy(alpha = 0.7f)
+                                tint = color
                             )
                             Text(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage%",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = 10.sp
+                                    fontSize = 12.sp
                                 ),
-                                color = color.copy(alpha = 0.7f)
+                                color = color
                             )
                         }
                     }
@@ -319,9 +319,9 @@ private fun FlowBadge(
             }
             Text(
                 text = formatCurrencyRight(amount, currency, precision, shorten = true),
-                style = MaterialTheme.typography.bodyMedium.copy(
+                style = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 15.sp
                 ),
                 color = color
             )
@@ -348,7 +348,7 @@ private fun NetWorthDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -375,9 +375,10 @@ private fun NetWorthDisplaySettingsDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Font Size Selection
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    color = AppColors.cardSurface,
                     shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, AppColors.border)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -389,7 +390,7 @@ private fun NetWorthDisplaySettingsDialog(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             ),
-                            color = MaterialTheme.colorScheme.primary
+                            color = AppColors.primary
                         )
 
                         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -419,9 +420,10 @@ private fun NetWorthDisplaySettingsDialog(
 
                 // Show Comparison Toggle
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    color = AppColors.cardSurface,
                     shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, AppColors.border)
                 ) {
                     Row(
                         modifier = Modifier
@@ -437,12 +439,12 @@ private fun NetWorthDisplaySettingsDialog(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.sp
                                 ),
-                                color = MaterialTheme.colorScheme.primary
+                                color = AppColors.primary
                             )
                             Text(
                                 "Show change from previous period",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = AppColors.contentSecondary
                             )
                         }
                         Switch(
@@ -454,7 +456,7 @@ private fun NetWorthDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }
 
@@ -462,7 +464,7 @@ private fun NetWorthDisplaySettingsDialog(
 @Composable
 fun NetWorthCardPreview() {
     OssWalletTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Box(modifier = Modifier.padding(16.dp)) {
                 NetWorthCard(
                     currentMetrics = NetWorthMetrics(
@@ -491,7 +493,7 @@ fun NetWorthCardPreview() {
 @Composable
 fun NetWorthCardAmoledPreview() {
     OssWalletTheme(theme = "Amoled") {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Box(modifier = Modifier.padding(16.dp)) {
                 NetWorthCard(
                     currentMetrics = NetWorthMetrics(

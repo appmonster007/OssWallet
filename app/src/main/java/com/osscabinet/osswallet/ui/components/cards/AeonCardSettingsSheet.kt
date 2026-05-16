@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.AdvancedFilterSection
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A standardized bottom sheet for configuring analytical and dashboard cards.
@@ -41,7 +42,7 @@ fun AeonCardSettingsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = AppColors.cardSurfaceProminent,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
@@ -66,7 +67,7 @@ fun AeonCardSettingsSheet(
                 
                 IconButton(
                     onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete Card")
                 }
@@ -74,7 +75,7 @@ fun AeonCardSettingsSheet(
 
             // Scoping Section
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                color = AppColors.insetSurface.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -90,14 +91,14 @@ fun AeonCardSettingsSheet(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("Include future transactions", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
-                                Text("Show scheduled entries in this card", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                Text("Show scheduled entries in this card", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                             }
                             Switch(
                                 checked = !filter.excludeFuture,
                                 onCheckedChange = { include -> onFilterChange(filter.copy(excludeFuture = !include)) }
                             )
                         }
-                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                     }
                     AdvancedFilterSection(
                         filter = filter,

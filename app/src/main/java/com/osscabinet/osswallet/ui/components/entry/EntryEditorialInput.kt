@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Editorial-style text input with icon and label for entry screens.
@@ -65,8 +66,8 @@ fun EntryEditorialInput(
         Surface(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+            color = AppColors.recessedSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
             onClick = { focusRequester.requestFocus() }
         ) {
             Row(
@@ -75,14 +76,14 @@ fun EntryEditorialInput(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    color = AppColors.primary.copy(alpha = 0.08f),
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = AppColors.primary,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     }
@@ -98,7 +99,7 @@ fun EntryEditorialInput(
                             letterSpacing = 0.5.sp,
                             fontSize = 10.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
 
                     Box(modifier = Modifier.padding(top = 2.dp)) {
@@ -106,14 +107,14 @@ fun EntryEditorialInput(
                             Text(
                                 text = placeholder,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                color = AppColors.contentSecondary.copy(alpha = 0.3f)
                             )
                         }
                         BasicTextField(
                             value = value,
                             onValueChange = onValueChange,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = AppColors.contentPrimary,
                                 fontWeight = FontWeight.Medium
                             ),
                             keyboardOptions = KeyboardOptions(
@@ -136,7 +137,7 @@ fun EntryEditorialInput(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            modifier = Modifier.background(AppColors.componentOnCard)
         ) {
             filteredSuggestions.forEach { suggestion ->
                 DropdownMenuItem(

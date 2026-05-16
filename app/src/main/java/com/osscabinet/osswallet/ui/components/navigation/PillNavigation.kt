@@ -36,7 +36,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 
@@ -76,7 +76,7 @@ fun UnifiedPillNavigation(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
+                        .background(ColorScrimDark)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -121,7 +121,7 @@ fun UnifiedPillNavigation(
                                 .matchParentSize()
                                 .graphicsLayer { alpha = scrimAlpha }
                                 .background(
-                                    color = Color.Black,
+                                    color = ColorScrimPill,
                                     shape = CircleShape
                                 )
                                 .clickable(
@@ -169,8 +169,8 @@ fun UnifiedPillNavigation(
                         modifier = Modifier
                             .size(56.dp)
                             .graphicsLayer { rotationZ = rotation },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = AppColors.primary,
+                        contentColor = AppColors.onPrimary,
                         shape = CircleShape,
                         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
                     ) {
@@ -196,7 +196,7 @@ fun PillNavigationBar(
     Surface(
         modifier = modifier.height(56.dp),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(12.dp),
+        color = AppColors.componentOnCard,
         tonalElevation = 8.dp,
         shadowElevation = 8.dp
     ) {
@@ -224,7 +224,7 @@ fun PillNavigationBar(
                     .fillMaxWidth(1f / tabs.size) // Precise width calculation
                     .fillMaxHeight()
                     .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = AppColors.primaryContainer,
                         shape = CircleShape
                     )
             )
@@ -268,9 +268,9 @@ fun PillNavigationBar(
                             imageVector = if (selected) tab.selectedIcon else tab.icon,
                             contentDescription = tab.contentDescription,
                             tint = if (selected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                AppColors.onSelectionContainer
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                AppColors.contentSecondary.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -378,7 +378,7 @@ fun FabMenuItem(
                 }
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
+                color = AppColors.cardSurfaceProminent,
                 shape = RoundedCornerShape(20.dp),
                 shadowElevation = if (isPressed) 1.dp else 4.dp,
                 onClick = {
@@ -390,15 +390,15 @@ fun FabMenuItem(
                     label,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = AppColors.contentPrimary,
                     fontWeight = FontWeight.Medium
                 )
             }
             SmallFloatingActionButton(
                 onClick = onClick,
                 modifier = Modifier.size(40.dp),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                containerColor = AppColors.secondaryContainer,
+                contentColor = AppColors.onSecondaryContainer,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {
@@ -424,7 +424,7 @@ fun UnifiedPillNavigationPreview() {
         )
     )
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground)) {
             UnifiedPillNavigation(
                 selectedTab = 0,
                 onTabSelected = {},
@@ -451,7 +451,7 @@ fun UnifiedPillNavigationExpandedPreview() {
         )
     )
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground)) {
             UnifiedPillNavigation(
                 selectedTab = 0,
                 onTabSelected = {},

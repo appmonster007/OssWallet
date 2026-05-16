@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import kotlinx.coroutines.delay
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +64,7 @@ fun AdvancedFilterSection(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+                color = AppColors.secondary.copy(alpha = 0.7f)
             )
             
             LazyRow(
@@ -108,7 +109,7 @@ fun AdvancedFilterSection(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary
+                color = AppColors.primary
             )
             
             AeonTimelinePeriodSelector(
@@ -132,7 +133,7 @@ fun AdvancedFilterSection(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary
+                color = AppColors.primary
             )
             
             if (countActiveFilters(filter) > 0) {
@@ -202,8 +203,8 @@ fun AdvancedFilterSection(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (expandedFilters) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = if (expandedFilters) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    containerColor = if (expandedFilters) AppColors.selectionContainer else AppColors.secondaryContainer,
+                    contentColor = if (expandedFilters) AppColors.onSelectionContainer else AppColors.onSecondaryContainer
                 )
             ) {
                 Icon(if (expandedFilters) Icons.Default.ExpandLess else Icons.Default.Add, null, modifier = Modifier.size(18.dp))

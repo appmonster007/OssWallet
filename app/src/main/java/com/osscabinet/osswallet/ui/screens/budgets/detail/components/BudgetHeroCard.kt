@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun BudgetHeroCard(
@@ -33,12 +34,9 @@ fun BudgetHeroCard(
     modifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    val healthyColor = Color(0xFF00695C)
-    val warningColor = Color(0xFFC62828)
-    
     val accentColor = when (progress.alertLevel) {
-        BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> warningColor
-        BudgetAlertLevel.NONE -> healthyColor
+        BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
+        BudgetAlertLevel.NONE -> AppColors.primary
     }
 
     AeonExpressiveCard(
@@ -86,7 +84,7 @@ fun BudgetHeroCard(
 //                                append(" ")
 //                                withStyle(SpanStyle(
 //                                    fontWeight = FontWeight.Light,
-//                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                                    color = AppColors.contentSecondary,
 //                                    fontSize = 18.sp
 //                                )) {
 //                                    append(symbolText)
@@ -97,7 +95,7 @@ fun BudgetHeroCard(
                                 fontSize = 32.sp,
                                 letterSpacing = (-1).sp
                             ),
-                            color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) warningColor else MaterialTheme.colorScheme.onSurface
+                            color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary
                         )
                     }
                     
@@ -126,21 +124,21 @@ fun BudgetHeroCard(
                     Text(
                         text = "${formatAmount(progress.spent, precision)} spent",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, precision, shorten = true)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                 }
             }
 
             if (progress.alertLevel != BudgetAlertLevel.NONE) {
                 Surface(
-                    color = warningColor.copy(alpha = 0.05f),
+                    color = AppColors.error.copy(alpha = 0.05f),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, warningColor.copy(alpha = 0.1f))
+                    border = BorderStroke(1.dp, AppColors.error.copy(alpha = 0.1f))
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp).fillMaxWidth(),
@@ -150,19 +148,19 @@ fun BudgetHeroCard(
                         Icon(
                             Icons.Rounded.Warning,
                             contentDescription = null,
-                            tint = warningColor,
+                            tint = AppColors.error,
                             modifier = Modifier.size(18.dp)
                         )
                         Column {
                             Text(
                                 text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "Budget Exceeded" else "Approaching Limit",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = warningColor
+                                color = AppColors.error
                             )
                             Text(
                                 text = "Alert threshold set at ${(budget.alertThreshold * 100).toInt()}%",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = warningColor.copy(alpha = 0.7f)
+                                color = AppColors.error.copy(alpha = 0.7f)
                             )
                         }
                     }

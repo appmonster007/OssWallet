@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Full-screen selection for Linking Transactions.
@@ -83,7 +84,7 @@ fun AeonLinkedTransactionSelection(
                     Text(
                         text = "Select related activities from your history to link them to this record.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
                     
@@ -114,11 +115,11 @@ fun AeonLinkedTransactionSelection(
                             Surface(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                                else MaterialTheme.colorScheme.surface,
+                                color = if (isSelected) AppColors.primary.copy(alpha = 0.08f)
+                                else AppColors.panelSurface,
                                 border = if (isSelected) BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                    AppColors.primary.copy(alpha = 0.3f)
                                 ) else null
                             ) {
                                 Box {
@@ -138,7 +139,7 @@ fun AeonLinkedTransactionSelection(
                                         showClosingBalance = false,
                                         showDividers = false,
                                         status = tx.status,
-                                        containerColor = Color.Transparent,
+                                        containerColor = AppColors.transparent,
                                         modifier = Modifier.padding(end = if (isSelected) 48.dp else 0.dp),
                                         onClick = {
                                             selectedIds = if (isSelected) {
@@ -153,13 +154,13 @@ fun AeonLinkedTransactionSelection(
                                         Surface(
                                             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).size(24.dp),
                                             shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primary,
+                                            color = AppColors.primary,
                                             shadowElevation = 2.dp
                                         ) {
                                             Icon(
                                                 Icons.Rounded.Check,
                                                 contentDescription = "Selected",
-                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                tint = AppColors.onPrimary,
                                                 modifier = Modifier.padding(4.dp)
                                             )
                                         }
@@ -174,7 +175,7 @@ fun AeonLinkedTransactionSelection(
 
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                    color = AppColors.panelSurface.copy(alpha = 0.95f)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp).windowInsetsPadding(WindowInsets.navigationBars)

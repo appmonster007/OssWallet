@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,7 +197,7 @@ fun SettingsScreen(
         ) {
             Surface(
                 shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                color = MaterialTheme.colorScheme.surface,
+                color = AppColors.panelSurface,
                 tonalElevation = 6.dp
             ) {
                 Column(
@@ -242,7 +243,7 @@ fun SettingsScreen(
                                         showCurrencyDialog = false
                                     },
                                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                    color = if (code == currencyCode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                    color = if (code == currencyCode) AppColors.selectionContainer else AppColors.transparent
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -253,13 +254,13 @@ fun SettingsScreen(
                                         Surface(
                                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                             shape = CircleShape,
-                                            color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondaryContainer
+                                            color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.1f) else AppColors.secondaryContainer
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Text(
                                                     symbol,
                                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                                    color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.onSecondaryContainer
                                                 )
                                             }
                                         }
@@ -268,19 +269,19 @@ fun SettingsScreen(
                                             Text(
                                                 name, 
                                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                                color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.contentPrimary
                                             )
                                             Text(
                                                 code, 
                                                 style = MaterialTheme.typography.labelSmall, 
-                                                color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                                                color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.7f) else AppColors.border
                                             )
                                         }
                                         if (code == currencyCode) {
                                             Icon(
                                                 Icons.Rounded.Check, 
                                                 contentDescription = null, 
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                                tint = AppColors.onPrimaryContainer
                                             )
                                         }
                                     }
@@ -330,7 +331,7 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                             Text(t, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                             if (t == theme) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
                             }
                         }
                     }
@@ -359,7 +360,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
+                .background(AppColors.screenBackground)
                 .verticalScroll(scrollState)
                 .padding(AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
@@ -371,14 +372,14 @@ fun SettingsScreen(
                     icon = Icons.Rounded.CurrencyExchange,
                     onClick = { showCurrencyDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "App Appearance",
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Auto-save Exchange Rates",
                     subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
@@ -388,15 +389,15 @@ fun SettingsScreen(
                             checked = autoSaveExchangeRates,
                             onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
                             )
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Card Animations",
@@ -407,15 +408,15 @@ fun SettingsScreen(
                             checked = cardAnimationEnabled,
                             onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
                             )
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Expandable Action Button",
@@ -426,15 +427,15 @@ fun SettingsScreen(
                             checked = expandableFabEnabled,
                             onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
                             )
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "24-Hour Time Format",
@@ -445,15 +446,15 @@ fun SettingsScreen(
                             checked = use24HourFormat,
                             onCheckedChange = { viewModel.setUse24HourFormat(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
                             )
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Decimal Precision",
                     subtitle = "Toggle between 2 and 3 places",
@@ -463,7 +464,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .height(AeonTheme.dimensions.spacing2xl)
                                 .background(
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    AppColors.insetSurface.copy(alpha = 0.5f),
                                     CircleShape
                                 )
                                 .padding(2.dp),
@@ -481,14 +482,14 @@ fun SettingsScreen(
                                             }
                                         },
                                     shape = CircleShape,
-                                    color = if (decimalPrecision == p) MaterialTheme.colorScheme.primary else Color.Transparent
+                                    color = if (decimalPrecision == p) AppColors.primary else AppColors.transparent
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
                                             p.toString(),
                                             style = MaterialTheme.typography.labelLarge,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (decimalPrecision == p) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = if (decimalPrecision == p) AppColors.onPrimary else AppColors.contentSecondary
                                         )
                                     }
                                 }
@@ -496,7 +497,7 @@ fun SettingsScreen(
                         }
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
 
                 SettingsItem(
                     title = "Location Auto-fill",
@@ -507,10 +508,10 @@ fun SettingsScreen(
                             checked = mapsAccessEnabled,
                             onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
                             )
                         )
                     }
@@ -524,35 +525,35 @@ fun SettingsScreen(
                     icon = Icons.Rounded.AccountBalance,
                     onClick = { navigate(onManageAccountsClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Tags",
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
                     onClick = { navigate(onManageTagsClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Categories",
                     subtitle = "Organize income and expenses",
                     icon = Icons.Rounded.Category,
                     onClick = { navigate(onManageCategoriesClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Transaction Templates",
                     subtitle = "Quick shortcuts for frequent entries",
                     icon = Icons.Rounded.AutoAwesome,
                     onClick = { navigate(onTemplatesClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Saved Filters",
                     subtitle = "Templates for quick transaction searching",
                     icon = Icons.Rounded.FilterList,
                     onClick = { navigate(onManageFiltersClick) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Smart Suggestions",
                     subtitle = "Discover recurring transactions automatically",
@@ -568,19 +569,19 @@ fun SettingsScreen(
                     icon = Icons.Rounded.CloudSync,
                     onClick = { showImportDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Export Data",
                     subtitle = "Download all records and database",
                     icon = Icons.Rounded.FileDownload,
                     onClick = { showExportDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Delete All Data",
                     subtitle = "Permanently clear your account",
                     icon = Icons.Rounded.DeleteForever,
-                    color = MaterialTheme.colorScheme.error,
+                    color = AppColors.error,
                     onClick = { /* Handle delete */ }
                 )
             }
@@ -591,13 +592,13 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("OssWallet v1.1.0", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                Text("Built for the Modern Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                Text("OssWallet v1.1.0", style = MaterialTheme.typography.labelSmall, color = AppColors.border)
+                Text("Built for the Modern Account", style = MaterialTheme.typography.labelSmall, color = AppColors.contentSecondary.copy(alpha = 0.5f))
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 Text(
                     "Currency rates provided by",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 Text(
                     "Exchangerate.host",
@@ -606,7 +607,7 @@ fun SettingsScreen(
                     },
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = AppColors.primary
                     )
                 )
             }
@@ -621,15 +622,15 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
             text = title,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = AppColors.primary,
                 letterSpacing = 1.2.sp
             ),
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
         )
         Surface(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            color = AppColors.insetSurface.copy(alpha = 0.2f),
+            border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f))
         ) {
             Column {
                 content()
@@ -645,7 +646,7 @@ fun SettingsItem(
     icon: ImageVector,
     onClick: (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
-    color: Color = MaterialTheme.colorScheme.onSurface,
+    color: Color = AppColors.contentPrimary,
     showChevron: Boolean = onClick != null && trailingContent == null
 ) {
     Row(
@@ -667,13 +668,13 @@ fun SettingsItem(
         Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = color)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppColors.border)
         }
         
         if (trailingContent != null) {
             trailingContent()
         } else if (showChevron) {
-            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = AppColors.border)
         }
     }
 }

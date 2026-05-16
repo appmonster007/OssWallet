@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import com.osscabinet.ossWallet.ui.calculator.*
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.*
 
 /**
  * Enhanced Financial Expression Engine UI.
@@ -77,8 +78,8 @@ fun CalculatorNumpad(
         // Display area
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+            color = AppColors.recessedSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -108,7 +109,7 @@ fun CalculatorNumpad(
                     Icon(
                         Icons.Rounded.History,
                         contentDescription = "Show History",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                        tint = AppColors.primary.copy(alpha = 0.6f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -176,7 +177,7 @@ private fun CalculatorDisplay(
                     style = MaterialTheme.typography.bodyLarge.copy(
                         letterSpacing = 0.5.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -189,7 +190,7 @@ private fun CalculatorDisplay(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp
                 ),
-                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                color = if (isError) AppColors.error else AppColors.contentPrimary,
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 42.sp
@@ -200,7 +201,7 @@ private fun CalculatorDisplay(
                 Text(
                     text = if (transactionType == "expense") "−$ghostResult" else ghostResult,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    color = AppColors.primary.copy(alpha = 0.4f),
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -212,14 +213,14 @@ private fun CalculatorDisplay(
         Surface(
             onClick = onSave,
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
+            color = AppColors.primary,
             modifier = Modifier.size(56.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Rounded.Done,
                     contentDescription = "Confirm amount",
-                    tint = Color.White,
+                    tint = ColorOnDark,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -285,17 +286,17 @@ private fun CalculatorKey(
     isAccent: Boolean = false
 ) {
     val backgroundColor = when {
-        isAccent -> MaterialTheme.colorScheme.primary
-        isOperator -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        isSpecial -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-        else -> MaterialTheme.colorScheme.surfaceContainerLowest
+        isAccent -> AppColors.primary
+        isOperator -> AppColors.primary.copy(alpha = 0.08f)
+        isSpecial -> AppColors.error.copy(alpha = 0.08f)
+        else -> AppColors.recessedSurface
     }
     
     val textColor = when {
-        isAccent -> Color.White
-        isOperator -> MaterialTheme.colorScheme.primary
-        isSpecial -> if (label == "C" || label == "⌫") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.onSurface
+        isAccent -> ColorOnDark
+        isOperator -> AppColors.primary
+        isSpecial -> if (label == "C" || label == "⌫") AppColors.error else AppColors.contentSecondary
+        else -> AppColors.contentPrimary
     }
     
     Surface(
@@ -303,7 +304,7 @@ private fun CalculatorKey(
         modifier = modifier.height(68.dp),
         shape = RoundedCornerShape(20.dp),
         color = backgroundColor,
-        border = if (!isAccent) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)) else null,
+        border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)) else null,
         shadowElevation = 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -339,9 +340,9 @@ private fun CalculatorHistorySheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = AppColors.cardSurface,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
     ) {
         Column(
             modifier = Modifier
@@ -360,7 +361,7 @@ private fun CalculatorHistorySheet(
                 )
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
-                        Text("Clear All", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        Text("Clear All", color = AppColors.error, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -375,7 +376,7 @@ private fun CalculatorHistorySheet(
                     Text(
                         "No calculations yet",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             } else {
@@ -388,8 +389,8 @@ private fun CalculatorHistorySheet(
                         Surface(
                             onClick = { onItemSelect(item) },
                             shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                            color = AppColors.recessedSurface,
+                            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -398,13 +399,13 @@ private fun CalculatorHistorySheet(
                                 Text(
                                     item.expression,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                                 Text(
                                     "= ${item.result}",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = AppColors.primary
                                 )
                             }
                         }

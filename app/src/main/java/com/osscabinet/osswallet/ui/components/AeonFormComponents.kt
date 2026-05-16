@@ -34,7 +34,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.util.isDark
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -53,13 +53,13 @@ fun AeonHeroHeader(
     val currentAccentColor = try {
         Color(android.graphics.Color.parseColor(accentColorHex))
     } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary
+        AppColors.primary
     }
 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        color = AppColors.insetSurface.copy(alpha = 0.3f)
     ) {
         Column(
             modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
@@ -76,7 +76,7 @@ fun AeonHeroHeader(
                         AppIconMap[iconName] ?: Icons.Rounded.Category,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                        tint = if (currentAccentColor.isDark()) Color.White else Color.Black
+                        tint = if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight
                     )
                 }
             }
@@ -92,7 +92,7 @@ fun AeonHeroHeader(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.primary,
+                            color = AppColors.primary,
                             fontWeight = FontWeight.Medium
                         )
                     )
@@ -114,7 +114,7 @@ fun AeonFormHeader(
     val currentAccentColor = try {
         Color(android.graphics.Color.parseColor(accentColorHex))
     } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary
+        AppColors.primary
     }
 
     Row(
@@ -129,7 +129,7 @@ fun AeonFormHeader(
 
         Surface(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            color = if (saveButtonEnabled) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
+            color = if (saveButtonEnabled) currentAccentColor else AppColors.insetSurface,
             onClick = { if (saveButtonEnabled) onSaveClick() },
             enabled = saveButtonEnabled
         ) {
@@ -138,7 +138,7 @@ fun AeonFormHeader(
                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXl, vertical = AeonTheme.dimensions.spacingSm),
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
+                    color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.border
                 )
             )
         }
@@ -157,21 +157,21 @@ fun AeonTextField(
     Surface(
         modifier = modifier.fillMaxWidth().height(56.dp),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        color = AppColors.insetSurface.copy(alpha = 0.4f)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXl),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (leadingIcon != null) {
-                Icon(leadingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                Icon(leadingIcon, contentDescription = null, tint = AppColors.border, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
             }
             if (prefix != null) {
                 Text(
                     prefix,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.outline,
+                        color = AppColors.border,
                         fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Bold
                     )
                 )
@@ -182,12 +182,12 @@ fun AeonTextField(
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = AppColors.contentPrimary,
                     fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Normal
                 ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                cursorBrush = SolidColor(AppColors.primary),
                 decorationBox = { innerTextField ->
-                    if (value.isEmpty()) Text(placeholder, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                    if (value.isEmpty()) Text(placeholder, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                     innerTextField()
                 }
             )
@@ -226,12 +226,12 @@ fun VerticalColorSlider(
         val y = thumbY * size.height
         
         drawCircle(
-            color = Color.White,
+            color = ColorOnDark,
             radius = 12.dp.toPx(),
             center = androidx.compose.ui.geometry.Offset(size.width / 2, y)
         )
         drawCircle(
-            color = Color.Black.copy(alpha = 0.2f),
+            color = ColorOnLight.copy(alpha = 0.2f),
             radius = 12.dp.toPx(),
             center = androidx.compose.ui.geometry.Offset(size.width / 2, y),
             style = Stroke(width = 1.dp.toPx())
@@ -301,7 +301,7 @@ fun ColorWheel(
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color.White, Color.Transparent),
+                    listOf(ColorOnDark, ColorTransparent),
                     center = center,
                     radius = radius
                 ),
@@ -316,7 +316,7 @@ fun ColorWheel(
 
             // Glass Handle (3D Effect)
             drawCircle(
-                color = Color.White,
+                color = ColorOnDark,
                 radius = 18.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(handleX, handleY)
             )
@@ -326,7 +326,7 @@ fun ColorWheel(
                 center = androidx.compose.ui.geometry.Offset(handleX, handleY)
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.3f),
+                color = ChartRimHighlight,
                 radius = 14.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(handleX, handleY),
                 style = Stroke(width = 2.dp.toPx())
@@ -363,7 +363,7 @@ fun AdvancedColorPickerDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Done") }
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = AppColors.sheetSurface,
         tonalElevation = 8.dp,
         title = { Text("Color Selection") },
         text = {
@@ -417,7 +417,7 @@ fun AdvancedColorPickerDialog(
                                 },
                                 range = 0f..1f,
                                 brush = Brush.verticalGradient(
-                                    listOf(Color.hsv(hsv.first, hsv.second, 1f), Color.Black)
+                                    listOf(Color.hsv(hsv.first, hsv.second, 1f), ColorOnLight)
                                 )
                             )
                         }
@@ -445,7 +445,7 @@ fun AdvancedColorPickerDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Icon(Icons.Rounded.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                                Icon(Icons.Rounded.LightMode, contentDescription = null, tint = AppColors.border)
                                 Slider(
                                     value = hsv.third,
                                     onValueChange = { 
@@ -456,9 +456,9 @@ fun AdvancedColorPickerDialog(
                                     valueRange = 0f..1f,
                                     modifier = Modifier.weight(1f),
                                     colors = SliderDefaults.colors(
-                                        thumbColor = Color.White,
+                                        thumbColor = ColorOnDark,
                                         activeTrackColor = Color.hsv(hsv.first, hsv.second, 1f),
-                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                        inactiveTrackColor = AppColors.insetSurface
                                     )
                                 )
                                 Text(
@@ -477,7 +477,7 @@ fun AdvancedColorPickerDialog(
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     repeat(2) { index ->
-                        val color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                        val color = if (pagerState.currentPage == index) AppColors.primary else AppColors.divider
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -543,7 +543,7 @@ fun VisualIdentitySection(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        color = AppColors.insetSurface.copy(alpha = 0.2f)
     ) {
         Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding), verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
             AeonFlowSectionHeader(title = "VISUAL IDENTITY")
@@ -560,7 +560,7 @@ fun VisualIdentitySection(
                     )
                     IconButton(
                         onClick = { showAllIcons = true },
-                        modifier = Modifier.size(56.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), CircleShape)
+                        modifier = Modifier.size(56.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
                     ) {
                         Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
                     }
@@ -575,12 +575,12 @@ fun VisualIdentitySection(
                         filteredIcons.forEach { name ->
                             val icon = AppIconMap[name]!!
                             val isSelected = selectedIconName == name
-                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
                             Surface(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clickable { onIconSelected(name) },
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
+                                contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                             ) {
                                 Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
                             }
@@ -589,16 +589,16 @@ fun VisualIdentitySection(
                 } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
                     // Show currently selected icon if search is blank
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
                         Surface(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
                             shape = CircleShape,
                             color = accentColor,
-                            contentColor = if (accentColor.isDark()) Color.White else Color.Black
+                            contentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
                         ) {
                             Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
                         }
-                        Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                        Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = AppColors.border)
                     }
                 }
             }
@@ -611,7 +611,7 @@ fun VisualIdentitySection(
                             Icons.Rounded.Lock,
                             contentDescription = "Locked",
                             modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = AppColors.border
                         )
                     }
                 }
@@ -634,8 +634,8 @@ fun VisualIdentitySection(
                                 .size(44.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                    else Color.Transparent
+                                    if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
+                                    else AppColors.transparent
                                 )
                                 .clickable(enabled = !isColorLocked) { onColorSelected(colorHex) },
                             contentAlignment = Alignment.Center
@@ -651,7 +651,7 @@ fun VisualIdentitySection(
                                     Icon(
                                         Icons.Rounded.Check,
                                         contentDescription = null,
-                                        tint = if (color.isDark()) Color.White else Color.Black,
+                                        tint = if (color.isDark()) ColorOnDark else ColorOnLight,
                                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                     )
                                 }
@@ -675,7 +675,7 @@ fun VisualIdentitySection(
                     )
                     IconButton(
                         onClick = { if (!isColorLocked) showColorPicker = true },
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), CircleShape)
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
                     ) {
                         Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
                     }
@@ -697,15 +697,15 @@ fun VisualIdentitySection(
                     ) {
                         AppIconMap.forEach { (name, icon) ->
                             val isSelected = selectedIconName == name
-                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
                             Surface(
                                 modifier = Modifier.size(48.dp).clickable { 
                                     onIconSelected(name)
                                     showAllIcons = false
                                 },
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
+                                contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                             ) {
                                 Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
                             }

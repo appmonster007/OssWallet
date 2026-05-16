@@ -61,6 +61,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -127,7 +128,7 @@ fun AccountsCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -269,7 +270,7 @@ private fun AccountsDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -302,8 +303,8 @@ private fun AccountsDisplaySettingsDialog(
                         onDismiss()
                     },
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        contentColor = MaterialTheme.colorScheme.primary
+                        containerColor = AppColors.accentContainer.copy(alpha = 0.3f),
+                        contentColor = AppColors.primary
                     )
                 ) {
                     Icon(
@@ -335,7 +336,7 @@ private fun AccountsDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }
 
@@ -520,7 +521,7 @@ private fun AeonAddAccountCardContent(
         else -> isSystemInDarkTheme()
     }
     val isAmoled = currentTheme == "Amoled"
-    val seedColor = MaterialTheme.colorScheme.primary
+    val seedColor = AppColors.primary
     val placeholderAccount = Account(
         "empty",
         "GET STARTED",

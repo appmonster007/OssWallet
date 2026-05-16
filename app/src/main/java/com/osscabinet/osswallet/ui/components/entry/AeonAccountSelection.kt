@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonAccountSelection(
@@ -27,7 +28,7 @@ fun AeonAccountSelection(
     allowOutsideWallet: Boolean = false,
     description: String? = null
 ) {
-    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val tertiaryColor = AppColors.tertiary
     val dims = AeonTheme.dimensions
 
     AeonSelectionSheet(
@@ -48,7 +49,7 @@ fun AeonAccountSelection(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = dims.spacingSm)
                 )
             }
@@ -71,7 +72,7 @@ fun AeonAccountSelection(
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = dims.spacingSm),
                     thickness = (dims.spacingXs / 8),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                    color = AppColors.divider.copy(alpha = 0.2f)
                 )
             }
         }

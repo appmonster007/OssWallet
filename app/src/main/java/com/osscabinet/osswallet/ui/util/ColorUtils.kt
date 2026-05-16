@@ -43,14 +43,14 @@ fun Color.toContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Col
     
     if (isAmoled) {
         // For Amoled, we want a very dark but slightly tinted surface
-        hsl[1] = hsl[1].coerceAtMost(0.2f)
-        hsl[2] = 0.05f // Almost black
+        hsl[1] = hsl[1].coerceAtMost(0.15f)
+        hsl[2] = 0.08f // Slightly elevated from pure black
     } else if (isDarkTheme) {
-        hsl[1] = hsl[1].coerceAtMost(0.3f)
-        hsl[2] = 0.15f
+        hsl[1] = hsl[1].coerceAtMost(0.25f)
+        hsl[2] = 0.18f
     } else {
-        hsl[1] = hsl[1].coerceAtMost(0.35f)
-        hsl[2] = 0.92f
+        hsl[1] = hsl[1].coerceAtMost(0.3f)
+        hsl[2] = 0.94f // Even lighter for better text contrast
     }
     
     return Color(ColorUtils.HSLToColor(hsl))
@@ -64,11 +64,13 @@ fun Color.toOnContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): C
     ColorUtils.colorToHSL(this.toArgb(), hsl)
     
     if (isAmoled || isDarkTheme) {
-        hsl[1] = hsl[1].coerceAtMost(0.4f)
-        hsl[2] = 0.9f
+        // High contrast for dark backgrounds
+        hsl[1] = hsl[1].coerceAtMost(0.3f)
+        hsl[2] = 0.95f // Near white
     } else {
-        hsl[1] = hsl[1].coerceAtMost(0.5f)
-        hsl[2] = 0.25f
+        // High contrast for light backgrounds
+        hsl[1] = hsl[1].coerceAtMost(0.4f)
+        hsl[2] = 0.12f // Near black
     }
     
     return Color(ColorUtils.HSLToColor(hsl))

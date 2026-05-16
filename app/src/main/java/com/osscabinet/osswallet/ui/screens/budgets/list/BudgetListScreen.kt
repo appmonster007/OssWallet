@@ -58,9 +58,8 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
-private val TealHealthy = Color(0xFF004D40)
-private val RedWarning = Color(0xFFB3261E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +93,7 @@ fun BudgetListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = AppColors.screenBackground
                 )
             )
         }
@@ -113,7 +112,7 @@ fun BudgetListScreen(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            color = AppColors.primary.copy(alpha = 0.08f),
                             modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -121,7 +120,7 @@ fun BudgetListScreen(
                                     Icons.Rounded.AccountBalance,
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = AppColors.primary
                                 )
                             }
                         }
@@ -133,7 +132,7 @@ fun BudgetListScreen(
                         Text(
                             "Create a budget to track\nyour spending goals",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -150,7 +149,7 @@ fun BudgetListScreen(
                         item {
                             ManagementSectionHeader(
                                 title = "ACTIVE",
-                                sectionColor = MaterialTheme.colorScheme.primary
+                                sectionColor = AppColors.primary
                             )
                         }
                         items(active, key = { it.id }) { budget ->
@@ -175,7 +174,7 @@ fun BudgetListScreen(
                         item {
                             ManagementSectionHeader(
                                 title = "ARCHIVED",
-                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                sectionColor = AppColors.contentSecondary.copy(alpha = 0.4f)
                             )
                         }
                         items(archived, key = { it.id }) { budget ->
@@ -223,8 +222,8 @@ private fun BudgetListItem(
     onArchive: () -> Unit
 ) {
     val progressColor = when (alertLevel) {
-        BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> RedWarning
-        BudgetAlertLevel.NONE -> TealHealthy
+        BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
+        BudgetAlertLevel.NONE -> AppColors.primary
     }
     val periodLabel = budget.timelineRange.toDisplayString()
 
@@ -253,7 +252,7 @@ private fun BudgetListItem(
                 )
             }
             DropdownMenuItem(
-                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                text = { Text("Delete", color = AppColors.error) },
                 onClick = { onDismiss(); onDelete() }
             )
         },
@@ -275,7 +274,7 @@ private fun BudgetListItem(
                     Text(
                         "$spentText spent",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
                         "${(progressFraction * 100).toInt()}%",

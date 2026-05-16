@@ -178,7 +178,8 @@ fun OssWalletTheme(
     }
 
     CompositionLocalProvider(
-        LocalAeonDimensions provides AeonDimensions()
+        LocalAeonDimensions provides AeonDimensions(),
+        LocalAppColorScheme provides colorScheme
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

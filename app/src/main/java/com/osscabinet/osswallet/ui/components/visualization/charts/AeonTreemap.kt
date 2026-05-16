@@ -38,9 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.generateShade
 import java.math.BigDecimal
@@ -138,7 +136,7 @@ fun AeonTreemap(
             ) {
                 // 1. Draw Ambient Shadow (Background depth for the whole treemap)
                 drawRoundRect(
-                    color = Color.Black.copy(alpha = 0.04f),
+                    color = ChartOverlayDark,
                     topLeft = Offset(-(dims.spacingXs / 2).toPx(), -(dims.spacingXs / 2).toPx()),
                     size = Size(widthPx + dims.spacingXs.toPx(), heightPx + dims.spacingXs.toPx()),
                     cornerRadius = CornerRadius(dims.spacingSm.toPx(), dims.spacingSm.toPx())
@@ -172,7 +170,7 @@ fun AeonTreemap(
                     if (drawRect.width > dims.containerCornerRadius.toPx() && drawRect.height > dims.containerCornerRadius.toPx()) {
                         val innerRadius = if (rounded) (dims.spacingXs * 1.25f).toPx() else 0f
                         drawRoundRect(
-                            color = Color.White.copy(alpha = 0.15f),
+                            color = ChartGlossHighlight,
                             topLeft = Offset(drawRect.left + (dims.spacingXs / 4).toPx(), drawRect.top + (dims.spacingXs / 4).toPx()),
                             size = Size(drawRect.width - (dims.spacingXs / 2).toPx(), drawRect.height - (dims.spacingXs / 2).toPx()),
                             cornerRadius = CornerRadius(innerRadius, innerRadius),
@@ -182,7 +180,7 @@ fun AeonTreemap(
                         // Subtle Top Glow
                         drawRoundRect(
                             brush = Brush.verticalGradient(
-                                colors = listOf(Color.White.copy(alpha = 0.1f), Color.Transparent),
+                                colors = listOf(ChartGlossGradEnd, ColorTransparent),
                                 startY = drawRect.top,
                                 endY = drawRect.top + drawRect.height * 0.4f
                             ),
@@ -195,7 +193,7 @@ fun AeonTreemap(
                     // 4. Selection Highlight
                     if (isSelected) {
                         drawRoundRect(
-                            color = Color.White.copy(alpha = 0.3f),
+                            color = ChartRimHighlight,
                             topLeft = Offset(drawRect.left, drawRect.top),
                             size = Size(drawRect.width, drawRect.height),
                             cornerRadius = cornerRadius,
@@ -233,8 +231,8 @@ fun AeonTreemap(
                     val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > dims.spacingLg && rectHeightDp > dims.spacingLg
 
                     if (showText || showOnlyIcon) {
-                        val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
-                        val labelColor = if (node.color.luminance() > 0.5f) Color.Black else Color.White
+                        val iconTint = if (node.color.luminance() > 0.5f) ColorOnLight.copy(alpha = 0.6f) else ColorOnDark.copy(alpha = 0.7f)
+                        val labelColor = if (node.color.luminance() > 0.5f) ColorOnLight else ColorOnDark
 
                         Box(
                             modifier = Modifier
@@ -428,12 +426,12 @@ fun AeonTreemapPreview() {
         Box(modifier = Modifier.size(400.dp, 300.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonTreemap(
                 nodes = listOf(
-                    AeonTreemapNode("Food", BigDecimal("500.00"), Color(0xFFFF5722), emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Rent", BigDecimal("1200.00"), Color(0xFF2196F3), emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Transport", BigDecimal("300.00"), Color(0xFF4CAF50), emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Entertainment", BigDecimal("200.00"), Color(0xFF9C27B0), emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Utilities", BigDecimal("150.00"), Color(0xFFFFC107), emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Health", BigDecimal("100.00"), Color(0xFFE91E63), emptyList(), emptyMap(), false, 0, 0f, null)
+                    AeonTreemapNode("Food", BigDecimal("500.00"), ChartColorOrange, emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Rent", BigDecimal("1200.00"), TagPresetColors[5], emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Transport", BigDecimal("300.00"), TagPresetColors[10], emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Entertainment", BigDecimal("200.00"), TagPresetColors[2], emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Utilities", BigDecimal("150.00"), TagPresetColors[13], emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Health", BigDecimal("100.00"), TagPresetColors[1], emptyList(), emptyMap(), false, 0, 0f, null)
                 )
             )
         }

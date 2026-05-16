@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * A unified selector for regular lists that supports single-select, multi-select, and management modes.
@@ -54,7 +55,7 @@ fun <T, ID> AeonHybridSelector(
                 label = labelMapper(item),
                 detail = detailMapper(item),
                 isSelected = isSelected,
-                iconColor = colorMapper(item) ?: MaterialTheme.colorScheme.primary,
+                iconColor = colorMapper(item) ?: AppColors.primary,
                 onClick = {
                     when (mode) {
                         AeonSelectMode.SINGLE -> onSelectionChange(setOf(id))
@@ -84,7 +85,7 @@ fun <T, ID> AeonHybridSelector(
                                     Icons.Rounded.Add,
                                     contentDescription = "Add",
                                     modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = AppColors.primary
                                 )
                             }
                             IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(32.dp)) {
@@ -92,7 +93,7 @@ fun <T, ID> AeonHybridSelector(
                                     Icons.Rounded.Edit,
                                     contentDescription = "Edit",
                                     modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.outline
+                                    tint = AppColors.border
                                 )
                             }
                         }

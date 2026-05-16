@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun TransactionFilterSheet(
@@ -40,7 +41,7 @@ fun TransactionFilterSheet(
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null
@@ -70,7 +71,7 @@ fun TransactionFilterSheet(
 fun TransactionFilterSheetPreview() {
     var theme by remember { mutableStateOf("Light") }
     OssWalletTheme(theme = theme) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = AppColors.screenBackground) {
             Box(modifier = Modifier.fillMaxSize()) {
                 TransactionFilterSheet(
                     filter = TransactionFilter(),

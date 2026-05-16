@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Main content layout for planned payment entry screen.
@@ -73,8 +74,8 @@ fun PlannedPaymentFormBody(
                         value = state.linkedTemplate?.name ?: "None",
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.primary
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
                     )
 
                     val scheduleSummary = PlannedPaymentService.buildScheduleSummary(
@@ -88,8 +89,8 @@ fun PlannedPaymentFormBody(
                         value = scheduleSummary,
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                        iconTint = AppColors.secondary
                     )
                 }
 

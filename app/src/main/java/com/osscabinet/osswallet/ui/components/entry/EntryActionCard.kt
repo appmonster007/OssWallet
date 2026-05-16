@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Shared action card for entry screens.
@@ -38,9 +39,9 @@ fun EntryActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    iconContainerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-    iconTint: Color = MaterialTheme.colorScheme.primary,
-    selectedColor: Color = MaterialTheme.colorScheme.primary,
+    iconContainerColor: Color = AppColors.primary.copy(alpha = 0.1f),
+    iconTint: Color = AppColors.primary,
+    selectedColor: Color = AppColors.primary,
     trailingIcon: ImageVector? = null,
     onTrailingIconClick: (() -> Unit)? = null
 ) {
@@ -51,13 +52,13 @@ fun EntryActionCard(
 
     val backgroundColor by animateColorAsState(
         if (isSelected) selectedColor.copy(alpha = 0.08f)
-        else MaterialTheme.colorScheme.surfaceContainerLow,
+        else AppColors.cardSurface,
         label = "bgColor"
     )
     
     val borderColor by animateColorAsState(
         if (isSelected) selectedColor
-        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+        else AppColors.divider.copy(alpha = 0.15f),
         label = "borderColor"
     )
 
@@ -108,14 +109,14 @@ fun EntryActionCard(
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     ),
-                    color = if (isSelected) selectedColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = if (isSelected) selectedColor.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
-                    color = if (isSelected) selectedColor else MaterialTheme.colorScheme.onSurface,
+                    color = if (isSelected) selectedColor else AppColors.contentPrimary,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -133,7 +134,7 @@ fun EntryActionCard(
                         trailingIcon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else AppColors.contentSecondary.copy(alpha = 0.4f)
                     )
                 }
             }

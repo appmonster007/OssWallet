@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +47,7 @@ fun FilterSheetContent(
     onApplyFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null
@@ -174,7 +175,7 @@ fun FilterSheetContent(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Surface(
@@ -182,11 +183,11 @@ fun FilterSheetContent(
                                 .fillMaxWidth()
                                 .height(48.dp),
                             shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            color = AppColors.insetSurface.copy(alpha = 0.5f),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                if (selectedFilterIds.isNotEmpty()) AppColors.primary
+                                else AppColors.border.copy(alpha = 0.2f)
                             ),
                             onClick = { filtersExpanded = !filtersExpanded }
                         ) {
@@ -200,18 +201,18 @@ fun FilterSheetContent(
                                 Text(
                                     text = selectedName,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (selectedFilterIds.isNotEmpty()) AppColors.primary
+                                    else AppColors.contentSecondary,
                                     maxLines = 1
                                 )
-                                Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.Default.ArrowDropDown, null, tint = AppColors.contentSecondary)
                             }
                         }
 
                         DropdownMenu(
                             expanded = filtersExpanded,
                             onDismissRequest = { filtersExpanded = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            modifier = Modifier.background(AppColors.cardSurfaceProminent)
                         ) {
                             savedFilters.forEach { savedFilter ->
                                 DropdownMenuItem(
@@ -266,7 +267,7 @@ internal fun FilterSheetDragHandle(
     onClick: () -> Unit,
     backgroundColor: Color
 ) {
-    val accentColor = MaterialTheme.colorScheme.primary
+    val accentColor = AppColors.primary
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessLow),

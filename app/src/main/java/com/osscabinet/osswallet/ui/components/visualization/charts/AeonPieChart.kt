@@ -42,9 +42,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -180,7 +178,7 @@ fun AeonPieChart(
                 // 1. Draw Ambient Shadow Ring (Background depth)
                 if (isDonut) {
                     drawCircle(
-                        color = Color.Black.copy(alpha = 0.05f),
+                        color = ChartPieInnerShadow,
                         radius = radius + dims.spacingXs.toPx(),
                         center = center,
                         style = Stroke(width = radius * 0.45f)
@@ -221,7 +219,7 @@ fun AeonPieChart(
                     if (isDonut && sliceSweep > 5f) {
                         val highlightWidth = (dims.spacingXs * 0.75f).toPx()
                         drawArc(
-                            color = Color.White.copy(alpha = 0.25f),
+                            color = ChartRimHighlight,
                             startAngle = currentAngle + (gapAngle / 2),
                             sweepAngle = sweepAngle,
                             useCenter = false,
@@ -234,7 +232,7 @@ fun AeonPieChart(
                     // 4. Selection Highlight
                     if (isSelected) {
                         drawArc(
-                            color = Color.White.copy(alpha = 0.3f),
+                            color = ChartGlossHighlight,
                             startAngle = currentAngle + (gapAngle / 2),
                             sweepAngle = sweepAngle,
                             useCenter = !isDonut,
@@ -323,14 +321,14 @@ fun AeonPieChartPreview() {
         Box(modifier = Modifier.size(300.dp).padding(AeonTheme.dimensions.screenPadding)) {
             AeonPieChart(
                 slices = listOf(
-                    AeonPieChartSlice(BigDecimal("450.00"), "Food", Color(0xFFFF5722), hasSubcategories = true, subcategoryCount = 3),
-                    AeonPieChartSlice(BigDecimal("300.00"), "Rent", Color(0xFF2196F3)),
-                    AeonPieChartSlice(BigDecimal("150.00"), "Transport", Color(0xFF4CAF50), hasSubcategories = true, subcategoryCount = 2),
-                    AeonPieChartSlice(BigDecimal("100.00"), "Utilities", Color(0xFFFFC107)),
-                    AeonPieChartSlice(BigDecimal("80.00"), "Health", Color(0xFFE91E63)),
-                    AeonPieChartSlice(BigDecimal("60.00"), "Entertainment", Color(0xFF9C27B0)),
-                    AeonPieChartSlice(BigDecimal("40.00"), "Insurance", Color(0xFF3F51B5)),
-                    AeonPieChartSlice(BigDecimal("20.00"), "Misc", Color(0xFF00BCD4))
+                    AeonPieChartSlice(BigDecimal("450.00"), "Food", ChartColorOrange, hasSubcategories = true, subcategoryCount = 3),
+                    AeonPieChartSlice(BigDecimal("300.00"), "Rent", TagPresetColors[5]),
+                    AeonPieChartSlice(BigDecimal("150.00"), "Transport", TagPresetColors[10], hasSubcategories = true, subcategoryCount = 2),
+                    AeonPieChartSlice(BigDecimal("100.00"), "Utilities", TagPresetColors[13]),
+                    AeonPieChartSlice(BigDecimal("80.00"), "Health", TagPresetColors[1]),
+                    AeonPieChartSlice(BigDecimal("60.00"), "Entertainment", TagPresetColors[2]),
+                    AeonPieChartSlice(BigDecimal("40.00"), "Insurance", TagPresetColors[4]),
+                    AeonPieChartSlice(BigDecimal("20.00"), "Misc", TagPresetColors[7])
                 ),
                 animate = false
             )

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CalculatorDialog(
@@ -24,7 +25,7 @@ fun CalculatorDialog(
         Surface(
             shape = RoundedCornerShape(32.dp),
             tonalElevation = 6.dp,
-            color = MaterialTheme.colorScheme.surface
+            color = AppColors.panelSurface
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -71,13 +72,13 @@ fun CalculatorDialog(
                             shape = RoundedCornerShape(16.dp),
                             colors = if (isOperator) {
                                 ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    containerColor = AppColors.accentContainer,
+                                    contentColor = AppColors.onAccentContainer
                                 )
                             } else if (isClear) {
                                 ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                    containerColor = AppColors.errorContainer,
+                                    contentColor = AppColors.onErrorContainer
                                 )
                             } else {
                                 ButtonDefaults.filledTonalButtonColors()

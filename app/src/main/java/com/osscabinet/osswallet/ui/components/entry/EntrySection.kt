@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.rounded.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Standard container for metadata/details in entry screens.
@@ -34,8 +35,8 @@ fun EntrySection(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        color = AppColors.sheetSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
         shadowElevation = 0.dp
     ) {
         Column(
@@ -49,7 +50,7 @@ fun EntrySection(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    color = AppColors.primary.copy(alpha = 0.1f),
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -57,7 +58,7 @@ fun EntrySection(
                             icon,
                             contentDescription = null,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = AppColors.primary
                         )
                     }
                 }
@@ -68,7 +69,7 @@ fun EntrySection(
                         letterSpacing = 1.sp,
                         fontSize = 10.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
 
@@ -82,7 +83,7 @@ fun EntrySection(
 fun EntrySectionLightPreview() {
     OssWalletTheme(theme = "Light") {
         Surface(
-            color = MaterialTheme.colorScheme.background,
+            color = AppColors.screenBackground,
             modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
         ) {
             EntrySection(
@@ -96,7 +97,7 @@ fun EntrySectionLightPreview() {
                 Text(
                     text = "More content can be added here",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AppColors.contentSecondary
                 )
             }
         }
@@ -108,7 +109,7 @@ fun EntrySectionLightPreview() {
 fun EntrySectionAmoledPreview() {
     OssWalletTheme(theme = "Amoled") {
         Surface(
-            color = MaterialTheme.colorScheme.background,
+            color = AppColors.screenBackground,
             modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
         ) {
             EntrySection(
@@ -135,7 +136,7 @@ fun EntrySectionAmoledPreview() {
 fun TransactionEntrySectionPreview() {
     OssWalletTheme(theme = "Amoled") {
         Surface(
-            color = MaterialTheme.colorScheme.background,
+            color = AppColors.screenBackground,
             modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
         ) {
             AeonDetailSection(
@@ -163,14 +164,14 @@ fun TransactionEntrySectionPreview() {
                             onStatusClick = {},
                             paymentMethodIcon = Icons.Rounded.Payments,
                             statusIcon = Icons.Rounded.CheckCircle,
-                            statusIconTint = MaterialTheme.colorScheme.primary,
-                            statusContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            statusIconTint = AppColors.primary,
+                            statusContainerColor = AppColors.primary.copy(alpha = 0.1f)
                         )
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
                             thickness = (AeonTheme.dimensions.spacingXs / 8),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            color = AppColors.divider.copy(alpha = 0.2f)
                         )
 
                         EntryWarrantySection(

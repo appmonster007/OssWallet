@@ -77,9 +77,8 @@ import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
-private val TealHealthy = Color(0xFF004D40)
-private val RedWarning = Color(0xFFB3261E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,10 +208,10 @@ fun LoanDetailScreen(
                                     .fillMaxWidth()
                                     .padding(AeonTheme.dimensions.screenPadding),
                                 shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                color = AppColors.cardSurface,
                                 border = BorderStroke(
                                     0.5.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                                    AppColors.divider.copy(alpha = 0.15f)
                                 )
                             ) {
                                 Box(
@@ -222,7 +221,7 @@ fun LoanDetailScreen(
                                     Text(
                                         "No related transactions",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                     )
                                 }
                             }
@@ -327,7 +326,7 @@ private fun LoanOverviewTab(
                                 val color = try {
                                     Color(account.colorHex.toColorInt())
                                 } catch (_: Exception) {
-                                    MaterialTheme.colorScheme.primary
+                                    AppColors.primary
                                 }
                                 ScopeChip(text = account.name, color = color)
                             }
@@ -354,7 +353,7 @@ private fun LoanOverviewTab(
                         allText = "No Tags",
                         isEmpty = loan.tags.isEmpty(),
                         items = loan.tags.map { tag ->
-                            { ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary) }
+                            { ScopeChip(text = tag, color = AppColors.secondary) }
                         }
                     )
                 }
@@ -370,7 +369,7 @@ private fun LoanOverviewTab(
                 ) {
                     ManagementSectionHeader(
                         title = "AMORTIZATION SCHEDULE",
-                        sectionColor = MaterialTheme.colorScheme.primary
+                        sectionColor = AppColors.primary
                     )
                     IconButton(onClick = { showAmortization = !showAmortization }) {
                         Icon(
@@ -407,9 +406,9 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
         SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date(entry.date))
     }
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.2f),
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.2f),
         shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.08f)),
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -423,7 +422,7 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
                 "${entry.period}",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.width(AeonTheme.dimensions.spacingXl),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = AppColors.contentSecondary
             )
             Text(
                 dateStr,
@@ -437,12 +436,12 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
             Text(
                 entry.interest.toPlainString(),
                 style = MaterialTheme.typography.bodySmall,
-                color = RedWarning
+                color = AppColors.error
             )
             Text(
                 entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                 style = MaterialTheme.typography.bodySmall,
-                color = TealHealthy
+                color = AppColors.primary
             )
         }
     }

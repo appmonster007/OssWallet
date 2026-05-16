@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Shared 72dp action card used on all entry screens (planned payments, budgets, loans).
@@ -34,8 +35,8 @@ fun AeonEntryActionCard(
     value: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconContainerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-    iconTint: Color = MaterialTheme.colorScheme.primary
+    iconContainerColor: Color = AppColors.primary.copy(alpha = 0.1f),
+    iconTint: Color = AppColors.primary
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -49,8 +50,8 @@ fun AeonEntryActionCard(
         },
         interactionSource = interactionSource,
         shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        color = AppColors.cardSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
         shadowElevation = 0.dp,
         modifier = modifier
             .height(72.dp)
@@ -86,7 +87,7 @@ fun AeonEntryActionCard(
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     text = value,

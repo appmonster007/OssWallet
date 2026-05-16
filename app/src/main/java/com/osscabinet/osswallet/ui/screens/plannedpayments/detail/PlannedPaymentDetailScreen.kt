@@ -32,15 +32,13 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.*
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-private val TealHealthy = Color(0xFF004D40)
-private val RedWarning = Color(0xFFB3261E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,7 +139,7 @@ fun PlannedPaymentDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = AppColors.screenBackground
                 )
             )
         }
@@ -156,9 +154,9 @@ fun PlannedPaymentDetailScreen(
             // Hero card
             item {
                 val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == TransactionType.INCOME) TealHealthy else RedWarning
-                    PlannedPaymentStatus.PAUSED -> Color.Gray
-                    else -> Color.Gray
+                    PlannedPaymentStatus.ACTIVE -> if (payment.transactionType == TransactionType.INCOME) AppColors.primary else AppColors.error
+                    PlannedPaymentStatus.PAUSED -> NeutralStatusColor
+                    else -> NeutralStatusColor
                 }
                 val recurrenceText =
                     PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
@@ -194,8 +192,8 @@ fun PlannedPaymentDetailScreen(
                         val statusLabel = payment.status.displayName
                         val statusColor = when (payment.status) {
                             PlannedPaymentStatus.ACTIVE -> accentColor
-                            PlannedPaymentStatus.PAUSED -> Color.Gray
-                            else -> MaterialTheme.colorScheme.error
+                            PlannedPaymentStatus.PAUSED -> NeutralStatusColor
+                            else -> AppColors.error
                         }
                         Surface(
                             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
@@ -212,12 +210,12 @@ fun PlannedPaymentDetailScreen(
                         val typeLabel = payment.transactionType.displayName
                         Surface(
                             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            color = AppColors.insetSurface.copy(alpha = 0.5f)
                         ) {
                             Text(
                                 typeLabel,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = AppColors.contentSecondary,
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
                             )
                         }
@@ -226,7 +224,7 @@ fun PlannedPaymentDetailScreen(
                     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                     HorizontalDivider(
                         thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                        color = AppColors.divider.copy(alpha = 0.15f)
                     )
                     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
 
@@ -243,7 +241,7 @@ fun PlannedPaymentDetailScreen(
                         Text(
                             recurrenceText,
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = AppColors.contentSecondary,
                             modifier = Modifier.weight(1f)
                         )
                         Icon(
@@ -262,7 +260,7 @@ fun PlannedPaymentDetailScreen(
                     Text(
                         "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.schedule.startDate))}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -279,10 +277,10 @@ fun PlannedPaymentDetailScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = AppColors.cardSurface,
                         border = BorderStroke(
                             0.5.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
+                            AppColors.divider.copy(alpha = 0.12f)
                         )
                     ) {
                         Column(
@@ -331,7 +329,7 @@ fun PlannedPaymentDetailScreen(
                     ManagementSectionHeader(
                         title = "UPCOMING",
                         count = upcomingItems.size,
-                        sectionColor = MaterialTheme.colorScheme.primary
+                        sectionColor = AppColors.primary
                     )
                 }
                 items(
@@ -360,7 +358,7 @@ fun PlannedPaymentDetailScreen(
                     ManagementSectionHeader(
                         title = "HISTORY",
                         count = pastOccurrences.size,
-                        sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        sectionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
                 }
                 items(pastOccurrences, key = { it.id }) { occ ->
@@ -388,7 +386,7 @@ private fun DetailMetaRow(
             icon,
             contentDescription = null,
             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            tint = AppColors.contentSecondary.copy(alpha = 0.5f)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -398,12 +396,12 @@ private fun DetailMetaRow(
                     letterSpacing = 0.5.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                color = AppColors.contentSecondary.copy(alpha = 0.45f)
             )
             Text(
                 value,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = AppColors.contentPrimary,
                 maxLines = if (singleLine) 1 else 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -426,21 +424,21 @@ private fun OccurrenceItem(
     val canConfirmToday = !scheduledDay.isAfter(today)
     val daysUntil = ChronoUnit.DAYS.between(today, scheduledDay).toInt()
 
-    val iconColor = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.secondary
+    val iconColor = if (item.isOverdue) AppColors.error else AppColors.secondary
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
     val formattedAmount =
         item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
 
     Surface(
         color = if (item.isOverdue)
-            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.12f)
+            AppColors.errorContainer.copy(alpha = 0.12f)
         else
-            MaterialTheme.colorScheme.surfaceContainerLow,
+            AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         border = BorderStroke(
             0.5.dp,
-            if (item.isOverdue) RedWarning.copy(alpha = 0.2f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            if (item.isOverdue) AppColors.error.copy(alpha = 0.2f)
+            else AppColors.divider.copy(alpha = 0.15f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -469,12 +467,12 @@ private fun OccurrenceItem(
                 Text(
                     dateLabel,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (item.isOverdue) RedWarning else MaterialTheme.colorScheme.onSurface
+                    color = if (item.isOverdue) AppColors.error else AppColors.contentPrimary
                 )
                 Text(
                     "$formattedAmount ${item.plannedPayment.currency}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
             when (status) {
@@ -483,10 +481,10 @@ private fun OccurrenceItem(
                         Surface(
                             onClick = onSkip,
                             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f),
+                            color = AppColors.contentSecondary.copy(alpha = 0.08f),
                             border = BorderStroke(
                                 0.5.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                AppColors.divider.copy(alpha = 0.2f)
                             ),
                             modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                         ) {
@@ -501,7 +499,7 @@ private fun OccurrenceItem(
                             Surface(
                                 onClick = onConfirm,
                                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                color = TealHealthy,
+                                color = AppColors.primary,
                                 modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                             ) {
                                 Row(
@@ -513,13 +511,13 @@ private fun OccurrenceItem(
                                         Icons.Rounded.Done,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
-                                        tint = Color.White
+                                        tint = ColorOnDark
                                     )
                                     Text(
                                         "Confirm",
                                         style = MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            color = ColorOnDark
                                         )
                                     )
                                 }
@@ -532,7 +530,7 @@ private fun OccurrenceItem(
                             }
                             Surface(
                                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                color = AppColors.insetSurface.copy(alpha = 0.4f),
                                 modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
                             ) {
                                 Row(
@@ -544,12 +542,12 @@ private fun OccurrenceItem(
                                         Icons.Rounded.Schedule,
                                         contentDescription = null,
                                         modifier = Modifier.size(12.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
                                     )
                                     Text(
                                         hintLabel,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        color = AppColors.contentSecondary.copy(
                                             alpha = 0.5f
                                         )
                                     )
@@ -567,13 +565,13 @@ private fun OccurrenceItem(
                         Icon(
                             Icons.Rounded.CheckCircle,
                             contentDescription = null,
-                            tint = TealHealthy,
+                            tint = AppColors.primary,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                         Text(
                             "Confirmed",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = TealHealthy
+                            color = AppColors.primary
                         )
                     }
                 }
@@ -586,13 +584,13 @@ private fun OccurrenceItem(
                         Icon(
                             Icons.Rounded.Cancel,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            tint = AppColors.contentSecondary.copy(alpha = 0.4f),
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                         Text(
                             "Skipped",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.4f)
                         )
                     }
                 }
@@ -610,19 +608,19 @@ private fun PastOccurrenceItem(
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
     val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
-        OccurrenceStatus.CONFIRMED -> Triple("Confirmed", TealHealthy, Icons.Rounded.CheckCircle)
-        OccurrenceStatus.SKIPPED -> Triple("Skipped", Color.Gray, Icons.Rounded.Cancel)
+        OccurrenceStatus.CONFIRMED -> Triple("Confirmed", AppColors.primary, Icons.Rounded.CheckCircle)
+        OccurrenceStatus.SKIPPED -> Triple("Skipped", NeutralStatusColor, Icons.Rounded.Cancel)
         OccurrenceStatus.PENDING -> Triple(
             "Pending",
-            MaterialTheme.colorScheme.onSurfaceVariant,
+            AppColors.contentSecondary,
             Icons.Rounded.CalendarToday
         )
     }
 
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -654,7 +652,7 @@ private fun PastOccurrenceItem(
                 Text(
                     "$formattedAmount ${payment.currency}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
             }
             Row(

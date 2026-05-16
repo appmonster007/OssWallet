@@ -24,8 +24,10 @@ import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun LoansCard(
@@ -54,7 +56,7 @@ fun LoansCard(
                     Icon(
                         Icons.Default.MoreVert,
                         contentDescription = "Options",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -87,7 +89,7 @@ fun LoansCard(
             Text(
                 text = "No loans yet",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
@@ -110,9 +112,7 @@ private fun LoanSummaryRow(
     onClick: () -> Unit,
     precision: Int = 2
 ) {
-    val lentColor = Color(0xFF00695C)
-    val borrowedColor = Color(0xFFE65100)
-    val accentColor = if (summary.loan.loanType == LoanType.LENT) lentColor else borrowedColor
+    val accentColor = if (summary.loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
     
     val progress = if (summary.loan.principalAmount > BigDecimal.ZERO)
         (summary.totalPaid.divide(summary.loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat().coerceIn(0f, 1f)
@@ -120,9 +120,9 @@ private fun LoanSummaryRow(
 
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = AppColors.sheetSurface,
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -137,7 +137,7 @@ private fun LoanSummaryRow(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.2).sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = AppColors.contentPrimary
                     )
                     Text(
                         text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}" 
@@ -184,19 +184,19 @@ private fun LoanSummaryRow(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
                         text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision, shorten = true),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = AppColors.contentPrimary
                     )
                 }
                 
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                    color = AppColors.componentOnCard.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -206,7 +206,7 @@ private fun LoanSummaryRow(
                             fontFeatureSettings = "tnum"
                         ),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                 }
             }

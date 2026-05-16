@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Reusable tag selection section for entry screens.
@@ -35,8 +36,8 @@ fun EntryTagSection(
         Surface(
             onClick = onShowTagSheet,
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+            color = AppColors.recessedSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
             modifier = Modifier.height(32.dp)
         ) {
             Row(
@@ -47,7 +48,7 @@ fun EntryTagSection(
                     Icons.AutoMirrored.Rounded.Label,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = AppColors.primary
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
@@ -61,8 +62,8 @@ fun EntryTagSection(
         selectedTags.forEach { tag ->
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+                color = AppColors.secondary.copy(alpha = 0.1f),
+                border = BorderStroke(0.5.dp, AppColors.secondary.copy(alpha = 0.2f)),
                 modifier = Modifier.height(32.dp)
             ) {
                 Row(
@@ -82,7 +83,7 @@ fun EntryTagSection(
                             Icons.Rounded.Close,
                             contentDescription = "Remove tag",
                             modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.secondary
+                            tint = AppColors.secondary
                         )
                     }
                 }

@@ -54,6 +54,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScree
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun RecentActivitiesCard(
@@ -102,7 +103,7 @@ fun RecentActivitiesCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
             }
@@ -167,7 +168,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -194,7 +195,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                 // Group By Selection
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    color = AppColors.insetSurface.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -208,7 +209,7 @@ private fun RecentActivitiesDisplaySettingsDialog(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             ),
-                            color = MaterialTheme.colorScheme.primary
+                            color = AppColors.primary
                         )
 
                         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -236,6 +237,6 @@ private fun RecentActivitiesDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }

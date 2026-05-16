@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun AeonTemplateSelection(
@@ -62,8 +64,8 @@ fun AeonTemplateSelection(
                     Surface(
                         onClick = { onTemplateSelected(null); onDismiss() },
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        color = AppColors.primary.copy(alpha = 0.1f),
+                        border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.2f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -71,9 +73,9 @@ fun AeonTemplateSelection(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create New Template", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text("Create New Template", color = AppColors.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -90,7 +92,7 @@ fun AeonTemplateSelection(
                         Card(
                             onClick = { onTemplateSelected(template); onDismiss() },
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                            colors = CardDefaults.cardColors(containerColor = AppColors.insetSurface.copy(alpha = 0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -100,13 +102,13 @@ fun AeonTemplateSelection(
                                     Surface(
                                         modifier = Modifier.size(40.dp),
                                         shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                        color = AppColors.primary.copy(alpha = 0.1f)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
                                                 imageVector = getIconByName(category?.iconName),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
+                                                tint = AppColors.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
@@ -115,13 +117,13 @@ fun AeonTemplateSelection(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(template.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text(category?.name ?: "Unknown", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                    Text(category?.name ?: "Unknown", style = MaterialTheme.typography.bodySmall, color = AppColors.border)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         "${if (template.transactionType == TransactionType.INCOME) "+" else "-"}${template.amount} ${template.currency ?: ""}",
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = if (template.transactionType == TransactionType.INCOME) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                                        color = if (template.transactionType == TransactionType.INCOME) PositiveAmountColor else AppColors.error,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }

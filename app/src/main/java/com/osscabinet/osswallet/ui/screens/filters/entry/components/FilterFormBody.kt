@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryEvent
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Filter Entry Form Body.
@@ -57,7 +58,7 @@ fun FilterFormBody(
                 showTypeSelector = false,
                 showAmount = false,
                 showCurrency = false,
-                amountColor = MaterialTheme.colorScheme.primary
+                amountColor = AppColors.primary
             )
 
             // CORE CRITERIA: Primary structural filter logic
@@ -185,8 +186,8 @@ fun FilterFormBody(
                         value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
                         onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colorScheme.tertiary
+                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = AppColors.tertiary
                     )
 
                     // Numerical Constraints

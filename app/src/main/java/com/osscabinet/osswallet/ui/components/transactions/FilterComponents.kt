@@ -43,6 +43,7 @@ import java.util.Locale
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -224,7 +225,7 @@ fun FilterFields(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    color = AppColors.primary.copy(alpha = 0.7f)
                 )
 
                 // Regex Toggles
@@ -236,32 +237,32 @@ fun FilterFields(
                         onClick = { onFilterChange(filter.copy(isNoteRegex = !filter.isNoteRegex)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (filter.isNoteRegex) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        color = if (filter.isNoteRegex) AppColors.selectionContainer else AppColors.insetSurface.copy(alpha = 0.5f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isNoteRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isNoteRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
                             Spacer(Modifier.width(4.dp))
-                            Text("Note Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isNoteRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Note Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isNoteRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
                         }
                     }
                     Surface(
                         onClick = { onFilterChange(filter.copy(isPayeeRegex = !filter.isPayeeRegex)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (filter.isPayeeRegex) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        color = if (filter.isPayeeRegex) AppColors.selectionContainer else AppColors.insetSurface.copy(alpha = 0.5f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isPayeeRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Code, null, modifier = Modifier.size(14.dp), tint = if (filter.isPayeeRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
                             Spacer(Modifier.width(4.dp))
-                            Text("Payee Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isPayeeRegex) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Payee Regex", style = MaterialTheme.typography.labelSmall, color = if (filter.isPayeeRegex) AppColors.onSelectionContainer else AppColors.contentSecondary)
                         }
                     }
                 }
@@ -304,7 +305,7 @@ fun FilterFields(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                color = AppColors.primary.copy(alpha = 0.7f)
             )
             
             // 2-Column Grid for Primary Dimensions
@@ -374,10 +375,10 @@ fun FilterFields(
             Surface(
                 onClick = { onFilterChange(filter.copy(excludeFuture = !filter.excludeFuture)) },
                 shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                color = AppColors.cardSurface,
                 border = androidx.compose.foundation.BorderStroke(
                     (AeonTheme.dimensions.spacingXs / 8),
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                    AppColors.divider.copy(alpha = 0.2f)
                 )
             ) {
                 Row(
@@ -394,7 +395,7 @@ fun FilterFields(
                         Icon(
                             Icons.Default.Update,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = AppColors.primary,
                             modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
                         )
                         Text(
@@ -419,7 +420,7 @@ fun FilterFields(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    color = AppColors.primary.copy(alpha = 0.7f)
                 )
                 ContextCard(
                     title = "Statuses",
@@ -439,7 +440,7 @@ fun FilterFields(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    color = AppColors.primary.copy(alpha = 0.7f)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -473,7 +474,7 @@ fun FilterFields(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    color = AppColors.primary.copy(alpha = 0.7f)
                 )
                 ContextCard(
                     title = "Methods",
@@ -492,7 +493,7 @@ fun FilterFields(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                color = AppColors.primary.copy(alpha = 0.7f)
             )
             ContextCard(
                 title = "Linked",
@@ -510,7 +511,7 @@ fun FilterFields(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                color = AppColors.primary.copy(alpha = 0.7f)
             )
             AeonDateRangeCard(
                 startDateMillis = filter.warrantyExpirationStart,
@@ -536,10 +537,10 @@ fun ContextCard(
         onClick = onClick,
         modifier = modifier.height(AeonTheme.dimensions.iconSize3xl + AeonTheme.dimensions.spacingLg),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = AppColors.cardSurface,
         border = androidx.compose.foundation.BorderStroke(
             (AeonTheme.dimensions.spacingXs / 8),
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            AppColors.divider.copy(alpha = 0.2f)
         )
     ) {
         Row(
@@ -550,13 +551,13 @@ fun ContextCard(
             Surface(
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                color = AppColors.primary.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.size(AeonTheme.dimensions.containerCornerRadius)
                     )
                 }
@@ -569,7 +570,7 @@ fun ContextCard(
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     value,
@@ -596,7 +597,7 @@ fun CompactTextField(
     Surface(
         modifier = modifier.height(AeonTheme.dimensions.iconSize2xl),
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        color = AppColors.insetSurface.copy(alpha = 0.5f)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
@@ -606,7 +607,7 @@ fun CompactTextField(
                 Icon(
                     leadingIcon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = AppColors.contentSecondary,
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
@@ -616,15 +617,15 @@ fun CompactTextField(
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 enabled = enabled,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppColors.contentPrimary),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(AppColors.primary),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) {
                         Text(
                             placeholder,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }
                     innerTextField()

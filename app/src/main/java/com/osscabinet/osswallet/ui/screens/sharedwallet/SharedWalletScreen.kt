@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +44,7 @@ fun SharedWalletScreen(
                     Icon(
                         Icons.Default.CloudDone,
                         contentDescription = "Synced",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = AppColors.primary,
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }
@@ -71,7 +72,7 @@ fun SharedWalletScreen(
                     Text(
                         "Collaborate on expenses with family or friends in real-time.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = AppColors.secondary
                     )
                 }
                 items(uiState.wallets) { wallet ->
@@ -131,7 +132,7 @@ fun WalletItem(wallet: SharedWallet) {
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+            containerColor = AppColors.cardSurface
         )
     ) {
         Row(
@@ -140,14 +141,14 @@ fun WalletItem(wallet: SharedWallet) {
         ) {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = AppColors.accentContainer,
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.Group,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = AppColors.onAccentContainer
                     )
                 }
             }
@@ -161,7 +162,7 @@ fun WalletItem(wallet: SharedWallet) {
                 Text(
                     text = "${wallet.memberIds.size} members",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = AppColors.secondary
                 )
             }
             TextButton(onClick = { /* View Transactions */ }) {

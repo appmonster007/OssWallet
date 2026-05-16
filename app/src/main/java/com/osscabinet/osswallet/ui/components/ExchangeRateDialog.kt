@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Dialog for entering exchange rate between currencies.
@@ -45,7 +46,7 @@ fun ExchangeRateDialog(
                 Text(
                     "Enter the exchange rate for this transfer",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AppColors.contentSecondary
                 )
 
                 OutlinedTextField(

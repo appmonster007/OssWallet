@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
+import com.osscabinet.ossWallet.ui.theme.AppColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
@@ -83,7 +84,7 @@ fun AnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add card",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = AppColors.primary
                         )
                     }
                 }
@@ -109,7 +110,7 @@ fun AnalyticsScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(innerPadding)
-                                .background(MaterialTheme.colorScheme.background)
+                                .background(AppColors.screenBackground)
                         ) {
                             AeonCardList(
                                 cards = cardsConfig.cards,

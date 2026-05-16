@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @Composable
 fun CurrencyBalancesCard(
@@ -98,7 +99,7 @@ fun CurrencyBalancesCard(
                 Icon(
                     Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppColors.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -108,7 +109,7 @@ fun CurrencyBalancesCard(
             Text(
                 text = "No data for selected filter",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else if (layout == "grid") {
@@ -211,7 +212,7 @@ private fun CurrencyDisplaySettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                    contentColor = AppColors.error
                 )
             ) {
                 Icon(
@@ -249,7 +250,7 @@ private fun CurrencyDisplaySettingsDialog(
             }
         },
         shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = AppColors.sheetSurface
     )
 }
 
@@ -266,8 +267,8 @@ fun CurrencyBalanceItem(
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.4f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f)),
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
@@ -280,7 +281,7 @@ fun CurrencyBalanceItem(
                 curr,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = AppColors.primary,
                     letterSpacing = 0.5.sp
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -303,7 +304,7 @@ fun CurrencyBalanceItem(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
                     maxLines = 1
                 )
             } else if (showBaseConversion) {

@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +26,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,7 +33,7 @@ import java.util.*
 /**
  * Optimized Timeline Period Selector.
  * 
- * @param swipeEntireComponent If true, the entire bar (including buttons and icons) swipes.
+ * @param swipeEntireComponent If true, the entire navigation row (buttons + icons + dates) swipes.
  *                            If false, buttons and icons are fixed and only the date value swipes.
  */
 @Composable
@@ -43,7 +41,7 @@ fun AeonTimelinePeriodSelector(
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
-    swipeEntireComponent: Boolean = false
+    swipeEntireComponent: Boolean = true
 ) {
     val initialPage = remember(currentRange) {
         when (currentRange) {
@@ -90,13 +88,14 @@ fun AeonTimelinePeriodSelector(
         tonalElevation = 1.dp
     ) {
         if (swipeEntireComponent) {
-            // Full Component Pager (Tactile Experience)
+            // 1. Full Component Pager (Tactile Experience)
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth()
             ) { page ->
-                TimelineSelectorRow(
+                TimelineSelectorLayout(
                     page = page,
+                    activePage = page,
                     currentRange = currentRange,
                     onRangeSelected = onRangeSelected,
                     onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
@@ -105,37 +104,19 @@ fun AeonTimelinePeriodSelector(
                 )
             }
         } else {
-            // Value-Only Pager (Fixed Controls Experience)
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Fixed Header Icons
-                IconIndicators(
-                    activePage = pagerState.currentPage,
-                    onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(32.dp).padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, -1)) },
-                        enabled = pagerState.currentPage > 0,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ChevronLeft, 
-                            null, 
-                            modifier = Modifier.size(16.dp),
-                            tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
-                        )
-                    }
-
+            // 2. Value-Only Pager (Fixed Controls Experience)
+            TimelineSelectorLayout(
+                page = pagerState.currentPage,
+                activePage = pagerState.currentPage,
+                currentRange = currentRange,
+                onRangeSelected = onRangeSelected,
+                onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                onDropdownShow = { showDropdown = it },
+                onDatePickerShow = { showDatePicker = it },
+                centerContent = {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth().height(26.dp)
                     ) { page ->
                         DateDisplayArea(
                             page = page,
@@ -144,21 +125,8 @@ fun AeonTimelinePeriodSelector(
                             onDatePickerShow = { showDatePicker = it }
                         )
                     }
-
-                    IconButton(
-                        onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, 1)) },
-                        enabled = pagerState.currentPage < pagerState.pageCount - 1,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ChevronRight, 
-                            null, 
-                            modifier = Modifier.size(16.dp),
-                            tint = if (pagerState.currentPage < pagerState.pageCount - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
-                        )
-                    }
                 }
-            }
+            )
         }
     }
 
@@ -174,7 +142,6 @@ fun AeonTimelinePeriodSelector(
         )
     }
 
-    // Dropdown (Shared for both implementations)
     if (showDropdown) {
         DropdownMenu(
             expanded = showDropdown,
@@ -208,13 +175,22 @@ fun AeonTimelinePeriodSelector(
 }
 
 @Composable
-private fun TimelineSelectorRow(
+private fun TimelineSelectorLayout(
     page: Int,
+    activePage: Int,
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     onIconClick: (Int) -> Unit,
     onDropdownShow: (Boolean) -> Unit,
-    onDatePickerShow: (Boolean) -> Unit
+    onDatePickerShow: (Boolean) -> Unit,
+    centerContent: @Composable ColumnScope.() -> Unit = {
+        DateDisplayArea(
+            page = page,
+            currentRange = currentRange,
+            onDropdownShow = onDropdownShow,
+            onDatePickerShow = onDatePickerShow
+        )
+    }
 ) {
     Row(
         modifier = Modifier
@@ -224,14 +200,14 @@ private fun TimelineSelectorRow(
     ) {
         IconButton(
             onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, -1)) },
-            enabled = page > 0,
+            enabled = currentRange !is TimelineRange.AllTime,
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
                 Icons.Default.ChevronLeft, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (page > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
             )
         }
 
@@ -240,25 +216,20 @@ private fun TimelineSelectorRow(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            IconIndicators(activePage = page, onIconClick = onIconClick)
-            DateDisplayArea(
-                page = page,
-                currentRange = currentRange,
-                onDropdownShow = onDropdownShow,
-                onDatePickerShow = onDatePickerShow
-            )
+            IconIndicators(activePage = activePage, onIconClick = onIconClick)
+            centerContent()
         }
 
         IconButton(
             onClick = { onRangeSelected(TimelineService.shiftRange(currentRange, 1)) },
-            enabled = page > 0,
+            enabled = currentRange !is TimelineRange.AllTime,
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
                 Icons.Default.ChevronRight, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (page > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
             )
         }
     }
@@ -273,7 +244,7 @@ private fun IconIndicators(
     val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
 
     Row(
-        modifier = Modifier.padding(top = 2.dp, bottom = 2.dp).animateContentSize(),
+        modifier = Modifier.padding(bottom = 2.dp).animateContentSize(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

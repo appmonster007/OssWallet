@@ -119,7 +119,7 @@ fun CategoryListScreen(
                 showAddDialog = false
                 selectedCategoryForEdit = null
             },
-            onSave = { name, icon, color, parentId ->
+            onSave = { name, icon, color, parentId, nature ->
                 viewModel.upsertCategory(
                     Category(
                         id = editingCategory?.id ?: 0,
@@ -127,7 +127,8 @@ fun CategoryListScreen(
                         iconName = icon,
                         colorHex = color,
                         parentId = parentId,
-                        isDefault = editingCategory?.isDefault ?: false
+                        isDefault = editingCategory?.isDefault ?: false,
+                        nature = nature
                     )
                 )
                 showAddDialog = false

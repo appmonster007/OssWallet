@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.local
 
 import androidx.room.TypeConverter
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -161,5 +162,15 @@ class Converters {
     @TypeConverter
     fun toStringSet(value: String?): Set<String>? {
         return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromCategoryNature(value: CategoryNature?): String? {
+        return value?.value
+    }
+
+    @TypeConverter
+    fun toCategoryNature(value: String?): CategoryNature? {
+        return value?.let { CategoryNature.fromValue(it) }
     }
 }

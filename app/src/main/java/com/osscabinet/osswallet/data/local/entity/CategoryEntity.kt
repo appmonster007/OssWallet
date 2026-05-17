@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 
 @Entity(tableName = "categories")
 data class CategoryEntity(
@@ -11,5 +12,6 @@ data class CategoryEntity(
     val iconName: String,
     val colorHex: Int,
     val isDefault: Boolean = false,
-    val parentId: Long? = null
+    val parentId: Long? = null,
+    val nature: CategoryNature = CategoryNature.WANT
 )

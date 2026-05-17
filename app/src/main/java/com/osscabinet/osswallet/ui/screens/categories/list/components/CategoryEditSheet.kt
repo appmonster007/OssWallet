@@ -5,8 +5,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -29,20 +30,20 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun CategoryEditSheet(
     category: Category?,
     parentCategories: List<Category>,
     onDismiss: () -> Unit,
-    onSave: (String, String, Int, Long?) -> Unit,
+    onSave: (String, String, Int, Long?, CategoryNature) -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
     var selectedIcon by remember { mutableStateOf(category?.iconName ?: "Other") }
     var selectedColorHex by remember { mutableStateOf(category?.colorHex?.toHex() ?: "#9E9E9E") }
     var selectedParentId by remember { mutableStateOf(category?.parentId) }
+    var selectedNature by remember { mutableStateOf(category?.nature ?: CategoryNature.WANT) }
 
     val isMandatory = category != null && category.id >= 1000L && category.id <= 1003L
     val isEditMode = category != null && category.id != 0L
@@ -130,8 +131,14 @@ fun CategoryEditSheet(
                     onIconClick = { if (!isMandatory) showIdentityDialog = true }
                 )
 
-                // Structure Section
+                // Classification Section
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        "CLASSIFICATION",
+                        style = AppTextStyles.formSectionLabel,
+                        color = AppColors.contentSecondary
+                    )
+
                     val parentCategory = parentCategories.find { it.id == selectedParentId }
                     var showParentPicker by remember { mutableStateOf(false) }
 
@@ -142,6 +149,21 @@ fun CategoryEditSheet(
                         onClick = { if (!isMandatory) showParentPicker = true },
                         iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
                         iconTint = AppColors.secondary
+                    )
+
+                    EntryActionCard(
+                        icon = Icons.AutoMirrored.Rounded.Label,
+                        label = "CATEGORY NATURE",
+                        value = selectedNature.name.lowercase().replaceFirstChar { it.uppercase() },
+                        onClick = {
+                            if (!isMandatory) {
+                                val entries = CategoryNature.entries
+                                val nextIndex = (entries.indexOf(selectedNature) + 1) % entries.size
+                                selectedNature = entries[nextIndex]
+                            }
+                        },
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
                     )
 
                     if (showParentPicker && !isMandatory) {
@@ -243,7 +265,7 @@ fun CategoryEditSheet(
                     }
                     
                     Button(
-                        onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
+                        onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId, selectedNature) },
                         enabled = name.isNotBlank() && !isMandatory,
                         modifier = Modifier.weight(1.5f),
                         shape = RoundedCornerShape(16.dp),
@@ -272,7 +294,7 @@ fun CategoryEditSheet(
                     .padding(vertical = 16.dp),
                 shape = RoundedCornerShape(32.dp),
                 color = AppColors.panelSurface,
-                tonalElevation = 12.dp // Higher elevation than parent
+                tonalElevation = 12.dp
             ) {
                 Column(
                     modifier = Modifier

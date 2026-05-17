@@ -89,7 +89,7 @@ fun UnifiedPillNavigation(
         // Floating Pill Navigation and FAB Assembly
         Row(
             modifier = modifier
-                .wrapContentWidth()
+                .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(bottom = fabPaddingBottom)
                 .padding(horizontal = 16.dp)
@@ -97,16 +97,26 @@ fun UnifiedPillNavigation(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally) 
         ) {
+            // Invisible spacer to balance the FAB on the right, centering the Pill
+            if (showFab) {
+                Spacer(modifier = Modifier.width(56.dp))
+            }
+
             if (tabs.isNotEmpty()) {
                 Box(
                     modifier = Modifier.wrapContentSize(),
                     contentAlignment = Alignment.Center
                 ) {
+                    val navHeight = 56.dp
+                    val internalPadding = 16.dp
+                    val tabWidth = navHeight// Result: 44dp
+                    val barWidth = (tabWidth * tabs.size) + (internalPadding * 3)
+
                     PillNavigationBar(
                         selectedTab = selectedTab,
                         onTabSelected = onTabSelected,
                         tabs = tabs,
-                        modifier = Modifier.widthIn(max = 200.dp)
+                        modifier = Modifier.width(barWidth) // Fixes the width to match the height per tab
                     )
 
                     // Animated Scrim covering the pill when FAB is expanded

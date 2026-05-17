@@ -106,11 +106,21 @@ fun AeonLineChart(
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
         
-        // Add 15% padding to the range for better visual breathing room
-        val rangeY = (maxY - minY).abs()
-        val padY = if (rangeY.signum() == 0) BigDecimal.ONE else rangeY.multiply(BigDecimal("0.15"))
-        val effectiveMinY = minY - padY
-        val effectiveMaxY = maxY + padY
+        // Calculate a "nice" step size based on the data range
+        val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
+        val roughStep = dataRange / 4.0
+        val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+        val niceMultiplier = when {
+            roughStep / mag <= 1.0 -> 1.0
+            roughStep / mag <= 2.0 -> 2.0
+            roughStep / mag <= 5.0 -> 5.0
+            else -> 10.0
+        }
+        val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
+
+        // Align boundaries and add 1-step buffer to ensure ticks strictly outside data
+        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).subtract(BigDecimal.ONE).multiply(niceStep)
+        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).add(BigDecimal.ONE).multiply(niceStep)
         val effectiveRangeY = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         fun valueToY(value: BigDecimal): Float {
@@ -187,19 +197,7 @@ fun AeonLineChart(
                 }
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
 
-                // Standard nice-numbers: step is 1×, 2×, or 5× a power of 10 → 3-7 ticks.
-                val rangeDouble = effectiveRangeY.toDouble().coerceAtLeast(1.0)
-                val roughStep = rangeDouble / 5.0
-                val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
-                val niceMultiplier = when {
-                    roughStep / mag <= 1.0 -> 1.0
-                    roughStep / mag <= 2.0 -> 2.0
-                    roughStep / mag <= 5.0 -> 5.0
-                    else -> 10.0
-                }
-                val niceStep = maxOf(java.math.BigDecimal.valueOf(niceMultiplier * mag), java.math.BigDecimal.ONE)
-                val firstTick = effectiveMinY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
-                var tick = firstTick
+                var tick = effectiveMinY
                 while (tick <= effectiveMaxY) {
                     val yPos = valueToY(tick)
                     if (yPos >= topPadding - 1f && yPos <= topPadding + chartHeight + 1f) {
@@ -324,12 +322,14 @@ fun AeonLineChart(
                 if (xAxisLabels.isNotEmpty()) {
                     val total = xAxisLabels.size
                     val lastIdx = total - 1
-                    val nearestLower5 = (lastIdx / 5) * 5
-                    val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                    val jump = 7
+                    val threshold = 4
+                    val nearestLowerJump = (lastIdx / jump) * jump
+                    val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                     xAxisLabels.forEachIndexed { index, lbl ->
                         if (lbl == null) return@forEachIndexed
-                        val show = index == lastIdx ||
-                            (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                        val show = index == 0 || index == lastIdx ||
+                            (index > 0 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
                         if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
                     }
                 } else {
@@ -337,12 +337,14 @@ fun AeonLineChart(
                     if (labelSeries != null) {
                         val total = labelSeries.dataPoints.size
                         val lastIdx = total - 1
-                        val nearestLower5 = (lastIdx / 5) * 5
-                        val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                        val jump = 7
+                        val threshold = 4
+                        val nearestLowerJump = (lastIdx / jump) * jump
+                        val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                         labelSeries.dataPoints.forEachIndexed { index, point ->
                             val lbl = point.label ?: return@forEachIndexed
-                            val show = index == lastIdx ||
-                                (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                            val show = index == 0 || index == lastIdx ||
+                                (index > 0 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
                             if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
                         }
                     }

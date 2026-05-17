@@ -145,9 +145,9 @@ fun AeonBarLineChart(
         val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
 
         // Align boundaries to ticks, ensuring one empty step above and below
-        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).subtract(BigDecimal.ONE).multiply(niceStep)
-        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).add(BigDecimal.ONE).multiply(niceStep)
-        val effectiveRange = effectiveMaxY - effectiveMinY
+        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
+        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).multiply(niceStep)
+        val effectiveRange = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         val chartHeight = heightPx - topPadding - bottomPadding
 

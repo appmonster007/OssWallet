@@ -15,6 +15,12 @@ import java.io.InputStreamReader
 import java.math.BigDecimal
 import javax.inject.Inject
 
+private fun BigDecimal.enforceSign(type: TransactionType): BigDecimal = when (type) {
+    TransactionType.EXPENSE -> abs().negate()
+    TransactionType.INCOME -> abs()
+    else -> this
+}
+
 private fun parseCsvLine(line: String): List<String> {
     val result = mutableListOf<String>()
     var current = StringBuilder()
@@ -258,13 +264,14 @@ class DatabaseSeeder @Inject constructor(
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
                 val catId = categoryNameToId[obj.getString("categoryName")] ?: continue
+                val txType = TransactionType.fromValue(obj.getString("transactionType"))
                 transactionDao.insertTransaction(
                     TransactionEntity(
                         name = obj.getString("name"),
-                        amount = BigDecimal(obj.getString("amount")),
+                        amount = BigDecimal(obj.getString("amount")).enforceSign(txType),
                         timestamp = now - obj.getLong("daysAgo") * 86_400_000L,
                         currency = obj.getString("currency"),
-                        transactionType = TransactionType.fromValue(obj.getString("transactionType")),
+                        transactionType = txType,
                         accountId = obj.getString("accountId"),
                         categoryId = catId,
                         paymentMethod = PaymentMethod.fromString(obj.getString("paymentMethod")),
@@ -461,7 +468,7 @@ class DatabaseSeeder @Inject constructor(
         val status: TransactionStatus = TransactionStatus.CLEARED
     ) {
         fun toTransactionEntity() = TransactionEntity(
-            name = category, amount = amount,
+            name = category, amount = amount.enforceSign(transactionType),
             timestamp = timestamp ?: System.currentTimeMillis(),
             currency = currency, transactionType = transactionType,
             accountId = accountId, categoryId = categoryId ?: 1002L,

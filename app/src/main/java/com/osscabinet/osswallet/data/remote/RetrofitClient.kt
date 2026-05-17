@@ -8,7 +8,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "https://open.er-api.com/"
+    private const val EXCHANGE_RATE_API_BASE_URL = "https://open.er-api.com/"
+    private const val FRANKFURTER_API_BASE_URL = "https://api.frankfurter.app/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -22,12 +23,21 @@ object RetrofitClient {
         .addInterceptor(logging)
         .build()
 
-    val currencyApi: CurrencyApi by lazy {
+    val exchangeRateApi: ExchangeRateApi by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(EXCHANGE_RATE_API_BASE_URL)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .client(okHttpClient)
             .build()
-            .create(CurrencyApi::class.java)
+            .create(ExchangeRateApi::class.java)
+    }
+
+    val frankfurterApi: FrankfurterApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(FRANKFURTER_API_BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(FrankfurterApi::class.java)
     }
 }

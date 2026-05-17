@@ -38,7 +38,6 @@ fun TransactionFilterSheet(
     categories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
-    onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.primaryContainer,
     showAccountFilter: Boolean = true,
@@ -53,7 +52,6 @@ fun TransactionFilterSheet(
             allCategories = categories,
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
-            onToggleExpand = onToggleExpand,
             onClose = onClose,
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
@@ -108,7 +106,6 @@ fun TransactionFilterSheetPreview() {
                         )
                     ),
                     onFilterEvent = {},
-                    onToggleExpand = {},
                     onClose = {}
                 )
 

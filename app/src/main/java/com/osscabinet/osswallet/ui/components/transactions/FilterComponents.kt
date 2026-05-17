@@ -383,7 +383,7 @@ fun FilterFields(
                         onRemoveTag = { tagName ->
                             onFilterChange(filter.copy(tags = filter.tags - tagName))
                         },
-                        label = "FILTER BY TAGS"
+                        label = "Tags"
                     )
                 }
             }

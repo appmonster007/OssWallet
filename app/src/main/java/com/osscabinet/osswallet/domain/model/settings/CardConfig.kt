@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.model.settings
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -91,6 +92,8 @@ sealed class CardConfig : BaseCardConfig {
             CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
             CardType.ACCOUNT_HERO -> AccountHeroCardConfig(cardId = cardId, screenContext = context)
             CardType.RECENT_ACTIVITIES -> RecentActivitiesCardConfig(cardId = cardId, screenContext = context)
+            CardType.CASHFLOW_COMPARISON -> CashFlowComparisonCardConfig(cardId = cardId, screenContext = context)
+            CardType.INCOME_EXPENSE_BAR -> IncomeExpenseBarCardConfig(cardId = cardId, screenContext = context)
         }
     }
 }
@@ -322,6 +325,58 @@ data class RecentActivitiesCardConfig(
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
+/**
+ * Metric selector for the Cash Flow Comparison card.
+ */
+@Serializable
+enum class CashFlowComparisonMetric { NET, INCOME, EXPENSE }
+
+/**
+ * Configuration for Cash Flow Comparison card instances.
+ */
+@Serializable
+@SerialName("cashflow_comparison")
+data class CashFlowComparisonCardConfig(
+    override val cardId: String,
+    override val title: String = "CASH FLOW COMPARISON",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val selectedMetric: CashFlowComparisonMetric = CashFlowComparisonMetric.NET,
+    val showCurrentPeriod: Boolean = true,
+    val showPreviousPeriod: Boolean = true,
+    val showSamePeriodLastYear: Boolean = true,
+    val isCumulative: Boolean = true,
+    val showGridLines: Boolean = true,
+    override val filter: TransactionFilter = TransactionFilter(
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+    )
+) : CardConfig() {
+    override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
+/**
+ * Configuration for Income & Expense Bar chart card instances.
+ */
+@Serializable
+@SerialName("income_expense_bar")
+data class IncomeExpenseBarCardConfig(
+    override val cardId: String,
+    override val title: String = "INCOME & EXPENSE",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val isCumulative: Boolean = false,
+    val showGridLines: Boolean = true,
+    override val filter: TransactionFilter = TransactionFilter(
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+    )
+) : CardConfig() {
+    override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()
@@ -348,4 +403,6 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is BudgetsCardConfig -> copy(filter = TransactionFilter())
     is LoansCardConfig -> copy(filter = TransactionFilter())
     is RecentActivitiesCardConfig -> copy(filter = TransactionFilter())
+    is CashFlowComparisonCardConfig -> copy(filter = TransactionFilter())
+    is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter())
 }

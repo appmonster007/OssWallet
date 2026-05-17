@@ -133,6 +133,24 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
 
     /**
+     * Callbacks for cash flow comparison card
+     */
+    data class CashFlowComparison(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig) -> Unit = {},
+        val onDelete: () -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
+     * Callbacks for income & expense bar chart card
+     */
+    data class IncomeExpenseBar(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig) -> Unit = {},
+        val onDelete: () -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
      * Legacy/Deprecated
      */
     data class WithFontSizeAndTimeline(

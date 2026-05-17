@@ -16,10 +16,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
@@ -53,6 +55,8 @@ fun CardType.toIcon(): ImageVector = when (this) {
     CardType.PLANNED_PAYMENTS -> Icons.Default.Schedule
     CardType.LOANS -> Icons.Default.CreditCard
     CardType.RECENT_ACTIVITIES -> Icons.Default.History
+    CardType.CASHFLOW_COMPARISON -> Icons.AutoMirrored.Filled.ShowChart
+    CardType.INCOME_EXPENSE_BAR -> Icons.Default.BarChart
 }
 
 /**

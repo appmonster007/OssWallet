@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -166,6 +167,18 @@ interface CardUpdateHandler {
     }
 
     fun updateCardRecentActivitiesConfig(cardId: String, config: RecentActivitiesCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
+    fun updateCashFlowComparisonConfig(cardId: String, config: CashFlowComparisonCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
+    fun updateIncomeExpenseBarConfig(cardId: String, config: IncomeExpenseBarCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }
         }

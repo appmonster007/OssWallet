@@ -40,6 +40,25 @@ data class AeonPieChartSlice(
 )
 
 /**
+ * Single segment of a bar (for simple or stacked charts).
+ */
+data class AeonBarChartBar(
+    val value: BigDecimal,
+    val label: String,
+    val color: Color,
+    val metadata: Map<String, Any> = emptyMap()
+)
+
+/**
+ * A group representing one slot on the X-axis.
+ * Contains one bar (simple) or multiple bars (stacked).
+ */
+data class AeonBarChartGroup(
+    val label: String,
+    val bars: List<AeonBarChartBar>
+)
+
+/**
  * Data model for treemap charts.
  */
 data class AeonTreemapNode(

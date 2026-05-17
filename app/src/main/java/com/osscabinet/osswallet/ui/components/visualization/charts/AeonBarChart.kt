@@ -1,13 +1,14 @@
 package com.osscabinet.ossWallet.ui.components.visualization.charts
 
+import android.graphics.Paint as AndroidPaint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -18,29 +19,34 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.theme.*
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
+import com.osscabinet.ossWallet.ui.theme.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
- * High-fidelity, interactive bar chart for single-axis visualization.
+ * High-fidelity, interactive bar chart supporting both simple and stacked visualizations.
+ * Refined with professional grid logic and dynamic scaling.
  */
 @Composable
 fun AeonBarChart(
-    data: List<Pair<String, BigDecimal>>,
+    groups: List<AeonBarChartGroup>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
-    barColor: Color = ChartColorBlue,
-    animate: Boolean = true
+    animate: Boolean = true,
+    showGrid: Boolean = true,
+    showXAxisLabels: Boolean = true
 ) {
-    if (data.isEmpty()) {
+    if (groups.isEmpty() || groups.all { it.bars.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data available", style = AppTextStyles.caption)
         }
@@ -52,7 +58,7 @@ fun AeonBarChart(
     val dims = AeonTheme.dimensions
 
     val animationProgress = remember { Animatable(0f) }
-    LaunchedEffect(data) {
+    LaunchedEffect(groups) {
         if (animate) {
             animationProgress.snapTo(0f)
             animationProgress.animateTo(1f, tween(1000))
@@ -62,43 +68,71 @@ fun AeonBarChart(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = with(density) { maxWidth.toPx() }
-        val heightPx = with(density) { maxHeight.toPx() }
-        val padding = 60f
-
-        val values = data.map { it.second }
-        val minY = values.minOf { it }.coerceAtMost(BigDecimal.ZERO)
-        val maxY = values.maxOf { it }.coerceAtLeast(BigDecimal.ONE)
+        val widthPx = constraints.maxWidth.toFloat()
+        val heightPx = constraints.maxHeight.toFloat()
         
-        val range = (maxY - minY).abs()
-        val paddingY = if (range.signum() == 0) BigDecimal.ONE else range.multiply(BigDecimal("0.1"))
-        val effectiveMinY = minY - paddingY
-        val effectiveMaxY = maxY + paddingY
-        val effectiveRange = effectiveMaxY - effectiveMinY
+        val leftPadding = with(density) { 50.dp.toPx() }
+        val rightPadding = with(density) { dims.spacingMd.toPx() }
+        val topPadding = with(density) { dims.spacingMd.toPx() }
+        val xLabelHeight = if (showXAxisLabels) with(density) { 20.dp.toPx() } else 0f
+        val bottomPadding = with(density) { dims.spacingLg.toPx() } + xLabelHeight
+        
+        val chartWidth = widthPx - leftPadding - rightPadding
+        val chartHeight = heightPx - topPadding - bottomPadding
+
+        // Calculate limits for stacked or simple bars
+        val groupTotals = groups.map { g ->
+            val pos = g.bars.filter { it.value > BigDecimal.ZERO }.sumOf { it.value }
+            val neg = g.bars.filter { it.value < BigDecimal.ZERO }.sumOf { it.value }
+            pos to neg
+        }
+        
+        val minY = groupTotals.minOf { it.second }.coerceAtMost(BigDecimal.ZERO)
+        val maxY = groupTotals.maxOf { it.first }.coerceAtLeast(BigDecimal.ONE)
+
+        // Nice step logic from AeonLineChart
+        val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
+        val roughStep = dataRange / 4.0
+        val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+        val niceMultiplier = when {
+            roughStep / mag <= 1.0 -> 1.0
+            roughStep / mag <= 2.0 -> 2.0
+            roughStep / mag <= 5.0 -> 5.0
+            else -> 10.0
+        }
+        val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
+
+        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
+        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).multiply(niceStep)
+        val effectiveRange = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         fun valueToY(value: BigDecimal): Float {
             val normalized = (value - effectiveMinY).divide(effectiveRange, 10, RoundingMode.HALF_UP).toFloat()
-            return heightPx - padding - (normalized * (heightPx - 2 * padding))
+            return heightPx - bottomPadding - (normalized * chartHeight)
         }
 
         fun indexToX(index: Int, total: Int): Float {
-            if (total <= 1) return widthPx / 2
-            val step = (widthPx - 2 * padding) / total
-            return padding + (index * step) + step / 2
+            if (total == 0) return leftPadding + chartWidth / 2
+            val slotWidth = chartWidth / total
+            return leftPadding + (index * slotWidth) + (slotWidth / 2)
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
         fun findIndex(offsetX: Float): Int {
-            val total = data.size
-            val step = (widthPx - 2 * padding) / total
-            return ((offsetX - padding) / step).toInt().coerceIn(0, total - 1)
+            val total = groups.size
+            if (total == 0) return -1
+            val slotWidth = chartWidth / total
+            return ((offsetX - leftPadding) / slotWidth).toInt().coerceIn(0, total - 1)
         }
 
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(data) {
+                .semantics {
+                    contentDescription = "Bar chart showing ${groups.size} periods. Drag or tap for details."
+                }
+                .pointerInput(groups) {
                     detectDragGestures(
                         onDragStart = { offset -> selectedIndex = findIndex(offset.x) },
                         onDrag = { change, _ -> selectedIndex = findIndex(change.position.x) },
@@ -106,71 +140,247 @@ fun AeonBarChart(
                         onDragCancel = { selectedIndex = null }
                     )
                 }
-                .pointerInput(data) {
+                .pointerInput(groups) {
                     detectTapGestures(
                         onTap = { offset -> selectedIndex = findIndex(offset.x) }
                     )
                 }
         ) {
-            // Draw Grid
-            val gridColor = ChartGridColor
-            for (i in 0..4) {
-                val y = padding + (i * (heightPx - 2 * padding) / 4)
-                drawLine(color = gridColor, start = Offset(padding, y), end = Offset(widthPx - padding, y), strokeWidth = 1f)
+            // 1. Draw Grid + Y-Axis Labels
+            if (showGrid) {
+                val gridColor = ChartGridColor.copy(alpha = 0.25f)
+                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
+                val labelPaint = AndroidPaint().apply {
+                    isAntiAlias = true
+                    color = android.graphics.Color.argb(140, 158, 158, 158)
+                    textAlign = AndroidPaint.Align.RIGHT
+                    textSize = 9.sp.toPx()
+                }
+
+                var tick = effectiveMinY
+                while (tick <= effectiveMaxY) {
+                    val yPos = valueToY(tick)
+                    if (yPos >= topPadding - 1f && yPos <= heightPx - bottomPadding + 1f) {
+                        drawLine(
+                            color = gridColor,
+                            start = Offset(leftPadding, yPos),
+                            end = Offset(widthPx - rightPadding, yPos),
+                            strokeWidth = 1f,
+                            pathEffect = dashEffect
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(
+                            formatShortNumber(tick),
+                            leftPadding - 8.dp.toPx(),
+                            yPos + 3.dp.toPx(),
+                            labelPaint
+                        )
+                    }
+                    tick = tick.add(niceStep)
+                }
+            }
+
+            // 2. Zero Line
+            drawLine(
+                color = ChartZeroLineColor,
+                start = Offset(leftPadding, zeroY),
+                end = Offset(widthPx - rightPadding, zeroY),
+                strokeWidth = (dims.spacingXs / 4).toPx()
+            )
+
+            // 3. Draw Bars (Simple or Stacked)
+            val slotWidth = chartWidth / groups.size.coerceAtLeast(1)
+            val barWidth = slotWidth * 0.7f
+
+            groups.forEachIndexed { groupIndex, group ->
+                val centerX = indexToX(groupIndex, groups.size)
+                
+                var currentPosAccumulator = BigDecimal.ZERO
+                var currentNegAccumulator = BigDecimal.ZERO
+
+                group.bars.forEach { bar ->
+                    val isPositive = bar.value >= BigDecimal.ZERO
+                    
+                    val startVal = if (isPositive) currentPosAccumulator else currentNegAccumulator
+                    val startY = valueToY(startVal)
+                    
+                    // Apply animation
+                    val animatedEndVal = startVal + (bar.value.multiply(BigDecimal.valueOf(animationProgress.value.toDouble())))
+                    val animatedEndY = valueToY(animatedEndVal)
+                    
+                    val top = if (isPositive) animatedEndY else startY
+                    val bottom = if (isPositive) startY else animatedEndY
+                    
+                    drawRoundRect(
+                        color = bar.color.copy(alpha = 0.85f),
+                        topLeft = Offset(centerX - barWidth / 2, top),
+                        size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                    )
+                    
+                    if (isPositive) currentPosAccumulator += bar.value
+                    else currentNegAccumulator += bar.value
+                }
+                
+                // 4. X-Axis Labels
+                if (showXAxisLabels) {
+                    val labelPaint = AndroidPaint().apply {
+                        isAntiAlias = true
+                        color = android.graphics.Color.argb(180, 158, 158, 158)
+                        textAlign = AndroidPaint.Align.CENTER
+                        textSize = 9.sp.toPx()
+                    }
+                    // Only show every Nth label if there are too many
+                    val step = (groups.size / 6).coerceAtLeast(1)
+                    if (groupIndex % step == 0 || groupIndex == groups.size - 1) {
+                        drawContext.canvas.nativeCanvas.drawText(
+                            group.label,
+                            centerX,
+                            heightPx - bottomPadding + 16.dp.toPx(),
+                            labelPaint
+                        )
+                    }
+                }
             }
             
-            // Zero Line
-            drawLine(color = ChartZeroLineColor, start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
-
-            // Draw Bars
-            val barWidth = (widthPx - 2 * padding) / data.size * 0.7f
-            data.forEachIndexed { index, pair ->
-                val x = indexToX(index, data.size)
-                val y = valueToY(pair.second)
-                
-                val animatedY = zeroY - (zeroY - y) * animationProgress.value
-                
-                val top = if (pair.second >= BigDecimal.ZERO) animatedY else zeroY
-                val bottom = if (pair.second >= BigDecimal.ZERO) zeroY else animatedY
-                
-                drawRoundRect(
-                    color = barColor.copy(alpha = 0.8f),
-                    topLeft = Offset(x - barWidth / 2, top),
-                    size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                    cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+            // 5. Selection Highlight
+            selectedIndex?.let { index ->
+                val x = indexToX(index, groups.size)
+                drawLine(
+                    color = ChartZeroLineColor.copy(alpha = 0.5f),
+                    start = Offset(x, topPadding),
+                    end = Offset(x, heightPx - bottomPadding),
+                    strokeWidth = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
             }
         }
 
-        // Tooltip
+        // 6. Tooltip
         selectedIndex?.let { index ->
-            val x = indexToX(index, data.size)
-            val pair = data[index]
+            val group = groups[index]
+            val x = indexToX(index, groups.size)
             
-            // Boundary-aware tooltip
-            val tooltipWidth = 140.dp
-            val tooltipHeight = 60.dp
+            val tooltipWidth = 180.dp
+            val tooltipHeight = (40 + group.bars.size * 25).dp
             val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
             val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
             val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, widthPx - tooltipWidthPx)
-            val yPos = (padding - 10f).coerceIn(0f, heightPx - tooltipHeightPx)
+            val yPos = (topPadding).coerceIn(0f, heightPx - tooltipHeightPx)
 
             Surface(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
                     .clip(RoundedCornerShape(dims.spacingMd)),
-                color = AppColors.insetSurface,
+                color = AppColors.insetSurface.copy(alpha = 0.95f),
                 tonalElevation = dims.spacingSm,
                 shadowElevation = dims.spacingSm,
-                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), barColor.copy(alpha = 0.5f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border.copy(alpha = 0.2f))
             ) {
-                Column(modifier = Modifier.padding(dims.spacingSm), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                    Text(pair.first, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
-                    Text(formatCurrencyRight(pair.second, currency, precision), style = AppTextStyles.cardSecondaryAmount, color = barColor)
+                Column(modifier = Modifier.padding(dims.spacingMd)) {
+                    Text(group.label, style = AppTextStyles.cardDelta, color = AppColors.contentPrimary)
+                    Spacer(modifier = Modifier.height(dims.spacingSm))
+                    
+                    group.bars.forEach { bar ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(bar.color, RoundedCornerShape(2.dp))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(bar.label, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
+                            }
+                            Text(
+                                formatCurrencyRight(bar.value, currency, precision),
+                                style = AppTextStyles.formSectionLabel,
+                                color = AppColors.contentPrimary
+                            )
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Backward compatible overload for simple bar charts.
+ */
+@Composable
+fun AeonBarChart(
+    data: List<Pair<String, BigDecimal>>,
+    modifier: Modifier = Modifier,
+    currency: String = "USD",
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+    barColor: Color = ChartColorBlue,
+    animate: Boolean = true
+) {
+    val groups = remember(data, barColor) {
+        data.map { (label, value) ->
+            AeonBarChartGroup(label, listOf(AeonBarChartBar(value, "Value", barColor)))
+        }
+    }
+    AeonBarChart(
+        groups = groups,
+        modifier = modifier,
+        currency = currency,
+        precision = precision,
+        animate = animate
+    )
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Simple Bar Chart")
+@Composable
+fun AeonBarChartSimplePreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+            AeonBarChart(
+                data = listOf(
+                    "Mon" to BigDecimal("120.00"),
+                    "Tue" to BigDecimal("450.00"),
+                    "Wed" to BigDecimal("-100.00"),
+                    "Thu" to BigDecimal("280.00"),
+                    "Fri" to BigDecimal("600.00"),
+                    "Sat" to BigDecimal("350.00"),
+                    "Sun" to BigDecimal("200.00")
+                )
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Stacked Bar Chart")
+@Composable
+fun AeonBarChartStackedPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxWidth().height(300.dp).padding(16.dp)) {
+            AeonBarChart(
+                groups = listOf(
+                    AeonBarChartGroup("Jan", listOf(
+                        AeonBarChartBar(BigDecimal("500"), "Product A", ChartColorBlue),
+                        AeonBarChartBar(BigDecimal("300"), "Product B", ChartColorGreen)
+                    )),
+                    AeonBarChartGroup("Feb", listOf(
+                        AeonBarChartBar(BigDecimal("400"), "Product A", ChartColorBlue),
+                        AeonBarChartBar(BigDecimal("600"), "Product B", ChartColorGreen)
+                    )),
+                    AeonBarChartGroup("Mar", listOf(
+                        AeonBarChartBar(BigDecimal("700"), "Product A", ChartColorBlue),
+                        AeonBarChartBar(BigDecimal("200"), "Product B", ChartColorGreen)
+                    )),
+                    AeonBarChartGroup("Apr", listOf(
+                        AeonBarChartBar(BigDecimal("-200"), "Loss", ChartColorRed),
+                        AeonBarChartBar(BigDecimal("400"), "Gain", ChartColorBlue)
+                    ))
+                )
+            )
         }
     }
 }

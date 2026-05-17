@@ -436,14 +436,10 @@ internal fun FilterSheetDragHandle(
         animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "handle_rotation"
     )
-    // When fully expanded the sheet top should reach the status bar area.
-    // The top of the pull tab starts at (status bar height - pull tab height)
-    // so that the sheet content starts exactly below the status bar.
     val pullTabHeight = 20.dp
     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val statusBarTopPadding = (statusBarHeight - pullTabHeight).coerceAtLeast(0.dp)
     val topPadding by animateDpAsState(
-        targetValue = if (isExpanded) statusBarTopPadding else 0.dp,
+        targetValue = if (isExpanded) statusBarHeight else 0.dp,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "handle_top_padding"
     )

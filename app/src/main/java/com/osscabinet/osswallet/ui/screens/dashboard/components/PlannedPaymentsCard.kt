@@ -70,8 +70,7 @@ fun PlannedPaymentsCard(
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    precision: Int = 2
+    headerModifier: Modifier = Modifier
 ) {
     AeonExpressiveCard(
         title = config.title,
@@ -106,8 +105,7 @@ fun PlannedPaymentsCard(
                     isOverdue = true,
                     onClick = { callbacks.onItemClick(payment.id) },
                     onConfirm = callbacks.onConfirm?.let { { it(payment.id) } },
-                    onSkip = callbacks.onSkip?.let { { it(payment.id) } },
-                    precision = precision
+                    onSkip = callbacks.onSkip?.let { { it(payment.id) } }
                 )
             }
 
@@ -120,8 +118,7 @@ fun PlannedPaymentsCard(
                     isOverdue = false,
                     onClick = { callbacks.onItemClick(item.plannedPayment.id) },
                     onConfirm = callbacks.onConfirm?.let { { it(item.plannedPayment.id) } },
-                    onSkip = callbacks.onSkip?.let { { it(item.plannedPayment.id) } },
-                    precision = precision
+                    onSkip = callbacks.onSkip?.let { { it(item.plannedPayment.id) } }
                 )
             }
         }
@@ -299,8 +296,7 @@ private fun PlannedPaymentRow(
     isOverdue: Boolean,
     onClick: () -> Unit,
     onConfirm: (() -> Unit)?,
-    onSkip: (() -> Unit)?,
-    precision: Int = 2
+    onSkip: (() -> Unit)?
 ) {
     val haptic = LocalHapticFeedback.current
     var isPressed by remember { mutableStateOf(false) }
@@ -362,7 +358,7 @@ private fun PlannedPaymentRow(
                 )
             }
             Text(
-                text = "${formatAmount(amount, precision)} $currency",
+                text = "${formatAmount(amount)} $currency",
                 style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,

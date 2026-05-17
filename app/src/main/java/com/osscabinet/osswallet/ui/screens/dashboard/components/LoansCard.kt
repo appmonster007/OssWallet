@@ -36,8 +36,7 @@ fun LoansCard(
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    precision: Int = 2
+    headerModifier: Modifier = Modifier
 ) {
     AeonExpressiveCard(
         title = config.title,
@@ -61,8 +60,7 @@ fun LoansCard(
                 items.forEach { summary ->
                     LoanSummaryRow(
                         summary = summary,
-                        onClick = { callbacks.onLoanClick(summary.loan.id) },
-                        precision = precision
+                        onClick = { callbacks.onLoanClick(summary.loan.id) }
                     )
                 }
             }
@@ -116,8 +114,7 @@ private fun LoansDisplaySettingsDialog(
 @Composable
 private fun LoanSummaryRow(
     summary: LoanSummary,
-    onClick: () -> Unit,
-    precision: Int = 2
+    onClick: () -> Unit
 ) {
     val accentColor = if (summary.loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
     
@@ -194,7 +191,7 @@ private fun LoanSummaryRow(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision, shorten = true),
+                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, shorten = true),
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),
@@ -207,7 +204,7 @@ private fun LoanSummaryRow(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Principal: ${formatAmount(summary.loan.principalAmount, precision)}",
+                        text = "Principal: ${formatAmount(summary.loan.principalAmount)}",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum"

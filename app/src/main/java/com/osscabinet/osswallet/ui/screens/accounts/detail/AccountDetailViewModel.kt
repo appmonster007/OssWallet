@@ -111,7 +111,6 @@ class AccountDetailViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.decimalPrecision,
                 settingsRepository.use24HourFormat,
                 settingsRepository.accountDetailSettings,
                 filter
@@ -129,10 +128,9 @@ class AccountDetailViewModel(
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
-                val precision = args[6] as Int
-                val use24Hour = args[7] as Boolean
-                val settings = args[8] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
-                val currentFilter = args[9] as TransactionFilter
+                val use24Hour = args[6] as Boolean
+                val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
+                val currentFilter = args[8] as TransactionFilter
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
@@ -149,7 +147,6 @@ class AccountDetailViewModel(
                     allTransactions = accountTransactions,
                     accounts = listOf(account),
                     exchangeRates = rates,
-                    precision = precision,
                     limit = Int.MAX_VALUE,
                     excludeFuture = !settings.transactionsSection.showPlannedPayments || currentFilter.excludeFuture
                 )
@@ -167,8 +164,7 @@ class AccountDetailViewModel(
                     accounts = accounts,
                     categories = categories,
                     baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    exchangeRates = rates
                 ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
 
                 AccountDetailUiState.Success(
@@ -179,7 +175,6 @@ class AccountDetailViewModel(
                     allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    decimalPrecision = precision,
                     use24HourFormat = use24Hour,
                     showPlannedPayments = settings.transactionsSection.showPlannedPayments,
                     useNoteAsHeader = settings.transactionsSection.useNoteAsHeader,
@@ -204,7 +199,6 @@ sealed class AccountDetailUiState {
         val allCategories: List<Category> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val decimalPrecision: Int,
         val use24HourFormat: Boolean = false,
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false,

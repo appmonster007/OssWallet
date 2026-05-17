@@ -71,7 +71,7 @@ object LoanService {
         loan: Loan,
         payments: List<LoanPayment>,
         now: Long,
-        precision: Int = 2
+        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision
     ): LoanSummary {
         val totalPaid = payments.fold(BigDecimal.ZERO) { acc, p -> acc + p.amount }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
@@ -93,7 +93,7 @@ object LoanService {
         transactions: List<Transaction>,
         exchangeRates: Map<String, BigDecimal>,
         now: Long,
-        precision: Int = 2,
+        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
     ): LoanSummary {
         val filteredTransactions = filterTransactionsForLoan(loan, transactions, allCategories)

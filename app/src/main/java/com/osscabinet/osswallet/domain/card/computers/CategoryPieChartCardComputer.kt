@@ -25,7 +25,11 @@ class CategoryPieChartCardComputer :
                 config.filter.categoryIds,
                 input.categories
             ),
-            transactionTypes = if (config.filter.transactionTypes.isEmpty()) setOf(TransactionType.EXPENSE) else config.filter.transactionTypes
+            transactionTypes = run {
+                val allowed = setOf(TransactionType.EXPENSE, TransactionType.INCOME)
+                val valid = config.filter.transactionTypes.intersect(allowed)
+                if (valid.size == 1) valid else setOf(TransactionType.EXPENSE)
+            }
         )
         val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 
@@ -34,10 +38,9 @@ class CategoryPieChartCardComputer :
             transactions = filteredTx,
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency,
-            precision = input.precision
+            baseCurrency = input.baseCurrency
         )
 
-        return CardRenderData.CategoryPieChart(config, tree, input.precision)
+        return CardRenderData.CategoryPieChart(config, tree)
     }
 }

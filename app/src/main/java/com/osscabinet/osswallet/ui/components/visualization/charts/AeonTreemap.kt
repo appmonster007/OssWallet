@@ -53,7 +53,7 @@ fun AeonTreemap(
     nodes: List<AeonTreemapNode>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     showLabels: Boolean = true,
     rounded: Boolean = true,
     onNodeClick: (AeonTreemapNode) -> Unit = {},

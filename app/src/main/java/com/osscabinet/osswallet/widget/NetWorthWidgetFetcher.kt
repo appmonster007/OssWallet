@@ -29,7 +29,6 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                     profileId = common.profileId,
                     baseCurrency = common.baseCurrency,
                     exchangeRates = common.exchangeRates,
-                    precision = common.precision,
                     filter = TransactionFilter(
                         timelineRange = config.timelineRange,
                         excludeFuture = true
@@ -52,11 +51,11 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
 
         prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH] =
-            formatCurrencyRight(netWorth, common.baseCurrency, common.precision, shorten = true)
+            formatCurrencyRight(netWorth, common.baseCurrency, shorten = true)
         prefs[NetWorthGlanceWidget.Keys.INCOME] =
-            formatCurrencyRight(income, common.baseCurrency, common.precision, shorten = true)
+            formatCurrencyRight(income, common.baseCurrency, shorten = true)
         prefs[NetWorthGlanceWidget.Keys.EXPENSE] =
-            formatCurrencyRight(expense, common.baseCurrency, common.precision, shorten = true)
+            formatCurrencyRight(expense, common.baseCurrency, shorten = true)
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =

@@ -65,7 +65,6 @@ fun AccountsCard(
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    precision: Int = 2,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -89,7 +88,6 @@ fun AccountsCard(
                 currentTheme = currentTheme,
                 onClick = callbacks.onManageClick,
                 gridColumns = if (config.layout == "grid") config.gridColumns else 2,
-                precision = precision,
                 modifier = Modifier.fillMaxWidth()
             )
         } else if (config.layout == "grid") {
@@ -109,7 +107,6 @@ fun AccountsCard(
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
                         filter = config.filter,
-                        precision = precision,
                         modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                     )
                 }
@@ -120,7 +117,6 @@ fun AccountsCard(
                         currentTheme = currentTheme,
                         onClick = callbacks.onManageClick,
                         gridColumns = config.gridColumns,
-                        precision = precision,
                         modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                     )
                 } else if (config.gridColumns > 1 && accounts.size % config.gridColumns != 0) {
@@ -144,7 +140,6 @@ fun AccountsCard(
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
                         filter = config.filter,
-                        precision = precision,
                         modifier = Modifier.width(180.dp)
                     )
                 }
@@ -155,7 +150,6 @@ fun AccountsCard(
                             currentTheme = currentTheme,
                             onClick = callbacks.onManageClick,
                             gridColumns = 2,
-                            precision = precision,
                             modifier = Modifier.width(180.dp)
                         )
                     }
@@ -246,7 +240,6 @@ private fun FlowRowScope.AccountItemWrapper(
     baseCurrency: String,
     currentTheme: String,
     gridColumns: Int,
-    precision: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -258,7 +251,6 @@ private fun FlowRowScope.AccountItemWrapper(
         baseCurrency = baseCurrency,
         currentTheme = currentTheme,
         gridColumns = gridColumns,
-        precision = precision,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = filter,
@@ -273,7 +265,6 @@ private fun AccountItemWrapper(
     baseCurrency: String,
     currentTheme: String,
     gridColumns: Int,
-    precision: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -285,7 +276,6 @@ private fun AccountItemWrapper(
         baseCurrency = baseCurrency,
         currentTheme = currentTheme,
         gridColumns = gridColumns,
-        precision = precision,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = filter,
@@ -300,7 +290,6 @@ private fun AccountItemContent(
     baseCurrency: String,
     currentTheme: String,
     gridColumns: Int,
-    precision: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -330,7 +319,6 @@ private fun AccountItemContent(
             isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
-            precision = precision,
             onClickIncome = {
                 onRecordsClick?.invoke(
                     filter.copy(
@@ -357,8 +345,7 @@ private fun AccountItemContent(
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
-            modifier = modifier,
-            precision = precision
+            modifier = modifier
         )
         else -> AeonAccountCardSmall(
             account = account,
@@ -369,8 +356,7 @@ private fun AccountItemContent(
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
-            modifier = modifier,
-            precision = precision
+            modifier = modifier
         )
     }
 }
@@ -382,10 +368,9 @@ fun FlowRowScope.AeonAddAccountCard(
     currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
-    precision: Int = 2,
     modifier: Modifier = Modifier
 ) {
-    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, precision, modifier)
+    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, modifier)
 }
 
 @Composable
@@ -394,10 +379,9 @@ fun AeonAddAccountCard(
     currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
-    precision: Int = 2,
     modifier: Modifier = Modifier
 ) {
-    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, precision, modifier)
+    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, modifier)
 }
 
 @Composable
@@ -406,7 +390,6 @@ private fun AeonAddAccountCardContent(
     currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
-    precision: Int = 2,
     modifier: Modifier = Modifier
 ) {
     val isDarkTheme = when (currentTheme) {
@@ -436,7 +419,6 @@ private fun AeonAddAccountCardContent(
             isAmoled = isAmoled,
             onClick = onClick,
             modifier = modifier,
-            precision = precision,
             extraLabel = "Add New"
         )
         2 -> AeonAccountCardMedium(
@@ -447,8 +429,7 @@ private fun AeonAddAccountCardContent(
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
             onClick = onClick,
-            modifier = modifier,
-            precision = precision
+            modifier = modifier
         )
         else -> AeonAccountCardSmall(
             account = placeholderAccount,
@@ -458,8 +439,7 @@ private fun AeonAddAccountCardContent(
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
             onClick = onClick,
-            modifier = modifier,
-            precision = precision
+            modifier = modifier
         )
     }
 }

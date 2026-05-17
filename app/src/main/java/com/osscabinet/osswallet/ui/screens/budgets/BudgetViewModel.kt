@@ -66,7 +66,6 @@ class BudgetViewModel(
         budgets,
         transactions,
         settingsRepository.currency,
-        settingsRepository.decimalPrecision,
         _exchangeRates,
         categories
     ) { arr ->
@@ -76,13 +75,12 @@ class BudgetViewModel(
         @Suppress("UNCHECKED_CAST")
         val transactionsList = arr[1] as List<Transaction>
         val baseCurrency = arr[2] as String
-        val precision = arr[3] as Int
 
         @Suppress("UNCHECKED_CAST")
-        val rates = arr[4] as Map<String, BigDecimal>
+        val rates = arr[3] as Map<String, BigDecimal>
 
         @Suppress("UNCHECKED_CAST")
-        val categoriesList = arr[5] as List<Category>
+        val categoriesList = arr[4] as List<Category>
 
         val now = System.currentTimeMillis()
         budgetsList.associate { budget ->
@@ -91,7 +89,6 @@ class BudgetViewModel(
                 transactionsList,
                 rates,
                 baseCurrency,
-                precision,
                 now,
                 categoriesList
             )
@@ -100,7 +97,6 @@ class BudgetViewModel(
                 transactionsList,
                 rates,
                 baseCurrency,
-                precision,
                 now,
                 categoriesList
             )

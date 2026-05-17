@@ -36,7 +36,7 @@ fun AeonBarChart(
     data: List<Pair<String, BigDecimal>>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     barColor: Color = ChartColorBlue,
     animate: Boolean = true
 ) {

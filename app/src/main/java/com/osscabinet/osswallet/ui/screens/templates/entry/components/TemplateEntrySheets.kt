@@ -19,7 +19,6 @@ fun TemplateEntrySheets(
         AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
-            decimalPrecision = state.decimalPrecision,
             onAmountChanged = { onEvent(TemplateEntryEvent.SetAmount(it)) },
             onTypeChanged = { newType ->
                 onEvent(TemplateEntryEvent.SetTransactionType(newType))

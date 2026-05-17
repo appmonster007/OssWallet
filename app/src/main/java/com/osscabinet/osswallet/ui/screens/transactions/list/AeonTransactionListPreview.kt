@@ -33,7 +33,6 @@ fun AeonTransactionListFilteredPreview() {
             allTransactions = emptyList(),
             accounts = mockAccounts,
             categories = mockCategories,
-            decimalPrecision = 2,
             analyticsState = AnalyticsUiState.Success(selectedCurrency = "USD"),
             filter = TransactionFilter(queryPayee = "Burger"),
             recordsSettings = TransactionSectionSettings(),

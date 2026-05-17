@@ -87,9 +87,6 @@ class TransactionViewModel(
     val categories = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
-
     val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -132,13 +129,10 @@ class TransactionViewModel(
                 ) { allTransactions, accounts, rates, hasLoadedExchangeRates, excludeFuture ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
-                    val precision = decimalPrecision.value
-
                     transactionUseCases.getRecentTransactions(
                         allTransactions = allTransactions,
                         accounts = accounts,
                         exchangeRates = rates,
-                        precision = precision,
                         limit = Int.MAX_VALUE,
                         excludeFuture = excludeFuture
                     )
@@ -189,7 +183,6 @@ class TransactionViewModel(
             categories,
             baseCurrency,
             exchangeRates,
-            decimalPrecision,
             recordsSettings
         ) { args: Array<*> ->
             @Suppress("UNCHECKED_CAST")
@@ -203,8 +196,7 @@ class TransactionViewModel(
             val base = args[4] as String
             @Suppress("UNCHECKED_CAST")
             val rates = args[5] as Map<String, BigDecimal>
-            val precision = args[6] as Int
-            val settings = args[7] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+            val settings = args[6] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 
             if (filtered.isEmpty()) return@combine TransactionListState()
 
@@ -215,8 +207,7 @@ class TransactionViewModel(
                 accounts = accounts,
                 categories = categories,
                 baseCurrency = base,
-                exchangeRates = rates,
-                precision = precision
+                exchangeRates = rates
             )
             TransactionListState(groups = groups, isEmpty = false)
         }.stateIn(

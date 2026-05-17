@@ -22,11 +22,10 @@ class ComputationRepositoryImpl(
 
     override val computationContext: Flow<ComputationContext?> = combine(
         selectedCurrency,
-        exchangeRates,
-        settingsRepository.decimalPrecision
-    ) { currency, rates, precision ->
+        exchangeRates
+    ) { currency, rates ->
         if (rates.isEmpty()) null
-        else ComputationContext(currency, rates, precision)
+        else ComputationContext(currency, rates)
     }
 
     init {

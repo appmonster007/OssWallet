@@ -49,7 +49,6 @@ fun TransactionListScreen(
     val listState by viewModel.listState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
-    val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
@@ -96,7 +95,6 @@ fun TransactionListScreen(
         allTransactions = allTransactions,
         accounts = accounts,
         categories = categories,
-        decimalPrecision = decimalPrecision,
         analyticsState = analyticsState,
         filter = filter,
         recordsSettings = recordsSettings,

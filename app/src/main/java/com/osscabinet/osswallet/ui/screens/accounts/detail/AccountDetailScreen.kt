@@ -357,7 +357,6 @@ fun AccountDetailScreen(
                                             is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                         }
                                     },
-                                    precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
                                     filter = state.currentFilter
                                 )
@@ -432,7 +431,6 @@ fun DynamicAccountDetailCards(
             categories = state.allCategories,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
-            precision = state.decimalPrecision,
             filter = accountScopeFilter
         )
     }
@@ -446,7 +444,6 @@ fun DynamicAccountDetailCards(
             categories = state.allCategories,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
-            precision = state.decimalPrecision,
             filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime)
         )
     }

@@ -37,8 +37,7 @@ fun BudgetsCard(
     config: BudgetsCardConfig,
     callbacks: CardCallbacks.Budgets = CardCallbacks.Budgets(),
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    precision: Int = 2
+    headerModifier: Modifier = Modifier
 ) {
     AeonExpressiveCard(
         title = config.title,
@@ -62,8 +61,7 @@ fun BudgetsCard(
                 items.forEach { progress ->
                     BudgetProgressRow(
                         progress = progress,
-                        onClick = { callbacks.onBudgetClick(progress.budget.id) },
-                        precision = precision
+                        onClick = { callbacks.onBudgetClick(progress.budget.id) }
                     )
                 }
             }
@@ -112,8 +110,7 @@ private fun BudgetsDisplaySettingsDialog(
 @Composable
 private fun BudgetProgressRow(
     progress: BudgetProgress,
-    onClick: () -> Unit,
-    precision: Int = 2
+    onClick: () -> Unit
 ) {
     val trackColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED -> AppColors.error
@@ -190,9 +187,9 @@ private fun BudgetProgressRow(
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, precision, shorten = true)
+                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, shorten = true)
                         } else {
-                            formatCurrencyRight(progress.remaining, progress.budget.currency, precision, shorten = true)
+                            formatCurrencyRight(progress.remaining, progress.budget.currency, shorten = true)
                         },
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
@@ -207,7 +204,7 @@ private fun BudgetProgressRow(
                     border = BorderStroke(1.dp, AppColors.border) // Mandatory for Level 3
                 ) {
                     Text(
-                        text = "${formatAmount(progress.spent, precision)} / ${formatAmount(progress.limit, precision)}",
+                        text = "${formatAmount(progress.spent)} / ${formatAmount(progress.limit)}",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",

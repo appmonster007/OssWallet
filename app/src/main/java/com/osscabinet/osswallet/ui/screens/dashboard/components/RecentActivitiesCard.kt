@@ -59,7 +59,6 @@ fun RecentActivitiesCard(
     callbacks: CardCallbacks.RecentActivities,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    precision: Int = 2,
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -86,7 +85,6 @@ fun RecentActivitiesCard(
             baseCurrency = baseCurrency,
             modifier = Modifier.height(300.dp),
             showHeader = false,
-            precision = precision,
             revealedCardIds = emptyList(),
             onTransactionEvent = { event ->
                 when (event) {

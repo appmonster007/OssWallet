@@ -35,8 +35,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun LoanHeroCard(
     loan: Loan,
     summary: LoanSummary,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
+    modifier: Modifier = Modifier
 ) {
     val accentColor = if (loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
     
@@ -72,7 +71,7 @@ fun LoanHeroCard(
                             color = accentColor.copy(alpha = 0.6f)
                         )
                         
-                        val balanceParts = formatCurrencyRight(summary.remainingBalance, loan.currency, precision = precision, shorten = true).split(" ")
+                        val balanceParts = formatCurrencyRight(summary.remainingBalance, loan.currency, shorten = true).split(" ")
                         val amountText = balanceParts.dropLast(1).joinToString(" ")
                         val symbolText = balanceParts.lastOrNull() ?: ""
 
@@ -120,12 +119,12 @@ fun LoanHeroCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${formatAmount(summary.totalPaid, precision)} repaid",
+                        text = "${formatAmount(summary.totalPaid)} repaid",
                         style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, precision, shorten = true)}",
+                        text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, shorten = true)}",
                         style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )

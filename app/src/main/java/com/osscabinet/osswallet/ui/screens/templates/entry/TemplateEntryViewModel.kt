@@ -37,9 +37,8 @@ class TemplateEntryViewModel(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags(),
-                    settingsRepository.decimalPrecision,
                     transactionUseCases.getTransactions(profileId)
-                ) { accounts, categories, tags, precision, transactions ->
+                ) { accounts, categories, tags, transactions ->
                     val payees = transactionUseCases.getUniquePayees(profileId)
                     val notes = transactionUseCases.getUniqueNotes(profileId)
                     
@@ -48,7 +47,6 @@ class TemplateEntryViewModel(
                             accounts = accounts,
                             categories = categories,
                             allTags = tags,
-                            decimalPrecision = precision,
                             uniquePayees = payees,
                             uniqueNotes = notes,
                             allTransactions = transactions

@@ -42,7 +42,6 @@ fun UnifiedCardRenderer(
             NetWorthCard(
                 currentMetrics = renderData.currentMetrics,
                 baseCurrency = renderData.baseCurrency,
-                precision = renderData.precision,
                 config = renderData.config,
                 previousMetrics = renderData.previousMetrics,
                 callbacks = cb,
@@ -64,7 +63,6 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -81,7 +79,6 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -94,7 +91,7 @@ fun UnifiedCardRenderer(
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData = CategoryPieChartData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                amount = metric.netBalance.setScale(renderData.precision, RoundingMode.HALF_UP),
+                amount = metric.netBalance,
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
@@ -111,7 +108,6 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 currentTheme = currentTheme,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -124,7 +120,7 @@ fun UnifiedCardRenderer(
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData = CategoryTreemapData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                amount = metric.netBalance.setScale(renderData.precision, RoundingMode.HALF_UP),
+                amount = metric.netBalance,
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
@@ -141,7 +137,6 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 currentTheme = currentTheme,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -161,7 +156,6 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 currencyBalances = renderData.currencyBalances,
                 callbacks = cb,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -180,7 +174,6 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
-                precision = renderData.precision,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier.fillMaxWidth(),
             )
@@ -196,8 +189,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 callbacks = cb,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                precision = renderData.precision
+                headerModifier = headerModifier
             )
         }
 
@@ -210,8 +202,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 callbacks = cb,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                precision = renderData.precision
+                headerModifier = headerModifier
             )
         }
 
@@ -224,8 +215,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 callbacks = cb,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                precision = renderData.precision
+                headerModifier = headerModifier
             )
         }
 
@@ -237,7 +227,6 @@ fun UnifiedCardRenderer(
                 listState = renderData.listState,
                 config = renderData.config,
                 callbacks = cb,
-                precision = renderData.precision,
                 baseCurrency = renderData.baseCurrency,
                 exchangeRates = renderData.exchangeRates,
                 filterContext = filterContext,

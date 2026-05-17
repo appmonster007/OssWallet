@@ -62,7 +62,7 @@ class TransactionUseCases(
         allTransactions: List<Transaction>,
         accounts: List<Account>,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int,
+        precision: Int = CurrencyService.precision,
         limit: Int = 20,
         days: Int = 7,
         excludeFuture: Boolean = true

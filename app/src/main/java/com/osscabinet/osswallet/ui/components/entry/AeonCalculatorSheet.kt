@@ -22,7 +22,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun AeonCalculatorSheet(
     currentAmount: String,
     transactionType: TransactionType = TransactionType.INCOME,
-    decimalPrecision: Int = 2,
     onAmountChanged: (String) -> Unit,
     onTypeChanged: (TransactionType) -> Unit = {},
     onDismiss: () -> Unit,
@@ -63,7 +62,6 @@ fun AeonCalculatorSheet(
                     onTypeChanged(type)
                 },
                 transactionType = transactionType,
-                decimalPrecision = decimalPrecision,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             )

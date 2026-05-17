@@ -10,6 +10,11 @@ import java.util.Currency
  */
 object CurrencyService {
 
+    /**
+     * Global decimal precision used for calculations when not specified.
+     */
+    var precision: Int = 2
+
     // ==================== Conversion & Logic ====================
 
     /**
@@ -20,7 +25,7 @@ object CurrencyService {
         fromCurrency: String,
         toCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int = 2
+        precision: Int = this.precision
     ): BigDecimal {
         if (fromCurrency == toCurrency) return amount.setScale(precision, RoundingMode.HALF_UP)
 
@@ -117,7 +122,7 @@ object CurrencyService {
         currencyTotals: Map<String, BigDecimal>,
         targetCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int = 2
+        precision: Int = this.precision
     ): BigDecimal {
         return currencyTotals.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
             acc.add(convertAmount(amount, curr, targetCurrency, exchangeRates, precision + 4))

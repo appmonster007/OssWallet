@@ -412,7 +412,6 @@ fun DashboardContent(
                             categories = state.allCategories,
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
-                            precision = state.decimalPrecision,
                             plannedPayments = state.plannedPayments,
                             budgets = state.budgets,
                             loans = state.loans,
@@ -477,7 +476,6 @@ fun DashboardContent(
                             is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                         }
                     },
-                    precision = state.decimalPrecision,
                     is24Hour = state.use24HourFormat
                 )
             }
@@ -577,7 +575,6 @@ private fun DashboardReviewContent() {
         NetWorthCard(
             currentMetrics = netWorthMetrics,
             baseCurrency = "USD",
-            precision = 2,
             config = NetWorthCardConfig(cardId = "networth")
         )
 

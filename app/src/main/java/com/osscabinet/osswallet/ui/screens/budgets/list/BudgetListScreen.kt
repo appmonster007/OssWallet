@@ -70,8 +70,7 @@ fun BudgetListScreen(
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
     onDetailClick: (Long) -> Unit,
-    baseCurrency: String = "USD",
-    precision: Int = 2
+    baseCurrency: String = "USD"
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()

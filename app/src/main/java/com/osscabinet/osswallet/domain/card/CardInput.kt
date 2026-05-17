@@ -24,7 +24,6 @@ data class CardInput(
     val categories: List<Category>,
     val exchangeRates: Map<String, BigDecimal>,
     val baseCurrency: String,
-    val precision: Int,
     val filter: TransactionFilter = TransactionFilter(),
     val plannedPayments: List<PlannedPayment> = emptyList(),
     val budgets: List<Budget> = emptyList(),

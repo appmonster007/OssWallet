@@ -38,22 +38,19 @@ sealed class CardRenderData {
         val config: NetWorthCardConfig,
         val currentMetrics: NetWorthMetrics,
         val baseCurrency: String,
-        val precision: Int,
         val previousMetrics: NetWorthMetrics? = null
     ) : CardRenderData()
 
     data class CurrencyBalances(
         val config: CurrencyBalancesCardConfig,
         val items: List<CurrencyAggregationItem>,
-        val baseCurrency: String,
-        val precision: Int
+        val baseCurrency: String
     ) : CardRenderData()
 
     data class CashFlow(
         val config: CashFlowCardConfig,
         val result: CashFlowResult,
-        val baseCurrency: String,
-        val precision: Int
+        val baseCurrency: String
     ) : CardRenderData()
 
     data class Accounts(
@@ -61,39 +58,33 @@ sealed class CardRenderData {
         val updatedAccounts: List<Account>,
         val accountStats: Map<String, AccountSummaryItem>,
         val baseCurrency: String,
-        val currentTheme: String,
-        val precision: Int
+        val currentTheme: String
     ) : CardRenderData()
 
     data class CategoryPieChart(
         val config: CategoryPieChartCardConfig,
-        val items: List<CategoryTreeMetrics>,
-        val precision: Int
+        val items: List<CategoryTreeMetrics>
     ) : CardRenderData()
 
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
-        val items: List<CategoryTreeMetrics>,
-        val precision: Int
+        val items: List<CategoryTreeMetrics>
     ) : CardRenderData()
 
     data class PlannedPayments(
         val config: PlannedPaymentsCardConfig,
         val upcoming: List<UpcomingPaymentItem>,
-        val overdue: List<PlannedPayment>,
-        val precision: Int
+        val overdue: List<PlannedPayment>
     ) : CardRenderData()
 
     data class Budgets(
         val config: BudgetsCardConfig,
-        val items: List<BudgetProgress>,
-        val precision: Int
+        val items: List<BudgetProgress>
     ) : CardRenderData()
 
     data class Loans(
         val config: LoansCardConfig,
-        val items: List<LoanSummary>,
-        val precision: Int
+        val items: List<LoanSummary>
     ) : CardRenderData()
 
     data class AccountHero(
@@ -104,15 +95,13 @@ sealed class CardRenderData {
         val expense: BigDecimal,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val currencyBalances: Map<String, BigDecimal> = emptyMap(),
-        val precision: Int
+        val currencyBalances: Map<String, BigDecimal> = emptyMap()
     ) : CardRenderData()
 
     data class RecentActivities(
         val config: RecentActivitiesCardConfig,
         val listState: TransactionListState,
         val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>,
-        val precision: Int
+        val exchangeRates: Map<String, BigDecimal>
     ) : CardRenderData()
 }

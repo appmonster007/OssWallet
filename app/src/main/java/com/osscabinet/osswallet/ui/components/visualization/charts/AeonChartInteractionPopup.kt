@@ -42,7 +42,7 @@ fun AeonChartInteractionPopup(
     chartHeightPx: Float,
     density: Float,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     onDrillInClick: () -> Unit = {},
     onNavigateToRecords: () -> Unit = {},
 ) {

@@ -130,7 +130,6 @@ fun PlannedPaymentEntrySheets(
         AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
-            decimalPrecision = 2,
             onAmountChanged = { amount ->
                 onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
             },

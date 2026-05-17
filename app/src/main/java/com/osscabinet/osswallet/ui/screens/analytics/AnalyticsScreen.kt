@@ -123,7 +123,6 @@ fun AnalyticsScreen(
                                     categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.selectedCurrency,
-                                    precision = state.decimalPrecision,
                                     plannedPayments = state.plannedPayments,
                                     budgets = state.budgets,
                                     loans = state.loans

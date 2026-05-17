@@ -58,7 +58,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun NetWorthCard(
     currentMetrics: NetWorthMetrics,
     baseCurrency: String,
-    precision: Int,
     config: NetWorthCardConfig,
     previousMetrics: NetWorthMetrics? = null,
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
@@ -94,7 +93,7 @@ fun NetWorthCard(
 
             Column {
                 Text(
-                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision, shorten = true),
+                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, shorten = true),
                     style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = baseFontSize,
@@ -140,7 +139,6 @@ fun NetWorthCard(
                     label = "INCOME",
                     amount = currentMetrics.cashFlow.totalIncomeInBase,
                     currency = baseCurrency,
-                    precision = precision,
                     color = PositiveAmountColor,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
@@ -150,7 +148,6 @@ fun NetWorthCard(
                     label = "EXPENSE",
                     amount = currentMetrics.cashFlow.totalExpensesInBase,
                     currency = baseCurrency,
-                    precision = precision,
                     color = AppColors.error,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
@@ -166,7 +163,6 @@ private fun FlowBadge(
     label: String,
     amount: BigDecimal,
     currency: String,
-    precision: Int,
     color: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
@@ -229,7 +225,7 @@ private fun FlowBadge(
                 }
             }
             Text(
-                text = formatCurrencyRight(amount, currency, precision, shorten = true),
+                text = formatCurrencyRight(amount, currency, shorten = true),
                 style = AppTextStyles.managementItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
@@ -367,7 +363,6 @@ fun NetWorthCardPreview() {
                         )
                     ),
                     baseCurrency = "USD",
-                    precision = 2,
                     config = NetWorthCardConfig(cardId = "preview"),
                     callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
                 )
@@ -391,7 +386,6 @@ fun NetWorthCardAmoledPreview() {
                         )
                     ),
                     baseCurrency = "USD",
-                    precision = 2,
                     config = NetWorthCardConfig(cardId = "preview"),
                     callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
                 )
@@ -414,7 +408,6 @@ fun NetWorthCardComparisonPreview() {
                     )
                 ),
                 baseCurrency = "USD",
-                precision = 2,
                 config = NetWorthCardConfig(
                     cardId = "preview_comparison",
                     filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH))

@@ -49,8 +49,7 @@ fun AeonAccountCardSmall(
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
+    modifier: Modifier = Modifier
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
@@ -94,13 +93,13 @@ fun AeonAccountCardSmall(
                 )
                 Column {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
+                        formatCurrencyRight(balance, account.currencyCode, shorten = true),
                         style = AppTextStyles.transactionSubtitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
+                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
                         style = AppTextStyles.metaLabel,
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
@@ -122,8 +121,7 @@ fun AeonAccountCardMedium(
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
+    modifier: Modifier = Modifier
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
@@ -176,13 +174,13 @@ fun AeonAccountCardMedium(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
+                    formatCurrencyRight(balance, account.currencyCode, shorten = true),
                     style = AppTextStyles.cardSectionTitle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
+                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.tagLabel,
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -207,7 +205,6 @@ fun AeonAccountCardLarge(
     isAmoled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    precision: Int = 2,
     cardNumber: String? = null,
     extraLabel: String? = null,
     onClickIncome: (() -> Unit)? = null,
@@ -274,14 +271,12 @@ fun AeonAccountCardLarge(
                             amount = incomeInAccountCurrency,
                             type = CashFlowType.INCOME,
                             currency = account.currencyCode,
-                            precision = precision,
                             onClick = onClickIncome
                         )
                         AeonFlowBadge(
                             amount = expenseInAccountCurrency,
                             type = CashFlowType.EXPENSE,
                             currency = account.currencyCode,
-                            precision = precision,
                             onClick = onClickExpense
                         )
                     }
@@ -295,7 +290,7 @@ fun AeonAccountCardLarge(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, precision = precision, shorten = true),
+                        formatCurrencyRight(balance, account.currencyCode, shorten = true),
                         style = AppTextStyles.calculatorDisplay,
                         color = contentColor
                     )
@@ -344,7 +339,7 @@ fun AeonAccountCardLarge(
                                         color = contentColor.copy(alpha = 0.6f)
                                     )
                                     Text(
-                                        formatAmount(bal, precision = precision),
+                                        formatAmount(bal),
                                         style = AppTextStyles.transactionBadge,
                                         color = contentColor
                                     )

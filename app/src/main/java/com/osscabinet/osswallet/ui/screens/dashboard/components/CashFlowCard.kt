@@ -40,7 +40,6 @@ fun CashFlowCard(
     callbacks: CardCallbacks.CashFlow = CardCallbacks.CashFlow(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    precision: Int = 2,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -71,7 +70,6 @@ fun CashFlowCard(
                 baseCurrency = baseCurrency,
                 type = CashFlowType.INCOME,
                 incomeColor = PositiveAmountColor,
-                precision = precision,
                 modifier = Modifier.weight(1f),
                 onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
             ) {
@@ -82,7 +80,6 @@ fun CashFlowCard(
                             amount = item.income,
                             inBase = item.incomeInBase,
                             baseCurrency = baseCurrency,
-                            precision = precision,
                             showBaseConversion = config.showBaseConversion,
                             onClick = {
                                 callbacks.onClickIncome?.invoke(
@@ -103,7 +100,6 @@ fun CashFlowCard(
                 baseCurrency = baseCurrency,
                 type = CashFlowType.EXPENSE,
                 expenseColor = NegativeAmountColor,
-                precision = precision,
                 modifier = Modifier.weight(1f),
                 onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
             ) {
@@ -114,7 +110,6 @@ fun CashFlowCard(
                             amount = item.expense,
                             inBase = item.expenseInBase,
                             baseCurrency = baseCurrency,
-                            precision = precision,
                             showBaseConversion = config.showBaseConversion,
                             onClick = {
                                 callbacks.onClickExpense?.invoke(
@@ -184,7 +179,6 @@ internal fun AeonFlowBreakdownItem(
     amount: BigDecimal,
     inBase: BigDecimal,
     baseCurrency: String,
-    precision: Int = 2,
     showBaseConversion: Boolean = true,
     onClick: () -> Unit = {}
 ) {
@@ -198,22 +192,22 @@ internal fun AeonFlowBreakdownItem(
         Text(
             curr,
             style = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             ),
             color = AppColors.contentSecondary
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                formatCurrencyRight(amount, curr, precision, shorten = true),
+                formatCurrencyRight(amount, curr, shorten = true),
                 style = AppTextStyles.transactionTitle.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 10.sp
+                    fontSize = 12.sp
                 )
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Medium
@@ -235,7 +229,6 @@ fun AeonFlowCard(
     @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
     incomeColor: Color = PositiveAmountColor,
     expenseColor: Color = NegativeAmountColor,
-    precision: Int = 2,
     onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -264,7 +257,7 @@ fun AeonFlowCard(
                     ),
                     color = color
                 )
-                AeonFlowBadge(totalInBase, type, baseCurrency, precision = precision, incomeColor = color, expenseColor = color)
+                AeonFlowBadge(totalInBase, type, baseCurrency, incomeColor = color, expenseColor = color)
             }
 
             content()

@@ -143,7 +143,7 @@ fun AeonExpressiveCard(
                         text = title,
                         style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             letterSpacing = 0.sp
                         ),
                         color = AppColors.contentPrimary
@@ -152,8 +152,8 @@ fun AeonExpressiveCard(
                         Text(
                             text = effectiveSubtitle,
                             style = AppTextStyles.drawerItemLabel.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 12.sp
+                                fontWeight = FontWeight.Light,
+                                fontSize = 10.sp
                             ),
                             color = AppColors.contentSecondary
                         )

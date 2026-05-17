@@ -137,7 +137,6 @@ class DashboardViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.decimalPrecision,
                 settingsRepository.use24HourFormat,
                 cardsConfig,
                 plannedPaymentsFlow,
@@ -155,15 +154,14 @@ class DashboardViewModel(
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
-                val precision = args[6] as Int
-                val use24Hour = args[7] as Boolean
-                val cardsCfg = args[8] as DashboardCardsConfig
+                val use24Hour = args[6] as Boolean
+                val cardsCfg = args[7] as DashboardCardsConfig
                 @Suppress("UNCHECKED_CAST")
-                val plannedPayments = args[9] as List<PlannedPayment>
+                val plannedPayments = args[8] as List<PlannedPayment>
                 @Suppress("UNCHECKED_CAST")
-                val budgets = args[10] as List<Budget>
+                val budgets = args[9] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
-                val loans = args[11] as List<Loan>
+                val loans = args[10] as List<Loan>
 
                 if (!hasLoadedExchangeRates) {
                     return@flatMapLatest flowOf(DashboardUiState.Loading)
@@ -176,7 +174,6 @@ class DashboardViewModel(
                     categories = categories,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
-                    precision = precision,
                     plannedPayments = plannedPayments,
                     budgets = budgets,
                     loans = loans
@@ -206,8 +203,7 @@ class DashboardViewModel(
                                     amount = transaction.amount,
                                     fromCurrency = transaction.currency,
                                     toCurrency = accountCurrency,
-                                    exchangeRates = rates,
-                                    precision = precision + 4
+                                    exchangeRates = rates
                                 )
 
                                 val balanceBefore = runningBalance
@@ -215,11 +211,11 @@ class DashboardViewModel(
                                 TransactionWithBalance(
                                     transaction = transaction,
                                     balanceBefore = balanceBefore.setScale(
-                                        precision,
+                                        CurrencyService.precision,
                                         RoundingMode.HALF_UP
                                     ),
                                     balanceAfter = runningBalance.setScale(
-                                        precision,
+                                        CurrencyService.precision,
                                         RoundingMode.HALF_UP
                                     )
                                 )
@@ -236,8 +232,7 @@ class DashboardViewModel(
                         accounts = accounts,
                         categories = categories,
                         baseCurrency = baseCurrency,
-                        exchangeRates = rates,
-                        precision = precision
+                        exchangeRates = rates
                     )
 
                     emit(DashboardUiState.Success(
@@ -248,7 +243,6 @@ class DashboardViewModel(
                         allCategories = categories,
                         baseCurrency = baseCurrency,
                         exchangeRates = rates,
-                        decimalPrecision = precision,
                         use24HourFormat = use24Hour,
                         plannedPayments = plannedPayments,
                         budgets = budgets,
@@ -364,7 +358,6 @@ sealed class DashboardUiState {
         val allCategories: List<Category>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val decimalPrecision: Int,
         val use24HourFormat: Boolean = false,
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),

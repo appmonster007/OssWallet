@@ -46,7 +46,6 @@ class AnalyticsViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.decimalPrecision,
                 plannedPaymentRepository.getActivePlannedPayments(profileId),
                 budgetRepository.getActiveBudgets(profileId),
                 loanRepository.getActiveLoans(profileId)
@@ -61,13 +60,12 @@ class AnalyticsViewModel(
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedRates = args[5] as Boolean
-                val precision = args[6] as Int
                 @Suppress("UNCHECKED_CAST")
-                val plannedPayments = args[7] as List<PlannedPayment>
+                val plannedPayments = args[6] as List<PlannedPayment>
                 @Suppress("UNCHECKED_CAST")
-                val budgets = args[8] as List<Budget>
+                val budgets = args[7] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
-                val loans = args[9] as List<Loan>
+                val loans = args[8] as List<Loan>
 
                 if (!hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading
@@ -79,7 +77,6 @@ class AnalyticsViewModel(
                     allCategories = categories,
                     exchangeRates = rates,
                     selectedCurrency = baseCurrency,
-                    decimalPrecision = precision,
                     plannedPayments = plannedPayments,
                     budgets = budgets,
                     loans = loans
@@ -101,7 +98,6 @@ sealed class AnalyticsUiState {
         val allCategories: List<Category> = emptyList(),
         val selectedCurrency: String = "USD",
         val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-        val decimalPrecision: Int = 2,
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),
         val loans: List<Loan> = emptyList()

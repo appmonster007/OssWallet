@@ -75,7 +75,6 @@ data class TransactionEntryState(
     val allPayees: List<String> = emptyList(),
     val allNotes: List<String> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    val decimalPrecision: Int = 2,
     val use24HourFormat: Boolean = false,
     val mapsAccessEnabled: Boolean = false,
 

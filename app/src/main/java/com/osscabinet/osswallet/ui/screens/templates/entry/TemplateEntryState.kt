@@ -53,7 +53,6 @@ data class TemplateEntryState(
     val allTags: List<Tag> = emptyList(),
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
-    val decimalPrecision: Int = 2,
 
     // Metadata
     val templateId: Long? = null,

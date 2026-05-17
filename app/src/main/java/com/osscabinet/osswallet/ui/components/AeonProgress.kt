@@ -25,7 +25,6 @@ fun AeonBudgetProgress(
     total: BigDecimal,
     color: Color,
     baseCurrency: String,
-    precision: Int = 2,
     showLabels: Boolean = true
 ) {
     val progress = if (total.signum() > 0) (current.toDouble() / total.toDouble()).toFloat().coerceIn(0f, 1f) else 0f
@@ -43,7 +42,7 @@ fun AeonBudgetProgress(
                     color = AppColors.contentPrimary
                 )
                 Text(
-                    "${formatCurrencyRight(current, baseCurrency, precision, shorten = true)} / ${formatCurrencyRight(total, baseCurrency, precision, shorten = true)}",
+                    "${formatCurrencyRight(current, baseCurrency, shorten = true)} / ${formatCurrencyRight(total, baseCurrency, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         color = AppColors.border
                     )

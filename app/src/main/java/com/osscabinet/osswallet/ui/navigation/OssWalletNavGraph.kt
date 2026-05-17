@@ -781,15 +781,13 @@ fun OssWalletNavGraph(
                     }
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
                 BudgetListScreen(
                     viewModel = budgetViewModel,
                     onAddClick = { navController.navigate(Screen.BudgetEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
                     onDetailClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
                     onBackClick = { navController.popBackStack() },
-                    baseCurrency = baseCurrency,
-                    precision = precision
+                    baseCurrency = baseCurrency
                 )
             }
 
@@ -936,14 +934,12 @@ fun OssWalletNavGraph(
                     }
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
                 LoanDetailScreen(
                     loanId = loanId,
                     viewModel = loanViewModel,
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     baseCurrency = baseCurrency,
-                    precision = precision,
                     onEditClick = { navController.navigate(Screen.LoanEntry.createRoute(loanId)) },
                     onBackClick = { navController.popBackStack() },
                     onTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
@@ -1016,14 +1012,12 @@ fun OssWalletNavGraph(
                     }
                 )
                 val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
                 BudgetDetailScreen(
                     budgetId = budgetId,
                     viewModel = budgetViewModel,
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     baseCurrency = baseCurrency,
-                    precision = precision,
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
                     onBackClick = { navController.popBackStack() },
                     onTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },

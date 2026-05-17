@@ -83,7 +83,6 @@ fun BudgetDetailScreen(
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     baseCurrency: String,
-    precision: Int,
     onEditClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
@@ -196,7 +195,6 @@ fun BudgetDetailScreen(
                                 BudgetHeroCard(
                                     budget = budget,
                                     progress = progress,
-                                    precision = precision,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -318,7 +316,7 @@ fun BudgetDetailScreen(
                         } else {
                             val now = System.currentTimeMillis()
 
-                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {
+                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, baseCurrency) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = budgetTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
@@ -326,8 +324,7 @@ fun BudgetDetailScreen(
                                     accounts = accounts,
                                     categories = categoriesList,
                                     baseCurrency = baseCurrency,
-                                    exchangeRates = emptyMap(),
-                                    precision = precision
+                                    exchangeRates = emptyMap()
                                 )
                                 TransactionListState(groups = groups, isEmpty = groups.isEmpty())
                             }
@@ -353,8 +350,7 @@ fun BudgetDetailScreen(
                                         is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
                                         is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                     }
-                                },
-                                precision = precision
+                                }
                             )
                         }
                     }

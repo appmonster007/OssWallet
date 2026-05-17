@@ -49,8 +49,7 @@ fun CategoryPieChartCard(
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    currentTheme: String = "System",
-    precision: Int = 2
+    currentTheme: String = "System"
 ) {
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -235,8 +234,7 @@ fun CategoryPieChartCard(
                 data = groupedData, 
                 navigationStack = navigationStack,
                 isDarkTheme = isDarkTheme, 
-                isAmoled = isAmoled, 
-                precision = precision
+                isAmoled = isAmoled
             )
         }
     }
@@ -312,8 +310,7 @@ fun CategoryLegend(
     data: List<CategoryPieChartData>, 
     navigationStack: List<List<CategoryPieChartData>>,
     isDarkTheme: Boolean, 
-    isAmoled: Boolean, 
-    precision: Int = 2
+    isAmoled: Boolean
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -356,7 +353,7 @@ fun CategoryLegend(
                 )
                 
                 Text(
-                    text = formatAmount(item.amount, precision),
+                    text = formatAmount(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -380,8 +377,8 @@ fun CategoryLegend(
     }
 }
 
-private fun formatCurrency(amount: BigDecimal, precision: Int = 2): String {
-    val formatted = formatAmount(amount, precision)
+private fun formatCurrency(amount: BigDecimal): String {
+    val formatted = formatAmount(amount)
     return if (amount >= BigDecimal.ZERO) {
         "+$formatted"
     } else {

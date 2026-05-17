@@ -8,6 +8,5 @@ import java.math.BigDecimal
  */
 data class ComputationContext(
     val baseCurrency: String,
-    val exchangeRates: Map<String, BigDecimal>,
-    val precision: Int
+    val exchangeRates: Map<String, BigDecimal>
 )

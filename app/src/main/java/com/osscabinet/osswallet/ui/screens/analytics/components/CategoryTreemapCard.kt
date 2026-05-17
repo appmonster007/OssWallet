@@ -70,8 +70,7 @@ fun CategoryTreemapCard(
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    currentTheme: String = "System",
-    precision: Int = 2
+    currentTheme: String = "System"
 ) {
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -245,7 +244,7 @@ fun CategoryTreemapCard(
         // Consistent Legend for Treemap
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            TreemapLegend(data = groupedData, isDarkTheme = isDarkTheme, isAmoled = isAmoled, precision = precision)
+            TreemapLegend(data = groupedData, isDarkTheme = isDarkTheme, isAmoled = isAmoled)
         }
     }
 
@@ -318,7 +317,7 @@ private fun CategoryTreemapDisplaySettingsDialog(
 }
 
 @Composable
-fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmoled: Boolean, precision: Int = 2) {
+fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmoled: Boolean) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -345,7 +344,7 @@ fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmole
                 )
                 
                 Text(
-                    text = formatAmount(item.amount, precision),
+                    text = formatAmount(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp

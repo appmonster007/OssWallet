@@ -185,25 +185,37 @@ fun AeonLineChart(
                 }
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
 
-                for (i in 0..4) {
-                    val ratio = i.toFloat() / 4
-                    val yValue = effectiveMinY + effectiveRangeY.multiply(BigDecimal(ratio.toString()))
-                    val yPos = valueToY(yValue)
-
-                    drawLine(
-                        color = gridColor,
-                        start = Offset(leftPadding, yPos),
-                        end = Offset(w - rightPadding, yPos),
-                        strokeWidth = (dims.spacingXs / 8).toPx(),
-                        pathEffect = dashEffect
-                    )
-
-                    drawContext.canvas.nativeCanvas.drawText(
-                        formatShortNumber(yValue),
-                        leftPadding - dims.spacingMd.toPx(),
-                        yPos + dims.spacingXs.toPx(),
-                        labelPaint
-                    )
+                // Standard nice-numbers: step is 1×, 2×, or 5× a power of 10 → 3-7 ticks.
+                val rangeDouble = effectiveRangeY.toDouble().coerceAtLeast(1.0)
+                val roughStep = rangeDouble / 5.0
+                val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+                val niceMultiplier = when {
+                    roughStep / mag <= 1.0 -> 1.0
+                    roughStep / mag <= 2.0 -> 2.0
+                    roughStep / mag <= 5.0 -> 5.0
+                    else -> 10.0
+                }
+                val niceStep = maxOf(java.math.BigDecimal.valueOf(niceMultiplier * mag), java.math.BigDecimal.ONE)
+                val firstTick = effectiveMinY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
+                var tick = firstTick
+                while (tick <= effectiveMaxY) {
+                    val yPos = valueToY(tick)
+                    if (yPos >= topPadding - 1f && yPos <= topPadding + chartHeight + 1f) {
+                        drawLine(
+                            color = gridColor,
+                            start = Offset(leftPadding, yPos),
+                            end = Offset(w - rightPadding, yPos),
+                            strokeWidth = (dims.spacingXs / 8).toPx(),
+                            pathEffect = dashEffect
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(
+                            formatShortNumber(tick),
+                            leftPadding - dims.spacingMd.toPx(),
+                            yPos + dims.spacingXs.toPx(),
+                            labelPaint
+                        )
+                    }
+                    tick = tick.add(niceStep)
                 }
             }
 

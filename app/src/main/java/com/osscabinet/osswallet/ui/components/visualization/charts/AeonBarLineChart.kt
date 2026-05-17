@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
@@ -175,19 +176,50 @@ fun AeonBarLineChart(
                     )
                 }
         ) {
-            // 1. Draw Grid
+            // 1. Draw Grid + Y-Axis Labels
             if (showGrid) {
                 val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
-                for (i in 0..4) {
-                    val y = padding + (i * (heightPx - padding - bottomPadding) / 4)
-                    drawLine(
-                        color = gridColor,
-                        start = Offset(padding, y),
-                        end = Offset(widthPx - padding, y),
-                        strokeWidth = 1f,
-                        pathEffect = dashEffect
-                    )
+                val labelPaint = AndroidPaint().apply {
+                    isAntiAlias = true
+                    color = android.graphics.Color.argb(140, 158, 158, 158)
+                    textAlign = AndroidPaint.Align.RIGHT
+                    textSize = with(density) { 9.sp.toPx() }
+                }
+
+                val effectiveRange = effectiveMaxY - effectiveMinY
+                val rangeDouble = effectiveRange.toDouble().coerceAtLeast(1.0)
+                val roughStep = rangeDouble / 5.0
+                val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+                val niceMultiplier = when {
+                    roughStep / mag <= 1.0 -> 1.0
+                    roughStep / mag <= 2.0 -> 2.0
+                    roughStep / mag <= 5.0 -> 5.0
+                    else -> 10.0
+                }
+                val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
+                val firstTick = effectiveMinY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
+                var tick = firstTick
+                val chartTop = padding
+                val chartBottom = heightPx - bottomPadding
+                while (tick <= effectiveMaxY) {
+                    val yPos = valueToY(tick)
+                    if (yPos >= chartTop - 1f && yPos <= chartBottom + 1f) {
+                        drawLine(
+                            color = gridColor,
+                            start = Offset(padding, yPos),
+                            end = Offset(widthPx - padding, yPos),
+                            strokeWidth = 1f,
+                            pathEffect = dashEffect
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(
+                            formatShortNumber(tick),
+                            padding - with(density) { 4.dp.toPx() },
+                            yPos + with(density) { 3.dp.toPx() },
+                            labelPaint
+                        )
+                    }
+                    tick = tick.add(niceStep)
                 }
             }
 
@@ -284,7 +316,7 @@ fun AeonBarLineChart(
 
                 if (index == 0) {
                     linePath.moveTo(x, animatedY)
-                    areaPath?.moveTo(x, heightPx - bottomPadding)
+                    areaPath?.moveTo(x, zeroY)
                     areaPath?.lineTo(x, animatedY)
                 } else {
                     val dx = x - prevX
@@ -292,7 +324,7 @@ fun AeonBarLineChart(
                     areaPath?.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
                 }
                 if (index == lineTotal - 1) {
-                    areaPath?.lineTo(x, heightPx - bottomPadding)
+                    areaPath?.lineTo(x, zeroY)
                     areaPath?.close()
                 }
                 prevX = x

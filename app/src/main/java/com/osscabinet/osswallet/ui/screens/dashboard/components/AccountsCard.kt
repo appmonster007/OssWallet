@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
@@ -419,7 +420,7 @@ private fun AeonAddAccountCardContent(
         "empty",
         "GET STARTED",
         baseCurrency,
-        "Default",
+        AccountStructureType.SAVINGS,
         String.format("#%06X", 0xFFFFFF and seedColor.toArgb()),
         "Add",
         listOf("Add")
@@ -467,8 +468,8 @@ private fun AeonAddAccountCardContent(
 @Composable
 fun AccountsCardPreview() {
     val accounts = listOf(
-        Account("1", "Main Savings", "USD", "Savings", "#004D40", "AccountBalance", emptyList()),
-        Account("2", "Travel Fund", "EUR", "Savings", "#B3261E", "Travel", emptyList())
+        Account("1", "Main Savings", "USD", AccountStructureType.SAVINGS, "#004D40", "AccountBalance", emptyList()),
+        Account("2", "Travel Fund", "EUR", AccountStructureType.SAVINGS, "#B3261E", "Travel", emptyList())
     )
     val stats = mapOf(
         "1" to AccountSummaryItem(accounts[0], mapOf("USD" to BigDecimal("5000.00")), BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("1000.00"), BigDecimal("200.00"), BigDecimal.ZERO),

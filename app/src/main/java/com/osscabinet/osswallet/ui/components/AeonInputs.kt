@@ -11,6 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -27,10 +29,14 @@ fun CurrencySelector(
     supportedCurrencies: List<String>
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     Box {
         Surface(
-            modifier = Modifier.clickable { showDialog = true },
+            modifier = Modifier.clickable { 
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                showDialog = true 
+            },
             shape = RoundedCornerShape(12.dp),
             color = AppColors.insetSurface.copy(alpha = 0.4f)
         ) {

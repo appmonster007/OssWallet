@@ -277,7 +277,7 @@ fun AccountManagementListItem(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        account.structureType,
+                        account.structureType.displayName,
                         style = AppTextStyles.transactionSwipeAction,
                         color = AppColors.border
                     )

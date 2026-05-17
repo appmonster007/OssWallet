@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -147,7 +148,7 @@ fun CurrencyManagementSection(
                 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
                     allowedCurrencies.forEach { code ->
@@ -157,7 +158,7 @@ fun CurrencyManagementSection(
                             isPrimary = isPrimary,
                             accentColor = accentColor,
                             onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 if (isPrimary) {
                                     // Toggle off primary if multiple, or just leave it
                                 } else {
@@ -165,7 +166,7 @@ fun CurrencyManagementSection(
                                 }
                             },
                             onRemove = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (isPrimary) onPrimaryCurrencyChange("")
                                 onAllowedCurrenciesChange(allowedCurrencies - code)
                             }
@@ -197,17 +198,17 @@ fun CurrencyManagementSection(
             
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.chipPadding),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.chipPadding)
             ) {
-                filteredCurrencies.filter { !allowedCurrencies.contains(it) }.take(16).forEach { code ->
+                filteredCurrencies.filter { !allowedCurrencies.contains(it) }.forEach { code ->
                     Surface(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
                             onAllowedCurrenciesChange(allowedCurrencies + code)
                         },
-                        shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                         color = AppColors.recessedSurface.copy(alpha = 0.4f),
                         border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
                     ) {
@@ -239,8 +240,8 @@ fun CurrencyTile(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.width(130.dp).height(90.dp),
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardPadding),
+        modifier = Modifier.width(100.dp).height(70.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = if (isPrimary) accentColor else AppColors.recessedSurface.copy(alpha = 0.5f),
         border = BorderStroke(
             width = if (isPrimary) 2.dp else 1.dp,

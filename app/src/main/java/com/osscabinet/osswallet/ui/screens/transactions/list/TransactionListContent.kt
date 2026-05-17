@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
@@ -171,7 +172,7 @@ fun TransactionListContentPreview() {
         id = "1",
         name = "Checking",
         currencyCode = "USD",
-        structureType = "Personal",
+        structureType = AccountStructureType.CHECKING,
         colorHex = "#FF0000",
         icon = "account_balance",
         allowedCurrencies = listOf("USD")

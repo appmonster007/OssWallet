@@ -35,6 +35,7 @@ fun AeonImpactHeaderCard(
     currency: String,
     onCurrencyClick: () -> Unit,
     onAmountClick: () -> Unit,
+    amountLabel: String? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
@@ -75,6 +76,7 @@ fun AeonImpactHeaderCard(
         currency = currency,
         onCurrencyClick = onCurrencyClick,
         onAmountClick = onAmountClick,
+        amountLabel = amountLabel,
         name = name,
         onNameChange = onNameChange,
         nameLabel = nameLabel,
@@ -109,6 +111,7 @@ fun <T> AeonImpactHeaderCard(
     currency: String,
     onCurrencyClick: () -> Unit,
     onAmountClick: () -> Unit,
+    amountLabel: String? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
@@ -163,7 +166,8 @@ fun <T> AeonImpactHeaderCard(
                         onAmountClick = onAmountClick,
                         amountColor = activeAmountColor,
                         supportedCurrencies = supportedCurrencies,
-                        showCurrency = showCurrency
+                        showCurrency = showCurrency,
+                        label = amountLabel
                     )
 
                     if (onSplitClick != null && !isTransfer) {

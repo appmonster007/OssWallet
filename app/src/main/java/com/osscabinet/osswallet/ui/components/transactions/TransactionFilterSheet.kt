@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -75,7 +76,7 @@ fun TransactionFilterSheetPreview() {
                             id = "1",
                             name = "Cash",
                             currencyCode = "USD",
-                            structureType = "Personal",
+                            structureType = AccountStructureType.CASH,
                             colorHex = "#FF0000",
                             icon = "wallet"
                         ),
@@ -83,7 +84,7 @@ fun TransactionFilterSheetPreview() {
                             id = "2",
                             name = "Bank",
                             currencyCode = "USD",
-                            structureType = "Personal",
+                            structureType = AccountStructureType.CHECKING,
                             colorHex = "#00FF00",
                             icon = "account_balance"
                         )

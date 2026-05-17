@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -20,7 +21,7 @@ class CardFilterTest {
         id = "acc1",
         name = "Account 1",
         currencyCode = "USD",
-        structureType = "Bank",
+        structureType = AccountStructureType.CHECKING,
         colorHex = "#FF0000",
         icon = "bank"
     )
@@ -29,7 +30,7 @@ class CardFilterTest {
         id = "acc2",
         name = "Account 2",
         currencyCode = "EUR",
-        structureType = "Cash",
+        structureType = AccountStructureType.CASH,
         colorHex = "#00FF00",
         icon = "cash"
     )
@@ -38,7 +39,7 @@ class CardFilterTest {
         id = "acc3",
         name = "Account 3",
         currencyCode = "GBP",
-        structureType = "Credit Card",
+        structureType = AccountStructureType.CREDIT_CARD,
         colorHex = "#0000FF",
         icon = "credit_card"
     )

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -11,6 +12,7 @@ import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountEntryViewModel(
@@ -37,11 +39,21 @@ class AccountEntryViewModel(
                 },
                 computationRepository.exchangeRates
             ) { defaultCurrency, transactions, exchangeRates ->
+                val currentBalance = if (_state.value.isEditMode && _state.value.accountId != null) {
+                    AggregationService.calculateAccountBalance(
+                        accountId = _state.value.accountId!!,
+                        allTransactions = transactions,
+                        accountCurrency = _state.value.primaryCurrency,
+                        exchangeRates = exchangeRates
+                    )
+                } else BigDecimal.ZERO
+
                 _state.update {
                     it.copy(
                         defaultCurrency = defaultCurrency,
                         allTransactions = transactions,
-                        exchangeRates = exchangeRates
+                        exchangeRates = exchangeRates,
+                        currentBalance = currentBalance
                     )
                 }
             }.collect()
@@ -107,6 +119,11 @@ class AccountEntryViewModel(
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
             is AccountEntryEvent.SetColor -> _state.update { it.copy(accentColorHex = event.color) }
             is AccountEntryEvent.ShowStructureSheet -> _state.update { it.copy(showStructureSheet = event.show) }
+            is AccountEntryEvent.ShowIconSheet -> _state.update { it.copy(showIconSheet = event.show) }
+            is AccountEntryEvent.ShowColorSheet -> _state.update { it.copy(showColorSheet = event.show) }
+            is AccountEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
+            is AccountEntryEvent.OpenCalculator -> _state.update { it.copy(showCalculator = true, activeBalanceCurrency = event.currency) }
+            is AccountEntryEvent.CloseCalculator -> _state.update { it.copy(showCalculator = false, activeBalanceCurrency = null) }
             is AccountEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }

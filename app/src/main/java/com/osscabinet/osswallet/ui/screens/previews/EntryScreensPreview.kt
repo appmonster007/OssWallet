@@ -4,6 +4,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.AccountFormBody
+import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
@@ -11,8 +14,65 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.components.FilterFormBo
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanFormBody
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 3500, name = "Full Loan Entry Screen")
+
+
+@Preview(showBackground = true, widthDp = 400, heightDp = 1500, name = "Account Entry Screen - Edit")
+@Composable
+fun AccountEntryEditPreview() {
+    OssWalletTheme {
+        Surface {
+            AccountFormBody(
+                state = AccountEntryState(
+                    accountName = "Primary Credit Card",
+                    structureType = AccountStructureType.CREDIT_CARD,
+                    primaryCurrency = "EUR",
+                    allowedCurrencies = setOf("EUR"),
+                    selectedIconName = "CreditCard",
+                    accentColorHex = "#B71C1C",
+                    currentBalance = BigDecimal("-1250.50"),
+                    isEditMode = true
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 400, heightDp = 800, name = "Visual Identity Dialog Preview")
+@Composable
+fun VisualIdentityDialogPreview() {
+    OssWalletTheme {
+        Surface {
+            AccountFormBody(
+                state = AccountEntryState(
+                    accountName = "Dialog Test",
+                    showIconSheet = true
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 400, heightDp = 800, name = "Category Entry Dialog Preview")
+@Composable
+fun CategoryEntryDialogPreview() {
+    OssWalletTheme {
+        Surface {
+            CategoryEditSheet(
+                category = null,
+                parentCategories = listOf(
+                    Category(id = 1L, name = "Food", iconName = "Fastfood", colorHex = 0xFF4CAF50.toInt(), isDefault = false, parentId = null),
+                    Category(id = 2L, name = "Transport", iconName = "DirectionsBus", colorHex = 0xFF2196F3.toInt(), isDefault = false, parentId = null)
+                ),
+                onDismiss = {},
+                onSave = { _, _, _, _ -> }
+            )
+        }
+    }
+}
 @Composable
 fun FullLoanEntryPreview() {
     OssWalletTheme {

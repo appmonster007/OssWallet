@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.*
 
@@ -33,6 +35,7 @@ fun <T> EntryTypeSelector(
     itemWidth: androidx.compose.ui.unit.Dp = 80.dp
 ) {
     val selectedIndex = types.indexOfFirst { it.third == selectedType }.coerceAtLeast(0)
+    val haptic = LocalHapticFeedback.current
 
     val indicatorColor by animateColorAsState(
         targetValue = selectedColor,
@@ -86,7 +89,10 @@ fun <T> EntryTypeSelector(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { onTypeSelected(type) },
+                        ) { 
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onTypeSelected(type) 
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

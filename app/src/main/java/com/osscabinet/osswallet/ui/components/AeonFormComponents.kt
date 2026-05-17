@@ -49,54 +49,159 @@ fun AeonHeroHeader(
     subtitle: String? = null,
     iconName: String,
     accentColorHex: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLeftAligned: Boolean = false,
+    onTitleChange: ((String) -> Unit)? = null,
+    onIconClick: (() -> Unit)? = null
 ) {
     val currentAccentColor = try {
         Color(android.graphics.Color.parseColor(accentColorHex))
     } catch (e: Exception) {
         AppColors.primary
     }
+    
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.insetSurface.copy(alpha = 0.3f)
+        color = AppColors.insetSurface
     ) {
-        Column(
-            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-        ) {
-            Surface(
-                modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                color = currentAccentColor
+        if (isLeftAligned) {
+            Row(
+                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        AppIconMap[iconName] ?: Icons.Rounded.Category,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                        tint = if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight
-                    )
+                Surface(
+                    modifier = Modifier
+                        .size(AeonTheme.dimensions.iconSize3xl)
+                        .then(if (onIconClick != null) Modifier.clickable { 
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onIconClick() 
+                        } else Modifier),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    color = currentAccentColor
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            AppIconMap[iconName] ?: Icons.Rounded.Category,
+                            contentDescription = null,
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                            tint = if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    if (onTitleChange != null) {
+                        BasicTextField(
+                            value = title,
+                            onValueChange = onTitleChange,
+                            textStyle = AppTextStyles.heroAmount.copy(
+                                color = AppColors.contentPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(currentAccentColor),
+                            decorationBox = { innerTextField ->
+                                if (title.isEmpty()) {
+                                    Text(
+                                        "Account Name",
+                                        style = AppTextStyles.heroAmount,
+                                        color = AppColors.contentSecondary.copy(alpha = 0.3f)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = title.ifBlank { "Untitled" },
+                            style = AppTextStyles.heroAmount,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                    
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = AppTextStyles.listItemTitle.copy(
+                                color = AppColors.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
                 }
             }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = title.ifBlank { "Untitled" },
-                    style = AppTextStyles.heroAmount,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = AppTextStyles.listItemTitle.copy(
-                            color = AppColors.primary,
-                            fontWeight = FontWeight.Medium
+        } else {
+            Column(
+                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .size(AeonTheme.dimensions.iconSize3xl)
+                        .then(if (onIconClick != null) Modifier.clickable { 
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onIconClick() 
+                        } else Modifier),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    color = currentAccentColor
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            AppIconMap[iconName] ?: Icons.Rounded.Category,
+                            contentDescription = null,
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                            tint = if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight
                         )
-                    )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (onTitleChange != null) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = title,
+                            onValueChange = onTitleChange,
+                            textStyle = AppTextStyles.heroAmount.copy(
+                                color = AppColors.contentPrimary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(currentAccentColor),
+                            decorationBox = { innerTextField ->
+                                if (title.isEmpty()) {
+                                    Text(
+                                        "Account Name",
+                                        style = AppTextStyles.heroAmount,
+                                        color = AppColors.contentSecondary.copy(alpha = 0.3f),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = title.ifBlank { "Untitled" },
+                            style = AppTextStyles.heroAmount,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = AppTextStyles.listItemTitle.copy(
+                                color = AppColors.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -156,7 +261,7 @@ fun AeonTextField(
     prefix: String? = null
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth().height(56.dp),
+        modifier = modifier.fillMaxWidth().height(34.dp),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = AppColors.insetSurface.copy(alpha = 0.4f)
     ) {
@@ -535,6 +640,7 @@ fun AeonColorSelection(
     showTitle: Boolean = true
 ) {
     var showColorPicker by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         if (showTitle) {
@@ -572,7 +678,10 @@ fun AeonColorSelection(
                             if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
                             else AppColors.transparent
                         )
-                        .clickable(enabled = !isColorLocked) { onColorSelected(colorHex) },
+                        .clickable(enabled = !isColorLocked) { 
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onColorSelected(colorHex) 
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
@@ -636,78 +745,74 @@ fun VisualIdentitySection(
     isColorLocked: Boolean = false
 ) {
     var iconSearchQuery by remember { mutableStateOf("") }
-    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }.take(10)
     var showAllIcons by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.insetSurface.copy(alpha = 0.2f)
-    ) {
-        Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding), verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
-            AeonFlowSectionHeader(title = "VISUAL IDENTITY")
-            
-            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                AeonFlowSectionHeader(title = "IDENTIFIER ICON")
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                    AeonTextField(
-                        value = iconSearchQuery,
-                        onValueChange = { iconSearchQuery = it },
-                        placeholder = "Search 100+ icons...",
-                        leadingIcon = Icons.Rounded.Search,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(
-                        onClick = { showAllIcons = true },
-                        modifier = Modifier.size(56.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
-                    ) {
-                        Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
-                    }
-                }
-
-                if (filteredIcons.isNotEmpty()) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingSm),
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                    ) {
-                        filteredIcons.forEach { name ->
-                            val icon = AppIconMap[name]!!
-                            val isSelected = selectedIconName == name
-                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
-                            Surface(
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clickable { onIconSelected(name) },
-                                shape = CircleShape,
-                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
-                                contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
-                            ) {
-                                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
-                            }
-                        }
-                    }
-                } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
-                    // Show currently selected icon if search is blank
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
-                        Surface(
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
-                            shape = CircleShape,
-                            color = accentColor,
-                            contentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
-                        ) {
-                            Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
-                        }
-                        Text(selectedIconName, style = AppTextStyles.transactionTitle, color = AppColors.border)
-                    }
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+            AeonFlowSectionHeader(title = "IDENTIFIER ICON")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                AeonTextField(
+                    value = iconSearchQuery,
+                    onValueChange = { iconSearchQuery = it },
+                    placeholder = "Search icons...",
+                    leadingIcon = Icons.Rounded.Search,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = { showAllIcons = true },
+                    modifier = Modifier.size(56.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
+                ) {
+                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
                 }
             }
 
-            AeonColorSelection(
-                accentColorHex = accentColorHex,
-                onColorSelected = onColorSelected,
-                isColorLocked = isColorLocked
-            )
+            if (filteredIcons.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingSm),
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                ) {
+                    filteredIcons.forEach { name ->
+                        val icon = AppIconMap[name]!!
+                        val isSelected = selectedIconName == name
+                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
+                        Surface(
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clickable { 
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                onIconSelected(name) 
+                            },
+                            shape = CircleShape,
+                            color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
+                            contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
+                        ) {
+                            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
+                        }
+                    }
+                }
+            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
+                // Show currently selected icon if search is blank
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                    val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
+                    Surface(
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
+                        shape = CircleShape,
+                        color = accentColor,
+                        contentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
+                    }
+                    Text(selectedIconName, style = AppTextStyles.transactionTitle, color = AppColors.border)
+                }
+            }
         }
+
+        AeonColorSelection(
+            accentColorHex = accentColorHex,
+            onColorSelected = onColorSelected,
+            isColorLocked = isColorLocked
+        )
     }
 
     if (showAllIcons) {
@@ -726,6 +831,7 @@ fun VisualIdentitySection(
                             val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
                             Surface(
                                 modifier = Modifier.size(48.dp).clickable { 
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                                     onIconSelected(name)
                                     showAllIcons = false
                                 },

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -20,7 +21,7 @@ class AccountUseCases(
         name: String,
         initialBalances: Map<String, String>,
         currency: String,
-        structureType: String,
+        structureType: AccountStructureType,
         colorHex: String,
         icon: String,
         allowedCurrencies: List<String>,

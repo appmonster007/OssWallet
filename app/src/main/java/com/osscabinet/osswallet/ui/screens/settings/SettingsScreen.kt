@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
@@ -653,7 +654,7 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.screenPadding))
+            Spacer(modifier = Modifier.height(scrollBottomPadding()))
             
             Column(
                 modifier = Modifier.fillMaxWidth(),

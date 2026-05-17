@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
 import java.util.*
@@ -265,7 +266,7 @@ fun RatesTab(uiState: CurrencyUiState) {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = AeonTheme.dimensions.screenPadding)
+            contentPadding = PaddingValues(bottom = scrollBottomPadding())
         ) {
             items(filteredRates) { rate ->
                 val isBase = rate.currencyCode == uiState.baseCurrency

@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
@@ -371,7 +372,7 @@ fun PlannedPaymentDetailScreen(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(32.dp)) }
+            item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
         }
     }
 }

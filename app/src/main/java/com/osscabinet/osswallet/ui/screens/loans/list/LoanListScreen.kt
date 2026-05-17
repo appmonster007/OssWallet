@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -111,7 +112,7 @@ fun LoanListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding),
-                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                    contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                 ) {
                     if (active.isNotEmpty()) {

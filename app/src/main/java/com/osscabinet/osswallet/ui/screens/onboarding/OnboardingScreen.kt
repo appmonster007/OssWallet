@@ -30,6 +30,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCur
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -569,5 +570,7 @@ private fun AppearanceStep(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
 }

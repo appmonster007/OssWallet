@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,12 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import androidx.compose.ui.input.pointer.pointerInput
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+
+@Composable
+fun scrollBottomPadding(): Dp {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    return (screenHeightDp / 2).dp
+}
 
 @Composable
 fun AeonSectionHeader(

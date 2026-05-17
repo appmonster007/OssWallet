@@ -86,7 +86,7 @@ fun CategoryListScreen(
                     )
                 }
             )
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.height(scrollBottomPadding()))
         }
     }
 

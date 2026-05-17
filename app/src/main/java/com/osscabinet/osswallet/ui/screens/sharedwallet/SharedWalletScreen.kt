@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -79,6 +80,7 @@ fun SharedWalletScreen(
                 items(uiState.wallets) { wallet ->
                     WalletItem(wallet)
                 }
+                item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
             }
         }
 

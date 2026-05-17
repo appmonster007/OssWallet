@@ -136,8 +136,10 @@ fun AnalyticsScreen(
                                 onRecordsClick = onRecordsClick,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
-                                    horizontal = AeonTheme.dimensions.screenPadding,
-                                    vertical = AeonTheme.dimensions.spacingMd
+                                    start = AeonTheme.dimensions.screenPadding,
+                                    end = AeonTheme.dimensions.screenPadding,
+                                    top = AeonTheme.dimensions.spacingMd,
+                                    bottom = scrollBottomPadding()
                                 ),
                                 animateCards = cardAnimationEnabled,
                                 currentTheme = currentTheme,

@@ -168,7 +168,6 @@ fun AccountDetailScreen(
                     is FilterEvent.UpdateSettings -> {}
                 }
             },
-            onToggleExpand = { /* Handle if needed */ },
             onClose = { showFilterSheet = false },
             showAccountFilter = false,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },

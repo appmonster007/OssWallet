@@ -107,15 +107,6 @@ fun TransactionListContent(
                 allTransactions = allTransactions,
                 savedFilters = savedFilters,
                 onFilterEvent = onFilterEvent,
-                onToggleExpand = {
-                    scope.launch {
-                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                            scaffoldState.bottomSheetState.expand()
-                        } else {
-                            scaffoldState.bottomSheetState.partialExpand()
-                        }
-                    }
-                },
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
                 backgroundColor = AppColors.insetSurface,
                 accountNames = accountNames,

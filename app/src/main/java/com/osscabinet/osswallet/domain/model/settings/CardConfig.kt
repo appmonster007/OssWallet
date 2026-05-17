@@ -189,6 +189,9 @@ data class CategoryPieChartCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
+    val showFullBreakdown: Boolean = false,
+    val showOnlyActiveCategories: Boolean = true,
+    val showComparison: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
@@ -209,6 +212,9 @@ data class CategoryTreemapCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
+    val showFullBreakdown: Boolean = false,
+    val showOnlyActiveCategories: Boolean = true,
+    val showComparison: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_TREEMAP

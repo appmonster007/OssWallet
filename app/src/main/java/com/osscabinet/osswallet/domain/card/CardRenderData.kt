@@ -75,7 +75,8 @@ sealed class CardRenderData {
 
     data class CategoryPieChart(
         val config: CategoryPieChartCardConfig,
-        val items: List<CategoryTreeMetrics>
+        val items: List<CategoryTreeMetrics>,
+        val previousTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class CategoryTreemap(

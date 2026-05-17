@@ -6,8 +6,11 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import java.math.BigDecimal
 
 class CategoryPieChartCardComputer :
     CardDataComputer<CategoryPieChartCardConfig, CardRenderData.CategoryPieChart> {
@@ -41,6 +44,24 @@ class CategoryPieChartCardComputer :
             baseCurrency = input.baseCurrency
         )
 
-        return CardRenderData.CategoryPieChart(config, tree)
+        // Step 4: Compute previous period total if comparison is enabled
+        val previousTotal: BigDecimal? = if (config.showComparison && expandedFilter.timelineRange !is TimelineRange.AllTime) {
+            val (prevStart, prevEnd) = TimelineService.getPreviousRange(expandedFilter.timelineRange)
+            if (prevStart != null && prevEnd != null) {
+                val prevFilter = expandedFilter.copy(
+                    timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
+                )
+                val prevTx = TransactionFilterService.filter(baseTx, prevFilter)
+                val prevTree = AggregationService.buildCategoryTree(
+                    transactions = prevTx,
+                    allCategories = input.categories,
+                    exchangeRates = input.exchangeRates,
+                    baseCurrency = input.baseCurrency
+                )
+                prevTree.sumOf { it.netBalance.abs() }
+            } else null
+        } else null
+
+        return CardRenderData.CategoryPieChart(config, tree, previousTotal)
     }
 }

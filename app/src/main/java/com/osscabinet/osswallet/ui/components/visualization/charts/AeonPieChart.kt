@@ -50,7 +50,13 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.ui.text.style.TextAlign
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * High-fidelity, interactive pie/donut chart with tooltips.
@@ -64,6 +70,9 @@ fun AeonPieChart(
     isDonut: Boolean = true,
     animate: Boolean = true,
     rounded: Boolean = true,
+    previousTotal: BigDecimal? = null,
+    showComparison: Boolean = false,
+    isAllTime: Boolean = true,
     onSliceClick: (AeonPieChartSlice) -> Unit = {},
     onDrillInClick: (AeonPieChartSlice) -> Unit = {},
     onNavigateToRecords: (AeonPieChartSlice) -> Unit = {}
@@ -267,6 +276,79 @@ fun AeonPieChart(
                     }
                     
                     currentAngle += sliceSweep
+                }
+            }
+
+            // Center total for donut charts
+            if (isDonut) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(dims.spacingSm),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    val formattedTotal = formatCurrencyRight(total, currency, precision, shorten = true)
+                    
+                    Text(
+                        text = "TOTAL",
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = formattedTotal,
+                        style = AppTextStyles.heroAmount,
+                        color = AppColors.contentPrimary,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
+                    )
+
+                    // Comparison Delta
+                    if (showComparison && !isAllTime && previousTotal != null && previousTotal.signum() != 0) {
+                        val delta = total.subtract(previousTotal)
+                            .divide(previousTotal, 8, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal("100"))
+
+                        val isIncrease = delta.signum() > 0
+                        val isDecrease = delta.signum() < 0
+                        
+                        // For expense breakdown, an increase in outflow (more negative) 
+                        // or increase in positive cost is usually "Negative" (Red)
+                        val color = when {
+                            isIncrease -> NegativeAmountColor
+                            isDecrease -> PositiveAmountColor
+                            else -> AppColors.contentSecondary
+                        }
+                        
+                        val icon = when {
+                            isIncrease -> Icons.Default.ArrowUpward
+                            isDecrease -> Icons.Default.ArrowDownward
+                            else -> null
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            if (icon != null) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = color
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                            }
+                            Text(
+                                text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                ),
+                                color = color
+                            )
+                        }
+                    }
                 }
             }
 

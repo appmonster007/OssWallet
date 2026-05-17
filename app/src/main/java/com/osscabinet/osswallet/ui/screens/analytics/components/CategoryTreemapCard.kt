@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.analytics.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -84,8 +85,13 @@ fun CategoryTreemapCard(
     val currentData = navigationStack.last()
     
     // Grouping logic for "Other" category
-    val groupedData = remember(currentData) {
-        val sorted = currentData.sortedByDescending { it.amount.abs() }
+    val groupedData = remember(currentData, config.showOnlyActiveCategories) {
+        val filtered = if (config.showOnlyActiveCategories) {
+            currentData.filter { it.amount.signum() != 0 }
+        } else {
+            currentData
+        }
+        val sorted = filtered.sortedByDescending { it.amount.abs() }
         if (sorted.size > 12) {
             val top = sorted.take(10)
             val others = sorted.drop(10).filter { it.amount.abs() > BigDecimal.ZERO }
@@ -244,7 +250,13 @@ fun CategoryTreemapCard(
         // Consistent Legend for Treemap
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            TreemapLegend(data = groupedData, isDarkTheme = isDarkTheme, isAmoled = isAmoled)
+            TreemapLegend(
+                data = groupedData, 
+                isDarkTheme = isDarkTheme, 
+                isAmoled = isAmoled,
+                showFullBreakdown = config.showFullBreakdown,
+                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
+            )
         }
     }
 
@@ -309,6 +321,18 @@ private fun CategoryTreemapDisplaySettingsDialog(
                     checked = config.rounded,
                     onCheckedChange = { onUpdate(config.copy(rounded = it)) }
                 )
+                AeonSettingsToggle(
+                    label = "FULL BREAKDOWN",
+                    description = "Show all categories in the legend instead of top 5",
+                    checked = config.showFullBreakdown,
+                    onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+                )
+                AeonSettingsToggle(
+                    label = "ACTIVE ONLY",
+                    description = "Only show categories with non-zero values",
+                    checked = config.showOnlyActiveCategories,
+                    onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+                )
             }
         },
         shape = RoundedCornerShape(32.dp),
@@ -317,12 +341,20 @@ private fun CategoryTreemapDisplaySettingsDialog(
 }
 
 @Composable
-fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmoled: Boolean) {
+fun TreemapLegend(
+    data: List<CategoryTreemapData>, 
+    isDarkTheme: Boolean, 
+    isAmoled: Boolean,
+    showFullBreakdown: Boolean,
+    onToggleBreakdown: (Boolean) -> Unit
+) {
+    val displayData = if (showFullBreakdown) data else data.take(5)
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        data.take(5).forEach { item ->
+        displayData.forEach { item ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -354,15 +386,29 @@ fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmole
             }
         }
         
-        if (data.size > 5) {
+        if (!showFullBreakdown && data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                modifier = Modifier.padding(start = 22.dp)
+                color = AppColors.primary,
+                modifier = Modifier
+                    .padding(start = 22.dp)
+                    .clickable { onToggleBreakdown(true) }
+            )
+        } else if (showFullBreakdown && data.size > 5) {
+            Text(
+                text = "Show less",
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = AppColors.primary,
+                modifier = Modifier
+                    .padding(start = 22.dp)
+                    .clickable { onToggleBreakdown(false) }
             )
         }
     }

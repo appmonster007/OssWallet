@@ -70,16 +70,18 @@ object CurrencyFormatter {
     }
 
     /**
-     * Shortens large numbers for UI display (e.g., 1.234M, 10.50K).
-     * Keeps at least 4 digits total and respects requested precision.
+     * Shortens large numbers for UI display (e.g., 3,964.00K, 10.50M).
+     * Adheres to precision while keeping at least 2 integer digits (2+2 or 2+3 min total).
      */
     fun formatShortNumber(value: BigDecimal?, precision: Int = this.precision): String {
         val validValue = value ?: BigDecimal.ZERO
         val absValue = validValue.abs()
+
+        // Use 10x thresholds to ensure at least 2 integer digits in shortened form
         val (divisor, suffix) = when {
-            absValue >= BigDecimal("1000000000000") -> BigDecimal("1000000000000") to "T"
-            absValue >= BigDecimal("1000000000") -> BigDecimal("1000000000") to "B"
-            absValue >= BigDecimal("1000000") -> BigDecimal("1000000") to "M"
+            absValue >= BigDecimal("10000000000000") -> BigDecimal("1000000000000") to "T"
+            absValue >= BigDecimal("10000000000") -> BigDecimal("1000000000") to "B"
+            absValue >= BigDecimal("10000000") -> BigDecimal("1000000") to "M"
             absValue >= BigDecimal("10000") -> BigDecimal("1000") to "K"
             else -> return formatAmount(validValue, precision)
         }
@@ -88,8 +90,9 @@ object CurrencyFormatter {
         val integerPart = shortened.toBigInteger().abs().toString()
         val integerDigits = if (integerPart == "0") 0 else integerPart.length
         
-        // Keep at least 4 digits total (integer + decimal)
-        val adaptiveDecimals = (4 - integerDigits).coerceAtLeast(1)
+        // Adhere to precision while keeping at least 2+precision total digits
+        val targetTotal = 2 + precision
+        val adaptiveDecimals = (targetTotal - integerDigits).coerceAtLeast(1)
         val finalScale = maxOf(adaptiveDecimals, precision)
 
         val result = shortened.setScale(finalScale, RoundingMode.HALF_UP)

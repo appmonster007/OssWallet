@@ -75,7 +75,6 @@ class TransactionEntryViewModel(
             val templates = templateRepository.getAllTemplates().first()
             val payees = transactionUseCases.getUniquePayees(profileId)
             val notes = transactionUseCases.getUniqueNotes(profileId)
-            val use24Hour = settingsRepository.use24HourFormat.first()
             val mapsAccess = settingsRepository.mapsAccessEnabled.first()
             val transactions = transactionUseCases.getTransactions(profileId).first()
 
@@ -110,7 +109,6 @@ class TransactionEntryViewModel(
                 templates = templates,
                 allPayees = payees,
                 allNotes = notes,
-                use24HourFormat = use24Hour,
                 mapsAccessEnabled = mapsAccess,
                 transactions = allRelevantTransactions,
                 selectedAccount = selectedAccount,

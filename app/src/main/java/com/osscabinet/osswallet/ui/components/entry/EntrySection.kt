@@ -156,7 +156,6 @@ fun TransactionEntrySectionPreview() {
                             linkedTransactions = emptyList(),
                             accounts = emptyList(),
                             categories = emptyList(),
-                            is24Hour = true,
                             onShowSheet = {},
                             onRemoveLink = {}
                         )

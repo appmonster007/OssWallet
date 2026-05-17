@@ -54,7 +54,6 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -127,8 +126,7 @@ fun TransactionListScreen(
                 is FilterEvent.Reset -> viewModel.resetToInitialFilter()
             }
         },
-        revealedCardIds = revealedCardIds,
-        is24Hour = use24HourFormat
+        revealedCardIds = revealedCardIds
     )
 }
 

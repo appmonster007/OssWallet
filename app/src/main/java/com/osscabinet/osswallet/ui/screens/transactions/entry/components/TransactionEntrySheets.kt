@@ -29,8 +29,7 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetDate(millis))
                 onEvent(TransactionEntryEvent.ShowDatePicker(false))
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowDatePicker(false)) },
-            is24Hour = state.use24HourFormat
+            onDismiss = { onEvent(TransactionEntryEvent.ShowDatePicker(false)) }
         )
     }
 
@@ -102,7 +101,6 @@ fun TransactionEntrySheets(
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,
             categories = state.categories,
-            is24Hour = state.use24HourFormat,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(TransactionEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },
@@ -157,8 +155,7 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetWarrantyExpiration(millis))
                 onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false))
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false)) },
-            is24Hour = state.use24HourFormat
+            onDismiss = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false)) }
         )
     }
 

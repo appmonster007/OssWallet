@@ -111,7 +111,6 @@ class AccountDetailViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.use24HourFormat,
                 settingsRepository.accountDetailSettings,
                 filter
             ) { args: Array<*> ->
@@ -128,9 +127,8 @@ class AccountDetailViewModel(
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
-                val use24Hour = args[6] as Boolean
-                val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
-                val currentFilter = args[8] as TransactionFilter
+                val settings = args[6] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
+                val currentFilter = args[7] as TransactionFilter
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
@@ -175,7 +173,6 @@ class AccountDetailViewModel(
                     allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    use24HourFormat = use24Hour,
                     showPlannedPayments = settings.transactionsSection.showPlannedPayments,
                     useNoteAsHeader = settings.transactionsSection.useNoteAsHeader,
                     currentFilter = currentFilter
@@ -199,7 +196,6 @@ sealed class AccountDetailUiState {
         val allCategories: List<Category> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val use24HourFormat: Boolean = false,
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false,
         val currentFilter: TransactionFilter = TransactionFilter()

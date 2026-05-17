@@ -59,7 +59,6 @@ fun RecentActivitiesScreen(
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
-    is24Hour: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true
 ) {
@@ -186,10 +185,7 @@ fun RecentActivitiesScreen(
                                     TransactionType.INCOME -> CashFlowType.INCOME
                                     else -> CashFlowType.EXPENSE
                                 },
-                                timestamp = SimpleDateFormat(
-                                    if (is24Hour) "HH:mm" else "hh:mm a",
-                                    Locale.getDefault()
-                                ).format(Date(transaction.timestamp)),
+                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatTime(transaction.timestamp),
                                 note = transaction.note,
                                 tags = transaction.tags,
                                 icon = getIconByName(enriched.categoryIcon),

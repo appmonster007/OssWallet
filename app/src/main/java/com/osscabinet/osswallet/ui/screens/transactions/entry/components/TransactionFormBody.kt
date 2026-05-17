@@ -128,7 +128,6 @@ fun TransactionFormBody(
                         ),
                         accounts = state.accounts,
                         categories = state.categories,
-                        is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(TransactionEntryEvent.RemoveLinkedTransaction(state.transactionId ?: -1L, txId)) },
                         onPaymentMethodClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },

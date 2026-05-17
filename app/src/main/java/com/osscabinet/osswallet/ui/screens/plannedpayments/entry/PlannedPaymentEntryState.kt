@@ -71,8 +71,7 @@ data class PlannedPaymentEntryState(
     val currentProfileId: Int = 1,
     val existingPayment: PlannedPayment? = null,
     val displayLinkedTxs: List<Transaction> = emptyList(),
-    val allTransactions: List<Transaction> = emptyList(),
-    val use24HourFormat: Boolean = false
+    val allTransactions: List<Transaction> = emptyList()
 ) {
     val canSave: Boolean
         get() = name.isNotBlank()

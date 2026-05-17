@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
@@ -140,9 +139,7 @@ fun ExchangeRatesScreen(
                     },
                     actions = {
                         if (pagerState.currentPage == 0) {
-                            val pattern = if (uiState.use24HourFormat) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
-                            val dateFormat = remember(uiState.use24HourFormat) { SimpleDateFormat(pattern, Locale.getDefault()) }
-                            val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "Never"
+                            val lastUpdatedStr = if (uiState.lastUpdated > 0) com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(uiState.lastUpdated) else "Never"
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(horizontalAlignment = Alignment.End) {
@@ -352,9 +349,7 @@ fun RatesTab(uiState: CurrencyUiState) {
             
             item {
                 if (uiState.lastUpdated > 0) {
-                    val pattern = if (uiState.use24HourFormat) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
-                    val dateFormat = remember(pattern) { SimpleDateFormat(pattern, Locale.getDefault()) }
-                    val lastUpdatedStr = remember(uiState.lastUpdated, dateFormat) { dateFormat.format(Date(uiState.lastUpdated)) }
+                    val lastUpdatedStr = com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(uiState.lastUpdated)
                     
                     Text(
                         text = "Last updated: $lastUpdatedStr",

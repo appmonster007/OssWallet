@@ -67,8 +67,7 @@ fun AeonTransactionList(
     showClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
     baseCurrency: String,
-    revealedCardIds: List<Long> = emptyList(),
-    is24Hour: Boolean = false
+    revealedCardIds: List<Long> = emptyList()
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -126,10 +125,7 @@ fun AeonTransactionList(
                             enriched.accountCurrency
                         ),
                         type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                        timestamp = SimpleDateFormat(
-                            if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a",
-                            Locale.getDefault()
-                        ).format(Date(tx.timestamp)),
+                        timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                         note = tx.note,
                         tags = tx.tags,
                         icon = icon,

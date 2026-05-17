@@ -28,7 +28,6 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import java.math.BigDecimal
-import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -43,14 +42,11 @@ fun AeonLinkedTransactionSelection(
     linkedIds: Set<Long>,
     accounts: List<Account>,
     categories: List<Category>,
-    is24Hour: Boolean = false,
     onLinkedTransactionsChanged: (Set<Long>) -> Unit,
     onDismiss: () -> Unit
 ) {
     var selectedIds by remember { mutableStateOf(linkedIds) }
     var query by remember { mutableStateOf("") }
-    val pattern = if (is24Hour) "MMM dd, HH:mm" else "MMM dd, hh:mm a"
-    val sdf = remember(is24Hour) { SimpleDateFormat(pattern, Locale.getDefault()) }
 
     val filteredTransactions = remember(query, transactions) {
         val base = transactions.filter { it.id != currentTransactionId }
@@ -136,7 +132,7 @@ fun AeonLinkedTransactionSelection(
                                             TransactionType.INCOME -> CashFlowType.INCOME
                                             else -> CashFlowType.EXPENSE
                                         },
-                                        timestamp = sdf.format(Date(tx.timestamp)),
+                                        timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                                         note = tx.note,
                                         tags = tx.tags,
                                         icon = icon,

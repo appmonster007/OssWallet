@@ -87,9 +87,6 @@ class TransactionViewModel(
     val categories = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 

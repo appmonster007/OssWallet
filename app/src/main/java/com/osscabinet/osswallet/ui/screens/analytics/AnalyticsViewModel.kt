@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,7 +28,8 @@ class AnalyticsViewModel(
     override val cardRepository: CardRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
-    private val loanRepository: LoanRepository
+    private val loanRepository: LoanRepository,
+    private val computeCardUseCase: ComputeCardUseCase
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -88,6 +90,23 @@ class AnalyticsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AnalyticsUiState.Loading
         )
+
+    val cardDataMap: StateFlow<Map<String, CardRenderData>> = combine(cardsConfig, uiState) { cards, state ->
+        Pair(cards, state)
+    }.transformLatest { (cards, state) ->
+        if (state !is AnalyticsUiState.Success) { emit(emptyMap()); return@transformLatest }
+        val input = CardInput(
+            transactions = state.allTransactions,
+            accounts = state.accounts,
+            categories = state.allCategories,
+            exchangeRates = state.exchangeRates,
+            baseCurrency = state.selectedCurrency,
+            plannedPayments = state.plannedPayments,
+            budgets = state.budgets,
+            loans = state.loans
+        )
+        emit(computeCardUseCase.computeAll(cards.cards, input))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 }
 
 sealed class AnalyticsUiState {

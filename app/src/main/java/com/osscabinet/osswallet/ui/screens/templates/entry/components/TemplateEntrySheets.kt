@@ -157,7 +157,6 @@ fun TemplateEntrySheets(
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,
             categories = state.categories,
-            is24Hour = state.use24HourFormat,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },

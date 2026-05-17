@@ -97,7 +97,6 @@ fun TemplateFormBody(
                         ),
                         accounts = state.accounts,
                         categories = state.categories,
-                        is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(TemplateEntryEvent.RemoveLinkedTransaction(state.templateId ?: -1L, txId)) },
                         onPaymentMethodClick = { onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(true)) },

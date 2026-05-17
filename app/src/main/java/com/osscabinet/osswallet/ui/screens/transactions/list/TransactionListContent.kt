@@ -68,8 +68,7 @@ fun TransactionListContent(
     onMenuClick: () -> Unit = {},
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
-    revealedCardIds: List<Long> = emptyList(),
-    is24Hour: Boolean = false
+    revealedCardIds: List<Long> = emptyList()
 ) {
     val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
     val scaffoldState = rememberBottomSheetScaffoldState(
@@ -155,8 +154,7 @@ fun TransactionListContent(
                     showClosingBalance = recordsSettings.showClosingBalance,
                     showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
                     baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                    revealedCardIds = revealedCardIds,
-                    is24Hour = is24Hour
+                    revealedCardIds = revealedCardIds
                 )
             }
         }

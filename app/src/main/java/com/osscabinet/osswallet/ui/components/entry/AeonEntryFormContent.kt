@@ -113,7 +113,6 @@ fun AeonEntryMetadataSection(
     state: AeonMetadataState,
     accounts: List<Account>,
     categories: List<Category>,
-    is24Hour: Boolean,
     onShowLinkedTransactions: () -> Unit,
     onRemoveLink: (Long) -> Unit,
     onPaymentMethodClick: () -> Unit,
@@ -133,7 +132,6 @@ fun AeonEntryMetadataSection(
             linkedTransactions = state.linkedTransactions,
             accounts = accounts,
             categories = categories,
-            is24Hour = is24Hour,
             onShowSheet = onShowLinkedTransactions,
             onRemoveLink = onRemoveLink
         )

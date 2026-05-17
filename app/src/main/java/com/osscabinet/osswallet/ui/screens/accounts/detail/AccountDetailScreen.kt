@@ -357,7 +357,6 @@ fun AccountDetailScreen(
                                             is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                         }
                                     },
-                                    is24Hour = state.use24HourFormat,
                                     filter = state.currentFilter
                                 )
                             }

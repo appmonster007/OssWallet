@@ -67,6 +67,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
@@ -418,7 +419,7 @@ fun PlannedPaymentListScreen(
                         }
                     }
 
-                    item { Spacer(modifier = Modifier.height(100.dp)) }
+                    item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                 }
             }
 

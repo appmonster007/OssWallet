@@ -48,10 +48,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
@@ -64,6 +62,7 @@ import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -103,18 +102,6 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
-/**
- * Helper function to calculate 30% of screen height as dp padding.
- * This ensures the scroll ends when the last item is 30% above the bottom.
- */
-@Composable
-private fun calculateScrollBottomPadding(): Dp {
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
-    val screenHeightPx = configuration.screenHeightDp * density.density
-    val thirtyPercentPx = screenHeightPx * 0.3f
-    return with(density) { thirtyPercentPx.toDp() }
-}
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -427,7 +414,7 @@ fun DashboardContent(
                             start = AeonTheme.dimensions.screenPadding,
                             end = AeonTheme.dimensions.screenPadding,
                             top = AeonTheme.dimensions.spacingMd,
-                            bottom = calculateScrollBottomPadding()
+                            bottom = scrollBottomPadding()
                         ),
                         animateCards = cardAnimationEnabled,
                         currentTheme = currentTheme,
@@ -461,7 +448,7 @@ fun DashboardContent(
                     listState = state.recentActivitiesState,
                     onRecordsClick = onRecordsClick,
                     baseCurrency = state.baseCurrency,
-                    contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
+                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
                     modifier = Modifier.fillMaxSize(),
                     revealedCardIds = revealedCardIds,
                     onTransactionEvent = { event ->

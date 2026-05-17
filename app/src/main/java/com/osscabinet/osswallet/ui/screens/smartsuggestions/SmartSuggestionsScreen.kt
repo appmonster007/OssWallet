@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -87,7 +88,7 @@ fun SmartSuggestionsScreen(
                     start = AeonTheme.dimensions.screenPadding,
                     end = AeonTheme.dimensions.screenPadding,
                     top = padding.calculateTopPadding() + AeonTheme.dimensions.spacingSm,
-                    bottom = AeonTheme.dimensions.screenPadding
+                    bottom = scrollBottomPadding()
                 ),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -88,7 +89,7 @@ fun FilterListScreen(
                     .padding(innerPadding)
                     .padding(horizontal = AeonTheme.dimensions.screenPadding),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding),
-                contentPadding = PaddingValues(vertical = AeonTheme.dimensions.screenPadding)
+                contentPadding = PaddingValues(top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding())
             ) {
                 items(filters) { filter ->
                     FilterItem(

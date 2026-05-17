@@ -155,7 +155,7 @@ fun TemplateListScreenContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(AppColors.screenBackground),
-                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                    contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                 ) {
                     template, isDragging ->
@@ -171,7 +171,7 @@ fun TemplateListScreenContent(
                     .fillMaxSize()
                     .padding(padding)
                     .background(AppColors.screenBackground),
-                contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
+                contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {
                 items(templates, key = { it.id }) { template ->

@@ -9,11 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
@@ -39,18 +37,6 @@ import java.math.BigDecimal
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
-/**
- * Helper function to calculate 30% of screen height as dp padding.
- * This ensures the scroll ends when the last item is 30% above the bottom.
- */
-@Composable
-private fun calculateScrollBottomPadding(): Dp {
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
-    val screenHeightPx = configuration.screenHeightDp * density.density
-    val thirtyPercentPx = screenHeightPx * 0.3f
-    return with(density) { thirtyPercentPx.toDp() }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +134,7 @@ fun TransactionListContent(
                 AeonTransactionList(
                     listState = listState,
                     onTransactionEvent = onTransactionEvent,
-                    contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
+                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
                     useNoteAsHeader = recordsSettings.useNoteAsHeader,
                     showOpeningBalance = recordsSettings.showOpeningBalance,
                     showClosingBalance = recordsSettings.showClosingBalance,

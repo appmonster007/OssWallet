@@ -90,7 +90,6 @@ fun LoanDetailScreen(
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     baseCurrency: String,
-    precision: Int,
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
@@ -122,7 +121,7 @@ fun LoanDetailScreen(
     // Use precomputed summary from ViewModel (matches BudgetViewModel.budgetProgress pattern).
     // Fall back to empty summary while the combine flow first emits.
     val summary = loanSummaries[loanId] ?: LoanService.buildSummary(
-        loan, emptyList(), System.currentTimeMillis(), precision
+        loan, emptyList(), System.currentTimeMillis()
     )
 
     // Activity tab — canonical filter from LoanService guarantees consistency with summary.
@@ -199,8 +198,7 @@ fun LoanDetailScreen(
                         summary = summary,
                         selectedAccount = selectedAccount,
                         selectedCategories = selectedCategories,
-                        allCategoriesCount = categoriesList.size,
-                        precision = precision
+                        allCategoriesCount = categoriesList.size
                     )
 
                     1 -> {
@@ -228,7 +226,7 @@ fun LoanDetailScreen(
                                 }
                             }
                         } else {
-                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {
+                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, baseCurrency) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = loanTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
@@ -236,8 +234,7 @@ fun LoanDetailScreen(
                                     accounts = accounts,
                                     categories = categoriesList,
                                     baseCurrency = baseCurrency,
-                                    exchangeRates = emptyMap(),
-                                    precision = precision
+                                    exchangeRates = emptyMap()
                                 )
                                 TransactionListState(groups = groups, isEmpty = groups.isEmpty())
                             }
@@ -261,8 +258,7 @@ fun LoanDetailScreen(
                                         is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
                                         is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                     }
-                                },
-                                precision = precision
+                                }
                             )
                         }
                     }
@@ -285,8 +281,7 @@ private fun LoanOverviewTab(
     summary: LoanSummary,
     selectedAccount: com.osscabinet.ossWallet.domain.model.Account?,
     selectedCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
-    allCategoriesCount: Int,
-    precision: Int
+    allCategoriesCount: Int
 ) {
     var showAmortization by remember { mutableStateOf(false) }
     var showAllAmortization by remember { mutableStateOf(false) }
@@ -308,7 +303,6 @@ private fun LoanOverviewTab(
             LoanHeroCard(
                 loan = loan,
                 summary = summary,
-                precision = precision,
                 modifier = Modifier.fillMaxWidth()
             )
         }

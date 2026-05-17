@@ -59,7 +59,6 @@ fun AccountHeroCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    precision: Int = 2,
     callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero()
 ) {
     val accountColor = try {
@@ -74,8 +73,7 @@ fun AccountHeroCard(
         amount = balance,
         fromCurrency = account.currencyCode,
         toCurrency = baseCurrency,
-        exchangeRates = exchangeRates,
-        precision = precision
+        exchangeRates = exchangeRates
     )
 
     AeonExpressiveCard(
@@ -105,7 +103,7 @@ fun AccountHeroCard(
                 )
 
                 val balanceParts =
-                    formatCurrencyRight(balance, account.currencyCode, precision = precision, shorten = true).split(
+                    formatCurrencyRight(balance, account.currencyCode, shorten = true).split(
                         " "
                     )
                 val amountText = balanceParts.dropLast(1).joinToString(" ")
@@ -139,7 +137,6 @@ fun AccountHeroCard(
                             formatCurrencyRight(
                                 balanceInBase,
                                 baseCurrency,
-                                precision = precision,
                                 shorten = true
                             )
                         }",
@@ -218,7 +215,7 @@ fun AccountHeroCard(
                                         )
                                     )
                                     Text(
-                                        formatAmount(bal, precision = precision),
+                                        formatAmount(bal),
                                         style = AppTextStyles.transactionTitle.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = (-0.2).sp

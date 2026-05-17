@@ -9,7 +9,7 @@ import java.util.Stack
  * Enhanced financial expression evaluator
  * Supports Token-based evaluation, implicit multiplication, and binary percentages.
  */
-class ExpressionEvaluator(private val precision: Int = 2) {
+class ExpressionEvaluator(private val precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision) {
 
     fun evaluate(expr: String): BigDecimal {
         // Fallback for string-based evaluation (can be removed if no longer needed)

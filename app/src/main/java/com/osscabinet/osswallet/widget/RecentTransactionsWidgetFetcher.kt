@@ -69,7 +69,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             val account = accountsMap[tx.accountId]
             WidgetTransaction(
                 id = tx.id,
-                amount = formatCurrencyRight(tx.amount.abs(), tx.currency, common.precision),
+                amount = formatCurrencyRight(tx.amount.abs(), tx.currency),
                 currency = tx.currency,
                 type = tx.transactionType.value,
                 category = category?.name ?: "Unknown",

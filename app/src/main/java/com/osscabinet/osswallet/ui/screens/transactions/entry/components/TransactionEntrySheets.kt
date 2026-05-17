@@ -211,7 +211,6 @@ fun TransactionEntrySheets(
         AeonCalculatorSheet(
             currentAmount = state.amount,
             transactionType = state.transactionType,
-            decimalPrecision = state.decimalPrecision,
             onAmountChanged = { amount ->
                 onEvent(TransactionEntryEvent.SetAmount(amount))
             },

@@ -62,7 +62,6 @@ fun AeonTransactionList(
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    precision: Int = 2,
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
@@ -92,7 +91,6 @@ fun AeonTransactionList(
                     totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
                     totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                     baseCurrency = baseCurrency,
-                    precision = precision,
                     showOpeningBalance = showOpeningBalance,
                     showClosingBalance = showClosingBalance,
                     showOnlyActiveCurrencies = showOnlyActiveCurrencies
@@ -114,21 +112,18 @@ fun AeonTransactionList(
                         account = enriched.accountName,
                         amount = formatCurrencyRight(
                             tx.amount,
-                            tx.currency,
-                            precision
+                            tx.currency
                         ),
                         convertedAmount = if ((tx.currency != baseCurrency) && (enriched.amountInBase != null)) {
-                            formatCurrencyRight(enriched.amountInBase, baseCurrency, precision)
+                            formatCurrencyRight(enriched.amountInBase, baseCurrency)
                         } else null,
                         balanceBefore = formatCurrencyRight(
                             enriched.item.balanceBefore,
-                            enriched.accountCurrency,
-                            precision
+                            enriched.accountCurrency
                         ),
                         balanceAfter = formatCurrencyRight(
                             enriched.item.balanceAfter,
-                            enriched.accountCurrency,
-                            precision
+                            enriched.accountCurrency
                         ),
                         type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                         timestamp = SimpleDateFormat(

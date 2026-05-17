@@ -26,9 +26,9 @@ object BudgetService {
         transactions: List<Transaction>,
         exchangeRates: Map<String, BigDecimal>,
         baseCurrency: String,
-        precision: Int,
         now: Long,
-        allCategories: List<Category> = emptyList()
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision
     ): BigDecimal {
         val filteredTransactions =
             filterTransactionsForBudget(budget, transactions, now, allCategories)
@@ -131,10 +131,10 @@ object BudgetService {
         transactions: List<Transaction>,
         exchangeRates: Map<String, BigDecimal>,
         baseCurrency: String,
-        precision: Int,
         now: Long,
         allCategories: List<Category> = emptyList(),
-        depth: Int = 0
+        depth: Int = 0,
+        precision: Int = CurrencyService.precision
     ): BigDecimal {
         if (!budget.rollover || depth >= 12) return BigDecimal.ZERO
         
@@ -146,10 +146,10 @@ object BudgetService {
         
         // Temporarily override budget's timelineRange to previous for spent calculation
         val previousBudget = budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
-        val previousSpent = calculateSpent(previousBudget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories)
+        val previousSpent = calculateSpent(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, precision)
         
         // Cumulative: Previous period's rollover affects its effective limit
-        val previousRollover = calculateRollover(previousBudget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories, depth + 1)
+        val previousRollover = calculateRollover(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, depth + 1, precision)
         val previousEffectiveLimit = budget.limitAmount.add(previousRollover)
         
         return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)

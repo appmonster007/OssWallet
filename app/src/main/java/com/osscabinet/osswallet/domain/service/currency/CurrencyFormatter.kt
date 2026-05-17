@@ -14,9 +14,14 @@ import java.util.Locale
 object CurrencyFormatter {
 
     /**
+     * Global decimal precision used for formatting when not specified.
+     */
+    var precision: Int = 2
+
+    /**
      * Formats an amount with localized grouping and decimal separators.
      */
-    fun formatAmount(amount: BigDecimal?, precision: Int = 2): String {
+    fun formatAmount(amount: BigDecimal?, precision: Int = this.precision): String {
         val validAmount = amount ?: BigDecimal.ZERO
         val symbols = DecimalFormatSymbols(Locale.getDefault())
         val pattern = buildString {
@@ -68,7 +73,7 @@ object CurrencyFormatter {
      * Shortens large numbers for UI display (e.g., 1.234M, 10.50K).
      * Keeps at least 4 digits total and respects requested precision.
      */
-    fun formatShortNumber(value: BigDecimal?, precision: Int = 2): String {
+    fun formatShortNumber(value: BigDecimal?, precision: Int = this.precision): String {
         val validValue = value ?: BigDecimal.ZERO
         val absValue = validValue.abs()
         val (divisor, suffix) = when {
@@ -104,7 +109,7 @@ object CurrencyFormatter {
     /**
      * Formats a currency amount in a shortened form (e.g., "$1.234M", "10.50K €").
      */
-    fun formatShortCurrency(amount: BigDecimal?, currency: String?, precision: Int = 2, symbolOnLeft: Boolean = true): String {
+    fun formatShortCurrency(amount: BigDecimal?, currency: String?, precision: Int = this.precision, symbolOnLeft: Boolean = true): String {
         val shortNumber = formatShortNumber(amount, precision)
         val symbol = getCurrencySymbol(currency)
         return if (symbolOnLeft) "$symbol$shortNumber" else "$shortNumber $symbol"
@@ -116,7 +121,7 @@ object CurrencyFormatter {
     fun formatCurrencyRight(
         amount: BigDecimal?,
         currencyCode: String?,
-        precision: Int = 2,
+        precision: Int = this.precision,
         shorten: Boolean = false
     ): String {
         return if (shorten) {
@@ -134,7 +139,7 @@ object CurrencyFormatter {
     fun formatCurrencyLeft(
         amount: BigDecimal?,
         currencyCode: String?,
-        precision: Int = 2,
+        precision: Int = this.precision,
         shorten: Boolean = false
     ): String {
         return if (shorten) {

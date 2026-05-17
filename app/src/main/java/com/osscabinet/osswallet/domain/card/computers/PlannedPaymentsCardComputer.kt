@@ -46,8 +46,7 @@ class PlannedPaymentsCardComputer :
         return CardRenderData.PlannedPayments(
             config = config,
             upcoming = shownUpcoming,
-            overdue = shownOverdue,
-            precision = input.precision
+            overdue = shownOverdue
         )
     }
 }

@@ -31,9 +31,6 @@ object CardAggregationService {
     ): CardRenderData.NetWorth {
         val currentFilter = input.filter.merge(config.filter)
         
-        val currentSummary = TransactionAggregationService.getSummary(queryService, profileId, currentFilter)
-            .getOrDefault(FinancialSummary.EMPTY)
-        
         val currentTotalsByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, currentFilter)
             .getOrDefault(emptyMap())
             .mapValues { it.value.totalAmount }
@@ -41,8 +38,7 @@ object CardAggregationService {
         val netWorth = CurrencyService.calculateTotalInCurrency(
             currencyTotals = currentTotalsByCurrency,
             targetCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates,
-            precision = input.precision
+            exchangeRates = input.exchangeRates
         )
 
         val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter)
@@ -60,8 +56,7 @@ object CardAggregationService {
                 val prevNetWorth = CurrencyService.calculateTotalInCurrency(
                     currencyTotals = prevTotalsByCurrency,
                     targetCurrency = input.baseCurrency,
-                    exchangeRates = input.exchangeRates,
-                    precision = input.precision
+                    exchangeRates = input.exchangeRates
                 )
                 val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter)
                 NetWorthMetrics(prevNetWorth, prevCashFlow)
@@ -72,7 +67,6 @@ object CardAggregationService {
             config = config,
             currentMetrics = currentMetrics,
             baseCurrency = input.baseCurrency,
-            precision = input.precision,
             previousMetrics = previousMetrics
         )
     }
@@ -89,8 +83,7 @@ object CardAggregationService {
         return CardRenderData.CashFlow(
             config = config,
             result = result,
-            baseCurrency = input.baseCurrency,
-            precision = input.precision
+            baseCurrency = input.baseCurrency
         )
     }
 
@@ -120,20 +113,20 @@ object CardAggregationService {
 
             CashFlowBreakdownItem(
                 currency = curr,
-                income = summary.income.setScale(input.precision, RoundingMode.HALF_UP),
-                incomeInBase = incomeInBase.setScale(input.precision, RoundingMode.HALF_UP),
-                expense = summary.expense.abs().setScale(input.precision, RoundingMode.HALF_UP),
-                expenseInBase = expenseInBase.setScale(input.precision, RoundingMode.HALF_UP),
-                transfer = summary.transfer.setScale(input.precision, RoundingMode.HALF_UP),
-                transferInBase = transferInBase.setScale(input.precision, RoundingMode.HALF_UP)
+                income = summary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                incomeInBase = incomeInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expense = summary.expense.abs().setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expenseInBase = expenseInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transfer = summary.transfer.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transferInBase = transferInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }
 
         return CashFlowResult(
-            totalIncomeInBase = totalIncomeInBase.setScale(input.precision, RoundingMode.HALF_UP),
-            totalExpensesInBase = totalExpenseInBase.setScale(input.precision, RoundingMode.HALF_UP),
-            totalTransfersInBase = totalTransferInBase.setScale(input.precision, RoundingMode.HALF_UP),
-            netInBase = totalIncomeInBase.subtract(totalExpenseInBase).setScale(input.precision, RoundingMode.HALF_UP),
+            totalIncomeInBase = totalIncomeInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            totalExpensesInBase = totalExpenseInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            totalTransfersInBase = totalTransferInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            netInBase = totalIncomeInBase.subtract(totalExpenseInBase).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             breakdown = breakdownItems,
             filteredTransactions = emptyList()
         )
@@ -152,13 +145,13 @@ object CardAggregationService {
         val balances = summariesByCurrency.map { (curr, summary) ->
             CurrencyAggregationItem(
                 currency = curr,
-                amount = summary.totalAmount.setScale(input.precision, RoundingMode.HALF_UP),
+                amount = summary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, input.baseCurrency, input.exchangeRates, 10)
-                    .setScale(input.precision, RoundingMode.HALF_UP)
+                    .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }.sortedByDescending { it.amountInBase.abs() }
 
-        return CardRenderData.CurrencyBalances(config, balances, input.baseCurrency, input.precision)
+        return CardRenderData.CurrencyBalances(config, balances, input.baseCurrency)
     }
 
     suspend fun computeAccountsCard(
@@ -206,8 +199,7 @@ object CardAggregationService {
             input.accounts,
             accountStats,
             input.baseCurrency,
-            "light",
-            input.precision
+            "light"
         )
     }
 
@@ -247,18 +239,17 @@ object CardAggregationService {
         )
 
         val balancesByCurrency = lifetimeSummariesByCurrency
-            .mapValues { it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP) }
+            .mapValues { it.value.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP) }
 
         return CardRenderData.AccountHero(
             config = config,
             account = account,
-            balance = lifetimeSummary.totalAmount.setScale(input.precision, RoundingMode.HALF_UP),
-            income = periodSummary.income.setScale(input.precision, RoundingMode.HALF_UP),
-            expense = periodSummary.expense.abs().setScale(input.precision, RoundingMode.HALF_UP),
+            balance = lifetimeSummary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            income = periodSummary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            expense = periodSummary.expense.abs().setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
-            currencyBalances = balancesByCurrency,
-            precision = input.precision
+            currencyBalances = balancesByCurrency
         )
     }
 }

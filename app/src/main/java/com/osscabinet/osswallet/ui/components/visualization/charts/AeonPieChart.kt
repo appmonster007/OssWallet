@@ -60,7 +60,7 @@ fun AeonPieChart(
     slices: List<AeonPieChartSlice>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     isDonut: Boolean = true,
     animate: Boolean = true,
     rounded: Boolean = true,

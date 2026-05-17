@@ -65,13 +65,12 @@ class LoanViewModel(
         loans,
         transactions,
         _exchangeRates,
-        settingsRepository.decimalPrecision,
         categories
-    ) { loansList, transactionsList, rates, precision, categoriesList ->
+    ) { loansList, transactionsList, rates, categoriesList ->
         val now = System.currentTimeMillis()
         loansList.associate { loan ->
             loan.id to LoanService.buildSummaryFromTransactions(
-                loan, transactionsList, rates, now, precision, categoriesList
+                loan, transactionsList, rates, now, allCategories = categoriesList
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

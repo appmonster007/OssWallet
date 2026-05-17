@@ -45,7 +45,7 @@ fun AeonBarLineChart(
     lineData: List<BigDecimal>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     barColorPositive: Color = ChartColorGreen,
     barColorNegative: Color = ChartColorRed,
     lineColor: Color = ChartColorBlue,

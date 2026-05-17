@@ -70,6 +70,13 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
+            val precision by appContainer.settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
+
+            LaunchedEffect(precision) {
+                com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
+                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision = precision
+                com.osscabinet.ossWallet.domain.service.timeline.TimelineService.precision = precision
+            }
 
             OssWalletTheme(theme = theme) {
                 Surface(

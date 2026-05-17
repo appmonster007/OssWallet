@@ -36,6 +36,11 @@ object TimelineService {
     private val shortDateFormatter = DateTimeFormatter.ofPattern("MMM d")
 
     /**
+     * Global decimal precision used for timeline computations when not specified.
+     */
+    var precision: Int = 2
+
+    /**
      * Gets the date range for a "this period" type.
      */
     fun getRangeForThis(
@@ -255,7 +260,7 @@ object TimelineService {
         groupingType: TransactionGroupingType,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        precision: Int = this.precision
     ): GroupHeaderData {
         data class RangeInfo(val title: String, val subtitle: String, val start: Long, val end: Long)
         val info = when (groupingType) {
@@ -376,7 +381,7 @@ object TimelineService {
         categories: List<Category>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        precision: Int = this.precision
     ): List<TransactionGroup> {
         val groups = groupTransactions(transactions, groupingType)
         val sortedKeys = groups.keys.sortedDescending()

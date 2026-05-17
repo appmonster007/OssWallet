@@ -40,14 +40,13 @@ fun CalculatorNumpad(
     amount: String,
     onAmountChange: (String, TransactionType) -> Unit,
     transactionType: TransactionType = TransactionType.INCOME,
-    decimalPrecision: Int = 2,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var state by remember { mutableStateOf(CalculatorState(transactionType = transactionType)) }
     var showHistory by remember { mutableStateOf(false) }
     
-    val evaluator = remember(decimalPrecision) { ExpressionEvaluator(decimalPrecision) }
+    val evaluator = remember { ExpressionEvaluator() }
     
     LaunchedEffect(transactionType, amount) {
         if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {

@@ -56,7 +56,6 @@ fun RecentActivitiesScreen(
     baseCurrency: String = "USD",
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
     revealedCardIds: List<Long> = emptyList(),
-    precision: Int = 2,
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
@@ -153,7 +152,6 @@ fun RecentActivitiesScreen(
                                 totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
                                 totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                                 baseCurrency = baseCurrency,
-                                precision = precision,
                                 showOpeningBalance = showOpeningBalance,
                                 showClosingBalance = showClosingBalance
                             )
@@ -173,18 +171,15 @@ fun RecentActivitiesScreen(
                                 account = enriched.accountName,
                                 amount = formatCurrencyRight(
                                     transaction.amount,
-                                    transaction.currency,
-                                    precision
+                                    transaction.currency
                                 ),
                                 balanceBefore = formatCurrencyRight(
                                     enriched.item.balanceBefore,
-                                    enriched.accountCurrency,
-                                    precision
+                                    enriched.accountCurrency
                                 ),
                                 balanceAfter = formatCurrencyRight(
                                     enriched.item.balanceAfter,
-                                    enriched.accountCurrency,
-                                    precision
+                                    enriched.accountCurrency
                                 ),
                                 type = when (transaction.transactionType) {
                                     TransactionType.TRANSFER -> CashFlowType.TRANSFER

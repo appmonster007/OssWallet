@@ -32,8 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun BudgetHeroCard(
     budget: Budget,
     progress: BudgetProgress,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
+    modifier: Modifier = Modifier
 ) {
     val accentColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
@@ -74,7 +73,7 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount = formatCurrencyRight(displayAmount, budget.currency, precision = precision, shorten = true)
+                        val amount = formatCurrencyRight(displayAmount, budget.currency, shorten = true)
                         val amountParts = amount.split(" ")
                         val amountText = amountParts.dropLast(1).joinToString(" ")
                         val symbolText = amountParts.lastOrNull() ?: ""
@@ -123,12 +122,12 @@ fun BudgetHeroCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${formatAmount(progress.spent, precision)} spent",
+                        text = "${formatAmount(progress.spent)} spent",
                         style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, precision, shorten = true)}",
+                        text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, shorten = true)}",
                         style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )

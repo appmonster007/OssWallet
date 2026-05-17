@@ -46,7 +46,6 @@ fun TransactionHeader(
     totalOpeningBalanceBase: BigDecimal,
     totalClosingBalanceBase: BigDecimal,
     baseCurrency: String,
-    precision: Int,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
@@ -155,21 +154,21 @@ fun TransactionHeader(
                     val baseColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
 
                     Text(
-                        formatCurrencyRight(incomeBase, baseCurrency, precision, shorten = true),
+                        formatCurrencyRight(incomeBase, baseCurrency, shorten = true),
                         style = styles.baseValueStyle,
                         color = styles.positiveColor,
                         modifier = baseColumnModifier,
                         textAlign = TextAlign.End
                     )
                     Text(
-                        formatCurrencyRight(expenseBase, baseCurrency, precision, shorten = true),
+                        formatCurrencyRight(expenseBase, baseCurrency, shorten = true),
                         style = styles.baseValueStyle,
                         color = styles.negativeColor,
                         modifier = baseColumnModifier,
                         textAlign = TextAlign.End
                     )
                     Text(
-                        formatCurrencyRight(netBase, baseCurrency, precision, shorten = true),
+                        formatCurrencyRight(netBase, baseCurrency, shorten = true),
                         style = styles.baseValueStyle,
                         color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
                         modifier = baseColumnModifier,
@@ -177,8 +176,8 @@ fun TransactionHeader(
                     )
 
                     if (balanceWeight > 0) {
-                        val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, precision, shorten = true)
-                        val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true)
+                        val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, shorten = true)
+                        val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, shorten = true)
                         val balanceText = when {
                             showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
                             showOpeningBalance -> openingBaseText
@@ -224,21 +223,21 @@ fun TransactionHeader(
                                 val breakdownColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
 
                                 Text(
-                                    formatCurrencyRight(inc, curr, precision, shorten = true),
+                                    formatCurrencyRight(inc, curr, shorten = true),
                                     style = styles.breakdownValueStyle,
                                     color = styles.positiveColor.copy(alpha = 0.7f),
                                     modifier = breakdownColumnModifier,
                                     textAlign = TextAlign.End
                                 )
                                 Text(
-                                    formatCurrencyRight(exp, curr, precision, shorten = true),
+                                    formatCurrencyRight(exp, curr, shorten = true),
                                     style = styles.breakdownValueStyle,
                                     color = styles.negativeColor.copy(alpha = 0.7f),
                                     modifier = breakdownColumnModifier,
                                     textAlign = TextAlign.End
                                 )
                                 Text(
-                                    formatCurrencyRight(net, curr, precision, shorten = true),
+                                    formatCurrencyRight(net, curr, shorten = true),
                                     style = styles.breakdownValueStyle.copy(fontWeight = FontWeight.Bold),
                                     color = (if (net >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor).copy(alpha = 0.7f),
                                     modifier = breakdownColumnModifier,
@@ -246,8 +245,8 @@ fun TransactionHeader(
                                 )
 
                                 if (balanceWeight > 0) {
-                                    val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, precision, shorten = true) else "0.00 $curr"
-                                    val balBeforeText = formatCurrencyRight(balBefore, curr, precision, shorten = true)
+                                    val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, shorten = true) else "0.00 $curr"
+                                    val balBeforeText = formatCurrencyRight(balBefore, curr, shorten = true)
 
                                     val balanceText = when {
                                         showOpeningBalance && showClosingBalance -> "$balBeforeText → $balAfterText"
@@ -348,8 +347,7 @@ fun TransactionHeaderPreview() {
             netBase = BigDecimal("2500.00"),
             totalOpeningBalanceBase = BigDecimal("17300.00"),
             totalClosingBalanceBase = BigDecimal("23000.00"),
-            baseCurrency = "USD",
-            precision = 2
+            baseCurrency = "USD"
         )
     }
 }

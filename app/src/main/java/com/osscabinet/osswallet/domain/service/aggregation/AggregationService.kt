@@ -47,7 +47,7 @@ object AggregationService {
         transactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision
     ): CashFlowResult {
         if (transactions.isEmpty()) return CashFlowResult.empty()
 
@@ -101,7 +101,7 @@ object AggregationService {
         transactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        precision: Int = 2
+        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision
     ): List<CurrencyAggregationItem> {
         val summaries = calculateSummaryByCurrency(transactions)
         return summaries.map { (curr, summary) ->
@@ -253,7 +253,7 @@ object AggregationService {
         allCategories: List<Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null,
-        precision: Int = 2
+        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision
     ): List<CategoryTreeMetrics> {
         val categoryMap = allCategories.associateBy { it.id }
 

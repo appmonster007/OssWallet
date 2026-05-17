@@ -36,16 +36,14 @@ class RecentActivitiesCardComputer(
             accounts = input.accounts,
             categories = input.categories,
             baseCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates,
-            precision = input.precision
+            exchangeRates = input.exchangeRates
         )
 
         return CardRenderData.RecentActivities(
             config = config,
             listState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
             baseCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates,
-            precision = input.precision
+            exchangeRates = input.exchangeRates
         )
     }
 }

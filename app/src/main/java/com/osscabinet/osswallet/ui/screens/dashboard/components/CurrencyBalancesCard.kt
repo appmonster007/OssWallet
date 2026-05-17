@@ -38,7 +38,6 @@ fun CurrencyBalancesCard(
     callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    precision: Int = 2,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -80,7 +79,6 @@ fun CurrencyBalancesCard(
                                 amount = item.amount,
                                 inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
-                                precision = precision,
                                 showBaseConversion = config.showBaseConversion,
                                 onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) },
                                 modifier = Modifier.weight(1f)
@@ -105,7 +103,6 @@ fun CurrencyBalancesCard(
                         amount = item.amount,
                         inBase = item.amountInBase,
                         baseCurrency = baseCurrency,
-                        precision = precision,
                         showBaseConversion = config.showBaseConversion,
                         onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) }
                     )
@@ -171,7 +168,6 @@ fun CurrencyBalanceItem(
     amount: BigDecimal,
     inBase: BigDecimal,
     baseCurrency: String,
-    precision: Int = 2,
     showBaseConversion: Boolean = true,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -199,7 +195,7 @@ fun CurrencyBalanceItem(
             )
 
             Text(
-                formatCurrencyRight(amount, curr, precision, shorten = true),
+                formatCurrencyRight(amount, curr, shorten = true),
                 style = AppTextStyles.screenSubTitle.copy(
                     fontFeatureSettings = "tnum",
                     fontWeight = FontWeight.Bold,
@@ -210,7 +206,7 @@ fun CurrencyBalanceItem(
 
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium

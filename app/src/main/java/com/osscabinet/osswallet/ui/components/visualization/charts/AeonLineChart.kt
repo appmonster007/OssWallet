@@ -45,7 +45,7 @@ fun AeonLineChart(
     series: List<AeonLineChartSeries>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2,
+    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     showGrid: Boolean = true,
     animate: Boolean = true,
     onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null

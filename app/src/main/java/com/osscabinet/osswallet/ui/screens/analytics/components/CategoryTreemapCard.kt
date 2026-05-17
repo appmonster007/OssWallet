@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -43,16 +42,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -72,20 +67,12 @@ fun CategoryTreemapCard(
     data: List<CategoryTreemapData>,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    onUpdate: (CategoryTreemapCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {},
-    onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList(),
-    filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+    callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     currentTheme: String = "System",
     precision: Int = 2
 ) {
-    var showDisplaySettings by remember { mutableStateOf(false) }
-    var showFilterSettings by remember { mutableStateOf(false) }
-    
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
         "Dark", "Amoled" -> true
@@ -137,15 +124,11 @@ fun CategoryTreemapCard(
         headerModifier = headerModifier,
         filter = config.filter,
         baseFilter = baseFilter,
-        filterRules = filterRules,
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showFilterSettings = true },
-                activeFilterCount = activeCount
-            )
-            IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Rounded.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = AppColors.primary)
-            }
+        filterRules = config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
+        displaySettings = { onDismiss ->
+            CategoryTreemapDisplaySettingsDialog(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }
     ) {
         if (navigationStack.size > 1) {
@@ -245,7 +228,7 @@ fun CategoryTreemapCard(
                         val clickedItem = groupedData.find { it.category == node.name }
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
-                        onRecordsClick(
+                        callbacks.onRecordsClick(
                             config.filter.copy(
                                 categoryIds = categoryIds.map { it.toLong() }.toSet()
                             )
@@ -266,29 +249,6 @@ fun CategoryTreemapCard(
         }
     }
 
-    if (showDisplaySettings) {
-        CategoryTreemapDisplaySettingsDialog(
-            config = config,
-            onUpdate = onUpdate,
-            onDismiss = { showDisplaySettings = false },
-            onDelete = onDelete
-        )
-    }
-    
-    if (showFilterSettings) {
-        AeonCardSettingsSheet(
-            title = "Treemap Filter",
-            filter = config.filter,
-            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
-            onDismiss = { showFilterSettings = false },
-            onDelete = onDelete,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters,
-            filterRules = config.filterRules,
-            baseFilter = baseFilter
-        )
-    }
 }
 
 @Composable

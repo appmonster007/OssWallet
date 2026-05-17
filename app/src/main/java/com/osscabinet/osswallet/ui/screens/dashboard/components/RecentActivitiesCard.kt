@@ -14,13 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -40,17 +37,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -62,58 +56,33 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun RecentActivitiesCard(
     listState: TransactionListState,
     config: RecentActivitiesCardConfig,
-    onUpdate: (RecentActivitiesCardConfig) -> Unit,
-    onTransactionClick: (Long) -> Unit,
-    onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
-    onDelete: () -> Unit,
+    callbacks: CardCallbacks.RecentActivities,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2,
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDeleteTransaction: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
+    baseFilter: TransactionFilter = TransactionFilter(),
 ) {
-    var showDisplaySettings by remember { mutableStateOf(false) }
-    var showFilterSettings by remember { mutableStateOf(false) }
-
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.History,
         modifier = modifier,
         headerModifier = headerModifier,
         filter = config.filter,
+        baseFilter = baseFilter,
         filterRules = config.filterRules,
-        onClick = { onRecordsClick(config.filter) },
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showFilterSettings = true },
-                activeFilterCount = activeCount
-            )
-            IconButton(
-                onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-            ) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = "Display Settings",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                )
-            }
+        filterContext = filterContext,
+        onClick = { callbacks.onRecordsClick(config.filter) },
+        onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
+        displaySettings = { onDismiss ->
+            RecentActivitiesDisplaySettingsDialog(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }
     ) {
         RecentActivitiesScreen(
             listState = listState,
-            onRecordsClick = onRecordsClick,
+            onRecordsClick = callbacks.onRecordsClick,
             baseCurrency = baseCurrency,
             modifier = Modifier.height(300.dp),
             showHeader = false,
@@ -121,39 +90,16 @@ fun RecentActivitiesCard(
             revealedCardIds = emptyList(),
             onTransactionEvent = { event ->
                 when (event) {
-                    is TransactionItemEvent.Click -> onTransactionClick(event.id)
-                    is TransactionItemEvent.Expand -> onItemExpanded(event.id)
-                    is TransactionItemEvent.Collapse -> onItemCollapsed(event.id)
-                    is TransactionItemEvent.StatusChange -> onStatusChange(event.id, event.status)
-                    is TransactionItemEvent.Clone -> onClone(event.id)
-                    is TransactionItemEvent.Delete -> onDeleteTransaction(event.id)
-                    is TransactionItemEvent.Split -> onSplit(event.id)
-                    is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(event.id)
+                    is TransactionItemEvent.Click -> callbacks.onTransactionClick(event.id)
+                    is TransactionItemEvent.Expand -> callbacks.onItemExpanded(event.id)
+                    is TransactionItemEvent.Collapse -> callbacks.onItemCollapsed(event.id)
+                    is TransactionItemEvent.StatusChange -> callbacks.onStatusChange(event.id, event.status)
+                    is TransactionItemEvent.Clone -> callbacks.onClone(event.id)
+                    is TransactionItemEvent.Delete -> callbacks.onDeleteTransaction(event.id)
+                    is TransactionItemEvent.Split -> callbacks.onSplit(event.id)
+                    is TransactionItemEvent.FullSwipeRight -> callbacks.onFullSwipeRight(event.id)
                 }
             }
-        )
-    }
-
-    if (showDisplaySettings) {
-        RecentActivitiesDisplaySettingsDialog(
-            config = config,
-            onUpdate = onUpdate,
-            onDismiss = { showDisplaySettings = false },
-            onDelete = onDelete
-        )
-    }
-
-    if (showFilterSettings) {
-        AeonCardSettingsSheet(
-            title = "${config.title} Filter",
-            filter = config.filter,
-            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
-            onDismiss = { showFilterSettings = false },
-            onDelete = onDelete,
-            filterRules = config.filterRules,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters
         )
     }
 }

@@ -17,11 +17,9 @@ import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -31,10 +29,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,27 +36,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -71,80 +59,39 @@ fun NetWorthCard(
     currentMetrics: NetWorthMetrics,
     baseCurrency: String,
     precision: Int,
-    cardId: String,
-    fontSize: String,
-    showComparison: Boolean,
-    filter: TransactionFilter,
-    onFontSizeChange: (String, String) -> Unit,
-    onShowComparisonChange: (String, Boolean) -> Unit,
-    onFilterChange: (String, TransactionFilter) -> Unit,
-    onDelete: () -> Unit = {},
-    onClickIncome: (TransactionFilter) -> Unit = {},
-    onClickExpense: (TransactionFilter) -> Unit = {},
-    modifier: Modifier = Modifier,
-    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    config: NetWorthCardConfig,
+    previousMetrics: NetWorthMetrics? = null,
+    callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList(),
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
-    previousMetrics: NetWorthMetrics? = null
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
 ) {
-    var showDisplaySettings by remember { mutableStateOf(false) }
-    var showFilterSettings by remember { mutableStateOf(false) }
-
-    val timelineLabel = when (val tr = filter.timelineRange) {
-        is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> tr.period.label
-        is TimelineRange.LastPeriod -> tr.period.label
-        is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
-            val start = tr.start?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            val end = tr.end?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            "$start - $end"
-        }
-    }
-
     AeonExpressiveCard(
-        title = "Net Worth",
-        subtitle = timelineLabel,
+        title = config.title,
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         headerModifier = headerModifier,
-        filter = filter,
+        filter = config.filter,
         baseFilter = baseFilter,
-        filterRules = filterRules,
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showFilterSettings = true },
-                activeFilterCount = activeCount
-            )
-            IconButton(
-                onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = "Display Settings",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        filterRules = config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        displaySettings = { onDismiss ->
+            NetWorthDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
-            // Primary Figure: Manrope, Bold, 20px (or larger as per font setting)
-            val baseFontSize = when (fontSize) {
+            val baseFontSize = when (config.fontSize) {
                 "Small" -> 18.sp
                 "Large" -> 24.sp
                 "X-Large" -> 32.sp
                 else -> 20.sp
             }
-            
+
             Column {
                 Text(
                     text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision, shorten = true),
@@ -155,13 +102,13 @@ fun NetWorthCard(
                     ),
                     color = AppColors.contentPrimary
                 )
-                
-                if (showComparison && previousMetrics != null) {
+
+                if (config.showComparison && previousMetrics != null) {
                     val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)
                     if (change.signum() != 0 && previousMetrics.netWorth.signum() != 0) {
                         val percentage = change.multiply(BigDecimal("100"))
                             .divide(previousMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
-                        
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -196,8 +143,8 @@ fun NetWorthCard(
                     precision = precision,
                     color = PositiveAmountColor,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
-                    previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
+                    onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
+                    previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
                 FlowBadge(
                     label = "EXPENSE",
@@ -206,38 +153,11 @@ fun NetWorthCard(
                     precision = precision,
                     color = AppColors.error,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
-                    previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
+                    onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
+                    previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }
         }
-    }
-
-    if (showDisplaySettings) {
-        NetWorthDisplaySettingsDialog(
-            fontSize = fontSize,
-            showComparison = showComparison,
-            cardId = cardId,
-            onFontSizeChange = onFontSizeChange,
-            onShowComparisonChange = onShowComparisonChange,
-            onDismiss = { showDisplaySettings = false },
-            onDelete = onDelete
-        )
-    }
-
-    if (showFilterSettings) {
-        AeonCardSettingsSheet(
-            title = "Net Worth Filter",
-            filter = filter,
-            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
-            onDismiss = { showFilterSettings = false },
-            onDelete = onDelete,
-            filterRules = filterRules,
-            baseFilter = baseFilter,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters
-        )
     }
 }
 
@@ -256,7 +176,6 @@ private fun FlowBadge(
         modifier = modifier.clickable(onClick = onClick),
         color = AppColors.insetSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-//        border = BorderStroke(1.dp, AppColors.border)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
@@ -271,12 +190,6 @@ private fun FlowBadge(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                 ) {
-//                Icon(
-//                    if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-//                    contentDescription = null,
-//                    modifier = Modifier.size(14.dp),
-//                    tint = color
-//                )
                     Text(
                         text = label,
                         style = AppTextStyles.transactionSwipeAction.copy(
@@ -284,7 +197,7 @@ private fun FlowBadge(
                             fontSize = 12.sp,
                             letterSpacing = 0.5.sp
                         ),
-                        color = AppColors.contentSecondary // Level 3 Label pairing
+                        color = AppColors.contentSecondary
                     )
                 }
                 if (previousAmount != null) {
@@ -329,25 +242,19 @@ private fun FlowBadge(
 
 @Composable
 private fun NetWorthDisplaySettingsDialog(
-    fontSize: String,
-    showComparison: Boolean,
-    cardId: String,
-    onFontSizeChange: (String, String) -> Unit,
-    onShowComparisonChange: (String, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    config: NetWorthCardConfig,
+    callbacks: CardCallbacks.NetWorth,
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(
                 onClick = {
-                    onDelete()
+                    callbacks.onDelete()
                     onDismiss()
                 },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = AppColors.error
-                )
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -359,19 +266,13 @@ private fun NetWorthDisplaySettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
+            TextButton(onClick = onDismiss) { Text("Done") }
         },
         title = {
-            Text(
-                "Net Worth Display",
-                style = AppTextStyles.cardTitle
-            )
+            Text("Net Worth Display", style = AppTextStyles.cardTitle)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Font Size Selection
                 Surface(
                     color = AppColors.cardSurface,
                     shape = RoundedCornerShape(20.dp),
@@ -390,25 +291,19 @@ private fun NetWorthDisplaySettingsDialog(
                             ),
                             color = AppColors.primary
                         )
-
                         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                             listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                                 SegmentedButton(
-                                    selected = fontSize == size,
-                                    onClick = { onFontSizeChange(cardId, size) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = 4
-                                    ),
-                                    label = { 
-                                        Text(
-                                            when(size) {
-                                                "Small" -> "S"
-                                                "Medium" -> "M"
-                                                "Large" -> "L"
-                                                else -> "XL"
-                                            }
-                                        )
+                                    selected = config.fontSize == size,
+                                    onClick = { callbacks.onFontSizeChange(config.cardId, size) },
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
+                                    label = {
+                                        Text(when (size) {
+                                            "Small" -> "S"
+                                            "Medium" -> "M"
+                                            "Large" -> "L"
+                                            else -> "XL"
+                                        })
                                     }
                                 )
                             }
@@ -416,7 +311,6 @@ private fun NetWorthDisplaySettingsDialog(
                     }
                 }
 
-                // Show Comparison Toggle
                 Surface(
                     color = AppColors.cardSurface,
                     shape = RoundedCornerShape(20.dp),
@@ -446,8 +340,8 @@ private fun NetWorthDisplaySettingsDialog(
                             )
                         }
                         Switch(
-                            checked = showComparison,
-                            onCheckedChange = { onShowComparisonChange(cardId, it) }
+                            checked = config.showComparison,
+                            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
                         )
                     }
                 }
@@ -474,13 +368,8 @@ fun NetWorthCardPreview() {
                     ),
                     baseCurrency = "USD",
                     precision = 2,
-                    cardId = "preview",
-                    fontSize = "Medium",
-                    showComparison = true,
-                    filter = TransactionFilter(),
-                    onFontSizeChange = { _, _ -> },
-                    onShowComparisonChange = { _, _ -> },
-                    onFilterChange = { _, _ -> }
+                    config = NetWorthCardConfig(cardId = "preview"),
+                    callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
                 )
             }
         }
@@ -503,13 +392,8 @@ fun NetWorthCardAmoledPreview() {
                     ),
                     baseCurrency = "USD",
                     precision = 2,
-                    cardId = "preview",
-                    fontSize = "Medium",
-                    showComparison = true,
-                    filter = TransactionFilter(),
-                    onFontSizeChange = { _, _ -> },
-                    onShowComparisonChange = { _, _ -> },
-                    onFilterChange = { _, _ -> }
+                    config = NetWorthCardConfig(cardId = "preview"),
+                    callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
                 )
             }
         }
@@ -531,13 +415,11 @@ fun NetWorthCardComparisonPreview() {
                 ),
                 baseCurrency = "USD",
                 precision = 2,
-                cardId = "preview_comparison",
-                fontSize = "Medium",
-                showComparison = true,
-                filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)),
-                onFontSizeChange = { _, _ -> },
-                onShowComparisonChange = { _, _ -> },
-                onFilterChange = { _, _ -> },
+                config = NetWorthCardConfig(
+                    cardId = "preview_comparison",
+                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
+                ),
+                callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {}),
                 previousMetrics = NetWorthMetrics(
                     netWorth = BigDecimal("122300.50"),
                     cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(

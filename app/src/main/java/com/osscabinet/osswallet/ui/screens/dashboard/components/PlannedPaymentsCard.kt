@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -53,6 +52,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import java.math.BigDecimal
 import java.time.Instant
@@ -68,34 +68,19 @@ fun PlannedPaymentsCard(
     upcoming: List<UpcomingPaymentItem>,
     overdue: List<PlannedPayment>,
     config: PlannedPaymentsCardConfig,
-    onUpdate: (PlannedPaymentsCardConfig) -> Unit,
-    onItemClick: (Long) -> Unit,
-    onDelete: () -> Unit,
-    onConfirmPayment: ((PlannedPayment) -> Unit)? = null,
-    onSkipPayment: ((PlannedPayment) -> Unit)? = null,
+    callbacks: CardCallbacks.PlannedPayments,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    var showSettings by remember { mutableStateOf(false) }
-
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.EventRepeat,
         modifier = modifier,
         headerModifier = headerModifier,
-        headerTrailing = { _ ->
-            IconButton(
-                onClick = { showSettings = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = "Card settings",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        filterEnabled = false,
+        displaySettings = { onDismiss ->
+            PlannedPaymentsSettingsSheet(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -119,9 +104,9 @@ fun PlannedPaymentsCard(
                     currency = payment.currency,
                     dateLabel = "OVERDUE",
                     isOverdue = true,
-                    onClick = { onItemClick(payment.id) },
-                    onConfirm = onConfirmPayment?.let { { it(payment) } },
-                    onSkip = onSkipPayment?.let { { it(payment) } },
+                    onClick = { callbacks.onItemClick(payment.id) },
+                    onConfirm = callbacks.onConfirm?.let { { it(payment.id) } },
+                    onSkip = callbacks.onSkip?.let { { it(payment.id) } },
                     precision = precision
                 )
             }
@@ -133,22 +118,13 @@ fun PlannedPaymentsCard(
                     currency = item.plannedPayment.currency,
                     dateLabel = formatDate(item.scheduledDate),
                     isOverdue = false,
-                    onClick = { onItemClick(item.plannedPayment.id) },
-                    onConfirm = onConfirmPayment?.let { { it(item.plannedPayment) } },
-                    onSkip = onSkipPayment?.let { { it(item.plannedPayment) } },
+                    onClick = { callbacks.onItemClick(item.plannedPayment.id) },
+                    onConfirm = callbacks.onConfirm?.let { { it(item.plannedPayment.id) } },
+                    onSkip = callbacks.onSkip?.let { { it(item.plannedPayment.id) } },
                     precision = precision
                 )
             }
         }
-    }
-
-    if (showSettings) {
-        PlannedPaymentsSettingsSheet(
-            config = config,
-            onUpdate = onUpdate,
-            onDelete = onDelete,
-            onDismiss = { showSettings = false }
-        )
     }
 }
 

@@ -4,10 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -34,56 +34,19 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun LoansCard(
     items: List<LoanSummary>,
     config: LoansCardConfig,
-    onUpdate: (LoansCardConfig) -> Unit,
-    onLoanClick: (Long) -> Unit,
-    onDelete: () -> Unit,
+    callbacks: CardCallbacks.Loans,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
-        headerTrailing = { _ ->
-            Box {
-                IconButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "Options",
-                        tint = AppColors.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    listOf("ALL", "LENT", "BORROWED").forEach { type ->
-                        DropdownMenuItem(
-                            text = { Text(type.lowercase().replaceFirstChar { it.uppercase() }) },
-                            trailingIcon = {
-                                if (config.showType == type) {
-                                    RadioButton(selected = true, onClick = null)
-                                }
-                            },
-                            onClick = {
-                                onUpdate(config.copy(showType = type))
-                                showMenu = false
-                            }
-                        )
-                    }
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Delete card") },
-                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                        onClick = { showMenu = false; onDelete() }
-                    )
-                }
-            }
+        filterEnabled = false,
+        displaySettings = { onDismiss ->
+            LoansDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (items.isEmpty()) {
@@ -98,13 +61,56 @@ fun LoansCard(
                 items.forEach { summary ->
                     LoanSummaryRow(
                         summary = summary,
-                        onClick = { onLoanClick(summary.loan.id) },
+                        onClick = { callbacks.onLoanClick(summary.loan.id) },
                         precision = precision
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun LoansDisplaySettingsDialog(
+    config: LoansCardConfig,
+    callbacks: CardCallbacks.Loans,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = { callbacks.onDelete(); onDismiss() },
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        title = { Text("Loans Display", style = AppTextStyles.cardTitle) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("SHOW TYPE", style = AppTextStyles.transactionSwipeAction.copy(fontWeight = FontWeight.Bold), color = AppColors.primary)
+                listOf("ALL", "LENT", "BORROWED").forEach { type ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(type.lowercase().replaceFirstChar { it.uppercase() }, style = AppTextStyles.transactionTitle)
+                        RadioButton(
+                            selected = config.showType == type,
+                            onClick = { callbacks.onUpdate(config.copy(showType = type)) }
+                        )
+                    }
+                }
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = AppColors.sheetSurface
+    )
 }
 
 @Composable
@@ -237,9 +243,7 @@ fun LoansCardPreview() {
             LoansCard(
                 items = loans,
                 config = com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig(cardId = "preview", title = "Loans"),
-                onUpdate = {},
-                onLoanClick = {},
-                onDelete = {}
+                callbacks = CardCallbacks.Loans(onUpdate = {}, onLoanClick = {}, onDelete = {})
             )
         }
     }

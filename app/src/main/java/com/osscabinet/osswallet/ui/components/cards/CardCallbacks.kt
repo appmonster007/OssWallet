@@ -23,34 +23,34 @@ sealed class CardCallbacks {
      * Callbacks for Net Worth
      */
     data class NetWorth(
-        val onFontSizeChange: (String, String) -> Unit,
-        val onShowComparisonChange: (String, Boolean) -> Unit,
-        val onFilterChange: (String, TransactionFilter) -> Unit,
+        val onFontSizeChange: (String, String) -> Unit = { _, _ -> },
+        val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
         val onClickExpense: ((TransactionFilter) -> Unit)? = null,
-        val onDelete: () -> Unit
+        val onDelete: () -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for currency balances
      */
     data class CurrencyBalances(
-        val onLayoutChange: (String, String) -> Unit,
-        val onShowBaseConversionChange: (String, Boolean) -> Unit,
-        val onFilterChange: (String, TransactionFilter) -> Unit,
+        val onLayoutChange: (String, String) -> Unit = { _, _ -> },
+        val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onCurrencyClick: ((String, TimelineRange) -> Unit)? = null,
-        val onDelete: () -> Unit
+        val onDelete: () -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for cash flow card
      */
     data class CashFlow(
-        val onShowBaseConversionChange: (String, Boolean) -> Unit,
-        val onFilterChange: (String, TransactionFilter) -> Unit,
+        val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
         val onClickExpense: ((TransactionFilter) -> Unit)? = null,
-        val onDelete: () -> Unit
+        val onDelete: () -> Unit = {}
     ) : CardCallbacks()
     
     /**
@@ -76,10 +76,10 @@ sealed class CardCallbacks {
      * Callbacks for accounts card
      */
     data class Accounts(
-        val onGridColumnsChange: (String, Int) -> Unit,
-        val onLayoutChange: (String, String) -> Unit,
-        val onFilterChange: (String, com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
-        val onShowAddAccountCardChange: (String, Boolean) -> Unit,
+        val onGridColumnsChange: (String, Int) -> Unit = { _, _ -> },
+        val onLayoutChange: (String, String) -> Unit = { _, _ -> },
+        val onFilterChange: (String, com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = { _, _ -> },
+        val onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> },
         val onManageClick: () -> Unit = {},
         val onAccountClick: (String) -> Unit = {},
         val onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},

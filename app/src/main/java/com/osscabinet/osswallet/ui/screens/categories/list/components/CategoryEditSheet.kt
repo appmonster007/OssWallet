@@ -11,25 +11,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
-import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 
 @Composable
 fun CategoryEditSheet(
@@ -119,7 +117,7 @@ fun CategoryEditSheet(
                 AeonHeroHeader(
                     title = name,
                     subtitle = if (selectedParentId != null) {
-                        "Sub-category of ${parentCategories.find { it.id == selectedParentId }?.name}"
+                        "Sub-category"
                     } else {
                         "Primary Category"
                     },
@@ -145,45 +143,14 @@ fun CategoryEditSheet(
                     )
 
                     if (showParentPicker && !isMandatory) {
-                        Dialog(onDismissRequest = { showParentPicker = false }) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.95f)
-                                    .fillMaxHeight(0.7f),
-                                shape = RoundedCornerShape(28.dp),
-                                color = AppColors.panelSurface,
-                                tonalElevation = 8.dp
-                            ) {
-                                Column(modifier = Modifier.padding(24.dp)) {
-                                    Text(
-                                        "Select Parent",
-                                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
-                                        modifier = Modifier.padding(bottom = 16.dp)
-                                    )
-                                    
-                                    Box(modifier = Modifier.weight(1f)) {
-                                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                            AeonHierarchicalHybridSelector(
-                                                items = parentCategories.filter { it.id != (category?.id ?: 0L) },
-                                                mode = AeonSelectMode.PARENT,
-                                                selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
-                                                onSelectionChange = { },
-                                                idMapper = { it.id },
-                                                labelMapper = { it.name },
-                                                parentIdMapper = { it.parentId },
-                                                iconMapper = { AppIconMap[it.iconName] },
-                                                colorMapper = { if (it.colorHex == -1) OutlineLight else Color(it.colorHex) },
-                                                noneLabel = "None (Primary Category)",
-                                                onParentSelected = {
-                                                    selectedParentId = it
-                                                    showParentPicker = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        AeonCategorySelection(
+                            categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
+                            selectedCategoryIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
+                            onSelectionChange = { },
+                            onDismiss = { showParentPicker = false },
+                            mode = AeonSelectMode.PARENT,
+                            title = "Select Parent"
+                        )
                     }
 
                     if (selectedParentId != null) {
@@ -230,13 +197,16 @@ fun CategoryEditSheet(
 
     // Nested Visual Identity Dialog
     if (showIdentityDialog) {
-        Dialog(onDismissRequest = { showIdentityDialog = false }) {
+        Dialog(
+            onDismissRequest = { showIdentityDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
+                    .fillMaxWidth(0.9f)
                     .wrapContentHeight()
-                    .padding(vertical = 24.dp),
-                shape = RoundedCornerShape(28.dp),
+                    .padding(vertical = 16.dp),
+                shape = RoundedCornerShape(32.dp),
                 color = AppColors.panelSurface,
                 tonalElevation = 12.dp // Higher elevation than parent
             ) {
@@ -244,19 +214,27 @@ fun CategoryEditSheet(
                     modifier = Modifier
                         .padding(24.dp)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    verticalArrangement = Arrangement.spacedBy(28.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             "Visual Identity",
-                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                            style = AppTextStyles.heroAmount.copy(fontSize = 20.sp)
                         )
-                        IconButton(onClick = { showIdentityDialog = false }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        IconButton(
+                            onClick = { showIdentityDialog = false },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Close, 
+                                contentDescription = "Close",
+                                modifier = Modifier.size(20.dp),
+                                tint = AppColors.contentSecondary
+                            )
                         }
                     }
 

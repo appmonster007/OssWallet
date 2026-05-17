@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
@@ -28,33 +30,44 @@ fun AccountEntrySheets(
     onEvent: (AccountEntryEvent) -> Unit
 ) {
     if (state.showIconSheet) {
-        Dialog(onDismissRequest = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) }) {
+        Dialog(
+            onDismissRequest = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .padding(vertical = 24.dp)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(28.dp),
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight()
+                    .padding(vertical = 16.dp),
+                shape = RoundedCornerShape(32.dp),
                 color = AppColors.panelSurface,
-                tonalElevation = 6.dp
+                tonalElevation = 8.dp
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(AeonTheme.dimensions.screenPadding)
+                        .padding(24.dp)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
+                    verticalArrangement = Arrangement.spacedBy(28.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Visual Identity",
-                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                            style = AppTextStyles.heroAmount.copy(fontSize = 20.sp)
                         )
-                        IconButton(onClick = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        IconButton(
+                            onClick = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Close, 
+                                contentDescription = "Close",
+                                modifier = Modifier.size(20.dp),
+                                tint = AppColors.contentSecondary
+                            )
                         }
                     }
 

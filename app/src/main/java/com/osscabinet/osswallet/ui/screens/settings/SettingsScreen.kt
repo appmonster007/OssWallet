@@ -61,10 +61,13 @@ fun SettingsScreen(
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
+    val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
+    val availableProviders = viewModel.availableProviders
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showProviderDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
@@ -182,12 +185,13 @@ fun SettingsScreen(
     }
 
     if (showCurrencyDialog) {
-        val currencies = remember { getAllCurrencies() }
+        val activeProvider = availableProviders.find { it.id == currencyProviderId } ?: availableProviders.first()
+        val currencies = remember(activeProvider) { activeProvider.fetchSupportedCurrencies() }
         var searchQuery by remember { mutableStateOf("") }
-        val filteredCurrencies = remember(searchQuery) {
+        val filteredCurrencies = remember(searchQuery, currencies) {
             currencies.filter { 
-                it.contains(searchQuery, ignoreCase = true) || 
-                getCurrencyName(it).contains(searchQuery, ignoreCase = true)
+                it.code.contains(searchQuery, ignoreCase = true) || 
+                it.name.contains(searchQuery, ignoreCase = true)
             }
         }
 
@@ -235,9 +239,10 @@ fun SettingsScreen(
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                         ) {
-                            items(filteredCurrencies) { code ->
+                            items(filteredCurrencies) { metadata ->
+                                val code = metadata.code
                                 val symbol = getCurrencySymbol(code)
-                                val name = getCurrencyName(code)
+                                val name = metadata.name
                                 Surface(
                                     onClick = {
                                         viewModel.setCurrency(code)
@@ -267,16 +272,35 @@ fun SettingsScreen(
                                         }
                                         Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                                         Column(modifier = Modifier.weight(1f)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    name, 
+                                                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                                                    color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.contentPrimary
+                                                )
+                                                if (metadata.isVolatile) {
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Icon(
+                                                        Icons.Rounded.Warning, 
+                                                        contentDescription = "Volatile", 
+                                                        tint = AppColors.error,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                }
+                                            }
                                             Text(
-                                                name, 
-                                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                                                color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.contentPrimary
-                                            )
-                                            Text(
-                                                code, 
+                                                "$code • ${metadata.country}", 
                                                 style = AppTextStyles.transactionSwipeAction, 
                                                 color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.7f) else AppColors.border
                                             )
+                                            if (!metadata.note.isNullOrBlank()) {
+                                                Text(
+                                                    metadata.note,
+                                                    style = AppTextStyles.caption.copy(fontSize = 10.sp),
+                                                    color = AppColors.error.copy(alpha = 0.8f),
+                                                    lineHeight = 12.sp
+                                                )
+                                            }
                                         }
                                         if (code == currencyCode) {
                                             Icon(
@@ -302,6 +326,42 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showProviderDialog) {
+        AlertDialog(
+            onDismissRequest = { showProviderDialog = false },
+            title = { Text("Exchange Rate Provider") },
+            text = {
+                Column {
+                    availableProviders.forEach { provider ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setCurrencyProvider(provider.id)
+                                    showProviderDialog = false
+                                }
+                                .padding(AeonTheme.dimensions.cardPadding),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.Api, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(provider.name, style = AppTextStyles.listItemTitle)
+                                Text(provider.attribution, style = AppTextStyles.caption, color = AppColors.border)
+                            }
+                            if (provider.id == currencyProviderId) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showProviderDialog = false }) { Text("Close") }
+            }
+        )
     }
 
     if (showThemeDialog) {
@@ -379,6 +439,13 @@ fun SettingsScreen(
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Exchange Rate Provider",
+                    subtitle = availableProviders.find { it.id == currencyProviderId }?.name ?: "Select Provider",
+                    icon = Icons.Rounded.Api,
+                    onClick = { showProviderDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
@@ -602,7 +669,7 @@ fun SettingsScreen(
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 Text(
-                    "Exchangerate.host",
+                    availableProviders.find { it.id == currencyProviderId }?.attribution ?: "Exchangerate.host",
                     modifier = Modifier.clickable {
                         // In a real app, use Context to open the URL
                     },

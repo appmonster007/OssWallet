@@ -75,7 +75,8 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.profileRepository,
                 appContainer.backupRepository,
-                appContainer.currencyRepository
+                appContainer.currencyRepository,
+                appContainer.exchangeRateProviderRegistry
             )
         }
     )

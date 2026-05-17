@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
+import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
@@ -30,7 +32,8 @@ class SettingsViewModel(
     settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    private val providerRegistry: ExchangeRateProviderRegistry
 ) : BaseViewModel(settingsRepository) {
 
     val currency: StateFlow<String> = settingsRepository.currency
@@ -74,6 +77,11 @@ class SettingsViewModel(
 
     val mapsAccessEnabled: StateFlow<Boolean> = settingsRepository.mapsAccessEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
+
+    val availableProviders: List<ExchangeRateProvider> = providerRegistry.getAllProviders()
 
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
@@ -197,6 +205,14 @@ class SettingsViewModel(
     fun setMapsAccessEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveMapsAccessEnabled(enabled)
+        }
+    }
+
+    fun setCurrencyProvider(providerId: String) {
+        viewModelScope.launch {
+            settingsRepository.saveCurrencyProvider(providerId)
+            // Trigger a refresh with the new provider
+            fetchAndSaveRates(currency.value)
         }
     }
 

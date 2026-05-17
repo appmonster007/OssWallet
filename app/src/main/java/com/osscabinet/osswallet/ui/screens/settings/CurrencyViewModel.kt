@@ -2,7 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
-import com.osscabinet.ossWallet.data.remote.CurrencyResponse
+import com.osscabinet.ossWallet.domain.model.currency.CurrencyRates
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -49,7 +49,7 @@ class CurrencyViewModel(
                         currencyCode = code,
                         rate = rate,
                         timestamp = System.currentTimeMillis(),
-                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000 // Placeholder
+                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000L // 24h fallback
                     )
                 }
                 _uiState.update { it.copy(rates = entities, lastUpdated = System.currentTimeMillis(), isLoading = false) }
@@ -64,12 +64,12 @@ class CurrencyViewModel(
             val base = _uiState.value.baseCurrency
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val response = currencyRepository.fetchFreshRates(base)
+                val rates = currencyRepository.fetchFreshRates(base)
                 if (autoSave) {
-                    currencyRepository.saveRates(base, response)
+                    currencyRepository.saveRates(base, rates)
                     loadRates(base)
                 } else {
-                    _uiState.update { it.copy(pendingResponse = response, isLoading = false) }
+                    _uiState.update { it.copy(pendingRates = rates, isLoading = false) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(syncError = e.message, isLoading = false) }
@@ -80,15 +80,15 @@ class CurrencyViewModel(
     fun confirmSaveRates() {
         viewModelScope.launch {
             val base = _uiState.value.baseCurrency
-            val response = _uiState.value.pendingResponse ?: return@launch
-            currencyRepository.saveRates(base, response)
-            _uiState.update { it.copy(pendingResponse = null) }
+            val rates = _uiState.value.pendingRates ?: return@launch
+            currencyRepository.saveRates(base, rates)
+            _uiState.update { it.copy(pendingRates = null) }
             loadRates(base)
         }
     }
 
     fun cancelSaveRates() {
-        _uiState.update { it.copy(pendingResponse = null) }
+        _uiState.update { it.copy(pendingRates = null) }
     }
 
     fun clearError() {
@@ -108,6 +108,6 @@ data class CurrencyUiState(
     val lastUpdated: Long = 0,
     val isLoading: Boolean = false,
     val syncError: String? = null,
-    val pendingResponse: CurrencyResponse? = null,
+    val pendingRates: CurrencyRates? = null,
     val use24HourFormat: Boolean = false
 )

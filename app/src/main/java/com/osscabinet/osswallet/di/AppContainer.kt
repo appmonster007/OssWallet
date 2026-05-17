@@ -36,6 +36,9 @@ import com.osscabinet.ossWallet.domain.card.computers.LoansCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.RecentActivitiesCardComputer
+import com.osscabinet.ossWallet.data.remote.provider.ExchangeRateApiProvider
+import com.osscabinet.ossWallet.data.remote.provider.FrankfurterProvider
+import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
@@ -148,8 +151,15 @@ class AppContainer(private val context: Context) {
         AccountRepositoryImpl(db.accountDao())
     }
 
+    val exchangeRateProviderRegistry: ExchangeRateProviderRegistry by lazy {
+        ExchangeRateProviderRegistry(listOf(
+            ExchangeRateApiProvider(RetrofitClient.exchangeRateApi),
+            FrankfurterProvider(RetrofitClient.frankfurterApi)
+        ))
+    }
+
     val currencyRepository: CurrencyRepository by lazy {
-        CurrencyRepositoryImpl(RetrofitClient.currencyApi, db.currencyDao())
+        CurrencyRepositoryImpl(exchangeRateProviderRegistry, db.currencyDao(), settingsRepository)
     }
 
     val profileRepository: ProfileRepository by lazy {

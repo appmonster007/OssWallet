@@ -54,20 +54,19 @@ fun ExchangeRatesScreen(
 
     // navigateBack removed
 
-    if (uiState.pendingResponse != null) {
+    if (uiState.pendingRates != null) {
         AlertDialog(
             onDismissRequest = { viewModel.cancelSaveRates() },
             title = { Text("Confirm Exchange Rates") },
             text = {
-                val response = uiState.pendingResponse
-                val jsonPreview = remember(response) {
+                val rates = uiState.pendingRates
+                val jsonPreview = remember(rates) {
                     """
                     {
-                      "result": "${response?.result}",
-                      "base_code": "${response?.baseCode}",
+                      "base_currency": "${rates?.baseCurrency}",
                       "rates": {
-                        ${response?.rates?.entries?.take(5)?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }}
-                        ... (+${(response?.rates?.size ?: 5) - 5} more)
+                        ${rates?.rates?.entries?.take(5)?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }}
+                        ... (+${(rates?.rates?.size ?: 5) - 5} more)
                       }
                     }
                     """.trimIndent()

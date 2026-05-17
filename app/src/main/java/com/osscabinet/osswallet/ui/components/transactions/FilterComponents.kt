@@ -372,80 +372,83 @@ fun FilterFields(
             }
         }
 
-        // Primary Context Grid (Type and Accounts/Categories)
+        // Primary Context Grid (Type, Accounts, Categories, Currencies)
+        AeonContextGrid {
+            EntryActionRow {
+                // Type Card
+                EntryActionCard(
+                    icon = if (filter.transactionTypes.size == 1) {
+                        when (filter.transactionTypes.first()) {
+                            TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                            TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
+                            else -> Icons.Default.FilterList
+                        }
+                    } else Icons.Default.FilterList,
+                    label = "TYPES",
+                    value = when {
+                        filter.transactionTypes.isEmpty() -> "All"
+                        filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
+                        else -> "${filter.transactionTypes.size} Selected"
+                    },
+                    isSelected = filter.transactionTypes.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                    onClick = { activeSheet = "Types" },
+                    iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                    iconTint = AppColors.primary
+                )
+
+                // Accounts Card
+                if (filterRules.allowAccountSelection && showAccountFilter) {
+                    EntryActionCard(
+                        icon = Icons.Default.AccountBalance,
+                        label = "ACCOUNTS",
+                        value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
+                        isSelected = filter.accountIds.isNotEmpty(),
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeSheet = "Accounts" },
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
+                    )
+                }
+            }
+
+            EntryActionRow {
+                // Categories Card
+                if (filterRules.allowCategorySelection) {
+                    EntryActionCard(
+                        icon = Icons.Default.Category,
+                        label = "CATEGORIES",
+                        value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
+                        isSelected = filter.categoryIds.isNotEmpty(),
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeSheet = "Categories" },
+                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = AppColors.tertiary
+                    )
+                }
+
+                // Currency Card
+                if (filterRules.allowCurrencySelection) {
+                    EntryActionCard(
+                        icon = Icons.Default.MonetizationOn,
+                        label = "CURRENCIES",
+                        value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
+                        isSelected = filter.currencies.isNotEmpty(),
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeSheet = "Currencies" },
+                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = AppColors.primary
+                    )
+                }
+            }
+        }
+
+        // Secondary Context section (Tags and Toggles)
         EntrySection(
             title = "CONTEXT",
             icon = Icons.Rounded.Explore
         ) {
             AeonContextGrid {
-                EntryActionRow {
-                    // Type Card
-                    EntryActionCard(
-                        icon = if (filter.transactionTypes.size == 1) {
-                            when (filter.transactionTypes.first()) {
-                                TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
-                                TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                                else -> Icons.Default.FilterList
-                            }
-                        } else Icons.Default.FilterList,
-                        label = "TYPES",
-                        value = when {
-                            filter.transactionTypes.isEmpty() -> "All"
-                            filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
-                            else -> "${filter.transactionTypes.size} Selected"
-                        },
-                        isSelected = filter.transactionTypes.isNotEmpty(),
-                        modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Types" },
-                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                        iconTint = AppColors.primary
-                    )
-
-                    // Accounts Card
-                    if (filterRules.allowAccountSelection && showAccountFilter) {
-                        EntryActionCard(
-                            icon = Icons.Default.AccountBalance,
-                            label = "ACCOUNTS",
-                            value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
-                            isSelected = filter.accountIds.isNotEmpty(),
-                            modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "Accounts" },
-                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                            iconTint = AppColors.primary
-                        )
-                    }
-                }
-
-                EntryActionRow {
-                    // Categories Card
-                    if (filterRules.allowCategorySelection) {
-                        EntryActionCard(
-                            icon = Icons.Default.Category,
-                            label = "CATEGORIES",
-                            value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
-                            isSelected = filter.categoryIds.isNotEmpty(),
-                            modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "Categories" },
-                            iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                            iconTint = AppColors.tertiary
-                        )
-                    }
-
-                    // Currency Card
-                    if (filterRules.allowCurrencySelection) {
-                        EntryActionCard(
-                            icon = Icons.Default.MonetizationOn,
-                            label = "CURRENCIES",
-                            value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
-                            isSelected = filter.currencies.isNotEmpty(),
-                            modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "Currencies" },
-                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                            iconTint = AppColors.primary
-                        )
-                    }
-                }
-
                 // Tags Card
                 if (filterRules.allowTagSelection) {
                     EntryActionRow {

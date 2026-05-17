@@ -13,6 +13,18 @@ import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import java.math.BigDecimal
 
+enum class CashFlowComparisonGranularity { DAY, WEEK, MONTH }
+
+data class CashFlowTimePoint(
+    val label: String,
+    val epochMillis: Long,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val net: BigDecimal
+)
+
+data class CashFlowComparisonSeries(val points: List<CashFlowTimePoint>)
+
 /**
  * Metrics specifically for Net Worth card rendering.
  */
@@ -103,5 +115,27 @@ sealed class CardRenderData {
         val listState: TransactionListState,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>
+    ) : CardRenderData()
+
+    data class CashFlowComparison(
+        val config: CashFlowComparisonCardConfig,
+        val currentSeries: CashFlowComparisonSeries,
+        val previousSeries: CashFlowComparisonSeries,
+        val lastYearSeries: CashFlowComparisonSeries,
+        val baseCurrency: String,
+        val granularity: CashFlowComparisonGranularity,
+        // Labels for every bucket in the full current period (no zero-origin sentinel).
+        // Used to drive the x-axis when currentSeries is truncated at today.
+        val periodLabels: List<String> = emptyList()
+    ) : CardRenderData()
+
+    data class IncomeExpenseBar(
+        val config: com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig,
+        val buckets: List<CashFlowTimePoint>,
+        val granularity: CashFlowComparisonGranularity,
+        val baseCurrency: String,
+        // Index of the last bucket whose start time is ≤ today.
+        // -1 means all buckets are in the future. Used to terminate the net line at today.
+        val todayBucketIndex: Int = -1
     ) : CardRenderData()
 }

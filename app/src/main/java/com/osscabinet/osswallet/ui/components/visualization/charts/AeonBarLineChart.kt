@@ -29,19 +29,34 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import android.graphics.Paint as AndroidPaint
 
 /**
  * High-fidelity, interactive bar + line chart for dual-axis visualization.
+ *
+ * When [incomeData] and [expenseData] are both non-empty, draws TWO bars per bucket:
+ *   - Income bar: positive, green, left half of the bucket slot
+ *   - Expense bar: negative (drawn downward from zero), red, right half
+ *
+ * When only [barData] is provided (legacy), keeps existing single-bar behavior unchanged.
+ *
+ * The line uses a cubic bezier curve instead of straight segments for a smooth appearance.
+ *
+ * When [showXAxisLabels] is true, labels from [xLabels] are drawn below the chart axis.
+ * At most every max(1, total/6) labels are shown, always including the last.
+ *
+ * [lineThicknessDp] overrides the default line stroke width when > 0.
  */
 @Composable
 fun AeonBarLineChart(
-    barData: List<BigDecimal>,
+    barData: List<BigDecimal> = emptyList(),
     lineData: List<BigDecimal>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
@@ -51,9 +66,22 @@ fun AeonBarLineChart(
     lineColor: Color = ChartColorBlue,
     animate: Boolean = true,
     smaData: List<Double>? = null,
-    onNavigateToRecords: ((Int) -> Unit)? = null
+    onNavigateToRecords: ((Int) -> Unit)? = null,
+    // New parameters for income/expense dual-bar mode
+    incomeData: List<BigDecimal> = emptyList(),
+    expenseData: List<BigDecimal> = emptyList(),
+    xLabels: List<String?> = emptyList(),
+    showXAxisLabels: Boolean = false,
+    lineThicknessDp: Float = 0f,
+    showGrid: Boolean = true
 ) {
-    if (barData.isEmpty() || lineData.isEmpty()) {
+    val dualBarMode = incomeData.isNotEmpty() && expenseData.isNotEmpty()
+    val effectiveBarData = when {
+        dualBarMode -> incomeData  // used only for index/total counting
+        else -> barData
+    }
+
+    if (effectiveBarData.isEmpty() || lineData.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data available", style = AppTextStyles.caption)
         }
@@ -65,7 +93,7 @@ fun AeonBarLineChart(
     val dims = AeonTheme.dimensions
 
     val animationProgress = remember { Animatable(0f) }
-    LaunchedEffect(barData, lineData) {
+    LaunchedEffect(barData, lineData, incomeData, expenseData) {
         if (animate) {
             animationProgress.snapTo(0f)
             animationProgress.animateTo(1f, tween(1000))
@@ -74,12 +102,22 @@ fun AeonBarLineChart(
         }
     }
 
+    // Extra bottom padding for x-axis labels
+    val xLabelExtraDp = if (showXAxisLabels) 14.dp else 0.dp
+
     BoxWithConstraints(modifier = modifier) {
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
+        val xLabelExtraPx = with(density) { xLabelExtraDp.toPx() }
         val padding = 60f
+        val bottomPadding = padding + xLabelExtraPx
 
-        val allValues = barData + lineData
+        val allValues = if (dualBarMode) {
+            incomeData + expenseData.map { it.negate() } + lineData
+        } else {
+            effectiveBarData + lineData
+        }
+
         if (allValues.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No data available", style = AppTextStyles.caption)
@@ -89,7 +127,7 @@ fun AeonBarLineChart(
 
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
-        
+
         val range = (maxY - minY).abs()
         val paddingY = if (range.signum() == 0) BigDecimal.ONE else range.multiply(BigDecimal("0.1"))
         val effectiveMinY = minY - paddingY
@@ -98,7 +136,7 @@ fun AeonBarLineChart(
 
         fun valueToY(value: BigDecimal): Float {
             val normalized = (value - effectiveMinY).divide(effectiveRange, 10, RoundingMode.HALF_UP).toFloat()
-            return heightPx - padding - (normalized * (heightPx - 2 * padding))
+            return heightPx - bottomPadding - (normalized * (heightPx - padding - bottomPadding))
         }
 
         fun indexToX(index: Int, total: Int): Float {
@@ -109,7 +147,7 @@ fun AeonBarLineChart(
         val zeroY = valueToY(BigDecimal.ZERO)
 
         fun findIndex(offsetX: Float): Int {
-            val total = barData.size
+            val total = effectiveBarData.size
             val step = (widthPx - 2 * padding) / (total - 1).coerceAtLeast(1)
             return ((offsetX - padding + step / 2) / step).toInt().coerceIn(0, total - 1)
         }
@@ -120,7 +158,7 @@ fun AeonBarLineChart(
                 .semantics {
                     contentDescription = "Bar and line chart comparison. Drag or tap to explore values."
                 }
-                .pointerInput(barData, lineData) {
+                .pointerInput(barData, lineData, incomeData, expenseData) {
                     detectDragGestures(
                         onDragStart = { offset -> selectedIndex = findIndex(offset.x) },
                         onDrag = { change, _ -> selectedIndex = findIndex(change.position.x) },
@@ -128,7 +166,7 @@ fun AeonBarLineChart(
                         onDragCancel = { selectedIndex = null }
                     )
                 }
-                .pointerInput(barData, lineData) {
+                .pointerInput(barData, lineData, incomeData, expenseData) {
                     detectTapGestures(
                         onTap = { offset -> selectedIndex = findIndex(offset.x) },
                         onLongPress = {
@@ -138,59 +176,170 @@ fun AeonBarLineChart(
                 }
         ) {
             // 1. Draw Grid
-            val gridColor = ChartGridColor
-            for (i in 0..4) {
-                val y = padding + (i * (heightPx - 2 * padding) / 4)
-                drawLine(color = gridColor, start = Offset(padding, y), end = Offset(widthPx - padding, y), strokeWidth = 1f)
+            if (showGrid) {
+                val gridColor = ChartGridColor.copy(alpha = 0.25f)
+                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
+                for (i in 0..4) {
+                    val y = padding + (i * (heightPx - padding - bottomPadding) / 4)
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(padding, y),
+                        end = Offset(widthPx - padding, y),
+                        strokeWidth = 1f,
+                        pathEffect = dashEffect
+                    )
+                }
             }
-            
+
             // Zero Line
-            drawLine(color = ChartZeroLineColor, start = Offset(padding, zeroY), end = Offset(widthPx - padding, zeroY), strokeWidth = (dims.spacingXs / 4).toPx())
+            drawLine(
+                color = ChartZeroLineColor,
+                start = Offset(padding, zeroY),
+                end = Offset(widthPx - padding, zeroY),
+                strokeWidth = (dims.spacingXs / 4).toPx()
+            )
 
             // 2. Draw Bars
-            val barWidth = (widthPx - 2 * padding) / barData.size * 0.5f
-            barData.forEachIndexed { index, value ->
-                val x = indexToX(index, barData.size)
+            if (dualBarMode) {
+                val totalBuckets = incomeData.size
+                val slotWidth = (widthPx - 2 * padding) / totalBuckets.coerceAtLeast(1)
+                val halfBarWidth = slotWidth * 0.35f  // each half-bar is 35% of the slot
+
+                incomeData.forEachIndexed { index, incomeVal ->
+                    val slotCenterX = padding + (index + 0.5f) * slotWidth
+                    val incomeX = slotCenterX - halfBarWidth / 2
+                    val incomeY = valueToY(incomeVal)
+                    val animatedIncomeY = zeroY - (zeroY - incomeY) * animationProgress.value
+
+                    val incomeTop = if (incomeVal >= BigDecimal.ZERO) animatedIncomeY else zeroY
+                    val incomeBottom = if (incomeVal >= BigDecimal.ZERO) zeroY else animatedIncomeY
+
+                    drawRoundRect(
+                        color = barColorPositive.copy(alpha = 0.8f),
+                        topLeft = Offset(incomeX, incomeTop),
+                        size = Size(halfBarWidth, (incomeBottom - incomeTop).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                    )
+                }
+
+                expenseData.forEachIndexed { index, expenseVal ->
+                    val slotCenterX = padding + (index + 0.5f) * slotWidth
+                    val expenseX = slotCenterX  // right half of the slot
+                    // Expense is stored as positive, drawn as negative (below zero)
+                    val negExpense = expenseVal.negate()
+                    val expenseY = valueToY(negExpense)
+                    // expenseY > zeroY in canvas coords (below the zero line)
+                    val animatedExpenseY = zeroY + (expenseY - zeroY) * animationProgress.value
+
+                    // topLeft.y = zeroY (the zero line), bar extends downward to animatedExpenseY
+                    drawRoundRect(
+                        color = barColorNegative.copy(alpha = 0.8f),
+                        topLeft = Offset(expenseX, zeroY),
+                        size = Size(halfBarWidth, (animatedExpenseY - zeroY).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                    )
+                }
+            } else {
+                val barWidth = (widthPx - 2 * padding) / effectiveBarData.size * 0.5f
+                effectiveBarData.forEachIndexed { index, value ->
+                    val x = indexToX(index, effectiveBarData.size)
+                    val y = valueToY(value)
+
+                    val animatedY = zeroY - (zeroY - y) * animationProgress.value
+                    val color = if (value >= BigDecimal.ZERO) barColorPositive else barColorNegative
+
+                    val top = if (value >= BigDecimal.ZERO) animatedY else zeroY
+                    val bottom = if (value >= BigDecimal.ZERO) zeroY else animatedY
+
+                    drawRoundRect(
+                        color = color.copy(alpha = 0.8f),
+                        topLeft = Offset(x - barWidth / 2, top),
+                        size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                    )
+                }
+            }
+
+            // 3. Draw Line (+ gradient area fill in dual-bar mode) using cubic bezier
+            // In dual-bar mode, align line points to bar slot centers for visual consistency
+            val linePath = Path()
+            val areaPath = if (dualBarMode) Path() else null
+            var prevX = 0f
+            var prevY = 0f
+            val lineTotal = lineData.size
+            // In dual-bar mode use the full-period slot count (incomeData.size) so a truncated net
+            // line shares the same x-spacing as the bars rather than stretching to fill the chart.
+            val fullPeriodSlots = if (dualBarMode) incomeData.size else lineTotal
+            val lineSlotWidth = if (dualBarMode && fullPeriodSlots > 0) {
+                (widthPx - 2 * padding) / fullPeriodSlots
+            } else 0f
+            lineData.forEachIndexed { index, value ->
+                val x = if (dualBarMode) {
+                    padding + (index + 0.5f) * lineSlotWidth
+                } else {
+                    indexToX(index, lineTotal)
+                }
                 val y = valueToY(value)
-                
-                val animatedY = zeroY - (zeroY - y) * animationProgress.value
-                val color = if (value >= BigDecimal.ZERO) barColorPositive else barColorNegative
-                
-                val top = if (value >= BigDecimal.ZERO) animatedY else zeroY
-                val bottom = if (value >= BigDecimal.ZERO) zeroY else animatedY
-                
-                drawRoundRect(
-                    color = color.copy(alpha = 0.8f),
-                    topLeft = Offset(x - barWidth / 2, top),
-                    size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                    cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                val animatedY = heightPx - bottomPadding - (heightPx - bottomPadding - y) * animationProgress.value
+
+                if (index == 0) {
+                    linePath.moveTo(x, animatedY)
+                    areaPath?.moveTo(x, heightPx - bottomPadding)
+                    areaPath?.lineTo(x, animatedY)
+                } else {
+                    val dx = x - prevX
+                    linePath.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
+                    areaPath?.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
+                }
+                if (index == lineTotal - 1) {
+                    areaPath?.lineTo(x, heightPx - bottomPadding)
+                    areaPath?.close()
+                }
+                prevX = x
+                prevY = animatedY
+            }
+
+            // Draw area gradient fill under the net line (dual-bar mode only)
+            areaPath?.let {
+                drawPath(
+                    path = it,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(lineColor.copy(alpha = 0.2f), lineColor.copy(alpha = 0f)),
+                        startY = padding,
+                        endY = heightPx - bottomPadding
+                    )
                 )
             }
 
-            // 3. Draw Line
-            val linePath = Path()
-            lineData.forEachIndexed { index, value ->
-                val x = indexToX(index, lineData.size)
-                val y = valueToY(value)
-                val animatedY = heightPx - padding - (heightPx - padding - y) * animationProgress.value
-                
-                if (index == 0) linePath.moveTo(x, animatedY) else linePath.lineTo(x, animatedY)
+            val lineStrokeWidth = if (lineThicknessDp > 0f) {
+                with(density) { lineThicknessDp.dp.toPx() }
+            } else {
+                (dims.spacingXs * 0.75f).toPx()
             }
 
             drawPath(
                 path = linePath,
                 color = lineColor,
-                style = Stroke(width = (dims.spacingXs * 0.75f).toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                style = Stroke(width = lineStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
             // 4. Draw SMA (Smooth Moving Average)
             smaData?.let { sma ->
                 val smaPath = Path()
+                var smaPrevX = 0f
+                var smaPrevY = 0f
                 sma.forEachIndexed { index, value ->
                     val x = indexToX(index, sma.size)
                     val y = valueToY(value.toBigDecimal())
-                    val animatedY = heightPx - padding - (heightPx - padding - y) * animationProgress.value
-                    if (index == 0) smaPath.moveTo(x, animatedY) else smaPath.lineTo(x, animatedY)
+                    val animatedY = heightPx - bottomPadding - (heightPx - bottomPadding - y) * animationProgress.value
+                    if (index == 0) {
+                        smaPath.moveTo(x, animatedY)
+                    } else {
+                        val dx = x - smaPrevX
+                        smaPath.cubicTo(smaPrevX + dx * 0.3f, smaPrevY, x - dx * 0.3f, animatedY, x, animatedY)
+                    }
+                    smaPrevX = x
+                    smaPrevY = animatedY
                 }
                 drawPath(
                     path = smaPath,
@@ -199,13 +348,43 @@ fun AeonBarLineChart(
                 )
             }
 
-            // 5. Draw selection highlight
+            // 5. Draw X-Axis Labels
+            if (showXAxisLabels && xLabels.isNotEmpty()) {
+                val total = xLabels.size
+                val lastIdx = total - 1
+                val nearestLower5 = (lastIdx / 5) * 5
+                val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                val labelPaint = AndroidPaint().apply {
+                    isAntiAlias = true
+                    color = android.graphics.Color.argb(220, 180, 180, 180)
+                    textAlign = AndroidPaint.Align.CENTER
+                    textSize = with(density) { 9.sp.toPx() }
+                }
+                val labelSlotWidth = if (dualBarMode) (widthPx - 2 * padding) / total.coerceAtLeast(1) else 0f
+                xLabels.forEachIndexed { index, label ->
+                    if (label == null) return@forEachIndexed
+                    val show = index == lastIdx ||
+                        (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                    if (show) {
+                        val x = if (dualBarMode) {
+                            padding + (index + 0.5f) * labelSlotWidth
+                        } else {
+                            indexToX(index, total)
+                        }
+                        drawContext.canvas.nativeCanvas.drawText(label, x, heightPx - xLabelExtraPx * 0.2f, labelPaint)
+                    }
+                }
+            }
+
+            // 6. Draw selection highlight
             selectedIndex?.let { index ->
-                val x = indexToX(index, barData.size)
+                val selTotal = effectiveBarData.size
+                val selSlotWidth = if (dualBarMode) (widthPx - 2 * padding) / selTotal.coerceAtLeast(1) else 0f
+                val x = if (dualBarMode) padding + (index + 0.5f) * selSlotWidth else indexToX(index, selTotal)
                 drawLine(
                     color = ChartZeroLineColor,
                     start = Offset(x, padding),
-                    end = Offset(x, heightPx - padding),
+                    end = Offset(x, heightPx - bottomPadding),
                     strokeWidth = (dims.spacingXs / 4).toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
@@ -214,18 +393,23 @@ fun AeonBarLineChart(
 
         // Tooltip
         selectedIndex?.let { index ->
-            val x = indexToX(index, barData.size)
-            val barVal = barData[index]
-            val lineVal = lineData[index]
-            
-            // Boundary-aware tooltip
+            val ttTotal = effectiveBarData.size
+            val ttSlotWidth = if (dualBarMode) (widthPx - 2 * padding) / ttTotal.coerceAtLeast(1) else 0f
+            val x = if (dualBarMode) padding + (index + 0.5f) * ttSlotWidth else indexToX(index, ttTotal)
+
             val tooltipWidth = 160.dp
-            val tooltipHeight = 100.dp
+            val tooltipHeight = if (dualBarMode) 120.dp else 100.dp
             val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
             val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
             val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, widthPx - tooltipWidthPx)
             val yPos = (padding - 10f).coerceIn(0f, heightPx - tooltipHeightPx)
+
+            val label = xLabels.getOrNull(index)
+            val barVal = effectiveBarData.getOrNull(index)
+            val incomeVal = incomeData.getOrNull(index)
+            val expenseVal = expenseData.getOrNull(index)
+            val lineVal = lineData.getOrNull(index)
 
             Surface(
                 modifier = Modifier
@@ -238,17 +422,56 @@ fun AeonBarLineChart(
                 border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 4), lineColor.copy(alpha = 0.5f))
             ) {
                 Column(modifier = Modifier.padding(dims.spacingSm)) {
-                    Text("Period ${index + 1}", style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
+                    Text(
+                        label ?: "Period ${index + 1}",
+                        style = AppTextStyles.transactionSwipeAction,
+                        color = AppColors.contentSecondary
+                    )
                     Spacer(modifier = Modifier.height(dims.spacingXs))
-                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Text("Flow:", style = AppTextStyles.transactionSwipeAction)
-                        Text(formatCurrencyRight(barVal, currency, precision), style = AppTextStyles.managementItemSubtitle, color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
+
+                    if (dualBarMode) {
+                        if (incomeVal != null) {
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                Text("Income:", style = AppTextStyles.transactionSwipeAction)
+                                Text(
+                                    formatCurrencyRight(incomeVal, currency, precision),
+                                    style = AppTextStyles.managementItemSubtitle,
+                                    color = barColorPositive
+                                )
+                            }
+                        }
+                        if (expenseVal != null) {
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                Text("Expense:", style = AppTextStyles.transactionSwipeAction)
+                                Text(
+                                    formatCurrencyRight(expenseVal, currency, precision),
+                                    style = AppTextStyles.managementItemSubtitle,
+                                    color = barColorNegative
+                                )
+                            }
+                        }
+                    } else if (barVal != null) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Flow:", style = AppTextStyles.transactionSwipeAction)
+                            Text(
+                                formatCurrencyRight(barVal, currency, precision),
+                                style = AppTextStyles.managementItemSubtitle,
+                                color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
+                            )
+                        }
                     }
-                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Text("Trend:", style = AppTextStyles.transactionSwipeAction)
-                        Text(formatCurrencyRight(lineVal, currency, precision), style = AppTextStyles.managementItemSubtitle, color = lineColor)
+
+                    if (lineVal != null) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Net:", style = AppTextStyles.transactionSwipeAction)
+                            Text(
+                                formatCurrencyRight(lineVal, currency, precision),
+                                style = AppTextStyles.managementItemSubtitle,
+                                color = lineColor
+                            )
+                        }
                     }
-                    
+
                     if (onNavigateToRecords != null) {
                         Spacer(modifier = Modifier.height(dims.spacingSm))
                         OutlinedButton(
@@ -277,6 +500,23 @@ fun AeonBarLineChartPreview() {
             AeonBarLineChart(
                 barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800"), BigDecimal("400")),
                 lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100"), BigDecimal("1500"))
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Dual Bar Mode")
+@Composable
+fun AeonBarLineChartDualPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxWidth().height(280.dp).padding(AeonTheme.dimensions.screenPadding)) {
+            AeonBarLineChart(
+                lineData = listOf(BigDecimal.ZERO, BigDecimal("300"), BigDecimal("700"), BigDecimal("300"), BigDecimal("900")),
+                incomeData = listOf(BigDecimal.ZERO, BigDecimal("500"), BigDecimal("800"), BigDecimal("400"), BigDecimal("1000")),
+                expenseData = listOf(BigDecimal.ZERO, BigDecimal("200"), BigDecimal("100"), BigDecimal("100"), BigDecimal("100")),
+                xLabels = listOf(null, "Jan", "Feb", "Mar", "Apr"),
+                showXAxisLabels = true,
+                lineThicknessDp = 1.5f
             )
         }
     }

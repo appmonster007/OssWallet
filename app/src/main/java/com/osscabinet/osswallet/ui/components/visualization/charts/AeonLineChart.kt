@@ -48,6 +48,12 @@ fun AeonLineChart(
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     showGrid: Boolean = true,
     animate: Boolean = true,
+    lineThicknessDp: Float = 0f,
+    showXAxisLabels: Boolean = false,
+    // When > 0, all series share this x-range denominator so shorter series don't stretch to fill the chart.
+    totalXSlots: Int = 0,
+    // When non-empty, these labels are used for the x-axis instead of deriving from the first series.
+    xAxisLabels: List<String?> = emptyList(),
     onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null
 ) {
     if (series.isEmpty() || series.all { it.dataPoints.isEmpty() }) {
@@ -76,8 +82,9 @@ fun AeonLineChart(
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val leftPadding = with(density) { 50.dp.toPx() } // Keep specific chart layout constant or use dims.spacing3xl + dims.spacingSm
-        val bottomPadding = with(density) { dims.spacing2xl.toPx() }
+        val leftPadding = with(density) { 50.dp.toPx() }
+        val xLabelHeight = with(density) { 14.dp.toPx() }
+        val bottomPadding = with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
         val topPadding = with(density) { dims.spacingLg.toPx() }
         val rightPadding = with(density) { dims.spacingLg.toPx() }
         
@@ -112,8 +119,9 @@ fun AeonLineChart(
         }
 
         fun indexToX(index: Int, total: Int): Float {
-            if (total <= 1) return leftPadding + chartWidth / 2
-            return leftPadding + (index.toFloat() / (total - 1)) * chartWidth
+            val effective = if (totalXSlots > 0) totalXSlots else total
+            if (effective <= 1) return leftPadding + chartWidth / 2
+            return leftPadding + (index.toFloat() / (effective - 1)) * chartWidth
         }
 
         fun findClosestIndex(offsetX: Float): Int {
@@ -167,7 +175,7 @@ fun AeonLineChart(
         ) {
             // 1. Draw Grid System and Y-Axis Labels
             if (showGrid) {
-                val gridColor = ChartGridColor
+                val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val labelPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.argb(140, 158, 158, 158)
                     textSize = 10.sp.toPx()
@@ -175,17 +183,19 @@ fun AeonLineChart(
                     isAntiAlias = true
                     alpha = 140
                 }
+                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
 
                 for (i in 0..4) {
                     val ratio = i.toFloat() / 4
                     val yValue = effectiveMinY + effectiveRangeY.multiply(BigDecimal(ratio.toString()))
                     val yPos = valueToY(yValue)
-                    
+
                     drawLine(
                         color = gridColor,
                         start = Offset(leftPadding, yPos),
                         end = Offset(w - rightPadding, yPos),
-                        strokeWidth = (dims.spacingXs / 8).toPx()
+                        strokeWidth = (dims.spacingXs / 8).toPx(),
+                        pathEffect = dashEffect
                     )
 
                     drawContext.canvas.nativeCanvas.drawText(
@@ -227,9 +237,11 @@ fun AeonLineChart(
 
                 val linePath = Path()
                 val areaPath = Path()
-                
-                s.dataPoints.forEachIndexed { index, point ->
-                    val x = indexToX(index, s.dataPoints.size)
+                val pts = s.dataPoints
+                val n = pts.size
+
+                pts.forEachIndexed { index, point ->
+                    val x = indexToX(index, n)
                     val y = valueToY(point.y)
                     val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
 
@@ -238,15 +250,22 @@ fun AeonLineChart(
                         areaPath.moveTo(x, topPadding + chartHeight)
                         areaPath.lineTo(x, animY)
                     } else {
-                        linePath.lineTo(x, animY)
+                        // Smooth cubic bezier with reduced tension (0.3) — moderately curved
+                        val prevX = indexToX(index - 1, n)
+                        val prevY = run {
+                            val py = valueToY(pts[index - 1].y)
+                            topPadding + chartHeight - (topPadding + chartHeight - py) * animationProgress.value
+                        }
+                        val dx = x - prevX
+                        val cp1x = prevX + dx * 0.3f
+                        val cp2x = x - dx * 0.3f
+                        linePath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
+                        areaPath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
                     }
-                    
-                    if (index == s.dataPoints.size - 1) {
-                        areaPath.lineTo(x, animY)
+
+                    if (index == n - 1) {
                         areaPath.lineTo(x, topPadding + chartHeight)
                         areaPath.close()
-                    } else if (index > 0) {
-                        areaPath.lineTo(x, animY)
                     }
                 }
 
@@ -261,19 +280,59 @@ fun AeonLineChart(
                     )
                 }
 
+                val strokePx = if (lineThicknessDp > 0f) {
+                    with(density) { lineThicknessDp.dp.toPx() }
+                } else {
+                    (dims.spacingXs * 0.9f).toPx()
+                }
                 drawPath(
                     path = linePath,
                     color = s.color,
                     style = Stroke(
-                        width = (dims.spacingXs * 0.9f).toPx(),
+                        width = strokePx,
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round,
-                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(15f, 15f)) else null
+                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(12f, 8f)) else null
                     )
                 )
+            }
 
-                // Draw end points only if selected or for specific emphasis if needed
-                // For now, removing plotted dots as requested for simplicity
+            // X-axis labels — prefer explicit xAxisLabels list, fall back to first series labels
+            if (showXAxisLabels || xAxisLabels.isNotEmpty()) {
+                val labelPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.argb(220, 180, 180, 180)
+                    textSize = 9.sp.toPx()
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    isAntiAlias = true
+                }
+                val labelY = topPadding + chartHeight + with(density) { dims.spacing2xl.toPx() } - with(density) { 2.dp.toPx() }
+
+                if (xAxisLabels.isNotEmpty()) {
+                    val total = xAxisLabels.size
+                    val lastIdx = total - 1
+                    val nearestLower5 = (lastIdx / 5) * 5
+                    val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                    xAxisLabels.forEachIndexed { index, lbl ->
+                        if (lbl == null) return@forEachIndexed
+                        val show = index == lastIdx ||
+                            (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                        if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
+                    }
+                } else {
+                    val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
+                    if (labelSeries != null) {
+                        val total = labelSeries.dataPoints.size
+                        val lastIdx = total - 1
+                        val nearestLower5 = (lastIdx / 5) * 5
+                        val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                        labelSeries.dataPoints.forEachIndexed { index, point ->
+                            val lbl = point.label ?: return@forEachIndexed
+                            val show = index == lastIdx ||
+                                (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                            if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
+                        }
+                    }
+                }
             }
 
             if (selectedIndex != -1) {

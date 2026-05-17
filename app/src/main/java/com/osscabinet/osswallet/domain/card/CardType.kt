@@ -74,6 +74,16 @@ enum class CardType(
         "recent_activities",
         "Recent Activities",
         "List of your latest transactions."
+    ),
+    CASHFLOW_COMPARISON(
+        "cashflow_comparison",
+        "Cash Flow Comparison",
+        "Compare cash flow across current, previous, and same period last year."
+    ),
+    INCOME_EXPENSE_BAR(
+        "income_expense_bar",
+        "Income & Expense Chart",
+        "Bar chart showing income and expenses per time bucket with a net trend line."
     );
 
     /** Returns true when this card type can be added by the user on [screen]. */

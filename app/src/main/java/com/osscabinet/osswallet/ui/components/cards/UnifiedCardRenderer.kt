@@ -18,6 +18,8 @@ import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.PlannedPaymentsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowComparisonCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.IncomeExpenseBarCard
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
@@ -233,6 +235,34 @@ fun UnifiedCardRenderer(
                 baseFilter = cardWithCallbacks.baseFilter,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
+            )
+        }
+
+        is CardWithCallbacks.CashFlowComparison -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            CashFlowComparisonCard(
+                renderData = renderData,
+                callbacks = cb,
+                filterContext = filterContext,
+                baseFilter = cardWithCallbacks.baseFilter,
+                modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier
+            )
+        }
+
+        is CardWithCallbacks.IncomeExpenseBar -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            IncomeExpenseBarCard(
+                renderData = renderData,
+                callbacks = cb,
+                filterContext = filterContext,
+                baseFilter = cardWithCallbacks.baseFilter,
+                modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier
             )
         }
 

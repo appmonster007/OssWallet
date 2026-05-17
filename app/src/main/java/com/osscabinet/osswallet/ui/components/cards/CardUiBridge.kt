@@ -23,6 +23,8 @@ import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
 
@@ -380,6 +382,50 @@ fun rememberCardWithCallbacks(
                         onDeleteTransaction = callbacks.onDeleteTransaction,
                         onSplit = callbacks.onSplit,
                         onFullSwipeRight = callbacks.onFullSwipeRight
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+
+            config is CashFlowComparisonCardConfig && renderData is CardRenderData.CashFlowComparison -> {
+                CardWithCallbacks.CashFlowComparison(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.CashFlowComparison(
+                        onUpdate = { newConfig ->
+                            updateHandler.updateCashFlowComparisonConfig(
+                                config.cardId,
+                                newConfig
+                            )
+                        },
+                        onDelete = { onDelete(config.cardId) },
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        }
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+
+            config is IncomeExpenseBarCardConfig && renderData is CardRenderData.IncomeExpenseBar -> {
+                CardWithCallbacks.IncomeExpenseBar(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.IncomeExpenseBar(
+                        onUpdate = { newConfig ->
+                            updateHandler.updateIncomeExpenseBarConfig(
+                                config.cardId,
+                                newConfig
+                            )
+                        },
+                        onDelete = { onDelete(config.cardId) },
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        }
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter

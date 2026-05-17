@@ -36,6 +36,8 @@ import com.osscabinet.ossWallet.domain.card.computers.LoansCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.RecentActivitiesCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.CashFlowComparisonCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.IncomeExpenseBarCardComputer
 import com.osscabinet.ossWallet.data.remote.provider.ExchangeRateApiProvider
 import com.osscabinet.ossWallet.data.remote.provider.FrankfurterProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
@@ -124,7 +126,9 @@ class AppContainer(private val context: Context) {
             LoansCardComputer(),
             PlannedPaymentsCardComputer(),
             CategoryPieChartCardComputer(),
-            CategoryTreemapCardComputer()
+            CategoryTreemapCardComputer(),
+            CashFlowComparisonCardComputer(databaseQueryService),
+            IncomeExpenseBarCardComputer(databaseQueryService)
         ))
     }
 

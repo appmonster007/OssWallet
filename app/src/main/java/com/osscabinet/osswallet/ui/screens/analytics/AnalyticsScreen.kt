@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
@@ -139,9 +140,11 @@ fun AnalyticsScreen(
                                 ),
                                 animateCards = cardAnimationEnabled,
                                 currentTheme = currentTheme,
-                                accounts = state.accounts,
-                                allCategories = state.allCategories,
-                                savedFilters = savedFilters,
+                                filterContext = FilterSelectionContext(
+                                    accounts = state.accounts,
+                                    allCategories = state.allCategories,
+                                    savedFilters = savedFilters
+                                ),
                                 callbacks = CardListCallbacks(
                                     onAccountClick = onAccountClick,
                                     onTransactionClick = onEditTransactionClick,

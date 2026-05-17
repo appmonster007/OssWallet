@@ -66,6 +66,7 @@ import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -89,6 +90,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
@@ -430,9 +432,11 @@ fun DashboardContent(
                         ),
                         animateCards = cardAnimationEnabled,
                         currentTheme = currentTheme,
-                        accounts = state.accounts,
-                        allCategories = state.allCategories,
-                        savedFilters = savedFilters,
+                        filterContext = FilterSelectionContext(
+                            accounts = state.accounts,
+                            allCategories = state.allCategories,
+                            savedFilters = savedFilters
+                        ),
                         callbacks = CardListCallbacks(
                             onManageAccountsClick = onManageAccountsClick,
                             onAccountClick = onAccountClick,
@@ -574,21 +578,12 @@ private fun DashboardReviewContent() {
             currentMetrics = netWorthMetrics,
             baseCurrency = "USD",
             precision = 2,
-            cardId = "networth",
-            fontSize = "Medium",
-            showComparison = true,
-            filter = TransactionFilter(),
-            onFontSizeChange = { _, _ -> },
-            onShowComparisonChange = { _, _ -> },
-            onFilterChange = { _, _ -> }
+            config = NetWorthCardConfig(cardId = "networth")
         )
 
         BudgetsCard(
             items = budgets,
-            config = BudgetsCardConfig(cardId = "budgets", title = "Budgets"),
-            onUpdate = {},
-            onBudgetClick = {},
-            onDelete = {}
+            config = BudgetsCardConfig(cardId = "budgets", title = "Budgets")
         )
     }
 }

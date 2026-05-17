@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -496,9 +497,11 @@ fun DynamicAccountDetailCards(
             ),
             animateCards = cardAnimationEnabled,
             currentTheme = currentTheme,
-            accounts = listOf(state.account),
-            allCategories = state.allCategories,
-            savedFilters = savedFilters,
+            filterContext = FilterSelectionContext(
+                accounts = listOf(state.account),
+                allCategories = state.allCategories,
+                savedFilters = savedFilters
+            ),
             callbacks = CardListCallbacks(
                 onAccountClick = { id -> navigate { onAccountClick(id) } },
                 onTransactionClick = onEditTransactionClick,
@@ -519,11 +522,12 @@ fun DynamicAccountDetailCards(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = screenPadding.calculateTopPadding() + AeonTheme.dimensions.spacingLg, bottom = AeonTheme.dimensions.spacingXs),
-                        showTitle = false,
                         currentTheme = currentTheme,
-                        accounts = listOf(state.account),
-                        allCategories = state.allCategories,
-                        savedFilters = savedFilters
+                        filterContext = FilterSelectionContext(
+                            accounts = listOf(state.account),
+                            allCategories = state.allCategories,
+                            savedFilters = savedFilters
+                        ),
                     )
                 }
             }

@@ -9,7 +9,7 @@ import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -34,51 +35,19 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun BudgetsCard(
     items: List<BudgetProgress>,
     config: BudgetsCardConfig,
-    onUpdate: (BudgetsCardConfig) -> Unit,
-    onBudgetClick: (Long) -> Unit,
-    onDelete: () -> Unit,
+    callbacks: CardCallbacks.Budgets = CardCallbacks.Budgets(),
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.DonutLarge,
         modifier = modifier,
         headerModifier = headerModifier,
-        headerTrailing = { _ ->
-            Box {
-                IconButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "Options",
-                        tint = AppColors.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Show archived") },
-                        trailingIcon = {
-                            Checkbox(checked = config.showArchived, onCheckedChange = null)
-                        },
-                        onClick = {
-                            onUpdate(config.copy(showArchived = !config.showArchived))
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete card") },
-                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                        onClick = { showMenu = false; onDelete() }
-                    )
-                }
-            }
+        filterEnabled = false,
+        displaySettings = { onDismiss ->
+            BudgetsDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (items.isEmpty()) {
@@ -93,13 +62,51 @@ fun BudgetsCard(
                 items.forEach { progress ->
                     BudgetProgressRow(
                         progress = progress,
-                        onClick = { onBudgetClick(progress.budget.id) },
+                        onClick = { callbacks.onBudgetClick(progress.budget.id) },
                         precision = precision
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun BudgetsDisplaySettingsDialog(
+    config: BudgetsCardConfig,
+    callbacks: CardCallbacks.Budgets,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = { callbacks.onDelete(); onDismiss() },
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        title = { Text("Budgets Display", style = AppTextStyles.cardTitle) },
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Show archived budgets", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.showArchived,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
+                )
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = AppColors.sheetSurface
+    )
 }
 
 @Composable
@@ -251,9 +258,7 @@ fun BudgetsCardPreview() {
             BudgetsCard(
                 items = budgets,
                 config = com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig(cardId = "preview", title = "Budgets"),
-                onUpdate = {},
-                onBudgetClick = {},
-                onDelete = {}
+                callbacks = CardCallbacks.Budgets(onUpdate = {}, onBudgetClick = {}, onDelete = {})
             )
         }
     }

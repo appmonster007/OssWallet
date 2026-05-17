@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -37,9 +37,7 @@ fun AeonCardList(
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
     animateCards: Boolean = true,
     currentTheme: String = "light",
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList(),
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: CardListCallbacks = CardListCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
@@ -88,11 +86,8 @@ fun AeonCardList(
                     cardWithCallbacks = effectiveCard,
                     modifier = Modifier.fillMaxWidth(),
                     headerModifier = dragModifier,
-                    showTitle = true,
                     currentTheme = currentTheme,
-                    accounts = accounts,
-                    allCategories = allCategories,
-                    savedFilters = savedFilters
+                    filterContext = filterContext,
                 )
             }
         }

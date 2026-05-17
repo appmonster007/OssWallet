@@ -8,36 +8,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
-
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -45,65 +34,26 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
-    cardId: String,
-    modifier: Modifier = Modifier,
-    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    title: String = "Currency Balances",
-    precision: Int = 2,
-    layout: String = "scroll", // "scroll" or "grid"
-    showBaseConversion: Boolean = true,
-    filter: TransactionFilter = TransactionFilter(),
-    onLayoutChange: (String, String) -> Unit = { _, _ -> },
-    onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
-    onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
-    onDelete: () -> Unit = {},
-    onCurrencyClick: (String, TimelineRange) -> Unit = { _, _ -> },
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    config: CurrencyBalancesCardConfig,
+    callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    precision: Int = 2,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
 ) {
-    var showDisplaySettings by remember { mutableStateOf(false) }
-    var showFilterSettings by remember { mutableStateOf(false) }
-
-    val timelineLabel = when (val tr = filter.timelineRange) {
-        is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> tr.period.label
-        is TimelineRange.LastPeriod -> tr.period.label
-        is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
-            val start = tr.start?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            val end = tr.end?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            "$start - $end"
-        }
-    }
-
     AeonExpressiveCard(
-        title = title,
-        subtitle = timelineLabel,
+        title = config.title,
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
-        filter = filter,
+        filter = config.filter,
         baseFilter = baseFilter,
-        filterRules = filterRules,
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showFilterSettings = true },
-                activeFilterCount = activeCount
-            )
-            IconButton(
-                onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = "Display Settings",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        filterRules = config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        displaySettings = { onDismiss ->
+            CurrencyDisplaySettingsDialog(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (currencyTotals.isEmpty()) {
@@ -113,7 +63,7 @@ fun CurrencyBalancesCard(
                 color = AppColors.contentSecondary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-        } else if (layout == "grid") {
+        } else if (config.layout == "grid") {
             val chunks = currencyTotals.chunked(3)
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,8 +81,8 @@ fun CurrencyBalancesCard(
                                 inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision,
-                                showBaseConversion = showBaseConversion,
-                                onClick = { onCurrencyClick(item.currency, filter.timelineRange) },
+                                showBaseConversion = config.showBaseConversion,
+                                onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -156,65 +106,31 @@ fun CurrencyBalancesCard(
                         inBase = item.amountInBase,
                         baseCurrency = baseCurrency,
                         precision = precision,
-                        showBaseConversion = showBaseConversion,
-                        onClick = { onCurrencyClick(item.currency, filter.timelineRange) }
+                        showBaseConversion = config.showBaseConversion,
+                        onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) }
                     )
                 }
             }
         }
     }
-
-    if (showDisplaySettings) {
-        CurrencyDisplaySettingsDialog(
-            layout = layout,
-            showBaseConversion = showBaseConversion,
-            baseCurrency = baseCurrency,
-            cardId = cardId,
-            onLayoutChange = onLayoutChange,
-            onShowBaseConversionChange = onShowBaseConversionChange,
-            onDismiss = { showDisplaySettings = false },
-            onDelete = onDelete
-        )
-    }
-
-    if (showFilterSettings) {
-        AeonCardSettingsSheet(
-            title = "Currency Balances Filter",
-            filter = filter,
-            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
-            onDismiss = { showFilterSettings = false },
-            onDelete = onDelete,
-            filterRules = filterRules,
-            baseFilter = baseFilter,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters
-        )
-    }
 }
 
 @Composable
 private fun CurrencyDisplaySettingsDialog(
-    layout: String,
-    showBaseConversion: Boolean,
+    config: CurrencyBalancesCardConfig,
     baseCurrency: String,
-    cardId: String,
-    onLayoutChange: (String, String) -> Unit,
-    onShowBaseConversionChange: (String, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    callbacks: CardCallbacks.CurrencyBalances,
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(
                 onClick = {
-                    onDelete()
+                    callbacks.onDelete()
                     onDismiss()
                 },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = AppColors.error
-                )
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -226,27 +142,21 @@ private fun CurrencyDisplaySettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
+            TextButton(onClick = onDismiss) { Text("Done") }
         },
         title = {
-            Text(
-                "Currency Display",
-                style = AppTextStyles.cardTitle
-            )
+            Text("Currency Display", style = AppTextStyles.cardTitle)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 AeonLayoutToggle(
-                    layout = layout,
-                    onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
+                    layout = config.layout,
+                    onLayoutChange = { newLayout -> callbacks.onLayoutChange(config.cardId, newLayout) }
                 )
-
                 AeonBaseConversionToggle(
                     baseCurrency = baseCurrency,
-                    showBaseConversion = showBaseConversion,
-                    onShowBaseConversionChange = { show -> onShowBaseConversionChange(cardId, show) }
+                    showBaseConversion = config.showBaseConversion,
+                    onShowBaseConversionChange = { show -> callbacks.onShowBaseConversionChange(config.cardId, show) }
                 )
             }
         },
@@ -287,7 +197,7 @@ fun CurrencyBalanceItem(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Text(
                 formatCurrencyRight(amount, curr, precision, shorten = true),
                 style = AppTextStyles.screenSubTitle.copy(
@@ -297,7 +207,7 @@ fun CurrencyBalanceItem(
                 ),
                 maxLines = 1
             )
-            
+
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
@@ -328,8 +238,7 @@ fun CurrencyBalancesCardPreview() {
             CurrencyBalancesCard(
                 currencyTotals = items,
                 baseCurrency = "USD",
-                cardId = "preview",
-                layout = "scroll"
+                config = CurrencyBalancesCardConfig(cardId = "preview")
             )
         }
     }

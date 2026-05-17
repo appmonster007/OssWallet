@@ -21,46 +21,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardLarge
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import java.math.BigDecimal
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -68,89 +56,47 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsCard(
-    onManageClick: () -> Unit,
-    onAccountClick: (String) -> Unit,
-    onRecordsClick: ((TransactionFilter) -> Unit)? = null,
-    onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
     currentTheme: String,
-    cardId: String,
-    modifier: Modifier = Modifier,
-    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    gridColumns: Int = 2,
-    layout: String = "grid",
-    precision: Int = 2,
-    filter: TransactionFilter = TransactionFilter(),
-    onLayoutChange: (String, String) -> Unit = { _, _ -> },
-    onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
-    settingsTitle: String = "Accounts View",
-    showAddAccountCard: Boolean = true,
-    onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> },
-    onDelete: () -> Unit = {},
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    config: AccountsCardConfig,
+    callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    precision: Int = 2,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
 ) {
-    var showDisplaySettings by remember { mutableStateOf(false) }
-    var showFilterSettings by remember { mutableStateOf(false) }
-
-    val timelineLabel = when (val tr = filter.timelineRange) {
-        is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> tr.period.label
-        is TimelineRange.LastPeriod -> tr.period.label
-        is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
-            val start = tr.start?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            val end = tr.end?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
-            "$start - $end"
-        }
-    }
-
     AeonExpressiveCard(
-        title = "Accounts",
-        subtitle = timelineLabel,
+        title = config.title,
         icon = Icons.Rounded.AccountBalanceWallet,
         modifier = modifier,
         headerModifier = headerModifier,
-        filter = filter,
+        filter = config.filter,
         baseFilter = baseFilter,
-        filterRules = filterRules,
-        headerTrailing = { activeCount ->
-            AeonCardFilterButton(
-                onClick = { showFilterSettings = true },
-                activeFilterCount = activeCount
-            )
-            IconButton(
-                onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = "Display Settings",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        filterRules = config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        displaySettings = { onDismiss ->
+            AccountsDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (accounts.isEmpty()) {
             AeonAddAccountCard(
                 baseCurrency = baseCurrency,
                 currentTheme = currentTheme,
-                onClick = onManageClick,
-                gridColumns = if (layout == "grid") gridColumns else 2,
+                onClick = callbacks.onManageClick,
+                gridColumns = if (config.layout == "grid") config.gridColumns else 2,
                 precision = precision,
                 modifier = Modifier.fillMaxWidth()
             )
-        } else if (layout == "grid") {
+        } else if (config.layout == "grid") {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = gridColumns
+                maxItemsInEachRow = config.gridColumns
             ) {
                 accounts.forEach { account ->
                     AccountItemWrapper(
@@ -158,26 +104,26 @@ fun AccountsCard(
                         accountStats = accountStats,
                         baseCurrency = baseCurrency,
                         currentTheme = currentTheme,
-                        gridColumns = gridColumns,
-                        onAccountClick = onAccountClick,
-                        onRecordsClick = onRecordsClick,
-                        filter = filter,
+                        gridColumns = config.gridColumns,
+                        onAccountClick = callbacks.onAccountClick,
+                        onRecordsClick = callbacks.onRecordsClick,
+                        filter = config.filter,
                         precision = precision,
-                        modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                     )
                 }
 
-                if (showAddAccountCard) {
+                if (config.showAddAccountCard) {
                     AeonAddAccountCard(
                         baseCurrency = baseCurrency,
                         currentTheme = currentTheme,
-                        onClick = onManageClick,
-                        gridColumns = gridColumns,
+                        onClick = callbacks.onManageClick,
+                        gridColumns = config.gridColumns,
                         precision = precision,
-                        modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                     )
-                } else if (gridColumns > 1 && accounts.size % gridColumns != 0) {
-                    repeat(gridColumns - (accounts.size % gridColumns)) {
+                } else if (config.gridColumns > 1 && accounts.size % config.gridColumns != 0) {
+                    repeat(config.gridColumns - (accounts.size % config.gridColumns)) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -194,19 +140,19 @@ fun AccountsCard(
                         baseCurrency = baseCurrency,
                         currentTheme = currentTheme,
                         gridColumns = 2,
-                        onAccountClick = onAccountClick,
-                        onRecordsClick = onRecordsClick,
-                        filter = filter,
+                        onAccountClick = callbacks.onAccountClick,
+                        onRecordsClick = callbacks.onRecordsClick,
+                        filter = config.filter,
                         precision = precision,
                         modifier = Modifier.width(180.dp)
                     )
                 }
-                if (showAddAccountCard) {
+                if (config.showAddAccountCard) {
                     item {
                         AeonAddAccountCard(
                             baseCurrency = baseCurrency,
                             currentTheme = currentTheme,
-                            onClick = onManageClick,
+                            onClick = callbacks.onManageClick,
                             gridColumns = 2,
                             precision = precision,
                             modifier = Modifier.width(180.dp)
@@ -216,64 +162,23 @@ fun AccountsCard(
             }
         }
     }
-
-    if (showDisplaySettings) {
-        AccountsDisplaySettingsDialog(
-            layout = layout,
-            gridColumns = gridColumns,
-            showAddAccountCard = showAddAccountCard,
-            cardId = cardId,
-            onLayoutChange = onLayoutChange,
-            onGridColumnsChange = onGridColumnsChange,
-            onShowAddAccountCardChange = onShowAddAccountCardChange,
-            onManageClick = onManageClick,
-            onDismiss = { showDisplaySettings = false },
-            onDelete = onDelete,
-            settingsTitle = settingsTitle
-        )
-    }
-
-    if (showFilterSettings) {
-        AeonCardSettingsSheet(
-            title = "Accounts Filter",
-            filter = filter,
-            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
-            onDismiss = { showFilterSettings = false },
-            onDelete = onDelete,
-            filterRules = filterRules,
-            baseFilter = baseFilter,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters
-        )
-    }
 }
 
 @Composable
 private fun AccountsDisplaySettingsDialog(
-    layout: String,
-    gridColumns: Int,
-    showAddAccountCard: Boolean,
-    cardId: String,
-    onLayoutChange: (String, String) -> Unit,
-    onGridColumnsChange: (String, Int) -> Unit,
-    onShowAddAccountCardChange: (String, Boolean) -> Unit,
-    onManageClick: () -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit,
-    settingsTitle: String
+    config: AccountsCardConfig,
+    callbacks: CardCallbacks.Accounts,
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(
                 onClick = {
-                    onDelete()
+                    callbacks.onDelete()
                     onDismiss()
                 },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = AppColors.error
-                )
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -285,9 +190,7 @@ private fun AccountsDisplaySettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
+            TextButton(onClick = onDismiss) { Text("Done") }
         },
         title = {
             Row(
@@ -295,13 +198,10 @@ private fun AccountsDisplaySettingsDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Accounts Display",
-                    style = AppTextStyles.cardTitle
-                )
+                Text("Accounts Display", style = AppTextStyles.cardTitle)
                 IconButton(
                     onClick = {
-                        onManageClick()
+                        callbacks.onManageClick()
                         onDismiss()
                     },
                     colors = IconButtonDefaults.iconButtonColors(
@@ -309,31 +209,26 @@ private fun AccountsDisplaySettingsDialog(
                         contentColor = AppColors.primary
                     )
                 ) {
-                    Icon(
-                        Icons.Default.Settings,
-                        contentDescription = "Manage Accounts"
-                    )
+                    Icon(Icons.Default.Settings, contentDescription = "Manage Accounts")
                 }
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 AeonLayoutToggle(
-                    layout = layout,
-                    onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
+                    layout = config.layout,
+                    onLayoutChange = { newLayout -> callbacks.onLayoutChange(config.cardId, newLayout) }
                 )
-
-                if (layout == "grid") {
+                if (config.layout == "grid") {
                     AeonGridColumnsSettings(
-                        gridColumns = gridColumns,
-                        onGridColumnsChange = { columns -> onGridColumnsChange(cardId, columns) }
+                        gridColumns = config.gridColumns,
+                        onGridColumnsChange = { columns -> callbacks.onGridColumnsChange(config.cardId, columns) }
                     )
                 }
-
                 AeonSettingsToggle(
                     label = "SHOW ADD ACCOUNT CARD",
-                    checked = showAddAccountCard,
-                    onCheckedChange = { show -> onShowAddAccountCardChange(cardId, show) }
+                    checked = config.showAddAccountCard,
+                    onCheckedChange = { show -> callbacks.onShowAddAccountCardChange(config.cardId, show) }
                 )
             }
         },
@@ -414,10 +309,6 @@ private fun AccountItemContent(
     val balance = stats?.balance ?: BigDecimal.ZERO
     val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
 
-    val handleAccountClick = {
-        onAccountClick(account.id)
-    }
-
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
         "Dark", "Amoled" -> true
@@ -436,7 +327,7 @@ private fun AccountItemContent(
             expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = handleAccountClick,
+            onClick = { onAccountClick(account.id) },
             modifier = modifier,
             precision = precision,
             onClickIncome = {
@@ -464,7 +355,7 @@ private fun AccountItemContent(
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = handleAccountClick,
+            onClick = { onAccountClick(account.id) },
             modifier = modifier,
             precision = precision
         )
@@ -476,7 +367,7 @@ private fun AccountItemContent(
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = handleAccountClick,
+            onClick = { onAccountClick(account.id) },
             modifier = modifier,
             precision = precision
         )
@@ -587,18 +478,13 @@ fun AccountsCardPreview() {
     OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             AccountsCard(
-                onManageClick = {},
-                onAccountClick = {},
-                onGridColumnsChange = { _, _ -> },
                 accounts = accounts,
                 accountStats = stats,
                 baseCurrency = "USD",
                 currentTheme = "System",
-                cardId = "preview",
-                gridColumns = 2,
-                layout = "grid"
+                config = AccountsCardConfig(cardId = "preview"),
+                callbacks = CardCallbacks.Accounts(onManageClick = {}, onAccountClick = {})
             )
         }
     }
 }
-

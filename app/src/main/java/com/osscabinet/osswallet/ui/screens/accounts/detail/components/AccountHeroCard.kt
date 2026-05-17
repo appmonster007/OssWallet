@@ -35,9 +35,11 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
@@ -52,16 +54,12 @@ fun AccountHeroCard(
     expense: BigDecimal,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
+    config: AccountHeroCardConfig,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
     precision: Int = 2,
-    showCurrencyBadges: Boolean = true,
-    filter: TransactionFilter = TransactionFilter(),
-    onClickIncome: (TransactionFilter) -> Unit = {},
-    onClickExpense: (TransactionFilter) -> Unit = {},
-    onClickCurrency: (String) -> Unit = {},
-    onClick: (() -> Unit)? = null
+    callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero()
 ) {
     val accountColor = try {
         Color(account.colorHex.toColorInt())
@@ -85,10 +83,10 @@ fun AccountHeroCard(
         icon = icon,
         iconColor = accountColor,
         accentColor = accountColor,
-        modifier = modifier.clickable { onClick?.invoke() },
+        modifier = modifier.clickable { callbacks.onClick?.invoke() },
         headerModifier = headerModifier,
-        filter = filter,
-        headerTrailing = null
+        filterEnabled = false,
+        filter = config.filter,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -164,7 +162,7 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = AppColors.primary,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
+                    onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
                 )
                 FlowSummaryItem(
                     label = "Expense",
@@ -173,12 +171,12 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = AppColors.error,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
+                    onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
                 )
             }
 
             // Multi-Currency Section
-            if (showCurrencyBadges && currencyBalances.isNotEmpty()) {
+            if (config.showCurrencyBadges && currencyBalances.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "DISTRIBUTION",
@@ -201,7 +199,7 @@ fun AccountHeroCard(
                                     1.dp,
                                     AppColors.divider.copy(alpha = 0.2f)
                                 ),
-                                modifier = Modifier.clickable { onClickCurrency(curr) }
+                                modifier = Modifier.clickable { callbacks.onClickCurrency?.invoke(curr) }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(
@@ -299,6 +297,7 @@ fun AccountHeroCardPreview() {
                 expense = BigDecimal("4200.00"),
                 baseCurrency = "USD",
                 exchangeRates = emptyMap(),
+                config = com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig(cardId = "preview"),
                 currencyBalances = mapOf(
                     "USD" to BigDecimal("1800000.00"),
                     "EUR" to BigDecimal("45000.00"),

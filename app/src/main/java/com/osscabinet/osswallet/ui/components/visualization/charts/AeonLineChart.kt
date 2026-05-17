@@ -118,6 +118,8 @@ fun AeonLineChart(
             return topPadding + chartHeight - (normalized * chartHeight)
         }
 
+        val zeroY = valueToY(BigDecimal.ZERO)
+
         fun indexToX(index: Int, total: Int): Float {
             val effective = if (totalXSlots > 0) totalXSlots else total
             if (effective <= 1) return leftPadding + chartWidth / 2
@@ -259,7 +261,7 @@ fun AeonLineChart(
 
                     if (index == 0) {
                         linePath.moveTo(x, animY)
-                        areaPath.moveTo(x, topPadding + chartHeight)
+                        areaPath.moveTo(x, zeroY)
                         areaPath.lineTo(x, animY)
                     } else {
                         // Smooth cubic bezier with reduced tension (0.3) — moderately curved
@@ -276,7 +278,7 @@ fun AeonLineChart(
                     }
 
                     if (index == n - 1) {
-                        areaPath.lineTo(x, topPadding + chartHeight)
+                        areaPath.lineTo(x, zeroY)
                         areaPath.close()
                     }
                 }

@@ -132,10 +132,21 @@ fun AeonBarLineChart(
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
 
-        val range = (maxY - minY).abs()
-        val paddingY = if (range.signum() == 0) BigDecimal.ONE else range.multiply(BigDecimal("0.1"))
-        val effectiveMinY = minY - paddingY
-        val effectiveMaxY = maxY + paddingY
+        // Calculate a "nice" step size based on the data range
+        val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
+        val roughStep = dataRange / 4.0
+        val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+        val niceMultiplier = when {
+            roughStep / mag <= 1.0 -> 1.0
+            roughStep / mag <= 2.0 -> 2.0
+            roughStep / mag <= 5.0 -> 5.0
+            else -> 10.0
+        }
+        val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
+
+        // Align boundaries to ticks, ensuring one empty step above and below
+        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).subtract(BigDecimal.ONE).multiply(niceStep)
+        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).add(BigDecimal.ONE).multiply(niceStep)
         val effectiveRange = effectiveMaxY - effectiveMinY
 
         val chartHeight = heightPx - topPadding - bottomPadding
@@ -192,19 +203,7 @@ fun AeonBarLineChart(
                     textSize = with(density) { 9.sp.toPx() }
                 }
 
-                val effectiveRange = effectiveMaxY - effectiveMinY
-                val rangeDouble = effectiveRange.toDouble().coerceAtLeast(1.0)
-                val roughStep = rangeDouble / 5.0
-                val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
-                val niceMultiplier = when {
-                    roughStep / mag <= 1.0 -> 1.0
-                    roughStep / mag <= 2.0 -> 2.0
-                    roughStep / mag <= 5.0 -> 5.0
-                    else -> 10.0
-                }
-                val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
-                val firstTick = effectiveMinY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
-                var tick = firstTick
+                var tick = effectiveMinY
                 val chartTop = topPadding
                 val chartBottom = heightPx - bottomPadding
                 while (tick <= effectiveMaxY) {
@@ -389,8 +388,10 @@ fun AeonBarLineChart(
             if (showXAxisLabels && xLabels.isNotEmpty()) {
                 val total = xLabels.size
                 val lastIdx = total - 1
-                val nearestLower5 = (lastIdx / 5) * 5
-                val skipNearestLower5 = lastIdx % 5 != 0 && (lastIdx - nearestLower5) <= 3
+                val jump = 7
+                val threshold = 4
+                val nearestLowerJump = (lastIdx / jump) * jump
+                val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
                     color = android.graphics.Color.argb(220, 180, 180, 180)
@@ -400,8 +401,8 @@ fun AeonBarLineChart(
                 val labelSlotWidth = if (dualBarMode) chartWidth / total.coerceAtLeast(1) else 0f
                 xLabels.forEachIndexed { index, label ->
                     if (label == null) return@forEachIndexed
-                    val show = index == lastIdx ||
-                        (index > 0 && index % 5 == 0 && !(skipNearestLower5 && index == nearestLower5))
+                    val show = index == 0 || index == lastIdx ||
+                        (index > 0 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
                     if (show) {
                         val x = if (dualBarMode) {
                             leftPadding + (index + 0.5f) * labelSlotWidth

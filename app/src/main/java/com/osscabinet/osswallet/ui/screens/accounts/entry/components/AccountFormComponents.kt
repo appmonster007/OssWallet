@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -17,6 +19,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +29,8 @@ import com.osscabinet.ossWallet.ui.util.isDark
 import java.util.Currency.getAvailableCurrencies
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -38,6 +44,9 @@ fun CurrencyManagementSection(
     currencyUsageMap: Map<String, Boolean> = emptyMap()
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    val haptic = LocalHapticFeedback.current
+    val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
+    
     val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
     
     val allCurrencies = remember {
@@ -46,300 +55,236 @@ fun CurrencyManagementSection(
             .distinct()
             .sorted()
     }
-
-    LaunchedEffect(allowedCurrencies) {
-        if (allowedCurrencies.isEmpty()) {
-            onPrimaryCurrencyChange("")
-        } else if (allowedCurrencies.size == 1) {
-            onPrimaryCurrencyChange(allowedCurrencies.first())
-        } else if (primaryCurrency.isNotEmpty() && !allowedCurrencies.contains(primaryCurrency)) {
-            onPrimaryCurrencyChange(allowedCurrencies.first())
-        }
-    }
-
+    
     val filteredCurrencies = if (searchQuery.isBlank()) {
         commonCurrencies
     } else {
-        allCurrencies.filter { it.contains(searchQuery, ignoreCase = true) }
+        allCurrencies.filter { 
+            it.contains(searchQuery, ignoreCase = true) || 
+            try { java.util.Currency.getInstance(it).displayName.contains(searchQuery, ignoreCase = true) } catch (e: Exception) { false }
+        }
     }
 
-    Surface(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(40.dp),
-        color = AppColors.insetSurface.copy(alpha = 0.2f)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
     ) {
-        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            AeonFlowSectionHeader(title = "CURRENCY MANAGEMENT")
-            
-            // Search Bar
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = CircleShape,
-                color = AppColors.panelSurface
+        // Search & Header
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardPadding)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.border, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        "ASSET CONFIGURATION",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp),
+                        color = AppColors.primary
+                    )
+                    Text(
+                        "Select currencies for this portfolio",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                    )
+                }
+                
+                Surface(
+                    shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
+                    color = AppColors.primary,
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonSize.D6.value),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                    ) {
+                        Icon(Icons.Rounded.Dashboard, contentDescription = null, tint = Color.White, modifier = Modifier.size(AeonSize.D14.value))
+                        Text(
+                            allowedCurrencies.size.toString(),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+            
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
+                color = AppColors.recessedSurface.copy(alpha = 0.4f),
+                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.primary.copy(alpha = 0.5f), modifier = Modifier.size(AeonSize.D20.value))
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = AppTextStyles.listItemTitle.copy(color = AppColors.contentPrimary),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = AppColors.contentPrimary),
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) Text("Search ISO codes...", color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                            if (searchQuery.isEmpty()) Text("Search assets...", style = MaterialTheme.typography.bodyLarge, color = AppColors.contentSecondary.copy(alpha = 0.3f))
                             innerTextField()
                         }
                     )
                 }
             }
+        }
 
-            // Top 10 Currencies in 5x2 grid or search results
-            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
-
-            if (searchQuery.isBlank()) {
-                val topCurrencies = commonCurrencies.take(10)
-                val otherSelectedCurrencies = allowedCurrencies.filter { !topCurrencies.contains(it) }
+        // Active Set (Tiles)
+        if (allowedCurrencies.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardPadding)) {
+                Text(
+                    "SELECTED PORTFOLIO",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                )
                 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Top 10 grid
-                    topCurrencies.chunked(5).forEach { rowCurrencies ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            rowCurrencies.forEach { code ->
-                                val isSelected = allowedCurrencies.contains(code)
-                                val isPrimary = primaryCurrency == code
-                                val hasTransactions = currencyUsageMap[code] ?: false
-                                val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else {
-                                    !isSelected || (allowedCurrencies.size > 1)
-                                }
-
-                                CurrencyGridItem(
-                                    code = code,
-                                    isSelected = isSelected,
-                                    isPrimary = isPrimary,
-                                    canToggle = canToggle,
-                                    accentColor = accentColor,
-                                    onClick = {
-                                        if (isSelected) {
-                                            if (isPrimary) onPrimaryCurrencyChange("")
-                                            onAllowedCurrenciesChange(allowedCurrencies - code)
-                                        } else {
-                                            if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
-                                            onAllowedCurrenciesChange(allowedCurrencies + code)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-
-                    // Extra rows for other selected currencies
-                    if (otherSelectedCurrencies.isNotEmpty()) {
-                        otherSelectedCurrencies.chunked(5).forEach { rowCurrencies ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                rowCurrencies.forEach { code ->
-                                    val isPrimary = primaryCurrency == code
-                                    val hasTransactions = currencyUsageMap[code] ?: false
-                                    val canToggle = if (isEditMode) !isPrimary && !hasTransactions else (allowedCurrencies.size > 1)
-
-                                    CurrencyGridItem(
-                                        code = code,
-                                        isSelected = true,
-                                        isPrimary = isPrimary,
-                                        canToggle = canToggle,
-                                        accentColor = accentColor,
-                                        onClick = {
-                                            if (isPrimary) onPrimaryCurrencyChange("")
-                                            onAllowedCurrenciesChange(allowedCurrencies - code)
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                // Fill empty spaces to maintain grid alignment
-                                repeat(5 - rowCurrencies.size) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
-                    filteredCurrencies.forEach { code ->
-                        val isSelected = allowedCurrencies.contains(code)
+                    allowedCurrencies.forEach { code ->
                         val isPrimary = primaryCurrency == code
-                        val hasTransactions = currencyUsageMap[code] ?: false
-                        val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else {
-                            !isSelected || (allowedCurrencies.size > 1)
-                        }
-                        
-                        Surface(
-                            modifier = Modifier
-                                .alpha(if (canToggle) 1f else 0.5f)
-                                .clip(CircleShape)
-                                .clickable(enabled = canToggle) {
-                                    if (isSelected) {
-                                        if (isPrimary) onPrimaryCurrencyChange("")
-                                        onAllowedCurrenciesChange(allowedCurrencies - code)
-                                    } else {
-                                        if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
-                                        onAllowedCurrenciesChange(allowedCurrencies + code)
-                                    }
-                                },
-                            shape = CircleShape,
-                            color = when {
-                                isPrimary -> accentColor
-                                isSelected -> accentColor.copy(alpha = 0.3f)
-                                else -> AppColors.insetSurface.copy(alpha = 0.5f)
-                            },
-                            contentColor = when {
-                                isPrimary -> if (accentColor.isDark()) ColorOnDark else ColorOnLight
-                                isSelected -> AppColors.contentPrimary
-                                else -> AppColors.contentSecondary
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(code, style = AppTextStyles.listSectionHeader)
+                        CurrencyTile(
+                            code = code,
+                            isPrimary = isPrimary,
+                            accentColor = accentColor,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (isPrimary) {
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
+                                    // Toggle off primary if multiple, or just leave it
+                                } else {
+                                    onPrimaryCurrencyChange(code)
                                 }
+                            },
+                            onRemove = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (isPrimary) onPrimaryCurrencyChange("")
+                                onAllowedCurrenciesChange(allowedCurrencies - code)
                             }
-                        }
+                        )
                     }
                 }
             }
+        }
 
-            // Default Currency Selection (Moved after allowed currencies)
-            if (allowedCurrencies.size > 1) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val isInvalid = primaryCurrency.isBlank()
-                    Text(
-                        "Primary Currency" + if (isInvalid) " (Required)" else "",
-                        style = AppTextStyles.managementItemTitle,
-                        color = if (isInvalid) AppColors.error else AppColors.contentPrimary
-                    )
-                    var isExpanded by remember { mutableStateOf(false) }
-                    Box {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .border(
-                                    width = if (isInvalid) 2.dp else 0.dp,
-                                    color = if (isInvalid) AppColors.error else AppColors.transparent,
-                                    shape = RoundedCornerShape(28.dp)
-                                )
-                                .clickable { isExpanded = true },
-                            shape = RoundedCornerShape(28.dp),
-                            color = AppColors.panelSurface,
-                            tonalElevation = if (isInvalid) 2.dp else 0.dp
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(
-                                    primaryCurrency.ifEmpty { "Select Primary Currency" },
-                                    color = if (primaryCurrency.isEmpty()) AppColors.border else AppColors.contentPrimary,
-                                    fontWeight = if (primaryCurrency.isEmpty()) FontWeight.Normal else FontWeight.Bold
-                                )
-                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = if (isInvalid) AppColors.error else AppColors.contentPrimary)
-                            }
-                        }
-                        DropdownMenu(
-                            expanded = isExpanded,
-                            onDismissRequest = { isExpanded = false },
-                            modifier = Modifier.fillMaxWidth(0.8f).background(AppColors.popupSurface)
-                        ) {
-                            allowedCurrencies.forEach { code ->
-                                DropdownMenuItem(
-                                    text = { Text(code, fontWeight = if (code == primaryCurrency) FontWeight.Bold else FontWeight.Normal) },
-                                    onClick = {
-                                        onPrimaryCurrencyChange(code)
-                                        isExpanded = false
-                                    },
-                                    leadingIcon = {
-                                        if (code == primaryCurrency) Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            } else if (allowedCurrencies.size == 1) {
-                // If only one, it's already primary, but we can show a confirmation label
+        // Discovery Grid
+        Column(verticalArrangement = Arrangement.spacedBy(AeonSize.D20.value)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
                 Text(
-                    "Primary Currency: $primaryCurrency",
-                    style = AppTextStyles.drawerItemLabel,
-                    color = AppColors.primary,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    if (searchQuery.isBlank()) "POPULAR ASSETS" else "SEARCH RESULTS",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
+                if (searchQuery.isBlank()) {
+                    Text(
+                        "SEE ALL",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, color = AppColors.primary)
+                    )
+                }
             }
-
-            if (isEditMode) {
-                Text("Note: Currencies with existing transactions cannot be removed.", style = AppTextStyles.transactionSwipeAction, color = AppColors.border)
+            
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.chipPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.chipPadding)
+            ) {
+                filteredCurrencies.filter { !allowedCurrencies.contains(it) }.take(16).forEach { code ->
+                    Surface(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
+                            onAllowedCurrenciesChange(allowedCurrencies + code)
+                        },
+                        shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
+                        color = AppColors.recessedSurface.copy(alpha = 0.4f),
+                        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = AeonSize.D14.value, vertical = AeonTheme.dimensions.spacingMd),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                        ) {
+                            Text(
+                                code,
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black),
+                                color = AppColors.contentPrimary
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun CurrencyGridItem(
+fun CurrencyTile(
     code: String,
-    isSelected: Boolean,
     isPrimary: Boolean,
-    canToggle: Boolean,
     accentColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onRemove: () -> Unit
 ) {
     Surface(
-        modifier = modifier
-            .alpha(if (canToggle) 1f else 0.5f)
-            .clip(CircleShape)
-            .clickable(enabled = canToggle) { onClick() },
-        shape = CircleShape,
-        color = when {
-            isPrimary -> accentColor
-            isSelected -> accentColor.copy(alpha = 0.3f)
-            else -> AppColors.insetSurface.copy(alpha = 0.5f)
-        },
-        contentColor = when {
-            isPrimary -> if (accentColor.isDark()) ColorOnDark else ColorOnLight
-            isSelected -> AppColors.contentPrimary
-            else -> AppColors.contentSecondary
-        }
+        onClick = onClick,
+        modifier = Modifier.width(130.dp).height(90.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardPadding),
+        color = if (isPrimary) accentColor else AppColors.recessedSurface.copy(alpha = 0.5f),
+        border = BorderStroke(
+            width = if (isPrimary) 2.dp else 1.dp,
+            color = if (isPrimary) accentColor else AppColors.divider.copy(alpha = 0.1f)
+        )
     ) {
-        Box(
-            modifier = Modifier.padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (!isPrimary) {
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.align(Alignment.TopEnd).size(AeonTheme.dimensions.buttonCornerRadius).padding(AeonSize.D4.value)
+                ) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs), tint = AppColors.contentSecondary.copy(alpha = 0.4f))
+                }
+            } else {
+                Surface(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(AeonTheme.dimensions.spacingSm),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.2f)
+                ) {
+                    Icon(
+                        Icons.Rounded.Star, 
+                        contentDescription = "Primary", 
+                        modifier = Modifier.padding(AeonSize.D4.value).size(AeonSize.D10.value),
+                        tint = Color.White
+                    )
+                }
+            }
+            
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    getCurrencySymbol(code),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                    color = if (isPrimary) Color.White else AppColors.contentPrimary
+                )
                 Text(
                     code,
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.sp),
+                    color = if (isPrimary) Color.White.copy(alpha = 0.7f) else AppColors.contentSecondary
                 )
-                if (isPrimary) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(12.dp))
-                }
             }
         }
     }
 }
-

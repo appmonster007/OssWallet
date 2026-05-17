@@ -16,6 +16,7 @@ interface SettingsRepository {
     val use24HourFormat: Flow<Boolean>
     val mapsAccessEnabled: Flow<Boolean>
     val currencyProvider: Flow<String>
+    val userName: Flow<String>
     val dashboardSettings: Flow<DashboardSettings>
     val accountsViewSettings: Flow<AccountsViewSettings>
     val accountDetailSettings: Flow<AccountDetailSettings>
@@ -37,6 +38,7 @@ interface SettingsRepository {
     suspend fun saveUse24HourFormat(use24Hour: Boolean)
     suspend fun saveMapsAccessEnabled(enabled: Boolean)
     suspend fun saveCurrencyProvider(providerId: String)
+    suspend fun saveUserName(name: String)
     suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)
     suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings)
     suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings)

@@ -48,11 +48,12 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
 import com.osscabinet.ossWallet.ui.screens.tags.list.TagListScreen
-import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
 import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletViewModel
 import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletScreen
 import com.osscabinet.ossWallet.ui.screens.categories.list.CategoryListScreen
+import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
+import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryScreen
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
@@ -174,42 +175,45 @@ fun OssWalletNavGraph(
         }
     )
 
-    val accountEntryViewModel: AccountEntryViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            AccountEntryViewModel(
-                appContainer.accountUseCases,
-                appContainer.accountRepository,
-                appContainer.transactionRepository,
-                appContainer.computationRepository,
-                appContainer.settingsRepository
-            )
-        }
-    )
-
-    val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
-    val keepSplashOnScreen = when (isOnboardingCompleted) {
-        null -> true
-        false -> false
-        true -> dashboardUiState is DashboardUiState.Loading
-    }
+    val keepSplashOnScreen = dashboardUiState is DashboardUiState.Loading
 
     SideEffect {
         onSplashConditionChanged(keepSplashOnScreen)
     }
 
-    if (isOnboardingCompleted == false) {
-        OnboardingScreen(
-            viewModel = settingsViewModel,
-            accountEntryViewModel = accountEntryViewModel,
-            onFinished = { /* State change will trigger re-composition */ }
-        )
-    } else if (isOnboardingCompleted == true) {
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Dashboard.createRoute(topLevel = true)
-        ) {
+    NavHost(
+        navController = navController,
+        startDestination = if (isOnboardingCompleted == true) Screen.Dashboard.createRoute(topLevel = true) else Screen.Onboarding.route
+    ) {
+            composable(
+                route = Screen.Onboarding.route,
+                enterTransition = { FadeEnterTransitionSpec },
+                exitTransition = { FadeExitTransitionSpec },
+                popEnterTransition = { FadeEnterTransitionSpec },
+                popExitTransition = { FadeExitTransitionSpec }
+            ) {
+                val onboardingViewModel: OnboardingViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        OnboardingViewModel(
+                            appContainer.settingsRepository,
+                            appContainer.profileRepository,
+                            appContainer.exchangeRateProviderRegistry
+                        )
+                    }
+                )
+                OnboardingScreen(
+                    viewModel = onboardingViewModel,
+                    onComplete = {
+                        navController.navigate(Screen.Dashboard.createRoute(topLevel = true)) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             composable(
                 route = Screen.Dashboard.route,
                 arguments = listOf(
@@ -1035,5 +1039,4 @@ fun OssWalletNavGraph(
                 )
             }
         }
-    }
 }

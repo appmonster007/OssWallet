@@ -63,6 +63,7 @@ fun SettingsScreen(
     val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
     val availableProviders = viewModel.availableProviders
+    val availableCurrencies by viewModel.availableCurrencies.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()

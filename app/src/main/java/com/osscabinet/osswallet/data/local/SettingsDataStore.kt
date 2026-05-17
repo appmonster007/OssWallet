@@ -83,6 +83,7 @@ class SettingsDataStore(private val context: Context) {
         val USE_24_HOUR_FORMAT_KEY = booleanPreferencesKey("use_24_hour_format")
         val MAPS_ACCESS_ENABLED_KEY = booleanPreferencesKey("maps_access_enabled")
         val CURRENCY_PROVIDER_KEY = stringPreferencesKey("currency_provider")
+        val USER_NAME_KEY = stringPreferencesKey("user_name")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
@@ -140,6 +141,10 @@ class SettingsDataStore(private val context: Context) {
 
     val currencyProvider: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[CURRENCY_PROVIDER_KEY] ?: "exchangerate-api"
+    }
+
+    val userName: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[USER_NAME_KEY] ?: ""
     }
 
     val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
@@ -267,6 +272,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveCurrencyProvider(providerId: String) {
         context.dataStore.edit { preferences ->
             preferences[CURRENCY_PROVIDER_KEY] = providerId
+        }
+    }
+
+    suspend fun saveUserName(name: String) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_NAME_KEY] = name
         }
     }
 

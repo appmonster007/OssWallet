@@ -81,6 +81,10 @@ class SettingsViewModel(
     val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
 
+    val availableCurrencies: StateFlow<List<String>> = currencyProvider
+        .map { providerId -> providerRegistry.getProvider(providerId).fetchSupportedCurrencies().map { it.code } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val availableProviders: List<ExchangeRateProvider> = providerRegistry.getAllProviders()
 
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted

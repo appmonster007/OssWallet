@@ -246,7 +246,7 @@ fun FilterFields(
         modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // Search (Note/Payee)
+        // Search (Note/Payee/Tags)
         if (filterRules.allowSearch) {
             EntrySection(
                 title = "SEARCH",
@@ -369,10 +369,27 @@ fun FilterFields(
                         leadingIcon = Icons.Rounded.Person
                     )
                 }
+
+                // Tags (Moved from Context) - Similar to Transaction Entry Screen
+                if (filterRules.allowTagSelection) {
+                    val selectedTags = remember(filter.tags, allTags) {
+                        filter.tags.map { tagName ->
+                            allTags.find { it.name == tagName } ?: Tag(name = tagName)
+                        }
+                    }
+                    EntryTagSection(
+                        tags = selectedTags,
+                        onShowTagSheet = { activeSheet = "Tags" },
+                        onRemoveTag = { tagName ->
+                            onFilterChange(filter.copy(tags = filter.tags - tagName))
+                        },
+                        label = "FILTER BY TAGS"
+                    )
+                }
             }
         }
 
-        // Primary Context Grid (Type, Accounts, Categories, Currencies)
+        // Primary Context Grid (Type, Accounts, Categories, Currencies, Status, Methods)
         AeonContextGrid {
             EntryActionRow {
                 // Type Card
@@ -441,73 +458,34 @@ fun FilterFields(
                     )
                 }
             }
-        }
 
-        // Secondary Context section (Tags and Toggles)
-        EntrySection(
-            title = "CONTEXT",
-            icon = Icons.Rounded.Explore
-        ) {
-            AeonContextGrid {
-                // Tags Card
-                if (filterRules.allowTagSelection) {
-                    EntryActionRow {
+            // Status & Methods (Moved from separate section)
+            if (filterRules.allowStatusSelection || filterRules.allowPaymentMethodSelection) {
+                EntryActionRow {
+                    if (filterRules.allowStatusSelection) {
                         EntryActionCard(
-                            icon = Icons.Default.Label,
-                            label = "TAGS",
-                            value = if (filter.tags.isEmpty()) "All" else "${filter.tags.size} Selected",
-                            isSelected = filter.tags.isNotEmpty(),
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { activeSheet = "Tags" },
-                            iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
+                            icon = Icons.AutoMirrored.Rounded.FactCheck,
+                            label = "STATUS",
+                            value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
+                            isSelected = filter.statuses.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "Statuses" },
+                            iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
                             iconTint = AppColors.secondary
                         )
                     }
-                }
-            }
 
-            // Future Transactions Toggle
-            EntrySwitchRow(
-                icon = Icons.Default.Update,
-                label = "Show Future Transactions",
-                checked = !filter.excludeFuture,
-                onCheckedChange = { onFilterChange(filter.copy(excludeFuture = !it)) }
-            )
-        }
-
-        // Status & Methods
-        if (filterRules.allowStatusSelection || filterRules.allowPaymentMethodSelection) {
-            EntrySection(
-                title = "STATUS & METHODS",
-                icon = Icons.AutoMirrored.Rounded.FactCheck
-            ) {
-                AeonContextGrid {
-                    EntryActionRow {
-                        if (filterRules.allowStatusSelection) {
-                            EntryActionCard(
-                                icon = Icons.AutoMirrored.Rounded.FactCheck,
-                                label = "STATUS",
-                                value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
-                                isSelected = filter.statuses.isNotEmpty(),
-                                modifier = Modifier.weight(1f),
-                                onClick = { activeSheet = "Statuses" },
-                                iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
-                                iconTint = AppColors.secondary
-                            )
-                        }
-
-                        if (filterRules.allowPaymentMethodSelection) {
-                            EntryActionCard(
-                                icon = Icons.Default.Payments,
-                                label = "METHODS",
-                                value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
-                                isSelected = filter.paymentMethods.isNotEmpty(),
-                                modifier = Modifier.weight(1f),
-                                onClick = { activeSheet = "PaymentMethods" },
-                                iconContainerColor = AppColors.primary.copy(alpha = 0.1f),
-                                iconTint = AppColors.primary
-                            )
-                        }
+                    if (filterRules.allowPaymentMethodSelection) {
+                        EntryActionCard(
+                            icon = Icons.Default.Payments,
+                            label = "METHODS",
+                            value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
+                            isSelected = filter.paymentMethods.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                            onClick = { activeSheet = "PaymentMethods" },
+                            iconContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                            iconTint = AppColors.primary
+                        )
                     }
                 }
             }

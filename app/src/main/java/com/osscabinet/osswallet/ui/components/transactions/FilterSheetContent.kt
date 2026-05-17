@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -135,6 +136,26 @@ fun FilterSheetContent(
                 applyFilterWithDebounce(localFilter, debounceMs = 0)
             },
             swipeEntireComponent = true
+        )
+
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = AppColors.divider
+        )
+
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+
+        // Future Transactions Toggle - Moved below timeline as requested
+        EntrySwitchRow(
+            icon = Icons.Default.Update,
+            label = "Show Future Transactions",
+            checked = !localFilter.excludeFuture,
+            onCheckedChange = { 
+                localFilter = localFilter.copy(excludeFuture = !it)
+                applyFilterWithDebounce(localFilter, debounceMs = 0)
+            }
         )
 
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
@@ -308,12 +329,12 @@ internal fun FilterSheetDragHandle(
         animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "handle_rotation"
     )
-    // When fully expanded the sheet top can reach the status bar area.
-    // Animate a top padding equal to the status bar height so the visible
-    // pull tab always stays below the system status bar.
-    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        .plus(64.dp) // title bar height
-        .minus(20.dp) // pull tab height
+    // When fully expanded the sheet top should reach the status bar area.
+    // The top of the pull tab starts at (status bar height - pull tab height)
+    // so that the sheet content starts exactly below the status bar.
+    val pullTabHeight = 20.dp
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val statusBarTopPadding = (statusBarHeight - pullTabHeight).coerceAtLeast(0.dp)
     val topPadding by animateDpAsState(
         targetValue = if (isExpanded) statusBarTopPadding else 0.dp,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -328,7 +349,7 @@ internal fun FilterSheetDragHandle(
         // Flat bookmark-style pull tab: wide, short, gently rounded top corners only.
         Box(
             modifier = Modifier
-                .size(width = 88.dp, height = 20.dp)
+                .size(width = 88.dp, height = pullTabHeight)
                 .background(
                     backgroundColor,
                     RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)

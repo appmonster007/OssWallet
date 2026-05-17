@@ -18,7 +18,7 @@ import java.math.BigDecimal
 
 
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 1500, name = "Account Entry Screen - Edit")
+@Preview(showBackground = true, widthDp = 400, heightDp = 1000, name = "Account Entry Screen - Edit")
 @Composable
 fun AccountEntryEditPreview() {
     OssWalletTheme {
@@ -105,7 +105,7 @@ fun FullLoanEntryPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 3500, name = "Full Budget Entry Screen")
+@Preview(showBackground = true, widthDp = 400, heightDp = 2000, name = "Full Budget Entry Screen")
 @Composable
 fun FullBudgetEntryPreview() {
     OssWalletTheme {
@@ -135,7 +135,7 @@ fun FullBudgetEntryPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 3500, name = "Full Filter Entry Screen")
+@Preview(showBackground = true, widthDp = 400, heightDp = 1250, name = "Full Filter Entry Screen")
 @Composable
 fun FullFilterEntryPreview() {
     OssWalletTheme {

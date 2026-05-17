@@ -86,7 +86,7 @@ fun TransactionListContent(
                         }
                     }
                 },
-                backgroundColor = AppColors.cardSurfaceProminent
+                backgroundColor = AppColors.insetSurface
             )
         },
         topBar = {

@@ -3,6 +3,9 @@ package com.osscabinet.ossWallet.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -24,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -32,10 +36,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.ui.util.isDark
+import kotlinx.coroutines.launch
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -258,26 +264,28 @@ fun AeonTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
-    prefix: String? = null
+    prefix: String? = null,
+    height: Dp = 44.dp
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth().height(34.dp),
+        modifier = modifier.fillMaxWidth().height(height),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = AppColors.insetSurface.copy(alpha = 0.4f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXl),
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (leadingIcon != null) {
                 Icon(leadingIcon, contentDescription = null, tint = AppColors.border, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
-                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
             }
             if (prefix != null) {
                 Text(
                     prefix,
                     style = AppTextStyles.listItemTitle.copy(
                         color = AppColors.border,
+                        fontSize = 13.sp,
                         fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Bold
                     )
                 )
@@ -289,9 +297,11 @@ fun AeonTextField(
                 modifier = Modifier.weight(1f),
                 textStyle = AppTextStyles.listItemTitle.copy(
                     color = AppColors.contentPrimary,
+                    fontSize = 14.sp,
                     fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Normal
                 ),
                 cursorBrush = SolidColor(AppColors.primary),
+                singleLine = true,
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) Text(placeholder, color = AppColors.contentSecondary.copy(alpha = 0.6f))
                     innerTextField()
@@ -302,45 +312,139 @@ fun AeonTextField(
 }
 
 @Composable
-fun VerticalColorSlider(
+fun AeonSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     range: ClosedFloatingPointRange<Float>,
     brush: Brush,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isHorizontal: Boolean = true,
+    height: Dp = 48.dp
 ) {
-    Canvas(
+    var isDragging by remember { mutableStateOf(false) }
+    val thumbScale by animateFloatAsState(if (isDragging) 1.15f else 1f, label = "ThumbScale")
+
+    Box(
         modifier = modifier
-            .width(48.dp)
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(24.dp))
+            .then(
+                if (isHorizontal) Modifier.fillMaxWidth().height(height) 
+                else Modifier.fillMaxHeight().width(height)
+            )
+            .shadow(
+                elevation = 8.dp,
+                shape = CircleShape,
+                clip = false,
+                ambientColor = Color.Black.copy(alpha = 0.4f),
+                spotColor = Color.Black.copy(alpha = 0.4f)
+            )
+            .clip(CircleShape)
             .background(brush)
             .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    val newValue = (1f - (offset.y / size.height)).coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
+                detectTapGestures(
+                    onPress = { 
+                        isDragging = true
+                        try {
+                            awaitRelease()
+                        } finally {
+                            isDragging = false
+                        }
+                    }
+                ) { offset ->
+                    val progress = if (isHorizontal) (offset.x / size.width) else (1f - (offset.y / size.height))
+                    val newValue = progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
                     onValueChange(newValue)
                 }
             }
             .pointerInput(Unit) {
-                detectDragGestures { change, _ ->
-                    val newValue = (1f - (change.position.y / size.height)).coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
+                detectDragGestures(
+                    onDragStart = { isDragging = true },
+                    onDragEnd = { isDragging = false },
+                    onDragCancel = { isDragging = false }
+                ) { change, _ ->
+                    val progress = if (isHorizontal) (change.position.x / size.width) else (1f - (change.position.y / size.height))
+                    val newValue = progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
                     onValueChange(newValue)
                 }
             }
     ) {
-        val thumbY = (1f - (value - range.start) / (range.endInclusive - range.start))
-        val y = thumbY * size.height
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val progress = (value - range.start) / (range.endInclusive - range.start)
+            val center = if (isHorizontal) {
+                androidx.compose.ui.geometry.Offset(progress * size.width, size.height / 2)
+            } else {
+                androidx.compose.ui.geometry.Offset(size.width / 2, (1f - progress) * size.height)
+            }
+            
+            // Simple white thumb as seen in inspiration
+            val radius = 18.dp.toPx() * thumbScale
+            
+            // Subtle shadow for the thumb itself
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.25f),
+                radius = radius + 3.dp.toPx(),
+                center = center.copy(y = center.y + 1.5.dp.toPx())
+            )
+            
+            drawCircle(
+                color = Color.White,
+                radius = radius,
+                center = center
+            )
+        }
+    }
+}
+
+@Composable
+fun HorizontalColorSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    range: ClosedFloatingPointRange<Float>,
+    brush: Brush,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    icon: ImageVector? = null
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (icon != null) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+            )
+        } else if (label != null) {
+            Text(
+                label,
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                ),
+                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                modifier = Modifier.width(32.dp)
+            )
+        }
         
-        drawCircle(
-            color = ColorOnDark,
-            radius = 12.dp.toPx(),
-            center = androidx.compose.ui.geometry.Offset(size.width / 2, y)
+        AeonSlider(
+            value = value,
+            onValueChange = onValueChange,
+            range = range,
+            brush = brush,
+            isHorizontal = true,
+            modifier = Modifier.weight(1f)
         )
-        drawCircle(
-            color = ColorOnLight.copy(alpha = 0.2f),
-            radius = 12.dp.toPx(),
-            center = androidx.compose.ui.geometry.Offset(size.width / 2, y),
-            style = Stroke(width = 1.dp.toPx())
+        
+        Text(
+            if (range.endInclusive <= 1f) "${(value * 100).toInt()}%" else "${value.toInt()}°",
+            style = AppTextStyles.transactionSwipeAction.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            color = AppColors.contentSecondary,
+            modifier = Modifier.width(44.dp)
         )
     }
 }
@@ -351,6 +455,9 @@ fun ColorWheel(
     onColorSelected: (Color) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isInteracting by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
     Box(
         modifier = modifier.aspectRatio(1f),
         contentAlignment = Alignment.Center
@@ -365,7 +472,11 @@ fun ColorWheel(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(hsv[2]) {
-                    detectDragGestures { change, _ ->
+                    detectDragGestures(
+                        onDragStart = { isInteracting = true },
+                        onDragEnd = { isInteracting = false },
+                        onDragCancel = { isInteracting = false }
+                    ) { change, _ ->
                         val radius = size.width / 2f
                         val center = androidx.compose.ui.geometry.Offset(radius, radius)
                         val dx = change.position.x - center.x
@@ -379,7 +490,16 @@ fun ColorWheel(
                     }
                 }
                 .pointerInput(hsv[2]) {
-                    detectTapGestures { offset ->
+                    detectTapGestures(
+                        onPress = {
+                            isInteracting = true
+                            try {
+                                awaitRelease()
+                            } finally {
+                                isInteracting = false
+                            }
+                        }
+                    ) { offset ->
                         val radius = size.width / 2f
                         val center = androidx.compose.ui.geometry.Offset(radius, radius)
                         val dx = offset.x - center.x
@@ -413,6 +533,18 @@ fun ColorWheel(
                 ),
                 radius = radius
             )
+            
+            // Inner Well Shadow/Rim
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.15f),
+                radius = radius,
+                style = Stroke(width = 2.dp.toPx())
+            )
+            drawCircle(
+                color = ColorOnLight.copy(alpha = 0.1f),
+                radius = radius,
+                style = Stroke(width = 1.dp.toPx())
+            )
 
             // Handle Position
             val angle = (hsv[0] * PI / 180).toFloat()
@@ -420,22 +552,39 @@ fun ColorWheel(
             val handleX = center.x + r * cos(angle)
             val handleY = center.y + r * sin(angle)
 
-            // Glass Handle (3D Effect)
+            val handleOffset = androidx.compose.ui.geometry.Offset(handleX, handleY)
+            
+            // Halo/Glow when interacting
+            if (isInteracting) {
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.2f),
+                    radius = 24.dp.toPx(),
+                    center = handleOffset
+                )
+            }
+
+            // Simple white handle matching new slider style
+            val handleRadius = 14.dp.toPx()
+            
+            // Shadow
             drawCircle(
-                color = ColorOnDark,
-                radius = 18.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(handleX, handleY)
+                color = Color.Black.copy(alpha = 0.2f),
+                radius = handleRadius + 2.dp.toPx(),
+                center = handleOffset.copy(y = handleOffset.y + 1.dp.toPx())
             )
+            
+            // White Outer
+            drawCircle(
+                color = Color.White,
+                radius = handleRadius,
+                center = handleOffset
+            )
+            
+            // Inner Color Core (Optional, but helps see what's picked)
             drawCircle(
                 color = selectedColor,
-                radius = 14.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(handleX, handleY)
-            )
-            drawCircle(
-                color = ChartRimHighlight,
-                radius = 14.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(handleX, handleY),
-                style = Stroke(width = 2.dp.toPx())
+                radius = handleRadius * 0.7f,
+                center = handleOffset
             )
         }
     }
@@ -443,12 +592,13 @@ fun ColorWheel(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AdvancedColorPickerDialog(
+fun AdvancedColorPickerContent(
     initialColorHex: String,
     onColorSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+    modifier: Modifier = Modifier,
+    initialPage: Int = 0
 ) {
-    var hsv by remember {
+    var hsv by remember(initialColorHex) {
         val hsvOut = FloatArray(3)
         try {
             android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(initialColorHex), hsvOut)
@@ -458,12 +608,239 @@ fun AdvancedColorPickerDialog(
         mutableStateOf(Triple(hsvOut[0], hsvOut[1], hsvOut[2]))
     }
 
-    val pagerState = remember {
-        object : PagerState() {
-            override val pageCount: Int get() = 2
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { 2 })
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        // Tab Switcher (Segmented Control)
+        Surface(
+            modifier = Modifier
+                .width(220.dp)
+                .height(40.dp),
+            shape = CircleShape,
+            color = AppColors.insetSurface.copy(alpha = 0.4f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                val selectedTabX = animateDpAsState(
+                    targetValue = if (pagerState.currentPage == 0) 0.dp else 110.dp,
+                    label = "TabSelection"
+                )
+                
+                // Animated Pill
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .offset { androidx.compose.ui.unit.IntOffset(selectedTabX.value.roundToPx(), 0) }
+                        .width(102.dp)
+                        .fillMaxHeight()
+                        .background(AppColors.primary, CircleShape)
+                        .border(1.dp, ColorOnLight.copy(alpha = 0.15f), CircleShape)
+                )
+
+                Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                    listOf("Sliders", "Wheel").forEachIndexed { index, title ->
+                        val isSelected = pagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable(
+                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                title,
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 12.sp
+                                ),
+                                color = if (isSelected) (if (AppColors.primary.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().height(280.dp)
+        ) { page ->
+            if (page == 0) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically)
+                ) {
+                    // Hue Slider
+                    HorizontalColorSlider(
+                        value = hsv.first,
+                        onValueChange = { 
+                            hsv = hsv.copy(first = it)
+                            val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                            onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                        },
+                        range = 0f..360f,
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
+                        ),
+                        icon = Icons.Rounded.Palette
+                    )
+                    // Saturation Slider
+                    HorizontalColorSlider(
+                        value = hsv.second,
+                        onValueChange = { 
+                            hsv = hsv.copy(second = it)
+                            val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                            onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                        },
+                        range = 0f..1f,
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.hsv(hsv.first, 0f, hsv.third), Color.hsv(hsv.first, 1f, hsv.third))
+                        ),
+                        icon = Icons.Rounded.InvertColors
+                    )
+                    // Brightness Slider
+                    HorizontalColorSlider(
+                        value = hsv.third,
+                        onValueChange = { 
+                            hsv = hsv.copy(third = it)
+                            val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                            onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                        },
+                        range = 0f..1f,
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Black, Color.hsv(hsv.first, hsv.second, 1f))
+                        ),
+                        icon = Icons.Rounded.LightMode
+                    )
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    ColorWheel(
+                        selectedColor = Color.hsv(hsv.first, hsv.second, hsv.third),
+                        onColorSelected = { color ->
+                            val newHsv = FloatArray(3)
+                            android.graphics.Color.colorToHSV(color.toArgb(), newHsv)
+                            hsv = Triple(newHsv[0], newHsv[1], hsv.third) // Keep brightness
+                            val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                            onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                        },
+                        modifier = Modifier.size(200.dp)
+                    )
+                    
+                    // Brightness Slider for Wheel Page
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.LightMode, 
+                            contentDescription = null, 
+                            tint = AppColors.contentSecondary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        AeonSlider(
+                            value = hsv.third,
+                            onValueChange = { 
+                                hsv = hsv.copy(third = it)
+                                val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                                onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                            },
+                            range = 0f..1f,
+                            brush = Brush.horizontalGradient(
+                                listOf(Color.Black, Color.hsv(hsv.first, hsv.second, 1f))
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "${(hsv.third * 100).toInt()}%",
+                            style = AppTextStyles.transactionSwipeAction.copy(fontSize = 12.sp),
+                            color = AppColors.contentSecondary,
+                            modifier = Modifier.width(36.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Preview and HEX
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            val currentColor = Color.hsv(hsv.first, hsv.second, hsv.third)
+            
+            // New Comparison Preview (Old vs New)
+            Box(
+                modifier = Modifier
+                    .size(80.dp, 52.dp)
+                    .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
+                    .border(1.dp, AppColors.divider.copy(alpha = 0.1f), RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
+            ) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // Original Color
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(try { Color(android.graphics.Color.parseColor(initialColorHex)) } catch(e: Exception) { Color.Gray })
+                    )
+                    // New Color
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(currentColor)
+                    )
+                }
+            }
+
+            AeonTextField(
+                value = initialColorHex,
+                onValueChange = { 
+                    if (it.length <= 7) {
+                        val newHex = if (it.startsWith("#")) it else "#$it"
+                        try {
+                            val hsvOut = FloatArray(3)
+                            android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(newHex), hsvOut)
+                            hsv = Triple(hsvOut[0], hsvOut[1], hsvOut[2])
+                            onColorSelected(newHex)
+                        } catch (e: Exception) {
+                            onColorSelected(newHex)
+                        }
+                    }
+                },
+                placeholder = DefaultAccentColorHex,
+                prefix = "HEX",
+                modifier = Modifier.weight(1f)
+            )
         }
     }
+}
 
+@Composable
+fun AdvancedColorPickerDialog(
+    initialColorHex: String,
+    onColorSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -473,160 +850,10 @@ fun AdvancedColorPickerDialog(
         tonalElevation = 8.dp,
         title = { Text("Color Selection") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth().height(320.dp)
-                ) { page ->
-                    if (page == 0) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            // Hue Slider
-                            VerticalColorSlider(
-                                value = hsv.first,
-                                onValueChange = { 
-                                    hsv = hsv.copy(first = it)
-                                    val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
-                                    onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
-                                },
-                                range = 0f..360f,
-                                brush = Brush.verticalGradient(
-                                    listOf(Color.Red, Color.Magenta, Color.Blue, Color.Cyan, Color.Green, Color.Yellow, Color.Red).reversed()
-                                )
-                            )
-                                // Saturation Slider
-                            VerticalColorSlider(
-                                value = hsv.second,
-                                onValueChange = { 
-                                    hsv = hsv.copy(second = it)
-                                    val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
-                                    onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
-                                },
-                                range = 0f..1f,
-                                brush = Brush.verticalGradient(
-                                    listOf(Color.hsv(hsv.first, 1f, hsv.third), Color.hsv(hsv.first, 0f, hsv.third))
-                                )
-                            )
-                            // Brightness Slider
-                            VerticalColorSlider(
-                                value = hsv.third,
-                                onValueChange = { 
-                                    hsv = hsv.copy(third = it)
-                                    val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
-                                    onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
-                                },
-                                range = 0f..1f,
-                                brush = Brush.verticalGradient(
-                                    listOf(Color.hsv(hsv.first, hsv.second, 1f), ColorOnLight)
-                                )
-                            )
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            ColorWheel(
-                                selectedColor = Color.hsv(hsv.first, hsv.second, hsv.third),
-                                onColorSelected = { color ->
-                                    val newHsv = FloatArray(3)
-                                    android.graphics.Color.colorToHSV(color.toArgb(), newHsv)
-                                    hsv = Triple(newHsv[0], newHsv[1], hsv.third) // Keep brightness
-                                    val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
-                                    onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
-                                },
-                                modifier = Modifier.size(220.dp)
-                            )
-                            
-                            // Brightness Slider for Wheel Page
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(Icons.Rounded.LightMode, contentDescription = null, tint = AppColors.border)
-                                Slider(
-                                    value = hsv.third,
-                                    onValueChange = { 
-                                        hsv = hsv.copy(third = it)
-                                        val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
-                                        onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
-                                    },
-                                    valueRange = 0f..1f,
-                                    modifier = Modifier.weight(1f),
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = ColorOnDark,
-                                        activeTrackColor = Color.hsv(hsv.first, hsv.second, 1f),
-                                        inactiveTrackColor = AppColors.insetSurface
-                                    )
-                                )
-                                Text(
-                                    "${(hsv.third * 100).toInt()}%",
-                                    style = AppTextStyles.drawerItemLabel,
-                                    modifier = Modifier.width(36.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Page Indicator
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    repeat(2) { index ->
-                        val color = if (pagerState.currentPage == index) AppColors.primary else AppColors.divider
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                        )
-                    }
-                }
-
-                // Preview and HEX
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    val currentColor = Color.hsv(hsv.first, hsv.second, hsv.third)
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(currentColor)
-                    )
-                    AeonTextField(
-                        value = initialColorHex,
-                        onValueChange = { 
-                            if (it.length <= 7) {
-                                val newHex = if (it.startsWith("#")) it else "#$it"
-                                try {
-                                    val hsvOut = FloatArray(3)
-                                    android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(newHex), hsvOut)
-                                    hsv = Triple(hsvOut[0], hsvOut[1], hsvOut[2])
-                                    onColorSelected(newHex)
-                                } catch (e: Exception) {
-                                    onColorSelected(newHex)
-                                }
-                            }
-                        },
-                        placeholder = DefaultAccentColorHex,
-                        prefix = "HEX",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            AdvancedColorPickerContent(
+                initialColorHex = initialColorHex,
+                onColorSelected = onColorSelected
+            )
         }
     )
 }
@@ -663,7 +890,8 @@ fun AeonColorSelection(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .alpha(alpha),
+                .alpha(alpha)
+                .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -706,10 +934,10 @@ fun AeonColorSelection(
         Row(
             modifier = Modifier.alpha(alpha),
             verticalAlignment = Alignment.CenterVertically, 
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
-            Box(modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clip(CircleShape).background(color))
+            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(color))
             AeonTextField(
                 value = accentColorHex,
                 onValueChange = { if (!isColorLocked && it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
@@ -719,9 +947,9 @@ fun AeonColorSelection(
             )
             IconButton(
                 onClick = { if (!isColorLocked) showColorPicker = true },
-                modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
+                modifier = Modifier.size(44.dp).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
             ) {
-                Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
+                Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker", modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -749,8 +977,8 @@ fun VisualIdentitySection(
     var showAllIcons by remember { mutableStateOf(false) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
             AeonFlowSectionHeader(title = "IDENTIFIER ICON")
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 AeonTextField(
@@ -762,9 +990,9 @@ fun VisualIdentitySection(
                 )
                 IconButton(
                     onClick = { showAllIcons = true },
-                    modifier = Modifier.size(56.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
+                    modifier = Modifier.size(44.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
                 ) {
-                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
+                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons", modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -793,17 +1021,27 @@ fun VisualIdentitySection(
                 }
             } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
                 // Show currently selected icon if search is blank
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically, 
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+                    modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
+                ) {
                     val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
                     Surface(
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
+                        modifier = Modifier.size(48.dp),
                         shape = CircleShape,
                         color = accentColor,
                         contentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
                     ) {
-                        Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
+                        Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
                     }
-                    Text(selectedIconName, style = AppTextStyles.transactionTitle, color = AppColors.border)
+                    Text(
+                        selectedIconName, 
+                        style = AppTextStyles.listItemTitle.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = AppColors.contentSecondary
+                        )
+                    )
                 }
             }
         }
@@ -849,5 +1087,37 @@ fun VisualIdentitySection(
                 TextButton(onClick = { showAllIcons = false }) { Text("Close") }
             }
         )
+    }
+}
+
+
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AdvancedColorPickerSlidersPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.sheetSurface) {
+            AdvancedColorPickerContent(
+                initialColorHex = "#2196F3",
+                onColorSelected = {},
+                modifier = Modifier.padding(24.dp),
+                initialPage = 0
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AdvancedColorPickerWheelPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.sheetSurface) {
+            AdvancedColorPickerContent(
+                initialColorHex = "#2196F3",
+                onColorSelected = {},
+                modifier = Modifier.padding(24.dp),
+                initialPage = 1
+            )
+        }
     }
 }

@@ -192,11 +192,11 @@ fun AeonFlowSectionHeader(
                 Text(
                     title.uppercase(),
                     style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
-                        fontSize = 12.sp
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.1.sp,
+                        fontSize = 11.sp
                     ),
-                    color = AppColors.primary.copy(alpha = 0.9f)
+                    color = AppColors.primary.copy(alpha = 0.8f)
                 )
 
                 if (activeFilterCount > 0) {

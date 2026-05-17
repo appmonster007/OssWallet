@@ -33,6 +33,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
@@ -79,7 +80,7 @@ fun AccountHeroCard(
 
     AeonExpressiveCard(
         title = account.name,
-        subtitle = account.structureType,
+        subtitle = account.structureType.displayName,
         icon = icon,
         iconColor = accountColor,
         accentColor = accountColor,
@@ -287,7 +288,7 @@ private fun FlowSummaryItem(
 @Composable
 fun AccountHeroCardPreview() {
     val account =
-        Account("1", "Wealth Fund", "USD", "Investment", "#004D40", "AccountBalance", emptyList())
+        Account("1", "Wealth Fund", "USD", AccountStructureType.INVESTMENT, "#004D40", "AccountBalance", emptyList())
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         Box(modifier = Modifier.padding(24.dp)) {
             AccountHeroCard(

@@ -317,7 +317,7 @@ fun AeonAccountCardLarge(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                account.structureType.uppercase(),
+                                account.structureType.displayName.uppercase(),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = AppTextStyles.transactionBadge,
                                 color = contentColor
@@ -421,7 +421,7 @@ fun AccountSelection(
                             },
                             idMapper = { it.id },
                             labelMapper = { it.name },
-                            detailMapper = { it.structureType },
+                            detailMapper = { it.structureType.displayName },
                             iconMapper = { AppIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
                             colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
                         )

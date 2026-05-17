@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
@@ -52,65 +53,69 @@ fun CategoryEditSheet(
         selectedColorHex
     }
 
-    AeonFullScreenDialog(onDismissRequest = onDismiss) {
-        AeonSelectionScreen(
-            title = if (!isEditMode) "New Category" else "Edit Category",
-            onBack = onDismiss,
-            actions = {
-                if (isEditMode && !isMandatory && onDelete != null) {
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = AppColors.error)
-                    }
-                }
-                
-                IconButton(
-                    onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
-                    enabled = name.isNotBlank() && !isMandatory
-                ) {
-                    Icon(
-                        Icons.Rounded.Done,
-                        contentDescription = "Save",
-                        tint = if (name.isNotBlank() && !isMandatory) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.38f)
-                    )
-                }
-            }
-        ) { padding ->
+    var showIdentityDialog by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = AppColors.panelSurface,
+            tonalElevation = 6.dp
+        ) {
             Column(
                 modifier = Modifier
-                    .padding(padding)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 40.dp),
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                // Header with Title and Actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (!isEditMode) "New Category" else "Edit Category",
+                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                    )
+                    
+                    if (isEditMode && !isMandatory && onDelete != null) {
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = AppColors.error)
+                        }
+                    }
+                }
+
                 if (isMandatory) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = AppColors.errorContainer.copy(alpha = 0.2f)
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 Icons.Rounded.Lock,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(16.dp),
                                 tint = AppColors.error
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "This is a system category and cannot be modified or deleted.",
-                                style = AppTextStyles.transactionSwipeAction,
+                                "System category locked.",
+                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 12.sp),
                                 color = AppColors.onErrorContainer
                             )
                         }
                     }
                 }
 
-                // Preview Header
+                // Interactive Hero Header
                 AeonHeroHeader(
                     title = name,
                     subtitle = if (selectedParentId != null) {
@@ -119,42 +124,44 @@ fun CategoryEditSheet(
                         "Primary Category"
                     },
                     iconName = selectedIcon,
-                    accentColorHex = displayColorHex
+                    accentColorHex = displayColorHex,
+                    isLeftAligned = true,
+                    onTitleChange = { if (!isMandatory) name = it },
+                    onIconClick = { if (!isMandatory) showIdentityDialog = true }
                 )
 
-                // Identity Section
-                EntrySection(title = "IDENTITY", icon = Icons.Rounded.Category) {
-                    EntryEditorialInput(
-                        value = name,
-                        onValueChange = { if (!isMandatory) name = it },
-                        label = "CATEGORY NAME",
-                        icon = Icons.Rounded.Category
-                    )
-
+                // Structure Section
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     val parentCategory = parentCategories.find { it.id == selectedParentId }
                     var showParentPicker by remember { mutableStateOf(false) }
 
                     EntryActionCard(
                         icon = Icons.Rounded.AccountTree,
                         label = "PARENT CATEGORY",
-                        value = parentCategory?.name ?: "None",
+                        value = parentCategory?.name ?: "None (Primary)",
                         onClick = { if (!isMandatory) showParentPicker = true },
                         iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
                         iconTint = AppColors.secondary
                     )
 
                     if (showParentPicker && !isMandatory) {
-                        AeonFullScreenDialog(onDismissRequest = { showParentPicker = false }) {
-                            AeonSelectionScreen(
-                                title = "Select Parent Category",
-                                onBack = { showParentPicker = false }
-                            ) { paddingPicker ->
-                                Column(
-                                    modifier = Modifier
-                                        .padding(paddingPicker)
-                                        .padding(24.dp)
-                                ) {
-                                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Dialog(onDismissRequest = { showParentPicker = false }) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.95f)
+                                    .fillMaxHeight(0.7f),
+                                shape = RoundedCornerShape(28.dp),
+                                color = AppColors.panelSurface,
+                                tonalElevation = 8.dp
+                            ) {
+                                Column(modifier = Modifier.padding(24.dp)) {
+                                    Text(
+                                        "Select Parent",
+                                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    )
+                                    
+                                    Box(modifier = Modifier.weight(1f)) {
                                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                             AeonHierarchicalHybridSelector(
                                                 items = parentCategories.filter { it.id != (category?.id ?: 0L) },
@@ -178,46 +185,93 @@ fun CategoryEditSheet(
                             }
                         }
                     }
-                }
 
-                if (selectedParentId != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        color = AppColors.secondaryContainer.copy(alpha = 0.2f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Rounded.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = AppColors.primary
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                "Inheriting color from parent category.",
-                                style = AppTextStyles.transactionSwipeAction,
-                                color = AppColors.onSecondaryContainer
-                            )
-                        }
+                    if (selectedParentId != null) {
+                        Text(
+                            "Inheriting color from parent category.",
+                            style = AppTextStyles.transactionSwipeAction.copy(
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            ),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                     }
                 }
 
-                // Visual Identity Section
-                VisualIdentitySection(
-                    selectedIconName = selectedIcon,
-                    onIconSelected = { if (!isMandatory) selectedIcon = it },
-                    accentColorHex = displayColorHex,
-                    onColorSelected = { 
-                        if (selectedParentId == null && !isMandatory) {
-                            selectedColorHex = it 
+                // Final Actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel", color = AppColors.contentSecondary)
+                    }
+                    
+                    Button(
+                        onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
+                        enabled = name.isNotBlank() && !isMandatory,
+                        modifier = Modifier.weight(1.5f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.primary,
+                            disabledContainerColor = AppColors.divider.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Text("Save Category")
+                    }
+                }
+            }
+        }
+    }
+
+    // Nested Visual Identity Dialog
+    if (showIdentityDialog) {
+        Dialog(onDismissRequest = { showIdentityDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .wrapContentHeight()
+                    .padding(vertical = 24.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = AppColors.panelSurface,
+                tonalElevation = 12.dp // Higher elevation than parent
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Visual Identity",
+                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                        )
+                        IconButton(onClick = { showIdentityDialog = false }) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Close")
                         }
-                    },
-                    isColorLocked = selectedParentId != null || isMandatory
-                )
+                    }
+
+                    VisualIdentitySection(
+                        selectedIconName = selectedIcon,
+                        onIconSelected = { selectedIcon = it },
+                        accentColorHex = displayColorHex,
+                        onColorSelected = { 
+                            if (selectedParentId == null) {
+                                selectedColorHex = it 
+                            }
+                        },
+                        isColorLocked = selectedParentId != null
+                    )
+                }
             }
         }
     }

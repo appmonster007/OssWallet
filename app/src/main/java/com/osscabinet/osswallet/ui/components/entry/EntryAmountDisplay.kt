@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,8 +35,10 @@ fun EntryAmountDisplay(
     modifier: Modifier = Modifier,
     amountColor: Color = AppColors.primary,
     supportedCurrencies: List<String> = listOf("USD"),
-    showCurrency: Boolean = true
+    showCurrency: Boolean = true,
+    label: String? = null
 ) {
+    val haptic = LocalHapticFeedback.current
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -42,10 +46,25 @@ fun EntryAmountDisplay(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { onAmountClick() }
+            ) { 
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onAmountClick() 
+            }
             .padding(vertical = AeonTheme.dimensions.spacingSm),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (label != null) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.5.sp
+                ),
+                color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

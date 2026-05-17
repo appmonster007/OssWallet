@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,8 @@ fun EntryEditorialInput(
     suggestions: List<String> = emptyList(),
     maxLines: Int = 4,
     placeholder: String = "Tap to enter...",
+    iconColor: Color = AppColors.primary,
+    enabled: Boolean = true,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -65,7 +68,7 @@ fun EntryEditorialInput(
         modifier = modifier.fillMaxWidth()
     ) {
         Surface(
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
             color = AppColors.recessedSurface,
             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
@@ -77,14 +80,14 @@ fun EntryEditorialInput(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.08f),
+                    color = iconColor.copy(alpha = 0.08f),
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = AppColors.primary,
+                            tint = iconColor,
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     }
@@ -114,8 +117,9 @@ fun EntryEditorialInput(
                         BasicTextField(
                             value = value,
                             onValueChange = onValueChange,
+                            enabled = enabled,
                             textStyle = AppTextStyles.listItemTitle.copy(
-                                color = AppColors.contentPrimary,
+                                color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.8f),
                                 fontWeight = FontWeight.Medium
                             ),
                             keyboardOptions = KeyboardOptions(
@@ -125,7 +129,7 @@ fun EntryEditorialInput(
                             maxLines = maxLines,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .focusRequester(focusRequester)
+                                .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
                                 .onFocusChanged { isFocused = it.isFocused }
                         )
                     }

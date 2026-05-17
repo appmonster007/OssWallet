@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
@@ -359,7 +360,7 @@ fun FilterSheetContentPreview() {
             id = "1",
             name = "Checking",
             currencyCode = "USD",
-            structureType = "Personal",
+            structureType = AccountStructureType.CHECKING,
             colorHex = "#FF0000",
             icon = "account_balance",
             allowedCurrencies = listOf("USD")
@@ -388,10 +389,10 @@ fun FilterSheetContentPreview() {
 @Composable
 fun FilterSheetContentLongPreview() {
     val sampleAccounts = listOf(
-        Account(id = "1", name = "Main Checking", currencyCode = "USD", structureType = "Checking", colorHex = "#4CAF50", icon = "account_balance"),
-        Account(id = "2", name = "Savings", currencyCode = "USD", structureType = "Savings", colorHex = "#2196F3", icon = "savings"),
-        Account(id = "3", name = "Credit Card", currencyCode = "USD", structureType = "Credit", colorHex = "#F44336", icon = "credit_card"),
-        Account(id = "4", name = "Cash Wallet", currencyCode = "USD", structureType = "Cash", colorHex = "#FFC107", icon = "payments")
+        Account(id = "1", name = "Main Checking", currencyCode = "USD", structureType = AccountStructureType.CHECKING, colorHex = "#4CAF50", icon = "account_balance"),
+        Account(id = "2", name = "Savings", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, colorHex = "#2196F3", icon = "savings"),
+        Account(id = "3", name = "Credit Card", currencyCode = "USD", structureType = AccountStructureType.CREDIT_CARD, colorHex = "#F44336", icon = "credit_card"),
+        Account(id = "4", name = "Cash Wallet", currencyCode = "USD", structureType = AccountStructureType.CASH, colorHex = "#FFC107", icon = "payments")
     )
     val sampleCategories = listOf(
         Category(id = 1, name = "Housing", iconName = "home", colorHex = 0xFF2196F3.toInt(), isDefault = true, parentId = null),

@@ -6,7 +6,7 @@ data class Account(
     val id: String,
     val name: String,
     val currencyCode: String,
-    val structureType: String,
+    val structureType: AccountStructureType,
     val colorHex: String,
     val icon: String,
     val allowedCurrencies: List<String> = emptyList(),

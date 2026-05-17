@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.list
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -17,8 +18,8 @@ import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 @Composable
 fun AeonTransactionListFilteredPreview() {
     val mockAccounts = listOf(
-        Account("1", "Main Bank", "USD", "REGULAR", "#2196F3", "AccountBalance", listOf("USD")),
-        Account("2", "Cash", "USD", "REGULAR", "#4CAF50", "AccountBalanceWallet", listOf("USD"))
+        Account("1", "Main Bank", "USD", AccountStructureType.CHECKING, "#2196F3", "AccountBalance", listOf("USD")),
+        Account("2", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "AccountBalanceWallet", listOf("USD"))
     )
     
     val mockCategories = listOf(

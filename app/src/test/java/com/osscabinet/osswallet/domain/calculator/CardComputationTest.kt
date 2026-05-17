@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.calculator
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
@@ -54,8 +55,8 @@ class CardComputationTest {
     ))
     
     private val accounts = listOf(
-        Account(id = "1", name = "Cash", currencyCode = "USD", structureType = "wallet", colorHex = "#FFFFFF", icon = "wallet"),
-        Account(id = "2", name = "Bank", currencyCode = "EUR", structureType = "bank", colorHex = "#000000", icon = "bank")
+        Account(id = "1", name = "Cash", currencyCode = "USD", structureType = AccountStructureType.CASH, colorHex = "#FFFFFF", icon = "wallet"),
+        Account(id = "2", name = "Bank", currencyCode = "EUR", structureType = AccountStructureType.CHECKING, colorHex = "#000000", icon = "bank")
     )
 
     private val transactions = listOf(

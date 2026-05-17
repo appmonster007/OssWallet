@@ -6,5 +6,6 @@ data class Category(
     val iconName: String,
     val colorHex: Int,
     val isDefault: Boolean,
-    val parentId: Long?
+    val parentId: Long?,
+    val nature: CategoryNature = CategoryNature.WANT
 )

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import kotlinx.coroutines.flow.Flow
 
 class CategoryUseCases(
@@ -15,7 +16,8 @@ class CategoryUseCases(
         iconName: String,
         colorHex: Int,
         parentId: Long? = null,
-        isDefault: Boolean = false
+        isDefault: Boolean = false,
+        nature: CategoryNature = CategoryNature.WANT
     ) {
         categoryDao.insertCategory(
             CategoryEntity(
@@ -24,7 +26,8 @@ class CategoryUseCases(
                 iconName = iconName,
                 colorHex = colorHex,
                 parentId = parentId,
-                isDefault = isDefault
+                isDefault = isDefault,
+                nature = nature
             )
         )
     }

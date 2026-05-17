@@ -68,7 +68,7 @@ fun CategoryEntryDialogPreview() {
                     Category(id = 2L, name = "Transport", iconName = "DirectionsBus", colorHex = 0xFF2196F3.toInt(), isDefault = false, parentId = null)
                 ),
                 onDismiss = {},
-                onSave = { _, _, _, _ -> }
+                onSave = { _, _, _, _, _ -> }
             )
         }
     }

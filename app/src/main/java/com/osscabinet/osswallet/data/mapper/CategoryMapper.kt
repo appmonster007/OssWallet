@@ -10,7 +10,8 @@ fun CategoryEntity.toDomain(): Category {
         iconName = iconName,
         colorHex = colorHex,
         isDefault = isDefault,
-        parentId = parentId
+        parentId = parentId,
+        nature = nature
     )
 }
 
@@ -21,6 +22,7 @@ fun Category.toEntity(): CategoryEntity {
         iconName = iconName,
         colorHex = colorHex,
         isDefault = isDefault,
-        parentId = parentId
+        parentId = parentId,
+        nature = nature
     )
 }

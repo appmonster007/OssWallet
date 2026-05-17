@@ -9,7 +9,15 @@ interface ExchangeRateApi {
     suspend fun getLatestRates(
         @Path("base") base: String
     ): ExchangeRateApiResponse
+
+    @GET("v6/codes")
+    suspend fun getSupportedCodes(): ExchangeRateCodesResponse
 }
+
+data class ExchangeRateCodesResponse(
+    @Json(name = "result") val result: String,
+    @Json(name = "supported_codes") val supportedCodes: List<List<String>>
+)
 
 data class ExchangeRateApiResponse(
     @Json(name = "result") val result: String,

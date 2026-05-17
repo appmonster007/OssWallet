@@ -16,7 +16,7 @@ interface ExchangeRateProvider {
     /**
      * Returns the list of currencies supported by this provider.
      */
-    fun fetchSupportedCurrencies(): List<CurrencyMetadata>
+    suspend fun fetchSupportedCurrencies(): List<CurrencyMetadata>
 
     /**
      * Fetches the exchange rate between the base and target currency.

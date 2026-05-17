@@ -198,7 +198,7 @@ internal fun AeonFlowBreakdownItem(
         Text(
             curr,
             style = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             ),
             color = AppColors.contentSecondary
@@ -208,14 +208,14 @@ internal fun AeonFlowBreakdownItem(
                 formatCurrencyRight(amount, curr, precision, shorten = true),
                 style = AppTextStyles.transactionTitle.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 10.sp
                 )
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
-                        fontSize = 12.sp,
+                        fontSize = 8.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     color = AppColors.contentSecondary
@@ -260,7 +260,7 @@ fun AeonFlowCard(
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
-                        fontSize = 12.sp
+                        fontSize = 10.sp
                     ),
                     color = color
                 )

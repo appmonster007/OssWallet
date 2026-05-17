@@ -298,7 +298,7 @@ fun AeonFlowBadge(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Black,
-                fontSize = 11.sp,
+                fontSize = 8.sp,
                 fontFeatureSettings = "tnum"
             )
         )

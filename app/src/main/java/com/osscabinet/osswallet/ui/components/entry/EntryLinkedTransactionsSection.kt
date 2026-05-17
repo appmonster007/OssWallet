@@ -32,7 +32,6 @@ fun EntryLinkedTransactionsSection(
     linkedTransactions: List<Transaction>,
     accounts: List<Account>,
     categories: List<Category>,
-    is24Hour: Boolean,
     onShowSheet: () -> Unit,
     onRemoveLink: (Long) -> Unit
 ) {
@@ -86,7 +85,6 @@ fun EntryLinkedTransactionsSection(
                 tx = tx,
                 accountName = account?.name ?: "Unknown",
                 category = category,
-                is24Hour = is24Hour,
                 onRemove = { onRemoveLink(tx.id) }
             )
         }
@@ -98,7 +96,6 @@ private fun EntryLinkedTransactionItem(
     tx: Transaction,
     accountName: String,
     category: Category?,
-    is24Hour: Boolean,
     onRemove: () -> Unit
 ) {
     val categoryName = category?.name ?: "Unknown"
@@ -127,7 +124,7 @@ private fun EntryLinkedTransactionItem(
                     TransactionType.INCOME -> CashFlowType.INCOME
                     else -> CashFlowType.EXPENSE
                 },
-                timestamp = formatDate(tx.timestamp, is24Hour),
+                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                 note = tx.note,
                 tags = tx.tags,
                 icon = icon,
@@ -158,10 +155,4 @@ private fun EntryLinkedTransactionItem(
             }
         }
     }
-}
-
-private fun formatDate(millis: Long, is24Hour: Boolean): String {
-    val pattern = if (is24Hour) "MMM dd, HH:mm" else "MMM dd, hh:mm a"
-    val formatter = java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
-    return formatter.format(java.util.Date(millis))
 }

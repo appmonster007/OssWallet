@@ -131,7 +131,6 @@ fun PlannedPaymentFormBody(
                         ),
                         accounts = state.accounts,
                         categories = state.categories,
-                        is24Hour = state.use24HourFormat,
                         onShowLinkedTransactions = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
                         onRemoveLink = { txId -> onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId)) },
                         onPaymentMethodClick = { onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },

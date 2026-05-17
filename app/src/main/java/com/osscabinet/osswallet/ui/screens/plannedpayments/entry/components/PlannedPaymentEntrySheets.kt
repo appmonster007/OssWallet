@@ -215,7 +215,6 @@ fun PlannedPaymentEntrySheets(
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,
             categories = state.categories,
-            is24Hour = state.use24HourFormat,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(PlannedPaymentEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },

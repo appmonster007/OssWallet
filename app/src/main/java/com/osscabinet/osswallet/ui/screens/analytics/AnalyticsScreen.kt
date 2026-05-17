@@ -54,6 +54,7 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
+    val cardDataMap by viewModel.cardDataMap.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -117,6 +118,7 @@ fun AnalyticsScreen(
                         ) {
                             AeonCardList(
                                 cards = cardsConfig.cards,
+                                cardDataMap = cardDataMap,
                                 cardInput = CardInput(
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,

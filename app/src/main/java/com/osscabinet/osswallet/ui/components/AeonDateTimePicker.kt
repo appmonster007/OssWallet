@@ -8,7 +8,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.*
-import java.text.SimpleDateFormat
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -17,7 +16,7 @@ fun AeonDateTimePicker(
     initialDateTime: Long,
     onDateTimeSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
-    is24Hour: Boolean = false
+    is24Hour: Boolean = com.osscabinet.ossWallet.ui.util.TimeUtils.use24HourFormat
 ) {
     var showDatePicker by remember { mutableStateOf(true) }
     var selectedDateMillis by remember { mutableStateOf(initialDateTime) }
@@ -83,15 +82,4 @@ fun AeonDateTimePicker(
             containerColor = AppColors.panelSurface
         )
     }
-}
-
-fun formatDateTime(millis: Long, is24Hour: Boolean = false): String {
-    val pattern = if (is24Hour) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
-    val sdf = SimpleDateFormat(pattern, Locale.getDefault())
-    return sdf.format(Date(millis))
-}
-
-fun formatDate(millis: Long): String {
-    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    return sdf.format(Date(millis))
 }

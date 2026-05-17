@@ -475,8 +475,7 @@ fun DashboardContent(
                             is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
                             is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                         }
-                    },
-                    is24Hour = state.use24HourFormat
+                    }
                 )
             }
         }

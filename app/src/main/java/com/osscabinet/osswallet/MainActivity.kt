@@ -71,11 +71,16 @@ class MainActivity : FragmentActivity() {
         setContent {
             val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
             val precision by appContainer.settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
+            val use24Hour by appContainer.settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
 
             LaunchedEffect(precision) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision = precision
                 com.osscabinet.ossWallet.domain.service.timeline.TimelineService.precision = precision
+            }
+
+            LaunchedEffect(use24Hour) {
+                com.osscabinet.ossWallet.ui.util.TimeUtils.use24HourFormat = use24Hour
             }
 
             OssWalletTheme(theme = theme) {

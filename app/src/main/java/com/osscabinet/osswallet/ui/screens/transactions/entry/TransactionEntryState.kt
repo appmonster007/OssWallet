@@ -75,7 +75,6 @@ data class TransactionEntryState(
     val allPayees: List<String> = emptyList(),
     val allNotes: List<String> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    val use24HourFormat: Boolean = false,
     val mapsAccessEnabled: Boolean = false,
 
     // Edit mode data

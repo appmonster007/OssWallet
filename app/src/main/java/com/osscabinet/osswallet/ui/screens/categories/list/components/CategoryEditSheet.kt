@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -144,6 +145,12 @@ fun CategoryEditSheet(
                     )
 
                     if (showParentPicker && !isMandatory) {
+                        var parentSearchQuery by remember { mutableStateOf("") }
+                        val filteredParents = remember(parentSearchQuery, parentCategories, category) {
+                            val base = parentCategories.filter { it.id != (category?.id ?: 0L) }
+                            if (parentSearchQuery.isBlank()) base
+                            else base.filter { it.name.contains(parentSearchQuery, ignoreCase = true) }
+                        }
                         Dialog(
                             onDismissRequest = { showParentPicker = false },
                             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -184,17 +191,22 @@ fun CategoryEditSheet(
                                             )
                                         }
                                     }
+                                    AeonSearchField(
+                                        query = parentSearchQuery,
+                                        onQueryChange = { parentSearchQuery = it },
+                                        placeholder = "Search categories..."
+                                    )
                                     AeonHierarchicalHybridSelector(
-                                        items = parentCategories.filter { it.id != (category?.id ?: 0L) },
+                                        items = filteredParents,
                                         mode = AeonSelectMode.PARENT,
                                         selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
                                         onSelectionChange = { },
                                         idMapper = { it.id },
                                         labelMapper = { it.name },
-                                        parentIdMapper = { it.parentId },
+                                        parentIdMapper = if (parentSearchQuery.isBlank()) { it -> it.parentId } else { _ -> null },
                                         iconMapper = { getIconByName(it.iconName) },
                                         colorMapper = { if (it.colorHex == -1) OutlineLight else androidx.compose.ui.graphics.Color(it.colorHex) },
-                                        noneLabel = "None (Primary)",
+                                        noneLabel = if (parentSearchQuery.isBlank()) "None (Primary)" else null,
                                         onParentSelected = { id ->
                                             selectedParentId = id
                                             showParentPicker = false

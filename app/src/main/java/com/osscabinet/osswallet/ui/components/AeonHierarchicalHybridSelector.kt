@@ -112,23 +112,25 @@ fun <T, ID> AeonHierarchicalHybridSelector(
         }
 
         rootItems.forEach { root ->
-            RecursiveHybridNode(
-                item = root,
-                allItems = items,
-                mode = mode,
-                selectedIds = selectedIds,
-                onSelectionChange = onSelectionChange,
-                idMapper = idMapper,
-                labelMapper = labelMapper,
-                parentIdMapper = parentIdMapper,
-                iconMapper = iconMapper,
-                colorMapper = colorMapper,
-                onParentSelected = onParentSelected,
-                onEditClick = onEditClick,
-                onAddChildClick = onAddChildClick,
-                depth = 0,
-                startExpanded = startExpanded
-            )
+            key(idMapper(root)) {
+                RecursiveHybridNode(
+                    item = root,
+                    allItems = items,
+                    mode = mode,
+                    selectedIds = selectedIds,
+                    onSelectionChange = onSelectionChange,
+                    idMapper = idMapper,
+                    labelMapper = labelMapper,
+                    parentIdMapper = parentIdMapper,
+                    iconMapper = iconMapper,
+                    colorMapper = colorMapper,
+                    onParentSelected = onParentSelected,
+                    onEditClick = onEditClick,
+                    onAddChildClick = onAddChildClick,
+                    depth = 0,
+                    startExpanded = startExpanded
+                )
+            }
         }
     }
 }
@@ -214,23 +216,25 @@ private fun <T, ID> RecursiveHybridNode(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     children.forEach { child ->
-                        RecursiveHybridNode(
-                            item = child,
-                            allItems = allItems,
-                            mode = mode,
-                            selectedIds = selectedIds,
-                            onSelectionChange = onSelectionChange,
-                            idMapper = idMapper,
-                            labelMapper = labelMapper,
-                            parentIdMapper = parentIdMapper,
-                            iconMapper = iconMapper,
-                            colorMapper = colorMapper,
-                            onParentSelected = onParentSelected,
-                            onEditClick = onEditClick,
-                            onAddChildClick = onAddChildClick,
-                            depth = depth + 1,
-                            startExpanded = startExpanded
-                        )
+                        key(idMapper(child)) {
+                            RecursiveHybridNode(
+                                item = child,
+                                allItems = allItems,
+                                mode = mode,
+                                selectedIds = selectedIds,
+                                onSelectionChange = onSelectionChange,
+                                idMapper = idMapper,
+                                labelMapper = labelMapper,
+                                parentIdMapper = parentIdMapper,
+                                iconMapper = iconMapper,
+                                colorMapper = colorMapper,
+                                onParentSelected = onParentSelected,
+                                onEditClick = onEditClick,
+                                onAddChildClick = onAddChildClick,
+                                depth = depth + 1,
+                                startExpanded = startExpanded
+                            )
+                        }
                     }
 
                     if (children.isNotEmpty()) {

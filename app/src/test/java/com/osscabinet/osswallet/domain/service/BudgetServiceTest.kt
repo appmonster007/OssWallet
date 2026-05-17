@@ -151,7 +151,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("-100"), timestamp = outOfPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)
+        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
         assertEquals(0, BigDecimal("500").compareTo(spent))
     }
 
@@ -166,7 +166,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("500"), transactionType = TransactionType.INCOME, timestamp = inPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)
+        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
         assertEquals(0, BigDecimal("200").compareTo(spent))
     }
 
@@ -181,7 +181,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("-300"), categoryId = 2L, timestamp = inPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)
+        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
         assertEquals(0, BigDecimal("200").compareTo(spent))
     }
 }

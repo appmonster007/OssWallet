@@ -23,8 +23,9 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -143,14 +144,65 @@ fun CategoryEditSheet(
                     )
 
                     if (showParentPicker && !isMandatory) {
-                        AeonCategorySelection(
-                            categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
-                            selectedCategoryIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
-                            onSelectionChange = { },
-                            onDismiss = { showParentPicker = false },
-                            mode = AeonSelectMode.PARENT,
-                            title = "Select Parent"
-                        )
+                        Dialog(
+                            onDismissRequest = { showParentPicker = false },
+                            properties = DialogProperties(usePlatformDefaultWidth = false)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.9f)
+                                    .wrapContentHeight()
+                                    .padding(vertical = 16.dp),
+                                shape = RoundedCornerShape(32.dp),
+                                color = AppColors.panelSurface,
+                                tonalElevation = 12.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(24.dp)
+                                        .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Select Parent",
+                                            style = AppTextStyles.heroAmount.copy(fontSize = 20.sp)
+                                        )
+                                        IconButton(
+                                            onClick = { showParentPicker = false },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Close,
+                                                contentDescription = "Close",
+                                                modifier = Modifier.size(20.dp),
+                                                tint = AppColors.contentSecondary
+                                            )
+                                        }
+                                    }
+                                    AeonHierarchicalHybridSelector(
+                                        items = parentCategories.filter { it.id != (category?.id ?: 0L) },
+                                        mode = AeonSelectMode.PARENT,
+                                        selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
+                                        onSelectionChange = { },
+                                        idMapper = { it.id },
+                                        labelMapper = { it.name },
+                                        parentIdMapper = { it.parentId },
+                                        iconMapper = { getIconByName(it.iconName) },
+                                        colorMapper = { if (it.colorHex == -1) OutlineLight else androidx.compose.ui.graphics.Color(it.colorHex) },
+                                        noneLabel = "None (Primary)",
+                                        onParentSelected = { id ->
+                                            selectedParentId = id
+                                            showParentPicker = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (selectedParentId != null) {

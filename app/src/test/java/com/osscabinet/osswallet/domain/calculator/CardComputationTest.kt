@@ -32,24 +32,24 @@ class CardComputationTest {
             override suspend fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
                 val totals = AggregationService.calculateTotalByCurrency(input.transactions)
                 val netWorth = CurrencyService.calculateTotalInCurrency(
-                    totals, input.baseCurrency, input.exchangeRates, input.precision
+                    totals, input.baseCurrency, input.exchangeRates
                 )
-                val cashFlow = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
-                return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.baseCurrency, input.precision)
+                val cashFlow = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates)
+                return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.baseCurrency)
             }
         },
         object : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
             override val supportedType = CardType.CASH_FLOW
             override suspend fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
-                val result = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
-                return CardRenderData.CashFlow(config, result, input.baseCurrency, input.precision)
+                val result = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates)
+                return CardRenderData.CashFlow(config, result, input.baseCurrency)
             }
         },
         object : CardDataComputer<CurrencyBalancesCardConfig, CardRenderData.CurrencyBalances> {
             override val supportedType = CardType.CURRENCY_BALANCES
             override suspend fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-                val items = AggregationService.calculateCurrencyBalances(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
-                return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)
+                val items = AggregationService.calculateCurrencyBalances(input.transactions, input.baseCurrency, input.exchangeRates)
+                return CardRenderData.CurrencyBalances(config, items, input.baseCurrency)
             }
         }
     ))
@@ -69,8 +69,7 @@ class CardComputationTest {
         accounts = accounts,
         categories = emptyList(),
         exchangeRates = exchangeRates,
-        baseCurrency = baseCurrency,
-        precision = 2
+        baseCurrency = baseCurrency
     )
 
     @Test

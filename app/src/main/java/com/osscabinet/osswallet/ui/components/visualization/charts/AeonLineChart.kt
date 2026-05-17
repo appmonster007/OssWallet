@@ -119,8 +119,8 @@ fun AeonLineChart(
         val niceStep = maxOf(BigDecimal.valueOf(niceMultiplier * mag), BigDecimal.ONE)
 
         // Align boundaries and add 1-step buffer to ensure ticks strictly outside data
-        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).subtract(BigDecimal.ONE).multiply(niceStep)
-        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).add(BigDecimal.ONE).multiply(niceStep)
+        val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
+        val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).multiply(niceStep)
         val effectiveRangeY = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         fun valueToY(value: BigDecimal): Float {
@@ -132,7 +132,7 @@ fun AeonLineChart(
 
         fun indexToX(index: Int, total: Int): Float {
             val effective = if (totalXSlots > 0) totalXSlots else total
-            if (effective <= 1) return leftPadding + chartWidth / 2
+            if (effective <= 1) return leftPadding
             return leftPadding + (index.toFloat() / (effective - 1)) * chartWidth
         }
 

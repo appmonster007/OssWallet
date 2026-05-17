@@ -9,6 +9,9 @@ interface FrankfurterApi {
     suspend fun getLatestRates(
         @Query("from") base: String
     ): FrankfurterResponse
+
+    @GET("currencies")
+    suspend fun getSupportedCurrencies(): Map<String, String>
 }
 
 data class FrankfurterResponse(

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
@@ -81,8 +82,12 @@ class SettingsViewModel(
     val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
 
-    val availableCurrencies: StateFlow<List<String>> = currencyProvider
-        .map { providerId -> providerRegistry.getProvider(providerId).fetchSupportedCurrencies().map { it.code } }
+    val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
+        .flatMapLatest { providerId ->
+            flow {
+                emit(providerRegistry.getProvider(providerId).fetchSupportedCurrencies())
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableProviders: List<ExchangeRateProvider> = providerRegistry.getAllProviders()

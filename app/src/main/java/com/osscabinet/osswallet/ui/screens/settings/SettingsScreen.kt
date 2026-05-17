@@ -186,11 +186,9 @@ fun SettingsScreen(
     }
 
     if (showCurrencyDialog) {
-        val activeProvider = availableProviders.find { it.id == currencyProviderId } ?: availableProviders.first()
-        val currencies = remember(activeProvider) { activeProvider.fetchSupportedCurrencies() }
         var searchQuery by remember { mutableStateOf("") }
-        val filteredCurrencies = remember(searchQuery, currencies) {
-            currencies.filter { 
+        val filteredCurrencies = remember(searchQuery, availableCurrencies) {
+            availableCurrencies.filter {
                 it.code.contains(searchQuery, ignoreCase = true) || 
                 it.name.contains(searchQuery, ignoreCase = true)
             }

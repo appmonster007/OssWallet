@@ -15,7 +15,9 @@ class ExchangeRateApiProvider(
     override val name: String = "ExchangeRate-API"
     override val attribution: String = "Rates by ExchangeRate-API"
 
-    override fun fetchSupportedCurrencies(): List<CurrencyMetadata> {
+    override suspend fun fetchSupportedCurrencies(): List<CurrencyMetadata> {
+        // open.er-api.com does not provide a supported currencies endpoint.
+        // We use the hardcoded list for this provider.
         return SupportedCurrencies.entries.map { it.toMetadata() }
     }
 

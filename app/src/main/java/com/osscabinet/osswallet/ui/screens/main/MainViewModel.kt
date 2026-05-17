@@ -20,6 +20,9 @@ class MainViewModel(
     private val templateRepository: TemplateRepository
 ) : BaseViewModel(settingsRepository) {
 
+    val isOnboardingCompleted: StateFlow<Boolean> = settingsRepository.isOnboardingCompleted
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val currentProfile: StateFlow<Profile?> = combine(
         settingsRepository.currentProfileId,
         profileRepository.getAllProfiles()

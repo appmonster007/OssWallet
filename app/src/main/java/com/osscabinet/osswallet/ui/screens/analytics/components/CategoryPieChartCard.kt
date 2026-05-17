@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.analytics.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import kotlinx.serialization.Contextual
@@ -49,7 +51,8 @@ fun CategoryPieChartCard(
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    currentTheme: String = "System"
+    currentTheme: String = "System",
+    previousTotal: BigDecimal? = null
 ) {
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -60,11 +63,20 @@ fun CategoryPieChartCard(
     
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }
+    
+    val filteredData = remember(data, config.showOnlyActiveCategories) {
+        if (config.showOnlyActiveCategories) {
+            data.filter { it.amount.signum() != 0 }
+        } else {
+            data
+        }
+    }
+    
     val currentData = navigationStack.last()
     
     // Sync with external data changes
-    LaunchedEffect(data) {
-        navigationStack = listOf(data)
+    LaunchedEffect(filteredData) {
+        navigationStack = listOf(filteredData)
     }
 
     AeonExpressiveCard(
@@ -200,6 +212,10 @@ fun CategoryPieChartCard(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
                     rounded = config.rounded,
+                    currency = baseFilter.currencies.firstOrNull() ?: "USD",
+                    previousTotal = previousTotal,
+                    showComparison = config.showComparison,
+                    isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
                     onSliceClick = { slice ->
                         // Interaction feedback
                     },
@@ -234,7 +250,9 @@ fun CategoryPieChartCard(
                 data = groupedData, 
                 navigationStack = navigationStack,
                 isDarkTheme = isDarkTheme, 
-                isAmoled = isAmoled
+                isAmoled = isAmoled,
+                showFullBreakdown = config.showFullBreakdown,
+                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
             )
         }
     }
@@ -298,6 +316,24 @@ private fun CategoryPieChartDisplaySettingsDialog(
                     checked = config.rounded,
                     onCheckedChange = { onUpdate(config.copy(rounded = it)) }
                 )
+                AeonSettingsToggle(
+                    label = "FULL BREAKDOWN",
+                    description = "Show all categories in the legend instead of top 5",
+                    checked = config.showFullBreakdown,
+                    onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+                )
+                AeonSettingsToggle(
+                    label = "ACTIVE ONLY",
+                    description = "Only show categories with non-zero values",
+                    checked = config.showOnlyActiveCategories,
+                    onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+                )
+                AeonSettingsToggle(
+                    label = "SHOW COMPARISON",
+                    description = "Display comparison to previous period in chart center",
+                    checked = config.showComparison,
+                    onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
+                )
             }
         },
         shape = RoundedCornerShape(32.dp),
@@ -310,13 +346,17 @@ fun CategoryLegend(
     data: List<CategoryPieChartData>, 
     navigationStack: List<List<CategoryPieChartData>>,
     isDarkTheme: Boolean, 
-    isAmoled: Boolean
+    isAmoled: Boolean,
+    showFullBreakdown: Boolean,
+    onToggleBreakdown: (Boolean) -> Unit
 ) {
+    val displayData = if (showFullBreakdown) data else data.take(5)
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        data.take(5).forEachIndexed { index, item ->
+        displayData.forEachIndexed { index, item ->
             val baseColor = if (navigationStack.size > 1) {
                 val currentData = navigationStack.last()
                 val prevStack = navigationStack[navigationStack.size - 2]
@@ -363,15 +403,29 @@ fun CategoryLegend(
             }
         }
         
-        if (data.size > 5) {
+        if (!showFullBreakdown && data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                modifier = Modifier.padding(start = 22.dp)
+                color = AppColors.primary,
+                modifier = Modifier
+                    .padding(start = 22.dp)
+                    .clickable { onToggleBreakdown(true) }
+            )
+        } else if (showFullBreakdown && data.size > 5) {
+            Text(
+                text = "Show less",
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = AppColors.primary,
+                modifier = Modifier
+                    .padding(start = 22.dp)
+                    .clickable { onToggleBreakdown(false) }
             )
         }
     }

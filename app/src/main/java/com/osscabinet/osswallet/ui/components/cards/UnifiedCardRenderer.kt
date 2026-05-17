@@ -112,6 +112,7 @@ fun UnifiedCardRenderer(
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
+                previousTotal = renderData.previousTotal
             )
         }
 

@@ -18,13 +18,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.graphics.lerp as lerpColor
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -43,6 +46,9 @@ import kotlin.math.roundToInt
  *    the finger moves. Release past 50 % → springs to full screen. Release below → snaps back.
  *  - Long press: presets dropdown.
  *  - Expanded / back button / swipe down on top bar: real-time collapse, springs back to pill.
+ *
+ * The AeonTimelinePeriodSelector travels positionally from its pill-center position to its
+ * filter-sheet position, then fades out as the filter sheet fades in — no abrupt jump.
  *
  * Must be called with Modifier.fillMaxSize() from the parent Box so the expansion can
  * cover the whole screen. Pass bottomPadding so the pill floats above the nav bar.
@@ -69,8 +75,11 @@ fun TransactionFilterPill(
     // Safe fraction clamped to [0,1] so lerp calls never produce negative sizes.
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
-    // Content switch at the midpoint so the filter form appears on a nearly-full surface.
-    val showExpanded by remember { derivedStateOf { morph.value > 0.5f } }
+    // Pre-warm filter layout at f=0.60 (10 % before it starts fading in).
+    val filterInTree by remember { derivedStateOf { morph.value > 0.60f } }
+
+    // Measured height of the AeonTimelinePeriodSelector (updated after first composition).
+    var selectorHeightPx by remember { mutableIntStateOf(0) }
 
     val pillH = 76.dp   // compact: just enough for AeonTimelinePeriodSelector
     val pillHorizMargin = 20.dp
@@ -110,12 +119,39 @@ fun TransactionFilterPill(
             }
         }
 
+        // Pill uses cardSurfaceProminent (surfaceContainerHigh) so the timeline selector's
+        // icon backgrounds (surfaceContainer) contrast with the pill background.
+        // surfaceContainerHigh is lighter than surfaceContainer in dark/amoled and darker in light.
+        val pillColor  = AppColors.cardSurfaceProminent
+        val sheetColor = AppColors.sheetSurface
+
+        // Status bar height — needed to compute where the selector lands in the filter sheet.
+        val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+        // Selector's target Y inside the expanded surface:
+        //   top bar (Row w/ 8dp vertical padding each side + 48dp icon height = 64dp)
+        //   + divider (0.5dp) + FilterSheetContent top padding (screenPadding = 18dp)
+        val filterSelectorTop = statusBarPadding + 64.dp + 0.5.dp + 18.dp
+
+        // Selector's resting Y inside the pill — vertically centered.
+        val selectorH = with(density) { selectorHeightPx.toDp() }
+        val pillSelectorTop = ((pillH - selectorH) / 2f).coerceAtLeast(0.dp)
+
+        // Traveling Y and horizontal padding for the overlay selector.
+        val selectorTop      = lerp(pillSelectorTop, filterSelectorTop, f)
+        val selectorHorizPad = lerp(12.dp, 18.dp, f)
+
+        // Overlay fades from 1→0 between f=0.60 and f=0.85; filter fades from 0→1 between f=0.70 and f=1.0.
+        // The 0.70–0.85 overlap is the crossfade window.
+        val overlayAlpha = ((0.85f - f) / 0.25f).coerceIn(0f, 1f)
+
         // Interpolated visual properties
         val surfaceH      = lerp(pillH, maxH, f)
         val horizMargin   = lerp(pillHorizMargin, 0.dp, f)
         val corner        = ((1f - f) * 28f).coerceAtLeast(0f).dp
         val shadowElev    = lerp(8.dp, 0.dp, f)
         val offsetYPx     = collapsedTopPx * (1f - f)
+        val surfaceColor  = lerpColor(pillColor, sheetColor, f)
 
         // Scrim
         if (f > 0.01f) {
@@ -134,7 +170,7 @@ fun TransactionFilterPill(
         // The single morphing surface.
         Surface(
             shape = RoundedCornerShape(corner),
-            color = AppColors.sheetSurface,
+            color = surfaceColor,
             shadowElevation = shadowElev,
             modifier = Modifier
                 .padding(horizontal = horizMargin)
@@ -142,8 +178,8 @@ fun TransactionFilterPill(
                 .height(surfaceH)
                 .offset { IntOffset(0, offsetYPx.roundToInt()) }
                 .then(
-                    // Gesture modifiers are only active while in pill mode.
-                    if (!showExpanded) Modifier
+                    // Gesture modifiers are only active while in pill mode (before filter pre-warms).
+                    if (!filterInTree) Modifier
                         .pointerInput(Unit) {
                             detectVerticalDragGestures(
                                 onDragEnd = { settle() },
@@ -164,20 +200,49 @@ fun TransactionFilterPill(
                     else Modifier
                 )
         ) {
-            if (showExpanded) {
-                FullScreenFilterContent(
-                    filter = filter,
-                    accounts = accounts,
-                    categories = categories,
-                    savedFilters = savedFilters,
-                    onFilterEvent = onFilterEvent,
-                    onSaveFilterClick = onSaveFilterClick,
-                    onClose = ::collapse,
-                    onDragDelta = ::snapByDelta,
-                    onDragEnd = ::settle
-                )
-            } else {
-                PillContent(filter = filter, onFilterEvent = onFilterEvent)
+            Box(Modifier.fillMaxSize()) {
+                // Filter sheet fades in from f=0.70 to f=1.0.
+                if (filterInTree) {
+                    val filterAlpha = ((f - 0.7f) / 0.3f).coerceIn(0f, 1f)
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = filterAlpha }
+                    ) {
+                        FullScreenFilterContent(
+                            filter = filter,
+                            accounts = accounts,
+                            categories = categories,
+                            savedFilters = savedFilters,
+                            onFilterEvent = onFilterEvent,
+                            onSaveFilterClick = onSaveFilterClick,
+                            onClose = ::collapse,
+                            onDragDelta = ::snapByDelta,
+                            onDragEnd = ::settle
+                        )
+                    }
+                }
+
+                // Traveling selector overlay: moves from pill-center to filter-sheet position,
+                // fading out as the filter sheet fades in. Creates a seamless positional handoff.
+                if (overlayAlpha > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = selectorHorizPad)
+                            .offset(y = selectorTop)
+                            .graphicsLayer { alpha = overlayAlpha }
+                    ) {
+                        AeonTimelinePeriodSelector(
+                            currentRange = filter.timelineRange,
+                            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
+                            swipeEntireComponent = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onGloballyPositioned { selectorHeightPx = it.size.height }
+                        )
+                    }
+                }
             }
         }
 
@@ -206,30 +271,6 @@ fun TransactionFilterPill(
                 }
             }
         }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Pill content — just the timeline selector, no extras.
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun PillContent(
-    filter: TransactionFilter,
-    onFilterEvent: (FilterEvent) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        AeonTimelinePeriodSelector(
-            currentRange = filter.timelineRange,
-            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
-            swipeEntireComponent = true,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 

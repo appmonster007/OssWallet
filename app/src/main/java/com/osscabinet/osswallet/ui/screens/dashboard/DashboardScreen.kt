@@ -452,6 +452,7 @@ fun DashboardContent(
 
             1 -> {
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+                val recentActivitiesBreakdown by dashboardViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
                 RecentActivitiesScreen(
                     listState = state.recentActivitiesState,
@@ -460,6 +461,7 @@ fun DashboardContent(
                     contentPadding = PaddingValues(bottom = scrollBottomPadding()),
                     modifier = Modifier.fillMaxSize(),
                     revealedCardIds = revealedCardIds,
+                    showCurrencyBreakdown = recentActivitiesBreakdown,
                     onTransactionEvent = { event ->
                         when (event) {
                             is TransactionItemEvent.Click -> onEditTransactionClick(event.id)

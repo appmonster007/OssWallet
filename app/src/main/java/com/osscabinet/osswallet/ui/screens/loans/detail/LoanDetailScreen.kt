@@ -240,6 +240,8 @@ fun LoanDetailScreen(
                                 TransactionListState(groups = groups, isEmpty = groups.isEmpty())
                             }
 
+                            val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
+
                             RecentActivitiesScreen(
                                 listState = loanListState,
                                 onRecordsClick = { _ ->
@@ -248,6 +250,7 @@ fun LoanDetailScreen(
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
+                                showCurrencyBreakdown = recentActivitiesBreakdown,
                                 onTransactionEvent = { event ->
                                     when (event) {
                                         is TransactionItemEvent.Click -> onTransactionClick(event.id)

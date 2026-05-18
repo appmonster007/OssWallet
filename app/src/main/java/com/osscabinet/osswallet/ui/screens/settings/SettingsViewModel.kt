@@ -217,6 +217,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setRecentActivitiesBreakdown(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveRecentActivitiesBreakdown(enabled)
+        }
+    }
+
     fun setCurrencyProvider(providerId: String) {
         viewModelScope.launch {
             settingsRepository.saveCurrencyProvider(providerId)

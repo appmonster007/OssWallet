@@ -15,6 +15,7 @@ interface SettingsRepository {
     val isDatabaseSeeded: Flow<Boolean>
     val use24HourFormat: Flow<Boolean>
     val mapsAccessEnabled: Flow<Boolean>
+    val recentActivitiesBreakdown: Flow<Boolean>
     val currencyProvider: Flow<String>
     val userName: Flow<String>
     val dashboardSettings: Flow<DashboardSettings>
@@ -37,6 +38,7 @@ interface SettingsRepository {
     suspend fun saveDatabaseSeeded(seeded: Boolean)
     suspend fun saveUse24HourFormat(use24Hour: Boolean)
     suspend fun saveMapsAccessEnabled(enabled: Boolean)
+    suspend fun saveRecentActivitiesBreakdown(enabled: Boolean)
     suspend fun saveCurrencyProvider(providerId: String)
     suspend fun saveUserName(name: String)
     suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)

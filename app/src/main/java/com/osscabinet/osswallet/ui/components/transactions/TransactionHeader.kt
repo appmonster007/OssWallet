@@ -50,6 +50,7 @@ fun TransactionHeader(
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
+    showCurrencyBreakdown: Boolean = true,
     initiallyExpanded: Boolean = false
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
@@ -70,7 +71,7 @@ fun TransactionHeader(
     }
 
     val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
-    val canExpand = currenciesToDisplay.isNotEmpty()
+    val canExpand = showCurrencyBreakdown && currenciesToDisplay.isNotEmpty()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -199,7 +200,7 @@ fun TransactionHeader(
                 }
 
                 // Row 4+: Breakdown (Expandable)
-                AnimatedVisibility(visible = isExpanded) {
+                AnimatedVisibility(visible = showCurrencyBreakdown && isExpanded) {
                     Column(modifier = Modifier.padding(top = 2.dp)) {
                         currenciesToDisplay.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO

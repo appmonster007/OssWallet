@@ -60,7 +60,8 @@ fun RecentActivitiesScreen(
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
     showOpeningBalance: Boolean = false,
-    showClosingBalance: Boolean = true
+    showClosingBalance: Boolean = true,
+    showCurrencyBreakdown: Boolean = true
 ) {
 
     Column(
@@ -152,7 +153,8 @@ fun RecentActivitiesScreen(
                                 totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                                 baseCurrency = baseCurrency,
                                 showOpeningBalance = showOpeningBalance,
-                                showClosingBalance = showClosingBalance
+                                showClosingBalance = showClosingBalance,
+                                showCurrencyBreakdown = showCurrencyBreakdown
                             )
                         }
                     }

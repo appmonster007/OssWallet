@@ -18,6 +18,7 @@ class SettingsRepositoryImpl(
     override val isDatabaseSeeded: Flow<Boolean> = settingsDataStore.isDatabaseSeeded
     override val use24HourFormat: Flow<Boolean> = settingsDataStore.use24HourFormat
     override val mapsAccessEnabled: Flow<Boolean> = settingsDataStore.mapsAccessEnabled
+    override val recentActivitiesBreakdown: Flow<Boolean> = settingsDataStore.recentActivitiesBreakdown
     override val currencyProvider: Flow<String> = settingsDataStore.currencyProvider
     override val userName: Flow<String> = settingsDataStore.userName
     override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
@@ -40,6 +41,7 @@ class SettingsRepositoryImpl(
     override suspend fun saveDatabaseSeeded(seeded: Boolean) = settingsDataStore.saveDatabaseSeeded(seeded)
     override suspend fun saveUse24HourFormat(use24Hour: Boolean) = settingsDataStore.saveUse24HourFormat(use24Hour)
     override suspend fun saveMapsAccessEnabled(enabled: Boolean) = settingsDataStore.saveMapsAccessEnabled(enabled)
+    override suspend fun saveRecentActivitiesBreakdown(enabled: Boolean) = settingsDataStore.saveRecentActivitiesBreakdown(enabled)
     override suspend fun saveCurrencyProvider(providerId: String) = settingsDataStore.saveCurrencyProvider(providerId)
     override suspend fun saveUserName(name: String) = settingsDataStore.saveUserName(name)
     override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) = settingsDataStore.updateDashboardSettings(update)

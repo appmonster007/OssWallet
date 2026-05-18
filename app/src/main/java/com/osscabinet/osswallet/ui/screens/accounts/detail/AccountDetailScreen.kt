@@ -302,6 +302,7 @@ fun AccountDetailScreen(
                         1 -> {
                             // Transactions tab content using RecentActivitiesCard
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+                            val recentActivitiesBreakdown by accountDetailViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
                             if (state.listState.isEmpty) {
                                 Box(
@@ -334,6 +335,7 @@ fun AccountDetailScreen(
                                     contentPadding = PaddingValues(bottom = scrollBottomPadding()),
                                     modifier = Modifier.fillMaxSize(),
                                     revealedCardIds = revealedCardIds,
+                                    showCurrencyBreakdown = recentActivitiesBreakdown,
                                     onTransactionEvent = { event ->
                                         when (event) {
                                             is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }

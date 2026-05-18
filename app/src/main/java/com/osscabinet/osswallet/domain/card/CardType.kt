@@ -84,6 +84,12 @@ enum class CardType(
         "income_expense_bar",
         "Income & Expense Chart",
         "Bar chart showing income and expenses per time bucket with a net trend line."
+    ),
+    CATEGORY_SPENDING_TREND(
+        "category_spending_trend",
+        "Category Spending Trend",
+        "Period-wise stacked spending by category, filtered by nature (Must / Need / Want).",
+        availableOnScreens = setOf(ScreenContext.DASHBOARD, ScreenContext.ANALYTICS)
     );
 
     /** Returns true when this card type can be added by the user on [screen]. */

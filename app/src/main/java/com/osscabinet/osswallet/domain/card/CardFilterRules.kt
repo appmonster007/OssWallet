@@ -107,5 +107,14 @@ data class CardFilterRules(
         val INCOME_AND_EXPENSE = CardFilterRules(
             forcedTransactionTypes = listOf("income", "expense")
         )
+
+        /**
+         * Rules for spending-by-category cards where the category selection is controlled
+         * by the in-card segmented button, not the filter sheet.
+         */
+        val SPENDING_LOCKED_CATEGORIES = CardFilterRules(
+            allowedTransactionTypes = listOf("income", "expense"),
+            allowCategorySelection = false
+        )
     }
 }

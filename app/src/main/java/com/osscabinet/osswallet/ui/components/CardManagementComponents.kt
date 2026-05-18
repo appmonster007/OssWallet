@@ -57,6 +57,7 @@ fun CardType.toIcon(): ImageVector = when (this) {
     CardType.RECENT_ACTIVITIES -> Icons.Default.History
     CardType.CASHFLOW_COMPARISON -> Icons.AutoMirrored.Filled.ShowChart
     CardType.INCOME_EXPENSE_BAR -> Icons.Default.BarChart
+    CardType.CATEGORY_SPENDING_TREND -> Icons.Default.BarChart
 }
 
 /**

@@ -94,6 +94,7 @@ sealed class CardConfig : BaseCardConfig {
             CardType.RECENT_ACTIVITIES -> RecentActivitiesCardConfig(cardId = cardId, screenContext = context)
             CardType.CASHFLOW_COMPARISON -> CashFlowComparisonCardConfig(cardId = cardId, screenContext = context)
             CardType.INCOME_EXPENSE_BAR -> IncomeExpenseBarCardConfig(cardId = cardId, screenContext = context)
+            CardType.CATEGORY_SPENDING_TREND -> CategorySpendingTrendCardConfig(cardId = cardId, screenContext = context)
         }
     }
 }
@@ -366,6 +367,27 @@ data class CashFlowComparisonCardConfig(
  * Configuration for Income & Expense Bar chart card instances.
  */
 @Serializable
+enum class CategoryNatureFilter { ALL, MUST, NEED, WANT }
+
+@Serializable
+@SerialName("category_spending_trend")
+data class CategorySpendingTrendCardConfig(
+    override val cardId: String,
+    override val title: String = "CATEGORY SPENDING",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val selectedNature: CategoryNatureFilter = CategoryNatureFilter.ALL,
+    val showGridLines: Boolean = true,
+    override val filter: TransactionFilter = TransactionFilter(
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+    )
+) : CardConfig() {
+    override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
+    override val filterRules: CardFilterRules get() = CardFilterRules.SPENDING_LOCKED_CATEGORIES
+}
+
+@Serializable
 @SerialName("income_expense_bar")
 data class IncomeExpenseBarCardConfig(
     override val cardId: String,
@@ -411,4 +433,5 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is RecentActivitiesCardConfig -> copy(filter = TransactionFilter())
     is CashFlowComparisonCardConfig -> copy(filter = TransactionFilter())
     is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter())
+    is CategorySpendingTrendCardConfig -> copy(filter = TransactionFilter())
 }

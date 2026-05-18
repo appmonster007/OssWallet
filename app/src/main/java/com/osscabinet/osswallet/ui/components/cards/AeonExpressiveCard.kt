@@ -27,13 +27,16 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * Core card shell for the Aeon design system.
@@ -74,6 +77,10 @@ fun AeonExpressiveCard(
     // This is the correct and only place to expose the card delete action.
     displaySettings: (@Composable (onDismiss: () -> Unit) -> Unit)? = null,
 
+    // Timeline mode — when true, an AeonTimelinePeriodSelector is rendered below the header.
+    // Requires filter + onFilterChange to be provided; changes are routed through onFilterChange.
+    timelineMode: Boolean = false,
+
     content: @Composable ColumnScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -87,7 +94,7 @@ fun AeonExpressiveCard(
     var showDisplaySettings by rememberSaveable { mutableStateOf(false) }
 
     val activeFilterCount = filter?.let { countActiveFilters(it, baseFilter, filterRules) } ?: 0
-    val effectiveSubtitle = subtitle ?: filter?.timelineRange?.let { timelineLabel(it) }
+    val effectiveSubtitle = subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
 
     Card(
         modifier = modifier
@@ -192,6 +199,17 @@ fun AeonExpressiveCard(
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
+            if (timelineMode && filter != null && onFilterChange != null) {
+                AeonTimelinePeriodSelector(
+                    currentRange = filter.timelineRange,
+                    onRangeSelected = { newRange ->
+                        onFilterChange(filter.copy(timelineRange = newRange))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+            }
+
             content()
         }
     }
@@ -219,16 +237,36 @@ fun AeonExpressiveCard(
 // Helpers
 // ---------------------------------------------------------------------------
 
-private fun timelineLabel(range: TimelineRange): String = when (range) {
-    is TimelineRange.AllTime -> "All Time"
-    is TimelineRange.ThisPeriod -> range.period.label
-    is TimelineRange.LastPeriod -> range.period.label
-    is TimelineRange.CustomRange -> {
-        val fmt = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
-        val start = range.start?.let { fmt.format(Instant.ofEpochMilli(it)) } ?: "..."
-        val end = range.end?.let { fmt.format(Instant.ofEpochMilli(it)) } ?: "..."
-        "$start – $end"
+private fun timelineLabel(range: TimelineRange): String {
+    val (startMs, endMs) = TimelineService.getDateRange(range)
+    if (startMs == null || endMs == null) return "All Time"
+
+    val startCal = Calendar.getInstance().apply { timeInMillis = startMs }
+    val endCal = Calendar.getInstance().apply { timeInMillis = endMs }
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+
+    val resolvedDate = if (
+        startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
+        endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH) &&
+        startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
+        startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR)
+    ) {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(startMs))
+    } else {
+        val fmt = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear)
+            SimpleDateFormat("MMM d", Locale.getDefault())
+        else
+            SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+        "${fmt.format(Date(startMs))} – ${fmt.format(Date(endMs))}"
     }
+
+    val prefix = when {
+        range is TimelineRange.ThisPeriod -> "${range.period.label} · "
+        range is TimelineRange.LastPeriod -> "Last ${range.period.label} · "
+        else -> ""
+    }
+
+    return prefix + resolvedDate
 }
 
 /**

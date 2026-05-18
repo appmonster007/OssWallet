@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,13 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -48,7 +45,7 @@ fun FilterSheetContent(
     accounts: List<Account>,
     allCategories: List<Category>,
     allTags: List<Tag> = emptyList(),
-    allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
+    allTransactions: List<Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
     onClose: () -> Unit,
@@ -56,12 +53,19 @@ fun FilterSheetContent(
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    initialShowCustomize: Boolean = false
+    initialShowCustomize: Boolean = false,
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter()
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var presetsDropdownExpanded by remember { mutableStateOf(false) }
     var showCustomize by remember { mutableStateOf(initialShowCustomize) }
+
+    val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
+    val effectiveAccountNames = remember(accounts, accountNames) { 
+        accounts.associate { it.id to it.name } + accountNames 
+    }
 
     // Debouncing mechanism for instant filter application
     val filterSheetScope = rememberCoroutineScope()
@@ -101,7 +105,7 @@ fun FilterSheetContent(
     // Combine multiple filters from selected presets using TransactionFilter
     fun updateFilterFromSelectedPresets() {
         if (selectedFilterIds.isEmpty()) {
-            localFilter = TransactionFilter()
+            localFilter = baseFilter
             applyFilterWithDebounce(localFilter, debounceMs = 0)
             return
         }
@@ -120,20 +124,8 @@ fun FilterSheetContent(
     }
 
     val scrollState = rememberScrollState()
-    val hasActiveFilters = remember(localFilter) {
-        localFilter.queryNote != null || 
-        localFilter.queryPayee != null || 
-        localFilter.categoryIds.isNotEmpty() || 
-        localFilter.accountIds.isNotEmpty() || 
-        localFilter.transactionTypes.isNotEmpty() || 
-        localFilter.currencies.isNotEmpty() || 
-        localFilter.tags.isNotEmpty() || 
-        localFilter.statuses.isNotEmpty() || 
-        localFilter.minAmount != null || 
-        localFilter.maxAmount != null || 
-        localFilter.hasWarranty != null ||
-        localFilter.linkedTransactionIds.isNotEmpty() ||
-        localFilter.timelineRange != TimelineRange.AllTime
+    val hasActiveFilters = remember(localFilter, baseFilter) {
+        countActiveFilters(localFilter, baseFilter, filterRules) > 0
     }
 
     Column(
@@ -143,40 +135,87 @@ fun FilterSheetContent(
             .verticalScroll(scrollState)
             .padding(AeonTheme.dimensions.screenPadding)
     ) {
-        // 1. Timeline Selector
-        AeonTimelinePeriodSelector(
-            currentRange = localFilter.timelineRange,
-            onRangeSelected = { range ->
-                localFilter = localFilter.copy(timelineRange = range)
-                onFilterEvent(FilterEvent.UpdateTimeline(range))
-                selectedFilterIds = emptySet()
-                applyFilterWithDebounce(localFilter, debounceMs = 0)
-            },
-            swipeEntireComponent = true
-        )
+        // 1. Base Scope Indicator (if any)
+        val hasBaseFilters = countActiveFilters(baseFilter) > 0
+        if (hasBaseFilters) {
+            Text(
+                "BASE SCOPE",
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = AppColors.secondary.copy(alpha = 0.7f)
+            )
+            
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            ) {
+                items(items = baseFilter.categoryIds.toList()) { id ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(categoryMap[id]?.name ?: "Cat: $id") }
+                    )
+                }
+                items(items = baseFilter.accountIds.toList()) { id ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(effectiveAccountNames[id] ?: id) }
+                    )
+                }
+                items(items = baseFilter.transactionTypes.toList()) { type ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(type.displayName) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
+        }
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+        // 2. Timeline Selector
+        if (filterRules.allowTimelineSelection) {
+            AeonTimelinePeriodSelector(
+                currentRange = localFilter.timelineRange,
+                onRangeSelected = { range ->
+                    localFilter = localFilter.copy(timelineRange = range)
+                    onFilterEvent(FilterEvent.UpdateTimeline(range))
+                    selectedFilterIds = emptySet()
+                    applyFilterWithDebounce(localFilter, debounceMs = 0)
+                },
+                swipeEntireComponent = true
+            )
 
-        // 2. Divider
-        HorizontalDivider(
-            thickness = 0.5.dp,
-            color = AppColors.divider.copy(alpha = 0.7f)
-        )
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+        }
 
         // 3. Future Transactions Toggle
-        EntrySwitchRow(
-            icon = Icons.Default.Update,
-            label = "Show Future Transactions",
-            checked = !localFilter.excludeFuture,
-            onCheckedChange = { 
-                localFilter = localFilter.copy(excludeFuture = !it)
-                applyFilterWithDebounce(localFilter, debounceMs = 0)
-            }
-        )
+        if (filterRules.allowFutureTransactionsToggle) {
+            EntrySwitchRow(
+                icon = Icons.Default.Update,
+                label = "Show Future Transactions",
+                checked = !localFilter.excludeFuture,
+                onCheckedChange = { 
+                    localFilter = localFilter.copy(excludeFuture = !it)
+                    applyFilterWithDebounce(localFilter, debounceMs = 0)
+                }
+            )
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+        }
 
         // 4. Presets and Customise Options
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -230,7 +269,103 @@ fun FilterSheetContent(
             }
         }
 
-        // 5. Full Filter Section (Shown only if Customise selected)
+        // 5. Active Filter Chips (Quick removal)
+        val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
+        if (activeFiltersRelative > 0) {
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Categories
+                items(items = localFilter.categoryIds.toList()) { id ->
+                    if (id !in baseFilter.categoryIds) {
+                        FilterChip(
+                            selected = true,
+                            onClick = { 
+                                removeFilter(localFilter, "categoryIds", id) {
+                                    localFilter = it
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(it, debounceMs = 0)
+                                }
+                            },
+                            label = { Text(categoryMap[id]?.name ?: "Cat: $id") },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+                // Accounts
+                items(items = localFilter.accountIds.toList()) { id ->
+                    if (id !in baseFilter.accountIds) {
+                        FilterChip(
+                            selected = true,
+                            onClick = { 
+                                removeFilter(localFilter, "accountIds", id) {
+                                    localFilter = it
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(it, debounceMs = 0)
+                                }
+                            },
+                            label = { Text(effectiveAccountNames[id] ?: id) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+                // Types
+                items(items = localFilter.transactionTypes.toList()) { type ->
+                    if (type !in baseFilter.transactionTypes) {
+                        FilterChip(
+                            selected = true,
+                            onClick = { 
+                                removeFilter(localFilter, "transactionTypes", type) {
+                                    localFilter = it
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(it, debounceMs = 0)
+                                }
+                            },
+                            label = { Text(type.displayName) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+                // Tags
+                items(items = localFilter.tags.toList()) { tag ->
+                    if (tag !in baseFilter.tags) {
+                        FilterChip(
+                            selected = true,
+                            onClick = { 
+                                removeFilter(localFilter, "tags", tag) {
+                                    localFilter = it
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(it, debounceMs = 0)
+                                }
+                            },
+                            label = { Text(tag) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+                // Statuses
+                items(items = localFilter.statuses.toList()) { status ->
+                    if (status !in baseFilter.statuses) {
+                        FilterChip(
+                            selected = true,
+                            onClick = { 
+                                removeFilter(localFilter, "statuses", status) {
+                                    localFilter = it
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(it, debounceMs = 0)
+                                }
+                            },
+                            label = { Text(status.displayName) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+            }
+        }
+
+        // 6. Full Filter Section (Shown only if Customise selected)
         androidx.compose.animation.AnimatedVisibility(
             visible = showCustomize,
             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -256,7 +391,7 @@ fun FilterSheetContent(
                     )
                     TextButton(
                         onClick = {
-                            localFilter = TransactionFilter()
+                            localFilter = baseFilter
                             selectedFilterIds = emptySet()
                             onFilterEvent(FilterEvent.Reset)
                         },
@@ -272,8 +407,7 @@ fun FilterSheetContent(
 
                 val allAvailableCurrencies = remember(accounts) {
                     accounts.flatMap { account ->
-                        if (account.allowedCurrencies.isEmpty()) listOf(account.currencyCode)
-                        else account.allowedCurrencies
+                        account.allowedCurrencies.ifEmpty { listOf(account.currencyCode) }
                     }.distinct().sorted()
                 }
 
@@ -288,14 +422,29 @@ fun FilterSheetContent(
                     allCategories = allCategories,
                     allTags = allTags,
                     allTransactions = allTransactions,
-                    showAccountFilter = showAccountFilter,
+                    showAccountFilter = showAccountFilter && filterRules.allowAccountSelection,
                     allAvailableCurrencies = allAvailableCurrencies,
                     onImmediateApply = { newFilter, debounceMs ->
                         applyFilterWithDebounce(newFilter, debounceMs)
                     },
-                    onAddTag = onAddTag
+                    onAddTag = onAddTag,
+                    filterRules = filterRules
                 )
             }
+        }
+
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+
+        Button(
+            onClick = onClose,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppColors.primary,
+                contentColor = AppColors.onPrimary
+            )
+        ) {
+            Text("Done", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
         }
 
         Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))

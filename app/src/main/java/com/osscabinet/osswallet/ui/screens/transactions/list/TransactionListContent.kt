@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetDragHandle
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
@@ -41,6 +42,8 @@ import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 
+import com.osscabinet.ossWallet.ui.components.transactions.FilterPeekBar
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListContent(
@@ -58,41 +61,11 @@ fun TransactionListContent(
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
+    onOpenFullFilter: () -> Unit,
     revealedCardIds: List<Long> = emptyList()
 ) {
-    val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded,
-            skipHiddenState = true
-        )
-    )
-    val scope = rememberCoroutineScope()
-
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
+    Scaffold(
         modifier = Modifier.background(AppColors.transparent),
-        sheetPeekHeight = 110.dp,
-        sheetContainerColor = AppColors.transparent,
-        sheetContentColor = AppColors.contentPrimary,
-        sheetTonalElevation = 0.dp,
-        sheetShadowElevation = 0.dp,
-        sheetShape = RectangleShape,
-        sheetDragHandle = {
-            FilterSheetDragHandle(
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
-                onClick = {
-                    scope.launch {
-                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                            scaffoldState.bottomSheetState.expand()
-                        } else {
-                            scaffoldState.bottomSheetState.partialExpand()
-                        }
-                    }
-                },
-                backgroundColor = AppColors.insetSurface
-            )
-        },
         topBar = {
             TransactionListTopAppBar(
                 filter = filter,
@@ -103,66 +76,37 @@ fun TransactionListContent(
                 onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
             )
         },
-        sheetContent = {
-            FilterSheetContent(
+        bottomBar = {
+            FilterPeekBar(
                 filter = filter,
-                accounts = accounts,
-                allCategories = categories,
-                allTransactions = allTransactions,
-                savedFilters = savedFilters,
-                onFilterEvent = onFilterEvent,
-                onSaveFilterClick = onSaveFilterClick,
-                onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
-                backgroundColor = AppColors.insetSurface,
-                accountNames = accountNames,
+                onTimelineChange = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
+                onOpenFullFilter = onOpenFullFilter,
+                onPresetsClick = onOpenFullFilter,
+                hasPresets = savedFilters.isNotEmpty(),
+                hasActiveFilters = false, // You can compute this if needed
+                backgroundColor = AppColors.insetSurface
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerPadding.calculateTopPadding())
-                    .background(AppColors.screenBackground)
-            ) {
-                if (listState.isEmpty) {
-                    TransactionListEmptyState()
-                } else {
-                    AeonTransactionList(
-                        listState = listState,
-                        onTransactionEvent = onTransactionEvent,
-                        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                        showOpeningBalance = recordsSettings.showOpeningBalance,
-                        showClosingBalance = recordsSettings.showClosingBalance,
-                        showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
-                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                        revealedCardIds = revealedCardIds
-                    )
-                }
-            }
-
-            // Scrim Overlay: Blocks interaction and dims background when filter sheet is open
-            val targetValue = scaffoldState.bottomSheetState.targetValue
-            val currentValue = scaffoldState.bottomSheetState.currentValue
-            val isExpanded = targetValue == SheetValue.Expanded || currentValue == SheetValue.Expanded
-            
-            val scrimAlpha by animateFloatAsState(
-                targetValue = if (targetValue == SheetValue.Expanded) 0.5f else 0f,
-                label = "filter_scrim_alpha"
-            )
-
-            if (scrimAlpha > 0f || isExpanded) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = scrimAlpha))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            scope.launch { scaffoldState.bottomSheetState.partialExpand() }
-                        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(AppColors.screenBackground)
+        ) {
+            if (listState.isEmpty) {
+                TransactionListEmptyState()
+            } else {
+                AeonTransactionList(
+                    listState = listState,
+                    onTransactionEvent = onTransactionEvent,
+                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+                    useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                    showOpeningBalance = recordsSettings.showOpeningBalance,
+                    showClosingBalance = recordsSettings.showClosingBalance,
+                    showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
+                    baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
+                    revealedCardIds = revealedCardIds
                 )
             }
         }
@@ -213,6 +157,7 @@ fun TransactionListContentPreview() {
                 onTransactionEvent = {},
                 onBackClick = {},
                 onFilterEvent = {},
+                onOpenFullFilter = {}
             )
         }
     }

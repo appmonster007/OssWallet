@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ fun TransactionListScreen(
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
     val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
+    var showFullFilter by rememberSaveable { mutableStateOf(false) }
     var navTriggered by remember { mutableStateOf(false) }
 
     // Reset navTriggered when returning to this screen
@@ -89,6 +91,26 @@ fun TransactionListScreen(
     // Removed automatic filter clearing on screen disposal
 
     val isTopLevel = isTopLevelParam
+
+    if (showFullFilter) {
+        TransactionFilterSheet(
+            filter = filter,
+            accounts = accounts,
+            categories = categories,
+            savedFilters = savedFilters,
+            onFilterEvent = { event ->
+                when (event) {
+                    is FilterEvent.Apply -> viewModel.updateRecordsFilter(event.filter)
+                    is FilterEvent.UpdateTimeline -> viewModel.updateRecordsTimelineRange(event.range)
+                    is FilterEvent.UpdateSettings -> viewModel.updateRecordsSettings { event.settings }
+                    is FilterEvent.Reset -> viewModel.resetToInitialFilter()
+                }
+            },
+            onSaveFilterClick = onSaveFilterClick,
+            onClose = { showFullFilter = false },
+            accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
+        )
+    }
 
     TransactionListContent(
         listState = listState,
@@ -128,6 +150,7 @@ fun TransactionListScreen(
                 is FilterEvent.Reset -> viewModel.resetToInitialFilter()
             }
         },
+        onOpenFullFilter = { showFullFilter = true },
         revealedCardIds = revealedCardIds
     )
 }

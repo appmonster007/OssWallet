@@ -39,6 +39,7 @@ fun AeonTransactionListFilteredPreview() {
             onTransactionEvent = {},
             onBackClick = {},
             onFilterEvent = {},
+            onOpenFullFilter = {}
         )
     }
 }

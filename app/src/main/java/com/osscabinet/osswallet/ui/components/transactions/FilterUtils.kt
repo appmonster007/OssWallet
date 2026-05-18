@@ -68,6 +68,7 @@ fun removeFilter(
         "queryPayee" -> filter.copy(queryPayee = null)
         "amountRange" -> filter.copy(minAmount = null, maxAmount = null)
         "statuses" -> filter.copy(statuses = filter.statuses - (value as TransactionStatus))
+        "tags" -> filter.copy(tags = filter.tags - (value as String))
         else -> filter
     }
     onUpdateFilter(updatedFilter)

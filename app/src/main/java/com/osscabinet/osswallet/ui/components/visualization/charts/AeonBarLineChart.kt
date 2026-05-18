@@ -388,8 +388,11 @@ fun AeonBarLineChart(
             if (showXAxisLabels && xLabels.isNotEmpty()) {
                 val total = xLabels.size
                 val lastIdx = total - 1
-                val jump = 7
-                val threshold = 4
+                // Derive jump from the minimum pixel gap a label needs so they never overlap.
+                // "dd/MM" at 9sp is ~32dp wide; this scales correctly with chart width and data density.
+                val minLabelSpacingPx = with(density) { 32.dp.toPx() }
+                val jump = maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
+                val threshold = (jump / 2).coerceAtLeast(1)
                 val nearestLowerJump = (lastIdx / jump) * jump
                 val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                 val labelPaint = AndroidPaint().apply {

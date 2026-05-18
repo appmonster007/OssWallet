@@ -92,7 +92,7 @@ fun TransactionFilterPill(
     }
 
     val pillH = 76.dp   // compact: just enough for AeonTimelinePeriodSelector
-    val pillHorizMargin = 20.dp
+    val pillHorizMargin = 12.dp
 
     BoxWithConstraints(modifier = modifier) {
         val maxH = maxHeight
@@ -310,7 +310,7 @@ private fun FullScreenFilterContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AppColors.sheetSurface)
+                .background(AppColors.cardSurfaceProminent)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = 4.dp, vertical = 8.dp)
                 .onGloballyPositioned { onTopBarMeasured(it.size.height) }
@@ -348,7 +348,7 @@ private fun FullScreenFilterContent(
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
             onClose = onClose,
-            backgroundColor = AppColors.sheetSurface,
+            backgroundColor = AppColors.cardSurfaceProminent,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
         )
     }

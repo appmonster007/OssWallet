@@ -394,8 +394,10 @@ fun FilterFields(
         AeonContextGrid {
             EntryActionRow {
                 // Type Card
+                val isTypeLocked = filterRules.forcedTransactionTypes != null
                 EntryActionCard(
-                    icon = if (filter.transactionTypes.size == 1) {
+                    icon = if (isTypeLocked) Icons.Default.Lock
+                    else if (filter.transactionTypes.size == 1) {
                         when (filter.transactionTypes.first()) {
                             TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
                             TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
@@ -403,16 +405,19 @@ fun FilterFields(
                         }
                     } else Icons.Default.FilterList,
                     label = "TYPES",
-                    value = when {
+                    value = if (isTypeLocked) {
+                        filterRules.forcedTransactionTypes!!.joinToString(" & ") { it.replaceFirstChar { c -> c.uppercaseChar() } }
+                    } else when {
                         filter.transactionTypes.isEmpty() -> "All"
                         filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
                         else -> "${filter.transactionTypes.size} Selected"
                     },
-                    isSelected = filter.transactionTypes.isNotEmpty(),
+                    isSelected = filter.transactionTypes.isNotEmpty() || isTypeLocked,
                     modifier = Modifier.weight(1f),
-                    onClick = { activeSheet = "Types" },
-                    iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                    iconTint = AppColors.primary
+                    onClick = { if (!isTypeLocked) activeSheet = "Types" },
+                    iconContainerColor = if (isTypeLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
+                                         else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                    iconTint = if (isTypeLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                 )
 
                 // Accounts Card

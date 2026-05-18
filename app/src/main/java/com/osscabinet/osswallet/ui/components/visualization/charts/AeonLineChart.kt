@@ -328,8 +328,8 @@ fun AeonLineChart(
                     val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                     xAxisLabels.forEachIndexed { index, lbl ->
                         if (lbl == null) return@forEachIndexed
-                        val show = index == 0 || index == lastIdx ||
-                            (index > 0 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
+                        val show = index == 1 || index == lastIdx ||
+                            (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
                         if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
                     }
                 } else {

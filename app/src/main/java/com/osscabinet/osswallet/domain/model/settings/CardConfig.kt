@@ -359,7 +359,7 @@ data class CashFlowComparisonCardConfig(
     )
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
-    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 /**
@@ -380,7 +380,7 @@ data class IncomeExpenseBarCardConfig(
     )
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
-    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 @Serializable

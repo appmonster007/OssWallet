@@ -330,6 +330,8 @@ fun BudgetDetailScreen(
                                 TransactionListState(groups = groups, isEmpty = groups.isEmpty())
                             }
 
+                            val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
+
                             RecentActivitiesScreen(
                                 listState = budgetListState,
                                 onRecordsClick = { _ ->
@@ -340,6 +342,7 @@ fun BudgetDetailScreen(
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
+                                showCurrencyBreakdown = recentActivitiesBreakdown,
                                 onTransactionEvent = { event ->
                                     when (event) {
                                         is TransactionItemEvent.Click -> onTransactionClick(event.id)

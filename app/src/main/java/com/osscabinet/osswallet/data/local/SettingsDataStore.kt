@@ -58,7 +58,8 @@ data class TransactionSectionSettings(
     val showClosingBalance: Boolean = true,
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     val showOnlyActiveCurrencies: Boolean = false,
-    val excludeFutureTransactions: Boolean = true
+    val excludeFutureTransactions: Boolean = true,
+    val showCurrencyBreakdown: Boolean = true
 )
 
 @Serializable
@@ -82,6 +83,7 @@ class SettingsDataStore(private val context: Context) {
         val IS_DATABASE_SEEDED_KEY = booleanPreferencesKey("is_database_seeded")
         val USE_24_HOUR_FORMAT_KEY = booleanPreferencesKey("use_24_hour_format")
         val MAPS_ACCESS_ENABLED_KEY = booleanPreferencesKey("maps_access_enabled")
+        val RECENT_ACTIVITIES_BREAKDOWN_KEY = booleanPreferencesKey("recent_activities_breakdown")
         val CURRENCY_PROVIDER_KEY = stringPreferencesKey("currency_provider")
         val USER_NAME_KEY = stringPreferencesKey("user_name")
 
@@ -137,6 +139,10 @@ class SettingsDataStore(private val context: Context) {
 
     val mapsAccessEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[MAPS_ACCESS_ENABLED_KEY] ?: false
+    }
+
+    val recentActivitiesBreakdown: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[RECENT_ACTIVITIES_BREAKDOWN_KEY] ?: false
     }
 
     val currencyProvider: Flow<String> = context.dataStore.data.map { preferences ->
@@ -266,6 +272,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveMapsAccessEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[MAPS_ACCESS_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun saveRecentActivitiesBreakdown(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[RECENT_ACTIVITIES_BREAKDOWN_KEY] = enabled
         }
     }
 

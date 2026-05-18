@@ -62,6 +62,7 @@ fun SettingsScreen(
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
+    val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
     val availableProviders = viewModel.availableProviders
     val availableCurrencies by viewModel.availableCurrencies.collectAsStateWithLifecycle()
@@ -575,6 +576,23 @@ fun SettingsScreen(
                         Switch(
                             checked = mapsAccessEnabled,
                             onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                                uncheckedThumbColor = AppColors.border,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
+                            )
+                        )
+                    }
+                )
+                SettingsItem(
+                    title = "Recent Activities Breakdown",
+                    subtitle = if (recentActivitiesBreakdown) "Currency breakdown shown in group headers" else "Currency breakdown hidden in group headers",
+                    icon = if (recentActivitiesBreakdown) Icons.Rounded.CurrencyExchange else Icons.Rounded.Block,
+                    trailingContent = {
+                        Switch(
+                            checked = recentActivitiesBreakdown,
+                            onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = AppColors.primary,
                                 checkedTrackColor = AppColors.switchTrackOn,

@@ -156,6 +156,19 @@ fun TransactionListTopAppBar(
                             showMoreMenu = false
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Show Currency Breakdown") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showCurrencyBreakdown,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showCurrencyBreakdown = !recordsSettings.showCurrencyBreakdown))
+                            showMoreMenu = false
+                        }
+                    )
                 }
             }
         }

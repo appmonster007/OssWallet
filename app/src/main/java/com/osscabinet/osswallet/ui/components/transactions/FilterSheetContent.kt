@@ -17,6 +17,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -38,6 +43,16 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
+private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, String>(
+    save = { Json.encodeToString(it.value) },
+    restore = { mutableStateOf(Json.decodeFromString(it)) }
+)
+
+private val FilterIdsSaver = Saver<MutableState<Set<Long>>, ArrayList<Long>>(
+    save = { ArrayList(it.value.toList()) },
+    restore = { mutableStateOf(it.toSet()) }
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterSheetContent(
@@ -58,10 +73,10 @@ fun FilterSheetContent(
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter()
 ) {
-    var localFilter by remember { mutableStateOf(filter) }
-    var selectedFilterIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var localFilter by rememberSaveable(saver = TransactionFilterSaver) { mutableStateOf(filter) }
+    var selectedFilterIds by rememberSaveable(saver = FilterIdsSaver) { mutableStateOf(emptySet<Long>()) }
     var presetsDropdownExpanded by remember { mutableStateOf(false) }
-    var showCustomize by remember { mutableStateOf(initialShowCustomize) }
+    var showCustomize by rememberSaveable { mutableStateOf(initialShowCustomize) }
 
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
     val effectiveAccountNames = remember(accounts, accountNames) { 
@@ -77,6 +92,7 @@ fun FilterSheetContent(
         debounceJob.value = filterSheetScope.launch {
             delay(debounceMs)
             onFilterEvent(FilterEvent.Apply(newFilter))
+            debounceJob.value = null
         }
     }
 
@@ -119,9 +135,11 @@ fun FilterSheetContent(
         applyFilterWithDebounce(localFilter, debounceMs = 0)
     }
 
-    // Sync localFilter with filter prop when it changes
+    // Sync localFilter with filter prop when it changes (only when not currently editing)
     LaunchedEffect(filter) {
-        localFilter = filter
+        if (debounceJob.value == null) {
+            localFilter = filter
+        }
     }
 
     val scrollState = rememberScrollState()
@@ -450,7 +468,11 @@ fun FilterSheetContent(
             }
 
             Button(
-                onClick = { onSaveFilterClick(localFilter) },
+                onClick = { 
+                    debounceJob.value?.cancel()
+                    onFilterEvent(FilterEvent.Apply(localFilter))
+                    onSaveFilterClick(localFilter) 
+                },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(

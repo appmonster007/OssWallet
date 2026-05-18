@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -82,8 +83,8 @@ fun AeonExpressiveCard(
     val showFilterButton = filterEnabled && filter != null && onFilterChange != null
     val showSettingsButton = displaySettings != null
 
-    var showFilterSheet by remember { mutableStateOf(false) }
-    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSheet by rememberSaveable { mutableStateOf(false) }
+    var showDisplaySettings by rememberSaveable { mutableStateOf(false) }
 
     val activeFilterCount = filter?.let { countActiveFilters(it, baseFilter, filterRules) } ?: 0
     val effectiveSubtitle = subtitle ?: filter?.timelineRange?.let { timelineLabel(it) }

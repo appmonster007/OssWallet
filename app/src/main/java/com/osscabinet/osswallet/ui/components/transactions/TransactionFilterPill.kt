@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.graphics.lerp as lerpColor
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -75,8 +74,8 @@ fun TransactionFilterPill(
     // Safe fraction clamped to [0,1] so lerp calls never produce negative sizes.
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
-    // Pre-warm filter layout at f=0.60 (10 % before it starts fading in).
-    val filterInTree by remember { derivedStateOf { morph.value > 0.60f } }
+    // Pre-warm filter layout at f=0.70 (5 % before it starts fading in at 0.75).
+    val filterInTree by remember { derivedStateOf { morph.value > 0.70f } }
 
     // Measured height of the AeonTimelinePeriodSelector (updated after first composition).
     var selectorHeightPx by remember { mutableIntStateOf(0) }
@@ -119,11 +118,7 @@ fun TransactionFilterPill(
             }
         }
 
-        // Pill uses cardSurfaceProminent (surfaceContainerHigh) so the timeline selector's
-        // icon backgrounds (surfaceContainer) contrast with the pill background.
-        // surfaceContainerHigh is lighter than surfaceContainer in dark/amoled and darker in light.
-        val pillColor  = AppColors.cardSurfaceProminent
-        val sheetColor = AppColors.sheetSurface
+        val sheetColor = AppColors.cardSurfaceProminent
 
         // Status bar height — needed to compute where the selector lands in the filter sheet.
         val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -141,9 +136,9 @@ fun TransactionFilterPill(
         val selectorTop      = lerp(pillSelectorTop, filterSelectorTop, f)
         val selectorHorizPad = lerp(12.dp, 18.dp, f)
 
-        // Overlay fades from 1→0 between f=0.60 and f=0.85; filter fades from 0→1 between f=0.70 and f=1.0.
-        // The 0.70–0.85 overlap is the crossfade window.
-        val overlayAlpha = ((0.85f - f) / 0.25f).coerceIn(0f, 1f)
+        // Overlay fades 1→0 between f=0.55 and f=0.70; filter fades 0→1 between f=0.75 and f=1.0.
+        // A small gap (0.70–0.75) ensures neither is visible at the same time — no double-selector ghost.
+        val overlayAlpha = ((0.70f - f) / 0.15f).coerceIn(0f, 1f)
 
         // Interpolated visual properties
         val surfaceH      = lerp(pillH, maxH, f)
@@ -151,7 +146,7 @@ fun TransactionFilterPill(
         val corner        = ((1f - f) * 28f).coerceAtLeast(0f).dp
         val shadowElev    = lerp(8.dp, 0.dp, f)
         val offsetYPx     = collapsedTopPx * (1f - f)
-        val surfaceColor  = lerpColor(pillColor, sheetColor, f)
+        val surfaceColor  = sheetColor  // same color throughout — pill and sheet are identical
 
         // Scrim
         if (f > 0.01f) {
@@ -201,9 +196,9 @@ fun TransactionFilterPill(
                 )
         ) {
             Box(Modifier.fillMaxSize()) {
-                // Filter sheet fades in from f=0.70 to f=1.0.
+                // Filter sheet fades in from f=0.75 to f=1.0 — starts after overlay is fully gone.
                 if (filterInTree) {
-                    val filterAlpha = ((f - 0.7f) / 0.3f).coerceIn(0f, 1f)
+                    val filterAlpha = ((f - 0.75f) / 0.25f).coerceIn(0f, 1f)
                     Box(
                         Modifier
                             .fillMaxSize()

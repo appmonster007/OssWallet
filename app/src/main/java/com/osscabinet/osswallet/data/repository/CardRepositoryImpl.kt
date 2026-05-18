@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -154,6 +155,7 @@ class CardRepositoryImpl(
                 is RecentActivitiesCardConfig -> card.copy(order = index)
                 is CashFlowComparisonCardConfig -> card.copy(order = index)
                 is IncomeExpenseBarCardConfig -> card.copy(order = index)
+                is CategorySpendingTrendCardConfig -> card.copy(order = index)
             }
         }
 }

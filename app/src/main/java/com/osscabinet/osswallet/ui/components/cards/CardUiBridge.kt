@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
 
@@ -428,6 +429,29 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.IncomeExpenseBar(
                         onUpdate = { newConfig ->
                             updateHandler.updateIncomeExpenseBarConfig(
+                                config.cardId,
+                                newConfig
+                            )
+                        },
+                        onDelete = { onDelete(config.cardId) },
+                        onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                input.filter.merge(config.filter).merge(drillDown)
+                            )
+                        },
+                        onSaveFilterClick = callbacks.onSaveFilterClick
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+
+            config is CategorySpendingTrendCardConfig && renderData is CardRenderData.CategorySpendingTrend -> {
+                CardWithCallbacks.CategorySpendingTrend(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.CategorySpendingTrend(
+                        onUpdate = { newConfig ->
+                            updateHandler.updateCategorySpendingTrendConfig(
                                 config.cardId,
                                 newConfig
                             )

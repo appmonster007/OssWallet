@@ -163,4 +163,14 @@ sealed class CardCallbacks {
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
+
+    /**
+     * Callbacks for category spending trend card
+     */
+    data class CategorySpendingTrend(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig) -> Unit = {},
+        val onDelete: () -> Unit = {},
+        val onRecordsClick: (TransactionFilter) -> Unit = {},
+        val onSaveFilterClick: (TransactionFilter) -> Unit = {}
+    ) : CardCallbacks()
 }

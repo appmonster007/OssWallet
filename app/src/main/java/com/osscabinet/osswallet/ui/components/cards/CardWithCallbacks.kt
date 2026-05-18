@@ -104,6 +104,13 @@ sealed class CardWithCallbacks {
         override val baseFilter: TransactionFilter = TransactionFilter()
     ) : CardWithCallbacks()
 
+    data class CategorySpendingTrend(
+        val renderData: CardRenderData.CategorySpendingTrend,
+        val callbacks: CardCallbacks.CategorySpendingTrend,
+        override val filterRules: CardFilterRules = CardFilterRules.SPENDING_LOCKED_CATEGORIES,
+        override val baseFilter: TransactionFilter = TransactionFilter()
+    ) : CardWithCallbacks()
+
     data class ComputeError(
         val cardId: String,
         val message: String?,

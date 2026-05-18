@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionListState
@@ -139,4 +140,34 @@ sealed class CardRenderData {
         // -1 means all buckets are in the future. Used to terminate the net line at today.
         val todayBucketIndex: Int = -1
     ) : CardRenderData()
+
+    data class CategorySpendingTrend(
+        val config: com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig,
+        val buckets: List<CategorySpendingBucket>,
+        val granularity: CashFlowComparisonGranularity,
+        val activeCategories: List<CategorySummary>,
+        val baseCurrency: String
+    ) : CardRenderData()
 }
+
+data class CategorySpendingBucket(
+    val label: String,
+    val epochMillis: Long,
+    val categoryAmounts: List<CategoryAmount>
+)
+
+data class CategoryAmount(
+    val categoryId: Long,
+    val categoryName: String,
+    val colorHex: Int,
+    val nature: CategoryNature,
+    val amount: BigDecimal
+)
+
+data class CategorySummary(
+    val categoryId: Long,
+    val name: String,
+    val colorHex: Int,
+    val nature: CategoryNature,
+    val totalAmount: BigDecimal
+)

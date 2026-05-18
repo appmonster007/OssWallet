@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -489,57 +488,6 @@ fun FilterSheetContent(
 
         Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-fun FilterPeekBar(
-    filter: TransactionFilter,
-    onTimelineChange: (TimelineRange) -> Unit,
-    onOpenFullFilter: () -> Unit,
-    onPresetsClick: () -> Unit,
-    hasPresets: Boolean,
-    hasActiveFilters: Boolean,
-    backgroundColor: Color = AppColors.insetSurface
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = backgroundColor,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        shadowElevation = 8.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = AeonTheme.dimensions.screenPadding)
-                .padding(top = 8.dp, bottom = 16.dp)
-        ) {
-            // Drag handle look-alike to indicate it can be opened
-            Box(
-                modifier = Modifier
-                    .width(32.dp)
-                    .height(4.dp)
-                    .background(AppColors.divider.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
-                    .align(Alignment.CenterHorizontally)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-
-            AeonTimelinePeriodSelector(
-                currentRange = filter.timelineRange,
-                onRangeSelected = onTimelineChange,
-                swipeEntireComponent = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            FilterPeekOptions(
-                onPresetsClick = onPresetsClick,
-                onMoreClick = onOpenFullFilter,
-                hasPresets = hasPresets,
-                hasActiveFilters = hasActiveFilters,
-                isExpanded = false
-            )
-        }
     }
 }
 

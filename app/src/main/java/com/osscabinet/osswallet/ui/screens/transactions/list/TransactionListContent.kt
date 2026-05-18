@@ -1,32 +1,20 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
-import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetDragHandle
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
@@ -37,12 +25,7 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import java.math.BigDecimal
-import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.theme.AppColors
-
-
-import com.osscabinet.ossWallet.ui.components.transactions.FilterPeekBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,55 +44,58 @@ fun TransactionListContent(
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
-    onOpenFullFilter: () -> Unit,
     revealedCardIds: List<Long> = emptyList()
 ) {
-    Scaffold(
-        modifier = Modifier.background(AppColors.transparent),
-        topBar = {
-            TransactionListTopAppBar(
-                filter = filter,
-                recordsSettings = recordsSettings,
-                onBackClick = onBackClick,
-                onMenuClick = onMenuClick,
-                isTopLevel = isTopLevel,
-                onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
-            )
-        },
-        bottomBar = {
-            FilterPeekBar(
-                filter = filter,
-                onTimelineChange = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
-                onOpenFullFilter = onOpenFullFilter,
-                onPresetsClick = onOpenFullFilter,
-                hasPresets = savedFilters.isNotEmpty(),
-                hasActiveFilters = false, // You can compute this if needed
-                backgroundColor = AppColors.insetSurface
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(AppColors.screenBackground)
-        ) {
-            if (listState.isEmpty) {
-                TransactionListEmptyState()
-            } else {
-                AeonTransactionList(
-                    listState = listState,
-                    onTransactionEvent = onTransactionEvent,
-                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                    useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                    showOpeningBalance = recordsSettings.showOpeningBalance,
-                    showClosingBalance = recordsSettings.showClosingBalance,
-                    showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
-                    baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                    revealedCardIds = revealedCardIds
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.background(AppColors.transparent),
+            topBar = {
+                TransactionListTopAppBar(
+                    filter = filter,
+                    recordsSettings = recordsSettings,
+                    onBackClick = onBackClick,
+                    onMenuClick = onMenuClick,
+                    isTopLevel = isTopLevel,
+                    onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
                 )
             }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(AppColors.screenBackground)
+            ) {
+                if (listState.isEmpty) {
+                    TransactionListEmptyState()
+                } else {
+                    AeonTransactionList(
+                        listState = listState,
+                        onTransactionEvent = onTransactionEvent,
+                        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                        showOpeningBalance = recordsSettings.showOpeningBalance,
+                        showClosingBalance = recordsSettings.showClosingBalance,
+                        showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
+                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
+                        revealedCardIds = revealedCardIds
+                    )
+                }
+            }
         }
+
+        TransactionFilterPill(
+            filter = filter,
+            accounts = accounts,
+            categories = categories,
+            savedFilters = savedFilters,
+            onFilterEvent = onFilterEvent,
+            onSaveFilterClick = onSaveFilterClick,
+            bottomPadding = 16.dp + navigationBarHeight,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -156,8 +142,7 @@ fun TransactionListContentPreview() {
                 recordsSettings = TransactionSectionSettings(),
                 onTransactionEvent = {},
                 onBackClick = {},
-                onFilterEvent = {},
-                onOpenFullFilter = {}
+                onFilterEvent = {}
             )
         }
     }

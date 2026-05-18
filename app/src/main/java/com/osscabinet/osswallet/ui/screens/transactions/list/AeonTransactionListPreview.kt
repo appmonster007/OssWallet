@@ -11,7 +11,6 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import java.math.BigDecimal
-import java.util.*
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800, name = "Filtered Transactions")
@@ -38,8 +37,7 @@ fun AeonTransactionListFilteredPreview() {
             recordsSettings = TransactionSectionSettings(),
             onTransactionEvent = {},
             onBackClick = {},
-            onFilterEvent = {},
-            onOpenFullFilter = {}
+            onFilterEvent = {}
         )
     }
 }

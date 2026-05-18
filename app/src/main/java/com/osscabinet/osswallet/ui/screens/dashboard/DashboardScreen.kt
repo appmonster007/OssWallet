@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -190,11 +191,7 @@ fun DashboardScreen(
     var isFabExpanded by remember { mutableStateOf(false) }
 
     val pageCount = 2
-    val pagerState = remember {
-        object : PagerState() {
-            override val pageCount: Int get() = pageCount
-        }
-    }
+    val pagerState = rememberPagerState(pageCount = { pageCount })
     val tabs = listOf(
         NavigationTab(
             icon = Icons.Rounded.Dashboard,

@@ -625,12 +625,8 @@ internal fun FilterSheetDragHandle(
         label = "handle_rotation"
     )
     val pullTabHeight = 20.dp
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val topPadding by animateDpAsState(
-        targetValue = if (isExpanded) statusBarHeight else 0.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "handle_top_padding"
-    )
+
+    val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = Modifier
             .fillMaxWidth()

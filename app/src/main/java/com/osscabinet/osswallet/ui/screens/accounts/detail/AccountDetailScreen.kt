@@ -130,6 +130,7 @@ fun AccountDetailScreen(
         }
     }
 
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val pageCount = 2
     val pagerState = rememberPagerState(initialPage = 0) { pageCount }
     val tabs = listOf(
@@ -360,6 +361,7 @@ fun AccountDetailScreen(
                 scope.launch { pagerState.animateScrollToPage(index) }
             },
             tabs = tabs,
+            fabPaddingBottom = 16.dp + navigationBarHeight,
             isFabExpanded = isFabExpanded,
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
             onFabClick = {

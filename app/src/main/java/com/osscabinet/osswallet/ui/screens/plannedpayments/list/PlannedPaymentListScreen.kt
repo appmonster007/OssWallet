@@ -6,6 +6,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -195,6 +198,7 @@ fun PlannedPaymentListScreen(
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val now = remember { System.currentTimeMillis() }
 
     val windowEnd = remember(now) { now + 30L * 24 * 60 * 60 * 1000 }
@@ -427,6 +431,7 @@ fun PlannedPaymentListScreen(
                 selectedTab = 0,
                 onTabSelected = {},
                 tabs = emptyList(),
+                fabPaddingBottom = 16.dp + navigationBarHeight,
                 onFabClick = onAddClick,
                 fabIcon = Icons.Rounded.Repeat,
                 showFab = true

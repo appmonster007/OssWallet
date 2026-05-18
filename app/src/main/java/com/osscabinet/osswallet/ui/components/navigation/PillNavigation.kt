@@ -92,10 +92,10 @@ fun UnifiedPillNavigation(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(bottom = fabPaddingBottom)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 24.dp)
                 .zIndex(2f),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally) 
+            horizontalArrangement = if (showFab) Arrangement.SpaceBetween else Arrangement.Center
         ) {
             // Invisible spacer to balance the FAB on the right, centering the Pill
             if (showFab) {

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -63,7 +64,7 @@ fun FilterFields(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    var activeSheet by remember { mutableStateOf<String?>(null) }
+    var activeSheet by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Sheets for multi-selection
     when (activeSheet) {

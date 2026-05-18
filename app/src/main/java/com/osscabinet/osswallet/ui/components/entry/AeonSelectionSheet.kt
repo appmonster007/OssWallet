@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.Flip
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +49,7 @@ fun <T, ID> AeonSelectionSheet(
     footerContent: @Composable (ColumnScope.() -> Unit)? = null,
     startExpanded: Boolean = true
 ) {
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     
     val filteredItems = remember(query, items) {

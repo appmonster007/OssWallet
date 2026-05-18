@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -146,10 +147,10 @@ fun AccountDetailScreen(
         )
     )
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
-    var showAddCardDialog by remember { mutableStateOf(false) }
-    var showFilterSheet by remember { mutableStateOf(false) }
-    var isFabExpanded by remember { mutableStateOf(false) }
+    var showSettingsDialog by rememberSaveable { mutableStateOf(false) }
+    var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
+    var showFilterSheet by rememberSaveable { mutableStateOf(false) }
+    var isFabExpanded by rememberSaveable { mutableStateOf(false) }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()

@@ -48,14 +48,7 @@ class FilterEntryViewModel(
                             accounts = accounts,
                             categories = categories,
                             allTransactions = transactions,
-                            availableTags = tags,
-                            selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else emptySet(),
-                            selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
-                            selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
-                            selectedStatuses = if (it.isEditMode) it.selectedStatuses else emptySet(),
-                            selectedTransactionTypes = if (it.isEditMode) it.selectedTransactionTypes else emptySet(),
-                            selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else emptySet(),
-                            selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
+                            availableTags = tags
                         )
                     }
                 }
@@ -69,6 +62,7 @@ class FilterEntryViewModel(
                 it.copy(
                     filterId = null,
                     isEditMode = false,
+                    name = "New Filter",
                     selectedTransactionTypes = initialFilter.transactionTypes.toSet(),
                     selectedAccountIds = initialFilter.accountIds.toSet(),
                     selectedCategoryIds = initialFilter.categoryIds.toSet(),

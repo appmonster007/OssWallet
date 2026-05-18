@@ -70,60 +70,91 @@ fun FilterFormBody(
                         onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) }
                     )
 
-                    AeonContextGrid {
-                        // Accounts & Categories selection
-                        EntryActionRow {
-                            val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
-                            EntryActionCard(
-                                icon = getAccountIconByName(accountObj?.icon),
-                                label = "ACCOUNTS",
-                                value = when {
-                                    state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
-                                    accountObj != null -> accountObj.name
-                                    else -> "${state.selectedAccountIds.size} Selected"
-                                },
-                                onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
-                            EntryActionCard(
-                                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
-                                label = "CATEGORIES",
-                                value = when {
-                                    state.selectedCategoryIds.isEmpty() || (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
-                                    categoryObj != null -> categoryObj.name
-                                    else -> "${state.selectedCategoryIds.size} Selected"
-                                },
-                                onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(show = true)) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        // Flows & Currencies selection
-                        EntryActionRow {
-                            EntryActionCard(
-                                icon = Icons.AutoMirrored.Rounded.ShowChart,
-                                label = "FLOWS",
-                                value = if (state.selectedTransactionTypes.size >= 2 || state.selectedTransactionTypes.isEmpty()) "All Flows" else state.selectedTransactionTypes.first().displayName,
-                                onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            EntryActionCard(
-                                icon = Icons.Rounded.CurrencyExchange,
-                                label = "CURRENCIES",
-                                value = if (state.selectedCurrencies.isEmpty()) "All Currencies" else if (state.selectedCurrencies.size == 1) state.selectedCurrencies.first() else "${state.selectedCurrencies.size} Selected",
-                                onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
+                    // Future transactions exclusion
+                    EntrySwitchRow(
+                        label = "Exclude Future",
+                        checked = state.excludeFuture,
+                        onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
+                        icon = Icons.Rounded.Schedule,
+                        subtitle = "Exclude future dated transactions"
+                    )
                 }
             }
 
-            // ADVANCED SEARCH: Detailed text queries and constraints
-            EntrySection(title = "ADVANCED SEARCH", icon = Icons.Rounded.FilterList) {
+            // PRIMARY FILTERS: The context grid matching FilterFields logic
+            AeonContextGrid {
+                // Flows & Accounts selection
+                EntryActionRow {
+                    EntryActionCard(
+                        icon = Icons.AutoMirrored.Rounded.ShowChart,
+                        label = "FLOWS",
+                        value = if (state.selectedTransactionTypes.size >= 2 || state.selectedTransactionTypes.isEmpty()) "All Flows" else state.selectedTransactionTypes.first().displayName,
+                        onClick = { onEvent(FilterEntryEvent.ShowTypeSheet(show = true)) },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
+                    EntryActionCard(
+                        icon = getAccountIconByName(accountObj?.icon),
+                        label = "ACCOUNTS",
+                        value = when {
+                            state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
+                            accountObj != null -> accountObj.name
+                            else -> "${state.selectedAccountIds.size} Selected"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Categories & Currencies selection
+                EntryActionRow {
+                    val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                    EntryActionCard(
+                        icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                        label = "CATEGORIES",
+                        value = when {
+                            state.selectedCategoryIds.isEmpty() || (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
+                            categoryObj != null -> categoryObj.name
+                            else -> "${state.selectedCategoryIds.size} Selected"
+                        },
+                        onClick = { onEvent(FilterEntryEvent.ShowCategorySheet(show = true)) },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    EntryActionCard(
+                        icon = Icons.Rounded.CurrencyExchange,
+                        label = "CURRENCIES",
+                        value = if (state.selectedCurrencies.isEmpty()) "All Currencies" else if (state.selectedCurrencies.size == 1) state.selectedCurrencies.first() else "${state.selectedCurrencies.size} Selected",
+                        onClick = { onEvent(FilterEntryEvent.ShowCurrencySheet(show = true)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Status & Methods selection
+                EntryActionRow {
+                    EntryActionCard(
+                        icon = Icons.AutoMirrored.Rounded.FactCheck,
+                        label = "STATUS",
+                        value = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
+                        onClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
+                        iconTint = AppColors.secondary
+                    )
+
+                    EntryActionCard(
+                        icon = Icons.Rounded.Payments,
+                        label = "METHODS",
+                        value = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "Any Method" else "${state.selectedPaymentMethods.size} Selected",
+                        onClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(show = true)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // SEARCH & TAGS: Detailed text queries
+            EntrySection(title = "SEARCH & TAGS", icon = Icons.Rounded.Search) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
                     // Note and Payee Queries with Regex support
                     Column(verticalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
@@ -166,33 +197,18 @@ fun FilterFormBody(
 
                     // Multi-select Tags
                     EntryTagSection(
-                        tags = state.selectedTags.map { name -> 
+                        tags = state.selectedTags.map { name ->
                             state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
                         },
                         onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
                     )
+                }
+            }
 
-                    // Multi-select PM and Status
-                    EntryPaymentMethodStatusRow(
-                        paymentMethod = if (state.selectedPaymentMethods.isEmpty() || state.selectedPaymentMethods.size == PaymentMethod.entries.size) "All Methods" else "${state.selectedPaymentMethods.size} Selected",
-                        onPaymentMethodClick = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(show = true)) },
-                        statusLabel = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
-                        onStatusClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) }
-                    )
-
-                    // Linked Items
-                    EntryActionCard(
-                        icon = Icons.Rounded.Link,
-                        label = "LINKED TRANSACTIONS",
-                        value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
-                        onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                        iconTint = AppColors.tertiary
-                    )
-
-                    // Numerical Constraints
+            // AMOUNT & RECORDS: Numerical constraints and links
+            EntrySection(title = "AMOUNT & RECORDS", icon = Icons.Rounded.AttachMoney) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
                     AeonContextGrid {
                         EntryActionRow {
                             EntryActionCard(
@@ -212,12 +228,26 @@ fun FilterFormBody(
                         }
                     }
 
-                    // Warranty Constraints
+                    EntryActionCard(
+                        icon = Icons.Rounded.Link,
+                        label = "LINKED RECORDS",
+                        value = if (state.linkedTransactionIds.isEmpty()) "None Linked" else "${state.linkedTransactionIds.size} Linked",
+                        onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = AppColors.tertiary
+                    )
+                }
+            }
+
+            // WARRANTY: Warranty status and dates
+            EntrySection(title = "WARRANTY", icon = Icons.Rounded.VerifiedUser) {
+                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
                     EntryActionCard(
                         icon = Icons.Rounded.Verified,
-                        label = "WARRANTY STATUS",
+                        label = "PROTECTION STATUS",
                         value = when (state.hasWarranty) {
-                            null -> "Any"
+                            null -> "Any Status"
                             true -> "Has Warranty"
                             false -> "No Warranty"
                         },
@@ -256,15 +286,6 @@ fun FilterFormBody(
                             }
                         }
                     }
-
-                    // Future transactions exclusion
-                    EntrySwitchRow(
-                        label = "Exclude Future",
-                        checked = state.excludeFuture,
-                        onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
-                        icon = Icons.Rounded.Schedule,
-                        subtitle = "Exclude future dated transactions"
-                    )
                 }
             }
         }

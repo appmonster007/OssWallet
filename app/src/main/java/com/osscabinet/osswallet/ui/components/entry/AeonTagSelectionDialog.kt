@@ -107,8 +107,7 @@ fun AeonTagSelectionDialog(
                     if (searchQuery.isNotBlank()) {
                         Popup(
                             alignment = Alignment.TopStart,
-                            offset = IntOffset(0, searchFieldHeight + with(density) { 4.dp.roundToPx() }),
-                            onDismissRequest = { searchQuery = "" }
+                            offset = IntOffset(0, searchFieldHeight + with(density) { 4.dp.roundToPx() })
                         ) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(0.82f), // Slightly narrower than dialog

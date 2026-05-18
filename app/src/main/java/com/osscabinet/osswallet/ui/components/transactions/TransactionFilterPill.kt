@@ -1,9 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -32,25 +30,22 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Floating pill at the bottom of the transaction screen.
+ * Floating pill that holds only the timeline selector when collapsed.
  *
- * Collapsed: a compact, centered pill showing only the timeline selector.
- *   - Long-press: opens presets dropdown.
- *   - Swipe up: pill floats to top while morphing into the full-screen filter.
+ * Gesture mechanics:
+ *  - Swipe up: pill moves up in real-time and morphs into the full-screen filter as
+ *    the finger moves. Release past 50 % → springs to full screen. Release below → snaps back.
+ *  - Long press: presets dropdown.
+ *  - Expanded / back button / swipe down on top bar: real-time collapse, springs back to pill.
  *
- * Expanded: full-screen filter sheet.
- *   - Back button or swipe-down on the top bar: collapses back to pill.
- *
- * Must be placed inside a Box with Modifier.fillMaxSize() so the expansion can
- * reach the full screen. bottomPadding controls how high the pill sits above the
- * navigation bar when collapsed.
+ * Must be called with Modifier.fillMaxSize() from the parent Box so the expansion can
+ * cover the whole screen. Pass bottomPadding so the pill floats above the nav bar.
  */
 @Composable
 fun TransactionFilterPill(
@@ -63,31 +58,22 @@ fun TransactionFilterPill(
     bottomPadding: Dp = 16.dp,
     modifier: Modifier = Modifier
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
     var showDropdown by remember { mutableStateOf(false) }
-
-    val density = LocalDensity.current
-    val swipeThresholdPx = with(density) { 80.dp.toPx() }
-
-    val dragOffset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
-    // No bounce — overshoot makes corner radius go negative.
-    val expandFraction by animateFloatAsState(
-        targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "pill_expand"
-    )
+    // 0f = compact pill at bottom, 1f = full-screen filter.
+    // Driven in real-time by gesture; springs to 0 or 1 on release.
+    val morph = remember { Animatable(0f) }
 
-    // Always clamp so downstream lerp calls are safe even if the spring overshoots slightly.
-    val f = expandFraction.coerceIn(0f, 1f)
+    // Safe fraction clamped to [0,1] so lerp calls never produce negative sizes.
+    val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
-    // Pill geometry constants
-    val pillH = 92.dp
-    val pillHorizMargin = 20.dp  // margin each side → pill is narrower than the screen
+    // Content switch at the midpoint so the filter form appears on a nearly-full surface.
+    val showExpanded by remember { derivedStateOf { morph.value > 0.5f } }
+
+    val pillH = 76.dp   // compact: just enough for AeonTimelinePeriodSelector
+    val pillHorizMargin = 20.dp
 
     BoxWithConstraints(modifier = modifier) {
         val maxH = maxHeight
@@ -95,71 +81,76 @@ fun TransactionFilterPill(
         val pillHPx = with(density) { pillH.toPx() }
         val bottomPx = with(density) { bottomPadding.toPx() }
 
-        // Y of the pill's top edge when collapsed, measured from the top of this Box.
+        // Y of the pill's top edge when fully collapsed.
         val collapsedTopPx = maxHPx - bottomPx - pillHPx
 
-        // Interpolated values — always computed from the clamped fraction.
-        val surfaceH = lerp(pillH, maxH, f)
-        val horizMargin = lerp(pillHorizMargin, 0.dp, f)
-        // Corner: 28dp pill → 0dp full-screen, clamped to avoid negatives.
-        val corner = ((1f - f) * 28f).coerceAtLeast(0f).dp
-        val shadowElev = lerp(8.dp, 0.dp, f)
-        // Y offset: pill rests at collapsedTopPx, expands toward 0.
-        val offsetYPx = collapsedTopPx * (1f - f)
-        // Live upward drag feedback only while collapsed.
-        val liveTranslation = if (!isExpanded) dragOffset.value else 0f
+        // The pixel distance the pill travels from rest to screen-top — used to
+        // convert raw drag pixels into a 0–1 fraction.
+        val travelPx = collapsedTopPx
 
-        // Scrim appears as the pill expands.
+        // --- helpers that must capture travelPx and live inside BoxWithConstraints ---
+
+        fun snapByDelta(rawPixelDelta: Float) {
+            // rawPixelDelta: negative = dragging up, positive = dragging down.
+            // Upward drag increases morph; downward drag decreases it.
+            val newF = (morph.value - rawPixelDelta / travelPx).coerceIn(0f, 1f)
+            scope.launch { morph.snapTo(newF) }
+        }
+
+        fun settle() {
+            scope.launch {
+                val target = if (morph.value >= 0.5f) 1f else 0f
+                morph.animateTo(target, spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMedium))
+            }
+        }
+
+        fun collapse() {
+            scope.launch {
+                morph.animateTo(0f, spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMedium))
+            }
+        }
+
+        // Interpolated visual properties
+        val surfaceH      = lerp(pillH, maxH, f)
+        val horizMargin   = lerp(pillHorizMargin, 0.dp, f)
+        val corner        = ((1f - f) * 28f).coerceAtLeast(0f).dp
+        val shadowElev    = lerp(8.dp, 0.dp, f)
+        val offsetYPx     = collapsedTopPx * (1f - f)
+
+        // Scrim
         if (f > 0.01f) {
             Box(
-                modifier = Modifier
+                Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = f * 0.5f))
                     .then(
                         if (f > 0.4f) Modifier.pointerInput(Unit) {
-                            detectTapGestures { isExpanded = false }
+                            detectTapGestures { collapse() }
                         } else Modifier
                     )
             )
         }
 
-        // The single morphing surface — pill shape when collapsed, full-screen when expanded.
+        // The single morphing surface.
         Surface(
             shape = RoundedCornerShape(corner),
             color = AppColors.sheetSurface,
             shadowElevation = shadowElev,
             modifier = Modifier
-                .padding(horizontal = horizMargin)     // shrinks pill width, disappears when expanded
+                .padding(horizontal = horizMargin)
                 .fillMaxWidth()
                 .height(surfaceH)
-                .offset { IntOffset(0, (offsetYPx + liveTranslation).roundToInt()) }
+                .offset { IntOffset(0, offsetYPx.roundToInt()) }
                 .then(
-                    if (!isExpanded) Modifier
+                    // Gesture modifiers are only active while in pill mode.
+                    if (!showExpanded) Modifier
                         .pointerInput(Unit) {
                             detectVerticalDragGestures(
-                                onDragEnd = {
-                                    if (dragOffset.value < -swipeThresholdPx) {
-                                        isExpanded = true
-                                        scope.launch { dragOffset.snapTo(0f) }
-                                    } else {
-                                        scope.launch {
-                                            dragOffset.animateTo(
-                                                0f,
-                                                spring(stiffness = Spring.StiffnessLow)
-                                            )
-                                        }
-                                    }
-                                },
-                                onDragCancel = {
-                                    scope.launch {
-                                        dragOffset.animateTo(0f, spring(stiffness = Spring.StiffnessLow))
-                                    }
-                                },
+                                onDragEnd = { settle() },
+                                onDragCancel = { settle() },
                                 onVerticalDrag = { _, delta ->
-                                    scope.launch {
-                                        // Only allow upward drags (negative delta).
-                                        dragOffset.snapTo((dragOffset.value + delta).coerceAtMost(0f))
-                                    }
+                                    // Only respond to upward drags (or cancelling a partial drag).
+                                    if (delta < 0f || morph.value > 0f) snapByDelta(delta)
                                 }
                             )
                         }
@@ -173,27 +164,24 @@ fun TransactionFilterPill(
                     else Modifier
                 )
         ) {
-            Crossfade(targetState = isExpanded, label = "pill_crossfade") { expanded ->
-                if (expanded) {
-                    FullScreenFilterContent(
-                        filter = filter,
-                        accounts = accounts,
-                        categories = categories,
-                        savedFilters = savedFilters,
-                        onFilterEvent = onFilterEvent,
-                        onSaveFilterClick = onSaveFilterClick,
-                        onClose = { isExpanded = false }
-                    )
-                } else {
-                    PillContent(
-                        filter = filter,
-                        onFilterEvent = onFilterEvent
-                    )
-                }
+            if (showExpanded) {
+                FullScreenFilterContent(
+                    filter = filter,
+                    accounts = accounts,
+                    categories = categories,
+                    savedFilters = savedFilters,
+                    onFilterEvent = onFilterEvent,
+                    onSaveFilterClick = onSaveFilterClick,
+                    onClose = ::collapse,
+                    onDragDelta = ::snapByDelta,
+                    onDragEnd = ::settle
+                )
+            } else {
+                PillContent(filter = filter, onFilterEvent = onFilterEvent)
             }
         }
 
-        // Presets dropdown — floats just above the collapsed pill position.
+        // Presets dropdown — anchored just above the collapsed pill.
         if (showDropdown && savedFilters.isNotEmpty()) {
             Box(
                 modifier = Modifier
@@ -221,28 +209,21 @@ fun TransactionFilterPill(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Pill content — just the timeline selector, no extras.
+// ---------------------------------------------------------------------------
+
 @Composable
 private fun PillContent(
     filter: TransactionFilter,
     onFilterEvent: (FilterEvent) -> Unit
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // Grip handle — hints at swipe-up interaction.
-        Box(
-            modifier = Modifier
-                .width(32.dp)
-                .height(3.dp)
-                .background(AppColors.divider.copy(alpha = 0.45f), RoundedCornerShape(1.5.dp))
-        )
-
-        Spacer(Modifier.height(8.dp))
-
         AeonTimelinePeriodSelector(
             currentRange = filter.timelineRange,
             onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
@@ -252,6 +233,10 @@ private fun PillContent(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Full-screen filter content — shown after the pill finishes expanding.
+// ---------------------------------------------------------------------------
+
 @Composable
 private fun FullScreenFilterContent(
     filter: TransactionFilter,
@@ -260,14 +245,13 @@ private fun FullScreenFilterContent(
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    // onDragDelta: raw pixel delta from the top-bar drag; caller converts to fraction.
+    onDragDelta: (Float) -> Unit,
+    onDragEnd: () -> Unit
 ) {
-    var dragAccum by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
-    val collapseThresholdPx = with(density) { 80.dp.toPx() }
-
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top bar — back button + swipe-down-to-close.
+        // Top bar — drag downward to collapse, back button to close.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -277,15 +261,10 @@ private fun FullScreenFilterContent(
                 .draggable(
                     orientation = Orientation.Vertical,
                     state = rememberDraggableState { delta ->
-                        if (delta > 0) {
-                            dragAccum += delta
-                            if (dragAccum > collapseThresholdPx) {
-                                onClose()
-                                dragAccum = 0f
-                            }
-                        }
+                        // Only pass downward (positive) drag deltas to the morph driver.
+                        if (delta > 0f) onDragDelta(delta)
                     },
-                    onDragStopped = { dragAccum = 0f }
+                    onDragStopped = { onDragEnd() }
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {

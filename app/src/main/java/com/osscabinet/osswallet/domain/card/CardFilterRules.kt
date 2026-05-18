@@ -19,6 +19,12 @@ data class CardFilterRules(
      * The UI should disable the selection and show it as fixed.
      */
     val forcedTransactionType: String? = null,
+
+    /**
+     * If set, the card MUST use exactly these transaction types and the user cannot change them.
+     * The UI should disable the type selector and display the forced types as locked.
+     */
+    val forcedTransactionTypes: List<String>? = null,
     
     /**
      * Whether account selection is allowed.
@@ -92,6 +98,14 @@ data class CardFilterRules(
          */
         val INCOME_OR_EXPENSE_ONLY = CardFilterRules(
             allowedTransactionTypes = listOf("income", "expense")
+        )
+
+        /**
+         * Rules for cards that always show both Income and Expense and must not allow type changes
+         * (e.g., Income & Expense Bar, Cash Flow Comparison).
+         */
+        val INCOME_AND_EXPENSE = CardFilterRules(
+            forcedTransactionTypes = listOf("income", "expense")
         )
     }
 }

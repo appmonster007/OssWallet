@@ -401,8 +401,8 @@ fun AeonBarLineChart(
                 val labelSlotWidth = if (dualBarMode) chartWidth / total.coerceAtLeast(1) else 0f
                 xLabels.forEachIndexed { index, label ->
                     if (label == null) return@forEachIndexed
-                    val show = index == 0 || index == lastIdx ||
-                        (index > 0 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
+                    val show = index == 1 || index == lastIdx ||
+                        (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
                     if (show) {
                         val x = if (dualBarMode) {
                             leftPadding + (index + 0.5f) * labelSlotWidth

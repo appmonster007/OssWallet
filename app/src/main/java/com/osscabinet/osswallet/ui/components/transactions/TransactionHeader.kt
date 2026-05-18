@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -303,37 +304,45 @@ private data class TransactionHeaderStyles(
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,
             titleStyle = AppTextStyles.transactionSwipeAction.copy(
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 color = AppColors.border,
+                fontSize = 8.sp,
                 letterSpacing = 1.sp,
             ),
             subtitleStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Medium,
                 color = AppColors.border,
+                fontSize = 8.sp,
                 letterSpacing = 0.5.sp,
             ),
             columnHeaderStyle = AppTextStyles.metaLabel.copy(
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
+                fontSize = 8.sp,
                 letterSpacing = 0.5.sp
             ),
             totalLabelStyle = AppTextStyles.metaLabel.copy(
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Black,
             ),
             baseValueStyle = AppTextStyles.transactionSwipeAction.copy(
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
             ),
             breakdownLabelStyle = AppTextStyles.metaLabel.copy(
-                fontWeight = FontWeight.Bold,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Medium,
             ),
-            breakdownValueStyle = AppTextStyles.metaLabel
+            breakdownValueStyle = AppTextStyles.metaLabel.copy(
+                fontSize = 8.sp,
+            )
         )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 100)
 @Composable
 fun TransactionHeaderPreview() {
-    MaterialTheme {
+    OssWalletTheme {
         TransactionHeader(
             title = "WEEK 1",
             subtitle = "Jan 1 - Jan 7",

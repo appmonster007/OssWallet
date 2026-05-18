@@ -65,6 +65,7 @@ fun AnalyticsScreen(
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -165,6 +166,7 @@ fun AnalyticsScreen(
                     selectedTab = 0,
                     onTabSelected = {},
                     tabs = emptyList(),
+                    fabPaddingBottom = 16.dp + navigationBarHeight,
                     isFabExpanded = isFabExpanded,
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {

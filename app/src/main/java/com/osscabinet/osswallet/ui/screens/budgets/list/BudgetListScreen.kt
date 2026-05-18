@@ -2,6 +2,9 @@ package com.osscabinet.ossWallet.ui.screens.budgets.list
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +76,7 @@ fun BudgetListScreen(
     onDetailClick: (Long) -> Unit,
     baseCurrency: String = "USD"
 ) {
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
     val active = budgets.filter { !it.isArchived }
@@ -203,6 +207,7 @@ fun BudgetListScreen(
                 selectedTab = 0,
                 onTabSelected = {},
                 tabs = emptyList(),
+                fabPaddingBottom = 16.dp + navigationBarHeight,
                 onFabClick = onAddClick,
                 fabIcon = Icons.Rounded.AccountBalance,
                 showFab = true

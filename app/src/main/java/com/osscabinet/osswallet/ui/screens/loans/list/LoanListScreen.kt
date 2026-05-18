@@ -47,6 +47,7 @@ fun LoanListScreen(
     onAddClick: () -> Unit,
     onLoanClick: (Long) -> Unit
 ) {
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val active = loans.filter { it.status == LoanStatus.ACTIVE }
     val settled = loans.filter { it.status == LoanStatus.SETTLED }
@@ -154,6 +155,7 @@ fun LoanListScreen(
                 selectedTab = 0,
                 onTabSelected = {},
                 tabs = emptyList(),
+                fabPaddingBottom = 16.dp + navigationBarHeight,
                 onFabClick = onAddClick,
                 fabIcon = Icons.Rounded.AccountBalance,
                 showFab = true

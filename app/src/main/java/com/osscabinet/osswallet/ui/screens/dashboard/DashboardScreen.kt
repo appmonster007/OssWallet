@@ -11,6 +11,9 @@ import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -209,6 +212,7 @@ fun DashboardScreen(
 
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
 
     val isTopLevel = remember(initialViewContext, isTopLevelParam) {
@@ -303,6 +307,7 @@ fun DashboardScreen(
                 scope.launch { pagerState.animateScrollToPage(index) }
             },
             tabs = tabs,
+            fabPaddingBottom = 16.dp + navigationBarHeight,
             isFabExpanded = isFabExpanded,
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
             onFabClick = {

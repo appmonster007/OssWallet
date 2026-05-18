@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
 data class CardListCallbacks(
     val onTransactionClick: (Long) -> Unit = {},
@@ -15,4 +16,5 @@ data class CardListCallbacks(
     val onDeleteTransaction: (Long) -> Unit = {},
     val onSplit: (Long) -> Unit = {},
     val onFullSwipeRight: (Long) -> Unit = {},
+    val onSaveFilterClick: (TransactionFilter) -> Unit = {},
 )

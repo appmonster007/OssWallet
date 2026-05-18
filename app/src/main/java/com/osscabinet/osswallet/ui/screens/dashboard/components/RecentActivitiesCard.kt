@@ -75,6 +75,7 @@ fun RecentActivitiesCard(
         filterContext = filterContext,
         onClick = { callbacks.onRecordsClick(config.filter) },
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             RecentActivitiesDisplaySettingsDialog(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }

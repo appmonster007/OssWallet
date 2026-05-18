@@ -58,8 +58,13 @@ sealed class Screen(val route: String) {
     object TagList : Screen("tag_list")
     object CategoryList : Screen("category_list")
     object FilterList : Screen("filter_list")
-    object FilterEntry : Screen("filter_entry?filterId={filterId}") {
-        fun createRoute(filterId: Long? = null) = if (filterId != null) "filter_entry?filterId=$filterId" else "filter_entry"
+    object FilterEntry : Screen("filter_entry?filterId={filterId}&initialFilter={initialFilter}") {
+        fun createRoute(filterId: Long? = null, initialFilter: String? = null): String {
+            val params = mutableListOf<String>()
+            filterId?.let { params.add("filterId=$it") }
+            initialFilter?.let { params.add("initialFilter=$it") }
+            return if (params.isEmpty()) "filter_entry" else "filter_entry?${params.joinToString("&")}"
+        }
     }
 
     object PlannedPaymentList : Screen("planned_payment_list")

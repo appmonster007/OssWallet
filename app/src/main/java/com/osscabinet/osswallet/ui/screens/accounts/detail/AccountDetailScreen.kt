@@ -87,7 +87,8 @@ fun AccountDetailScreen(
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
-    onRecordsClick: (TransactionFilter) -> Unit
+    onRecordsClick: (TransactionFilter) -> Unit,
+    onSaveFilterClick: (TransactionFilter) -> Unit = {}
 ) {
     // Initialize filter from navigation parameter when screen opens
     LaunchedEffect(filterJson) {
@@ -168,6 +169,7 @@ fun AccountDetailScreen(
                     is FilterEvent.UpdateSettings -> {}
                 }
             },
+            onSaveFilterClick = onSaveFilterClick,
             onClose = { showFilterSheet = false },
             showAccountFilter = false,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },

@@ -66,6 +66,7 @@ fun AeonExpressiveCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     filterSheetTitle: String? = null,
     onFilterChange: ((TransactionFilter) -> Unit)? = null,
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
 
     // Settings slot — settings button appears automatically when non-null
     // The lambda receives onDismiss and is responsible for its own dialog/sheet UI.
@@ -201,6 +202,7 @@ fun AeonExpressiveCard(
             filter = filter,
             onFilterChange = onFilterChange,
             onDismiss = { showFilterSheet = false },
+            onSaveFilterClick = onSaveFilterClick,
             filterContext = filterContext,
             filterRules = filterRules ?: CardFilterRules.DEFAULT,
             baseFilter = baseFilter

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -62,7 +63,36 @@ class FilterEntryViewModel(
         }
     }
 
-    fun initialize(filterId: Long? = null) {
+    fun initialize(filterId: Long? = null, initialFilter: TransactionFilter? = null) {
+        if (initialFilter != null) {
+            _state.update {
+                it.copy(
+                    filterId = null,
+                    isEditMode = false,
+                    selectedTransactionTypes = initialFilter.transactionTypes.toSet(),
+                    selectedAccountIds = initialFilter.accountIds.toSet(),
+                    selectedCategoryIds = initialFilter.categoryIds.toSet(),
+                    selectedPaymentMethods = initialFilter.paymentMethods.toSet(),
+                    selectedStatuses = initialFilter.statuses.toSet(),
+                    linkedTransactionIds = initialFilter.linkedTransactionIds.toSet(),
+                    selectedTags = initialFilter.tags.toSet(),
+                    selectedCurrencies = initialFilter.currencies.toSet(),
+                    queryNote = initialFilter.queryNote ?: "",
+                    isNoteRegex = initialFilter.isNoteRegex,
+                    queryPayee = initialFilter.queryPayee ?: "",
+                    isPayeeRegex = initialFilter.isPayeeRegex,
+                    minAmount = initialFilter.minAmount?.toPlainString() ?: "",
+                    maxAmount = initialFilter.maxAmount?.toPlainString() ?: "",
+                    hasWarranty = initialFilter.hasWarranty,
+                    warrantyExpirationStart = initialFilter.warrantyExpirationStart,
+                    warrantyExpirationEnd = initialFilter.warrantyExpirationEnd,
+                    timelineRange = initialFilter.timelineRange,
+                    excludeFuture = initialFilter.excludeFuture
+                )
+            }
+            return
+        }
+
         if (filterId == null || filterId == -1L) {
             _state.update { 
                 it.copy(

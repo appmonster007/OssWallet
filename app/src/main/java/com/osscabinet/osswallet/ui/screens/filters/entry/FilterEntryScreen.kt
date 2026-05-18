@@ -7,18 +7,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.filters.entry.components.FilterFormBody
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterEntryScreen(
     filterId: Long? = null,
+    initialFilterJson: String? = null,
     viewModel: FilterEntryViewModel,
     onBackClick: () -> Unit
 ) {
-    LaunchedEffect(filterId) {
-        viewModel.initialize(filterId)
+    LaunchedEffect(filterId, initialFilterJson) {
+        val initialFilter = initialFilterJson?.let {
+            try {
+                Json.decodeFromString<TransactionFilter>(java.net.URLDecoder.decode(it, "UTF-8"))
+            } catch (e: Exception) {
+                null
+            }
+        }
+        viewModel.initialize(filterId, initialFilter)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()

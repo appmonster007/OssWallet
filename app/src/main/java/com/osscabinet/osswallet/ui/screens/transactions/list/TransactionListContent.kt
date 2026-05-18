@@ -52,6 +52,7 @@ fun TransactionListContent(
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     onBackClick: () -> Unit,
     onMenuClick: () -> Unit = {},
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
     revealedCardIds: List<Long> = emptyList()
@@ -107,6 +108,7 @@ fun TransactionListContent(
                 allTransactions = allTransactions,
                 savedFilters = savedFilters,
                 onFilterEvent = onFilterEvent,
+                onSaveFilterClick = onSaveFilterClick,
                 onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
                 backgroundColor = AppColors.insetSurface,
                 accountNames = accountNames,

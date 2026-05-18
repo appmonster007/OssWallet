@@ -76,6 +76,7 @@ fun NetWorthCard(
         filterRules = config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             NetWorthDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }

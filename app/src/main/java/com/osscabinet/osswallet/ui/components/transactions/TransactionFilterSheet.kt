@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +35,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionFilterSheet(
     filter: TransactionFilter,
@@ -40,12 +45,24 @@ fun TransactionFilterSheet(
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onClose: () -> Unit,
-    backgroundColor: Color = AppColors.primaryContainer,
+    backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
 ) {
-    Box(
-        modifier = Modifier.wrapContentHeight()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        sheetState = sheetState,
+        containerColor = backgroundColor,
+        dragHandle = {
+            FilterSheetDragHandle(
+                isExpanded = true,
+                onClick = onClose,
+                backgroundColor = backgroundColor
+            )
+        },
+        scrimColor = Color.Black.copy(alpha = 0.5f),
     ) {
         FilterSheetContent(
             filter = filter,

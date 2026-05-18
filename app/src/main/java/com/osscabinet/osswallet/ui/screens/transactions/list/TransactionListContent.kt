@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -115,25 +118,51 @@ fun TransactionListContent(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-                .background(AppColors.screenBackground)
-        ) {
-            if (listState.isEmpty) {
-                TransactionListEmptyState()
-            } else {
-                AeonTransactionList(
-                    listState = listState,
-                    onTransactionEvent = onTransactionEvent,
-                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                    useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                    showOpeningBalance = recordsSettings.showOpeningBalance,
-                    showClosingBalance = recordsSettings.showClosingBalance,
-                    showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
-                    baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                    revealedCardIds = revealedCardIds
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding())
+                    .background(AppColors.screenBackground)
+            ) {
+                if (listState.isEmpty) {
+                    TransactionListEmptyState()
+                } else {
+                    AeonTransactionList(
+                        listState = listState,
+                        onTransactionEvent = onTransactionEvent,
+                        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                        showOpeningBalance = recordsSettings.showOpeningBalance,
+                        showClosingBalance = recordsSettings.showClosingBalance,
+                        showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
+                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
+                        revealedCardIds = revealedCardIds
+                    )
+                }
+            }
+
+            // Scrim Overlay: Blocks interaction and dims background when filter sheet is open
+            val targetValue = scaffoldState.bottomSheetState.targetValue
+            val currentValue = scaffoldState.bottomSheetState.currentValue
+            val isExpanded = targetValue == SheetValue.Expanded || currentValue == SheetValue.Expanded
+            
+            val scrimAlpha by animateFloatAsState(
+                targetValue = if (targetValue == SheetValue.Expanded) 0.5f else 0f,
+                label = "filter_scrim_alpha"
+            )
+
+            if (scrimAlpha > 0f || isExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = scrimAlpha))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            scope.launch { scaffoldState.bottomSheetState.partialExpand() }
+                        }
                 )
             }
         }

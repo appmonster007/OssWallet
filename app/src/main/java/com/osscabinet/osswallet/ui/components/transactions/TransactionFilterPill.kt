@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -25,8 +26,10 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.launch
@@ -72,8 +75,8 @@ fun TransactionFilterPill(
         }
     }
 
-    val pillH = 76.dp
-    val pillHorizMargin = 12.dp
+    val pillH = 56.dp
+    val pillHorizMargin = 24.dp
 
     BoxWithConstraints(modifier = modifier) {
         val maxH = maxHeight
@@ -86,7 +89,7 @@ fun TransactionFilterPill(
 
         // Expanded card: 68% of available height, bottom-anchored so the pill
         // grows purely upward without sliding down.
-        val expandedH = maxH * 0.68f
+        val expandedH = maxH * 0.8f
         val expandedHPx = with(density) { expandedH.toPx() }
         val expandedTopPx = maxHPx - bottomPx - expandedHPx
 
@@ -169,7 +172,8 @@ fun TransactionFilterPill(
                 categories = categories,
                 savedFilters = savedFilters,
                 onFilterEvent = onFilterEvent,
-                onSaveFilterClick = onSaveFilterClick
+                onSaveFilterClick = onSaveFilterClick,
+                pillHeight = pillH
             )
         }
 
@@ -212,22 +216,27 @@ private fun FilterDialogContent(
     categories: List<Category>,
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit
+    onSaveFilterClick: (TransactionFilter) -> Unit,
+    pillHeight: Dp
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(Modifier.height(AeonTheme.dimensions.screenPadding))
-
-        // Timeline selector — visible even in pill mode.
-        AeonTimelinePeriodSelector(
-            currentRange = filter.timelineRange,
-            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
-            swipeEntireComponent = true,
+        // Center the timeline selector vertically within the pill height for equal bezels.
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.screenPadding)
-        )
+                .height(pillHeight),
+            contentAlignment = Alignment.Center
+        ) {
+            AeonTimelinePeriodSelector(
+                currentRange = filter.timelineRange,
+                onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
+                swipeEntireComponent = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp) // Thin horizontal bezel
+            )
+        }
 
-        Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
         HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.6f))
 
         // Filter controls — timeline selector suppressed here since it lives above.
@@ -243,5 +252,28 @@ private fun FilterDialogContent(
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
             filterRules = CardFilterRules.DEFAULT.copy(allowTimelineSelection = false)
         )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
+@Composable
+fun TransactionFilterPillPreview() {
+    OssWalletTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            TransactionFilterPill(
+                filter = TransactionFilter(timelineRange = TimelineRange.AllTime),
+                accounts = emptyList(),
+                categories = emptyList(),
+                savedFilters = emptyList(),
+                onFilterEvent = {},
+                onSaveFilterClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

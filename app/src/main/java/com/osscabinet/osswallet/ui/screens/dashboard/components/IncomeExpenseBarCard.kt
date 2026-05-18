@@ -56,6 +56,7 @@ fun IncomeExpenseBarCard(
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             IncomeExpenseBarDisplaySettingsDialog(
                 config = config,

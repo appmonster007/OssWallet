@@ -61,6 +61,8 @@ import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 
 @Composable
@@ -252,6 +254,10 @@ fun OssWalletNavGraph(
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
+                    onSaveFilterClick = { filter ->
+                        val filterJson = java.net.URLEncoder.encode(Json.encodeToString(filter), "UTF-8")
+                        navController.navigate(Screen.FilterEntry.createRoute(initialFilter = filterJson))
+                    },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)
                         navController.navigate(Screen.TransactionEntry.createRoute())
@@ -342,6 +348,10 @@ fun OssWalletNavGraph(
                         navController.navigate(Screen.TransactionEntry.createRoute())
                     },
                     onBackClick = { navController.popBackStack() },
+                    onSaveFilterClick = { filter ->
+                        val filterJson = java.net.URLEncoder.encode(Json.encodeToString(filter), "UTF-8")
+                        navController.navigate(Screen.FilterEntry.createRoute(initialFilter = filterJson))
+                    },
                     templateViewModel = templateViewModel,
                     filterJson = filterJson
                 )
@@ -642,7 +652,11 @@ fun OssWalletNavGraph(
                     onAddTransactionClick = { accId, type, templateId ->
                         navController.navigate(Screen.TransactionEntry.createRoute(accountId = accId, type = type, templateId = templateId))
                     },
-                    onRecordsClick = { filter -> navController.navigateToRecords(filter) }
+                    onRecordsClick = { filter -> navController.navigateToRecords(filter) },
+                    onSaveFilterClick = { filter ->
+                        val filterJson = java.net.URLEncoder.encode(Json.encodeToString(filter), "UTF-8")
+                        navController.navigate(Screen.FilterEntry.createRoute(initialFilter = filterJson))
+                    }
                 )
             }
 
@@ -702,16 +716,24 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.FilterEntry.route,
-                arguments = listOf(navArgument("filterId") {
-                    type = NavType.LongType
-                    defaultValue = -1L
-                }),
+                arguments = listOf(
+                    navArgument("filterId") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                    navArgument("initialFilter") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                ),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterId = backStackEntry.arguments?.getLong("filterId") ?: -1L
+                val initialFilterJson = backStackEntry.arguments?.getString("initialFilter")
                 val entryViewModel: FilterEntryViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         FilterEntryViewModel(
@@ -727,6 +749,7 @@ fun OssWalletNavGraph(
 
                 FilterEntryScreen(
                     filterId = filterId,
+                    initialFilterJson = initialFilterJson,
                     viewModel = entryViewModel,
                     onBackClick = { navController.popBackStack() }
                 )

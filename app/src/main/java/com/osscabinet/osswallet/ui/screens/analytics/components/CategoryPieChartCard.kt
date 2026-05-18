@@ -89,6 +89,7 @@ fun CategoryPieChartCard(
         filterRules = config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             CategoryPieChartDisplaySettingsDialog(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }

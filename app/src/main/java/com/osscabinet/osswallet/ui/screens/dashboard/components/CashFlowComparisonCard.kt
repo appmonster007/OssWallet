@@ -68,6 +68,7 @@ fun CashFlowComparisonCard(
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             CashFlowComparisonDisplaySettingsDialog(
                 config = config,

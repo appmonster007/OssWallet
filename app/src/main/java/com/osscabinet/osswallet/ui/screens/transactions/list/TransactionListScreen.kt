@@ -42,6 +42,7 @@ fun TransactionListScreen(
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
     onBackClick: () -> Unit,
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
     templateViewModel: TemplateViewModel,
     // Context-aware parameters
     filterJson: String? = null
@@ -118,6 +119,7 @@ fun TransactionListScreen(
         },
         onMenuClick = onMenuClick,
         isTopLevel = isTopLevel,
+        onSaveFilterClick = onSaveFilterClick,
         onFilterEvent = { event ->
             when (event) {
                 is FilterEvent.Apply -> viewModel.updateRecordsFilter(event.filter)

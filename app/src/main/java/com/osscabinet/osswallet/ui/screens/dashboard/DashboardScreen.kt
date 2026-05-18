@@ -119,6 +119,7 @@ fun DashboardScreen(
     onAccountClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
     accountViewModel: AccountViewModel,
@@ -274,6 +275,7 @@ fun DashboardScreen(
                         onManageAccountsClick = { navigate(onManageAccountsClick) },
                         onAccountClick = { id -> navigate { onAccountClick(id) } },
                         onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                        onSaveFilterClick = onSaveFilterClick,
                         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                         onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
                         onSplitTransactionClick = { id -> navigate { onSplitTransactionClick(id) } },
@@ -337,6 +339,7 @@ fun DashboardContent(
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit,
+    onSaveFilterClick: (com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = {},
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
@@ -436,6 +439,7 @@ fun DashboardContent(
                             onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
                             onSplit = { onSplitTransactionClick(it) },
                             onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                            onSaveFilterClick = onSaveFilterClick
                         ),
                     )
                 }

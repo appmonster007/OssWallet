@@ -56,6 +56,7 @@ fun CashFlowCard(
         filterRules = config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             CashFlowDisplaySettingsDialog(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
         }

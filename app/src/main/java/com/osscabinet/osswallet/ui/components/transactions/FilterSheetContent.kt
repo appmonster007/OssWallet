@@ -48,6 +48,7 @@ fun FilterSheetContent(
     allTransactions: List<Transaction> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
@@ -435,16 +436,32 @@ fun FilterSheetContent(
 
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
 
-        Button(
-            onClick = onClose,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = AppColors.primary,
-                contentColor = AppColors.onPrimary
-            )
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Done", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+            TextButton(
+                onClick = onClose,
+                modifier = Modifier.weight(0.4f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Close", style = AppTextStyles.listItemTitle)
+            }
+
+            Button(
+                onClick = { onSaveFilterClick(localFilter) },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.primary,
+                    contentColor = AppColors.onPrimary
+                )
+            ) {
+                Icon(Icons.Default.Save, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Save as Preset", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+            }
         }
 
         Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))

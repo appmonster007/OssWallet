@@ -269,15 +269,19 @@ object TimelineService {
                 val date =
                     Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId)
                         .toLocalDate()
+                val today = LocalDate.now(systemZoneId)
                 val formattedDate = date.format(dateFormatter)
-                val isToday = formattedDate == LocalDate.now(systemZoneId).format(dateFormatter)
-                val titleText = if (isToday) "Today" else formattedDate
+                val dayLabel = when {
+                    date == today -> "Today"
+                    date == today.minusDays(1) -> "Yesterday"
+                    else -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+                }
                 val startOfDay = date.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
                 val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
                     .toInstant().toEpochMilli()
                 RangeInfo(
-                    titleText,
-                    "${groupTransactions.size} transaction${if (groupTransactions.size > 1) "s" else ""}",
+                    dayLabel,
+                    formattedDate,
                     startOfDay,
                     endOfDay
                 )

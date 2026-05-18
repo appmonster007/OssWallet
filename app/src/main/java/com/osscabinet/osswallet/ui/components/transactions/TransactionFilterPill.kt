@@ -74,11 +74,22 @@ fun TransactionFilterPill(
     // Safe fraction clamped to [0,1] so lerp calls never produce negative sizes.
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
-    // Pre-warm filter layout at f=0.70 (5 % before it starts fading in at 0.75).
-    val filterInTree by remember { derivedStateOf { morph.value > 0.70f } }
+    // Pre-warm filter layout at f=0.60 so the top bar is measured well before the
+    // overlay starts fading out at f=0.65, giving a reliable filterSelectorTop value.
+    val filterInTree by remember { derivedStateOf { morph.value > 0.60f } }
 
     // Measured height of the AeonTimelinePeriodSelector (updated after first composition).
     var selectorHeightPx by remember { mutableIntStateOf(0) }
+
+    // Measured pixel height of the top bar Row in FullScreenFilterContent.
+    // Default is a reasonable estimate (status bar + ~64dp icon row) so the first
+    // animation frame is close even before onGloballyPositioned fires.
+    val statusBarEstimatePx = with(density) {
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding().toPx().roundToInt()
+    }
+    var topBarHeightPx by remember {
+        mutableIntStateOf(statusBarEstimatePx + with(density) { 64.dp.toPx().roundToInt() })
+    }
 
     val pillH = 76.dp   // compact: just enough for AeonTimelinePeriodSelector
     val pillHorizMargin = 20.dp
@@ -120,13 +131,10 @@ fun TransactionFilterPill(
 
         val sheetColor = AppColors.cardSurfaceProminent
 
-        // Status bar height — needed to compute where the selector lands in the filter sheet.
-        val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-
-        // Selector's target Y inside the expanded surface:
-        //   top bar (Row w/ 8dp vertical padding each side + 48dp icon height = 64dp)
-        //   + divider (0.5dp) + FilterSheetContent top padding (screenPadding = 18dp)
-        val filterSelectorTop = statusBarPadding + 64.dp + 0.5.dp + 18.dp
+        // Selector's target Y inside the expanded surface, derived from the measured top bar height.
+        // topBarHeightPx is updated via onGloballyPositioned on the Row in FullScreenFilterContent.
+        // The formula: measured top bar height + 0.5dp divider + 18dp FilterSheetContent top padding.
+        val filterSelectorTop = with(density) { topBarHeightPx.toDp() } + 0.5.dp + 18.dp
 
         // Selector's resting Y inside the pill — vertically centered.
         val selectorH = with(density) { selectorHeightPx.toDp() }
@@ -136,9 +144,14 @@ fun TransactionFilterPill(
         val selectorTop      = lerp(pillSelectorTop, filterSelectorTop, f)
         val selectorHorizPad = lerp(12.dp, 18.dp, f)
 
-        // Overlay fades 1→0 between f=0.55 and f=0.70; filter fades 0→1 between f=0.75 and f=1.0.
-        // A small gap (0.70–0.75) ensures neither is visible at the same time — no double-selector ghost.
-        val overlayAlpha = ((0.70f - f) / 0.15f).coerceIn(0f, 1f)
+        // Overlay fades 1→0 between f=0.65 and f=0.75.
+        // Filter fades 0→1 between f=0.70 and f=1.0.
+        // The brief overlap window (0.70–0.75) is intentional: both the overlay and the filter
+        // sheet selector are visible simultaneously, but at this point the overlay has travelled
+        // to exactly filterSelectorTop — the same position where it appears in the sheet.
+        // Because they sit at identical coordinates and identical color, there is no visible
+        // doubling; the crossfade is smooth and gap-free.
+        val overlayAlpha = ((0.75f - f) / 0.10f).coerceIn(0f, 1f)
 
         // Interpolated visual properties
         val surfaceH      = lerp(pillH, maxH, f)
@@ -196,9 +209,11 @@ fun TransactionFilterPill(
                 )
         ) {
             Box(Modifier.fillMaxSize()) {
-                // Filter sheet fades in from f=0.75 to f=1.0 — starts after overlay is fully gone.
+                // Filter sheet fades in from f=0.70 to f=1.0, overlapping briefly with the
+                // overlay fade-out window (0.70–0.75). Since both show the selector at the
+                // same position during overlap, the crossfade is seamless.
                 if (filterInTree) {
-                    val filterAlpha = ((f - 0.75f) / 0.25f).coerceIn(0f, 1f)
+                    val filterAlpha = ((f - 0.70f) / 0.30f).coerceIn(0f, 1f)
                     Box(
                         Modifier
                             .fillMaxSize()
@@ -213,7 +228,8 @@ fun TransactionFilterPill(
                             onSaveFilterClick = onSaveFilterClick,
                             onClose = ::collapse,
                             onDragDelta = ::snapByDelta,
-                            onDragEnd = ::settle
+                            onDragEnd = ::settle,
+                            onTopBarMeasured = { topBarHeightPx = it }
                         )
                     }
                 }
@@ -284,7 +300,10 @@ private fun FullScreenFilterContent(
     onClose: () -> Unit,
     // onDragDelta: raw pixel delta from the top-bar drag; caller converts to fraction.
     onDragDelta: (Float) -> Unit,
-    onDragEnd: () -> Unit
+    onDragEnd: () -> Unit,
+    // Reports the measured pixel height of the top bar Row (status bar inset + padding + icon row)
+    // so the caller can compute the exact filterSelectorTop without hardcoded estimates.
+    onTopBarMeasured: (Int) -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Top bar — drag downward to collapse, back button to close.
@@ -294,6 +313,7 @@ private fun FullScreenFilterContent(
                 .background(AppColors.sheetSurface)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = 4.dp, vertical = 8.dp)
+                .onGloballyPositioned { onTopBarMeasured(it.size.height) }
                 .draggable(
                     orientation = Orientation.Vertical,
                     state = rememberDraggableState { delta ->

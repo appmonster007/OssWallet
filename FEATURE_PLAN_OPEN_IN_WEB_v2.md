@@ -1,6 +1,7 @@
 # FEATURE PLAN: Open in Web — Local Web Portal with QR Code Access (v2)
 
-**Status:** Ready for implementation
+**Status:** Reviewed & refined — ready for implementation
+**Revision:** v2.1 — security hardening, asset-loading fix, ViewModel/Service architecture corrected, timing-safe auth, HTTP security headers
 **Replaces:** FEATURE_PLAN_OPEN_IN_WEB.md (v1 is superseded and must be deleted)
 **Target branch:** feature/open-in-web (branch from main)
 
@@ -194,41 +195,20 @@ private fun generateSessionToken(): String {
 
 `AuthSessionManager` tracks failed authentication attempts per remote IP address. Implementation:
 
+The complete thread-safe implementation is in `AuthSessionManager.kt` (Section 7.2). The key structural invariant: `authenticate()` calls `isLocked()` before ever reaching `recordFailedAttempt()`, so the compute lambda in `recordFailedAttempt` does not need a secondary lockout guard — the gate is at the `authenticate()` call site.
+
+Key state shape:
 ```kotlin
-// In-memory rate limiter — coroutine-safe
+// In AuthSessionManager — internal tracking types
 private val failedAttempts = ConcurrentHashMap<String, AttemptRecord>()
-
-data class AttemptRecord(val count: Int, val lockedUntil: Long)
-
-fun recordFailedAttempt(remoteIp: String): Boolean {
-    // Returns true if IP is now locked
-    val now = System.currentTimeMillis()
-    val record = failedAttempts.compute(remoteIp) { _, existing ->
-        when {
-            existing == null -> AttemptRecord(1, 0L)
-            existing.lockedUntil > now -> existing // still locked, don't increment
-            existing.count >= 4 -> AttemptRecord(existing.count + 1, now + 60_000L) // lock
-            else -> AttemptRecord(existing.count + 1, 0L)
-        }
-    }!!
-    return record.lockedUntil > now
-}
-
-fun isLocked(remoteIp: String): Boolean {
-    val record = failedAttempts[remoteIp] ?: return false
-    return record.lockedUntil > System.currentTimeMillis()
-}
-
-fun clearAttempts(remoteIp: String) {
-    failedAttempts.remove(remoteIp)
-}
+private data class AttemptRecord(val count: Int, val lockedUntil: Long)
 ```
 
 Rules:
-- 5th failed attempt triggers a 60-second lockout for that IP.
-- Successful auth clears the attempt record.
-- The lockout state lives in memory; it resets if the server restarts (acceptable for MVP).
-- Locked IPs receive `HTTP 429 Too Many Requests` with `Retry-After: 60` header.
+- 5th consecutive failed attempt from the same IP triggers a 60-second lockout.
+- Successful authentication clears that IP's attempt record.
+- Lockout state is in-memory only — resets on server restart (acceptable for MVP; a determined local attacker could restart to clear it, but the access code also regenerates on restart).
+- Locked IPs receive `HTTP 429 Too Many Requests` with `Retry-After: <seconds>` header.
 
 ### 3.4 Session Expiry
 
@@ -350,6 +330,7 @@ ktor-server-cors                = { group = "io.ktor", name = "ktor-server-cors"
 ktor-server-status-pages        = { group = "io.ktor", name = "ktor-server-status-pages",        version.ref = "ktor" }
 ktor-server-compression         = { group = "io.ktor", name = "ktor-server-compression",         version.ref = "ktor" }
 ktor-server-call-logging        = { group = "io.ktor", name = "ktor-server-call-logging",        version.ref = "ktor" }
+ktor-server-default-headers     = { group = "io.ktor", name = "ktor-server-default-headers",     version.ref = "ktor" }
 qrcode-kotlin-android           = { group = "io.github.g0dkar", name = "qrcode-kotlin-android",  version.ref = "qrcode-kotlin" }
 ```
 
@@ -368,13 +349,20 @@ implementation(libs.ktor.server.status.pages)
 implementation(libs.ktor.server.compression)
 // Call logging is debug-only to avoid log spam in release:
 debugImplementation(libs.ktor.server.call.logging)
+// HTTP security headers (CSP, X-Content-Type-Options, X-Frame-Options):
+implementation(libs.ktor.server.default.headers)
 // QR code generation
 implementation(libs.qrcode.kotlin.android)
 ```
 
 Note: `kotlinx-serialization-json` is already in the project (`libs.kotlinx.serialization.json`). Ktor's kotlinx-json serialization plugin shares the same library — no version conflict.
 
-Note: The `kotlin("plugin.serialization")` plugin is already applied in `app/build.gradle.kts` (line 7). No change needed there.
+**Note — serialization plugin version mismatch**: `app/build.gradle.kts` line 7 already applies the serialization plugin, but at `version "2.0.21"` while the project Kotlin version is `"2.2.10"`. Update the existing line:
+```kotlin
+// In app/build.gradle.kts plugins block — change the version on the existing line:
+kotlin("plugin.serialization") version "2.2.10"
+```
+No new plugin entry is needed — only align the version string. Mismatched versions cause subtle IR serialization bugs in release builds.
 
 ### 4.4 No new DI framework
 
@@ -425,20 +413,13 @@ sealed class WebServerState {
 }
 ```
 
-### 6.2 `domain/model/web/WebAccessSession.kt`
+### 6.2 Session management — domain boundary note
 
-```kotlin
-package com.osscabinet.ossWallet.domain.model.web
+Session management is encapsulated entirely within `AuthSessionManager` in the `data/` layer. There is **no public domain model for sessions** — the session token is an opaque `String` from all callers' perspectives. `AuthSessionManager` uses an internal `MutableSession` class (data-layer private) to track token, `createdAt`, and `lastActivityAt` without leaking mutability or internal state to the domain or UI layers.
 
-data class WebAccessSession(
-    val token: String,
-    val createdAt: Long,
-    val expiresAt: Long,
-    val lastActivityAt: Long
-)
-```
+A `WebAccessSession` domain model was considered but removed: it created a false impression that sessions were a domain concept with business rules, when in fact session lifecycle (expiry, refresh, lockout) is purely a data-layer concern for this feature.
 
-This is a pure domain model. The mutable refresh logic lives in `AuthSessionManager` in the data layer, which holds the live session objects.
+If multi-session support is added in a future version, introduce a proper domain session aggregate at that time.
 
 ### 6.3 `domain/repository/WebServerRepository.kt`
 
@@ -524,6 +505,7 @@ object NetworkUtils {
 ```kotlin
 package com.osscabinet.ossWallet.data.web
 
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
@@ -574,7 +556,11 @@ class AuthSessionManager {
         if (isLocked(remoteIp)) {
             throw RateLimitedException(getRemainingLockSeconds(remoteIp))
         }
-        return if (suppliedCode == currentAccessCode) {
+        // Constant-time comparison prevents timing-oracle attacks on the access code
+        return if (MessageDigest.isEqual(
+            suppliedCode.toByteArray(Charsets.UTF_8),
+            currentAccessCode.toByteArray(Charsets.UTF_8)
+        )) {
             clearAttempts(remoteIp)
             val token = generateSessionToken()
             activeSession = MutableSession(token)
@@ -591,7 +577,11 @@ class AuthSessionManager {
      */
     fun validateToken(token: String): Boolean {
         val session = activeSession ?: return false
-        if (session.token != token) return false
+        // Constant-time comparison prevents timing-oracle attacks on session tokens
+        if (!MessageDigest.isEqual(
+            session.token.toByteArray(Charsets.UTF_8),
+            token.toByteArray(Charsets.UTF_8)
+        )) return false
         if (session.isExpired()) {
             activeSession = null
             return false
@@ -716,6 +706,7 @@ Contains all Ktor route definitions. Receives repositories as constructor parame
 ```kotlin
 package com.osscabinet.ossWallet.data.web
 
+import android.content.Context
 import com.osscabinet.ossWallet.data.web.dto.AccountDto
 import com.osscabinet.ossWallet.data.web.dto.ApiResponse
 import com.osscabinet.ossWallet.data.web.dto.AuthRequest
@@ -741,6 +732,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class WebApiRoutes(
+    private val context: Context,
     private val authSessionManager: AuthSessionManager,
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
@@ -905,11 +897,14 @@ class WebApiRoutes(
     }
 
     private fun loadIndexHtml(): String {
-        return WebApiRoutes::class.java.classLoader
-            ?.getResourceAsStream("assets/web/index.html")
-            ?.bufferedReader()
-            ?.readText()
-            ?: "<html><body>Web UI not found. Rebuild the app.</body></html>"
+        // Android APK assets are NOT on the classloader's resource path.
+        // They must be read via AssetManager. Using classloader here would always
+        // return the fallback string at runtime.
+        return try {
+            context.assets.open("web/index.html").bufferedReader().readText()
+        } catch (e: Exception) {
+            "<html><body>Web UI not found. Rebuild the app.</body></html>"
+        }
     }
 }
 ```
@@ -984,6 +979,8 @@ data class PagedResponse<T>(
 )
 ```
 
+**Precision note — `Double` vs `BigDecimal`**: `AccountDto.balance` and `TransactionDto.amount` are typed as `Double` because `kotlinx.serialization` serializes `BigDecimal` as a JSON string by default, which would complicate the JavaScript web UI (it would need to parse strings instead of reading JSON numbers). `Double` has ~15 significant digits — sufficient for display, but not for financial arithmetic. The web UI must treat these values as display-only and never perform arithmetic on them. The Android domain layer continues to use `BigDecimal` internally; the precision loss happens only in the DTO mapping step inside `WebApiRoutes`, where `bigDecimalValue.toDouble()` is called before constructing the DTO.
+
 ### 7.7 `data/web/WebServerManager.kt`
 
 The core class implementing `WebServerRepository`. This owns the Ktor engine lifecycle.
@@ -1032,7 +1029,7 @@ class WebServerManager(
 
     private var engine: ApplicationEngine? = null
     private var serverScope: CoroutineScope? = null
-    val authSessionManager = AuthSessionManager()
+    private val authSessionManager = AuthSessionManager()
 
     override fun isRunning(): Boolean = _serverState.value is WebServerState.Running
 
@@ -1056,6 +1053,7 @@ class WebServerManager(
         val accessCode = authSessionManager.getAccessCode()
 
         val routes = WebApiRoutes(
+            context = context,
             authSessionManager = authSessionManager,
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
@@ -1077,6 +1075,19 @@ class WebServerManager(
                             mapOf("success" to false, "error" to "Internal server error")
                         )
                     }
+                }
+                // Defense-in-depth security headers for the web UI.
+                // 'unsafe-inline' is required because index.html uses inline <style> and <script>.
+                // For a future multi-file setup, replace with content hashes.
+                install(io.ktor.server.plugins.defaultheaders.DefaultHeaders) {
+                    header("Content-Security-Policy",
+                        "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'")
+                    header("X-Content-Type-Options", "nosniff")
+                    header("X-Frame-Options", "DENY")
+                    header("Referrer-Policy", "no-referrer")
+                }
+                if (BuildConfig.DEBUG) {
+                    install(io.ktor.server.plugins.calllogging.CallLogging)
                 }
                 with(routes) { installRoutes() }
             }.start(wait = false)
@@ -1130,8 +1141,9 @@ The `Application.module()` is set up inside `WebServerManager.start()` via the `
 |---|---|---|
 | `ContentNegotiation` | `json(serverJson)` | Serializes `@Serializable` response DTOs to JSON |
 | `Compression` | `gzip()` | Reduces transfer size for transaction lists on slow WiFi |
-| `StatusPages` | generic `Throwable` handler | Returns JSON error rather than HTML stacktrace |
-| `CallLogging` | debug builds only | Avoid log spam in release; conditionally added |
+| `StatusPages` | generic `Throwable` handler | Returns JSON error rather than HTML stacktrace — no stack traces exposed |
+| `DefaultHeaders` | CSP + X-Content-Type-Options + X-Frame-Options + Referrer-Policy | Defense-in-depth for the embedded web UI |
+| `CallLogging` | debug builds only (`BuildConfig.DEBUG` guard) | Avoid log spam in release; conditional install inside `embeddedServer` lambda |
 
 ### Auth middleware
 
@@ -1141,19 +1153,11 @@ Every `/api/*` route except `/api/health` and `POST /api/auth` calls `authentica
 
 ### Static file serving
 
-The web UI (`index.html`) is served by reading the asset from the APK's `assets/` folder via classloader. There is no `static {}` Ktor block. The root `GET /` handler loads the file and returns it as `ContentType.Text.Html`. This avoids a separate static file serving plugin dependency.
+The web UI (`index.html`) is served by reading the asset from the APK's `assets/web/` folder via Android's `AssetManager` (`context.assets.open("web/index.html")`). **Do not use classloader `getResourceAsStream` for Android APK assets** — the classloader path does not include the `assets/` directory; only `AssetManager` can read it at runtime. The root `GET /` handler reads and returns the file as `ContentType.Text.Html`. There is no `static {}` Ktor block, avoiding a separate static-file plugin dependency.
 
 ### Conditional call logging
 
-```kotlin
-// In app/build.gradle.kts, ktor-server-call-logging is debugImplementation only.
-// In WebServerManager.start(), conditionally install:
-if (BuildConfig.DEBUG) {
-    install(io.ktor.server.plugins.calllogging.CallLogging)
-}
-```
-
-This requires importing `BuildConfig` from the Android build system — an Android import inside `WebServerManager`. Since `WebServerManager` is in the `data/` layer, this is permitted.
+`CallLogging` is installed inside the `embeddedServer` lambda in `WebServerManager.start()` behind a `BuildConfig.DEBUG` guard (see Section 7.7). `ktor-server-call-logging` is `debugImplementation` only in `build.gradle.kts` so it is not included in release APKs at all. `BuildConfig` is an Android import, which is permitted in the `data/` layer.
 
 ---
 
@@ -1772,7 +1776,9 @@ viewModel(
 package com.osscabinet.ossWallet.ui.screens.openinweb
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.web.NetworkUtils
 import com.osscabinet.ossWallet.data.web.QRCodeGenerator
@@ -1780,6 +1786,7 @@ import com.osscabinet.ossWallet.data.web.WebServerPreferences
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
+import com.osscabinet.ossWallet.service.WebServerService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -1832,9 +1839,17 @@ class OpenInWebViewModel(
                     _uiState.value = _uiState.value.copy(isWifiConnected = false)
                     return@launch
                 }
-                webServerRepository.start()
+            }
+            // The foreground Service owns the server lifecycle — the ViewModel never
+            // calls webServerRepository.start()/stop() directly. The Service calls
+            // those methods, ensuring the server survives app backgrounding.
+            val serviceIntent = Intent(context, WebServerService::class.java).apply {
+                action = if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
+            }
+            if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
             } else {
-                webServerRepository.stop()
+                context.startService(serviceIntent)
             }
         }
     }
@@ -2298,35 +2313,16 @@ class WebServerService : Service() {
 }
 ```
 
-The `OpenInWebViewModel.toggleServer(true)` path must also start the service so it persists after the app is backgrounded. Add this to the `toggleServer` function in the ViewModel:
+The ViewModel controls the server exclusively by starting/stopping `WebServerService`. The Service is the sole caller of `webServerRepository.start()` and `webServerRepository.stop()`. The ViewModel observes `webServerRepository.serverState` for UI updates. This separation ensures the server survives app backgrounding without a double-start race condition.
+
+Add to `OssWalletApp` to restore server state on process restart if the user had it enabled:
 
 ```kotlin
-fun toggleServer(enabled: Boolean) {
-    viewModelScope.launch {
-        webServerPreferences.setEnabled(enabled)
-        val serviceIntent = Intent(context, WebServerService::class.java).apply {
-            action = if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
-        }
-        if (enabled) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
-        } else {
-            context.startService(serviceIntent) // sends STOP action to running service
-        }
-    }
-}
-```
+// In OssWalletApp — add this field alongside other app-level infrastructure:
+private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-Add `import android.content.Intent` and `import android.os.Build` to the ViewModel imports. The ViewModel is in the `ui/` layer and may hold a `Context` (the application context only — not an Activity context).
-
-Also add to `OssWalletApp.onCreate()`: restore server state on app open if `isEnabled` was true when the app was last closed:
-
-```kotlin
 // In OssWalletApp.onCreate(), after container initialization:
-CoroutineScope(Dispatchers.Main).launch {
+appScope.launch {
     container.webServerPreferences.isEnabled.first().let { wasEnabled ->
         if (wasEnabled) {
             val intent = Intent(this@OssWalletApp, WebServerService::class.java).apply {
@@ -2341,6 +2337,10 @@ CoroutineScope(Dispatchers.Main).launch {
     }
 }
 ```
+
+Required imports for `OssWalletApp`: `import android.content.Intent`, `import android.os.Build`, `import kotlinx.coroutines.CoroutineScope`, `import kotlinx.coroutines.Dispatchers`, `import kotlinx.coroutines.SupervisorJob`, `import kotlinx.coroutines.flow.first`, `import kotlinx.coroutines.launch`.
+
+`appScope` uses `SupervisorJob()` so a failure in one child coroutine does not cancel the scope. The raw `CoroutineScope(Dispatchers.Main)` pattern (without a `Job`) creates an unsupervised scope that cannot be cancelled and will leak if the launch throws.
 
 ---
 

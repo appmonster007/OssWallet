@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import androidx.compose.ui.unit.dp
@@ -122,16 +121,16 @@ fun TransactionListContentPreview() {
     )
 
     var theme by remember { mutableStateOf("System") }
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth().background(AppColors.insetSurface).padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = { theme = "Light" }) { Text("Light") }
-            Button(onClick = { theme = "Dark" }) { Text("Dark") }
-            Button(onClick = { theme = "Amoled" }) { Text("Amoled") }
-        }
-        OssWalletTheme(theme = theme) {
+    OssWalletTheme(theme = theme) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().background(AppColors.insetSurface).padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(onClick = { theme = "Light" }) { Text("Light") }
+                Button(onClick = { theme = "Dark" }) { Text("Dark") }
+                Button(onClick = { theme = "Amoled" }) { Text("Amoled") }
+            }
             TransactionListContent(
                 listState = TransactionListState(isEmpty = false),
                 allTransactions = emptyList(),

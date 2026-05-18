@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -33,7 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.style.TextOverflow
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
@@ -48,10 +45,6 @@ private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, Stri
     restore = { mutableStateOf(Json.decodeFromString(it)) }
 )
 
-private val FilterIdsSaver = Saver<MutableState<Set<Long>>, ArrayList<Long>>(
-    save = { ArrayList(it.value.toList()) },
-    restore = { mutableStateOf(it.toSet()) }
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,21 +62,16 @@ fun FilterSheetContent(
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    initialShowCustomize: Boolean = false,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter()
 ) {
     var localFilter by rememberSaveable(saver = TransactionFilterSaver) { mutableStateOf(filter) }
-    var selectedFilterIds by rememberSaveable(saver = FilterIdsSaver) { mutableStateOf(emptySet<Long>()) }
-    var presetsDropdownExpanded by remember { mutableStateOf(false) }
-    var showCustomize by rememberSaveable { mutableStateOf(initialShowCustomize) }
 
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
-    val effectiveAccountNames = remember(accounts, accountNames) { 
-        accounts.associate { it.id to it.name } + accountNames 
+    val effectiveAccountNames = remember(accounts, accountNames) {
+        accounts.associate { it.id to it.name } + accountNames
     }
 
-    // Debouncing mechanism for instant filter application
     val filterSheetScope = rememberCoroutineScope()
     val debounceJob = remember { mutableStateOf<Job?>(null) }
 
@@ -96,46 +84,7 @@ fun FilterSheetContent(
         }
     }
 
-    fun combineFiltersWithOrLogic(filters: List<TransactionFilter>): TransactionFilter {
-        if (filters.isEmpty()) return TransactionFilter()
-        if (filters.size == 1) return filters[0]
-
-        return TransactionFilter(
-            queryNote = filters.mapNotNull { it.queryNote }.takeIf { it.isNotEmpty() }?.joinToString("|"),
-            isNoteRegex = filters.any { it.isNoteRegex },
-            queryPayee = filters.mapNotNull { it.queryPayee }.takeIf { it.isNotEmpty() }?.joinToString("|"),
-            isPayeeRegex = filters.any { it.isPayeeRegex },
-            categoryIds = filters.flatMap { it.categoryIds }.toSet(),
-            accountIds = filters.flatMap { it.accountIds }.toSet(),
-            paymentMethods = filters.flatMap { it.paymentMethods }.toSet(),
-            hasWarranty = if (filters.any { it.hasWarranty == null }) null else filters.any { it.hasWarranty == true },
-            warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.minOrNull(),
-            warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.maxOrNull(),
-            minAmount = filters.mapNotNull { it.minAmount }.minOrNull(),
-            maxAmount = filters.mapNotNull { it.maxAmount }.maxOrNull(),
-            transactionTypes = filters.flatMap { it.transactionTypes }.toSet(),
-            currencies = filters.flatMap { it.currencies }.toSet(),
-            statuses = filters.flatMap { it.statuses }.toSet()
-        )
-    }
-
-    // Combine multiple filters from selected presets using TransactionFilter
-    fun updateFilterFromSelectedPresets() {
-        if (selectedFilterIds.isEmpty()) {
-            localFilter = baseFilter
-            applyFilterWithDebounce(localFilter, debounceMs = 0)
-            return
-        }
-
-        val filters = savedFilters
-            .filter { it.id in selectedFilterIds }
-            .map { it.filter }
-
-        localFilter = combineFiltersWithOrLogic(filters)
-        applyFilterWithDebounce(localFilter, debounceMs = 0)
-    }
-
-    // Sync localFilter with filter prop when it changes (only when not currently editing)
+    // Sync localFilter when the external filter changes (and no edit is in flight).
     LaunchedEffect(filter) {
         if (debounceJob.value == null) {
             localFilter = filter
@@ -143,9 +92,6 @@ fun FilterSheetContent(
     }
 
     val scrollState = rememberScrollState()
-    val hasActiveFilters = remember(localFilter, baseFilter) {
-        countActiveFilters(localFilter, baseFilter, filterRules) > 0
-    }
 
     Column(
         modifier = Modifier
@@ -205,19 +151,13 @@ fun FilterSheetContent(
                 onRangeSelected = { range ->
                     localFilter = localFilter.copy(timelineRange = range)
                     onFilterEvent(FilterEvent.UpdateTimeline(range))
-                    selectedFilterIds = emptySet()
                     applyFilterWithDebounce(localFilter, debounceMs = 0)
                 },
                 swipeEntireComponent = true
             )
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
-
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.7f)
-            )
-
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
@@ -227,84 +167,57 @@ fun FilterSheetContent(
                 icon = Icons.Default.Update,
                 label = "Show Future Transactions",
                 checked = !localFilter.excludeFuture,
-                onCheckedChange = { 
+                onCheckedChange = {
                     localFilter = localFilter.copy(excludeFuture = !it)
                     applyFilterWithDebounce(localFilter, debounceMs = 0)
                 }
             )
-
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
-        // 4. Presets and Customise Options
-        Box(modifier = Modifier.fillMaxWidth()) {
-            FilterPeekOptions(
-                onPresetsClick = {
-                    presetsDropdownExpanded = !presetsDropdownExpanded
-                },
-                onMoreClick = {
-                    showCustomize = !showCustomize
-                },
-                hasPresets = savedFilters.isNotEmpty(),
-                hasActiveFilters = hasActiveFilters,
-                isExpanded = showCustomize
+        // 4. Title row + Reset
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Filter Transactions",
+                style = AppTextStyles.screenTitle.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp
+                )
             )
-
-            // Presets Dropdown anchored here
-            DropdownMenu(
-                expanded = presetsDropdownExpanded,
-                onDismissRequest = { presetsDropdownExpanded = false },
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .background(AppColors.cardSurfaceProminent)
+            TextButton(
+                onClick = {
+                    localFilter = baseFilter
+                    onFilterEvent(FilterEvent.Reset)
+                },
+                contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
+                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
             ) {
-                savedFilters.forEach { savedFilter ->
-                    DropdownMenuItem(
-                        text = { 
-                            Text(
-                                savedFilter.name,
-                                style = AppTextStyles.listItemTitle.copy(
-                                    fontWeight = if (savedFilter.id in selectedFilterIds) FontWeight.Bold else FontWeight.Normal
-                                )
-                            ) 
-                        },
-                        onClick = {
-                            selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
-                                selectedFilterIds - savedFilter.id
-                            } else {
-                                selectedFilterIds + savedFilter.id
-                            }
-                            updateFilterFromSelectedPresets()
-                            presetsDropdownExpanded = false
-                        },
-                        trailingIcon = if (savedFilter.id in selectedFilterIds) {
-                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp), tint = AppColors.primary) }
-                        } else null,
-                        colors = MenuDefaults.itemColors(
-                            textColor = if (savedFilter.id in selectedFilterIds) AppColors.primary else AppColors.contentPrimary
-                        )
-                    )
-                }
+                Text("Reset All", style = AppTextStyles.listSectionHeader)
             }
         }
 
-        // 5. Active Filter Chips (Quick removal)
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+
+        // 5. Active Filter Chips (quick removal)
         val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
         if (activeFiltersRelative > 0) {
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Categories
                 items(items = localFilter.categoryIds.toList()) { id ->
                     if (id !in baseFilter.categoryIds) {
                         FilterChip(
                             selected = true,
-                            onClick = { 
+                            onClick = {
                                 removeFilter(localFilter, "categoryIds", id) {
                                     localFilter = it
-                                    selectedFilterIds = emptySet()
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
@@ -313,15 +226,13 @@ fun FilterSheetContent(
                         )
                     }
                 }
-                // Accounts
                 items(items = localFilter.accountIds.toList()) { id ->
                     if (id !in baseFilter.accountIds) {
                         FilterChip(
                             selected = true,
-                            onClick = { 
+                            onClick = {
                                 removeFilter(localFilter, "accountIds", id) {
                                     localFilter = it
-                                    selectedFilterIds = emptySet()
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
@@ -330,15 +241,13 @@ fun FilterSheetContent(
                         )
                     }
                 }
-                // Types
                 items(items = localFilter.transactionTypes.toList()) { type ->
                     if (type !in baseFilter.transactionTypes) {
                         FilterChip(
                             selected = true,
-                            onClick = { 
+                            onClick = {
                                 removeFilter(localFilter, "transactionTypes", type) {
                                     localFilter = it
-                                    selectedFilterIds = emptySet()
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
@@ -347,15 +256,13 @@ fun FilterSheetContent(
                         )
                     }
                 }
-                // Tags
                 items(items = localFilter.tags.toList()) { tag ->
                     if (tag !in baseFilter.tags) {
                         FilterChip(
                             selected = true,
-                            onClick = { 
+                            onClick = {
                                 removeFilter(localFilter, "tags", tag) {
                                     localFilter = it
-                                    selectedFilterIds = emptySet()
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
@@ -364,15 +271,13 @@ fun FilterSheetContent(
                         )
                     }
                 }
-                // Statuses
                 items(items = localFilter.statuses.toList()) { status ->
                     if (status !in baseFilter.statuses) {
                         FilterChip(
                             selected = true,
-                            onClick = { 
+                            onClick = {
                                 removeFilter(localFilter, "statuses", status) {
                                     localFilter = it
-                                    selectedFilterIds = emptySet()
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
@@ -382,75 +287,34 @@ fun FilterSheetContent(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
-        // 6. Full Filter Section (Shown only if Customise selected)
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showCustomize,
-            enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = AeonTheme.dimensions.spacingXl),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Filter Transactions",
-                        style = AppTextStyles.screenTitle.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.5).sp
-                        )
-                    )
-                    TextButton(
-                        onClick = {
-                            localFilter = baseFilter
-                            selectedFilterIds = emptySet()
-                            onFilterEvent(FilterEvent.Reset)
-                        },
-                        contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
-                    ) {
-                        Text(
-                            "Reset All",
-                            style = AppTextStyles.listSectionHeader
-                        )
-                    }
-                }
-
-                val allAvailableCurrencies = remember(accounts) {
-                    accounts.flatMap { account ->
-                        account.allowedCurrencies.ifEmpty { listOf(account.currencyCode) }
-                    }.distinct().sorted()
-                }
-
-                FilterFields(
-                    filter = localFilter,
-                    onFilterChange = {
-                        localFilter = it
-                        selectedFilterIds = emptySet()
-                        applyFilterWithDebounce(it, debounceMs = 300)
-                    },
-                    accounts = accounts,
-                    allCategories = allCategories,
-                    allTags = allTags,
-                    allTransactions = allTransactions,
-                    showAccountFilter = showAccountFilter && filterRules.allowAccountSelection,
-                    allAvailableCurrencies = allAvailableCurrencies,
-                    onImmediateApply = { newFilter, debounceMs ->
-                        applyFilterWithDebounce(newFilter, debounceMs)
-                    },
-                    onAddTag = onAddTag,
-                    filterRules = filterRules
-                )
-            }
+        // 6. Filter fields — always visible
+        val allAvailableCurrencies = remember(accounts) {
+            accounts.flatMap { account ->
+                account.allowedCurrencies.ifEmpty { listOf(account.currencyCode) }
+            }.distinct().sorted()
         }
+
+        FilterFields(
+            filter = localFilter,
+            onFilterChange = {
+                localFilter = it
+                applyFilterWithDebounce(it, debounceMs = 300)
+            },
+            accounts = accounts,
+            allCategories = allCategories,
+            allTags = allTags,
+            allTransactions = allTransactions,
+            showAccountFilter = showAccountFilter && filterRules.allowAccountSelection,
+            allAvailableCurrencies = allAvailableCurrencies,
+            onImmediateApply = { newFilter, debounceMs ->
+                applyFilterWithDebounce(newFilter, debounceMs)
+            },
+            onAddTag = onAddTag,
+            filterRules = filterRules
+        )
 
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
 
@@ -491,126 +355,6 @@ fun FilterSheetContent(
     }
 }
 
-@Composable
-fun FilterPeekOptions(
-    onPresetsClick: () -> Unit,
-    onMoreClick: () -> Unit,
-    hasPresets: Boolean,
-    hasActiveFilters: Boolean,
-    isExpanded: Boolean = false
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp),
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-    ) {
-        // Presets Option
-        Surface(
-            onClick = onPresetsClick,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.cardSurface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp, 
-                AppColors.divider.copy(alpha = 0.1f)
-            ),
-            enabled = hasPresets
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = androidx.compose.foundation.shape.CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Bookmark,
-                            contentDescription = null,
-                            tint = AppColors.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-                Column {
-                    Text(
-                        "PRESETS",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        if (hasPresets) "Select..." else "None",
-                        style = AppTextStyles.listItemTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-
-        // More/Customize Option
-        Surface(
-            onClick = onMoreClick,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            shape = RoundedCornerShape(16.dp),
-            color = if (isExpanded) AppColors.primary.copy(alpha = 0.08f) 
-                   else if (hasActiveFilters) AppColors.secondary.copy(alpha = 0.1f) 
-                   else AppColors.cardSurface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp, 
-                if (isExpanded) AppColors.primary.copy(alpha = 0.3f)
-                else if (hasActiveFilters) AppColors.secondary.copy(alpha = 0.3f) 
-                else AppColors.divider.copy(alpha = 0.1f)
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = androidx.compose.foundation.shape.CircleShape,
-                    color = (if (isExpanded) AppColors.primary 
-                            else if (hasActiveFilters) AppColors.secondary 
-                            else AppColors.contentSecondary).copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (isExpanded) Icons.Default.ExpandLess else Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = if (isExpanded) AppColors.primary 
-                                   else if (hasActiveFilters) AppColors.secondary 
-                                   else AppColors.contentSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-                Column {
-                    Text(
-                        "CUSTOMIZE",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        if (isExpanded) "Show Less" else "More...",
-                        style = AppTextStyles.listItemTitle
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 internal fun FilterSheetDragHandle(
@@ -704,7 +448,6 @@ fun FilterSheetContentPreview() {
                 onFilterEvent = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,
-                initialShowCustomize = true
             )
         }
     }
@@ -751,7 +494,6 @@ fun FilterSheetContentLongPreview() {
                 onFilterEvent = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,
-                initialShowCustomize = true
             )
         }
     }

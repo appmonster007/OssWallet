@@ -3,35 +3,30 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.launch
@@ -41,16 +36,14 @@ import kotlin.math.roundToInt
  * Floating pill that holds only the timeline selector when collapsed.
  *
  * Gesture mechanics:
- *  - Swipe up: pill moves up in real-time and morphs into the full-screen filter as
- *    the finger moves. Release past 50 % → springs to full screen. Release below → snaps back.
+ *  - Swipe up: pill expands upward into a floating card, revealing filter controls.
+ *    The bottom edge stays anchored; content slides out from inside the pill.
  *  - Long press: presets dropdown.
- *  - Expanded / back button / swipe down on top bar: real-time collapse, springs back to pill.
+ *  - Swipe down on the card (or tap scrim): springs back to pill.
  *
- * The AeonTimelinePeriodSelector travels positionally from its pill-center position to its
- * filter-sheet position, then fades out as the filter sheet fades in — no abrupt jump.
+ * No full-screen takeover. No header. No back button. Just a floating dialog card.
  *
- * Must be called with Modifier.fillMaxSize() from the parent Box so the expansion can
- * cover the whole screen. Pass bottomPadding so the pill floats above the nav bar.
+ * Must be called with Modifier.fillMaxSize() from the parent Box.
  */
 @Composable
 fun TransactionFilterPill(
@@ -60,38 +53,26 @@ fun TransactionFilterPill(
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
-    bottomPadding: Dp = 16.dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomPadding: Dp = 16.dp
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    // 0f = compact pill at bottom, 1f = full-screen filter.
-    // Driven in real-time by gesture; springs to 0 or 1 on release.
+    // 0f = compact pill, 1f = floating filter card.
     val morph = remember { Animatable(0f) }
-
-    // Safe fraction clamped to [0,1] so lerp calls never produce negative sizes.
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
-    // Pre-warm filter layout at f=0.60 so the top bar is measured well before the
-    // overlay starts fading out at f=0.65, giving a reliable filterSelectorTop value.
-    val filterInTree by remember { derivedStateOf { morph.value > 0.60f } }
-
-    // Measured height of the AeonTimelinePeriodSelector (updated after first composition).
-    var selectorHeightPx by remember { mutableIntStateOf(0) }
-
-    // Measured pixel height of the top bar Row in FullScreenFilterContent.
-    // Default is a reasonable estimate (status bar + ~64dp icon row) so the first
-    // animation frame is close even before onGloballyPositioned fires.
-    val statusBarEstimatePx = with(density) {
-        WindowInsets.statusBars.asPaddingValues().calculateTopPadding().toPx().roundToInt()
-    }
-    var topBarHeightPx by remember {
-        mutableIntStateOf(statusBarEstimatePx + with(density) { 64.dp.toPx().roundToInt() })
+    // Intercept back press when the card is open — dismiss the card, not the screen.
+    val isOpen by remember { derivedStateOf { morph.value > 0f } }
+    BackHandler(enabled = isOpen) {
+        scope.launch {
+            morph.animateTo(0f, spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMedium))
+        }
     }
 
-    val pillH = 76.dp   // compact: just enough for AeonTimelinePeriodSelector
+    val pillH = 76.dp
     val pillHorizMargin = 12.dp
 
     BoxWithConstraints(modifier = modifier) {
@@ -100,19 +81,21 @@ fun TransactionFilterPill(
         val pillHPx = with(density) { pillH.toPx() }
         val bottomPx = with(density) { bottomPadding.toPx() }
 
-        // Y of the pill's top edge when fully collapsed.
+        // Pill rests here (top edge of pill when collapsed).
         val collapsedTopPx = maxHPx - bottomPx - pillHPx
 
-        // The pixel distance the pill travels from rest to screen-top — used to
-        // convert raw drag pixels into a 0–1 fraction.
-        val travelPx = collapsedTopPx
+        // Expanded card: 68% of available height, bottom-anchored so the pill
+        // grows purely upward without sliding down.
+        val expandedH = maxH * 0.68f
+        val expandedHPx = with(density) { expandedH.toPx() }
+        val expandedTopPx = maxHPx - bottomPx - expandedHPx
 
-        // --- helpers that must capture travelPx and live inside BoxWithConstraints ---
+        // Actual pixel travel for mapping drag → morph fraction.
+        val dragTravelPx = (collapsedTopPx - expandedTopPx).coerceAtLeast(1f)
 
         fun snapByDelta(rawPixelDelta: Float) {
-            // rawPixelDelta: negative = dragging up, positive = dragging down.
-            // Upward drag increases morph; downward drag decreases it.
-            val newF = (morph.value - rawPixelDelta / travelPx).coerceIn(0f, 1f)
+            // Upward drag (negative delta) opens; downward drag closes.
+            val newF = (morph.value - rawPixelDelta / dragTravelPx).coerceIn(0f, 1f)
             scope.launch { morph.snapTo(newF) }
         }
 
@@ -129,132 +112,65 @@ fun TransactionFilterPill(
             }
         }
 
-        val sheetColor = AppColors.cardSurfaceProminent
+        // Bottom stays anchored; top edge lerps upward.
+        val offsetYPx = collapsedTopPx + (expandedTopPx - collapsedTopPx) * f
+        val surfaceH    = lerp(pillH, expandedH, f)
+        val horizMargin = lerp(pillHorizMargin, 8.dp, f)
+        val corner      = lerp(28.dp, 20.dp, f)   // stays rounded — it's a floating card
+        val shadowElev  = lerp(6.dp, 12.dp, f)    // card lifts as it expands
 
-        // Selector's target Y inside the expanded surface, derived from the measured top bar height.
-        // topBarHeightPx is updated via onGloballyPositioned on the Row in FullScreenFilterContent.
-        // The formula: measured top bar height + 0.5dp divider + 18dp FilterSheetContent top padding.
-        val filterSelectorTop = with(density) { topBarHeightPx.toDp() } + 0.5.dp + 18.dp
-
-        // Selector's resting Y inside the pill — vertically centered.
-        val selectorH = with(density) { selectorHeightPx.toDp() }
-        val pillSelectorTop = ((pillH - selectorH) / 2f).coerceAtLeast(0.dp)
-
-        // Traveling Y and horizontal padding for the overlay selector.
-        val selectorTop      = lerp(pillSelectorTop, filterSelectorTop, f)
-        val selectorHorizPad = lerp(12.dp, 18.dp, f)
-
-        // Overlay fades 1→0 between f=0.65 and f=0.75.
-        // Filter fades 0→1 between f=0.70 and f=1.0.
-        // The brief overlap window (0.70–0.75) is intentional: both the overlay and the filter
-        // sheet selector are visible simultaneously, but at this point the overlay has travelled
-        // to exactly filterSelectorTop — the same position where it appears in the sheet.
-        // Because they sit at identical coordinates and identical color, there is no visible
-        // doubling; the crossfade is smooth and gap-free.
-        val overlayAlpha = ((0.75f - f) / 0.10f).coerceIn(0f, 1f)
-
-        // Interpolated visual properties
-        val surfaceH      = lerp(pillH, maxH, f)
-        val horizMargin   = lerp(pillHorizMargin, 0.dp, f)
-        val corner        = ((1f - f) * 28f).coerceAtLeast(0f).dp
-        val shadowElev    = lerp(8.dp, 0.dp, f)
-        val offsetYPx     = collapsedTopPx * (1f - f)
-        val surfaceColor  = sheetColor  // same color throughout — pill and sheet are identical
-
-        // Scrim
+        // Scrim — tap to dismiss.
         if (f > 0.01f) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = f * 0.5f))
+                    .background(Color.Black.copy(alpha = f * 0.4f))
                     .then(
-                        if (f > 0.4f) Modifier.pointerInput(Unit) {
+                        if (f > 0.3f) Modifier.pointerInput(Unit) {
                             detectTapGestures { collapse() }
                         } else Modifier
                     )
             )
         }
 
-        // The single morphing surface.
         Surface(
             shape = RoundedCornerShape(corner),
-            color = surfaceColor,
+            color = AppColors.cardSurfaceProminent,
             shadowElevation = shadowElev,
             modifier = Modifier
                 .padding(horizontal = horizMargin)
                 .fillMaxWidth()
                 .height(surfaceH)
                 .offset { IntOffset(0, offsetYPx.roundToInt()) }
-                .then(
-                    // Gesture modifiers are only active while in pill mode (before filter pre-warms).
-                    if (!filterInTree) Modifier
-                        .pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onDragEnd = { settle() },
-                                onDragCancel = { settle() },
-                                onVerticalDrag = { _, delta ->
-                                    // Only respond to upward drags (or cancelling a partial drag).
-                                    if (delta < 0f || morph.value > 0f) snapByDelta(delta)
-                                }
-                            )
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragEnd = { settle() },
+                        onDragCancel = { settle() },
+                        onVerticalDrag = { _, delta ->
+                            // Upward drag always expands; downward drag closes when open.
+                            if (delta < 0f || morph.value > 0f) snapByDelta(delta)
                         }
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onLongPress = {
-                                    if (savedFilters.isNotEmpty()) showDropdown = true
-                                }
-                            )
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            if (morph.value < 0.3f && savedFilters.isNotEmpty())
+                                showDropdown = true
                         }
-                    else Modifier
-                )
+                    )
+                }
         ) {
-            Box(Modifier.fillMaxSize()) {
-                // Filter sheet fades in from f=0.70 to f=1.0, overlapping briefly with the
-                // overlay fade-out window (0.70–0.75). Since both show the selector at the
-                // same position during overlap, the crossfade is seamless.
-                if (filterInTree) {
-                    val filterAlpha = ((f - 0.70f) / 0.30f).coerceIn(0f, 1f)
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { alpha = filterAlpha }
-                    ) {
-                        FullScreenFilterContent(
-                            filter = filter,
-                            accounts = accounts,
-                            categories = categories,
-                            savedFilters = savedFilters,
-                            onFilterEvent = onFilterEvent,
-                            onSaveFilterClick = onSaveFilterClick,
-                            onClose = ::collapse,
-                            onDragDelta = ::snapByDelta,
-                            onDragEnd = ::settle,
-                            onTopBarMeasured = { topBarHeightPx = it }
-                        )
-                    }
-                }
-
-                // Traveling selector overlay: moves from pill-center to filter-sheet position,
-                // fading out as the filter sheet fades in. Creates a seamless positional handoff.
-                if (overlayAlpha > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = selectorHorizPad)
-                            .offset(y = selectorTop)
-                            .graphicsLayer { alpha = overlayAlpha }
-                    ) {
-                        AeonTimelinePeriodSelector(
-                            currentRange = filter.timelineRange,
-                            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
-                            swipeEntireComponent = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onGloballyPositioned { selectorHeightPx = it.size.height }
-                        )
-                    }
-                }
-            }
+            // Content is always in the Surface — the Surface's rounded clip reveals it
+            // as the card expands. No alpha fading, no overlays.
+            FilterDialogContent(
+                filter = filter,
+                accounts = accounts,
+                categories = categories,
+                savedFilters = savedFilters,
+                onFilterEvent = onFilterEvent,
+                onSaveFilterClick = onSaveFilterClick
+            )
         }
 
         // Presets dropdown — anchored just above the collapsed pill.
@@ -286,60 +202,35 @@ fun TransactionFilterPill(
 }
 
 // ---------------------------------------------------------------------------
-// Full-screen filter content — shown after the pill finishes expanding.
+// Floating filter card content — selector at the top, controls below.
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun FullScreenFilterContent(
+private fun FilterDialogContent(
     filter: TransactionFilter,
     accounts: List<Account>,
     categories: List<Category>,
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit,
-    onClose: () -> Unit,
-    // onDragDelta: raw pixel delta from the top-bar drag; caller converts to fraction.
-    onDragDelta: (Float) -> Unit,
-    onDragEnd: () -> Unit,
-    // Reports the measured pixel height of the top bar Row (status bar inset + padding + icon row)
-    // so the caller can compute the exact filterSelectorTop without hardcoded estimates.
-    onTopBarMeasured: (Int) -> Unit = {}
+    onSaveFilterClick: (TransactionFilter) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top bar — drag downward to collapse, back button to close.
-        Row(
+        Spacer(Modifier.height(AeonTheme.dimensions.screenPadding))
+
+        // Timeline selector — visible even in pill mode.
+        AeonTimelinePeriodSelector(
+            currentRange = filter.timelineRange,
+            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
+            swipeEntireComponent = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AppColors.cardSurfaceProminent)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 4.dp, vertical = 8.dp)
-                .onGloballyPositioned { onTopBarMeasured(it.size.height) }
-                .draggable(
-                    orientation = Orientation.Vertical,
-                    state = rememberDraggableState { delta ->
-                        // Only pass downward (positive) drag deltas to the morph driver.
-                        if (delta > 0f) onDragDelta(delta)
-                    },
-                    onDragStopped = { onDragEnd() }
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Close filter",
-                    tint = AppColors.contentPrimary
-                )
-            }
-            Text(
-                "Filter",
-                style = AppTextStyles.screenTitle.copy(fontWeight = FontWeight.Bold),
-                color = AppColors.contentPrimary
-            )
-        }
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
+        )
 
-        HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+        Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
+        HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.6f))
 
+        // Filter controls — timeline selector suppressed here since it lives above.
         FilterSheetContent(
             filter = filter,
             accounts = accounts,
@@ -347,9 +238,10 @@ private fun FullScreenFilterContent(
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
-            onClose = onClose,
+            onClose = {},
             backgroundColor = AppColors.cardSurfaceProminent,
-            accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
+            accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
+            filterRules = CardFilterRules.DEFAULT.copy(allowTimelineSelection = false)
         )
     }
 }

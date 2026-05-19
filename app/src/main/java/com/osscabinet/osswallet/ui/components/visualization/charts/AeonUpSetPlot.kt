@@ -29,6 +29,8 @@ fun AeonUpSetPlot(
     data: AeonUpSetData,
     currency: String,
     modifier: Modifier = Modifier,
+    maxVisibleRows: Int = 10,
+    maxVisibleCols: Int = 15,
     dotColorActive: Color = AppColors.primary,
     dotColorInactive: Color = AppColors.border.copy(alpha = 0.2f),
     lineColor: Color = AppColors.primary,
@@ -46,6 +48,9 @@ fun AeonUpSetPlot(
     val leftPanelWidth = 80.dp
     val rightPanelWidth = 80.dp
 
+    val viewportHeight = rowHeight * minOf(setNames.size, maxVisibleRows)
+    val viewportWidth = colWidth * minOf(data.intersections.size, maxVisibleCols)
+
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
@@ -55,9 +60,9 @@ fun AeonUpSetPlot(
             Box(modifier = Modifier.width(leftPanelWidth))
             
             // Intersection Size Bars (Horizontal Scroll)
-            Box(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
+            Box(modifier = Modifier.width(viewportWidth).horizontalScroll(horizontalScrollState)) {
                 Row(
-                    modifier = Modifier.height(60.dp).padding(bottom = 2.dp),
+                    modifier = Modifier.width(colWidth * data.intersections.size).height(60.dp).padding(bottom = 2.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.Bottom
                 ) {
@@ -82,7 +87,7 @@ fun AeonUpSetPlot(
         }
 
         // Main content: Set names | Dot Matrix | Set Size Bars
-        Row(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().height(viewportHeight)) {
             // Left Panel: Set names (Vertical Scroll)
             Column(
                 modifier = Modifier
@@ -111,7 +116,7 @@ fun AeonUpSetPlot(
             // Center: Dot Matrix (Dual Scroll)
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(viewportWidth)
                     .verticalScroll(verticalScrollState)
                     .horizontalScroll(horizontalScrollState)
             ) {

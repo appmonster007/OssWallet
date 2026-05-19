@@ -1,9 +1,13 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,7 +65,11 @@ fun TagUpSetPlotCard(
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            TagUpSetDisplaySettingsDialog(
+            TagUpSetSettingsSheet(
+                config = config,
+                onUpdate = { newConfig ->
+                    callbacks.onUpdate(newConfig)
+                },
                 onDelete = {
                     callbacks.onDelete()
                     onDismiss()
@@ -102,6 +110,8 @@ fun TagUpSetPlotCard(
                 AeonUpSetPlot(
                     data = AeonUpSetData(uiSets, uiIntersections),
                     currency = renderData.baseCurrency,
+                    maxVisibleRows = config.maxTags,
+                    maxVisibleCols = config.maxIntersections,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -186,24 +196,162 @@ fun TagUpSetPlotCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TagUpSetDisplaySettingsDialog(
+private fun TagUpSetSettingsSheet(
+    config: com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig,
+    onUpdate: (com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Card Settings", style = AppTextStyles.cardSectionTitle) },
-        text = {
-            Text("This card shows how your tags intersect and their total amounts.", style = AppTextStyles.caption)
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDelete) {
-                Text("Delete Card", color = AppColors.error)
+        containerColor = AppColors.cardSurfaceProminent,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Tag Analytics",
+                    style = AppTextStyles.heroAmount
+                )
+                IconButton(
+                    onClick = { onDelete(); onDismiss() },
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete card")
+                }
             }
+
+            // Display controls
+            Surface(
+                color = AppColors.insetSurface.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "DISPLAY",
+                        style = AppTextStyles.transactionSwipeAction.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp,
+                            fontSize = 11.sp
+                        ),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    
+                    // Max Tags Control
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Maximum visible tags", style = AppTextStyles.transactionTitle)
+                            Text(
+                                "Showing top ${config.maxTags} tags",
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = AppColors.sheetSurface,
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                                }
+                                
+                                Text(
+                                    text = "${config.maxTags}",
+                                    style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                                
+                                IconButton(
+                                    onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.3f)
+                    )
+
+                    // Max Intersections Control
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Maximum intersections", style = AppTextStyles.transactionTitle)
+                            Text(
+                                "Showing top ${config.maxIntersections} sets",
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = AppColors.sheetSurface,
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                                }
+                                
+                                Text(
+                                    text = "${config.maxIntersections}",
+                                    style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                                
+                                IconButton(
+                                    onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("Done") }
         }
-    )
+    }
 }

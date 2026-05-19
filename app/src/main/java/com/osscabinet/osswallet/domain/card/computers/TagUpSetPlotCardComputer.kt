@@ -84,7 +84,7 @@ class TagUpSetPlotCardComputer(
             .filter { it.key != "unspecified" }
             .toList()
             .sortedByDescending { it.second.income.subtract(it.second.expense).abs() }
-            .take(config.maxTags)
+//            .take(50) // All-time top 50 tags to ensure we cover the 40 tags in CSV
 
         val topTags = tagTotals.map { it.first }.toSet()
 
@@ -153,7 +153,7 @@ class TagUpSetPlotCardComputer(
                 )
             }
             .sortedByDescending { it.amount.abs() }
-            .take(config.maxIntersections)
+//            .take(50) // Allow scrolling through top 50 intersections
 
         val sets = tagTotals.map { (tag, stats) ->
             TagUpSetSet(

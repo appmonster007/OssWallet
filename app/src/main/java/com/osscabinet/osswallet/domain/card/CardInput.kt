@@ -25,6 +25,10 @@ data class CardInput(
     val exchangeRates: Map<String, BigDecimal>,
     val baseCurrency: String,
     val filter: TransactionFilter = TransactionFilter(),
+    // When true the inherited filter's timeline is always authoritative — even AllTime.
+    // Set by screens that own the timeline (Analytics). Dashboard leaves this false so
+    // each card's configured timeline acts as a fallback when the screen has no scope.
+    val screenOwnsTimeline: Boolean = false,
     val plannedPayments: List<PlannedPayment> = emptyList(),
     val budgets: List<Budget> = emptyList(),
     val loans: List<Loan> = emptyList(),

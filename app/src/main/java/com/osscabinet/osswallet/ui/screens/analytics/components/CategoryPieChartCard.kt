@@ -52,11 +52,12 @@ fun CategoryPieChartCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
     currentTheme: String = "System",
     previousTotal: BigDecimal? = null,
     showFilterButton: Boolean = true
 ) {
-    val displayFilter = if (inheritedFilter.timelineRange !is TimelineRange.AllTime)
+    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
         config.filter.copy(timelineRange = inheritedFilter.timelineRange)
     else config.filter
 

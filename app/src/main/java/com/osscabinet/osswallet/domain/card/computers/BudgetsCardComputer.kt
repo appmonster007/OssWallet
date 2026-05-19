@@ -16,7 +16,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
         val now = System.currentTimeMillis()
 
         // Resolve effective filter using canonical pipeline, then single-pass filter
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val filteredTx = TransactionFilterService.filter(input.transactions, mergedFilter)
 
         // BudgetService applies its own period/category/account rules on top of filteredTx.

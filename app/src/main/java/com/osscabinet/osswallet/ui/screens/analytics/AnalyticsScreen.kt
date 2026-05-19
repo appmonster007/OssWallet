@@ -27,8 +27,6 @@ import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,7 +126,8 @@ fun AnalyticsScreen(
                                         plannedPayments = state.plannedPayments,
                                         budgets = state.budgets,
                                         loans = state.loans,
-                                        filter = screenFilter
+                                        filter = screenFilter,
+                                        screenOwnsTimeline = true
                                     ),
                                     cardComputerRegistry = cardComputerRegistry,
                                     cardUpdateHandler = viewModel,
@@ -190,10 +189,7 @@ fun AnalyticsScreen(
             screenContext = ScreenContext.ANALYTICS,
             onDismiss = { showAddCardDialog = false },
             onCardTypeSelected = { cardType ->
-                val defaultFilter = TransactionFilter(
-                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = emptySet()
-                )
+                val defaultFilter = TransactionFilter()
                 when (cardType) {
                     CardType.CATEGORY_PIE_CHART -> viewModel.addCard(
                         CategoryPieChartCardConfig(

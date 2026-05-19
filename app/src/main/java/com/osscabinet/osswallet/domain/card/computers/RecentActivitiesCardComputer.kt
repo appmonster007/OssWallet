@@ -18,7 +18,7 @@ class RecentActivitiesCardComputer(
     override val supportedType = CardType.RECENT_ACTIVITIES
 
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
 
         val recentTransactions = queryService
             .observeFilteredTransactions(input.profileId, mergedFilter, limit = 20)

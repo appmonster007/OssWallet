@@ -45,8 +45,6 @@ fun TransactionListContent(
     onFilterEvent: (FilterEvent) -> Unit,
     revealedCardIds: List<Long> = emptyList()
 ) {
-    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.background(AppColors.transparent),
@@ -93,7 +91,6 @@ fun TransactionListContent(
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
-            bottomPadding = 16.dp + navigationBarHeight,
             modifier = Modifier.fillMaxSize()
         )
     }

@@ -80,12 +80,12 @@ fun CurrencyManagementSection(
                 Column {
                     Text(
                         "ASSET CONFIGURATION",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp),
+                        style = AppTextStyles.tableColumnHeader,
                         color = AppColors.primary
                     )
                     Text(
                         "Select currencies for this portfolio",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AppTextStyles.caption,
                         color = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
                 }
@@ -103,7 +103,7 @@ fun CurrencyManagementSection(
                         Icon(Icons.Rounded.Dashboard, contentDescription = null, tint = Color.White, modifier = Modifier.size(AeonSize.D14.value))
                         Text(
                             allowedCurrencies.size.toString(),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
+                            style = AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
                             color = Color.White
                         )
                     }
@@ -126,10 +126,10 @@ fun CurrencyManagementSection(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = AppColors.contentPrimary),
+                        textStyle = AppTextStyles.listItemTitle.copy(color = AppColors.contentPrimary),
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) Text("Search assets...", style = MaterialTheme.typography.bodyLarge, color = AppColors.contentSecondary.copy(alpha = 0.3f))
+                            if (searchQuery.isEmpty()) Text("Search assets...", style = AppTextStyles.listItemTitle, color = AppColors.contentSecondary.copy(alpha = 0.3f))
                             innerTextField()
                         }
                     )
@@ -142,7 +142,7 @@ fun CurrencyManagementSection(
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardPadding)) {
                 Text(
                     "SELECTED PORTFOLIO",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
+                    style = AppTextStyles.sectionOverline,
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 
@@ -185,13 +185,13 @@ fun CurrencyManagementSection(
             ) {
                 Text(
                     if (searchQuery.isBlank()) "POPULAR ASSETS" else "SEARCH RESULTS",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
+                    style = AppTextStyles.sectionOverline,
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 if (searchQuery.isBlank()) {
                     Text(
                         "SEE ALL",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, color = AppColors.primary)
+                        style = AppTextStyles.tagLabel.copy(fontWeight = FontWeight.Black, color = AppColors.primary)
                     )
                 }
             }
@@ -219,7 +219,7 @@ fun CurrencyManagementSection(
                         ) {
                             Text(
                                 code,
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black),
+                                style = AppTextStyles.drawerItemLabel.copy(fontWeight = FontWeight.Black),
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -277,12 +277,12 @@ fun CurrencyTile(
             ) {
                 Text(
                     getCurrencySymbol(code),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                    style = AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Black),
                     color = if (isPrimary) Color.White else AppColors.contentPrimary
                 )
                 Text(
                     code,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 1.sp),
+                    style = AppTextStyles.overlineLabel.copy(fontWeight = FontWeight.Black),
                     color = if (isPrimary) Color.White.copy(alpha = 0.7f) else AppColors.contentSecondary
                 )
             }

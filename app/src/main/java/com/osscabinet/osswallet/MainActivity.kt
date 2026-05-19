@@ -71,6 +71,7 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
+            val selectedFont by appContainer.settingsDataStore.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
             val precision by appContainer.settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
             val use24Hour by appContainer.settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
 
@@ -84,7 +85,7 @@ class MainActivity : FragmentActivity() {
                 com.osscabinet.ossWallet.ui.util.TimeUtils.use24HourFormat = use24Hour
             }
 
-            OssWalletTheme(theme = theme) {
+            OssWalletTheme(theme = theme, fontName = selectedFont) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = AppColors.screenBackground

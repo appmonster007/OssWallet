@@ -90,7 +90,7 @@ fun AccountListScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(account.name, style = AppTextStyles.transactionTitle, fontWeight = FontWeight.Bold)
+                        Text(account.name, style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold))
                         Text(formatCurrencyRight(BigDecimal.ZERO, account.currencyCode), style = AppTextStyles.caption)
                     }
                 }
@@ -277,7 +277,6 @@ fun AccountManagementListItem(
                     Text(
                         account.name,
                         style = AppTextStyles.managementItemTitle,
-                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

@@ -5,136 +5,82 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.R
 
-// Using Default Sans Serif to prevent font loading crashes (Resources$NotFoundException)
-// We will restore custom fonts (Manrope/Inter) once resource stability is confirmed.
-val Manrope = FontFamily.SansSerif
-val Inter = FontFamily.Default
+/**
+ * All supported app fonts. Add new entries here to make them available throughout the app —
+ * no other typography code needs to change.
+ *
+ * [displayFamily] is used for headings/display text; [bodyFamily] for body/label text.
+ * For [SYSTEM] both resolve to [FontFamily.Default].
+ */
+enum class AppFont(val displayName: String, val displayFamily: FontFamily, val bodyFamily: FontFamily) {
+    MANROPE(
+        displayName = "Manrope",
+        displayFamily = FontFamily(Font(R.font.manrope)),
+        bodyFamily = FontFamily(Font(R.font.inter))
+    ),
+    INTER(
+        displayName = "Inter",
+        displayFamily = FontFamily(Font(R.font.inter)),
+        bodyFamily = FontFamily(Font(R.font.inter))
+    ),
+    SYSTEM(
+        displayName = "System Default",
+        displayFamily = FontFamily.Default,
+        bodyFamily = FontFamily.Default
+    );
 
-val Typography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    displayMedium = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    displaySmall = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Normal,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Normal,
-        fontSize = 24.sp,
-        lineHeight = 32.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    titleLarge = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.15.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    titleMedium = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    titleSmall = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.4.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.25.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.4.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    bodySmall = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    labelLarge = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    labelMedium = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    labelSmall = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    )
+    companion object {
+        val DEFAULT = MANROPE
+        fun fromName(name: String): AppFont = entries.find { it.name == name } ?: DEFAULT
+    }
+}
+
+// Typographic scale: sizes, weights, spacing — defined once with no font concern.
+// Font selection only injects fontFamily via createTypography(); nothing else changes.
+private val displayScale = object {
+    val large  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val medium = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val small  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val headlineLarge  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val headlineMedium = TextStyle(fontWeight = FontWeight.Normal, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val headlineSmall  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
+    val titleLarge  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 18.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp, fontFeatureSettings = "tnum")
+    val titleMedium = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp,  fontFeatureSettings = "tnum")
+    val titleSmall  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,  fontFeatureSettings = "tnum")
+}
+
+private val bodyScale = object {
+    val large  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp, fontFeatureSettings = "tnum")
+    val medium = TextStyle(fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,  fontFeatureSettings = "tnum")
+    val small  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp,  fontFeatureSettings = "tnum")
+    val labelLarge  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
+    val labelMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
+    val labelSmall  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
+}
+
+// Only fontFamily is injected here. All other properties come from the scale objects above.
+fun createTypography(font: AppFont): Typography = Typography(
+    displayLarge   = displayScale.large.copy(fontFamily = font.displayFamily),
+    displayMedium  = displayScale.medium.copy(fontFamily = font.displayFamily),
+    displaySmall   = displayScale.small.copy(fontFamily = font.displayFamily),
+    headlineLarge  = displayScale.headlineLarge.copy(fontFamily = font.displayFamily),
+    headlineMedium = displayScale.headlineMedium.copy(fontFamily = font.displayFamily),
+    headlineSmall  = displayScale.headlineSmall.copy(fontFamily = font.displayFamily),
+    titleLarge     = displayScale.titleLarge.copy(fontFamily = font.displayFamily),
+    titleMedium    = displayScale.titleMedium.copy(fontFamily = font.displayFamily),
+    titleSmall     = displayScale.titleSmall.copy(fontFamily = font.displayFamily),
+    bodyLarge      = bodyScale.large.copy(fontFamily = font.bodyFamily),
+    bodyMedium     = bodyScale.medium.copy(fontFamily = font.bodyFamily),
+    bodySmall      = bodyScale.small.copy(fontFamily = font.bodyFamily),
+    labelLarge     = bodyScale.labelLarge.copy(fontFamily = font.bodyFamily),
+    labelMedium    = bodyScale.labelMedium.copy(fontFamily = font.bodyFamily),
+    labelSmall     = bodyScale.labelSmall.copy(fontFamily = font.bodyFamily),
 )
 
 val Typography.labelExtraSmall: TextStyle
@@ -398,4 +344,38 @@ object AppTextStyles {
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.sp
             )
+
+    // ── Overlines & Table Headers ────────────────────────────────────────────
+    // ALL-CAPS section header with heavy tracking (e.g. "ASSET CONFIGURATION").
+    val sectionOverline: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.5.sp
+            )
+
+    // ALL-CAPS table column header with maximum tracking (e.g. "CURRENCY", "VALUE").
+    val tableColumnHeader: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp
+            )
+
+    // ── Extended Hero Amounts ────────────────────────────────────────────────
+    // displayMedium hero number (adaptive display, one step larger than heroAmountDisplay).
+    val heroAmountMedium: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
+
+    // displayLarge hero number (adaptive display, largest size).
+    val heroAmountLarge: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold)
+
+    // ── Keypad ───────────────────────────────────────────────────────────────
+    // Large numpad / converter key button label (headlineMedium).
+    val keyButtonLabel: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
 }

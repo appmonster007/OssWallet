@@ -429,7 +429,7 @@ private fun MockContentPreview() {
             Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
             Box(Modifier.size(90.dp, 12.dp).background(AppColors.divider.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
         }
-        Text("$ 45.00", fontWeight = FontWeight.Black, color = AppColors.error)
+        Text("$ 45.00", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Black, color = AppColors.error))
     }
 }
 

@@ -82,6 +82,12 @@ class SettingsViewModel(
     val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
 
+    val useSystemFont: StateFlow<Boolean> = settingsRepository.useSystemFont
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val selectedFont: StateFlow<String> = settingsRepository.selectedFont
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "MANROPE")
+
     val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
         .flatMapLatest { providerId ->
             flow {
@@ -228,6 +234,18 @@ class SettingsViewModel(
             settingsRepository.saveCurrencyProvider(providerId)
             // Trigger a refresh with the new provider
             fetchAndSaveRates(currency.value)
+        }
+    }
+
+    fun setUseSystemFont(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveUseSystemFont(enabled)
+        }
+    }
+
+    fun setSelectedFont(fontName: String) {
+        viewModelScope.launch {
+            settingsRepository.saveSelectedFont(fontName)
         }
     }
 

@@ -56,10 +56,7 @@ fun EntryAmountDisplay(
         if (label != null) {
             Text(
                 text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.5.sp
-                ),
+                style = AppTextStyles.sectionOverline,
                 color = AppColors.contentSecondary.copy(alpha = 0.5f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )

@@ -249,8 +249,7 @@ private fun WelcomeStep() {
         Spacer(modifier = Modifier.height(48.dp))
         Text(
             text = "Welcome to OssWallet",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold,
+            style = AppTextStyles.heroAmountDisplay,
             color = AppColors.contentPrimary,
             textAlign = TextAlign.Center
         )

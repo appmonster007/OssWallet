@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.util.*
@@ -71,7 +72,7 @@ fun ExchangeRatesScreen(
                     """.trimIndent()
                 }
                 Column {
-                    Text("New rates fetched. Do you want to save them?", style = MaterialTheme.typography.bodyMedium)
+                    Text("New rates fetched. Do you want to save them?", style = AppTextStyles.transactionTitle)
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                     Surface(
                         color = AppColors.insetSurface,
@@ -81,7 +82,7 @@ fun ExchangeRatesScreen(
                         Text(
                             text = jsonPreview,
                             modifier = Modifier.padding(AeonTheme.dimensions.spacingSm),
-                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                            style = AppTextStyles.caption,
                             color = AppColors.contentSecondary
                         )
                     }
@@ -145,7 +146,7 @@ fun ExchangeRatesScreen(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         text = lastUpdatedStr,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = AppTextStyles.formFieldHint,
                                         color = AppColors.border
                                     )
                                 }
@@ -251,12 +252,12 @@ fun RatesTab(uiState: CurrencyUiState) {
         ) {
             Text(
                 "CURRENCY", 
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp), 
+                style = AppTextStyles.tableColumnHeader,
                 color = AppColors.contentSecondary.copy(alpha = 0.8f)
             )
             Text(
                 "VALUE (1 ${uiState.baseCurrency})", 
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp), 
+                style = AppTextStyles.tableColumnHeader,
                 color = AppColors.contentSecondary.copy(alpha = 0.8f)
             )
         }
@@ -292,8 +293,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = rate.currencyCode.take(2),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Black,
+                                        style = AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
                                         color = if (isBase) AppColors.onPrimary else AppColors.contentPrimary
                                     )
                                 }
@@ -303,8 +303,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         rate.currencyCode,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
+                                        style = AppTextStyles.screenSubTitle,
                                         color = if (isBase) AppColors.primary else AppColors.contentPrimary
                                     )
                                     if (isBase) {
@@ -315,7 +314,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                                         ) {
                                             Text(
                                                 "BASE",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Black),
+                                                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Black),
                                                 color = AppColors.onPrimary,
                                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                             )
@@ -324,7 +323,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                                 }
                                 Text(
                                     "1 ${uiState.baseCurrency} = ${String.format(Locale.US, "%.4f", rate.rate)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+                                    style = AppTextStyles.formFieldHint,
                                     color = AppColors.contentSecondary,
                                     modifier = Modifier.padding(top = 1.dp)
                                 )
@@ -332,9 +331,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                         }
                         Text(
                             text = String.format(Locale.US, "%.4f", rate.rate),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontFeatureSettings = "tnum",
+                            style = AppTextStyles.cardTitle.copy(
                                 color = if (isBase) AppColors.primary else AppColors.contentPrimary,
                                 letterSpacing = (-0.5).sp
                             )
@@ -353,7 +350,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                     
                     Text(
                         text = "Last updated: $lastUpdatedStr",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.formFieldHint,
                         color = AppColors.contentSecondary,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -437,9 +434,8 @@ fun ConverterTab(
                 ) {
                     Text(
                         text = "1 $fromCurrency = ${String.format(Locale.US, "%.4f", currentRate)} $toCurrency",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AppTextStyles.formFieldHint.copy(fontWeight = FontWeight.Black),
                         color = AppColors.primary,
-                        fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
@@ -576,7 +572,7 @@ private fun ConversionUnit(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp),
+                style = AppTextStyles.tableColumnHeader,
                 color = if (isSource) AppColors.contentSecondary else AppColors.primary
             )
             
@@ -626,8 +622,7 @@ private fun ConversionUnit(
                     ) {
                         Text(
                             text = currencyCode,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
+                            style = AppTextStyles.screenTitle.copy(fontWeight = FontWeight.Black),
                             color = AppColors.contentPrimary
                         )
                         Icon(
@@ -649,8 +644,7 @@ private fun ConversionUnit(
                             text = { 
                                 Text(
                                     currency, 
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (currency == currencyCode) FontWeight.Bold else FontWeight.Normal
+                                    style = AppTextStyles.listItemTitle.copy(fontWeight = if (currency == currencyCode) FontWeight.Bold else FontWeight.Normal)
                                 ) 
                             },
                             onClick = {
@@ -677,13 +671,11 @@ private fun ConversionUnit(
             ) { targetAmount ->
                 Text(
                     text = targetAmount,
-                    style = (if (targetAmount.length > 10) MaterialTheme.typography.displaySmall 
-                            else if (targetAmount.length > 7) MaterialTheme.typography.displayMedium 
-                            else MaterialTheme.typography.displayLarge).copy(
-                        fontFeatureSettings = "tnum",
-                        letterSpacing = (-1.5).sp
-                    ),
-                    fontWeight = FontWeight.Bold,
+                    style = when {
+                        targetAmount.length > 10 -> AppTextStyles.heroAmountDisplay
+                        targetAmount.length > 7  -> AppTextStyles.heroAmountMedium
+                        else                     -> AppTextStyles.heroAmountLarge
+                    }.copy(letterSpacing = (-1.5).sp),
                     color = if (isSource) AppColors.contentPrimary else AppColors.primary,
                     textAlign = TextAlign.End,
                     maxLines = 1,
@@ -720,8 +712,7 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
             } else {
                 Text(
                     text = text, 
-                    style = MaterialTheme.typography.headlineMedium, 
-                    fontWeight = FontWeight.Bold,
+                    style = AppTextStyles.keyButtonLabel,
                     color = if (text == ".") AppColors.primary else AppColors.contentPrimary
                 )
             }

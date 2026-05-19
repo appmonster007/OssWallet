@@ -86,6 +86,8 @@ class SettingsDataStore(private val context: Context) {
         val RECENT_ACTIVITIES_BREAKDOWN_KEY = booleanPreferencesKey("recent_activities_breakdown")
         val CURRENCY_PROVIDER_KEY = stringPreferencesKey("currency_provider")
         val USER_NAME_KEY = stringPreferencesKey("user_name")
+        val USE_SYSTEM_FONT_KEY = booleanPreferencesKey("use_system_font")
+        val SELECTED_FONT_KEY = stringPreferencesKey("selected_font")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
@@ -151,6 +153,17 @@ class SettingsDataStore(private val context: Context) {
 
     val userName: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[USER_NAME_KEY] ?: ""
+    }
+
+    val useSystemFont: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[USE_SYSTEM_FONT_KEY] ?: false
+    }
+
+    // Migrates the legacy useSystemFont boolean: if no explicit font choice has been saved yet,
+    // users who had useSystemFont=true keep "SYSTEM"; everyone else gets the app default "MANROPE".
+    val selectedFont: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[SELECTED_FONT_KEY]
+            ?: if (preferences[USE_SYSTEM_FONT_KEY] == true) "SYSTEM" else "MANROPE"
     }
 
     val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
@@ -290,6 +303,18 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveUserName(name: String) {
         context.dataStore.edit { preferences ->
             preferences[USER_NAME_KEY] = name
+        }
+    }
+
+    suspend fun saveUseSystemFont(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[USE_SYSTEM_FONT_KEY] = enabled
+        }
+    }
+
+    suspend fun saveSelectedFont(fontName: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SELECTED_FONT_KEY] = fontName
         }
     }
 

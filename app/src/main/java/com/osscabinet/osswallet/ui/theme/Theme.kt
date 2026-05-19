@@ -138,6 +138,7 @@ object AeonTheme {
 fun OssWalletTheme(
     theme: String = "System",
     dynamicColor: Boolean = true,
+    fontName: String = AppFont.DEFAULT.name,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (theme) {
@@ -183,7 +184,7 @@ fun OssWalletTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = createTypography(AppFont.fromName(fontName)),
             content = content
         )
     }

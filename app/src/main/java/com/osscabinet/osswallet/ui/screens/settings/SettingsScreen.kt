@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppFont
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +57,7 @@ fun SettingsScreen(
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
@@ -72,6 +74,7 @@ fun SettingsScreen(
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showProviderDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showFontDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var navTriggered by remember { mutableStateOf(false) }
@@ -365,6 +368,39 @@ fun SettingsScreen(
         )
     }
 
+    if (showFontDialog) {
+        AlertDialog(
+            onDismissRequest = { showFontDialog = false },
+            title = { Text("App Font") },
+            text = {
+                Column {
+                    AppFont.entries.forEach { font ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setSelectedFont(font.name)
+                                    showFontDialog = false
+                                }
+                                .padding(AeonTheme.dimensions.cardPadding),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.FontDownload, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                            Text(font.displayName, modifier = Modifier.weight(1f), style = AppTextStyles.listItemTitle)
+                            if (font.name == selectedFont) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFontDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
     if (showThemeDialog) {
         val themes = listOf("System", "Light", "Dark", "Amoled")
         AlertDialog(
@@ -440,6 +476,13 @@ fun SettingsScreen(
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "App Font",
+                    subtitle = AppFont.fromName(selectedFont).displayName,
+                    icon = Icons.Rounded.FontDownload,
+                    onClick = { showFontDialog = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(

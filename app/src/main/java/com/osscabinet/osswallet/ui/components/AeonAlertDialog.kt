@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Standardized Delete Confirmation Dialog.
@@ -26,7 +27,7 @@ fun AeonConfirmDeleteDialog(
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(title, fontWeight = FontWeight.Bold) },
+            title = { Text(title, style = AppTextStyles.heroAmount) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(message)
@@ -61,7 +62,7 @@ fun AeonInfoDialog(
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(title, fontWeight = FontWeight.Bold) },
+            title = { Text(title, style = AppTextStyles.heroAmount) },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = onDismiss) {

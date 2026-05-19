@@ -189,12 +189,12 @@ private fun CalculatorDisplay(
                 text = displayResult,
                 style = AppTextStyles.heroAmount.copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = (-1).sp
+                    letterSpacing = (-1).sp,
+                    fontSize = 42.sp
                 ),
                 color = if (isError) AppColors.error else AppColors.contentPrimary,
                 textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth(),
-                fontSize = 42.sp
+                modifier = Modifier.fillMaxWidth()
             )
             
             // Ghost Result
@@ -321,10 +321,10 @@ private fun CalculatorKey(
                     text = label,
                     style = AppTextStyles.screenTitle.copy(
                         fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.SemiBold,
-                        letterSpacing = if (label.length > 1) 0.sp else 0.5.sp
+                        letterSpacing = if (label.length > 1) 0.sp else 0.5.sp,
+                        fontSize = if (label.length > 1) 16.sp else 24.sp
                     ),
-                    color = textColor,
-                    fontSize = if (label.length > 1) 16.sp else 24.sp
+                    color = textColor
                 )
             }
         }
@@ -362,7 +362,7 @@ private fun CalculatorHistorySheet(
                 )
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
-                        Text("Clear All", color = AppColors.error, fontWeight = FontWeight.Bold)
+                        Text("Clear All", style = AppTextStyles.formSwitchLabel.copy(fontWeight = FontWeight.Bold, color = AppColors.error))
                     }
                 }
             }
@@ -405,7 +405,6 @@ private fun CalculatorHistorySheet(
                                 Text(
                                     "= ${item.result}",
                                     style = AppTextStyles.screenTitle,
-                                    fontWeight = FontWeight.Bold,
                                     color = AppColors.primary
                                 )
                             }

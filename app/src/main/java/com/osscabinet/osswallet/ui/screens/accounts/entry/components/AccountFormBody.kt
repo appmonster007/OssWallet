@@ -72,10 +72,7 @@ fun AccountFormBody(
                     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
                         Text(
                             text = "STRUCTURE TYPE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.5.sp
-                            ),
+                            style = AppTextStyles.sectionOverline,
                             color = AppColors.contentSecondary.copy(alpha = 0.5f)
                         )
                         

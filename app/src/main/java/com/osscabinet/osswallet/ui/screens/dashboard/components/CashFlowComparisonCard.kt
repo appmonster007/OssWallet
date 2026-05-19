@@ -132,7 +132,7 @@ fun CashFlowComparisonCard(
                 val totalXSlots = maxXBuckets + 1
                 val xAxisLabels: List<String?> = listOf(null) + renderData.periodLabels
 
-                val markers = buildMarkersList(renderData, config, maxXBuckets)
+                val markers = buildMarkersList(renderData, config)
 
                 AeonLineChart(
                     series = series,
@@ -307,26 +307,34 @@ private fun buildSeriesList(
 
 private fun buildMarkersList(
     renderData: CardRenderData.CashFlowComparison,
-    config: CashFlowComparisonCardConfig,
-    maxXBuckets: Int
+    config: CashFlowComparisonCardConfig
 ): List<AeonChartMarker> {
     val markers = mutableListOf<AeonChartMarker>()
 
-    // Show a period-end marker when this series ends before the longest one,
-    // OR when it IS the longest but current period hasn't caught up yet.
-    fun addIfNeeded(show: Boolean, totalBuckets: Int, label: String, color: Color) {
-        if (!show || totalBuckets <= 0) return
-        val isShortestVisible = totalBuckets < maxXBuckets
-        val isLongestAndCurrentIsAhead = totalBuckets == maxXBuckets && maxXBuckets > renderData.currentTotalBuckets
-        if (isShortestVisible || isLongestAndCurrentIsAhead) {
-            markers.add(AeonChartMarker(totalBuckets.toFloat(), label, color, isDashed = true))
-        }
+    // Show a period-end marker for each enabled series.
+    // For the current period, we mark 'today' (where the line terminates).
+    // For previous/last-year periods, we mark the end of their respective periods.
+    fun addMarker(show: Boolean, position: Int, label: String, color: Color) {
+        if (!show || position <= 0) return
+        markers.add(AeonChartMarker(position.toFloat(), label, color, isDashed = true))
     }
 
-    // showEndDot on the current series already marks "today" — no separate marker needed
-    addIfNeeded(config.showCurrentPeriod, renderData.currentTotalBuckets, "Current", CurrentPeriodColor)
-    addIfNeeded(config.showPreviousPeriod, renderData.previousTotalBuckets, "Prev", PreviousPeriodColor)
-    addIfNeeded(config.showSamePeriodLastYear, renderData.lastYearTotalBuckets, "LY", LastYearColor)
+    val currentMarkerPos = if (renderData.currentSeries.points.isNotEmpty()) {
+        renderData.currentSeries.points.size
+    } else {
+        // If the period is entirely in the future, we have no 'today' point to mark yet.
+        0
+    }
+
+    addMarker(config.showCurrentPeriod, currentMarkerPos, "Current", CurrentPeriodColor)
+    
+    // Only show Prev/LY markers if those periods have actually started/occurred.
+    if (renderData.previousSeries.points.isNotEmpty()) {
+        addMarker(config.showPreviousPeriod, renderData.previousSeries.points.size, "Prev", PreviousPeriodColor)
+    }
+    if (renderData.lastYearSeries.points.isNotEmpty()) {
+        addMarker(config.showSamePeriodLastYear, renderData.lastYearSeries.points.size, "LY", LastYearColor)
+    }
 
     return markers
 }

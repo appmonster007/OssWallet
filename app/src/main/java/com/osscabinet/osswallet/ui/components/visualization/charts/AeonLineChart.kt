@@ -229,14 +229,14 @@ fun AeonLineChart(
                         s.dataPoints.forEachIndexed { index, _ ->
                             val x = indexToX(index, s.dataPoints.size)
                             val y = valueToY(intervals[index].second)
-                            val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
+                            val animY = zeroY + (y - zeroY) * animationProgress.value
                             if (index == 0) confidencePath.moveTo(x, animY) else confidencePath.lineTo(x, animY)
                         }
                         // Bottom boundary (reverse)
                         for (index in (s.dataPoints.size - 1) downTo 0) {
                             val x = indexToX(index, s.dataPoints.size)
                             val y = valueToY(intervals[index].first)
-                            val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
+                            val animY = zeroY + (y - zeroY) * animationProgress.value
                             confidencePath.lineTo(x, animY)
                         }
                         confidencePath.close()
@@ -255,7 +255,7 @@ fun AeonLineChart(
                 pts.forEachIndexed { index, point ->
                     val x = indexToX(index, n)
                     val y = valueToY(point.y)
-                    val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
+                    val animY = zeroY + (y - zeroY) * animationProgress.value
 
                     if (index == 0) {
                         linePath.moveTo(x, animY)
@@ -266,7 +266,7 @@ fun AeonLineChart(
                         val prevX = indexToX(index - 1, n)
                         val prevY = run {
                             val py = valueToY(pts[index - 1].y)
-                            topPadding + chartHeight - (topPadding + chartHeight - py) * animationProgress.value
+                            zeroY + (py - zeroY) * animationProgress.value
                         }
                         val dx = x - prevX
                         val cp1x = prevX + dx * 0.3f

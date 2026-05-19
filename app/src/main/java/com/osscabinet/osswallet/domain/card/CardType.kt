@@ -104,6 +104,12 @@ enum class CardType(
         "Category Spending Trend",
         "Period-wise stacked spending by category, filtered by nature (Must / Need / Want).",
         category = CardCategory.ANALYTICS
+    ),
+    TAG_UPSET_PLOT(
+        "tag_upset_plot",
+        "Tag UpSet Plot",
+        "Analyze intersections of tags and their total amounts.",
+        category = CardCategory.ANALYTICS
     );
 
     /** Returns true when this card type can be added by the user on [screen]. */

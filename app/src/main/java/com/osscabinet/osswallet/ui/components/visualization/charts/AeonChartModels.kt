@@ -52,6 +52,26 @@ data class AeonPieChartSlice(
 )
 
 /**
+ * Data model for UpSet plots.
+ */
+data class AeonUpSetSet(
+    val name: String,
+    val total: BigDecimal,
+    val color: Color = Color.Unspecified
+)
+
+data class AeonUpSetIntersection(
+    val setIndices: Set<Int>, // Indices into the list of AeonUpSetSet
+    val value: BigDecimal,
+    val count: Int
+)
+
+data class AeonUpSetData(
+    val sets: List<AeonUpSetSet>,
+    val intersections: List<AeonUpSetIntersection>
+)
+
+/**
  * Single segment of a bar (for simple or stacked charts).
  */
 data class AeonBarChartBar(

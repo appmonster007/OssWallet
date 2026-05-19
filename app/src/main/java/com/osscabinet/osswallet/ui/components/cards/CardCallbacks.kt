@@ -173,4 +173,14 @@ sealed class CardCallbacks {
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
+
+    /**
+     * Callbacks for tag upset plot card
+     */
+    data class TagUpSetPlot(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig) -> Unit = {},
+        val onDelete: () -> Unit = {},
+        val onRecordsClick: (TransactionFilter) -> Unit = {},
+        val onSaveFilterClick: (TransactionFilter) -> Unit = {}
+    ) : CardCallbacks()
 }

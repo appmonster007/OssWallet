@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,10 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -27,7 +24,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -86,7 +84,7 @@ fun NetWorthCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            NetWorthDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
+            NetWorthSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         Column(
@@ -245,116 +243,54 @@ private fun FlowBadge(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NetWorthDisplaySettingsDialog(
+private fun NetWorthSettingsSheet(
     config: NetWorthCardConfig,
     callbacks: CardCallbacks.NetWorth,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
+    CardSettingsSheet(title = "Net Worth", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Font Size") {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
+                    SegmentedButton(
+                        selected = config.fontSize == size,
+                        onClick = { callbacks.onFontSizeChange(config.cardId, size) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
+                        label = {
+                            Text(when (size) {
+                                "Small" -> "S"
+                                "Medium" -> "M"
+                                "Large" -> "L"
+                                else -> "XL"
+                            })
+                        }
+                    )
+                }
+            }
+        }
+        CardSettingsSection("Display") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Show Comparison", style = AppTextStyles.transactionTitle)
+                    Text(
+                        "Show change from previous period",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
+                }
+                Switch(
+                    checked = config.showComparison,
+                    onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Text("Net Worth Display", style = AppTextStyles.cardTitle)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Surface(
-                    color = AppColors.cardSurface,
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, AppColors.border)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "FONT SIZE",
-                            style = AppTextStyles.transactionSwipeAction.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = AppColors.primary
-                        )
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
-                                SegmentedButton(
-                                    selected = config.fontSize == size,
-                                    onClick = { callbacks.onFontSizeChange(config.cardId, size) },
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
-                                    label = {
-                                        Text(when (size) {
-                                            "Small" -> "S"
-                                            "Medium" -> "M"
-                                            "Large" -> "L"
-                                            else -> "XL"
-                                        })
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Surface(
-                    color = AppColors.cardSurface,
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, AppColors.border)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "SHOW COMPARISON",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                ),
-                                color = AppColors.primary
-                            )
-                            Text(
-                                "Show change from previous period",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary
-                            )
-                        }
-                        Switch(
-                            checked = config.showComparison,
-                            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
-                        )
-                    }
-                }
-            }
-        },
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+    }
 }
 
 @Preview(showBackground = true, name = "Net Worth Card - Normal")

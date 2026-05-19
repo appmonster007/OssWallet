@@ -3,8 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +20,8 @@ import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -45,7 +47,7 @@ fun LoansCard(
         headerModifier = headerModifier,
         filterEnabled = false,
         displaySettings = { onDismiss ->
-            LoansDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
+            LoansSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (items.isEmpty()) {
@@ -68,47 +70,30 @@ fun LoansCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoansDisplaySettingsDialog(
+private fun LoansSettingsSheet(
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = { callbacks.onDelete(); onDismiss() },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
-        title = { Text("Loans Display", style = AppTextStyles.cardTitle) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("SHOW TYPE", style = AppTextStyles.transactionSwipeAction.copy(fontWeight = FontWeight.Bold), color = AppColors.primary)
-                listOf("ALL", "LENT", "BORROWED").forEach { type ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(type.lowercase().replaceFirstChar { it.uppercase() }, style = AppTextStyles.transactionTitle)
-                        RadioButton(
-                            selected = config.showType == type,
-                            onClick = { callbacks.onUpdate(config.copy(showType = type)) }
-                        )
-                    }
+    CardSettingsSheet(title = "Loans", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Show Type") {
+            listOf("ALL", "LENT", "BORROWED").forEach { type ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(type.lowercase().replaceFirstChar { it.uppercase() }, style = AppTextStyles.transactionTitle)
+                    RadioButton(
+                        selected = config.showType == type,
+                        onClick = { callbacks.onUpdate(config.copy(showType = type)) }
+                    )
                 }
             }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+    }
 }
 
 @Composable

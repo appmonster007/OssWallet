@@ -3,8 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Savings
@@ -23,6 +23,8 @@ import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -46,7 +48,7 @@ fun BudgetsCard(
         headerModifier = headerModifier,
         filterEnabled = false,
         displaySettings = { onDismiss ->
-            BudgetsDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
+            BudgetsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (items.isEmpty()) {
@@ -69,27 +71,15 @@ fun BudgetsCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BudgetsDisplaySettingsDialog(
+private fun BudgetsSettingsSheet(
     config: BudgetsCardConfig,
     callbacks: CardCallbacks.Budgets,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = { callbacks.onDelete(); onDismiss() },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
-        title = { Text("Budgets Display", style = AppTextStyles.cardTitle) },
-        text = {
+    CardSettingsSheet(title = "Budgets", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -101,10 +91,8 @@ private fun BudgetsDisplaySettingsDialog(
                     onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
                 )
             }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+    }
 }
 
 @Composable

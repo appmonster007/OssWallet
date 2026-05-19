@@ -4,9 +4,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +68,7 @@ fun CashFlowCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CashFlowDisplaySettingsDialog(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
+            CashFlowSettingsSheet(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         Row(
@@ -136,50 +138,23 @@ fun CashFlowCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CashFlowDisplaySettingsDialog(
+private fun CashFlowSettingsSheet(
     config: CashFlowCardConfig,
     baseCurrency: String,
     callbacks: CardCallbacks.CashFlow,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Text("Cash Flow Display", style = AppTextStyles.cardTitle)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AeonBaseConversionToggle(
-                    baseCurrency = baseCurrency,
-                    showBaseConversion = config.showBaseConversion,
-                    onShowBaseConversionChange = { show -> callbacks.onShowBaseConversionChange(config.cardId, show) }
-                )
-            }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+    CardSettingsSheet(title = "Cash Flow", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            AeonBaseConversionToggle(
+                baseCurrency = baseCurrency,
+                showBaseConversion = config.showBaseConversion,
+                onShowBaseConversionChange = { callbacks.onShowBaseConversionChange(config.cardId, it) }
+            )
+        }
+    }
 }
 
 @Composable

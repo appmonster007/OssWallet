@@ -28,8 +28,11 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import androidx.compose.material3.ExperimentalMaterial3Api
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
@@ -74,7 +77,7 @@ fun CategorySpendingTrendCard(
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategorySpendingDisplaySettingsDialog(
+            CategorySpendingSettingsSheet(
                 config = config,
                 callbacks = callbacks,
                 onDismiss = onDismiss
@@ -222,39 +225,28 @@ private fun NatureChip(nature: CategoryNature) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategorySpendingDisplaySettingsDialog(
+private fun CategorySpendingSettingsSheet(
     config: CategorySpendingTrendCardConfig,
     callbacks: CardCallbacks.CategorySpendingTrend,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Display Settings", style = AppTextStyles.cardSectionTitle) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Show Grid Lines", style = AppTextStyles.transactionSwipeAction)
-                    Switch(
-                        checked = config.showGridLines,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        dismissButton = {
-            TextButton(onClick = { callbacks.onDelete(); onDismiss() }) {
-                Text("Delete Card", color = AppColors.error)
+    CardSettingsSheet(title = "Category Spending", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Show Grid Lines", style = AppTextStyles.transactionSwipeAction)
+                Switch(
+                    checked = config.showGridLines,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                )
             }
         }
-    )
+    }
 }
 
 private fun buildChartGroups(

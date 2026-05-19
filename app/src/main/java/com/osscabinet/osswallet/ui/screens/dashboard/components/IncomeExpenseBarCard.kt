@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,6 +20,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -66,7 +68,7 @@ fun IncomeExpenseBarCard(
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            IncomeExpenseBarDisplaySettingsDialog(
+            IncomeExpenseBarSettingsSheet(
                 config = config,
                 callbacks = callbacks,
                 onDismiss = onDismiss
@@ -209,53 +211,26 @@ private fun IncomeExpenseLegendItem(color: Color, label: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IncomeExpenseBarDisplaySettingsDialog(
+private fun IncomeExpenseBarSettingsSheet(
     config: IncomeExpenseBarCardConfig,
     callbacks: CardCallbacks.IncomeExpenseBar,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
+    CardSettingsSheet(title = "Income & Expense", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
+                Text("Show Grid Lines", style = AppTextStyles.caption)
+                Switch(
+                    checked = config.showGridLines,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Text("Income & Expense Chart", style = AppTextStyles.cardTitle)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Show Grid Lines", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.showGridLines,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-                    )
-                }
-            }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+    }
 }

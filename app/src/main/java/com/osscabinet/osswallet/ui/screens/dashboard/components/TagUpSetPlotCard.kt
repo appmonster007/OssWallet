@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material.icons.rounded.Add
@@ -24,6 +23,8 @@ import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetData
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetIntersection
@@ -76,10 +77,7 @@ fun TagUpSetPlotCard(
                 onUpdate = { newConfig ->
                     callbacks.onUpdate(newConfig)
                 },
-                onDelete = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
+                onDelete = callbacks.onDelete,
                 onDismiss = onDismiss
             )
         }
@@ -217,201 +215,127 @@ private fun TagUpSetSettingsSheet(
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = AppColors.cardSurfaceProminent,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
+    CardSettingsSheet(title = "Tag Analytics", onDismiss = onDismiss, onDelete = onDelete) {
+        CardSettingsSection("Display") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Tag Analytics",
-                    style = AppTextStyles.heroAmount
-                )
-                IconButton(
-                    onClick = { onDelete(); onDismiss() },
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete card")
-                }
-            }
-
-            // Display controls
-            Surface(
-                color = AppColors.insetSurface.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Maximum visible tags", style = AppTextStyles.transactionTitle)
                     Text(
-                        "DISPLAY",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp,
-                            fontSize = 11.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        "Showing top ${config.maxTags} tags",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
                     )
-                    
-                    // Max Tags Control
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Maximum visible tags", style = AppTextStyles.transactionTitle)
-                            Text(
-                                "Showing top ${config.maxTags} tags",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = AppColors.sheetSurface,
-                            modifier = Modifier.height(40.dp)
+                }
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = AppColors.sheetSurface,
+                    modifier = Modifier.height(40.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
+                            modifier = Modifier.size(40.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
-                                }
-                                
-                                Text(
-                                    text = "${config.maxTags}",
-                                    style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                                
-                                IconButton(
-                                    onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
-                                }
-                            }
+                            Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
                         }
-                    }
-
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.3f)
-                    )
-
-                    // Max Intersections Control
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Maximum intersections", style = AppTextStyles.transactionTitle)
-                            Text(
-                                "Showing top ${config.maxIntersections} sets",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = AppColors.sheetSurface,
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
-                                }
-                                
-                                Text(
-                                    text = "${config.maxIntersections}",
-                                    style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                                
-                                IconButton(
-                                    onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
-                                }
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.3f)
-                    )
-
-                    // Dynamic Filtering Selection
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "DYNAMIC FILTERING",
-                            style = AppTextStyles.transactionSwipeAction.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp,
-                                fontSize = 11.sp
-                            ),
-                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            text = "${config.maxTags}",
+                            style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
-
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            UpSetDynamicFilteringMode.entries.forEachIndexed { index, mode ->
-                                SegmentedButton(
-                                    selected = config.dynamicFilteringMode == mode,
-                                    onClick = { onUpdate(config.copy(dynamicFilteringMode = mode)) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = UpSetDynamicFilteringMode.entries.size
-                                    ),
-                                    icon = {},
-                                    label = {
-                                        Icon(
-                                            imageVector = when (mode) {
-                                                UpSetDynamicFilteringMode.OFF -> Icons.Default.Block
-                                                UpSetDynamicFilteringMode.HORIZONTAL -> Icons.Default.ViewColumn
-                                                UpSetDynamicFilteringMode.VERTICAL -> Icons.Default.ViewStream
-                                            },
-                                            contentDescription = when (mode) {
-                                                UpSetDynamicFilteringMode.OFF -> "Filtering Off"
-                                                UpSetDynamicFilteringMode.HORIZONTAL -> "Row Filtering"
-                                                UpSetDynamicFilteringMode.VERTICAL -> "Column Filtering"
-                                            },
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                )
-                            }
+                        IconButton(
+                            onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
                         }
                     }
                 }
             }
-
-            Button(
-                onClick = onDismiss,
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("Done") }
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Maximum intersections", style = AppTextStyles.transactionTitle)
+                    Text(
+                        "Showing top ${config.maxIntersections} sets",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = AppColors.sheetSurface,
+                    modifier = Modifier.height(40.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                        }
+                        Text(
+                            text = "${config.maxIntersections}",
+                            style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                        IconButton(
+                            onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                        }
+                    }
+                }
+            }
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "DYNAMIC FILTERING",
+                    style = AppTextStyles.transactionSwipeAction.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp,
+                        fontSize = 11.sp
+                    ),
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    UpSetDynamicFilteringMode.entries.forEachIndexed { index, mode ->
+                        SegmentedButton(
+                            selected = config.dynamicFilteringMode == mode,
+                            onClick = { onUpdate(config.copy(dynamicFilteringMode = mode)) },
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = UpSetDynamicFilteringMode.entries.size
+                            ),
+                            icon = {},
+                            label = {
+                                Icon(
+                                    imageVector = when (mode) {
+                                        UpSetDynamicFilteringMode.OFF -> Icons.Default.Block
+                                        UpSetDynamicFilteringMode.HORIZONTAL -> Icons.Default.ViewColumn
+                                        UpSetDynamicFilteringMode.VERTICAL -> Icons.Default.ViewStream
+                                    },
+                                    contentDescription = when (mode) {
+                                        UpSetDynamicFilteringMode.OFF -> "Filtering Off"
+                                        UpSetDynamicFilteringMode.HORIZONTAL -> "Row Filtering"
+                                        UpSetDynamicFilteringMode.VERTICAL -> "Column Filtering"
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

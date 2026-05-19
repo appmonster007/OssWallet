@@ -28,12 +28,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.util.*
-import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -282,7 +284,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(50),
-                                color = if (isBase) AppColors.primary else Color.White,
+                                color = if (isBase) AppColors.primary else AppColors.inputSurface,
                                 modifier = Modifier.size(40.dp),
                                 border = if (!isBase) BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)) else null,
                                 tonalElevation = if (isBase) 2.dp else 1.dp
@@ -417,7 +419,7 @@ fun ConverterTab(
                 onCurrencyChange = { fromCurrency = it },
                 isSource = true,
                 modifier = Modifier
-                    .background(Color.White, RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
+                    .background(AppColors.inputSurface, RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
                     .border(BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
                     .padding(AeonTheme.dimensions.spacingLg)
             )
@@ -612,7 +614,7 @@ private fun ConversionUnit(
                 Surface(
                     onClick = { expanded = true },
                     modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
-                    color = Color.White,
+                    color = AppColors.panelSurface,
                     shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                     border = BorderStroke(1.5.dp, if (isSource) AppColors.divider.copy(alpha = 0.6f) else AppColors.primary.copy(alpha = 0.4f)),
                     tonalElevation = 2.dp
@@ -692,9 +694,6 @@ private fun ConversionUnit(
     }
 }
 
-
-
-
 @Composable
 fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -704,7 +703,7 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        color = if (isPressed) AppColors.primary.copy(alpha = 0.1f) else Color.White,
+        color = if (isPressed) AppColors.primary.copy(alpha = 0.1f) else AppColors.inputSurface,
         contentColor = AppColors.contentPrimary,
         border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.2f)),
         tonalElevation = if (isPressed) 2.dp else 0.dp,
@@ -730,5 +729,80 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
     }
 }
 
+// --- PREVIEWS ---
 
+private val mockRates = listOf(
+    CurrencyRateEntity("USD", "USD", 1.0, 0, 0),
+    CurrencyRateEntity("EUR", "USD", 0.92, 0, 0),
+    CurrencyRateEntity("GBP", "USD", 0.79, 0, 0),
+    CurrencyRateEntity("JPY", "USD", 150.5, 0, 0),
+    CurrencyRateEntity("INR", "USD", 83.0, 0, 0),
+    CurrencyRateEntity("AUD", "USD", 1.52, 0, 0),
+    CurrencyRateEntity("CAD", "USD", 1.35, 0, 0)
+)
 
+private val mockUiState = CurrencyUiState(
+    rates = mockRates,
+    baseCurrency = "USD",
+    lastUpdated = System.currentTimeMillis()
+)
+
+@Preview(showBackground = true, name = "Rates Tab - Light")
+@Composable
+fun PreviewRatesTabLight() {
+    OssWalletTheme(theme = "Light") {
+        Surface(color = AppColors.screenBackground) {
+            RatesTab(mockUiState)
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Rates Tab - Dark")
+@Composable
+fun PreviewRatesTabDark() {
+    OssWalletTheme(theme = "Dark") {
+        Surface(color = AppColors.screenBackground) {
+            RatesTab(mockUiState)
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Rates Tab - Amoled")
+@Composable
+fun PreviewRatesTabAmoled() {
+    OssWalletTheme(theme = "Amoled") {
+        Surface(color = AppColors.screenBackground) {
+            RatesTab(mockUiState)
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Converter Tab - Light")
+@Composable
+fun PreviewConverterTabLight() {
+    OssWalletTheme(theme = "Light") {
+        Surface(color = AppColors.screenBackground) {
+            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Converter Tab - Dark")
+@Composable
+fun PreviewConverterTabDark() {
+    OssWalletTheme(theme = "Dark") {
+        Surface(color = AppColors.screenBackground) {
+            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Converter Tab - Amoled")
+@Composable
+fun PreviewConverterTabAmoled() {
+    OssWalletTheme(theme = "Amoled") {
+        Surface(color = AppColors.screenBackground) {
+            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet
 
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -92,6 +93,10 @@ class MainActivity : FragmentActivity() {
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                     val scope = rememberCoroutineScope()
                     var isDrawerNavigating by remember { mutableStateOf(false) }
+
+                    BackHandler(enabled = drawerState.isOpen) {
+                        scope.launch { drawerState.close() }
+                    }
                     
                     val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
                     val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()

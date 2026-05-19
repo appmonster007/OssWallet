@@ -36,17 +36,7 @@ class CategorySpendingTrendCardComputer :
         config: CategorySpendingTrendCardConfig
     ): CardRenderData.CategorySpendingTrend {
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        val (currentStart, currentEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
-
-        if (currentStart == null || currentEnd == null) {
-            return CardRenderData.CategorySpendingTrend(
-                config = config,
-                buckets = emptyList(),
-                granularity = CashFlowComparisonGranularity.DAY,
-                activeCategories = emptyList(),
-                baseCurrency = input.baseCurrency
-            )
-        }
+        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
         // Build category nature lookup from full categories list
         val categoryNatureById = input.categories.associate { it.id to it.nature }

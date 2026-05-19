@@ -144,6 +144,34 @@ object TimelineService {
     }
 
     /**
+     * Resolves a timeline range into concrete start/end timestamps.
+     * If the range is AllTime, it derives boundaries from the transaction history.
+     */
+    fun resolveBoundRange(
+        timelineRange: TimelineRange,
+        transactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
+        referenceTime: Long? = null
+    ): Pair<Long, Long> {
+        val (start, end) = getDateRange(timelineRange, referenceTime)
+        if (start != null && end != null) return Pair(start, end)
+
+        val now = referenceTime ?: System.currentTimeMillis()
+        if (transactions.isEmpty()) {
+            // Default to today's full range if no data
+            return getRangeForThis(ThisPeriodType.TODAY, referenceTime = now)
+        }
+
+        val minTs = transactions.minOf { it.timestamp }
+        val maxTs = maxOf(transactions.maxOf { it.timestamp }, now)
+
+        val zone = systemZoneId
+        val resolvedStart = Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        val resolvedEnd = Instant.ofEpochMilli(maxTs).atZone(zone).toLocalDate().atTime(23, 59, 59, 999).atZone(zone).toInstant().toEpochMilli()
+
+        return Pair(resolvedStart, resolvedEnd)
+    }
+
+    /**
      * Gets the previous date range for a given timeline range.
      * Legacy method used for comparison metrics.
      */

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
@@ -100,6 +102,12 @@ fun TransactionFilterPill(
         // Actual pixel travel for mapping drag → morph fraction.
         val dragTravelPx = (collapsedTopPx - expandedTopPx).coerceAtLeast(1f)
 
+        // Color and content transitions based on morph state to match UnifiedPillNavigation
+        val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
+        val contentColor = lerp(AppColors.onSelectionContainer, AppColors.primary, f)
+        val inactiveColor = lerp(AppColors.onSelectionContainer.copy(alpha = 0.4f), AppColors.contentSecondary.copy(alpha = 0.3f), f)
+        val selectorBg = lerp(AppColors.primaryContainer, AppColors.cardSurface, f)
+
         fun snapByDelta(rawPixelDelta: Float) {
             // Upward drag (negative delta) opens; downward drag closes.
             val newF = (morph.value - rawPixelDelta / dragTravelPx).coerceIn(0f, 1f)
@@ -142,7 +150,7 @@ fun TransactionFilterPill(
 
         Surface(
             shape = RoundedCornerShape(corner),
-            color = AppColors.cardSurfaceProminent,
+            color = surfaceColor,
             shadowElevation = shadowElev,
             modifier = Modifier
                 .padding(horizontal = horizMargin)
@@ -177,7 +185,10 @@ fun TransactionFilterPill(
                 savedFilters = savedFilters,
                 onFilterEvent = onFilterEvent,
                 onSaveFilterClick = onSaveFilterClick,
-                pillHeight = pillH
+                pillHeight = pillH,
+                containerColor = selectorBg,
+                contentColor = contentColor,
+                inactiveContentColor = inactiveColor
             )
         }
 
@@ -221,7 +232,10 @@ private fun FilterDialogContent(
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
-    pillHeight: Dp
+    pillHeight: Dp,
+    containerColor: Color,
+    contentColor: Color,
+    inactiveContentColor: Color
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Center the timeline selector vertically within the pill height for equal bezels.
@@ -237,7 +251,10 @@ private fun FilterDialogContent(
                 swipeEntireComponent = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp) // Thin horizontal bezel
+                    .padding(horizontal = 6.dp), // Thin horizontal bezel
+                containerColor = containerColor,
+                contentColor = contentColor,
+                inactiveContentColor = inactiveContentColor
             )
         }
 

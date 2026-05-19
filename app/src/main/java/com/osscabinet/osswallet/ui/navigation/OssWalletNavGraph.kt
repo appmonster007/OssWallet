@@ -439,14 +439,6 @@ fun OssWalletNavGraph(
                         transactionViewModel.setSplitTransactionId(id)
                         navController.navigate(Screen.TransactionEntry.createRoute())
                     },
-                    onAddClick = { type, templateId ->
-                        if (templateId != null) {
-                            transactionViewModel.setTemplatePrefill(templateId)
-                            navController.navigate(Screen.TransactionEntry.createRoute())
-                        } else {
-                            navController.navigate(Screen.TransactionEntry.createRoute(type = type))
-                        }
-                    },
                     cardComputerRegistry = appContainer.cardComputerRegistry
                 )
             }

@@ -18,21 +18,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -48,6 +43,8 @@ import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -88,7 +85,7 @@ fun AccountsCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            AccountsDisplaySettingsDialog(config = config, callbacks = callbacks, onDismiss = onDismiss)
+            AccountsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (accounts.isEmpty()) {
@@ -168,77 +165,45 @@ fun AccountsCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountsDisplaySettingsDialog(
+private fun AccountsSettingsSheet(
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Accounts Display", style = AppTextStyles.cardTitle)
-                IconButton(
-                    onClick = {
-                        callbacks.onManageClick()
-                        onDismiss()
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = AppColors.accentContainer.copy(alpha = 0.3f),
-                        contentColor = AppColors.primary
-                    )
-                ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Manage Accounts")
-                }
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AeonLayoutToggle(
-                    layout = config.layout,
-                    onLayoutChange = { newLayout -> callbacks.onLayoutChange(config.cardId, newLayout) }
-                )
-                if (config.layout == "grid") {
-                    AeonGridColumnsSettings(
-                        gridColumns = config.gridColumns,
-                        onGridColumnsChange = { columns -> callbacks.onGridColumnsChange(config.cardId, columns) }
-                    )
-                }
-                AeonSettingsToggle(
-                    label = "SHOW ADD ACCOUNT CARD",
-                    checked = config.showAddAccountCard,
-                    onCheckedChange = { show -> callbacks.onShowAddAccountCardChange(config.cardId, show) }
+    CardSettingsSheet(title = "Accounts", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            AeonLayoutToggle(
+                layout = config.layout,
+                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
+            )
+            if (config.layout == "grid") {
+                AeonGridColumnsSettings(
+                    gridColumns = config.gridColumns,
+                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
                 )
             }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+            AeonSettingsToggle(
+                label = "SHOW ADD ACCOUNT CARD",
+                checked = config.showAddAccountCard,
+                onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) }
+            )
+        }
+        OutlinedButton(
+            onClick = { callbacks.onManageClick(); onDismiss() },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Manage Accounts")
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

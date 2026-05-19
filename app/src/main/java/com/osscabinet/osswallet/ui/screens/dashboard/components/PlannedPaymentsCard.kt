@@ -13,13 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,9 +24,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +42,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
@@ -133,156 +130,71 @@ private fun PlannedPaymentsSettingsSheet(
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = AppColors.cardSurfaceProminent,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
+    CardSettingsSheet(title = "Planned Payments", onDismiss = onDismiss, onDelete = onDelete) {
+        CardSettingsSection("Show") {
+            val viewModes = listOf(
+                PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
+                PlannedPaymentsViewMode.BOTH to "Overdue + Upcoming",
+                PlannedPaymentsViewMode.FUTURE_ONLY to "Future only (1 per schedule)"
+            )
+            viewModes.forEach { (mode, label) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(label, style = AppTextStyles.transactionTitle)
+                    RadioButton(
+                        selected = config.viewMode == mode,
+                        onClick = { onUpdate(config.copy(viewMode = mode)) }
+                    )
+                }
+            }
+        }
+        CardSettingsSection("Display") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Planned Payments",
-                    style = AppTextStyles.heroAmount
-                )
-                IconButton(
-                    onClick = { onDelete(); onDismiss() },
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
-                ) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete card")
-                }
-            }
-
-            // View mode selector
-            Surface(
-                color = AppColors.insetSurface.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Look-ahead window", style = AppTextStyles.transactionTitle)
                     Text(
-                        "SHOW",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp,
-                            fontSize = 11.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        "${config.daysAhead} days",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
                     )
-                    val viewModes = listOf(
-                        PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
-                        PlannedPaymentsViewMode.BOTH to "Overdue + Upcoming",
-                        PlannedPaymentsViewMode.FUTURE_ONLY to "Future only (1 per schedule)"
-                    )
-                    viewModes.forEach { (mode, label) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(label, style = AppTextStyles.transactionTitle)
-                            RadioButton(
-                                selected = config.viewMode == mode,
-                                onClick = { onUpdate(config.copy(viewMode = mode)) }
-                            )
-                        }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(7, 14, 30, 60).forEach { days ->
+                        FilterChip(
+                            selected = config.daysAhead == days,
+                            onClick = { onUpdate(config.copy(daysAhead = days)) },
+                            label = { Text("${days}d", style = AppTextStyles.transactionSwipeAction) }
+                        )
                     }
                 }
             }
-
-            // Days-ahead and max-items controls
-            Surface(
-                color = AppColors.insetSurface.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        "DISPLAY",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp,
-                            fontSize = 11.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Look-ahead window", style = AppTextStyles.transactionTitle)
-                            Text(
-                                "${config.daysAhead} days",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(7, 14, 30, 60).forEach { days ->
-                                FilterChip(
-                                    selected = config.daysAhead == days,
-                                    onClick = { onUpdate(config.copy(daysAhead = days)) },
-                                    label = {
-                                        Text(
-                                            "${days}d",
-                                            style = AppTextStyles.transactionSwipeAction
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.3f)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Max items", style = AppTextStyles.transactionTitle)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(3, 5, 7, 10).forEach { n ->
-                                FilterChip(
-                                    selected = config.maxItems == n,
-                                    onClick = { onUpdate(config.copy(maxItems = n)) },
-                                    label = {
-                                        Text(
-                                            "$n",
-                                            style = AppTextStyles.transactionSwipeAction
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Button(
-                onClick = onDismiss,
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.3f)
+            )
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("Done") }
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Max items", style = AppTextStyles.transactionTitle)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(3, 5, 7, 10).forEach { n ->
+                        FilterChip(
+                            selected = config.maxItems == n,
+                            onClick = { onUpdate(config.copy(maxItems = n)) },
+                            label = { Text("$n", style = AppTextStyles.transactionSwipeAction) }
+                        )
+                    }
+                }
+            }
         }
     }
 }

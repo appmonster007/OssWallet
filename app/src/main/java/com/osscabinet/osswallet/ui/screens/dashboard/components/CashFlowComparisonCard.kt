@@ -1,11 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.runtime.Composable
@@ -25,6 +22,8 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConf
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonMetric
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartPoint
@@ -78,7 +77,7 @@ fun CashFlowComparisonCard(
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CashFlowComparisonDisplaySettingsDialog(
+            CashFlowComparisonSettingsSheet(
                 config = config,
                 callbacks = callbacks,
                 onDismiss = onDismiss
@@ -448,105 +447,72 @@ fun CashFlowComparisonTightMarkersPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CashFlowComparisonDisplaySettingsDialog(
+private fun CashFlowComparisonSettingsSheet(
     config: CashFlowComparisonCardConfig,
     callbacks: CardCallbacks.CashFlowComparison,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
+    CardSettingsSheet(title = "Cash Flow Comparison", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
+                Text("Cumulative", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.isCumulative,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Text("Cash Flow Comparison", style = AppTextStyles.cardTitle)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Cumulative", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.isCumulative,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Show Grid Lines", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.showGridLines,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-                    )
-                }
-
-                HorizontalDivider(color = AppColors.border.copy(alpha = 0.3f))
-
-                Text("Show series", style = AppTextStyles.formSectionLabel)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Current Period", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.showCurrentPeriod,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Previous Period", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.showPreviousPeriod,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Same Period Last Year", style = AppTextStyles.caption)
-                    Switch(
-                        checked = config.showSamePeriodLastYear,
-                        onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Show Grid Lines", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.showGridLines,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                )
             }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+        CardSettingsSection("Series") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Current Period", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.showCurrentPeriod,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Previous Period", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.showPreviousPeriod,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Same Period Last Year", style = AppTextStyles.transactionTitle)
+                Switch(
+                    checked = config.showSamePeriodLastYear,
+                    onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
+                )
+            }
+        }
+    }
 }

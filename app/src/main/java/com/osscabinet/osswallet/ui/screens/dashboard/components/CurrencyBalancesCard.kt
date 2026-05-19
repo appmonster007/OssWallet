@@ -7,9 +7,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,7 +63,7 @@ fun CurrencyBalancesCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CurrencyDisplaySettingsDialog(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
+            CurrencyBalancesSettingsSheet(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
         }
     ) {
         if (currencyTotals.isEmpty()) {
@@ -121,54 +123,27 @@ fun CurrencyBalancesCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CurrencyDisplaySettingsDialog(
+private fun CurrencyBalancesSettingsSheet(
     config: CurrencyBalancesCardConfig,
     baseCurrency: String,
     callbacks: CardCallbacks.CurrencyBalances,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    callbacks.onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
-        },
-        title = {
-            Text("Currency Display", style = AppTextStyles.cardTitle)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AeonLayoutToggle(
-                    layout = config.layout,
-                    onLayoutChange = { newLayout -> callbacks.onLayoutChange(config.cardId, newLayout) }
-                )
-                AeonBaseConversionToggle(
-                    baseCurrency = baseCurrency,
-                    showBaseConversion = config.showBaseConversion,
-                    onShowBaseConversionChange = { show -> callbacks.onShowBaseConversionChange(config.cardId, show) }
-                )
-            }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+    CardSettingsSheet(title = "Currency Balances", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+        CardSettingsSection("Display") {
+            AeonLayoutToggle(
+                layout = config.layout,
+                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
+            )
+            AeonBaseConversionToggle(
+                baseCurrency = baseCurrency,
+                showBaseConversion = config.showBaseConversion,
+                onShowBaseConversionChange = { callbacks.onShowBaseConversionChange(config.cardId, it) }
+            )
+        }
+    }
 }
 
 @Composable

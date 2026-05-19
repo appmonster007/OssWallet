@@ -63,7 +63,12 @@ class CardRepositoryImpl(
     override suspend fun addCard(context: ScreenContext, card: CardConfig) {
         val flow = getCardsConfig(context)
         val current = flow.first()
-        val updated = current.copy(cards = current.cards + card)
+        
+        // Find the maximum order and set new card's order to max + 1
+        val maxOrder = current.cards.maxOfOrNull { it.order } ?: -1
+        val cardWithOrder = card.withOrder(maxOrder + 1)
+        
+        val updated = current.copy(cards = current.cards + cardWithOrder)
         saveConfig(context, updated)
     }
 
@@ -141,21 +146,6 @@ class CardRepositoryImpl(
 
     private fun withUpdatedOrder(cards: List<CardConfig>): List<CardConfig> =
         cards.mapIndexed { index, card ->
-            when (card) {
-                is NetWorthCardConfig -> card.copy(order = index)
-                is CurrencyBalancesCardConfig -> card.copy(order = index)
-                is CashFlowCardConfig -> card.copy(order = index)
-                is AccountsCardConfig -> card.copy(order = index)
-                is CategoryPieChartCardConfig -> card.copy(order = index)
-                is CategoryTreemapCardConfig -> card.copy(order = index)
-                is AccountHeroCardConfig -> card.copy(order = index)
-                is PlannedPaymentsCardConfig -> card.copy(order = index)
-                is BudgetsCardConfig -> card.copy(order = index)
-                is LoansCardConfig -> card.copy(order = index)
-                is RecentActivitiesCardConfig -> card.copy(order = index)
-                is CashFlowComparisonCardConfig -> card.copy(order = index)
-                is IncomeExpenseBarCardConfig -> card.copy(order = index)
-                is CategorySpendingTrendCardConfig -> card.copy(order = index)
-            }
+            card.withOrder(index)
         }
 }

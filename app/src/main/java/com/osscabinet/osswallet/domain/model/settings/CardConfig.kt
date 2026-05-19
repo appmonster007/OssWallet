@@ -436,3 +436,23 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter())
     is CategorySpendingTrendCardConfig -> copy(filter = TransactionFilter())
 }
+
+/**
+ * Returns a copy of this config with a new order value.
+ */
+fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
+    is NetWorthCardConfig -> copy(order = newOrder)
+    is CurrencyBalancesCardConfig -> copy(order = newOrder)
+    is CashFlowCardConfig -> copy(order = newOrder)
+    is AccountsCardConfig -> copy(order = newOrder)
+    is CategoryPieChartCardConfig -> copy(order = newOrder)
+    is CategoryTreemapCardConfig -> copy(order = newOrder)
+    is AccountHeroCardConfig -> copy(order = newOrder)
+    is PlannedPaymentsCardConfig -> copy(order = newOrder)
+    is BudgetsCardConfig -> copy(order = newOrder)
+    is LoansCardConfig -> copy(order = newOrder)
+    is RecentActivitiesCardConfig -> copy(order = newOrder)
+    is CashFlowComparisonCardConfig -> copy(order = newOrder)
+    is IncomeExpenseBarCardConfig -> copy(order = newOrder)
+    is CategorySpendingTrendCardConfig -> copy(order = newOrder)
+}

@@ -57,132 +57,130 @@ fun AnalyticsScreen(
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
-    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showAddCardDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Intelligence", style = AppTextStyles.calculatorKey) },
-                navigationIcon = {
-                    if (isTopLevel) {
-                        IconButton(onClick = onMenuClick) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
-                    } else {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showAddCardDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add card",
-                            tint = AppColors.primary
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-            when (val state = uiState) {
-                    is AnalyticsUiState.Loading -> {
-                        AeonShimmer(
-                            innerPadding = innerPadding,
-                            showCashflow = false,
-                            showAccounts = false
-                        )
-                    }
-                    is AnalyticsUiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            Text(state.message)
-                        }
-                    }
-                    is AnalyticsUiState.Success -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(AppColors.screenBackground)
-                            ) {
-                                AeonCardList(
-                                    cards = cardsConfig.cards,
-                                    cardDataMap = cardDataMap,
-                                    cardInput = CardInput(
-                                        profileId = state.profileId,
-                                        transactions = state.allTransactions,
-                                        accounts = state.accounts,
-                                        categories = state.allCategories,
-                                        exchangeRates = state.exchangeRates,
-                                        baseCurrency = state.selectedCurrency,
-                                        plannedPayments = state.plannedPayments,
-                                        budgets = state.budgets,
-                                        loans = state.loans,
-                                        filter = screenFilter,
-                                        screenOwnsTimeline = true
-                                    ),
-                                    cardComputerRegistry = cardComputerRegistry,
-                                    cardUpdateHandler = viewModel,
-                                    onReorder = { viewModel.reorderCards(it) },
-                                    onDelete = { viewModel.removeCard(it) },
-                                    onRecordsClick = onRecordsClick,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(
-                                        start = AeonTheme.dimensions.screenPadding,
-                                        end = AeonTheme.dimensions.screenPadding,
-                                        top = AeonTheme.dimensions.spacingMd,
-                                        bottom = scrollBottomPadding()
-                                    ),
-                                    animateCards = cardAnimationEnabled,
-                                    currentTheme = currentTheme,
-                                    filterContext = FilterSelectionContext(
-                                        accounts = state.accounts,
-                                        allCategories = state.allCategories,
-                                        savedFilters = savedFilters
-                                    ),
-                                    callbacks = CardListCallbacks(
-                                        onAccountClick = onAccountClick,
-                                        onTransactionClick = onEditTransactionClick,
-                                        onClone = { onCloneTransactionClick(it) },
-                                        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                                        onSplit = { onSplitTransactionClick(it) },
-                                        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                                    ),
-                                    disableCardFilterSheet = true,
-                                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Intelligence", style = AppTextStyles.calculatorKey) },
+                    navigationIcon = {
+                        if (isTopLevel) {
+                            IconButton(onClick = onMenuClick) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
                             }
-
-                            TransactionFilterPill(
-                                filter = screenFilter,
-                                accounts = nonArchivedAccounts,
-                                categories = state.allCategories,
-                                savedFilters = savedFilters,
-                                onFilterEvent = { event ->
-                                    when (event) {
-                                        is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
-                                        is FilterEvent.Reset -> viewModel.updateScreenFilter(TransactionFilter())
-                                        is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
-                                            screenFilter.copy(timelineRange = event.range)
-                                        )
-                                        else -> {}
-                                    }
-                                },
-                                onSaveFilterClick = {},
-                                modifier = Modifier.fillMaxSize(),
-                                bottomPadding = 16.dp + navigationBarHeight
+                        } else {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showAddCardDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add card",
+                                tint = AppColors.primary
                             )
                         }
                     }
+                )
+            }
+        ) { innerPadding ->
+            when (val state = uiState) {
+                is AnalyticsUiState.Loading -> {
+                    AeonShimmer(
+                        innerPadding = innerPadding,
+                        showCashflow = false,
+                        showAccounts = false
+                    )
+                }
+                is AnalyticsUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text(state.message)
+                    }
+                }
+                is AnalyticsUiState.Success -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .background(AppColors.screenBackground)
+                    ) {
+                        AeonCardList(
+                            cards = cardsConfig.cards,
+                            cardDataMap = cardDataMap,
+                            cardInput = CardInput(
+                                profileId = state.profileId,
+                                transactions = state.allTransactions,
+                                accounts = state.accounts,
+                                categories = state.allCategories,
+                                exchangeRates = state.exchangeRates,
+                                baseCurrency = state.selectedCurrency,
+                                plannedPayments = state.plannedPayments,
+                                budgets = state.budgets,
+                                loans = state.loans,
+                                filter = screenFilter,
+                                screenOwnsTimeline = true
+                            ),
+                            cardComputerRegistry = cardComputerRegistry,
+                            cardUpdateHandler = viewModel,
+                            onReorder = { viewModel.reorderCards(it) },
+                            onDelete = { viewModel.removeCard(it) },
+                            onRecordsClick = onRecordsClick,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonTheme.dimensions.spacingMd,
+                                bottom = scrollBottomPadding()
+                            ),
+                            animateCards = cardAnimationEnabled,
+                            currentTheme = currentTheme,
+                            filterContext = FilterSelectionContext(
+                                accounts = state.accounts,
+                                allCategories = state.allCategories,
+                                savedFilters = savedFilters
+                            ),
+                            callbacks = CardListCallbacks(
+                                onAccountClick = onAccountClick,
+                                onTransactionClick = onEditTransactionClick,
+                                onClone = { onCloneTransactionClick(it) },
+                                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { onSplitTransactionClick(it) },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                            ),
+                            disableCardFilterSheet = true,
+                        )
+                    }
+                }
             }
         }
+
+        // Floating Filter Pill
+        (uiState as? AnalyticsUiState.Success)?.let { state ->
+            TransactionFilterPill(
+                filter = screenFilter,
+                accounts = nonArchivedAccounts,
+                categories = state.allCategories,
+                savedFilters = savedFilters,
+                onFilterEvent = { event ->
+                    when (event) {
+                        is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
+                        is FilterEvent.Reset -> viewModel.updateScreenFilter(TransactionFilter())
+                        is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
+                            screenFilter.copy(timelineRange = event.range)
+                        )
+                        else -> {}
+                    }
+                },
+                onSaveFilterClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
 
     if (showAddCardDialog) {
         CardTypeSelectionDialog(

@@ -63,6 +63,10 @@ fun TransactionFilterPill(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
+    // Automatically account for navigation bar insets.
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val totalBottomPadding = bottomPadding + navigationBarHeight
+
     // 0f = compact pill, 1f = floating filter card.
     val morph = remember { Animatable(0f) }
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
@@ -82,7 +86,7 @@ fun TransactionFilterPill(
         val maxH = maxHeight
         val maxHPx = with(density) { maxH.toPx() }
         val pillHPx = with(density) { pillH.toPx() }
-        val bottomPx = with(density) { bottomPadding.toPx() }
+        val bottomPx = with(density) { totalBottomPadding.toPx() }
 
         // Pill rests here (top edge of pill when collapsed).
         val collapsedTopPx = maxHPx - bottomPx - pillHPx
@@ -183,7 +187,7 @@ fun TransactionFilterPill(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = pillHorizMargin)
-                    .padding(bottom = bottomPadding + pillH + 4.dp)
+                    .padding(bottom = totalBottomPadding + pillH + 4.dp)
             ) {
                 DropdownMenu(
                     expanded = showDropdown,

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -31,7 +32,7 @@ fun AeonUpSetPlot(
     modifier: Modifier = Modifier,
     maxVisibleRows: Int = 10,
     maxVisibleCols: Int = 15,
-    dynamicFiltering: Boolean = false,
+    dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
     dotColorActive: Color = AppColors.primary,
     dotColorInactive: Color = AppColors.border.copy(alpha = 0.2f),
     lineColor: Color = AppColors.primary,
@@ -48,12 +49,19 @@ fun AeonUpSetPlot(
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
 
+    val horizontalScrollEnabled = dynamicFilteringMode == UpSetDynamicFilteringMode.OFF || 
+                                 dynamicFilteringMode == UpSetDynamicFilteringMode.HORIZONTAL
+    val verticalScrollEnabled = dynamicFilteringMode == UpSetDynamicFilteringMode.OFF || 
+                               dynamicFilteringMode == UpSetDynamicFilteringMode.VERTICAL
+
     val density = androidx.compose.ui.platform.LocalDensity.current
     val colWidthPx = with(density) { colWidth.toPx() }
+    val rowHeightPx = with(density) { rowHeight.toPx() }
     val viewportWidthPx = with(density) { (colWidth * maxVisibleCols).toPx() }
+    val viewportHeightPx = with(density) { (rowHeight * maxVisibleRows).toPx() }
 
-    val activeRowIndices = remember(horizontalScrollState.value, data.intersections, dynamicFiltering) {
-        if (!dynamicFiltering) {
+    val activeRowIndices = remember(horizontalScrollState.value, data.intersections, dynamicFilteringMode) {
+        if (dynamicFilteringMode != UpSetDynamicFilteringMode.HORIZONTAL) {
             data.sets.indices.toSet()
         } else {
             val firstVisible = (horizontalScrollState.value / colWidthPx).toInt()
@@ -68,8 +76,30 @@ fun AeonUpSetPlot(
         }
     }
 
+    val activeColIndices = remember(verticalScrollState.value, data.sets, dynamicFilteringMode) {
+        if (dynamicFilteringMode != UpSetDynamicFilteringMode.VERTICAL) {
+            data.intersections.indices.toSet()
+        } else {
+            val firstVisible = (verticalScrollState.value / rowHeightPx).toInt()
+            val lastVisible = ((verticalScrollState.value + viewportHeightPx) / rowHeightPx).toInt()
+            
+            val visibleTagIndices = data.sets.indices.toList().subList(
+                firstVisible.coerceIn(0, data.sets.size),
+                (lastVisible + 1).coerceIn(0, data.sets.size)
+            ).toSet()
+
+            data.intersections.withIndex().filter { (_, intersection) ->
+                intersection.setIndices.any { visibleTagIndices.contains(it) }
+            }.map { it.index }.toSet()
+        }
+    }
+
     val renderedSets = remember(activeRowIndices, data.sets) {
         data.sets.filterIndexed { index, _ -> activeRowIndices.contains(index) }
+    }
+
+    val renderedIntersections = remember(activeColIndices, data.intersections) {
+        data.intersections.filterIndexed { index, _ -> activeColIndices.contains(index) }
     }
 
     val setNames = renderedSets.map { it.name }
@@ -77,11 +107,14 @@ fun AeonUpSetPlot(
     val maxIntersectionValue = data.intersections.maxOfOrNull { it.value.abs() } ?: BigDecimal.ONE
 
     val viewportHeight = rowHeight * minOf(setNames.size, maxVisibleRows)
-    val viewportWidth = colWidth * minOf(data.intersections.size, maxVisibleCols)
+    val viewportWidth = colWidth * minOf(renderedIntersections.size, maxVisibleCols)
 
-    // Map original set index to rendered row index
+    // Map original indices to rendered indices
     val originalToRenderedIndex = remember(activeRowIndices) {
         activeRowIndices.sorted().withIndex().associate { it.value to it.index }
+    }
+    val originalToRenderedColIndex = remember(activeColIndices) {
+        activeColIndices.sorted().withIndex().associate { it.value to it.index }
     }
 
     Column(modifier = modifier) {
@@ -90,13 +123,13 @@ fun AeonUpSetPlot(
             Box(modifier = Modifier.width(leftPanelWidth))
             
             // Intersection Size Bars (Horizontal Scroll)
-            Box(modifier = Modifier.width(viewportWidth).horizontalScroll(horizontalScrollState)) {
+            Box(modifier = Modifier.width(viewportWidth).horizontalScroll(horizontalScrollState, enabled = horizontalScrollEnabled)) {
                 Row(
-                    modifier = Modifier.width(colWidth * data.intersections.size).height(60.dp).padding(bottom = 2.dp),
+                    modifier = Modifier.width(colWidth * renderedIntersections.size).height(60.dp).padding(bottom = 2.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    data.intersections.forEach { intersection ->
+                    renderedIntersections.forEach { intersection ->
                         val ratio = if (maxIntersectionValue > BigDecimal.ZERO) {
                             intersection.value.abs().divide(maxIntersectionValue, 4, RoundingMode.HALF_UP).toFloat()
                         } else 0f
@@ -122,7 +155,7 @@ fun AeonUpSetPlot(
             Column(
                 modifier = Modifier
                     .width(leftPanelWidth)
-                    .verticalScroll(verticalScrollState)
+                    .verticalScroll(verticalScrollState, enabled = verticalScrollEnabled)
             ) {
                 activeRowIndices.sorted().forEach { originalIdx ->
                     val name = data.sets[originalIdx].name
@@ -148,19 +181,19 @@ fun AeonUpSetPlot(
             Box(
                 modifier = Modifier
                     .width(viewportWidth)
-                    .verticalScroll(verticalScrollState)
-                    .horizontalScroll(horizontalScrollState)
+                    .verticalScroll(verticalScrollState, enabled = verticalScrollEnabled)
+                    .horizontalScroll(horizontalScrollState, enabled = horizontalScrollEnabled)
             ) {
                 Canvas(
                     modifier = Modifier
-                        .width(colWidth * data.intersections.size)
+                        .width(colWidth * renderedIntersections.size)
                         .height(rowHeight * setNames.size)
                 ) {
                     val dx = colWidth.toPx()
                     val dy = rowHeight.toPx()
                     val radius = 5.dp.toPx()
 
-                    data.intersections.forEachIndexed { colIdx, intersection ->
+                    renderedIntersections.forEachIndexed { colIdx, intersection ->
                         val x = dx * (colIdx + 0.5f)
                         
                         if (intersection.setIndices.size > 1) {
@@ -193,7 +226,7 @@ fun AeonUpSetPlot(
                 
                 // Overlay invisible clickable boxes for intersection interactivity
                 Row {
-                    data.intersections.forEach { intersection ->
+                    renderedIntersections.forEach { intersection ->
                         Box(
                             modifier = Modifier
                                 .width(colWidth)
@@ -208,7 +241,7 @@ fun AeonUpSetPlot(
             Column(
                 modifier = Modifier
                     .width(rightPanelWidth)
-                    .verticalScroll(verticalScrollState)
+                    .verticalScroll(verticalScrollState, enabled = verticalScrollEnabled)
             ) {
                 activeRowIndices.sorted().forEach { originalRowIdx ->
                     val set = data.sets[originalRowIdx]

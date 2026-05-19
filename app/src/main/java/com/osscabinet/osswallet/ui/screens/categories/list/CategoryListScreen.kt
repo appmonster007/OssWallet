@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.categories.list
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +30,11 @@ fun CategoryListScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedCategoryForEdit by remember { mutableStateOf<Category?>(null) }
+
+    BackHandler(enabled = showAddDialog || selectedCategoryForEdit != null) {
+        showAddDialog = false
+        selectedCategoryForEdit = null
+    }
 
     var navTriggered by remember { mutableStateOf(false) }
     val navigate: (() -> Unit) -> Unit = { action ->

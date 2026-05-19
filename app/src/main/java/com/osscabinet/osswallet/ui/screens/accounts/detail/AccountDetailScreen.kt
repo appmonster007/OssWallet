@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -152,6 +153,11 @@ fun AccountDetailScreen(
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
+    BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = showFilterSheet) { showFilterSheet = false }
+    BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()

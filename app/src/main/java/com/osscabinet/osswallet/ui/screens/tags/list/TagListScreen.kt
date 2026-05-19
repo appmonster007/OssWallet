@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.tags.list
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,6 +33,9 @@ fun TagListScreen(
     var tagToDelete by remember { mutableStateOf<Tag?>(null) }
     var tagToEdit by remember { mutableStateOf<Tag?>(null) }
     var transactionCount by remember { mutableIntStateOf(0) }
+
+    BackHandler(enabled = tagToDelete != null) { tagToDelete = null }
+    BackHandler(enabled = tagToEdit != null) { tagToEdit = null }
 
     // Fetch transaction count when tagToDelete changes
     LaunchedEffect(tagToDelete) {

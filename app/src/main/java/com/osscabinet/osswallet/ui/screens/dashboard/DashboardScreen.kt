@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -189,6 +190,9 @@ fun DashboardScreen(
 
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     val pageCount = 2
     val pagerState = rememberPagerState(pageCount = { pageCount })

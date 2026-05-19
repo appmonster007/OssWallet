@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,9 @@ fun AnalyticsScreen(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     Scaffold(
         topBar = {

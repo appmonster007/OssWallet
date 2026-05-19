@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.list
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -62,6 +63,10 @@ fun AccountListScreen(
     var selectedAccountIds by remember { mutableStateOf(setOf<String>()) }
     var showMoreMenu by remember { mutableStateOf(false) }
     var showMultiDeleteDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showMoreMenu) { showMoreMenu = false }
+    BackHandler(enabled = showMultiDeleteDialog) { showMultiDeleteDialog = false }
+    BackHandler(enabled = isSelectionMode) { isSelectionMode = false; selectedAccountIds = emptySet() }
 
     val selectedAccounts = remember(selectedAccountIds, accounts) {
         accounts.filter { it.id in selectedAccountIds }

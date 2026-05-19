@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.list
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -79,6 +80,11 @@ fun TemplateListScreenContent(
 ) {
     var editList by remember { mutableStateOf(emptyList<Template>()) }
     var templateToDelete by remember { mutableStateOf<Template?>(null) }
+    var isReorderMode by remember { mutableStateOf(false) }
+    var navTriggered by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = templateToDelete != null) { templateToDelete = null }
+    BackHandler(enabled = isReorderMode) { isReorderMode = false }
 
     AeonConfirmDeleteDialog(
         show = templateToDelete != null,
@@ -100,9 +106,6 @@ fun TemplateListScreenContent(
             editList = starredTemplates.sortedBy { orderMap[it.id] ?: Int.MAX_VALUE }
         }
     }
-
-    var isReorderMode by remember { mutableStateOf(false) }
-    var navTriggered by remember { mutableStateOf(false) }
 
     val navigate: (() -> Unit) -> Unit = { action ->
         if (!navTriggered) {

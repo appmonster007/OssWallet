@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
@@ -47,7 +48,8 @@ fun ExchangeRatesScreen(
     val scope = rememberCoroutineScope()
     val tabs = listOf("Rates", "Converter")
 
-    // navigateBack removed
+    BackHandler(enabled = uiState.syncError != null) { viewModel.clearError() }
+    BackHandler(enabled = uiState.pendingRates != null) { viewModel.cancelSaveRates() }
 
     if (uiState.pendingRates != null) {
         AlertDialog(

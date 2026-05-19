@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.*
@@ -17,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -114,7 +118,7 @@ fun TagUpSetPlotCard(
                     currency = renderData.baseCurrency,
                     maxVisibleRows = config.maxTags,
                     maxVisibleCols = config.maxIntersections,
-                    dynamicFiltering = config.dynamicTagFiltering,
+                    dynamicFilteringMode = config.dynamicFilteringMode,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -162,8 +166,7 @@ fun TagUpSetPlotCard(
                                 Text(
                                     text = "${intersection.count} Transactions",
                                     style = AppTextStyles.caption.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                                        fontWeight = FontWeight.Bold
                                     ),
                                     color = AppColors.primary,
                                     modifier = Modifier.clickable {
@@ -360,24 +363,46 @@ private fun TagUpSetSettingsSheet(
                         color = AppColors.divider.copy(alpha = 0.3f)
                     )
 
-                    // Dynamic Tag Filtering Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Dynamic Tag Filtering", style = AppTextStyles.transactionTitle)
-                            Text(
-                                "Show only tags in visible columns",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary
-                            )
-                        }
-                        Switch(
-                            checked = config.dynamicTagFiltering,
-                            onCheckedChange = { onUpdate(config.copy(dynamicTagFiltering = it)) }
+                    // Dynamic Filtering Selection
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "DYNAMIC FILTERING",
+                            style = AppTextStyles.transactionSwipeAction.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp,
+                                fontSize = 11.sp
+                            ),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
+
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            UpSetDynamicFilteringMode.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = config.dynamicFilteringMode == mode,
+                                    onClick = { onUpdate(config.copy(dynamicFilteringMode = mode)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = UpSetDynamicFilteringMode.entries.size
+                                    ),
+                                    icon = {},
+                                    label = {
+                                        Icon(
+                                            imageVector = when (mode) {
+                                                UpSetDynamicFilteringMode.OFF -> Icons.Default.Block
+                                                UpSetDynamicFilteringMode.HORIZONTAL -> Icons.Default.ViewColumn
+                                                UpSetDynamicFilteringMode.VERTICAL -> Icons.Default.ViewStream
+                                            },
+                                            contentDescription = when (mode) {
+                                                UpSetDynamicFilteringMode.OFF -> "Filtering Off"
+                                                UpSetDynamicFilteringMode.HORIZONTAL -> "Row Filtering"
+                                                UpSetDynamicFilteringMode.VERTICAL -> "Column Filtering"
+                                            },
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -259,6 +259,9 @@ data class AccountHeroCardConfig(
 enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
 
 @Serializable
+enum class UpSetDynamicFilteringMode { OFF, HORIZONTAL, VERTICAL }
+
+@Serializable
 @SerialName("planned_payments")
 data class PlannedPaymentsCardConfig(
     override val cardId: String,
@@ -417,7 +420,7 @@ data class TagUpSetPlotCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val maxTags: Int = 10,
     val maxIntersections: Int = 15,
-    val dynamicTagFiltering: Boolean = false,
+    val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
     )

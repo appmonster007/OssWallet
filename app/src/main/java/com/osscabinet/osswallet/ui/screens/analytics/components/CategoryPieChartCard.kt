@@ -51,10 +51,15 @@ fun CategoryPieChartCard(
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
     currentTheme: String = "System",
     previousTotal: BigDecimal? = null,
     showFilterButton: Boolean = true
 ) {
+    val displayFilter = if (inheritedFilter.timelineRange !is TimelineRange.AllTime)
+        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+    else config.filter
+
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
         "Dark", "Amoled" -> true
@@ -86,7 +91,7 @@ fun CategoryPieChartCard(
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
-        filter = config.filter,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,
         filterContext = filterContext,

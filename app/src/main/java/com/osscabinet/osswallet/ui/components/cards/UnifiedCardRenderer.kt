@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
@@ -36,6 +37,7 @@ fun UnifiedCardRenderer(
     headerModifier: Modifier = Modifier,
     currentTheme: String = "light",
     filterContext: FilterSelectionContext = FilterSelectionContext(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
 ) {
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
@@ -50,6 +52,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -67,6 +70,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -84,6 +88,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -113,6 +118,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -144,6 +150,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -183,6 +190,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier.fillMaxWidth(),
@@ -241,6 +249,7 @@ fun UnifiedCardRenderer(
                 exchangeRates = renderData.exchangeRates,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -256,6 +265,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
@@ -271,6 +281,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
@@ -283,6 +294,7 @@ fun UnifiedCardRenderer(
                 callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier

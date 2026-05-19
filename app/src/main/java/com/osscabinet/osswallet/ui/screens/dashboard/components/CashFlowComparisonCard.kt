@@ -50,6 +50,7 @@ fun CashFlowComparisonCard(
     callbacks: CardCallbacks.CashFlowComparison = CardCallbacks.CashFlowComparison(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
     showFilterButton: Boolean = true,
     headerModifier: Modifier = Modifier,
 ) {
@@ -57,13 +58,17 @@ fun CashFlowComparisonCard(
 
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
 
+    val displayFilter = if (inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+    else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.AutoMirrored.Filled.ShowChart,
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
-        filter = config.filter,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,
         filterContext = filterContext,

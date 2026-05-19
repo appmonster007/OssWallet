@@ -63,15 +63,20 @@ fun RecentActivitiesCard(
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
     showFilterButton: Boolean = true,
 ) {
+    val displayFilter = if (inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+    else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.History,
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
-        filter = config.filter,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,
         filterContext = filterContext,

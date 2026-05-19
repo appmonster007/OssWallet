@@ -63,17 +63,22 @@ fun NetWorthCard(
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
+    val displayFilter = if (inheritedFilter.timelineRange !is TimelineRange.AllTime)
+        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+    else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
-        filter = config.filter,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,
         filterContext = filterContext,

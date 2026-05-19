@@ -1,47 +1,34 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.AlertDialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import com.osscabinet.ossWallet.domain.card.CardCategory
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.tooling.preview.Preview
 
 fun CardType.toIcon(): ImageVector = when (this) {
     CardType.NET_WORTH -> Icons.Default.AccountBalance
@@ -82,6 +69,7 @@ fun CardTypeSelectionDialog(
                     title = type.displayName,
                     description = type.description,
                     icon = type.toIcon(),
+                    category = type.category,
                     onClick = { onCardTypeSelected(type) }
                 )
             }
@@ -98,41 +86,52 @@ fun CardTypeOption(
     onClick: () -> Unit,
     icon: ImageVector? = null
 ) {
-    Card(
+    Surface(
+        onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = AppColors.insetSurface
-        )
+            .fillMaxWidth(),
+        color = AppColors.transparent,
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.primaryContainer.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppColors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = title,
-                    style = AppTextStyles.screenSubTitle
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.SemiBold)
                 )
-                Text(
-                    text = description,
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary
-                )
+                if (description.isNotEmpty()) {
+                    Text(
+                        text = description,
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary,
+                        maxLines = 2
+                    )
+                }
             }
         }
     }
@@ -145,50 +144,105 @@ data class CardTypeOptionData(
     val title: String,
     val description: String,
     val onClick: () -> Unit,
-    val icon: ImageVector? = null
+    val icon: ImageVector? = null,
+    val category: CardCategory = CardCategory.OTHER
 )
 
 /**
  * Generic add card dialog that can be used across all screens.
  * Takes a list of card type options and displays them.
  */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GenericAddCardDialog(
     onDismiss: () -> Unit,
     cardOptions: List<CardTypeOptionData>
 ) {
-    AlertDialog(
+    val groupedOptions = cardOptions
+        .sortedWith(compareBy({ it.category.order }, { it.title }))
+        .groupBy { it.category }
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Add Card") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        containerColor = AppColors.drawerSurface,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.border) },
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .padding(bottom = 16.dp)
+        ) {
+            Text(
+                text = "Add New Card",
+                style = AppTextStyles.heroAmount,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+            Text(
+                text = "Select a card type to add to your screen",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-                Text("Select a card type to add:")
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(cardOptions) { option ->
+                groupedOptions.forEach { (category, options) ->
+                    stickyHeader {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(AppColors.drawerSurface)
+                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = category.displayName.uppercase(),
+                                style = AppTextStyles.sectionOverline,
+                                color = AppColors.primary
+                            )
+                        }
+                    }
+
+                    items(options) { option ->
                         CardTypeOption(
                             title = option.title,
                             description = option.description,
                             onClick = option.onClick,
                             icon = option.icon
                         )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                            color = AppColors.border.copy(alpha = 0.3f)
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GenericAddCardDialogPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            val options = listOf(
+                CardTypeOptionData("Net Worth", "Overall balance across all accounts", {}, Icons.Default.AccountBalance, CardCategory.SUMMARY),
+                CardTypeOptionData("Cash Flow", "Income and expenses summary", {}, Icons.AutoMirrored.Filled.TrendingUp, CardCategory.SUMMARY),
+                CardTypeOptionData("Budgets", "Track your spending against set limits", {}, Icons.Default.Savings, CardCategory.TRACKING),
+                CardTypeOptionData("Category Pie Chart", "Spending distribution across categories", {}, Icons.Default.PieChart, CardCategory.ANALYTICS)
+            )
+            // Note: ModalBottomSheet might not render well in some preview environments
+            // This is just a structural representation
+            Column {
+                 options.groupBy { it.category }.forEach { (category, opts) ->
+                     Text(category.displayName, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                     opts.forEach { CardTypeOption(it.title, it.description, it.onClick, it.icon) }
+                 }
             }
-        },
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier
-            .fillMaxWidth(0.95f)
-            .fillMaxHeight(0.85f)
-    )
+        }
+    }
 }

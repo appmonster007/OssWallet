@@ -187,29 +187,7 @@ fun AnalyticsScreen(
             screenContext = ScreenContext.ANALYTICS,
             onDismiss = { showAddCardDialog = false },
             onCardTypeSelected = { cardType ->
-                val defaultFilter = TransactionFilter()
-                when (cardType) {
-                    CardType.CATEGORY_PIE_CHART -> viewModel.addCard(
-                        CategoryPieChartCardConfig(
-                            cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
-                            order = cardsConfig.cards.size,
-                            title = "CATEGORY PIE CHART",
-                            filter = defaultFilter,
-                            showLabels = true,
-                            showLegend = true
-                        )
-                    )
-                    CardType.CATEGORY_TREEMAP -> viewModel.addCard(
-                        CategoryTreemapCardConfig(
-                            cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
-                            order = cardsConfig.cards.size,
-                            title = "CATEGORY TREEMAP",
-                            filter = defaultFilter,
-                            showLabels = true
-                        )
-                    )
-                    else -> viewModel.addCard(cardType)
-                }
+                viewModel.addCard(cardType)
                 showAddCardDialog = false
             }
         )

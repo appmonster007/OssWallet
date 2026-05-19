@@ -488,8 +488,7 @@ fun DashboardContent(
             onCardTypeSelected = { cardType ->
                 dashboardViewModel.addCard(cardType)
                 onShowAddCardDialogChange(false)
-            },
-            additionalFilter = { it != CardType.BUDGETS }
+            }
         )
     }
 }

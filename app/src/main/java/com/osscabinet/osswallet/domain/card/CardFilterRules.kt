@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.card
 
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
@@ -87,6 +89,28 @@ data class CardFilterRules(
      */
     val allowFutureTransactionsToggle: Boolean = true
 ) {
+    /**
+     * Normalizes a candidate filter against these rules.
+     * - If [forcedTransactionTypes] is set, replaces candidate's transactionTypes unconditionally.
+     * - Else if [allowedTransactionTypes] is set, intersects with allowed set (or falls back to allowed set on conflict).
+     */
+    fun normalize(candidate: TransactionFilter): TransactionFilter {
+        if (forcedTransactionTypes != null) {
+            val forced = TransactionType.entries.filter { it.value in forcedTransactionTypes }.toSet()
+            return candidate.copy(transactionTypes = forced)
+        }
+        if (allowedTransactionTypes != null) {
+            val allowedSet = TransactionType.entries.filter { it.value in allowedTransactionTypes }.toSet()
+            if (candidate.transactionTypes.isNotEmpty()) {
+                val intersection = candidate.transactionTypes.intersect(allowedSet)
+                return candidate.copy(
+                    transactionTypes = if (intersection.isNotEmpty()) intersection else allowedSet
+                )
+            }
+        }
+        return candidate
+    }
+
     companion object {
         /**
          * Default rules that allow everything.

@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
@@ -17,12 +18,7 @@ class RecentActivitiesCardComputer(
     override val supportedType = CardType.RECENT_ACTIVITIES
 
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
-        val mergedFilter = input.filter.copy(
-            accountIds = if (config.filter.accountIds.isNotEmpty())
-                input.filter.accountIds.intersect(config.filter.accountIds)
-            else
-                input.filter.accountIds
-        )
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
 
         val recentTransactions = queryService
             .observeFilteredTransactions(input.profileId, mergedFilter, limit = 20)

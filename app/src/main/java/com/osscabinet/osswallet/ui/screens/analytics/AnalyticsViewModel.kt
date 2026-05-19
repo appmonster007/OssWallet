@@ -34,6 +34,13 @@ class AnalyticsViewModel(
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ANALYTICS
 
+    private val _screenFilter = MutableStateFlow(TransactionFilter())
+    val screenFilter: StateFlow<TransactionFilter> = _screenFilter.asStateFlow()
+
+    fun updateScreenFilter(filter: TransactionFilter) {
+        _screenFilter.value = filter
+    }
+
     // Analytics cards config - now using cardRepository
     val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
@@ -91,24 +98,25 @@ class AnalyticsViewModel(
             initialValue = AnalyticsUiState.Loading
         )
 
-    val cardDataMap: StateFlow<Map<String, CardRenderData>> = combine(cardsConfig, uiState) { cards, state ->
-        Pair(cards, state)
-    }.transformLatest { (cards, state) ->
-        if (state !is AnalyticsUiState.Success) { emit(emptyMap()); return@transformLatest }
-        val input = CardInput(
-            profileId = state.profileId,
-            transactions = state.allTransactions,
-            accounts = state.accounts,
-            categories = state.allCategories,
-            exchangeRates = state.exchangeRates,
-            baseCurrency = state.selectedCurrency,
-            plannedPayments = state.plannedPayments,
-            budgets = state.budgets,
-            loans = state.loans,
-            filter = TransactionFilter(excludeFuture = false)
-        )
-        emit(computeCardUseCase.computeAll(cards.cards, input))
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    val cardDataMap: StateFlow<Map<String, CardRenderData>> =
+        combine(cardsConfig, uiState, _screenFilter) { cards, state, sf ->
+            Triple(cards, state, sf)
+        }.transformLatest { (cards, state, screenFilter) ->
+            if (state !is AnalyticsUiState.Success) { emit(emptyMap()); return@transformLatest }
+            val input = CardInput(
+                profileId = state.profileId,
+                transactions = state.allTransactions,
+                accounts = state.accounts,
+                categories = state.allCategories,
+                exchangeRates = state.exchangeRates,
+                baseCurrency = state.selectedCurrency,
+                plannedPayments = state.plannedPayments,
+                budgets = state.budgets,
+                loans = state.loans,
+                filter = screenFilter
+            )
+            emit(computeCardUseCase.computeAll(cards.cards, input))
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 }
 
 sealed class AnalyticsUiState {

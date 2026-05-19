@@ -8,8 +8,8 @@ import com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity
 import com.osscabinet.ossWallet.domain.card.CategoryAmount
 import com.osscabinet.ossWallet.domain.card.CategorySpendingBucket
 import com.osscabinet.ossWallet.domain.card.CategorySummary
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
-import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -35,7 +35,7 @@ class CategorySpendingTrendCardComputer :
         input: CardInput,
         config: CategorySpendingTrendCardConfig
     ): CardRenderData.CategorySpendingTrend {
-        val mergedFilter = input.filter.merge(config.filter)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
         val (currentStart, currentEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
 
         if (currentStart == null || currentEnd == null) {
@@ -51,9 +51,8 @@ class CategorySpendingTrendCardComputer :
         // Build category nature lookup from full categories list
         val categoryNatureById = input.categories.associate { it.id to it.nature }
 
-        // Apply base scope filter then card filter
-        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-        val filteredTx = TransactionFilterService.filter(baseTx, mergedFilter)
+        // Single-pass filter
+        val filteredTx = TransactionFilterService.filter(input.transactions, mergedFilter)
 
         // Cap at today — future buckets always show 0
         val now = System.currentTimeMillis()

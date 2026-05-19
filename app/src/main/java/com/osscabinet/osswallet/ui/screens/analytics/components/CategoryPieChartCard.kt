@@ -52,7 +52,8 @@ fun CategoryPieChartCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     currentTheme: String = "System",
-    previousTotal: BigDecimal? = null
+    previousTotal: BigDecimal? = null,
+    showFilterButton: Boolean = true
 ) {
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -84,6 +85,7 @@ fun CategoryPieChartCard(
         icon = Icons.Rounded.PieChart,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

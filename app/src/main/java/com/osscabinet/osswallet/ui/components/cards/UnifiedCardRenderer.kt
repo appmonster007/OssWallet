@@ -50,6 +50,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -66,6 +67,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -82,6 +84,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -113,7 +116,8 @@ fun UnifiedCardRenderer(
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
-                previousTotal = renderData.previousTotal
+                previousTotal = renderData.previousTotal,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled
             )
         }
 
@@ -143,6 +147,7 @@ fun UnifiedCardRenderer(
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled
             )
         }
 
@@ -178,6 +183,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier.fillMaxWidth(),
             )
@@ -235,6 +241,7 @@ fun UnifiedCardRenderer(
                 exchangeRates = renderData.exchangeRates,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )
@@ -249,6 +256,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -263,6 +271,7 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -274,6 +283,7 @@ fun UnifiedCardRenderer(
                 callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )

@@ -7,8 +7,8 @@ import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.card.CashFlowTimePoint
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
@@ -36,7 +36,7 @@ class CashFlowComparisonCardComputer(
         input: CardInput,
         config: CashFlowComparisonCardConfig
     ): CardRenderData.CashFlowComparison {
-        val mergedFilter = input.filter.merge(config.filter)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
         val (currentStart, currentEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
 
         if (currentStart == null || currentEnd == null) {

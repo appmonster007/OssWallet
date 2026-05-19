@@ -18,7 +18,6 @@ class ComputeCardUseCase(private val registry: CardComputerRegistry) {
                 try {
                     config.cardId to registry.compute(config.cardType, input, config)
                 } catch (e: Exception) {
-                    android.util.Log.e("ComputeCardUseCase", "Failed: ${config.cardId}", e)
                     null
                 }
             }

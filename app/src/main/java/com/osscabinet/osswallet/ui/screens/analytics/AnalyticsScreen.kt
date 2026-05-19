@@ -23,6 +23,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
@@ -56,6 +58,7 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
     val cardDataMap by viewModel.cardDataMap.collectAsStateWithLifecycle()
+    val screenFilter by viewModel.screenFilter.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -115,54 +118,80 @@ fun AnalyticsScreen(
                         }
                     }
                     is AnalyticsUiState.Success -> {
-                        Column(
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(innerPadding)
-                                .background(AppColors.screenBackground)
                         ) {
-                            AeonCardList(
-                                cards = cardsConfig.cards,
-                                cardDataMap = cardDataMap,
-                                cardInput = CardInput(
-                                    profileId = state.profileId,
-                                    transactions = state.allTransactions,
-                                    accounts = state.accounts,
-                                    categories = state.allCategories,
-                                    exchangeRates = state.exchangeRates,
-                                    baseCurrency = state.selectedCurrency,
-                                    plannedPayments = state.plannedPayments,
-                                    budgets = state.budgets,
-                                    loans = state.loans,
-                                    filter = TransactionFilter(excludeFuture = false)
-                                ),
-                                cardComputerRegistry = cardComputerRegistry,
-                                cardUpdateHandler = viewModel,
-                                onReorder = { viewModel.reorderCards(it) },
-                                onDelete = { viewModel.removeCard(it) },
-                                onRecordsClick = onRecordsClick,
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(AppColors.screenBackground)
+                            ) {
+                                AeonCardList(
+                                    cards = cardsConfig.cards,
+                                    cardDataMap = cardDataMap,
+                                    cardInput = CardInput(
+                                        profileId = state.profileId,
+                                        transactions = state.allTransactions,
+                                        accounts = state.accounts,
+                                        categories = state.allCategories,
+                                        exchangeRates = state.exchangeRates,
+                                        baseCurrency = state.selectedCurrency,
+                                        plannedPayments = state.plannedPayments,
+                                        budgets = state.budgets,
+                                        loans = state.loans,
+                                        filter = screenFilter
+                                    ),
+                                    cardComputerRegistry = cardComputerRegistry,
+                                    cardUpdateHandler = viewModel,
+                                    onReorder = { viewModel.reorderCards(it) },
+                                    onDelete = { viewModel.removeCard(it) },
+                                    onRecordsClick = onRecordsClick,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        start = AeonTheme.dimensions.screenPadding,
+                                        end = AeonTheme.dimensions.screenPadding,
+                                        top = AeonTheme.dimensions.spacingMd,
+                                        bottom = scrollBottomPadding()
+                                    ),
+                                    animateCards = cardAnimationEnabled,
+                                    currentTheme = currentTheme,
+                                    filterContext = FilterSelectionContext(
+                                        accounts = state.accounts,
+                                        allCategories = state.allCategories,
+                                        savedFilters = savedFilters
+                                    ),
+                                    callbacks = CardListCallbacks(
+                                        onAccountClick = onAccountClick,
+                                        onTransactionClick = onEditTransactionClick,
+                                        onClone = { onCloneTransactionClick(it) },
+                                        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                                        onSplit = { onSplitTransactionClick(it) },
+                                        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                    ),
+                                    disableCardFilterSheet = true,
+                                )
+                            }
+
+                            TransactionFilterPill(
+                                filter = screenFilter,
+                                accounts = nonArchivedAccounts,
+                                categories = state.allCategories,
+                                savedFilters = savedFilters,
+                                onFilterEvent = { event ->
+                                    when (event) {
+                                        is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
+                                        is FilterEvent.Reset -> viewModel.updateScreenFilter(TransactionFilter())
+                                        is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
+                                            screenFilter.copy(timelineRange = event.range)
+                                        )
+                                        else -> {}
+                                    }
+                                },
+                                onSaveFilterClick = {},
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    start = AeonTheme.dimensions.screenPadding,
-                                    end = AeonTheme.dimensions.screenPadding,
-                                    top = AeonTheme.dimensions.spacingMd,
-                                    bottom = scrollBottomPadding()
-                                ),
-                                animateCards = cardAnimationEnabled,
-                                currentTheme = currentTheme,
-                                filterContext = FilterSelectionContext(
-                                    accounts = state.accounts,
-                                    allCategories = state.allCategories,
-                                    savedFilters = savedFilters
-                                ),
-                                callbacks = CardListCallbacks(
-                                    onAccountClick = onAccountClick,
-                                    onTransactionClick = onEditTransactionClick,
-                                    onClone = { onCloneTransactionClick(it) },
-                                    onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                                    onSplit = { onSplitTransactionClick(it) },
-                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                                ),
+                                bottomPadding = 16.dp + navigationBarHeight
                             )
                         }
                     }
@@ -203,7 +232,7 @@ fun AnalyticsScreen(
             onCardTypeSelected = { cardType ->
                 val defaultFilter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = setOf(TransactionType.EXPENSE)
+                    transactionTypes = emptySet()
                 )
                 when (cardType) {
                     CardType.CATEGORY_PIE_CHART -> viewModel.addCard(

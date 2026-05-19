@@ -38,6 +38,7 @@ fun CurrencyBalancesCard(
     callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -46,6 +47,7 @@ fun CurrencyBalancesCard(
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

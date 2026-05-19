@@ -86,6 +86,7 @@ fun RecentActivitiesCard(
             baseCurrency = baseCurrency,
             modifier = Modifier.height(300.dp),
             showHeader = false,
+            showCurrencyBreakdown = config.showCurrencyBreakdown,
             revealedCardIds = emptyList(),
             onTransactionEvent = { event ->
                 when (event) {

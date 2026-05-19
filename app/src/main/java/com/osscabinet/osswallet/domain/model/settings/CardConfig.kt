@@ -417,6 +417,7 @@ data class TagUpSetPlotCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val maxTags: Int = 10,
     val maxIntersections: Int = 15,
+    val dynamicTagFiltering: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
     )

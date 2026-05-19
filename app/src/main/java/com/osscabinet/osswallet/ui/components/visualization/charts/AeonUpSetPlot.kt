@@ -31,6 +31,7 @@ fun AeonUpSetPlot(
     modifier: Modifier = Modifier,
     maxVisibleRows: Int = 10,
     maxVisibleCols: Int = 15,
+    dynamicFiltering: Boolean = false,
     dotColorActive: Color = AppColors.primary,
     dotColorInactive: Color = AppColors.border.copy(alpha = 0.2f),
     lineColor: Color = AppColors.primary,
@@ -39,20 +40,49 @@ fun AeonUpSetPlot(
 ) {
     if (data.sets.isEmpty()) return
 
-    val setNames = data.sets.map { it.name }
-    val maxSetValue = data.sets.maxOfOrNull { it.total.abs() } ?: BigDecimal.ONE
-    val maxIntersectionValue = data.intersections.maxOfOrNull { it.value.abs() } ?: BigDecimal.ONE
-
     val rowHeight = 24.dp
     val colWidth = 24.dp
     val leftPanelWidth = 80.dp
     val rightPanelWidth = 80.dp
 
+    val horizontalScrollState = rememberScrollState()
+    val verticalScrollState = rememberScrollState()
+
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val colWidthPx = with(density) { colWidth.toPx() }
+    val viewportWidthPx = with(density) { (colWidth * maxVisibleCols).toPx() }
+
+    val activeRowIndices = remember(horizontalScrollState.value, data.intersections, dynamicFiltering) {
+        if (!dynamicFiltering) {
+            data.sets.indices.toSet()
+        } else {
+            val firstVisible = (horizontalScrollState.value / colWidthPx).toInt()
+            val lastVisible = ((horizontalScrollState.value + viewportWidthPx) / colWidthPx).toInt()
+            
+            val visibleIntersections = data.intersections.subList(
+                firstVisible.coerceIn(0, data.intersections.size),
+                (lastVisible + 1).coerceIn(0, data.intersections.size)
+            )
+            
+            visibleIntersections.flatMap { it.setIndices }.toSet()
+        }
+    }
+
+    val renderedSets = remember(activeRowIndices, data.sets) {
+        data.sets.filterIndexed { index, _ -> activeRowIndices.contains(index) }
+    }
+
+    val setNames = renderedSets.map { it.name }
+    val maxSetValue = data.sets.maxOfOrNull { it.total.abs() } ?: BigDecimal.ONE
+    val maxIntersectionValue = data.intersections.maxOfOrNull { it.value.abs() } ?: BigDecimal.ONE
+
     val viewportHeight = rowHeight * minOf(setNames.size, maxVisibleRows)
     val viewportWidth = colWidth * minOf(data.intersections.size, maxVisibleCols)
 
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
+    // Map original set index to rendered row index
+    val originalToRenderedIndex = remember(activeRowIndices) {
+        activeRowIndices.sorted().withIndex().associate { it.value to it.index }
+    }
 
     Column(modifier = modifier) {
         // Top row: Empty | Intersection Bars | Empty
@@ -94,12 +124,13 @@ fun AeonUpSetPlot(
                     .width(leftPanelWidth)
                     .verticalScroll(verticalScrollState)
             ) {
-                setNames.forEachIndexed { index, name ->
+                activeRowIndices.sorted().forEach { originalIdx ->
+                    val name = data.sets[originalIdx].name
                     Box(
                         modifier = Modifier
                             .height(rowHeight)
                             .fillMaxWidth()
-                            .clickable { onSetClick(index) },
+                            .clickable { onSetClick(originalIdx) },
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
@@ -133,20 +164,23 @@ fun AeonUpSetPlot(
                         val x = dx * (colIdx + 0.5f)
                         
                         if (intersection.setIndices.size > 1) {
-                            val activeIndices = intersection.setIndices.sorted()
-                            val minY = dy * (activeIndices.first() + 0.5f)
-                            val maxY = dy * (activeIndices.last() + 0.5f)
-                            drawLine(
-                                color = lineColor,
-                                start = Offset(x, minY),
-                                end = Offset(x, maxY),
-                                strokeWidth = 2.dp.toPx()
-                            )
+                            val renderedIndices = intersection.setIndices.mapNotNull { originalToRenderedIndex[it] }.sorted()
+                            if (renderedIndices.size > 1) {
+                                val minY = dy * (renderedIndices.first() + 0.5f)
+                                val maxY = dy * (renderedIndices.last() + 0.5f)
+                                drawLine(
+                                    color = lineColor,
+                                    start = Offset(x, minY),
+                                    end = Offset(x, maxY),
+                                    strokeWidth = 2.dp.toPx()
+                                )
+                            }
                         }
 
-                        for (rowIdx in 0 until setNames.size) {
-                            val y = dy * (rowIdx + 0.5f)
-                            val isActive = intersection.setIndices.contains(rowIdx)
+                        for (originalRowIdx in activeRowIndices.sorted()) {
+                            val renderedRowIdx = originalToRenderedIndex[originalRowIdx] ?: continue
+                            val y = dy * (renderedRowIdx + 0.5f)
+                            val isActive = intersection.setIndices.contains(originalRowIdx)
                             drawCircle(
                                 color = if (isActive) dotColorActive else dotColorInactive,
                                 radius = radius,
@@ -176,7 +210,8 @@ fun AeonUpSetPlot(
                     .width(rightPanelWidth)
                     .verticalScroll(verticalScrollState)
             ) {
-                data.sets.forEachIndexed { index, set ->
+                activeRowIndices.sorted().forEach { originalRowIdx ->
+                    val set = data.sets[originalRowIdx]
                     val ratio = if (maxSetValue > BigDecimal.ZERO) {
                         set.total.abs().divide(maxSetValue, 4, RoundingMode.HALF_UP).toFloat()
                     } else 0f
@@ -185,7 +220,7 @@ fun AeonUpSetPlot(
                         modifier = Modifier
                             .height(rowHeight)
                             .fillMaxWidth()
-                            .clickable { onSetClick(index) }
+                            .clickable { onSetClick(originalRowIdx) }
                             .padding(vertical = 8.dp, horizontal = 4.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {

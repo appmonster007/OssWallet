@@ -71,33 +71,35 @@ class CashFlowComparisonCardComputer(
             today = today
         )
 
-        // Previous period — skip if range is unbounded
+        // Previous period — cap at today so we don't show future zero-lines
         val (prevStart, prevEnd) = TimelineService.getPreviousRange(mergedFilter.timelineRange)
         var prevTotalBuckets = 0
         val previousSeries = if (prevStart != null && prevEnd != null) {
             val prevBuckets = generateBuckets(prevStart, prevEnd, granularity)
             prevTotalBuckets = prevBuckets.size
-            computeSeriesFromBuckets(
+            computeSeriesFromBucketsWithFutureCap(
                 buckets = prevBuckets,
                 baseFilter = mergedFilter,
                 profileId = input.profileId,
                 baseCurrency = input.baseCurrency,
-                exchangeRates = input.exchangeRates
+                exchangeRates = input.exchangeRates,
+                today = today
             )
         } else CashFlowComparisonSeries(emptyList())
 
-        // Same period last year — always computable since currentStart/End are non-null
+        // Same period last year — cap at today (unlikely to trigger unless current range is far in future)
         val lastYearStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentStart), zone)
             .minusYears(1).toInstant().toEpochMilli()
         val lastYearEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentEnd), zone)
             .minusYears(1).toInstant().toEpochMilli()
         val lastYearBuckets = generateBuckets(lastYearStart, lastYearEnd, granularity)
-        val lastYearSeries = computeSeriesFromBuckets(
+        val lastYearSeries = computeSeriesFromBucketsWithFutureCap(
             buckets = lastYearBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
             baseCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates
+            exchangeRates = input.exchangeRates,
+            today = today
         )
 
         return CardRenderData.CashFlowComparison(
@@ -162,7 +164,7 @@ class CashFlowComparisonCardComputer(
         return buckets
     }
 
-    // Current series: drop future buckets entirely so the line terminates naturally at today.
+    // Current / Previous / Last Year series: drop future buckets entirely so the line terminates naturally at today.
     // The bucket straddling today is capped at today; all fully-future buckets are skipped.
     private suspend fun computeSeriesFromBucketsWithFutureCap(
         buckets: List<Triple<Long, Long, String>>,
@@ -177,20 +179,6 @@ class CashFlowComparisonCardComputer(
             if (bucketStart > today) break
             val effectiveEnd = minOf(bucketEnd, today)
             points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates))
-        }
-        return CashFlowComparisonSeries(points)
-    }
-
-    // Previous / last-year series: fully in the past, no capping needed.
-    private suspend fun computeSeriesFromBuckets(
-        buckets: List<Triple<Long, Long, String>>,
-        baseFilter: TransactionFilter,
-        profileId: Int,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
-    ): CashFlowComparisonSeries {
-        val points = buckets.map { (bucketStart, bucketEnd, label) ->
-            queryBucket(baseFilter, profileId, bucketStart, bucketEnd, label, baseCurrency, exchangeRates)
         }
         return CashFlowComparisonSeries(points)
     }

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
@@ -74,6 +73,7 @@ class AnalyticsViewModel(
                 }
 
                 AnalyticsUiState.Success(
+                    profileId = profileId,
                     allTransactions = transactions,
                     accounts = accounts,
                     allCategories = categories,
@@ -96,6 +96,7 @@ class AnalyticsViewModel(
     }.transformLatest { (cards, state) ->
         if (state !is AnalyticsUiState.Success) { emit(emptyMap()); return@transformLatest }
         val input = CardInput(
+            profileId = state.profileId,
             transactions = state.allTransactions,
             accounts = state.accounts,
             categories = state.allCategories,
@@ -103,7 +104,8 @@ class AnalyticsViewModel(
             baseCurrency = state.selectedCurrency,
             plannedPayments = state.plannedPayments,
             budgets = state.budgets,
-            loans = state.loans
+            loans = state.loans,
+            filter = TransactionFilter(excludeFuture = false)
         )
         emit(computeCardUseCase.computeAll(cards.cards, input))
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -112,6 +114,7 @@ class AnalyticsViewModel(
 sealed class AnalyticsUiState {
     object Loading : AnalyticsUiState()
     data class Success(
+        val profileId: Int = 0,
         val allTransactions: List<Transaction> = emptyList(),
         val accounts: List<Account> = emptyList(),
         val allCategories: List<Category> = emptyList(),

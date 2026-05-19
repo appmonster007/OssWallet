@@ -125,6 +125,7 @@ fun AnalyticsScreen(
                                 cards = cardsConfig.cards,
                                 cardDataMap = cardDataMap,
                                 cardInput = CardInput(
+                                    profileId = state.profileId,
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,
                                     categories = state.allCategories,
@@ -132,7 +133,8 @@ fun AnalyticsScreen(
                                     baseCurrency = state.selectedCurrency,
                                     plannedPayments = state.plannedPayments,
                                     budgets = state.budgets,
-                                    loans = state.loans
+                                    loans = state.loans,
+                                    filter = TransactionFilter(excludeFuture = false)
                                 ),
                                 cardComputerRegistry = cardComputerRegistry,
                                 cardUpdateHandler = viewModel,

@@ -46,7 +46,10 @@ fun AeonTimelinePeriodSelector(
     currentRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
-    swipeEntireComponent: Boolean = false
+    swipeEntireComponent: Boolean = false,
+    containerColor: Color = AppColors.cardSurface,
+    contentColor: Color = AppColors.primary,
+    inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
 ) {
     val initialPage = remember(currentRange) {
         when (currentRange) {
@@ -89,9 +92,9 @@ fun AeonTimelinePeriodSelector(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.cardSurface,
+        color = containerColor,
         tonalElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(
+        border = if (containerColor == Color.Transparent) null else androidx.compose.foundation.BorderStroke(
             (AeonTheme.dimensions.spacingXs / 8),
             AppColors.divider.copy(alpha = 0.15f)
         )
@@ -110,7 +113,9 @@ fun AeonTimelinePeriodSelector(
                     onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                     showDropdown = showDropdown,
                     onDropdownShow = { showDropdown = it },
-                    onDatePickerShow = { showDatePicker = it }
+                    onDatePickerShow = { showDatePicker = it },
+                    contentColor = contentColor,
+                    inactiveContentColor = inactiveContentColor
                 )
             }
         } else {
@@ -124,6 +129,8 @@ fun AeonTimelinePeriodSelector(
                 showDropdown = showDropdown,
                 onDropdownShow = { showDropdown = it },
                 onDatePickerShow = { showDatePicker = it },
+                contentColor = contentColor,
+                inactiveContentColor = inactiveContentColor,
                 centerContent = {
                     HorizontalPager(
                         state = pagerState,
@@ -167,6 +174,8 @@ private fun TimelineSelectorLayout(
     showDropdown: Boolean,
     onDropdownShow: (Boolean) -> Unit,
     onDatePickerShow: (Boolean) -> Unit,
+    contentColor: Color = AppColors.primary,
+    inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f),
     centerContent: @Composable ColumnScope.() -> Unit = {
         DateDisplayArea(
             page = page,
@@ -175,7 +184,9 @@ private fun TimelineSelectorLayout(
             showDropdown = showDropdown,
             onDropdownShow = onDropdownShow,
             onDatePickerShow = onDatePickerShow,
-            onRangeSelected = onRangeSelected
+            onRangeSelected = onRangeSelected,
+            contentColor = contentColor,
+            inactiveContentColor = inactiveContentColor
         )
     }
 ) {
@@ -194,7 +205,7 @@ private fun TimelineSelectorLayout(
                 Icons.Default.ChevronLeft, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (currentRange !is TimelineRange.AllTime) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) contentColor else inactiveContentColor
             )
         }
 
@@ -203,7 +214,12 @@ private fun TimelineSelectorLayout(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            IconIndicators(activePage = activePage, onIconClick = onIconClick)
+            IconIndicators(
+                activePage = activePage, 
+                onIconClick = onIconClick,
+                contentColor = contentColor,
+                inactiveContentColor = inactiveContentColor
+            )
             centerContent()
         }
 
@@ -216,7 +232,7 @@ private fun TimelineSelectorLayout(
                 Icons.Default.ChevronRight, 
                 null, 
                 modifier = Modifier.size(18.dp),
-                tint = if (currentRange !is TimelineRange.AllTime) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.2f)
+                tint = if (currentRange !is TimelineRange.AllTime) contentColor else inactiveContentColor
             )
         }
     }
@@ -225,7 +241,9 @@ private fun TimelineSelectorLayout(
 @Composable
 private fun IconIndicators(
     activePage: Int,
-    onIconClick: (Int) -> Unit
+    onIconClick: (Int) -> Unit,
+    contentColor: Color = AppColors.primary,
+    inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
 ) {
     val icons = listOf(Icons.Default.History, Icons.Default.CalendarToday, Icons.Default.Schedule, Icons.Default.DateRange)
     val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
@@ -248,7 +266,7 @@ private fun IconIndicators(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
-                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
+                    tint = if (isSelected) contentColor else inactiveContentColor
                 )
                 AnimatedVisibility(
                     visible = isSelected,
@@ -259,7 +277,7 @@ private fun IconIndicators(
                         text = labels[index],
                         modifier = Modifier.padding(start = 4.dp),
                         style = AppTextStyles.timelineTabLabel,
-                        color = AppColors.primary
+                        color = contentColor
                     )
                 }
             }
@@ -275,7 +293,9 @@ private fun DateDisplayArea(
     showDropdown: Boolean,
     onDropdownShow: (Boolean) -> Unit,
     onDatePickerShow: (Boolean) -> Unit,
-    onRangeSelected: (TimelineRange) -> Unit
+    onRangeSelected: (TimelineRange) -> Unit,
+    contentColor: Color = AppColors.contentPrimary,
+    inactiveContentColor: Color = AppColors.contentSecondary
 ) {
     var width by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
@@ -299,7 +319,7 @@ private fun DateDisplayArea(
             Text(
                 text = getRangeSubtitleText(currentRange),
                 style = AppTextStyles.timelinePeriodValue,
-                color = AppColors.contentPrimary,
+                color = contentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -308,7 +328,7 @@ private fun DateDisplayArea(
                     Icons.Default.KeyboardArrowDown,
                     null,
                     modifier = Modifier.size(14.dp).padding(start = 2.dp),
-                    tint = AppColors.contentSecondary
+                    tint = inactiveContentColor
                 )
             }
         }

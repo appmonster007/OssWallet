@@ -110,12 +110,31 @@ class DatabaseQueryServiceImpl(
             AggregatedData(dimMap, metMap, row.count)
         }
 
-        // Handle Hybrid Rollup for TAGS
-        return if (plan.sqlDimensions.contains(AggregationDimension.TAGS)) {
+        // Handle Hybrid Rollup for TAGS (expand multi-value)
+        var result = if (plan.sqlDimensions.contains(AggregationDimension.TAGS)) {
             expandAndReaggregate(mapped, AggregationDimension.TAGS)
         } else {
             mapped
         }
+
+        // Handle TAG_COMBINATIONS (clean JSON brackets if needed)
+        if (plan.sqlDimensions.contains(AggregationDimension.TAG_COMBINATIONS)) {
+            result = result.map { row ->
+                val rawVal = row.dimensions[AggregationDimension.TAG_COMBINATIONS] ?: ""
+                val cleanVal = rawVal.removePrefix("[").removeSuffix("]")
+                    .split(",")
+                    .map { it.trim().removeSurrounding("\"") }
+                    .filter { it.isNotEmpty() }
+                    .sorted()
+                    .joinToString(",")
+                
+                row.copy(dimensions = row.dimensions.toMutableMap().apply { 
+                    put(AggregationDimension.TAG_COMBINATIONS, cleanVal) 
+                })
+            }
+        }
+
+        return result
     }
 
     private fun expandAndReaggregate(
@@ -125,11 +144,20 @@ class DatabaseQueryServiceImpl(
         val expanded = mutableListOf<AggregatedData>()
         
         data.forEach { row ->
-            val rawTags = row.dimensions[target] ?: ""
-            if (rawTags.isBlank() || rawTags == "unspecified") {
+            val rawValue = row.dimensions[target] ?: ""
+            if (rawValue.isBlank() || rawValue == "unspecified") {
                 expanded.add(row)
             } else {
-                val tags = rawTags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                // Support both legacy comma-separated and new JSON array format
+                val tags = if (rawValue.startsWith("[")) {
+                    rawValue.removePrefix("[").removeSuffix("]")
+                        .split(",")
+                        .map { it.trim().removeSurrounding("\"") }
+                        .filter { it.isNotEmpty() }
+                } else {
+                    rawValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                }
+
                 tags.forEach { tag ->
                     expanded.add(row.copy(
                         dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }

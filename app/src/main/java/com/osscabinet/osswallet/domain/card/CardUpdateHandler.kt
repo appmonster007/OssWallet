@@ -191,6 +191,12 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateTagUpSetPlotConfig(cardId: String, config: TagUpSetPlotCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
     // Structural Updates
     fun addCard(type: CardType) {
         cardUpdateScope.launch {

@@ -17,7 +17,8 @@ enum class AggregationDimension(
     PAYMENT_METHOD("paymentMethod", Cardinality.MEDIUM),
     CATEGORY("categoryId", Cardinality.HIGH),
     TIME("timestamp", Cardinality.HIGH),
-    TAGS("tags", Cardinality.MEDIUM); // Special: multi-value, handled via Kotlin rollup
+    TAGS("tags", Cardinality.MEDIUM), // Special: multi-value, handled via Kotlin rollup
+    TAG_COMBINATIONS("tags", Cardinality.MEDIUM); // Special: exact tag sets as dimensions
 
     enum class Cardinality { LOW, MEDIUM, HIGH }
 }

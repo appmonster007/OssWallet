@@ -121,6 +121,7 @@ private fun CardWithCallbacks.copyWithRules(
     is CardWithCallbacks.CashFlowComparison -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
     is CardWithCallbacks.IncomeExpenseBar -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
     is CardWithCallbacks.CategorySpendingTrend -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.TagUpSetPlot -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
     is CardWithCallbacks.ComputeError -> this
 }
 

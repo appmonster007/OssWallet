@@ -126,6 +126,14 @@ sealed class CardWithCallbacks {
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
 
+    data class TagUpSetPlot(
+        val renderData: CardRenderData.TagUpSetPlot,
+        val callbacks: CardCallbacks.TagUpSetPlot,
+        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val baseFilter: TransactionFilter = TransactionFilter(),
+        override val filterSheetEnabled: Boolean = true
+    ) : CardWithCallbacks()
+
     data class ComputeError(
         val cardId: String,
         val message: String?,

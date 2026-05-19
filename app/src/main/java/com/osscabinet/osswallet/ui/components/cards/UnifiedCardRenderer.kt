@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivities
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowComparisonCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.IncomeExpenseBarCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.CategorySpendingTrendCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.TagUpSetPlotCard
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
@@ -300,6 +301,20 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.CategorySpendingTrend -> {
             CategorySpendingTrendCard(
+                renderData = cardWithCallbacks.renderData,
+                callbacks = cardWithCallbacks.callbacks,
+                filterContext = filterContext,
+                baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
+                modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier
+            )
+        }
+
+        is CardWithCallbacks.TagUpSetPlot -> {
+            TagUpSetPlotCard(
                 renderData = cardWithCallbacks.renderData,
                 callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,

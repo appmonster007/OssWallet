@@ -95,6 +95,7 @@ sealed class CardConfig : BaseCardConfig {
             CardType.CASHFLOW_COMPARISON -> CashFlowComparisonCardConfig(cardId = cardId, screenContext = context)
             CardType.INCOME_EXPENSE_BAR -> IncomeExpenseBarCardConfig(cardId = cardId, screenContext = context)
             CardType.CATEGORY_SPENDING_TREND -> CategorySpendingTrendCardConfig(cardId = cardId, screenContext = context)
+            CardType.TAG_UPSET_PLOT -> TagUpSetPlotCardConfig(cardId = cardId, screenContext = context)
         }
     }
 }
@@ -407,6 +408,24 @@ data class IncomeExpenseBarCardConfig(
 }
 
 @Serializable
+@SerialName("tag_upset_plot")
+data class TagUpSetPlotCardConfig(
+    override val cardId: String,
+    override val title: String = "TAG UPSET PLOT",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val maxTags: Int = 10,
+    val maxIntersections: Int = 15,
+    override val filter: TransactionFilter = TransactionFilter(
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+    )
+) : CardConfig() {
+    override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+}
+
+@Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()
 )
@@ -435,6 +454,7 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is CashFlowComparisonCardConfig -> copy(filter = TransactionFilter())
     is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter())
     is CategorySpendingTrendCardConfig -> copy(filter = TransactionFilter())
+    is TagUpSetPlotCardConfig -> copy(filter = TransactionFilter())
 }
 
 /**
@@ -455,4 +475,5 @@ fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
     is CashFlowComparisonCardConfig -> copy(order = newOrder)
     is IncomeExpenseBarCardConfig -> copy(order = newOrder)
     is CategorySpendingTrendCardConfig -> copy(order = newOrder)
+    is TagUpSetPlotCardConfig -> copy(order = newOrder)
 }

@@ -153,7 +153,26 @@ sealed class CardRenderData {
         val activeCategories: List<CategorySummary>,
         val baseCurrency: String
     ) : CardRenderData()
+
+    data class TagUpSetPlot(
+        val config: com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig,
+        val sets: List<TagUpSetSet>,
+        val intersections: List<TagUpSetIntersection>,
+        val baseCurrency: String
+    ) : CardRenderData()
 }
+
+data class TagUpSetSet(
+    val tagName: String,
+    val totalAmount: BigDecimal,
+    val colorHex: Int = -1
+)
+
+data class TagUpSetIntersection(
+    val tags: Set<String>,
+    val amount: BigDecimal,
+    val transactionCount: Int
+)
 
 data class CategorySpendingBucket(
     val label: String,

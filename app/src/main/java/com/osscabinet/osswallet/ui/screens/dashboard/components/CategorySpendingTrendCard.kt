@@ -45,6 +45,7 @@ fun CategorySpendingTrendCard(
     callbacks: CardCallbacks.CategorySpendingTrend = CardCallbacks.CategorySpendingTrend(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -53,13 +54,17 @@ fun CategorySpendingTrendCard(
     var selectedNature by rememberSaveable { mutableStateOf(config.selectedNature) }
     var categoriesExpanded by rememberSaveable { mutableStateOf(false) }
 
+    val displayFilter = if (inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+    else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Default.BarChart,
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
-        filter = config.filter,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,
         filterContext = filterContext,

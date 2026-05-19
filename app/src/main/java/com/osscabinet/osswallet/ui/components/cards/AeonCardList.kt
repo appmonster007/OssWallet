@@ -91,6 +91,7 @@ fun AeonCardList(
                     headerModifier = dragModifier,
                     currentTheme = currentTheme,
                     filterContext = filterContext,
+                    inheritedFilter = cardInput.filter,
                 )
             }
         }

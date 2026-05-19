@@ -37,16 +37,7 @@ class IncomeExpenseBarCardComputer(
         config: IncomeExpenseBarCardConfig
     ): CardRenderData.IncomeExpenseBar {
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        val (currentStart, currentEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
-
-        if (currentStart == null || currentEnd == null) {
-            return CardRenderData.IncomeExpenseBar(
-                config = config,
-                buckets = emptyList(),
-                granularity = CashFlowComparisonGranularity.DAY,
-                baseCurrency = input.baseCurrency
-            )
-        }
+        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
         val spanDays = (currentEnd - currentStart) / 86_400_000L
         val granularity = when {

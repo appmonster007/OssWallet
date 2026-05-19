@@ -533,9 +533,7 @@ fun DynamicAccountDetailCards(
             screenContext = ScreenContext.ACCOUNT_DETAIL,
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
-                accountDetailViewModel.addCard(
-                    CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL)
-                )
+                accountDetailViewModel.addCard(cardType)
                 onShowAddCardDialogChange(false)
             }
         )

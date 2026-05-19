@@ -9,6 +9,24 @@ import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+data class TagUpSetIntersectionResult(
+    val tags: Set<String>,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val incomeByCurrency: Map<String, BigDecimal>,
+    val expenseByCurrency: Map<String, BigDecimal>,
+    val net: BigDecimal,
+    val transactionCount: Int
+)
+
+private data class IndividualTagStats(
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val count: Int,
+    val incomeByCurrency: Map<String, BigDecimal>,
+    val expenseByCurrency: Map<String, BigDecimal>
+)
+
 class TagUpSetPlotCardComputer(
     private val queryService: DatabaseQueryService
 ) : CardDataComputer<TagUpSetPlotCardConfig, CardRenderData.TagUpSetPlot> {
@@ -40,17 +58,32 @@ class TagUpSetPlotCardComputer(
 
         val tagTotals = individualTagData.groupBy { it.dimensions[AggregationDimension.TAGS] ?: "unspecified" }
             .mapValues { (_, rows) ->
-                rows.fold(BigDecimal.ZERO) { acc, row ->
+                var incomeTotal = BigDecimal.ZERO
+                var expenseTotal = BigDecimal.ZERO
+                var countTotal = 0
+                
+                rows.forEach { row ->
                     val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
-                    val income = row.metrics["income"] ?: BigDecimal.ZERO
-                    val expense = row.metrics["expense"] ?: BigDecimal.ZERO
-                    val net = income.subtract(expense)
-                    acc + CurrencyService.convertAmount(net, currency, baseCurrency, exchangeRates, 10)
+                    val inc = row.metrics["income"] ?: BigDecimal.ZERO
+                    val exp = row.metrics["expense"] ?: BigDecimal.ZERO
+                    incomeTotal += CurrencyService.convertAmount(inc, currency, baseCurrency, exchangeRates, 10)
+                    expenseTotal += CurrencyService.convertAmount(exp, currency, baseCurrency, exchangeRates, 10)
+                    countTotal += row.count
                 }
+                
+                val incomeByCurrency = rows.associate { 
+                    (it.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency) to (it.metrics["income"] ?: BigDecimal.ZERO)
+                }.filterValues { it.signum() != 0 }
+                
+                val expenseByCurrency = rows.associate { 
+                    (it.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency) to (it.metrics["expense"] ?: BigDecimal.ZERO)
+                }.filterValues { it.signum() != 0 }
+
+                IndividualTagStats(incomeTotal, expenseTotal, countTotal, incomeByCurrency, expenseByCurrency)
             }
             .filter { it.key != "unspecified" }
             .toList()
-            .sortedByDescending { it.second.abs() }
+            .sortedByDescending { it.second.income.subtract(it.second.expense).abs() }
             .take(config.maxTags)
 
         val topTags = tagTotals.map { it.first }.toSet()
@@ -66,42 +99,71 @@ class TagUpSetPlotCardComputer(
         val intersections = combinationData.groupBy { it.dimensions[AggregationDimension.TAG_COMBINATIONS] ?: "" }
             .map { (tagSetString, rows) ->
                 val tags = tagSetString.split(",").filter { it.isNotEmpty() }.toSet()
-                // Only keep intersections involving top tags
                 val filteredTags = tags.intersect(topTags)
                 
-                val amount = rows.fold(BigDecimal.ZERO) { acc, row ->
+                var incomeTotal = BigDecimal.ZERO
+                var expenseTotal = BigDecimal.ZERO
+                val incByCurr = mutableMapOf<String, BigDecimal>()
+                val expByCurr = mutableMapOf<String, BigDecimal>()
+
+                rows.forEach { row ->
                     val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
-                    val income = row.metrics["income"] ?: BigDecimal.ZERO
-                    val expense = row.metrics["expense"] ?: BigDecimal.ZERO
-                    val net = income.subtract(expense)
-                    acc + CurrencyService.convertAmount(net, currency, baseCurrency, exchangeRates, 10)
+                    val inc = row.metrics["income"] ?: BigDecimal.ZERO
+                    val exp = row.metrics["expense"] ?: BigDecimal.ZERO
+                    incomeTotal += CurrencyService.convertAmount(inc, currency, baseCurrency, exchangeRates, 10)
+                    expenseTotal += CurrencyService.convertAmount(exp, currency, baseCurrency, exchangeRates, 10)
+                    
+                    incByCurr[currency] = (incByCurr[currency] ?: BigDecimal.ZERO) + inc
+                    expByCurr[currency] = (expByCurr[currency] ?: BigDecimal.ZERO) + exp
                 }
                 
                 val count = rows.sumOf { it.count }
                 
-                TagUpSetIntersection(
+                TagUpSetIntersectionResult(
                     tags = filteredTags,
-                    amount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    income = incomeTotal,
+                    expense = expenseTotal,
+                    incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
+                    expenseByCurrency = expByCurr.filterValues { it.signum() != 0 },
+                    net = incomeTotal.subtract(expenseTotal),
                     transactionCount = count
                 )
             }
             .filter { it.tags.isNotEmpty() }
-            // Re-group because after filtering tags, multiple original combinations might map to same top-tag intersection
             .groupBy { it.tags }
             .map { (tags, results) ->
+                val inc = results.fold(BigDecimal.ZERO) { acc, r -> acc + r.income }
+                val exp = results.fold(BigDecimal.ZERO) { acc, r -> acc + r.expense }
+                
+                val incByCurr = mutableMapOf<String, BigDecimal>()
+                val expByCurr = mutableMapOf<String, BigDecimal>()
+                results.forEach { r ->
+                    r.incomeByCurrency.forEach { (c, v) -> incByCurr[c] = (incByCurr[c] ?: BigDecimal.ZERO) + v }
+                    r.expenseByCurrency.forEach { (c, v) -> expByCurr[c] = (expByCurr[c] ?: BigDecimal.ZERO) + v }
+                }
+
                 TagUpSetIntersection(
                     tags = tags,
-                    amount = results.fold(BigDecimal.ZERO) { acc, r -> acc + r.amount },
+                    amount = inc.subtract(exp).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    income = inc.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    expense = exp.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    incomeByCurrency = incByCurr,
+                    expenseByCurrency = expByCurr,
                     transactionCount = results.sumOf { it.transactionCount }
                 )
             }
             .sortedByDescending { it.amount.abs() }
             .take(config.maxIntersections)
 
-        val sets = tagTotals.map { (tag, amount) ->
+        val sets = tagTotals.map { (tag, stats) ->
             TagUpSetSet(
                 tagName = tag,
-                totalAmount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                totalAmount = stats.income.subtract(stats.expense).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                income = stats.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expense = stats.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                incomeByCurrency = stats.incomeByCurrency,
+                expenseByCurrency = stats.expenseByCurrency,
+                transactionCount = stats.count
             )
         }
 

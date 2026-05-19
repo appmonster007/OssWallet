@@ -30,9 +30,10 @@ fun AeonUpSetPlot(
     currency: String,
     modifier: Modifier = Modifier,
     dotColorActive: Color = AppColors.primary,
-    dotColorInactive: Color = AppColors.border.copy(alpha = 0.3f),
+    dotColorInactive: Color = AppColors.border.copy(alpha = 0.2f),
     lineColor: Color = AppColors.primary,
-    onIntersectionClick: (AeonUpSetIntersection) -> Unit = {}
+    onIntersectionClick: (AeonUpSetIntersection) -> Unit = {},
+    onSetClick: (Int) -> Unit = {}
 ) {
     if (data.sets.isEmpty()) return
 
@@ -40,10 +41,10 @@ fun AeonUpSetPlot(
     val maxSetValue = data.sets.maxOfOrNull { it.total.abs() } ?: BigDecimal.ONE
     val maxIntersectionValue = data.intersections.maxOfOrNull { it.value.abs() } ?: BigDecimal.ONE
 
-    val rowHeight = 40.dp
-    val colWidth = 48.dp
-    val leftPanelWidth = 100.dp
-    val rightPanelWidth = 100.dp
+    val rowHeight = 24.dp
+    val colWidth = 24.dp
+    val leftPanelWidth = 80.dp
+    val rightPanelWidth = 80.dp
 
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
@@ -56,7 +57,7 @@ fun AeonUpSetPlot(
             // Intersection Size Bars (Horizontal Scroll)
             Box(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
                 Row(
-                    modifier = Modifier.height(80.dp).padding(bottom = 4.dp),
+                    modifier = Modifier.height(60.dp).padding(bottom = 2.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.Bottom
                 ) {
@@ -69,8 +70,8 @@ fun AeonUpSetPlot(
                             modifier = Modifier
                                 .width(colWidth)
                                 .fillMaxHeight(ratio.coerceAtLeast(0.05f))
-                                .padding(horizontal = 12.dp)
-                                .background(AppColors.primary.copy(alpha = 0.8f), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .padding(horizontal = 6.dp)
+                                .background(AppColors.primary.copy(alpha = 0.8f), RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
                                 .clickable { onIntersectionClick(intersection) }
                         )
                     }
@@ -81,24 +82,27 @@ fun AeonUpSetPlot(
         }
 
         // Main content: Set names | Dot Matrix | Set Size Bars
-        Row(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
             // Left Panel: Set names (Vertical Scroll)
             Column(
                 modifier = Modifier
                     .width(leftPanelWidth)
                     .verticalScroll(verticalScrollState)
             ) {
-                setNames.forEach { name ->
+                setNames.forEachIndexed { index, name ->
                     Box(
-                        modifier = Modifier.height(rowHeight).fillMaxWidth(),
+                        modifier = Modifier
+                            .height(rowHeight)
+                            .fillMaxWidth()
+                            .clickable { onSetClick(index) },
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
                             text = name,
-                            style = AppTextStyles.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                            style = AppTextStyles.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
                             color = AppColors.contentPrimary,
                             maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
                 }
@@ -118,7 +122,7 @@ fun AeonUpSetPlot(
                 ) {
                     val dx = colWidth.toPx()
                     val dy = rowHeight.toPx()
-                    val radius = 8.dp.toPx()
+                    val radius = 5.dp.toPx()
 
                     data.intersections.forEachIndexed { colIdx, intersection ->
                         val x = dx * (colIdx + 0.5f)
@@ -131,7 +135,7 @@ fun AeonUpSetPlot(
                                 color = lineColor,
                                 start = Offset(x, minY),
                                 end = Offset(x, maxY),
-                                strokeWidth = 3.dp.toPx()
+                                strokeWidth = 2.dp.toPx()
                             )
                         }
 
@@ -148,17 +152,15 @@ fun AeonUpSetPlot(
                     }
                 }
                 
-                // Overlay invisible clickable boxes for interactivity
+                // Overlay invisible clickable boxes for intersection interactivity
                 Row {
                     data.intersections.forEach { intersection ->
-                        Column {
-                            Box(
-                                modifier = Modifier
-                                    .width(colWidth)
-                                    .height(rowHeight * setNames.size)
-                                    .clickable { onIntersectionClick(intersection) }
-                            )
-                        }
+                        Box(
+                            modifier = Modifier
+                                .width(colWidth)
+                                .height(rowHeight * setNames.size)
+                                .clickable { onIntersectionClick(intersection) }
+                        )
                     }
                 }
             }
@@ -169,7 +171,7 @@ fun AeonUpSetPlot(
                     .width(rightPanelWidth)
                     .verticalScroll(verticalScrollState)
             ) {
-                data.sets.forEach { set ->
+                data.sets.forEachIndexed { index, set ->
                     val ratio = if (maxSetValue > BigDecimal.ZERO) {
                         set.total.abs().divide(maxSetValue, 4, RoundingMode.HALF_UP).toFloat()
                     } else 0f
@@ -178,14 +180,15 @@ fun AeonUpSetPlot(
                         modifier = Modifier
                             .height(rowHeight)
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                            .clickable { onSetClick(index) }
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(ratio.coerceAtLeast(0.05f))
                                 .fillMaxHeight()
-                                .background(AppColors.accent.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
+                                .background(AppColors.accent.copy(alpha = 0.6f), RoundedCornerShape(1.dp))
                         )
                     }
                 }
@@ -199,14 +202,14 @@ fun AeonUpSetPlot(
 fun PreviewUpSetPlotLarge() {
     val sets = (1..15).map { AeonUpSetSet("Tag $it", BigDecimal(it * 100)) }
     val intersections = listOf(
-        AeonUpSetIntersection(setOf(0, 1, 2), BigDecimal(500), 10),
-        AeonUpSetIntersection(setOf(0, 1), BigDecimal(300), 5),
-        AeonUpSetIntersection(setOf(2, 3, 4, 5), BigDecimal(800), 15),
-        AeonUpSetIntersection(setOf(6, 7), BigDecimal(200), 3),
-        AeonUpSetIntersection(setOf(0, 5, 10), BigDecimal(450), 8),
-        AeonUpSetIntersection(setOf(12, 13, 14), BigDecimal(1200), 20),
-        AeonUpSetIntersection(setOf(1, 4, 7, 10), BigDecimal(150), 2),
-        AeonUpSetIntersection(setOf(8), BigDecimal(100), 1)
+        AeonUpSetIntersection(setOf(0, 1, 2), BigDecimal(500), BigDecimal(600), BigDecimal(100), emptyMap(), emptyMap(), 10),
+        AeonUpSetIntersection(setOf(0, 1), BigDecimal(300), BigDecimal(400), BigDecimal(100), emptyMap(), emptyMap(), 5),
+        AeonUpSetIntersection(setOf(2, 3, 4, 5), BigDecimal(800), BigDecimal(1000), BigDecimal(200), emptyMap(), emptyMap(), 15),
+        AeonUpSetIntersection(setOf(6, 7), BigDecimal(200), BigDecimal(300), BigDecimal(100), emptyMap(), emptyMap(), 3),
+        AeonUpSetIntersection(setOf(0, 5, 10), BigDecimal(450), BigDecimal(600), BigDecimal(150), emptyMap(), emptyMap(), 8),
+        AeonUpSetIntersection(setOf(12, 13, 14), BigDecimal(1200), BigDecimal(1500), BigDecimal(300), emptyMap(), emptyMap(), 20),
+        AeonUpSetIntersection(setOf(1, 4, 7, 10), BigDecimal(150), BigDecimal(200), BigDecimal(50), emptyMap(), emptyMap(), 2),
+        AeonUpSetIntersection(setOf(8), BigDecimal(100), BigDecimal(150), BigDecimal(50), emptyMap(), emptyMap(), 1)
     )
     
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
@@ -229,9 +232,9 @@ fun PreviewUpSetPlotSmall() {
         AeonUpSetSet("Food", BigDecimal(300))
     )
     val intersections = listOf(
-        AeonUpSetIntersection(setOf(0, 1), BigDecimal(200), 2),
-        AeonUpSetIntersection(setOf(0, 2), BigDecimal(150), 3),
-        AeonUpSetIntersection(setOf(0, 1, 2), BigDecimal(50), 1)
+        AeonUpSetIntersection(setOf(0, 1), BigDecimal(200), BigDecimal(300), BigDecimal(100), emptyMap(), emptyMap(), 2),
+        AeonUpSetIntersection(setOf(0, 2), BigDecimal(150), BigDecimal(200), BigDecimal(50), emptyMap(), emptyMap(), 3),
+        AeonUpSetIntersection(setOf(0, 1, 2), BigDecimal(50), BigDecimal(100), BigDecimal(50), emptyMap(), emptyMap(), 1)
     )
     
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {

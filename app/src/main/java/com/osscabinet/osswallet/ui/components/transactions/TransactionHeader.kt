@@ -56,11 +56,6 @@ fun TransactionHeader(
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
 
     val styles = TransactionHeaderStyles.default()
-    val balanceWeight = when {
-        showOpeningBalance && showClosingBalance -> 2f
-        showOpeningBalance || showClosingBalance -> 1f
-        else -> 0f
-    }
 
     val activeCurrencies = remember(allCurrencies, incomeByCurrency, expenseByCurrency) {
         allCurrencies.filter { curr ->
@@ -71,7 +66,6 @@ fun TransactionHeader(
     }
 
     val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
-    val canExpand = showCurrencyBreakdown && currenciesToDisplay.isNotEmpty()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -106,180 +100,24 @@ fun TransactionHeader(
                 if (showCurrencyBreakdown) {
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Row 2: Headers
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.width(styles.labelColumnWidth))
-                        listOf("INCOME", "EXPENSE", "NET").forEach { label ->
-                            Text(
-                                label,
-                                style = styles.columnHeaderStyle,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 8.dp),
-                                textAlign = TextAlign.End
-                            )
-                        }
-                        if (balanceWeight > 0) {
-                            Text(
-                                "BALANCE",
-                                style = styles.columnHeaderStyle,
-                                modifier = Modifier
-                                    .weight(balanceWeight)
-                                    .padding(start = 8.dp),
-                                textAlign = TextAlign.End
-                            )
-                        }
-                    }
-
-                    // Row 3: Aggregate (Clickable)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(if (canExpand) Modifier.clickable { isExpanded = !isExpanded } else Modifier)
-                            .padding(vertical = 1.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.width(styles.labelColumnWidth),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "TOTAL",
-                                style = styles.totalLabelStyle,
-                                color = AppColors.primary
-                            )
-                            if (canExpand) {
-                                Icon(
-                                    if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(10.dp),
-                                    tint = AppColors.primary.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-
-                        val baseColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
-
-                        Text(
-                            formatCurrencyRight(incomeBase, baseCurrency, shorten = true),
-                            style = styles.baseValueStyle,
-                            color = styles.positiveColor,
-                            modifier = baseColumnModifier,
-                            textAlign = TextAlign.End
-                        )
-                        Text(
-                            formatCurrencyRight(expenseBase, baseCurrency, shorten = true),
-                            style = styles.baseValueStyle,
-                            color = styles.negativeColor,
-                            modifier = baseColumnModifier,
-                            textAlign = TextAlign.End
-                        )
-                        Text(
-                            formatCurrencyRight(netBase, baseCurrency, shorten = true),
-                            style = styles.baseValueStyle,
-                            color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
-                            modifier = baseColumnModifier,
-                            textAlign = TextAlign.End
-                        )
-
-                        if (balanceWeight > 0) {
-                            val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, shorten = true)
-                            val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, shorten = true)
-                            val balanceText = when {
-                                showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
-                                showOpeningBalance -> openingBaseText
-                                else -> closingBaseText
-                            }
-                            Text(
-                                text = balanceText,
-                                style = styles.baseValueStyle,
-                                modifier = Modifier
-                                    .weight(balanceWeight)
-                                    .padding(start = 8.dp),
-                                textAlign = TextAlign.End,
-                                color = AppColors.contentPrimary,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-
-                    // Row 4+: Breakdown (Expandable)
-                    AnimatedVisibility(visible = isExpanded) {
-                        Column(modifier = Modifier.padding(top = 2.dp)) {
-                            currenciesToDisplay.forEach { curr ->
-                                val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
-                                val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
-                                val net = inc.add(exp)
-                                val balAfter = closingBalancesByCurrency[curr]
-                                val balBefore = openingBalancesByCurrency[curr] ?: BigDecimal.ZERO
-
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 1.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = curr,
-                                        style = styles.breakdownLabelStyle,
-                                        modifier = Modifier.width(styles.labelColumnWidth),
-                                        color = styles.outlineColor.copy(alpha = 0.8f)
-                                    )
-
-                                    val breakdownColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
-
-                                    Text(
-                                        formatCurrencyRight(inc, curr, shorten = true),
-                                        style = styles.breakdownValueStyle,
-                                        color = styles.positiveColor.copy(alpha = 0.7f),
-                                        modifier = breakdownColumnModifier,
-                                        textAlign = TextAlign.End
-                                    )
-                                    Text(
-                                        formatCurrencyRight(exp, curr, shorten = true),
-                                        style = styles.breakdownValueStyle,
-                                        color = styles.negativeColor.copy(alpha = 0.7f),
-                                        modifier = breakdownColumnModifier,
-                                        textAlign = TextAlign.End
-                                    )
-                                    Text(
-                                        formatCurrencyRight(net, curr, shorten = true),
-                                        style = styles.breakdownValueStyle.copy(fontWeight = FontWeight.Bold),
-                                        color = (if (net >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor).copy(alpha = 0.7f),
-                                        modifier = breakdownColumnModifier,
-                                        textAlign = TextAlign.End
-                                    )
-
-                                    if (balanceWeight > 0) {
-                                        val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, shorten = true) else "0.00 $curr"
-                                        val balBeforeText = formatCurrencyRight(balBefore, curr, shorten = true)
-
-                                        val balanceText = when {
-                                            showOpeningBalance && showClosingBalance -> "$balBeforeText → $balAfterText"
-                                            showOpeningBalance -> balBeforeText
-                                            else -> balAfterText
-                                        }
-
-                                        Text(
-                                            text = balanceText,
-                                            style = styles.breakdownValueStyle.copy(fontWeight = FontWeight.Bold),
-                                            modifier = Modifier
-                                                .weight(balanceWeight)
-                                                .padding(start = 8.dp),
-                                            textAlign = TextAlign.End,
-                                            color = AppColors.contentPrimary.copy(alpha = 0.6f),
-                                            maxLines = 1,
-                                            softWrap = false
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    TransactionSummaryBreakdown(
+                        incomeByCurrency = incomeByCurrency,
+                        expenseByCurrency = expenseByCurrency,
+                        incomeBase = incomeBase,
+                        expenseBase = expenseBase,
+                        netBase = netBase,
+                        baseCurrency = baseCurrency,
+                        openingBalancesByCurrency = openingBalancesByCurrency,
+                        closingBalancesByCurrency = closingBalancesByCurrency,
+                        totalOpeningBalanceBase = totalOpeningBalanceBase,
+                        totalClosingBalanceBase = totalClosingBalanceBase,
+                        showOpeningBalance = showOpeningBalance,
+                        showClosingBalance = showClosingBalance,
+                        currenciesToDisplay = currenciesToDisplay,
+                        labelColumnWidth = styles.labelColumnWidth,
+                        showCurrencyBreakdown = true,
+                        initiallyExpanded = isExpanded
+                    )
                 }
             }
         }

@@ -57,12 +57,21 @@ data class AeonPieChartSlice(
 data class AeonUpSetSet(
     val name: String,
     val total: BigDecimal,
-    val color: Color = Color.Unspecified
+    val color: Color = Color.Unspecified,
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expense: BigDecimal = BigDecimal.ZERO,
+    val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val transactionCount: Int = 0
 )
 
 data class AeonUpSetIntersection(
     val setIndices: Set<Int>, // Indices into the list of AeonUpSetSet
     val value: BigDecimal,
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expense: BigDecimal = BigDecimal.ZERO,
+    val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
     val count: Int
 )
 

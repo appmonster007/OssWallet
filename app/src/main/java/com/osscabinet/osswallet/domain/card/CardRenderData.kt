@@ -165,12 +165,21 @@ sealed class CardRenderData {
 data class TagUpSetSet(
     val tagName: String,
     val totalAmount: BigDecimal,
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expense: BigDecimal = BigDecimal.ZERO,
+    val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val transactionCount: Int = 0,
     val colorHex: Int = -1
 )
 
 data class TagUpSetIntersection(
     val tags: Set<String>,
     val amount: BigDecimal,
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expense: BigDecimal = BigDecimal.ZERO,
+    val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
     val transactionCount: Int
 )
 

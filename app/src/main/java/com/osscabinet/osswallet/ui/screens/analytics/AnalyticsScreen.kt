@@ -13,16 +13,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
@@ -31,7 +27,6 @@ import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -52,7 +47,6 @@ fun AnalyticsScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
-    onAddClick: (TransactionType?, Long?) -> Unit,
     cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -62,19 +56,13 @@ fun AnalyticsScreen(
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
-    val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showAddCardDialog by remember { mutableStateOf(false) }
-    var isFabExpanded by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
-    BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     Scaffold(
         topBar = {
@@ -103,8 +91,7 @@ fun AnalyticsScreen(
             )
         }
     ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (val state = uiState) {
+            when (val state = uiState) {
                     is AnalyticsUiState.Loading -> {
                         AeonShimmer(
                             innerPadding = innerPadding,
@@ -195,33 +182,6 @@ fun AnalyticsScreen(
                             )
                         }
                     }
-                }
-
-                UnifiedPillNavigation(
-                    selectedTab = 0,
-                    onTabSelected = {},
-                    tabs = emptyList(),
-                    fabPaddingBottom = 16.dp + navigationBarHeight,
-                    isFabExpanded = isFabExpanded,
-                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-                    onFabClick = {
-                        if (!expandableFabEnabled) {
-                            onAddClick(TransactionType.EXPENSE, null)
-                        }
-                    },
-                    fabMenu = if (expandableFabEnabled) {
-                        {
-                            TransactionFabMenu(
-                                isExpanded = isFabExpanded,
-                                templates = allTemplates,
-                                onAddClick = { type, templateId ->
-                                    isFabExpanded = false
-                                    onAddClick(type, templateId)
-                                }
-                            )
-                        }
-                    } else null
-                )
             }
         }
 

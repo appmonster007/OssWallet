@@ -316,7 +316,7 @@ fun AeonBarLineChart(
                     indexToX(index, lineTotal)
                 }
                 val y = valueToY(value)
-                val animatedY = heightPx - bottomPadding - (heightPx - bottomPadding - y) * animationProgress.value
+                val animatedY = zeroY + (y - zeroY) * animationProgress.value
 
                 if (index == 0) {
                     linePath.moveTo(x, animatedY)
@@ -367,7 +367,7 @@ fun AeonBarLineChart(
                 sma.forEachIndexed { index, value ->
                     val x = indexToX(index, sma.size)
                     val y = valueToY(value.toBigDecimal())
-                    val animatedY = heightPx - bottomPadding - (heightPx - bottomPadding - y) * animationProgress.value
+                    val animatedY = zeroY + (y - zeroY) * animationProgress.value
                     if (index == 0) {
                         smaPath.moveTo(x, animatedY)
                     } else {

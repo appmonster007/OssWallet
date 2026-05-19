@@ -134,3 +134,128 @@ Fees Adjustment,-15.00,Finance,9,1780531200000,USD,expense,acc_bank,Bank Transfe
 Interest Earned,25.50,Investment Returns,13,1780617600000,USD,income,acc_savings,Bank Transfer,Bank,Monthly interest,"Interest,Savings",monthly,1,,,,cleared
 Cashback earned,12.40,Other Income,13,1780704000000,USD,income,acc_credit,Other,Credit Card,Monthly cashback,"Cashback,Personal",monthly,1,,,,cleared
 Insurance Pay,-85.00,Health,5,1780790400000,USD,expense,acc_credit,Credit Card,Health Ins,Monthly premium,"Insurance,Health,Essential,Bills",monthly,1,,,,cleared
+Fine Dining,-350.00,Dining Out,1,1780876800000,USD,expense,acc_credit,Credit Card,Michelin Star,Celebration,"Luxury,Dining,Social",,1,,,,cleared
+Car Repair,-1200.00,Car Maintenance,2,1780963200000,USD,expense,acc_bank,Bank Transfer,Mechanic,Transmission,"Emergency,Auto,Maintenance,Essential",,1,,,,cleared
+Laptop Repair,-200.00,Electronics,3,1781049600000,USD,expense,acc_cash,Cash,Repair Shop,Screen fix,"Work,Electronics,Maintenance",,1,,,,cleared
+Bonus Payment,5000.00,Bonus,13,1781136000000,USD,income,acc_bank,Bank Transfer,Employer,Year end bonus,"Salary,Luxury,Savings",,1,,,,cleared
+Charity Donation,-100.00,Donations,11,1781222400000,USD,expense,acc_bank,Credit Card,Red Cross,Donation,"Gifts,Personal,Essential",,1,,,,cleared
+Crypto Investment,-1000.00,Crypto,12,1781308800000,USD,expense,acc_bank,Bank Transfer,Exchange,BTC Buy,"Investments,Savings,Luxury",,1,,,,cleared
+Utility Refund,45.00,Refunds & Cashback,13,1781395200000,USD,income,acc_bank,Bank Transfer,Power Co,Overpayment,"Bills,Utilities,Cashback",,1,,,,cleared
+Freelance Design,2500.00,Freelance,13,1781481600000,USD,income,acc_bank,Bank Transfer,Client C,Logo design,"Freelance,Business,Project,Work",,1,,,,cleared
+Yoga Class,-25.00,Fitness Classes,6,1781568000000,USD,expense,acc_cash,Cash,Studio,Single session,"Health,Fitness,Personal",,1,,,,cleared
+College Tuition,-4500.00,Tuition & Fees,8,1781654400000,USD,expense,acc_bank,Bank Transfer,University,Semester Fee,"Education,Essential,Bills",,1,,,,cleared
+Quarterly Tax Payment,-1200.00,Taxes & Fees,183,1781740800000,USD,expense,acc_bank,Bank Transfer,IRS,Q4 Tax,"Tax,Essential,Business",,1,,,,cleared
+Unplanned Medical Exp,-850.00,Hospital,140,1781827200000,USD,expense,acc_cash,Debit Card,City Clinic,Emergency Visit,"Emergency,Health,Essential",,1,,,,cleared
+Bank Service Fee,-12.00,Finance,9,1781913600000,USD,expense,acc_bank,Bank Transfer,Global Bank,Monthly maintenance,"Fees,Bills,Adjustment",,1,,,,cleared
+Home Insurance,-450.00,Insurance,182,1782000000000,USD,expense,acc_bank,Bank Transfer,SafeHome,Annual premium,"Housing,Essential,Insurance",,1,,,,cleared
+Software Project Milestone,3200.00,Freelance,198,1782086400000,USD,income,acc_bank,Bank Transfer,Client D,Backend API,"Project,Work,Freelance,Business",,1,,,,cleared
+Japan Souvenirs,-15000.00,Shopping,3,1782172800000,JPY,expense,acc_jpy,Cash,Kyoto Shop,Gifts,"Japan,Vacation,Travel,Personal",,1,,,,cleared
+Late Fee,-35.00,Finance,9,1782259200000,USD,expense,acc_credit,Credit Card,Credit Co,Late payment,"Fees,Misc,Adjustment",,1,,,,cleared
+Health Supplement,-45.99,Pharmacy,141,1782345600000,USD,expense,acc_cash,Cash,Wellness Store,Vitamins,"Health,Personal,Fitness",,1,,,,cleared
+Bus Pass Recharge,-80.00,Public Transit,111,1782432000000,USD,expense,acc_cash,Debit Card,City Transit,Monthly pass,"Transport,Essential,Bills",,1,,,,cleared
+Concert Tickets,-250.00,Music,151,1782518400000,USD,expense,acc_credit,Credit Card,TicketMaster,Rock Show,"Entertainment,Social,Luxury",,1,,,,cleared
+Car Maintenance Service,-350.00,Car Maintenance,2,1782604800000,USD,expense,acc_bank,Debit Card,Auto Shop,Regular checkup,"Auto,Maintenance,Transport,Essential",,1,,,,cleared
+Property Tax,-1800.00,Taxes & Fees,183,1782691200000,USD,expense,acc_bank,Bank Transfer,County,Semi-annual,"Tax,Housing,Essential,Bills",,1,,,,cleared
+Freelance Mobile App,4500.00,Freelance,198,1782777600000,USD,income,acc_bank,Bank Transfer,Client E,UI Design,"Freelance,Business,Project,Work",,1,,,,cleared
+Weekend Brunch,-65.00,Dining Out,102,1782864000000,USD,expense,acc_cash,Cash,Cafe,Sunday morning,"Dining,Food,Social,Personal",,1,,,,cleared
+Electronics Upgrade,-899.00,Electronics,121,1782950400000,USD,expense,acc_credit,Credit Card,Best Buy,New Monitor,"Electronics,Shopping,Work,Business",,1,,,,cleared
+Emergency Plumber,-400.00,Repairs,132,1783036800000,USD,expense,acc_cash,Cash,Local Plumber,Burst pipe,"Emergency,Housing,Essential,Maintenance",,1,,,,cleared
+Stock Portfolio Dividend,45.20,Dividends,199,1783123200000,USD,income,acc_invest,Bank Transfer,E-Trade,Quarterly,"Investments,Interest,Savings",,1,,,,cleared
+Miscellaneous Expense,-15.50,Others,1000,1783209600000,USD,expense,acc_cash,Cash,Small Shop,Uncategorized,"Misc,Personal,Adjustment",,1,,,,cleared
+Luxury Watch,-5000.00,Jewelry,121,1783296000000,USD,expense,acc_credit,Credit Card,Rolex,Gift for self,"Luxury,Gifts,Personal,Investments",,1,,,,cleared
+Weekend Flight to Tokyo,-1200.00,Flights,111,1783382400000,USD,expense,acc_bank,Bank Transfer,ANA,Flight,"Travel,Vacation,Japan,Transport",,1,,,,cleared
+Tokyo Hotel,-800.00,Hotels,112,1783468800000,USD,expense,acc_credit,Credit Card,Hilton Tokyo,Stay,"Travel,Vacation,Japan,Housing,Luxury",,1,,,,cleared
+Tokyo Dinner,-25000.00,Dining Out,102,1783555200000,JPY,expense,acc_jpy,Cash,Local Sushi,Omakase,"Travel,Vacation,Japan,Food,Dining,Luxury",,1,,,,cleared
+Emergency Health Check,-120.00,Health,140,1783641600000,USD,expense,acc_cash,Cash,Clinic,Flu check,"Health,Emergency,Essential",,1,,,,cleared
+Freelance Mobile App Milestone,2000.00,Freelance,198,1783728000000,USD,income,acc_bank,Bank Transfer,Client F,Sprint 2,"Project,Work,Freelance,Business",,1,,,,cleared
+Electricity Bill,-165.00,Electricity,181,1783814400000,USD,expense,acc_bank,Bank Transfer,Power Co,Usage,"Housing,Essential,Bills,Utilities",monthly,1,,,,cleared
+Internet Bill,-85.00,Internet,182,1783900800000,USD,expense,acc_bank,Bank Transfer,ISP,Gigabit,"Housing,Essential,Bills,Utilities",monthly,1,,,,cleared
+Subscription Bundle,-45.00,Services,191,1783987200000,USD,expense,acc_credit,Credit Card,Adobe,Creative Suite,"Subscription,Work,Project,Business,Entertainment",monthly,1,,,,cleared
+Gym Membership,-60.00,Fitness,161,1784073600000,USD,expense,acc_credit,Credit Card,Gold's Gym,Monthly,"Health,Fitness,Essential,Subscription",monthly,1,,,,cleared
+New Car Part,-150.00,Car Maintenance,122,1784160000000,USD,expense,acc_cash,Debit Card,AutoZone,Brakes,"Auto,Maintenance,Transport,Essential",,1,,,,cleared
+Shopping Spree,-450.00,Shopping,121,1784246400000,USD,expense,acc_credit,Credit Card,Macy's,Clothes,"Shopping,Personal,Social,Luxury",,1,,,,cleared
+Education Course,-300.00,Training,171,1784332800000,USD,expense,acc_bank,Bank Transfer,Coursera,Data Science,"Education,Work,Personal,Project",,1,,,,cleared
+Dinner with Family,-180.00,Dining Out,102,1784419200000,USD,expense,acc_cash,Credit Card,Olive Garden,Dinner,"Social,Food,Dining,Personal",,1,,,,cleared
+Cashback Reward,25.00,Other Income,199,1784505600000,USD,income,acc_credit,Other,Bank,Monthly,"Cashback,Personal,Adjustment",monthly,1,,,,cleared
+Tax Professional Fee,-200.00,Consulting,192,1784592000000,USD,expense,acc_bank,Bank Transfer,CPA,Tax prep,"Tax,Work,Business,Bills",,1,,,,cleared
+Interest Earned,12.50,Interest,199,1784678400000,USD,income,acc_savings,Bank Transfer,Bank,Savings Interest,"Interest,Savings,Investments",monthly,1,,,,cleared
+Insurance Premium,-110.00,Insurance,182,1784764800000,USD,expense,acc_bank,Bank Transfer,Geico,Auto,"Insurance,Auto,Transport,Essential,Bills",monthly,1,,,,cleared
+Office Supplies,-45.00,Shopping,121,1784851200000,USD,expense,acc_cash,Cash,Staples,Paper/Pens,"Work,Essential,Shopping,Business",,1,,,,cleared
+Gas Station,-65.00,Fuel,111,1784937600000,USD,expense,acc_bank,Credit Card,Shell,Fuel,"Transport,Essential,Auto",,1,,,,cleared
+Grocery Run,-120.00,Groceries,101,1785024000000,USD,expense,acc_cash,Debit Card,Safeway,Food,"Food,Groceries,Essential",,1,,,,cleared
+Weekend Cafe,-12.00,Coffee,102,1785110400000,USD,expense,acc_cash,Cash,Cafe,Latte,"Food,Social,Dining,Personal",,1,,,,cleared
+Late Night Uber,-35.00,Transport,111,1785196800000,USD,expense,acc_credit,Credit Card,Uber,Ride home,"Transport,Social,Personal",,1,,,,cleared
+Misc Refund,10.00,Other Income,199,1785283200000,USD,income,acc_bank,Bank Transfer,Store,Return,"Misc,Shopping,Adjustment",,1,,,,cleared
+Invested Dividend,50.00,Dividends,199,1785369600000,USD,income,acc_invest,Bank Transfer,Vanguard,Reinvested,"Investments,Savings,Interest",,1,,,,cleared
+Emergency Car Tow,-85.00,Transport,111,1785456000000,USD,expense,acc_cash,Cash,Towing Co,Flat tire,"Emergency,Auto,Transport,Maintenance",,1,,,,cleared
+Charity Gala Dinner,-500.00,Dining Out,102,1785542400000,USD,expense,acc_bank,Bank Transfer,Charity,Event,"Social,Gifts,Luxury,Dining",,1,,,,cleared
+Freelance Website Maintenance,500.00,Freelance,198,1785628800000,USD,income,acc_bank,Bank Transfer,Client G,Monthly update,"Project,Work,Freelance,Business",monthly,1,,,,cleared
+Bills Adjustment,-5.00,Finance,192,1785715200000,USD,expense,acc_bank,Bank Transfer,Utility Co,Rounding,"Bills,Adjustment,Misc",,1,,,,cleared
+Education Books,-120.00,Shopping,121,1785801600000,USD,expense,acc_credit,Credit Card,Amazon,Reference books,"Education,Work,Shopping,Project",,1,,,,cleared
+Luxury Dinner JPY,-15000.00,Dining Out,102,1785888000000,JPY,expense,acc_jpy,Debit Card,Ginza Grill,Tokyo dinner,"Travel,Vacation,Japan,Dining,Luxury",,1,,,,cleared
+Vacation Train Pass,-20000.00,Public Transit,111,1785974400000,JPY,expense,acc_jpy,Cash,JR Pass,1 week,"Travel,Vacation,Japan,Transport",,1,,,,cleared
+Freelance Consultation EUR,400.00,Freelance,198,1786060800000,EUR,income,acc_bank,Bank Transfer,Client H,Expert advice,"Project,Work,Freelance,Business",,1,,,,cleared
+Business Trip Expense EUR,-150.00,Travel,111,1786147200000,EUR,expense,acc_bank,Debit Card,Eurail,Business travel,"Travel,Work,Business,Transport",,1,,,,cleared
+India Hotel INR,-8000.00,Hotels,112,1786233600000,INR,expense,acc_bank,Bank Transfer,Taj,Stay,"Travel,Vacation,Luxury,Housing",,1,,,,cleared
+Singapore Food Court SGD,-25.00,Dining Out,102,1786320000000,SGD,expense,acc_sgd,Cash,Hawker,Lunch,"Travel,Food,Dining",,1,,,,cleared
+Work Laptop Bag,-85.00,Shopping,121,1786406400000,USD,expense,acc_credit,Credit Card,Best Buy,Laptop bag,"Work,Shopping,Electronics,Business",,1,,,,cleared
+Subscription Cloud,-12.00,Services,191,1786492800000,USD,expense,acc_credit,Credit Card,iCloud,Storage,"Subscription,Personal,Essential",monthly,1,,,,cleared
+Personal Hobby Gear,-150.00,Shopping,121,1786579200000,USD,expense,acc_cash,Cash,Hobby Lobby,Tools,"Personal,Shopping,Misc",,1,,,,cleared
+Fitness Tracker,-200.00,Electronics,121,1786665600000,USD,expense,acc_credit,Credit Card,Garmin,Watch,"Health,Fitness,Electronics,Shopping,Luxury",,1,,,,cleared
+Insurance Life,-75.00,Insurance,182,1786752000000,USD,expense,acc_bank,Bank Transfer,Prudential,Monthly,"Insurance,Health,Essential,Bills",monthly,1,,,,cleared
+Interest Savings INR,500.00,Interest,199,1786838400000,INR,income,acc_savings,Bank Transfer,Bank,Interest,"Interest,Savings",monthly,1,,,,cleared
+Cashback Credit SGD,5.00,Other Income,199,1786924800000,SGD,income,acc_credit,Other,Bank,Cashback,"Cashback,Personal,Adjustment",monthly,1,,,,cleared
+Groceries Bulk,-250.00,Groceries,101,1787011200000,USD,expense,acc_cash,Debit Card,Costco,Food,"Food,Groceries,Essential",,1,,,,cleared
+Dinner Guest,-95.00,Dining Out,102,1787097600000,USD,expense,acc_cash,Cash,Local Resto,Dinner,"Social,Food,Dining,Personal",,1,,,,cleared
+Emergency Locksmith,-150.00,Repairs,132,1787184000000,USD,expense,acc_cash,Cash,Locksmith,Locked out,"Emergency,Housing,Essential,Maintenance",,1,,,,cleared
+Project Freelance Web,1500.00,Freelance,198,1787270400000,USD,income,acc_bank,Bank Transfer,Client I,Web revamp,"Project,Work,Freelance,Business",,1,,,,cleared
+Work Desk Chair,-350.00,Furniture,121,1787356800000,USD,expense,acc_credit,Credit Card,IKEA,Ergo chair,"Work,Shopping,Housing,Business",,1,,,,cleared
+Adjustment Bank Fee,-2.00,Finance,192,1787443200000,USD,expense,acc_bank,Bank Transfer,Bank,Fee,"Fees,Adjustment,Bills",,1,,,,cleared
+Misc Item,-5.00,Others,1000,1787529600000,USD,expense,acc_cash,Cash,Newsstand,Paper,"Misc,Personal,Adjustment",,1,,,,cleared
+Luxury Spa,-250.00,Personal Care,161,1787616000000,USD,expense,acc_credit,Credit Card,Spa,Massage,"Luxury,Health,Personal",,1,,,,cleared
+Investment Gold,-1000.00,Commodities,122,1787702400000,USD,expense,acc_bank,Bank Transfer,Broker,Gold buy,"Investments,Savings,Luxury",,1,,,,cleared
+Tax Return Adjustment,45.00,Other Income,199,1787788800000,USD,income,acc_bank,Bank Transfer,IRS,Correction,"Tax,Adjustment,Cashback",,1,,,,cleared
+Gifts Wedding,-200.00,Gifts,151,1787875200000,USD,expense,acc_cash,Cash,Friends,Gift,"Gifts,Social,Personal",,1,,,,cleared
+Entertainment Movie,-45.00,Movies,151,1787961600000,USD,expense,acc_cash,Debit Card,Cinema,Night out,"Entertainment,Social,Food",,1,,,,cleared
+Maintenance Garden,-120.00,Home & Garden,132,1788048000000,USD,expense,acc_cash,Cash,Gardener,Cleanup,"Maintenance,Housing,Essential",,1,,,,cleared
+Bills Electricity Adjustment,-10.00,Electricity,181,1788134400000,USD,expense,acc_bank,Bank Transfer,Power Co,Rounding,"Bills,Utilities,Adjustment",,1,,,,cleared
+Auto Gas Transport,-45.00,Fuel,111,1788220800000,USD,expense,acc_bank,Credit Card,Exxon,Fuel,"Auto,Transport,Essential",,1,,,,cleared
+Work Education Fees,-500.00,Training,171,1788307200000,USD,expense,acc_bank,Bank Transfer,Conf,Ticket,"Work,Education,Fees,Business",,1,,,,cleared
+Freelance Mobile App Design,3000.00,Freelance,198,1788393600000,USD,income,acc_bank,Bank Transfer,Client J,App UI,"Project,Work,Freelance,Business",,1,,,,cleared
+Japan Souvenirs JPY,-50000.00,Shopping,121,1788480000000,JPY,expense,acc_jpy,Cash,Nara Shop,Gifts,"Travel,Vacation,Japan,Shopping,Gifts,Personal",,1,,,,cleared
+Vacation Flight JPY,-80000.00,Flights,111,1788566400000,JPY,expense,acc_jpy,Credit Card,JAL,Flight,"Travel,Vacation,Japan,Transport",,1,,,,cleared
+Travel Transport Uber,-25.00,Transport,111,1788652800000,USD,expense,acc_credit,Credit Card,Uber,Airport ride,"Travel,Transport,Personal",,1,,,,cleared
+Luxury Hotel Vacation,-450.00,Hotels,112,1788739200000,USD,expense,acc_credit,Credit Card,Resort,Stay,"Travel,Vacation,Luxury,Housing",,1,,,,cleared
+Dining Social Food,-85.00,Dining Out,102,1788825600000,USD,expense,acc_cash,Credit Card,Bistro,Dinner,"Dining,Social,Food",,1,,,,cleared
+Essential Groceries,-65.00,Groceries,101,1788912000000,USD,expense,acc_cash,Debit Card,Market,Food,"Essential,Groceries,Food",,1,,,,cleared
+Health Insurance Personal,-150.00,Insurance,182,1788998400000,USD,expense,acc_bank,Bank Transfer,Ins Co,Premium,"Health,Insurance,Personal,Essential",monthly,1,,,,cleared
+Fitness Subscription Gym,-50.00,Fitness,161,1789084800000,USD,expense,acc_credit,Credit Card,Gym,Monthly,"Fitness,Subscription,Health,Essential",monthly,1,,,,cleared
+Electronics Shopping Work,-1200.00,Electronics,121,1789171200000,USD,expense,acc_credit,Credit Card,Apple,MacBook,"Electronics,Shopping,Work,Business,Project",,1,,,,cleared
+Education Project Work,-400.00,Training,171,1789257600000,USD,expense,acc_bank,Bank Transfer,Udemy,Dev courses,"Education,Project,Work",,1,,,,cleared
+Tax Cashback Adjustment,250.00,Other Income,199,1789344000000,USD,income,acc_bank,Bank Transfer,State,Refund,"Tax,Cashback,Adjustment",,1,,,,cleared
+Investments Savings Interest,15.00,Interest,199,1789430400000,USD,income,acc_savings,Bank Transfer,Bank,Interest,"Investments,Savings,Interest",monthly,1,,,,cleared
+Auto Maintenance Repair,-350.00,Car Maintenance,122,1789516800000,USD,expense,acc_bank,Debit Card,Shop,Oil/Tires,"Auto,Maintenance,Transport,Essential",,1,,,,cleared
+Emergency Housing Maintenance,-600.00,Repairs,132,1789603200000,USD,expense,acc_cash,Cash,Fixer,Roof fix,"Emergency,Housing,Maintenance,Essential",,1,,,,cleared
+Business Freelance Project,1200.00,Freelance,198,1789689600000,USD,income,acc_bank,Bank Transfer,Client K,Consulting,"Business,Freelance,Project,Work",,1,,,,cleared
+Bills Utilities Housing,-210.00,Electricity,181,1789776000000,USD,expense,acc_bank,Bank Transfer,Utility,Monthly,"Bills,Utilities,Housing,Essential",monthly,1,,,,cleared
+Entertainment Social Gifts,-150.00,Gifts,151,1789862400000,USD,expense,acc_cash,Cash,Party,Birthday,"Entertainment,Social,Gifts",,1,,,,cleared
+Misc Personal Adjustment,-8.00,Others,1000,1789948800000,USD,expense,acc_cash,Cash,Misc,Rounding,"Misc,Personal,Adjustment",,1,,,,cleared
+Salary Work Essential,6000.00,Salary,191,1790035200000,USD,income,acc_bank,Bank Transfer,Company,Salary,"Salary,Work,Essential",monthly,1,,,,cleared
+Rent Housing Bills,-2000.00,Rent,181,1790121600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent,"Rent,Housing,Bills,Essential",monthly,1,,,,cleared
+Japan Travel Vacation,-40000.00,Shopping,121,1790208000000,JPY,expense,acc_jpy,Cash,Osaka Shop,Gifts,"Japan,Travel,Vacation,Personal",,1,,,,cleared
+Freelance Business Project EUR,500.00,Freelance,198,1790294400000,EUR,income,acc_bank,Bank Transfer,Client L,Dev work,"Freelance,Business,Project,Work",,1,,,,cleared
+Transport Auto Essential,-50.00,Fuel,111,1790380800000,USD,expense,acc_bank,Credit Card,Gas,Fuel,"Transport,Auto,Essential",,1,,,,cleared
+Luxury Shopping Social,-300.00,Shopping,121,1790467200000,USD,expense,acc_credit,Credit Card,Mall,Clothes,"Luxury,Shopping,Social,Personal",,1,,,,cleared
+Dining Food Social,-55.00,Dining Out,102,1790553600000,USD,expense,acc_cash,Cash,Dinner,Food,"Dining,Food,Social",,1,,,,cleared
+Essential Groceries Food,-110.00,Groceries,101,1790640000000,USD,expense,acc_cash,Debit Card,Market,Food,"Essential,Groceries,Food",,1,,,,cleared
+Health Fitness Subscription,-45.00,Fitness,161,1790726400000,USD,expense,acc_credit,Credit Card,Gym,Fee,"Health,Fitness,Subscription,Essential",monthly,1,,,,cleared
+Electronics Shopping Business,-800.00,Electronics,121,1790812800000,USD,expense,acc_credit,Credit Card,Amazon,Tools,"Electronics,Shopping,Business,Work,Project",,1,,,,cleared
+Education Project Personal,-250.00,Training,171,1790899200000,USD,expense,acc_bank,Bank Transfer,Udacity,Course,"Education,Project,Personal",,1,,,,cleared
+Tax Adjustment Fees,-50.00,Finance,192,1790985600000,USD,expense,acc_bank,Bank Transfer,IRS,Fee,"Tax,Adjustment,Fees,Bills",,1,,,,cleared
+Investments Savings Interest USD,120.00,Interest,199,1791072000000,USD,income,acc_savings,Bank Transfer,Bank,Interest,"Investments,Savings,Interest",monthly,1,,,,cleared
+Auto Maintenance Transport,-100.00,Car Maintenance,122,1791158400000,USD,expense,acc_bank,Debit Card,Shop,Service,"Auto,Maintenance,Transport,Essential",,1,,,,cleared
+Emergency Housing Bills,-300.00,Repairs,132,1791244800000,USD,expense,acc_cash,Cash,Plumber,Fix,"Emergency,Housing,Bills,Essential",,1,,,,cleared
+Business Freelance Work,800.00,Freelance,198,1791331200000,USD,income,acc_bank,Bank Transfer,Client M,Work,"Business,Freelance,Work,Project",,1,,,,cleared
+Bills Utilities Essential,-150.00,Electricity,181,1791417600000,USD,expense,acc_bank,Bank Transfer,Utility,Power,"Bills,Utilities,Essential,Housing",monthly,1,,,,cleared
+Entertainment Social Gifts USD,-100.00,Gifts,151,1791504000000,USD,expense,acc_cash,Cash,Bday,Gift,"Entertainment,Social,Gifts",,1,,,,cleared
+Misc Personal Adjustment Final,-10.00,Others,1000,1791590400000,USD,expense,acc_cash,Cash,Misc,End,"Misc,Personal,Adjustment",,1,,,,cleared

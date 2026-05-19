@@ -63,6 +63,7 @@ fun NetWorthCard(
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -71,6 +72,7 @@ fun NetWorthCard(
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

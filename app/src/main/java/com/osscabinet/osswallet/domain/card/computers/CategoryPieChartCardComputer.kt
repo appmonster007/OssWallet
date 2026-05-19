@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -17,24 +18,30 @@ class CategoryPieChartCardComputer :
     override val supportedType = CardType.CATEGORY_PIE_CHART
 
     override suspend fun compute(input: CardInput, config: CategoryPieChartCardConfig): CardRenderData.CategoryPieChart {
-        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
-        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+        // Step 1 & 2: Resolve effective filter using the canonical pipeline
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
 
-        // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
-        // EXPAND categories to include children so they aren't filtered out
-        // Also ensure transactionType is set (default to expense if not specified)
-        val expandedFilter = config.filter.copy(
-            categoryIds = TransactionFilterService.expandCategoryIds(
-                config.filter.categoryIds,
-                input.categories
-            ),
-            transactionTypes = run {
-                val allowed = setOf(TransactionType.EXPENSE, TransactionType.INCOME)
-                val valid = config.filter.transactionTypes.intersect(allowed)
-                if (valid.size == 1) valid else setOf(TransactionType.EXPENSE)
-            }
+        // Expand category IDs to include children
+        val expandedCategoryIds = TransactionFilterService.expandCategoryIds(
+            mergedFilter.categoryIds,
+            input.categories
         )
-        val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
+
+        // Resolve transaction type: use whatever is in mergedFilter.transactionTypes.
+        // If it's a single value, use it. If empty or multiple, default to EXPENSE.
+        val resolvedTypes = if (mergedFilter.transactionTypes.size == 1) {
+            mergedFilter.transactionTypes
+        } else {
+            setOf(TransactionType.EXPENSE)
+        }
+
+        val finalFilter = mergedFilter.copy(
+            categoryIds = expandedCategoryIds,
+            transactionTypes = resolvedTypes
+        )
+
+        // Single-pass filter against all transactions
+        val filteredTx = TransactionFilterService.filter(input.transactions, finalFilter)
 
         // Step 3: Compute all values from filteredTx (already filtered by transaction type)
         val tree = AggregationService.buildCategoryTree(
@@ -45,13 +52,13 @@ class CategoryPieChartCardComputer :
         )
 
         // Step 4: Compute previous period total if comparison is enabled
-        val previousTotal: BigDecimal? = if (config.showComparison && expandedFilter.timelineRange !is TimelineRange.AllTime) {
-            val (prevStart, prevEnd) = TimelineService.getPreviousRange(expandedFilter.timelineRange)
+        val previousTotal: BigDecimal? = if (config.showComparison && finalFilter.timelineRange !is TimelineRange.AllTime) {
+            val (prevStart, prevEnd) = TimelineService.getPreviousRange(finalFilter.timelineRange)
             if (prevStart != null && prevEnd != null) {
-                val prevFilter = expandedFilter.copy(
+                val prevFilter = finalFilter.copy(
                     timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                 )
-                val prevTx = TransactionFilterService.filter(baseTx, prevFilter)
+                val prevTx = TransactionFilterService.filter(input.transactions, prevFilter)
                 val prevTree = AggregationService.buildCategoryTree(
                     transactions = prevTx,
                     allCategories = input.categories,

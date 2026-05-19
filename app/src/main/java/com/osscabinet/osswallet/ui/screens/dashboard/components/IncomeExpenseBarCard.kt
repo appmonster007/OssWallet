@@ -37,6 +37,7 @@ fun IncomeExpenseBarCard(
     callbacks: CardCallbacks.IncomeExpenseBar = CardCallbacks.IncomeExpenseBar(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -49,6 +50,7 @@ fun IncomeExpenseBarCard(
         icon = Icons.Default.BarChart,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

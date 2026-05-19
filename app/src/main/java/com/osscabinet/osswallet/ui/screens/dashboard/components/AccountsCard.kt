@@ -65,6 +65,7 @@ fun AccountsCard(
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -73,6 +74,7 @@ fun AccountsCard(
         icon = Icons.Rounded.AccountBalanceWallet,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

@@ -71,7 +71,8 @@ fun CategoryTreemapCard(
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    currentTheme: String = "System"
+    currentTheme: String = "System",
+    showFilterButton: Boolean = true
 ) {
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -127,6 +128,7 @@ fun CategoryTreemapCard(
         icon = Icons.Rounded.Dashboard,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

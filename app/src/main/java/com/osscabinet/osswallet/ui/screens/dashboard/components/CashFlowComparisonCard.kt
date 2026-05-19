@@ -50,6 +50,7 @@ fun CashFlowComparisonCard(
     callbacks: CardCallbacks.CashFlowComparison = CardCallbacks.CashFlowComparison(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
     headerModifier: Modifier = Modifier,
 ) {
     val config = renderData.config
@@ -61,6 +62,7 @@ fun CashFlowComparisonCard(
         icon = Icons.AutoMirrored.Filled.ShowChart,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

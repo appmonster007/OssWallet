@@ -43,7 +43,8 @@ fun rememberCardWithCallbacks(
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: CardListCallbacks = CardListCallbacks(),
     currentTheme: String = "light",
-    preComputedData: CardRenderData? = null
+    preComputedData: CardRenderData? = null,
+    filterSheetEnabled: Boolean = true
 ): CardWithCallbacks? {
     // If preComputedData provided (dashboard path), use it immediately.
     // Otherwise trigger async computation via LaunchedEffect using the registry
@@ -73,7 +74,8 @@ fun rememberCardWithCallbacks(
         onRecordsClick,
         callbacks,
         currentTheme,
-        renderData
+        renderData,
+        filterSheetEnabled
     ) {
         when {
             config is NetWorthCardConfig && renderData is CardRenderData.NetWorth -> {
@@ -112,7 +114,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -151,7 +154,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -185,7 +189,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -228,7 +233,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -253,7 +259,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -278,7 +285,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -306,7 +314,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -327,7 +336,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -346,7 +356,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -365,7 +376,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -396,7 +408,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -419,7 +432,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -442,7 +456,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 
@@ -465,7 +480,8 @@ fun rememberCardWithCallbacks(
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
                     filterRules = config.filterRules,
-                    baseFilter = input.filter
+                    baseFilter = input.filter,
+                    filterSheetEnabled = filterSheetEnabled
                 )
             }
 

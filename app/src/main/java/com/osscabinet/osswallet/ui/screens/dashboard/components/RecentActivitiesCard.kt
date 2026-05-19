@@ -63,12 +63,14 @@ fun RecentActivitiesCard(
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    showFilterButton: Boolean = true,
 ) {
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.History,
         modifier = modifier,
         headerModifier = headerModifier,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = config.filterRules,

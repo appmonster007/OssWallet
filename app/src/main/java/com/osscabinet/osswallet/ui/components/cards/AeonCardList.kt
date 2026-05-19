@@ -41,6 +41,7 @@ fun AeonCardList(
     callbacks: CardListCallbacks = CardListCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
+    disableCardFilterSheet: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
     cardDataMap: Map<String, CardRenderData> = emptyMap()
 ) {
@@ -68,17 +69,19 @@ fun AeonCardList(
             onRecordsClick = onRecordsClick,
             callbacks = callbacks,
             currentTheme = currentTheme,
-            preComputedData = preComputedData
+            preComputedData = preComputedData,
+            filterSheetEnabled = !disableCardFilterSheet
         )
 
         when (val card = cardWithCallbacks) {
             is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
             null -> Box(modifier = Modifier.size(0.dp))
             else -> {
-                val effectiveCard = if (forceDisableAccountSelection) {
+                val effectiveCard = if (forceDisableAccountSelection || disableCardFilterSheet) {
                     card.copyWithRules(
-                        rules = card.filterRules.copy(allowAccountSelection = false),
-                        baseFilter = baseFilter
+                        rules = card.filterRules.copy(allowAccountSelection = if (forceDisableAccountSelection) false else card.filterRules.allowAccountSelection),
+                        baseFilter = baseFilter,
+                        filterSheetEnabled = !disableCardFilterSheet
                     )
                 } else card
 
@@ -99,22 +102,23 @@ fun AeonCardList(
  */
 private fun CardWithCallbacks.copyWithRules(
     rules: CardFilterRules,
-    baseFilter: TransactionFilter
+    baseFilter: TransactionFilter,
+    filterSheetEnabled: Boolean = true
 ): CardWithCallbacks = when (this) {
-    is CardWithCallbacks.NetWorth -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CurrencyBalances -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CashFlow -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.Accounts -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CategoryPieChart -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CategoryTreemap -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.AccountHero -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.Budgets -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.Loans -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.RecentActivities -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CashFlowComparison -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.IncomeExpenseBar -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CategorySpendingTrend -> copy(filterRules = rules, baseFilter = baseFilter)
+    is CardWithCallbacks.NetWorth -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CurrencyBalances -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CashFlow -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.Accounts -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CategoryPieChart -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CategoryTreemap -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.AccountHero -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.Budgets -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.Loans -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.RecentActivities -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CashFlowComparison -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.IncomeExpenseBar -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.CategorySpendingTrend -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
     is CardWithCallbacks.ComputeError -> this
 }
 

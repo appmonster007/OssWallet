@@ -112,6 +112,7 @@ fun TagUpSetPlotCard(
                     currency = renderData.baseCurrency,
                     maxVisibleRows = config.maxTags,
                     maxVisibleCols = config.maxIntersections,
+                    dynamicFiltering = config.dynamicTagFiltering,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -343,6 +344,31 @@ private fun TagUpSetSettingsSheet(
                                 }
                             }
                         }
+                    }
+
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.3f)
+                    )
+
+                    // Dynamic Tag Filtering Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Dynamic Tag Filtering", style = AppTextStyles.transactionTitle)
+                            Text(
+                                "Show only tags in visible columns",
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary
+                            )
+                        }
+                        Switch(
+                            checked = config.dynamicTagFiltering,
+                            onCheckedChange = { onUpdate(config.copy(dynamicTagFiltering = it)) }
+                        )
                     }
                 }
             }

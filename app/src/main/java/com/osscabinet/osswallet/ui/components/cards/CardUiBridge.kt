@@ -497,13 +497,13 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onDelete = { onDelete(config.cardId) },
-                        onRecordsClick = { drillDown ->
-                            onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
-                            )
-                        },
                         onSaveFilterClick = callbacks.onSaveFilterClick
                     ),
+                    onRecordsClick = { drillDown ->
+                        onRecordsClick(
+                            input.filter.merge(config.filter).merge(drillDown)
+                        )
+                    },
                     filterRules = config.filterRules,
                     baseFilter = input.filter,
                     filterSheetEnabled = filterSheetEnabled

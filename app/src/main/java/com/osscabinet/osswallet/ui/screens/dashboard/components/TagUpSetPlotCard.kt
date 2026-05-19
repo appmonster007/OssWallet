@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +39,7 @@ fun TagUpSetPlotCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    onRecordsClick: (TransactionFilter) -> Unit = {},
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
@@ -159,8 +161,15 @@ fun TagUpSetPlotCard(
                                 )
                                 Text(
                                     text = "${intersection.count} Transactions",
-                                    style = AppTextStyles.caption,
-                                    color = AppColors.contentSecondary
+                                    style = AppTextStyles.caption.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                                    ),
+                                    color = AppColors.primary,
+                                    modifier = Modifier.clickable {
+                                        val tags = intersection.setIndices.map { uiSets[it].name }.toSet()
+                                        onRecordsClick(displayFilter.copy(tags = tags))
+                                    }
                                 )
                             }
 

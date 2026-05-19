@@ -317,6 +317,7 @@ fun UnifiedCardRenderer(
             TagUpSetPlotCard(
                 renderData = cardWithCallbacks.renderData,
                 callbacks = cardWithCallbacks.callbacks,
+                onRecordsClick = cardWithCallbacks.onRecordsClick,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,

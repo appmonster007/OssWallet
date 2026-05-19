@@ -73,7 +73,7 @@ fun AppDrawerContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(AeonTheme.dimensions.screenPadding)
+                        .padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.screenPadding)
                 ) {
                     Surface(
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
@@ -102,7 +102,7 @@ fun AppDrawerContent(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
                     color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
@@ -136,14 +136,14 @@ fun AppDrawerContent(
                             }
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
                     color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
@@ -154,7 +154,7 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
                 )
 
                 val planningItems = listOf(
@@ -182,7 +182,7 @@ fun AppDrawerContent(
                             }
                         },
                         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
@@ -190,7 +190,7 @@ fun AppDrawerContent(
 
                 if (starredTemplates.isNotEmpty()) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
                         color = AppColors.insetSurface.copy(alpha = 0.5f)
                     )
 
@@ -201,7 +201,7 @@ fun AppDrawerContent(
                             letterSpacing = 1.sp
                         ),
                         color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
                     )
 
                     starredTemplates.forEach { template ->
@@ -221,7 +221,7 @@ fun AppDrawerContent(
                                     tint = AppColors.primary
                                 )
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
                             shape = RectangleShape,
                             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                         )
@@ -229,7 +229,7 @@ fun AppDrawerContent(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
                     color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
@@ -240,7 +240,7 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm)
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
                 )
 
                 nonArchivedAccounts.sortedBy { it.name }.forEach { account ->
@@ -280,7 +280,7 @@ fun AppDrawerContent(
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
@@ -295,7 +295,7 @@ fun AppDrawerContent(
             ) {
                 HorizontalDivider(
                     color = AppColors.insetSurface.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding)
                 )
                 NavigationDrawerItem(
                     label = {
@@ -307,7 +307,7 @@ fun AppDrawerContent(
                     selected = selectedDestination == "settings",
                     onClick = { onNavigate { onSettingsClick() } },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RectangleShape,
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                 )

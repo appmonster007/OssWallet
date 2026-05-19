@@ -38,6 +38,7 @@ fun UnifiedCardRenderer(
     currentTheme: String = "light",
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
 ) {
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
@@ -53,6 +54,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -71,6 +73,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -89,6 +92,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -119,6 +123,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -151,6 +156,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -191,6 +197,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier.fillMaxWidth(),
@@ -250,6 +257,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -266,6 +274,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
@@ -282,6 +291,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
@@ -295,6 +305,7 @@ fun UnifiedCardRenderer(
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier

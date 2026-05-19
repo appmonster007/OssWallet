@@ -113,7 +113,8 @@ class AnalyticsViewModel(
                 plannedPayments = state.plannedPayments,
                 budgets = state.budgets,
                 loans = state.loans,
-                filter = screenFilter
+                filter = screenFilter,
+                screenOwnsTimeline = true
             )
             emit(computeCardUseCase.computeAll(cards.cards, input))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

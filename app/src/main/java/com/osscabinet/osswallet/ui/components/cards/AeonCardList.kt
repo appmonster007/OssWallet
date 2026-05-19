@@ -92,6 +92,7 @@ fun AeonCardList(
                     currentTheme = currentTheme,
                     filterContext = filterContext,
                     inheritedFilter = cardInput.filter,
+                    screenOwnsTimeline = cardInput.screenOwnsTimeline,
                 )
             }
         }

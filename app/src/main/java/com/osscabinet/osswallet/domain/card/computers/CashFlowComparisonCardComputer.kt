@@ -36,7 +36,7 @@ class CashFlowComparisonCardComputer(
         input: CardInput,
         config: CashFlowComparisonCardConfig
     ): CardRenderData.CashFlowComparison {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val (currentStart, currentEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
 
         if (currentStart == null || currentEnd == null) {

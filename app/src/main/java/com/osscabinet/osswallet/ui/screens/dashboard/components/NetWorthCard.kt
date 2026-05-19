@@ -64,11 +64,12 @@ fun NetWorthCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
-    val displayFilter = if (inheritedFilter.timelineRange !is TimelineRange.AllTime)
+    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
         config.filter.copy(timelineRange = inheritedFilter.timelineRange)
     else config.filter
 

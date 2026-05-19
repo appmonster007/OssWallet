@@ -46,6 +46,7 @@ fun CategorySpendingTrendCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -54,7 +55,7 @@ fun CategorySpendingTrendCard(
     var selectedNature by rememberSaveable { mutableStateOf(config.selectedNature) }
     var categoriesExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val displayFilter = if (inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
         config.filter.copy(timelineRange = inheritedFilter.timelineRange)
     else config.filter
 

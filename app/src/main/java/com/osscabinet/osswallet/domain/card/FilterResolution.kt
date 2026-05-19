@@ -10,18 +10,18 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
  *
  * Steps:
  * 1. Merge inherited (screen scope) with card's adhoc filter. Sets intersect when both sides non-empty.
- *    Timeline: inherited wins when it is not AllTime (explicit user intent); card's timeline is the fallback.
+ *    Timeline: if [screenOwnsTimeline] the inherited timeline always wins (even AllTime).
+ *              Otherwise the inherited timeline only wins when it is not AllTime; card's timeline is the fallback.
  * 2. Normalize the merged result against the card's rules (forced values, allowed-set constraints).
  */
 fun resolveEffectiveFilter(
     inheritedFilter: TransactionFilter,
     cardFilter: TransactionFilter,
-    filterRules: CardFilterRules
+    filterRules: CardFilterRules,
+    screenOwnsTimeline: Boolean = false
 ): TransactionFilter {
-    // merge() lets cardFilter's timeline win unconditionally; override that so the screen-level
-    // timeline (inherited) takes precedence whenever the user has expressed a preference.
     val candidate = inheritedFilter.merge(cardFilter).let { merged ->
-        if (inheritedFilter.timelineRange !is TimelineRange.AllTime) {
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime) {
             merged.copy(timelineRange = inheritedFilter.timelineRange)
         } else {
             merged

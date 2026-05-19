@@ -46,7 +46,7 @@ data class NetWorthMetrics(
  * Every card computation returns a subtype of this class.
  */
 sealed class CardRenderData {
-    
+
     data class NetWorth(
         val config: NetWorthCardConfig,
         val currentMetrics: NetWorthMetrics,
@@ -128,7 +128,12 @@ sealed class CardRenderData {
         val granularity: CashFlowComparisonGranularity,
         // Labels for every bucket in the full current period (no zero-origin sentinel).
         // Used to drive the x-axis when currentSeries is truncated at today.
-        val periodLabels: List<String> = emptyList()
+        val periodLabels: List<String> = emptyList(),
+        // Expected total buckets for each period if they were completed.
+        // Used to draw "End of Period" markers when lengths differ.
+        val currentTotalBuckets: Int = 0,
+        val previousTotalBuckets: Int = 0,
+        val lastYearTotalBuckets: Int = 0
     ) : CardRenderData()
 
     data class IncomeExpenseBar(

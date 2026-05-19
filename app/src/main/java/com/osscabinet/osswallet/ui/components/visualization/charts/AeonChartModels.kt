@@ -22,7 +22,19 @@ data class AeonLineChartSeries(
     val color: Color,
     val fillGradient: Boolean = true,
     val isDashed: Boolean = false,
+    val showEndDot: Boolean = false,
     val confidenceIntervals: List<Pair<BigDecimal, BigDecimal>>? = null // Min, Max for each data point
+)
+
+/**
+ * Vertical marker with a label for line charts.
+ */
+data class AeonChartMarker(
+    /** x position in the same index space as [AeonLineChart.totalXSlots]. */
+    val x: Float,
+    val label: String,
+    val color: Color,
+    val isDashed: Boolean = true
 )
 
 /**

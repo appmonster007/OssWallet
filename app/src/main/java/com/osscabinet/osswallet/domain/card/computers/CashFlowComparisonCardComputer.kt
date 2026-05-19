@@ -73,15 +73,16 @@ class CashFlowComparisonCardComputer(
 
         // Previous period — skip if range is unbounded
         val (prevStart, prevEnd) = TimelineService.getPreviousRange(mergedFilter.timelineRange)
+        var prevTotalBuckets = 0
         val previousSeries = if (prevStart != null && prevEnd != null) {
             val prevBuckets = generateBuckets(prevStart, prevEnd, granularity)
+            prevTotalBuckets = prevBuckets.size
             computeSeriesFromBuckets(
                 buckets = prevBuckets,
                 baseFilter = mergedFilter,
                 profileId = input.profileId,
                 baseCurrency = input.baseCurrency,
-                exchangeRates = input.exchangeRates,
-                granularity = granularity
+                exchangeRates = input.exchangeRates
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -96,8 +97,7 @@ class CashFlowComparisonCardComputer(
             baseFilter = mergedFilter,
             profileId = input.profileId,
             baseCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates,
-            granularity = granularity
+            exchangeRates = input.exchangeRates
         )
 
         return CardRenderData.CashFlowComparison(
@@ -107,7 +107,10 @@ class CashFlowComparisonCardComputer(
             lastYearSeries = lastYearSeries,
             baseCurrency = input.baseCurrency,
             granularity = granularity,
-            periodLabels = fullBuckets.map { it.third }
+            periodLabels = fullBuckets.map { it.third },
+            currentTotalBuckets = fullBuckets.size,
+            previousTotalBuckets = prevTotalBuckets,
+            lastYearTotalBuckets = lastYearBuckets.size
         )
     }
 
@@ -184,8 +187,7 @@ class CashFlowComparisonCardComputer(
         baseFilter: TransactionFilter,
         profileId: Int,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        granularity: CashFlowComparisonGranularity
+        exchangeRates: Map<String, BigDecimal>
     ): CashFlowComparisonSeries {
         val points = buckets.map { (bucketStart, bucketEnd, label) ->
             queryBucket(baseFilter, profileId, bucketStart, bucketEnd, label, baseCurrency, exchangeRates)

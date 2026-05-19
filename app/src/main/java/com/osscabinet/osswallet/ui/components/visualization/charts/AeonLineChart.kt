@@ -10,13 +10,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +49,7 @@ fun AeonLineChart(
     totalXSlots: Int = 0,
     // When non-empty, these labels are used for the x-axis instead of deriving from the first series.
     xAxisLabels: List<String?> = emptyList(),
+    markers: List<AeonChartMarker> = emptyList(),
     onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null
 ) {
     if (series.isEmpty() || series.all { it.dataPoints.isEmpty() }) {
@@ -86,7 +82,7 @@ fun AeonLineChart(
         val xLabelHeight = with(density) { 14.dp.toPx() }
         val bottomPadding = with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
         val topPadding = with(density) { dims.spacingLg.toPx() }
-        val rightPadding = with(density) { dims.spacingLg.toPx() }
+        val rightPadding = with(density) { dims.spacing2xl.toPx() } // Increased for marker labels
         
         val chartWidth = w - leftPadding - rightPadding
         val chartHeight = h - bottomPadding - topPadding
@@ -130,10 +126,10 @@ fun AeonLineChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
-        fun indexToX(index: Int, total: Int): Float {
+        fun indexToX(index: Float, total: Int): Float {
             val effective = if (totalXSlots > 0) totalXSlots else total
             if (effective <= 1) return leftPadding
-            return leftPadding + (index.toFloat() / (effective - 1)) * chartWidth
+            return leftPadding + (index / (effective - 1)) * chartWidth
         }
 
         fun findClosestIndex(offsetX: Float): Int {
@@ -147,7 +143,7 @@ fun AeonLineChart(
             var minDistance = Float.MAX_VALUE
             
             for (i in 0 until totalPoints) {
-                val dx = indexToX(i, totalPoints)
+                val dx = indexToX(i.toFloat(), totalPoints)
                 val distance = abs(offsetX - dx)
                 if (distance < minDistance) {
                     minDistance = distance
@@ -195,7 +191,6 @@ fun AeonLineChart(
                     isAntiAlias = true
                     alpha = 140
                 }
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
 
                 var tick = effectiveMinY
                 while (tick <= effectiveMaxY) {
@@ -205,8 +200,7 @@ fun AeonLineChart(
                             color = gridColor,
                             start = Offset(leftPadding, yPos),
                             end = Offset(w - rightPadding, yPos),
-                            strokeWidth = (dims.spacingXs / 8).toPx(),
-                            pathEffect = dashEffect
+                            strokeWidth = (dims.spacingXs / 8).toPx()
                         )
                         drawContext.canvas.nativeCanvas.drawText(
                             formatShortNumber(tick),
@@ -227,14 +221,14 @@ fun AeonLineChart(
                         val confidencePath = Path()
                         // Top boundary
                         s.dataPoints.forEachIndexed { index, _ ->
-                            val x = indexToX(index, s.dataPoints.size)
+                            val x = indexToX(index.toFloat(), s.dataPoints.size)
                             val y = valueToY(intervals[index].second)
                             val animY = zeroY + (y - zeroY) * animationProgress.value
                             if (index == 0) confidencePath.moveTo(x, animY) else confidencePath.lineTo(x, animY)
                         }
                         // Bottom boundary (reverse)
                         for (index in (s.dataPoints.size - 1) downTo 0) {
-                            val x = indexToX(index, s.dataPoints.size)
+                            val x = indexToX(index.toFloat(), s.dataPoints.size)
                             val y = valueToY(intervals[index].first)
                             val animY = zeroY + (y - zeroY) * animationProgress.value
                             confidencePath.lineTo(x, animY)
@@ -253,7 +247,7 @@ fun AeonLineChart(
                 val n = pts.size
 
                 pts.forEachIndexed { index, point ->
-                    val x = indexToX(index, n)
+                    val x = indexToX(index.toFloat(), n)
                     val y = valueToY(point.y)
                     val animY = zeroY + (y - zeroY) * animationProgress.value
 
@@ -263,7 +257,7 @@ fun AeonLineChart(
                         areaPath.lineTo(x, animY)
                     } else {
                         // Smooth cubic bezier with reduced tension (0.3) — moderately curved
-                        val prevX = indexToX(index - 1, n)
+                        val prevX = indexToX((index - 1).toFloat(), n)
                         val prevY = run {
                             val py = valueToY(pts[index - 1].y)
                             zeroY + (py - zeroY) * animationProgress.value
@@ -307,6 +301,17 @@ fun AeonLineChart(
                         pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(12f, 8f)) else null
                     )
                 )
+
+                if (s.showEndDot && pts.isNotEmpty()) {
+                    val lastIdx = pts.size - 1
+                    val ex = indexToX(lastIdx.toFloat(), n)
+                    val ey = run {
+                        val raw = valueToY(pts[lastIdx].y)
+                        zeroY + (raw - zeroY) * animationProgress.value
+                    }
+                    drawCircle(color = ChartDotHighlight, radius = strokePx * 1.5f, center = Offset(ex, ey))
+                    drawCircle(color = s.color, radius = strokePx * 1.5f, center = Offset(ex, ey), style = Stroke(width = strokePx * 0.6f))
+                }
             }
 
             // X-axis labels — prefer explicit xAxisLabels list, fall back to first series labels
@@ -334,7 +339,7 @@ fun AeonLineChart(
                         if (lbl == null) return@forEachIndexed
                         val show = index == 1 || index == lastIdx ||
                             (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                        if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
+                        if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index.toFloat(), total), labelY, labelPaint)
                     }
                 } else {
                     val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
@@ -349,14 +354,67 @@ fun AeonLineChart(
                             val lbl = point.label ?: return@forEachIndexed
                             val show = index == 1 || index == lastIdx ||
                                 (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                            if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index, total), labelY, labelPaint)
+                            if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index.toFloat(), total), labelY, labelPaint)
                         }
                     }
                 }
             }
 
+            // 3. Draw Markers
+            if (markers.isNotEmpty()) {
+                val sortedMarkers = markers.sortedBy { it.x }
+                // Gap below which adjacent marker labels are staggered vertically
+                val markerMinGapPx = with(density) { 80.dp.toPx() }
+                val markerLabelHeightPx = with(density) { 14.dp.toPx() }
+                // Top baseline offset for the first stagger level
+                val markerLabelTopOffsetPx = with(density) { 10.dp.toPx() }
+                // Horizontal nudge between the marker line and its label
+                val markerLabelNudgePx = with(density) { 4.dp.toPx() }
+                // x threshold (fraction of chartWidth) past which label right-aligns
+                val markerEndThreshold = 0.8f
+
+                val markerLabelPaint = android.graphics.Paint().apply {
+                    textSize = with(density) { 9.sp.toPx() }
+                    isAntiAlias = true
+                    typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+                }
+
+                var lastMarkerX = -1000f
+                var currentLevel = 0
+
+                sortedMarkers.forEach { marker ->
+                    // marker.x is in the same index space as totalXSlots; `total` arg is unused when totalXSlots > 0
+                    val x = indexToX(marker.x, totalXSlots.coerceAtLeast(1))
+                    val markerColor = marker.color.copy(alpha = 0.6f)
+
+                    currentLevel = if (abs(x - lastMarkerX) < markerMinGapPx) (currentLevel + 1) % 3 else 0
+                    lastMarkerX = x
+
+                    drawLine(
+                        color = markerColor,
+                        start = Offset(x, topPadding),
+                        end = Offset(x, topPadding + chartHeight),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = if (marker.isDashed) PathEffect.dashPathEffect(floatArrayOf(10f, 10f)) else null
+                    )
+
+                    val isAtEnd = x > leftPadding + chartWidth * markerEndThreshold
+                    markerLabelPaint.color = markerColor.toArgb()
+                    markerLabelPaint.textAlign =
+                        if (isAtEnd) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
+
+                    val labelY = topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
+                    drawContext.canvas.nativeCanvas.drawText(
+                        marker.label,
+                        if (isAtEnd) x - markerLabelNudgePx else x + markerLabelNudgePx,
+                        labelY,
+                        markerLabelPaint
+                    )
+                }
+            }
+
             if (selectedIndex != -1) {
-                val x = indexToX(selectedIndex, series[0].dataPoints.size)
+                val x = indexToX(selectedIndex.toFloat(), series[0].dataPoints.size)
                 drawLine(
                     color = verticalGuideColor,
                     start = Offset(x, topPadding),
@@ -381,7 +439,7 @@ fun AeonLineChart(
             val referenceSeries = series.firstOrNull { selectedIndex < it.dataPoints.size }
             if (referenceSeries != null) {
                 val totalPoints = referenceSeries.dataPoints.size
-                val x = indexToX(selectedIndex, totalPoints)
+                val x = indexToX(selectedIndex.toFloat(), totalPoints)
                 val label = referenceSeries.dataPoints[selectedIndex].label
                 
                 // Boundary-aware multi-series tooltip
@@ -472,7 +530,6 @@ fun AeonLineChartPreview() {
                     AeonLineChartSeries(
                         name = "Expense",
                         color = TagPresetColors[0],
-                        isDashed = true,
                         fillGradient = false,
                         dataPoints = listOf(
                             AeonLineChartPoint(0f, BigDecimal("500.00"), "Jan"),

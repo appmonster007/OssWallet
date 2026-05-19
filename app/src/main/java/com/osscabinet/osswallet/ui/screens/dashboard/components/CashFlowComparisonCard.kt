@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
@@ -30,6 +29,7 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartPoint
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartSeries
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartMarker
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
@@ -46,10 +46,10 @@ private val LastYearColor = ChartColorGreen
 @Composable
 fun CashFlowComparisonCard(
     renderData: CardRenderData.CashFlowComparison,
+    modifier: Modifier = Modifier,
     callbacks: CardCallbacks.CashFlowComparison = CardCallbacks.CashFlowComparison(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
     val config = renderData.config
@@ -115,10 +115,17 @@ fun CashFlowComparisonCard(
             )
 
             if (series.isNotEmpty()) {
-                // Zero-origin sentinel + one slot per full-period bucket.
-                // Shared across all series so shorter (current) series doesn't stretch.
-                val totalXSlots = renderData.periodLabels.size + 1
+                val maxXBuckets = maxOf(
+                    renderData.currentTotalBuckets,
+                    renderData.previousTotalBuckets,
+                    renderData.lastYearTotalBuckets
+                )
+                // Zero-origin sentinel + enough slots for the longest period shown.
+                val totalXSlots = maxXBuckets + 1
                 val xAxisLabels: List<String?> = listOf(null) + renderData.periodLabels
+
+                val markers = buildMarkersList(renderData, config, maxXBuckets)
+
                 AeonLineChart(
                     series = series,
                     currency = renderData.baseCurrency,
@@ -126,6 +133,7 @@ fun CashFlowComparisonCard(
                     showGrid = config.showGridLines,
                     totalXSlots = totalXSlots,
                     xAxisLabels = xAxisLabels,
+                    markers = markers,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
@@ -205,14 +213,16 @@ private fun LegendItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(width = 16.dp, height = 3.dp)
-                .background(
-                    color = color.copy(alpha = alpha),
-                    shape = RoundedCornerShape(2.dp)
-                )
-        )
+        androidx.compose.foundation.Canvas(modifier = Modifier.size(width = 16.dp, height = 3.dp)) {
+            drawLine(
+                color = color.copy(alpha = alpha),
+                start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
+                strokeWidth = size.height,
+                pathEffect = if (isDashed) androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 3f)) else null,
+                cap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
+        }
         Text(
             text = label,
             style = AppTextStyles.caption.copy(fontSize = 10.sp),
@@ -255,7 +265,7 @@ private fun buildSeriesList(
                 color = CurrentPeriodColor,
                 dataPoints = seriesPoints(renderData.currentSeries),
                 fillGradient = true,
-                isDashed = false
+                showEndDot = true
             )
         )
     }
@@ -267,7 +277,7 @@ private fun buildSeriesList(
                 color = PreviousPeriodColor,
                 dataPoints = seriesPoints(renderData.previousSeries),
                 fillGradient = false,
-                isDashed = false
+                isDashed = true
             )
         )
     }
@@ -279,12 +289,147 @@ private fun buildSeriesList(
                 color = LastYearColor.copy(alpha = 0.6f),
                 dataPoints = seriesPoints(renderData.lastYearSeries),
                 fillGradient = false,
-                isDashed = false
+                isDashed = true
             )
         )
     }
 
     return series
+}
+
+private fun buildMarkersList(
+    renderData: CardRenderData.CashFlowComparison,
+    config: CashFlowComparisonCardConfig,
+    maxXBuckets: Int
+): List<AeonChartMarker> {
+    val markers = mutableListOf<AeonChartMarker>()
+
+    // Show a period-end marker when this series ends before the longest one,
+    // OR when it IS the longest but current period hasn't caught up yet.
+    fun addIfNeeded(show: Boolean, totalBuckets: Int, label: String, color: Color) {
+        if (!show || totalBuckets <= 0) return
+        val isShortestVisible = totalBuckets < maxXBuckets
+        val isLongestAndCurrentIsAhead = totalBuckets == maxXBuckets && maxXBuckets > renderData.currentTotalBuckets
+        if (isShortestVisible || isLongestAndCurrentIsAhead) {
+            markers.add(AeonChartMarker(totalBuckets.toFloat(), label, color, isDashed = true))
+        }
+    }
+
+    // showEndDot on the current series already marks "today" — no separate marker needed
+    addIfNeeded(config.showCurrentPeriod, renderData.currentTotalBuckets, "Current", CurrentPeriodColor)
+    addIfNeeded(config.showPreviousPeriod, renderData.previousTotalBuckets, "Prev", PreviousPeriodColor)
+    addIfNeeded(config.showSamePeriodLastYear, renderData.lastYearTotalBuckets, "LY", LastYearColor)
+
+    return markers
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Shorter Previous Period")
+@Composable
+fun CashFlowComparisonShorterPrevPreview() {
+    val renderData = CardRenderData.CashFlowComparison(
+        config = CashFlowComparisonCardConfig(
+            cardId = "preview_shorter",
+            title = "Shorter Previous Period",
+            showCurrentPeriod = true,
+            showPreviousPeriod = true,
+            showSamePeriodLastYear = false
+        ),
+        currentSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("01/02", 0, BigDecimal("100"), BigDecimal("50"), BigDecimal("50")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("02/02", 0, BigDecimal("120"), BigDecimal("60"), BigDecimal("60")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("03/02", 0, BigDecimal("150"), BigDecimal("70"), BigDecimal("80"))
+        )),
+        previousSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("01/01", 0, BigDecimal("80"), BigDecimal("40"), BigDecimal("40")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("02/01", 0, BigDecimal("90"), BigDecimal("45"), BigDecimal("45"))
+        )),
+        lastYearSeries = CashFlowComparisonSeries(emptyList()),
+        baseCurrency = "USD",
+        granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
+        periodLabels = listOf("01/02", "02/02", "03/02", "04/02", "05/02"),
+        currentTotalBuckets = 5,
+        previousTotalBuckets = 2,
+        lastYearTotalBuckets = 0
+    )
+    
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CashFlowComparisonCard(renderData = renderData)
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Longer Previous Period")
+@Composable
+fun CashFlowComparisonLongerPrevPreview() {
+    val renderData = CardRenderData.CashFlowComparison(
+        config = CashFlowComparisonCardConfig(
+            cardId = "preview_longer",
+            title = "Longer Previous Period",
+            showCurrentPeriod = true,
+            showPreviousPeriod = true,
+            showSamePeriodLastYear = false
+        ),
+        currentSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("01/02", 0, BigDecimal("100"), BigDecimal("50"), BigDecimal("50")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("02/02", 0, BigDecimal("120"), BigDecimal("60"), BigDecimal("60"))
+        )),
+        previousSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("01/01", 0, BigDecimal("80"), BigDecimal("40"), BigDecimal("40")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("02/01", 0, BigDecimal("90"), BigDecimal("45"), BigDecimal("45")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("03/01", 0, BigDecimal("100"), BigDecimal("50"), BigDecimal("50")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("04/01", 0, BigDecimal("110"), BigDecimal("55"), BigDecimal("55")),
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("05/01", 0, BigDecimal("120"), BigDecimal("60"), BigDecimal("60"))
+        )),
+        lastYearSeries = CashFlowComparisonSeries(emptyList()),
+        baseCurrency = "USD",
+        granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
+        periodLabels = listOf("01/02", "02/02", "03/02", "04/02", "05/02"),
+        currentTotalBuckets = 5,
+        previousTotalBuckets = 5,
+        lastYearTotalBuckets = 0
+    )
+    
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CashFlowComparisonCard(renderData = renderData)
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Overlapping Markers (Tight)")
+@Composable
+fun CashFlowComparisonTightMarkersPreview() {
+    val renderData = CardRenderData.CashFlowComparison(
+        config = CashFlowComparisonCardConfig(
+            cardId = "preview_tight",
+            title = "Tight Markers",
+            showCurrentPeriod = true,
+            showPreviousPeriod = true,
+            showSamePeriodLastYear = true
+        ),
+        currentSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("28/02", 0, BigDecimal("120"), BigDecimal("60"), BigDecimal("60"))
+        )),
+        previousSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("29/01", 0, BigDecimal("100"), BigDecimal("50"), BigDecimal("50"))
+        )),
+        lastYearSeries = CashFlowComparisonSeries(listOf(
+            com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("01/03", 0, BigDecimal("100"), BigDecimal("50"), BigDecimal("50"))
+        )),
+        baseCurrency = "USD",
+        granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
+        periodLabels = (1..30).map { "$it/02" },
+        currentTotalBuckets = 28,
+        previousTotalBuckets = 29,
+        lastYearTotalBuckets = 30
+    )
+    
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CashFlowComparisonCard(renderData = renderData)
+        }
+    }
 }
 
 @Composable

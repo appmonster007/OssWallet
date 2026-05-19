@@ -30,6 +30,7 @@ object SeedingConfig {
                 loanDao = database.loanDao(),
                 templateDao = database.templateDao(),
                 plannedPaymentDao = database.plannedPaymentDao(),
+                tagDao = database.tagDao(),
                 context = context,
                 settingsDataStore = settingsDataStore
             ).seed()

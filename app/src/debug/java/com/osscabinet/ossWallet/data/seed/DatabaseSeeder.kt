@@ -47,6 +47,7 @@ class DatabaseSeeder @Inject constructor(
     private val loanDao: LoanDao,
     private val templateDao: TemplateDao,
     private val plannedPaymentDao: PlannedPaymentDao,
+    private val tagDao: TagDao,
     private val context: Context,
     private val settingsDataStore: SettingsDataStore
 ) {
@@ -68,6 +69,7 @@ class DatabaseSeeder @Inject constructor(
         loanDao.clearAll()
         templateDao.clearAll()
         plannedPaymentDao.clearAll()
+        tagDao.clearAll()
 
         profileDao.insertProfile(loadDefaultProfile())
 
@@ -77,6 +79,9 @@ class DatabaseSeeder @Inject constructor(
 
         val accounts = loadAccountsFromCsv()
         val csvTransactions = loadTransactionsFromCsv()
+        val csvTags = loadTagsFromCsv()
+
+        seedTags(csvTags, csvTransactions)
 
         if (accounts.isEmpty()) {
             android.util.Log.e("DatabaseSeeder", "No accounts in CSV, aborting seeding")
@@ -108,6 +113,41 @@ class DatabaseSeeder @Inject constructor(
 
         settingsDataStore.saveDatabaseSeeded(seeded = true)
         android.util.Log.d("DatabaseSeeder", "Database seeding completed successfully")
+    }
+
+    private suspend fun seedTags(csvTags: List<TagSeedRow>, transactions: List<TransactionSeedRow>) {
+        // 1. Insert tags from CSV (defines specific colors/metadata)
+        for (tagRow in csvTags) {
+            tagDao.insertTag(tagRow.toTagEntity())
+        }
+
+        // 2. Discover any tags in transactions that weren't in tags.csv and add them with a default color
+        val existingTagNames = csvTags.map { it.name }.toSet()
+        val allTxTags = transactions.flatMap { it.tags.split(",").filter { t -> t.isNotBlank() } }.toSet()
+        val missingTags = allTxTags - existingTagNames
+
+        for (tagName in missingTags) {
+            tagDao.insertTag(TagEntity(name = tagName, colorHex = -7829368))
+        }
+
+        android.util.Log.d("DatabaseSeeder", "Seeded ${csvTags.size} tags from CSV and ${missingTags.size} discovered tags")
+    }
+
+    private fun loadTagsFromCsv(): List<TagSeedRow> {
+        val list = mutableListOf<TagSeedRow>()
+        try {
+            val reader = BufferedReader(InputStreamReader(context.assets.open("tags.csv")))
+            reader.readLine() // skip header
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotBlank()) {
+                        try { list.add(TagSeedRow.fromCsv(line)) }
+                        catch (e: Exception) { android.util.Log.e("DatabaseSeeder", "Bad tag row: ${e.message}") }
+                    }
+                }
+            }
+        } catch (e: Exception) { android.util.Log.e("DatabaseSeeder", "Failed to load tags.csv: ${e.message}") }
+        return list
     }
 
     // ── Profile ──────────────────────────────────────────────────────────────
@@ -427,6 +467,23 @@ class DatabaseSeeder @Inject constructor(
         (0 until length()).map { getString(it) }.toSet()
 
     // ── Seed row data classes ─────────────────────────────────────────────────
+
+    private data class TagSeedRow(
+        val name: String,
+        val colorHex: Int
+    ) {
+        fun toTagEntity() = TagEntity(name = name, colorHex = colorHex)
+
+        companion object {
+            fun fromCsv(line: String): TagSeedRow {
+                val p = parseCsvLine(line)
+                return TagSeedRow(
+                    name = p.getOrNull(0) ?: "",
+                    colorHex = p.getOrNull(1)?.toIntOrNull() ?: -7829368
+                )
+            }
+        }
+    }
 
     private data class AccountSeedRow(
         val id: String, val name: String, val currencyCode: String,

@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -75,7 +77,7 @@ fun TransactionEntrySheets(
                 }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
-            title = "Select Target Account",
+            title = stringResource(R.string.target_account_selection_title),
             allowOutsideWallet = true
         )
     }
@@ -251,7 +253,7 @@ fun TransactionEntrySheets(
                 ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = "Select Target Currency"
+            title = stringResource(R.string.target_currency_selection_title)
         )
     }
 }

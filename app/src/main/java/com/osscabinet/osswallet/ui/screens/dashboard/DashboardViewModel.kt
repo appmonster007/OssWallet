@@ -235,7 +235,7 @@ class DashboardViewModel @Inject constructor(
                     val groups = TimelineService.getGroupedData(
                         transactions = transactionsWithBalance.take(20),
                         absoluteHistory = transactionsWithBalance,
-                        groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                        groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
                         accounts = accounts,
                         categories = categories,
                         baseCurrency = baseCurrency,

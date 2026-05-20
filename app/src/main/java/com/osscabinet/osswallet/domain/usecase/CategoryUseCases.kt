@@ -1,14 +1,14 @@
 package com.osscabinet.ossWallet.domain.usecase
 
-import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CategoryNature
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 
 class CategoryUseCases(
-    private val categoryDao: CategoryDao
+    private val categoryRepository: CategoryRepository
 ) {
-    val categories: Flow<List<CategoryEntity>> = categoryDao.getAllCategories()
+    val categories: Flow<List<Category>> = categoryRepository.categories
 
     suspend fun upsertCategory(
         id: Long = 0,
@@ -19,8 +19,8 @@ class CategoryUseCases(
         isDefault: Boolean = false,
         nature: CategoryNature = CategoryNature.WANT
     ) {
-        categoryDao.insertCategory(
-            CategoryEntity(
+        categoryRepository.upsertCategory(
+            Category(
                 id = id,
                 name = name,
                 iconName = iconName,
@@ -32,7 +32,7 @@ class CategoryUseCases(
         )
     }
 
-    suspend fun deleteCategory(category: CategoryEntity) {
-        categoryDao.deleteCategory(category)
+    suspend fun deleteCategory(category: Category) {
+        categoryRepository.deleteCategory(category)
     }
 }

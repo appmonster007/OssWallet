@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
@@ -75,7 +77,7 @@ fun PlannedPaymentEntrySheets(
             selectedAccountIds = state.targetAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
-            title = "Select Target Account",
+            title = stringResource(R.string.target_account_selection_title),
             allowOutsideWallet = true
         )
     }

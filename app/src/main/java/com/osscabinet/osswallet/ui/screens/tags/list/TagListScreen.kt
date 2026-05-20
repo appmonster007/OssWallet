@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionContent
@@ -46,17 +48,19 @@ fun TagListScreen(
 
     AeonConfirmDeleteDialog(
         show = tagToDelete != null,
-        title = "Delete Tag",
+        title = stringResource(R.string.tag_delete_title),
         message = if (transactionCount > 0) {
-            "This tag is used in $transactionCount transactions. Are you sure you want to delete it? The tag will be removed from those transactions."
+            stringResource(R.string.tag_delete_confirm_with_count, transactionCount)
         } else {
-            "Are you sure you want to delete the tag \"${tagToDelete?.name}\"?"
+            stringResource(R.string.tag_delete_confirm_simple, tagToDelete?.name ?: "")
         },
         onConfirm = {
             tagToDelete?.let { viewModel.deleteTag(it) }
             tagToDelete = null
         },
-        onDismiss = { tagToDelete = null }
+        onDismiss = { tagToDelete = null },
+        confirmButtonText = stringResource(R.string.action_delete),
+        dismissButtonText = stringResource(R.string.action_cancel)
     )
 
     if (tagToEdit != null) {
@@ -85,7 +89,7 @@ fun TagListScreen(
             tagToDelete = tag
         },
         onDismiss = onBackClick,
-        title = "Manage Tags",
+        title = stringResource(R.string.tag_manage_title),
         isSelectionModeEnabled = false
     )
 }
@@ -101,18 +105,18 @@ fun EditTagDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Tag") },
+        title = { Text(stringResource(R.string.tag_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Tag Name") },
+                    label = { Text(stringResource(R.string.tag_edit_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Text("Tag Color", style = AppTextStyles.drawerItemLabel)
+                Text(stringResource(R.string.tag_edit_color_label), style = AppTextStyles.drawerItemLabel)
                 
                 TagPresetColors.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -138,12 +142,12 @@ fun EditTagDialog(
                 onClick = { if (name.isNotBlank()) onConfirm(name.trim(), selectedColor.toArgb()) },
                 enabled = name.isNotBlank()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

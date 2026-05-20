@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
@@ -45,7 +47,7 @@ fun TemplateEntrySheets(
             selectedAccountIds = state.selectedTargetAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetTargetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
-            title = "Select Target Account",
+            title = stringResource(R.string.target_account_selection_title),
             allowOutsideWallet = true
         )
     }

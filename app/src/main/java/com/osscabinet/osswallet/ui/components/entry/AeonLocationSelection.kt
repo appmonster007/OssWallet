@@ -49,7 +49,7 @@ fun AeonLocationSelection(
     title: String = "Location"
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
     var selectedCoords by remember { mutableStateOf(currentCoords) }
     var selectedAddress by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }

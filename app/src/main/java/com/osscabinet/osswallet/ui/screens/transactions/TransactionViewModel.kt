@@ -404,7 +404,7 @@ class TransactionViewModel @Inject constructor(
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {
-                            targetTx.amount.abs().divide(transaction.amount.abs(), 6, java.math.RoundingMode.HALF_UP)
+                            targetTx.amount.abs().divide(transaction.amount.abs(), 6, RoundingMode.HALF_UP)
                         } else BigDecimal.ONE
                         
                         prefill = prefill.copy(

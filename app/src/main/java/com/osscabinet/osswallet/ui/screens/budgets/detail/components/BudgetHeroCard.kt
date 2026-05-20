@@ -75,8 +75,8 @@ fun BudgetHeroCard(
 
                         val amount = formatCurrencyRight(displayAmount, budget.currency, shorten = true)
                         val amountParts = amount.split(" ")
-                        val amountText = amountParts.dropLast(1).joinToString(" ")
-                        val symbolText = amountParts.lastOrNull() ?: ""
+                        amountParts.dropLast(1).joinToString(" ")
+                        amountParts.lastOrNull() ?: ""
 
                         Text(
                             text = buildAnnotatedString {

@@ -20,7 +20,7 @@ import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentE
 @Composable
 fun PlannedPaymentEntrySheets(
     state: PlannedPaymentEntryState,
-    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (PlannedPaymentEntryEvent) -> Unit
 ) {
     if (state.showScheduleBuilder) {

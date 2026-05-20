@@ -201,7 +201,7 @@ class TemplateEntryViewModel @Inject constructor(
             }
             is TemplateEntryEvent.AddTag -> {
                 viewModelScope.launch {
-                    tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = event.name, colorHex = event.color ?: -1))
+                    tagRepository.insertTag(Tag(name = event.name, colorHex = event.color ?: -1))
                 }
             }
             is TemplateEntryEvent.UpdateTag -> {

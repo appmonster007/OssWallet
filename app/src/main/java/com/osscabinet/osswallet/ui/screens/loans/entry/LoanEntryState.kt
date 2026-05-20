@@ -73,7 +73,7 @@ data class LoanEntryState(
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
     val existingLoan: Loan? = null,
-    val availableFilters: List<com.osscabinet.ossWallet.domain.model.Filter> = emptyList()
+    val availableFilters: List<Filter> = emptyList()
 ) {
     val canSave: Boolean
         get() = name.isNotBlank() && 

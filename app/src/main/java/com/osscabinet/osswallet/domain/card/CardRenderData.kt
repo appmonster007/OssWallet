@@ -137,7 +137,7 @@ sealed class CardRenderData {
     ) : CardRenderData()
 
     data class IncomeExpenseBar(
-        val config: com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig,
+        val config: IncomeExpenseBarCardConfig,
         val buckets: List<CashFlowTimePoint>,
         val granularity: CashFlowComparisonGranularity,
         val baseCurrency: String,
@@ -147,7 +147,7 @@ sealed class CardRenderData {
     ) : CardRenderData()
 
     data class CategorySpendingTrend(
-        val config: com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig,
+        val config: CategorySpendingTrendCardConfig,
         val buckets: List<CategorySpendingBucket>,
         val granularity: CashFlowComparisonGranularity,
         val activeCategories: List<CategorySummary>,
@@ -155,7 +155,7 @@ sealed class CardRenderData {
     ) : CardRenderData()
 
     data class TagUpSetPlot(
-        val config: com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig,
+        val config: TagUpSetPlotCardConfig,
         val sets: List<TagUpSetSet>,
         val intersections: List<TagUpSetIntersection>,
         val baseCurrency: String

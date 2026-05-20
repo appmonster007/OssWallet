@@ -220,21 +220,21 @@ fun BudgetsCardPreview() {
     )
     
     val budgets = listOf(
-        com.osscabinet.ossWallet.domain.model.BudgetProgress(
+        BudgetProgress(
             budget = budget1,
             spent = java.math.BigDecimal("450.00"),
             limit = java.math.BigDecimal("1000.00"),
             remaining = java.math.BigDecimal("550.00"),
             percentage = 0.45f,
-            alertLevel = com.osscabinet.ossWallet.domain.model.BudgetAlertLevel.NONE
+            alertLevel = BudgetAlertLevel.NONE
         ),
-        com.osscabinet.ossWallet.domain.model.BudgetProgress(
+        BudgetProgress(
             budget = budget2,
             spent = java.math.BigDecimal("1250.00"),
             limit = java.math.BigDecimal("1200.00"),
             remaining = java.math.BigDecimal("-50.00"),
             percentage = 1.04f,
-            alertLevel = com.osscabinet.ossWallet.domain.model.BudgetAlertLevel.EXCEEDED
+            alertLevel = BudgetAlertLevel.EXCEEDED
         )
     )
 
@@ -242,7 +242,7 @@ fun BudgetsCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             BudgetsCard(
                 items = budgets,
-                config = com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig(cardId = "preview", title = "Budgets"),
+                config = BudgetsCardConfig(cardId = "preview", title = "Budgets"),
                 callbacks = CardCallbacks.Budgets(onUpdate = {}, onBudgetClick = {}, onDelete = {})
             )
         }

@@ -12,7 +12,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 @Preview(showBackground = true, heightDp = 1600)
 @Composable
 fun AeonFilterEntryPreview() {
-    OssWalletTheme() {
+    OssWalletTheme {
         FilterFormBody(
             state = FilterEntryState(
                 name = "High Expenses",

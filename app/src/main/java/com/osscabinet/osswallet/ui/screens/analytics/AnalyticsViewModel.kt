@@ -80,7 +80,7 @@ class AnalyticsViewModel @Inject constructor(
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[8] as List<Loan>
                 @Suppress("UNCHECKED_CAST")
-                val tags = args[9] as List<com.osscabinet.ossWallet.domain.model.Tag>
+                val tags = args[9] as List<Tag>
 
                 if (!hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading

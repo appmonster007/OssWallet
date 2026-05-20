@@ -207,16 +207,16 @@ private fun LoanSummaryRow(
 @Composable
 fun LoansCardPreview() {
     val loan = com.osscabinet.ossWallet.domain.model.Loan(
-        id = 1L, name = "Car Loan", principalAmount = java.math.BigDecimal("15000.00"), currency = "USD",
+        id = 1L, name = "Car Loan", principalAmount = BigDecimal("15000.00"), currency = "USD",
         startDate = System.currentTimeMillis(), lenderOrBorrowerName = "Bank",
-        loanType = com.osscabinet.ossWallet.domain.model.LoanType.BORROWED, linkedAccountId = "1", profileId = 1
+        loanType = LoanType.BORROWED, linkedAccountId = "1", profileId = 1
     )
     val loans = listOf(
-        com.osscabinet.ossWallet.domain.model.LoanSummary(
+        LoanSummary(
             loan = loan,
-            remainingBalance = java.math.BigDecimal("12000.00"),
-            totalPaid = java.math.BigDecimal("3000.00"),
-            interestAccrued = java.math.BigDecimal("150.00")
+            remainingBalance = BigDecimal("12000.00"),
+            totalPaid = BigDecimal("3000.00"),
+            interestAccrued = BigDecimal("150.00")
         )
     )
 
@@ -224,7 +224,7 @@ fun LoansCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             LoansCard(
                 items = loans,
-                config = com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig(cardId = "preview", title = "Loans"),
+                config = LoansCardConfig(cardId = "preview", title = "Loans"),
                 callbacks = CardCallbacks.Loans(onUpdate = {}, onLoanClick = {}, onDelete = {})
             )
         }

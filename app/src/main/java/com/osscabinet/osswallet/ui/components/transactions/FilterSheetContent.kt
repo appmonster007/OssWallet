@@ -482,7 +482,8 @@ fun FilterSheetContentLongPreview() {
     val samplePresets = listOf(
         Filter(id = 1, name = "High Value Expenses", filter = TransactionFilter(minAmount = java.math.BigDecimal(500))),
         Filter(id = 2, name = "Tax Deductible", filter = TransactionFilter(categoryIds = setOf(1, 5))),
-        Filter(id = 3, name = "Uncleared Transfers", filter = TransactionFilter(statuses = setOf(com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED)))
+        Filter(id = 3, name = "Uncleared Transfers", filter = TransactionFilter(statuses = setOf(
+            TransactionStatus.UNCLEARED)))
     )
     val sampleTags = listOf(
         Tag(1, "Essential", 0xFF004D5F.toInt()),

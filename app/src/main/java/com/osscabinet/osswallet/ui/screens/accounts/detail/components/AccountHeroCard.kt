@@ -295,7 +295,7 @@ fun AccountHeroCardPreview() {
                 expense = BigDecimal("4200.00"),
                 baseCurrency = "USD",
                 exchangeRates = emptyMap(),
-                config = com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig(cardId = "preview"),
+                config = AccountHeroCardConfig(cardId = "preview"),
                 currencyBalances = mapOf(
                     "USD" to BigDecimal("1800000.00"),
                     "EUR" to BigDecimal("45000.00"),

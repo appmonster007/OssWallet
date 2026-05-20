@@ -194,7 +194,7 @@ fun TagUpSetPlotCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "No tagged transactions in this period",

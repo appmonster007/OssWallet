@@ -32,7 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 @Composable
 fun FilterFormBody(
     state: FilterEntryState,
-    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (FilterEntryEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {

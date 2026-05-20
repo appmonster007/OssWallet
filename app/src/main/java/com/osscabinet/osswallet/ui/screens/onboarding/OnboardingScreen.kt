@@ -481,7 +481,7 @@ private fun AppearanceStep(
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            themes.forEach { (name, desc, icon) ->
+            themes.forEach { (name, _, icon) ->
                 val isSelected = selectedTheme == name
                 Surface(
                     onClick = { onThemeSelected(name) },

@@ -239,7 +239,7 @@ object PlannedPaymentService {
         rule: RecurrenceRule
     ): String {
         val recurrenceLabel = formatRecurrenceHuman(rule)
-        val startLabel = java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault()).format(java.util.Date(startDateMillis))
+        val startLabel = java.text.SimpleDateFormat("MMM d", Locale.getDefault()).format(java.util.Date(startDateMillis))
         return "$recurrenceLabel · Starts $startLabel"
     }
 

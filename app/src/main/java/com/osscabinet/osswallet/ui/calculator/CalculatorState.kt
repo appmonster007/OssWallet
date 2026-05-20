@@ -91,9 +91,7 @@ fun calculatorReducer(
 
         is CalculatorAction.AppendNumber -> {
             val currentTokens = if (state.isCalculated) emptyList() else state.tokens
-            val lastToken = currentTokens.lastOrNull()
-            
-            val newTokens = when (lastToken) {
+            val newTokens = when (val lastToken = currentTokens.lastOrNull()) {
                 is Token.Number -> {
                     // Prevent multiple decimals
                     if (action.number == "." && lastToken.value.contains(".")) {
@@ -129,8 +127,7 @@ fun calculatorReducer(
                 )
             }
 
-            val lastToken = state.tokens.lastOrNull()
-            val newTokens = when (lastToken) {
+            val newTokens = when (val lastToken = state.tokens.lastOrNull()) {
                 is Token.Operator -> state.tokens.dropLast(1) + Token.Operator(action.operator)
                 is Token.UnaryMinus -> {
                     if (action.operator == '+') emptyList() else state.tokens
@@ -197,9 +194,8 @@ fun calculatorReducer(
 
         CalculatorAction.Backspace -> {
             if (state.tokens.isEmpty()) return state
-            
-            val lastToken = state.tokens.last()
-            val newTokens = when (lastToken) {
+
+            val newTokens = when (val lastToken = state.tokens.last()) {
                 is Token.Number -> {
                     if (lastToken.value.length > 1) {
                         state.tokens.dropLast(1) + Token.Number(lastToken.value.dropLast(1))

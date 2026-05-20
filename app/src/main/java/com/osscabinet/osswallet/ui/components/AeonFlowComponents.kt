@@ -289,7 +289,7 @@ fun AeonFlowBadge(
         color = color.copy(alpha = 0.15f),
         contentColor = color,
         shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.4f)),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.4f)),
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
     ) {
         Text(

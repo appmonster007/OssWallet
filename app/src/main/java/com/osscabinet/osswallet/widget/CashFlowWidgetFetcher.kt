@@ -53,7 +53,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         val result = renderData?.result
         val incomeInBase = result?.totalIncomeInBase ?: BigDecimal.ZERO
         val expenseInBase = result?.totalExpensesInBase ?: BigDecimal.ZERO
-        val transferInBase = result?.totalTransfersInBase ?: BigDecimal.ZERO
+        result?.totalTransfersInBase ?: BigDecimal.ZERO
         val netInBase = result?.netInBase ?: BigDecimal.ZERO
 
         val incomeFormatted = formatCurrencyRight(incomeInBase, common.baseCurrency, shorten = true)

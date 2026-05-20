@@ -168,7 +168,7 @@ fun AeonHeroHeader(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (onTitleChange != null) {
-                        androidx.compose.foundation.text.BasicTextField(
+                        BasicTextField(
                             value = title,
                             onValueChange = onTitleChange,
                             textStyle = AppTextStyles.heroAmount.copy(

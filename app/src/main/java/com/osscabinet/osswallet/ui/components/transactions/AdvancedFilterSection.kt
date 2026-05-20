@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -144,6 +145,12 @@ fun AdvancedFilterSection(
                     onClick = { onFilterChange(baseFilter) },
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
+                    Icon(
+                        Icons.Rounded.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Clear All", style = AppTextStyles.transactionSwipeAction)
                 }
             }

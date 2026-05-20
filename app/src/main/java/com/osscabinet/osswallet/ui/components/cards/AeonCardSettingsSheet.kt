@@ -55,8 +55,10 @@ fun AeonCardSettingsSheet(
                 onSearchTransactions = filterContext.onSearchTransactions,
                 savedFilters = filterContext.savedFilters,
                 onFilterEvent = { event ->
-                    if (event is FilterEvent.Apply) {
-                        onFilterChange(event.filter)
+                    when (event) {
+                        is FilterEvent.Apply -> onFilterChange(event.filter)
+                        is FilterEvent.Reset -> onFilterChange(baseFilter)
+                        else -> {}
                     }
                 },
                 onSaveFilterClick = onSaveFilterClick,

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
@@ -199,6 +200,12 @@ fun FilterSheetContent(
                 contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
                 colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
             ) {
+                Icon(
+                    Icons.Rounded.RestartAlt,
+                    contentDescription = null,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
+                )
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
                 Text("Reset All", style = AppTextStyles.listSectionHeader)
             }
         }

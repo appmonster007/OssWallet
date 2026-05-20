@@ -360,9 +360,7 @@ data class CashFlowComparisonCardConfig(
     val showSamePeriodLastYear: Boolean = true,
     val isCumulative: Boolean = true,
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-    )
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
@@ -384,12 +382,10 @@ data class CategorySpendingTrendCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedNature: CategoryNatureFilter = CategoryNatureFilter.ALL,
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-    )
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
-    override val filterRules: CardFilterRules get() = CardFilterRules.SPENDING_LOCKED_CATEGORIES
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 @Serializable
@@ -402,9 +398,7 @@ data class IncomeExpenseBarCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-    )
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
@@ -421,9 +415,7 @@ data class TagUpSetPlotCardConfig(
     val maxTags: Int = 10,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
-    override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-    )
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY

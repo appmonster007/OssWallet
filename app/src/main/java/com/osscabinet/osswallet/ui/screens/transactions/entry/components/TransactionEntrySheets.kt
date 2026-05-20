@@ -11,6 +11,8 @@ import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
+
 /**
  * Container for all bottom sheets used in transaction entry.
  * Uses shared components to ensure consistency.
@@ -19,7 +21,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntrySt
 @Composable
 fun TransactionEntrySheets(
     state: TransactionEntryState,
-    onEvent: (TransactionEntryEvent) -> Unit
+    onEvent: (TransactionEntryEvent) -> Unit,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>
 ) {
     // Date/Time Picker
     if (state.showDatePicker) {
@@ -96,9 +99,9 @@ fun TransactionEntrySheets(
     // Linked Transaction Selection
     if (state.showLinkedTransactionSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.transactions,
+            onSearch = onSearch,
             currentTransactionId = state.transactionId,
-            linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
+            linkedIds = state.linkedTransactionIds.toSet(),
             accounts = state.accounts,
             categories = state.categories,
             onLinkedTransactionsChanged = { ids ->

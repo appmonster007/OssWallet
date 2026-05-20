@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
@@ -13,6 +14,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 @Database(
     entities = [
         TransactionEntity::class,
+        TransactionFtsEntity::class,
         TransactionLinkEntity::class,
         CurrencyRateEntity::class,
         AccountEntity::class,
@@ -27,7 +29,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -52,19 +54,48 @@ abstract class AppDatabase : RoomDatabase() {
             System.loadLibrary("sqlcipher")
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` USING fts4(content=`transactions`, `note`, `payee`, `name`)")
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE rowid = old.id;
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE rowid = old.id;
+                    END
+                """.trimIndent())
+                db.execSQL("INSERT INTO transactions_fts(rowid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_categories_name` ON `categories` (`name`)")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context, passphrase: ByteArray): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val factory = SupportOpenHelperFactory(passphrase)
-                
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .fallbackToDestructiveMigration(true)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

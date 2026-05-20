@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 data class OnboardingState(
     val userName: String = "",
@@ -37,7 +39,8 @@ sealed class OnboardingEvent {
     object CompleteOnboarding : OnboardingEvent()
 }
 
-class OnboardingViewModel(
+@HiltViewModel
+class OnboardingViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val providerRegistry: ExchangeRateProviderRegistry

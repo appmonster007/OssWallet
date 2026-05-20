@@ -28,6 +28,7 @@ fun AeonBudgetEntryPreview() {
                 selectedTags = setOf("Grocery", "Monthly"),
                 selectedCategoryIds = setOf(1L) // Simulating a selection
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {},
             modifier = Modifier.padding(16.dp)
         )

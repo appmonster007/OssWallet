@@ -15,9 +15,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.util.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AnalyticsViewModel(
+@HiltViewModel
+class AnalyticsViewModel @Inject constructor(
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
@@ -28,6 +31,7 @@ class AnalyticsViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
+    private val tagRepository: TagRepository,
     private val computeCardUseCase: ComputeCardUseCase
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
@@ -56,7 +60,8 @@ class AnalyticsViewModel(
                 computationRepository.hasLoadedExchangeRates,
                 plannedPaymentRepository.getActivePlannedPayments(profileId),
                 budgetRepository.getActiveBudgets(profileId),
-                loanRepository.getActiveLoans(profileId)
+                loanRepository.getActiveLoans(profileId),
+                tagRepository.getAllTags()
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val transactions = args[0] as List<Transaction>
@@ -74,6 +79,8 @@ class AnalyticsViewModel(
                 val budgets = args[7] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[8] as List<Loan>
+                @Suppress("UNCHECKED_CAST")
+                val tags = args[9] as List<com.osscabinet.ossWallet.domain.model.Tag>
 
                 if (!hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading
@@ -84,6 +91,7 @@ class AnalyticsViewModel(
                     allTransactions = transactions,
                     accounts = accounts,
                     allCategories = categories,
+                    allTags = tags,
                     exchangeRates = rates,
                     selectedCurrency = baseCurrency,
                     plannedPayments = plannedPayments,
@@ -127,6 +135,7 @@ sealed class AnalyticsUiState {
         val allTransactions: List<Transaction> = emptyList(),
         val accounts: List<Account> = emptyList(),
         val allCategories: List<Category> = emptyList(),
+        val allTags: List<Tag> = emptyList(),
         val selectedCurrency: String = "USD",
         val exchangeRates: Map<String, BigDecimal> = emptyMap(),
         val plannedPayments: List<PlannedPayment> = emptyList(),

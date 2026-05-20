@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.repository
 
+import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import kotlinx.coroutines.flow.Flow
@@ -24,9 +25,14 @@ interface TransactionRepository {
     fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>>
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>>
 
+    fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>>
+
     suspend fun getUniquePayees(profileId: Int): List<String>
     suspend fun getUniqueNotes(profileId: Int): List<String>
 
-    suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
-    suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
+    suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
+    suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
+
+    /** Executes [block] inside a single database transaction. */
+    suspend fun <T> runAtomically(block: suspend () -> T): T
 }

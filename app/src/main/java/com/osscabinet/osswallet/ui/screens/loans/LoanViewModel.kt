@@ -12,6 +12,8 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,12 +26,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-class LoanViewModel(
+@HiltViewModel
+class LoanViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     settingsRepository: SettingsRepository,
-    private val transactionRepository: TransactionRepository? = null,
-    private val currencyRepository: CurrencyRepository? = null,
-    private val categoryRepository: CategoryRepository? = null
+    private val transactionRepository: TransactionRepository,
+    private val currencyRepository: CurrencyRepository,
+    private val categoryRepository: CategoryRepository
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -42,17 +45,12 @@ class LoanViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val transactions: StateFlow<List<Transaction>> = if (transactionRepository != null) {
-        settingsRepository.currentProfileId
-            .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    } else {
-        MutableStateFlow(emptyList())
-    }
+    private val transactions: StateFlow<List<Transaction>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val categories: StateFlow<List<Category>> = categoryRepository?.categories
-        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-        ?: MutableStateFlow(emptyList())
+    private val categories: StateFlow<List<Category>> = categoryRepository.categories
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableTags: StateFlow<List<String>> = transactions
         .map { txList -> txList.asSequence().flatMap { it.tags }.distinct().sorted().toList() }
@@ -76,14 +74,12 @@ class LoanViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     init {
-        if (currencyRepository != null) {
-            viewModelScope.launch {
-                settingsRepository.currency.collect { base ->
-                    try {
-                        val rates = currencyRepository.getExchangeRates(base)
-                        _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
-                    } catch (_: Exception) {
-                    }
+        viewModelScope.launch {
+            settingsRepository.currency.collect { base ->
+                try {
+                    val rates = currencyRepository.getExchangeRates(base)
+                    _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
+                } catch (_: Exception) {
                 }
             }
         }

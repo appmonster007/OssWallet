@@ -146,6 +146,10 @@ class TransactionUseCases(
         return repository.getLinkedTransactions(transactionId)
     }
 
+    fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> {
+        return repository.searchTransactions(profileId, query)
+    }
+
     suspend fun getUniquePayees(profileId: Int): List<String> {
         return repository.getUniquePayees(profileId)
     }
@@ -153,4 +157,7 @@ class TransactionUseCases(
     suspend fun getUniqueNotes(profileId: Int): List<String> {
         return repository.getUniqueNotes(profileId)
     }
+
+    suspend fun <T> runAtomically(block: suspend () -> T): T =
+        repository.runAtomically(block)
 }

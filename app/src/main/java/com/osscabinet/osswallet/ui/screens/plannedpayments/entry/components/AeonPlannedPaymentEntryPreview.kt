@@ -17,6 +17,7 @@ fun AeonPlannedPaymentFormBodyPreview() {
                 transactionType = TransactionType.EXPENSE,
                 currency = "USD"
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {}
         )
     }

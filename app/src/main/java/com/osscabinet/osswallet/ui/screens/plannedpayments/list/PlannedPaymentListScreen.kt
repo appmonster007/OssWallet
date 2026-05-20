@@ -314,7 +314,6 @@ fun PlannedPaymentListScreen(
                                     } else {
                                         viewModel.quickConfirm(
                                             payment,
-                                            transactionManager,
                                             profileId
                                         )
                                     }
@@ -355,7 +354,6 @@ fun PlannedPaymentListScreen(
                                         } else {
                                             viewModel.quickConfirm(
                                                 item.plannedPayment,
-                                                transactionManager,
                                                 profileId
                                             )
                                         }
@@ -391,7 +389,6 @@ fun PlannedPaymentListScreen(
                                     } else {
                                         viewModel.quickConfirm(
                                             payment,
-                                            transactionManager,
                                             profileId
                                         )
                                     }

@@ -22,10 +22,15 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
 
-class PlannedPaymentViewModel(
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
+@HiltViewModel
+class PlannedPaymentViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
     private val categoryRepository: CategoryRepository,
+    private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
@@ -72,7 +77,6 @@ class PlannedPaymentViewModel(
     fun confirmOccurrence(
         occurrence: PlannedPaymentOccurrence,
         payment: PlannedPayment,
-        transactionManager: TransactionManager,
         profileId: Int
     ) {
         viewModelScope.launch {
@@ -101,59 +105,32 @@ class PlannedPaymentViewModel(
                 transferRate = payment.transferRate
             )
             val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
-            plannedPaymentRepository.upsertOccurrence(
-                occurrence.copy(
-                    status = OccurrenceStatus.CONFIRMED,
-                    generatedTransactionId = transactionId
-                )
+            transactionManager.confirmPlannedPaymentTransaction(
+                paymentId = payment.id,
+                transactionId = transactionId,
+                scheduledDate = occurrence.scheduledDate
             )
-            val nextDue =
-                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-            if (nextDue == null) {
-                plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-            } else {
-                plannedPaymentRepository.update(
-                    payment.copy(
-                        schedule = payment.schedule.copy(
-                            nextDueDate = nextDue,
-                            lastTriggeredDate = occurrence.scheduledDate
-                        )
-                    )
-                )
-            }
         }
     }
 
     fun skipOccurrence(occurrence: PlannedPaymentOccurrence, payment: PlannedPayment) {
         viewModelScope.launch {
-            plannedPaymentRepository.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
-            val nextDue =
-                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-            if (nextDue == null) {
-                plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-            } else {
-                plannedPaymentRepository.update(
-                    payment.copy(
-                        schedule = payment.schedule.copy(
-                            nextDueDate = nextDue,
-                            lastTriggeredDate = occurrence.scheduledDate
-                        )
-                    )
-                )
-            }
+            transactionManager.skipPlannedPayment(
+                paymentId = payment.id,
+                scheduledDate = occurrence.scheduledDate
+            )
         }
     }
 
     /** Confirm a payment directly from the list view (no pre-loaded occurrence needed). */
     fun quickConfirm(
         payment: PlannedPayment,
-        transactionManager: TransactionManager,
         profileId: Int
     ) {
         val occurrence = PlannedPaymentOccurrence(
             id = 0, plannedPaymentId = payment.id, scheduledDate = payment.schedule.nextDueDate
         )
-        confirmOccurrence(occurrence, payment, transactionManager, profileId)
+        confirmOccurrence(occurrence, payment, profileId)
     }
 
     /** Skip the current instance of a payment directly from the list view. */

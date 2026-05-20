@@ -29,7 +29,7 @@ fun AeonTransactionListFilteredPreview() {
     OssWalletTheme {
         TransactionListContent(
             listState = com.osscabinet.ossWallet.domain.model.TransactionListState(isEmpty = false),
-            allTransactions = emptyList(),
+            onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             accounts = mockAccounts,
             categories = mockCategories,
             analyticsState = AnalyticsUiState.Success(selectedCurrency = "USD"),

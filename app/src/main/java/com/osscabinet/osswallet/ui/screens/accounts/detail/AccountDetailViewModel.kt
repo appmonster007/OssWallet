@@ -18,7 +18,9 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.data.local.AccountDetailSettings
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -32,18 +34,25 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import androidx.lifecycle.SavedStateHandle
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AccountDetailViewModel(
-    private val accountId: String,
+@HiltViewModel
+class AccountDetailViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
+    private val tagRepository: TagRepository,
     @Suppress("UnusedPrivateMember") private val registry: CardComputerRegistry
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
+
+    private val accountId: String = checkNotNull(savedStateHandle["accountId"])
 
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ACCOUNT_DETAIL
@@ -74,6 +83,12 @@ class AccountDetailViewModel(
         filterManager.clear()
         // Re-apply scope lock after clear
         filterManager.setFilter("account_scope", TransactionFilter(accountIds = setOf(accountId)))
+    }
+
+    fun addTag(name: String, color: Int) {
+        viewModelScope.launch {
+            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))
+        }
     }
 
     fun updateShowPlannedPayments(show: Boolean) {
@@ -108,6 +123,7 @@ class AccountDetailViewModel(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
                 categoryRepository.categories,
+                tagRepository.getAllTags(),
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
@@ -124,11 +140,14 @@ class AccountDetailViewModel(
                 val categories = args[2] as List<Category>
 
                 @Suppress("UNCHECKED_CAST")
-                val rates = args[3] as Map<String, BigDecimal>
-                val baseCurrency = args[4] as String
-                val hasLoadedExchangeRates = args[5] as Boolean
-                val settings = args[6] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
-                val currentFilter = args[7] as TransactionFilter
+                val tags = args[3] as List<com.osscabinet.ossWallet.domain.model.Tag>
+
+                @Suppress("UNCHECKED_CAST")
+                val rates = args[4] as Map<String, BigDecimal>
+                val baseCurrency = args[5] as String
+                val hasLoadedExchangeRates = args[6] as Boolean
+                val settings = args[7] as AccountDetailSettings
+                val currentFilter = args[8] as TransactionFilter
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
@@ -171,6 +190,7 @@ class AccountDetailViewModel(
                     allAccountTransactions = accountTransactions,
                     listState = listState,
                     allCategories = categories,
+                    allTags = tags,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     showPlannedPayments = settings.transactionsSection.showPlannedPayments,
@@ -194,6 +214,7 @@ sealed class AccountDetailUiState {
         val allAccountTransactions: List<Transaction>,
         val listState: TransactionListState,
         val allCategories: List<Category> = emptyList(),
+        val allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val showPlannedPayments: Boolean = false,

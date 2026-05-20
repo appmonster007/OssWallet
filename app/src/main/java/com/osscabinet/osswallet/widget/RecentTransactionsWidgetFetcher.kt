@@ -58,8 +58,11 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
         val categoryMap = common.categoryRepository.categories.first().associateBy { it.id }
         
         // Load accounts to map account names
-        val container = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container
-        val accountsMap = container.accountRepository.getAllAccounts(common.profileId).first().associateBy { it.id }
+        val ep = dagger.hilt.android.EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint::class.java
+        )
+        val accountsMap = ep.accountRepository().getAllAccounts(common.profileId).first().associateBy { it.id }
 
         val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFormatter = SimpleDateFormat("MMM dd", Locale.getDefault())

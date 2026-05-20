@@ -4,12 +4,18 @@ import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.di.ApplicationScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import java.math.BigDecimal
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ComputationRepositoryImpl(
+@Singleton
+class ComputationRepositoryImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : ComputationRepository {
 
     private val _exchangeRates = MutableStateFlow<Map<String, BigDecimal>>(emptyMap())
@@ -37,7 +43,6 @@ class ComputationRepositoryImpl(
                 _exchangeRates.value = rates
                 _hasLoadedExchangeRates.value = true
             }
-            .launchIn(kotlinx.coroutines.GlobalScope) // This is a bit risky, but since AppContainer is a singleton it's somewhat okay. 
-            // Better to pass a scope, but for simplicity in this refactor...
+            .launchIn(applicationScope)
     }
 }

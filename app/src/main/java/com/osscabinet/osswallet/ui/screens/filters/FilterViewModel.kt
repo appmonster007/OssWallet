@@ -5,12 +5,15 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class FilterViewModel(
+@HiltViewModel
+class FilterViewModel @Inject constructor(
     private val filterRepository: FilterRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {

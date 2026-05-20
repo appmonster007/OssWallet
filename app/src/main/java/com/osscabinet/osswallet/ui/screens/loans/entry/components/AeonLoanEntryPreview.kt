@@ -26,6 +26,7 @@ fun AeonLoanEntryPreview() {
                 hasSettlementDate = true,
                 settlementDate = 1778803200000L // May 15, 2026
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {},
             modifier = Modifier.padding(16.dp)
         )

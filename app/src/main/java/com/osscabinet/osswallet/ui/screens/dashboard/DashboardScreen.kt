@@ -69,7 +69,12 @@ import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
-import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
+import com.osscabinet.ossWallet.ui.components.cards.AccountActions
+import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.FilterActions
+import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
@@ -430,22 +435,37 @@ fun DashboardContent(
                         filterContext = FilterSelectionContext(
                             accounts = state.accounts,
                             allCategories = state.allCategories,
-                            savedFilters = savedFilters
+                            allTags = state.allTags,
+                            savedFilters = savedFilters,
+                            onSearchTransactions = transactionViewModel::searchTransactions
                         ),
-                        callbacks = CardListCallbacks(
-                            onManageAccountsClick = onManageAccountsClick,
-                            onAccountClick = onAccountClick,
-                            onTransactionClick = onEditTransactionClick,
-                            onPlannedPaymentConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
-                            onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) },
-                            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                            onClone = { onCloneTransactionClick(it) },
-                            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                            onSplit = { onSplitTransactionClick(it) },
-                            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                            onSaveFilterClick = onSaveFilterClick
+                        callbacks = AeonInteractionCallbacks(
+                            accountActions = AccountActions(
+                                onManageClick = onManageAccountsClick,
+                                onClick = onAccountClick
+                            ),
+                            transactionActions = TransactionActions(
+                                onClick = onEditTransactionClick,
+                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                                onClone = { onCloneTransactionClick(it) },
+                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { onSplitTransactionClick(it) },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                            ),
+                            paymentActions = PaymentActions(
+                                onConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
+                                onSkip = { id -> dashboardViewModel.quickSkipById(id) }
+                            ),
+                            filterActions = FilterActions(
+                                onSaveClick = onSaveFilterClick
+                            ),
+                            tagActions = TagActions(
+                                onAdd = { name, color -> 
+                                    transactionViewModel.addTag(name, color)
+                                }
+                            )
                         ),
                     )
                 }

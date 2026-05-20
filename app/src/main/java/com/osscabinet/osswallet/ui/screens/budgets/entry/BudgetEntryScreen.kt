@@ -47,6 +47,7 @@ fun BudgetEntryScreen(
     ) { innerPadding ->
         BudgetFormBody(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )

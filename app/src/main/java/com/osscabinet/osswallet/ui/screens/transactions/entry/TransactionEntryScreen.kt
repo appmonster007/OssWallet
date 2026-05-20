@@ -98,6 +98,7 @@ fun TransactionEntryScreen(
         TransactionFormBody(
             state = state,
             onEvent = viewModel::onEvent,
+            onSearch = viewModel::searchTransactions,
             modifier = Modifier.padding(innerPadding)
         )
     }

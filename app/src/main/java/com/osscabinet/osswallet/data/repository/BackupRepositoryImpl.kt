@@ -20,8 +20,12 @@ import kotlinx.serialization.json.Json
 import java.io.*
 import java.math.BigDecimal
 import java.util.zip.ZipInputStream
+import javax.inject.Inject
+import javax.inject.Singleton
+import dagger.hilt.android.qualifiers.ApplicationContext
 
-class BackupRepositoryImpl(
+@Singleton
+class BackupRepositoryImpl @Inject constructor(
     private val profileDao: ProfileDao,
     private val accountDao: AccountDao,
     private val transactionDao: TransactionDao,
@@ -37,7 +41,7 @@ class BackupRepositoryImpl(
     private val filterDao: FilterDao,
     private val currencyDao: CurrencyDao,
     private val database: AppDatabase,
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) : BackupRepository {
 
     override suspend fun exportData(uriString: String, type: BackupType): Result<Unit> = withContext(Dispatchers.IO) {

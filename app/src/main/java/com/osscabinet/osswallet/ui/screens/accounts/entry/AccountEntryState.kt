@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.model.Transaction
 import java.math.BigDecimal
 
 data class AccountEntryState(
@@ -28,7 +27,7 @@ data class AccountEntryState(
     
     // External data
     val existingAccount: Account? = null,
-    val allTransactions: List<Transaction> = emptyList(),
+    val currencyUsageMap: Map<String, Boolean> = emptyMap(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val defaultCurrency: String = "USD"
 ) {
@@ -38,11 +37,4 @@ data class AccountEntryState(
             return accountName.isNotBlank() && primaryCurrency.isNotBlank() &&
                     allowedCurrencies.isNotEmpty() && (isEditMode || isBalanceValid)
         }
-
-    val currencyUsageMap: Map<String, Boolean>
-        get() = if (isEditMode) {
-            allTransactions.filter { it.accountId == accountId }
-                .groupBy { it.currency }
-                .mapValues { it.value.isNotEmpty() }
-        } else emptyMap()
 }

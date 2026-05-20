@@ -59,8 +59,7 @@ data class TemplateEntryState(
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false,
     val prefillDto: TransactionPrefillDTO? = null,
-    val displayLinkedTxs: List<Transaction> = emptyList(),
-    val allTransactions: List<Transaction> = emptyList()
+    val displayLinkedTxs: List<Transaction> = emptyList()
 ) {
     val selectedAccount: Account? get() = accounts.find { it.id == accountId }
     val selectedTargetAccount: Account? get() = accounts.find { it.id == targetAccountId }

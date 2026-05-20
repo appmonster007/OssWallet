@@ -23,7 +23,8 @@ fun AeonDetailSection(
     showNote: Boolean = true,
     showPayee: Boolean = true,
     showTags: Boolean = true,
-    selectedTags: List<Tag> = emptyList(),
+    selectedNames: Set<String> = emptySet(),
+    allAvailableTags: List<Tag> = emptyList(),
     onTagClick: () -> Unit = {},
     onRemoveTag: (String) -> Unit = {},
     noteSuggestions: List<String> = emptyList(),
@@ -57,7 +58,8 @@ fun AeonDetailSection(
 
         if (showTags) {
             EntryTagSection(
-                tags = selectedTags,
+                selectedNames = selectedNames,
+                allAvailableTags = allAvailableTags,
                 onShowTagSheet = onTagClick,
                 onRemoveTag = onRemoveTag
             )

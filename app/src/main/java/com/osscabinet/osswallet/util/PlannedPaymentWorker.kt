@@ -7,7 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.osscabinet.ossWallet.OssWalletApp
+import com.osscabinet.ossWallet.di.PlannedPaymentWorkerEntryPoint
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
@@ -20,13 +20,16 @@ class PlannedPaymentWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
-        val container = (applicationContext as OssWalletApp).container
-        val repo = container.plannedPaymentRepository
-        val settingsRepo = container.settingsRepository
+        val ep = dagger.hilt.android.EntryPointAccessors.fromApplication(
+            applicationContext,
+            PlannedPaymentWorkerEntryPoint::class.java
+        )
+        val repo = ep.plannedPaymentRepository()
+        val settingsRepo = ep.settingsRepository()
         val profileId = settingsRepo.currentProfileId.first()
         val now = System.currentTimeMillis()
 
-        val allCategories = container.categoryRepository.getAllCategoriesSync()
+        val allCategories = ep.categoryRepository().getAllCategoriesSync()
         val due = repo.getDue(profileId).filter { it.schedule.nextDueDate <= now }
         
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
@@ -60,7 +63,7 @@ class PlannedPaymentWorker(
                     transferRate = payment.transferRate
                 )
 
-                val txId = container.transactionManager.handleSaveTransaction(null, request, profileId)
+                val txId = ep.transactionManager().handleSaveTransaction(null, request, profileId)
 
                 // Mark occurrence as confirmed
                 repo.upsertOccurrence(

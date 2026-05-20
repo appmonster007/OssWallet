@@ -15,7 +15,6 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,7 +24,9 @@ import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.osscabinet.ossWallet.R
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -47,7 +48,12 @@ import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHer
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
-import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
+import com.osscabinet.ossWallet.ui.components.cards.AccountActions
+import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.FilterActions
+import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -92,6 +98,9 @@ fun AccountDetailScreen(
     onRecordsClick: (TransactionFilter) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {}
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     // Initialize filter from navigation parameter when screen opens
     LaunchedEffect(filterJson) {
         if (filterJson != null) {
@@ -100,7 +109,9 @@ fun AccountDetailScreen(
                 val filter = Json.decodeFromString<TransactionFilter>(decoded)
                 accountDetailViewModel.updateFilter(filter)
             } catch (e: Exception) {
-                // Handle error silently
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.account_detail_load_filter_error)
+                )
             }
         }
     }
@@ -138,14 +149,14 @@ fun AccountDetailScreen(
         NavigationTab(
             icon = Icons.Rounded.Dashboard,
             selectedIcon = Icons.Rounded.Dashboard,
-            label = "Overview",
-            contentDescription = "Overview tab"
+            label = stringResource(R.string.nav_overview),
+            contentDescription = stringResource(R.string.nav_overview_desc)
         ),
         NavigationTab(
             icon = Icons.Rounded.Receipt,
             selectedIcon = Icons.Rounded.Receipt,
-            label = "Transactions",
-            contentDescription = "Transactions tab"
+            label = stringResource(R.string.nav_transactions),
+            contentDescription = stringResource(R.string.nav_transactions_desc)
         )
     )
 
@@ -168,6 +179,8 @@ fun AccountDetailScreen(
             filter = state.currentFilter,
             accounts = accounts,
             categories = categories,
+            allTags = state.allTags,
+            onSearchTransactions = { transactionViewModel.searchTransactions(it) },
             savedFilters = savedFilters,
             onFilterEvent = { event ->
                 when (event) {
@@ -178,6 +191,7 @@ fun AccountDetailScreen(
                 }
             },
             onSaveFilterClick = onSaveFilterClick,
+            onAddTag = accountDetailViewModel::addTag,
             onClose = { showFilterSheet = false },
             showAccountFilter = false,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
@@ -188,7 +202,7 @@ fun AccountDetailScreen(
         val state = uiState as AccountDetailUiState.Success
         AlertDialog(
             onDismissRequest = { showSettingsDialog = false },
-            title = { Text("Transaction Settings") },
+            title = { Text(stringResource(R.string.transaction_settings_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
                     Row(
@@ -197,8 +211,8 @@ fun AccountDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Show Planned Payments", style = AppTextStyles.listItemTitle)
-                            Text("Include future transactions", style = AppTextStyles.caption, color = AppColors.border)
+                            Text(stringResource(R.string.setting_show_planned), style = AppTextStyles.listItemTitle)
+                            Text(stringResource(R.string.setting_show_planned_desc), style = AppTextStyles.caption, color = AppColors.border)
                         }
                         Switch(
                             checked = state.showPlannedPayments,
@@ -211,8 +225,8 @@ fun AccountDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Use Note as Header", style = AppTextStyles.listItemTitle)
-                            Text("Primary header will show transaction note", style = AppTextStyles.caption, color = AppColors.border)
+                            Text(stringResource(R.string.setting_use_note_as_header), style = AppTextStyles.listItemTitle)
+                            Text(stringResource(R.string.setting_use_note_as_header_desc), style = AppTextStyles.caption, color = AppColors.border)
                         }
                         Switch(
                             checked = state.useNoteAsHeader,
@@ -223,35 +237,36 @@ fun AccountDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Account Details", style = AppTextStyles.cardSectionTitle)
+                    Text(stringResource(R.string.account_detail_title), style = AppTextStyles.cardSectionTitle)
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigate { onBackClick() } }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showFilterSheet = true }) {
-                        Icon(Icons.Rounded.FilterList, contentDescription = "Filter")
+                        Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
                     }
                     IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
-                        Icon(Icons.Rounded.Edit, contentDescription = "Edit")
+                        Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.action_edit))
                     }
                     IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(Icons.Rounded.Settings, contentDescription = "Settings")
+                        Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.action_settings))
                     }
                     IconButton(onClick = { showAddCardDialog = true }) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Card")
+                        Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.action_add_card))
                     }
                 }
             )
@@ -325,7 +340,7 @@ fun AccountDetailScreen(
                                         )
                                         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
                                         Text(
-                                            "No transactions yet",
+                                            stringResource(R.string.no_transactions_yet),
                                             style = AppTextStyles.listItemTitle,
                                             color = AppColors.border
                                         )
@@ -458,14 +473,19 @@ fun DynamicAccountDetailCards(
         updateHandler = accountDetailViewModel,
         onDelete = {},
         onRecordsClick = onRecordsClick,
-        callbacks = CardListCallbacks(
-            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-            onClone = { onCloneTransactionClick(it) },
-            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-            onSplit = { onSplitTransactionClick(it) },
-            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+        callbacks = AeonInteractionCallbacks(
+            transactionActions = TransactionActions(
+                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                onClone = { onCloneTransactionClick(it) },
+                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                onSplit = { onSplitTransactionClick(it) },
+                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+            ),
+            tagActions = TagActions(
+                onAdd = accountDetailViewModel::addTag
+            )
         ),
         currentTheme = currentTheme
     )
@@ -494,18 +514,27 @@ fun DynamicAccountDetailCards(
             filterContext = FilterSelectionContext(
                 accounts = listOf(state.account),
                 allCategories = state.allCategories,
-                savedFilters = savedFilters
+                allTags = state.allTags,
+                savedFilters = savedFilters,
+                onSearchTransactions = transactionViewModel::searchTransactions
             ),
-            callbacks = CardListCallbacks(
-                onAccountClick = { id -> navigate { onAccountClick(id) } },
-                onTransactionClick = onEditTransactionClick,
-                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                onClone = { onCloneTransactionClick(it) },
-                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                onSplit = { onSplitTransactionClick(it) },
-                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+            callbacks = AeonInteractionCallbacks(
+                accountActions = AccountActions(
+                    onClick = { id -> navigate { onAccountClick(id) } }
+                ),
+                transactionActions = TransactionActions(
+                    onClick = onEditTransactionClick,
+                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                    onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                    onClone = { onCloneTransactionClick(it) },
+                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                    onSplit = { onSplitTransactionClick(it) },
+                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                ),
+                tagActions = TagActions(
+                    onAdd = accountDetailViewModel::addTag
+                )
             ),
             baseFilter = accountScopeFilter,
             forceDisableAccountSelection = true,
@@ -520,7 +549,9 @@ fun DynamicAccountDetailCards(
                         filterContext = FilterSelectionContext(
                             accounts = listOf(state.account),
                             allCategories = state.allCategories,
-                            savedFilters = savedFilters
+                            allTags = state.allTags,
+                            savedFilters = savedFilters,
+                            onSearchTransactions = transactionViewModel::searchTransactions
                         ),
                     )
                 }
@@ -563,7 +594,7 @@ fun DeleteAccountDetailCardsDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete Cards") },
+        title = { Text(stringResource(R.string.delete_cards_title)) },
         text = {
             Column(
                 modifier = Modifier
@@ -571,7 +602,7 @@ fun DeleteAccountDetailCardsDialog(
                     .heightIn(max = 300.dp),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
-                Text("Select cards to delete:")
+                Text(stringResource(R.string.delete_cards_prompt))
                 
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
@@ -613,12 +644,12 @@ fun DeleteAccountDetailCardsDialog(
                 },
                 enabled = selectedCards.isNotEmpty()
             ) {
-                Text("Delete")
+                Text(stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

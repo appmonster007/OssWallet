@@ -36,6 +36,7 @@ moshiKotlinCodegen = "1.15.2"
 datastorePreferences = "1.1.7"
 material = "1.4.0"
 vico = "2.0.0-beta.3"
+hilt = "2.59.2"
 glance = "1.1.1"
 mlkit-text-recognition = "19.0.1"
 biometric = "1.1.0"
@@ -111,9 +112,13 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 cronutils = { group = "com.cronutils", name = "cron-utils", version.ref = "cron-utils" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.3.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "googleDevtoolsKsp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 

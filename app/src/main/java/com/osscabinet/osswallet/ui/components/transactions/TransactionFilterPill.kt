@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
@@ -34,6 +35,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -55,9 +57,12 @@ fun TransactionFilterPill(
     filter: TransactionFilter,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     bottomPadding: Dp = 16.dp
 ) {
@@ -182,9 +187,12 @@ fun TransactionFilterPill(
                 filter = filter,
                 accounts = accounts,
                 categories = categories,
+                allTags = allTags,
+                onSearchTransactions = onSearchTransactions,
                 savedFilters = savedFilters,
                 onFilterEvent = onFilterEvent,
                 onSaveFilterClick = onSaveFilterClick,
+                onAddTag = onAddTag,
                 pillHeight = pillH,
                 containerColor = selectorBg,
                 contentColor = contentColor,
@@ -229,9 +237,12 @@ private fun FilterDialogContent(
     filter: TransactionFilter,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     pillHeight: Dp,
     containerColor: Color,
     contentColor: Color,
@@ -265,9 +276,12 @@ private fun FilterDialogContent(
             filter = filter,
             accounts = accounts,
             allCategories = categories,
+            allTags = allTags,
+            onSearchTransactions = onSearchTransactions,
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
+            onAddTag = onAddTag,
             onClose = {},
             backgroundColor = AppColors.cardSurfaceProminent,
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
@@ -290,6 +304,7 @@ fun TransactionFilterPillPreview() {
                 filter = TransactionFilter(timelineRange = TimelineRange.AllTime),
                 accounts = emptyList(),
                 categories = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 savedFilters = emptyList(),
                 onFilterEvent = {},
                 onSaveFilterClick = {},

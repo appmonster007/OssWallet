@@ -17,6 +17,7 @@ fun AeonTransactionFormBodyPreview() {
                 selectedCurrency = "USD",
                 note = "Dinner with friends"
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {}
         )
     }
@@ -33,6 +34,7 @@ fun AeonTransactionFormBodyAmoledPreview() {
                 selectedCurrency = "USD",
                 note = "Dinner with friends"
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {}
         )
     }
@@ -50,6 +52,7 @@ fun AeonTransactionFormBodyTransferPreview() {
                 targetCurrency = "EUR",
                 note = "Monthly Savings Transfer"
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {}
         )
     }

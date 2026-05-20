@@ -75,6 +75,22 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
     abstract suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
 
+    @Query("""
+        SELECT transactions.* FROM transactions 
+        JOIN transactions_fts ON transactions.id = transactions_fts.rowid 
+        WHERE transactions_fts MATCH :query AND profileId = :profileId
+        ORDER BY timestamp DESC
+    """)
+    abstract fun searchTransactions(profileId: Int, query: String): Flow<List<TransactionEntity>>
+
+    @Query("""
+        SELECT transactions.* FROM transactions
+        JOIN categories ON transactions.categoryId = categories.id
+        WHERE categories.name LIKE '%' || :query || '%' AND transactions.profileId = :profileId
+        ORDER BY transactions.timestamp DESC
+    """)
+    abstract fun searchTransactionsByCategoryName(profileId: Int, query: String): Flow<List<TransactionEntity>>
+
     @Query("SELECT DISTINCT payee FROM transactions WHERE profileId = :profileId AND payee IS NOT NULL AND payee != '' ORDER BY payee ASC")
     abstract suspend fun getUniquePayees(profileId: Int): List<String>
 

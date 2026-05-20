@@ -46,12 +46,14 @@ fun TemplateEntryScreen(
     ) { innerPadding ->
         TemplateFormBody(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
 
         TemplateEntrySheets(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent
         )
 

@@ -9,8 +9,11 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CurrencyRepositoryImpl(
+@Singleton
+class CurrencyRepositoryImpl @Inject constructor(
     private val providerRegistry: ExchangeRateProviderRegistry,
     private val dao: CurrencyDao,
     private val settingsRepository: SettingsRepository

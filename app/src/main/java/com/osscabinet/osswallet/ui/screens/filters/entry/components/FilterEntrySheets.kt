@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 @Composable
 fun FilterEntrySheets(
     state: FilterEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (FilterEntryEvent) -> Unit
 ) {
     if (state.showTypeSheet) {
@@ -91,7 +92,7 @@ fun FilterEntrySheets(
 
     if (state.showLinkSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
+            onSearch = onSearch,
             currentTransactionId = null,
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,

@@ -51,7 +51,6 @@ data class FilterEntryState(
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
-    val allTransactions: List<Transaction> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val existingFilter: Filter? = null
 ) {

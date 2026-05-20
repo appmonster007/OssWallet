@@ -20,6 +20,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -29,7 +31,8 @@ sealed class SyncState {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModel(
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,

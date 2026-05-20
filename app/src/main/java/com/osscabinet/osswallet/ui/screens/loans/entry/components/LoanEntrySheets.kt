@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 @Composable
 fun LoanEntrySheets(
     state: LoanEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (LoanEntryEvent) -> Unit
 ) {
     if (state.showNumpad) {
@@ -125,7 +126,7 @@ fun LoanEntrySheets(
             onTagsSelected = {
                 onEvent(LoanEntryEvent.SetTags(it))
             },
-            onAddTag = { name, _ -> 
+            onAddTag = { name, _ ->
                 onEvent(LoanEntryEvent.SetTags(state.selectedTags + name))
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowTagSheet(false)) }
@@ -181,7 +182,7 @@ fun LoanEntrySheets(
 
     if (state.showLinkSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
+            onSearch = onSearch,
             currentTransactionId = null,
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,

@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 @Composable
 fun PlannedPaymentFormBody(
     state: PlannedPaymentEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (PlannedPaymentEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -112,9 +113,8 @@ fun PlannedPaymentFormBody(
                 onNoteChange = { onEvent(PlannedPaymentEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(PlannedPaymentEntryEvent.SetPayee(it)) },
-                selectedTags = state.selectedTagNames.map { name -> 
-                    state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                },
+                selectedNames = state.selectedTagNames,
+                allAvailableTags = state.availableTags,
                 onTagClick = { onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
                 noteSuggestions = state.uniqueNotes,
@@ -184,6 +184,6 @@ fun PlannedPaymentFormBody(
         }
 
         // Dedicated sheets for selecting multi-value parameters
-        PlannedPaymentEntrySheets(state = state, onEvent = onEvent)
+        PlannedPaymentEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
     }
 }

@@ -22,7 +22,6 @@ fun AccountEntryScreen(
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     // Show a loader until the account is available in edit mode
     if (state.isEditMode && state.existingAccount == null) {
@@ -42,7 +41,6 @@ fun AccountEntryScreen(
         title = if (state.isEditMode) "Edit Account" else "New Account",
         onBackClick = onBackClick,
         onSaveClick = {
-            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
             viewModel.saveAccount {
                 viewModel.onEvent(AccountEntryEvent.TriggerNavigation)
             }

@@ -9,8 +9,11 @@ import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TagRepositoryImpl(
+@Singleton
+class TagRepositoryImpl @Inject constructor(
     private val tagDao: TagDao,
     private val transactionDao: TransactionDao
 ) : TagRepository {

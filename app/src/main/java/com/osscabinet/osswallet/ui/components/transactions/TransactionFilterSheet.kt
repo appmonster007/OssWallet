@@ -31,7 +31,9 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
@@ -41,9 +43,12 @@ fun TransactionFilterSheet(
     filter: TransactionFilter,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.sheetSurface,
     showAccountFilter: Boolean = true,
@@ -68,9 +73,12 @@ fun TransactionFilterSheet(
             filter = filter,
             accounts = accounts,
             allCategories = categories,
+            allTags = allTags,
+            onSearchTransactions = onSearchTransactions,
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
+            onAddTag = onAddTag,
             onClose = onClose,
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
@@ -124,6 +132,7 @@ fun TransactionFilterSheetPreview() {
                             parentId = null
                         )
                     ),
+                    onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                     onFilterEvent = {},
                     onClose = {}
                 )

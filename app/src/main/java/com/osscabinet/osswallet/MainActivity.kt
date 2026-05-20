@@ -15,25 +15,27 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.osscabinet.ossWallet.di.AppContainer
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import com.osscabinet.ossWallet.ui.navigation.Screen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.screens.main.MainViewModel
-import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.navigation.navigateToDashboard
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import android.content.Intent
-import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
+@AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     private var keepSplashOnScreen = true
-    private lateinit var appContainer: AppContainer
+
+    @Inject lateinit var settingsRepository: SettingsRepository
 
     companion object {
         const val EXTRA_WIDGET_NAV = "WIDGET_NAV"
@@ -47,33 +49,21 @@ class MainActivity : FragmentActivity() {
         pendingWidgetRoute = intent.getStringExtra(EXTRA_WIDGET_NAV)
     }
 
-    private val mainViewModel: MainViewModel by viewModels {
-        GenericViewModelFactory {
-            MainViewModel(
-                appContainer.profileRepository,
-                appContainer.settingsRepository,
-                appContainer.accountRepository,
-                appContainer.templateRepository
-            )
-        }
-    }
+    private val mainViewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
-        // Initialize dependency container
-        appContainer = (application as OssWalletApp).container
 
         pendingWidgetRoute = intent?.getStringExtra(EXTRA_WIDGET_NAV)
 
         setContent {
-            val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
-            val selectedFont by appContainer.settingsDataStore.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
-            val precision by appContainer.settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
-            val use24Hour by appContainer.settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
+            val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
+            val selectedFont by settingsRepository.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
+            val precision by settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
+            val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
 
             LaunchedEffect(precision) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -204,7 +194,6 @@ class MainActivity : FragmentActivity() {
                     ) {
                         OssWalletNavGraph(
                             navController = navController,
-                            appContainer = appContainer,
                             onSplashConditionChanged = { keepSplashOnScreen = it },
                             onOpenDrawer = { scope.launch { drawerState.open() } }
                         )

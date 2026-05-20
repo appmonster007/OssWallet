@@ -10,8 +10,11 @@ import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class TemplateViewModel(
+@HiltViewModel
+class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {

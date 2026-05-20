@@ -1,25 +1,95 @@
 package com.osscabinet.ossWallet.domain.service.management
 
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 
 class TransactionManager(
     private val transactionUseCases: TransactionUseCases,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
     private val widgetRefreshTrigger: WidgetRefreshTrigger
 ) {
 
     suspend fun handleSaveTransaction(
         existingTransaction: Transaction?,
         request: TransactionRequest,
-        profileId: Int
+        profileId: Int,
+        linkedTransactionIds: List<Long> = emptyList(),
+        clonedFromId: Long? = null,
+        sourcePlannedPaymentId: Long? = null,
+        scheduledDate: Long? = null
     ): Long = andRefresh {
-        if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
+        val newId = if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
         else handleNormalSave(existingTransaction, request, profileId)
+
+        // Manage links
+        if (existingTransaction != null) {
+            updateLinks(newId, linkedTransactionIds)
+        } else {
+            linkedTransactionIds.forEach { transactionUseCases.addTransactionLink(newId, it) }
+            clonedFromId?.let { transactionUseCases.addTransactionLink(newId, it) }
+        }
+
+        // Planned Payment side effects
+        sourcePlannedPaymentId?.let { paymentId ->
+            confirmPlannedPaymentTransaction(paymentId, newId, scheduledDate ?: request.timestamp)
+        }
+
+        newId
+    }
+
+    suspend fun handleSaveSplitTransactions(
+        existingTransactionId: Long?,
+        splits: List<TransactionSplit>,
+        baseRequest: TransactionRequest,
+        profileId: Int,
+        categoryNameLookup: (Long) -> String
+    ): Long = andRefresh {
+        transactionUseCases.runAtomically {
+            if (existingTransactionId != null) {
+                transactionUseCases.deleteTransaction(existingTransactionId)
+            }
+
+            val splitIds = splits.map { split ->
+                val amount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val request = baseRequest.copy(
+                    name = categoryNameLookup(split.categoryId ?: baseRequest.categoryId),
+                    amount = if (baseRequest.transactionType == TransactionType.INCOME) amount else amount.negate(),
+                    categoryId = split.categoryId ?: baseRequest.categoryId,
+                    note = split.note
+                )
+                // Recursive call for each split record
+                handleNormalSave(null, request, profileId)
+            }
+
+            // Link them
+            if (splitIds.size > 1) {
+                for (i in splitIds.indices) {
+                    for (j in i + 1 until splitIds.size) {
+                        transactionUseCases.addTransactionLink(splitIds[i], splitIds[j])
+                    }
+                }
+            }
+
+            splitIds.firstOrNull() ?: -1L
+        }
+    }
+
+    private suspend fun updateLinks(transactionId: Long, newLinkedIds: List<Long>) {
+        val currentIds = transactionUseCases.getLinkedTransactionIds(transactionId).first()
+        val toRemove = currentIds.toSet() - newLinkedIds.toSet()
+        val toAdd = newLinkedIds.toSet() - currentIds.toSet()
+
+        for (id in toRemove) {
+            transactionUseCases.removeTransactionLink(transactionId, id)
+        }
+        for (id in toAdd) {
+            transactionUseCases.addTransactionLink(transactionId, id)
+        }
     }
 
     private suspend fun handleNormalSave(
@@ -96,6 +166,68 @@ class TransactionManager(
         }
 
         return transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
+    }
+
+    suspend fun confirmPlannedPaymentTransaction(
+        paymentId: Long,
+        transactionId: Long,
+        scheduledDate: Long
+    ) {
+        val payment = plannedPaymentRepository.getById(paymentId) ?: return
+        
+        // Mark occurrence as confirmed
+        val occurrence = PlannedPaymentOccurrence(
+            id = 0,
+            plannedPaymentId = paymentId,
+            scheduledDate = scheduledDate,
+            status = OccurrenceStatus.CONFIRMED,
+            generatedTransactionId = transactionId
+        )
+        plannedPaymentRepository.upsertOccurrence(occurrence)
+
+        // Update planned payment next due date
+        val nextDue = PlannedPaymentService.calculateNextDueDate(payment, scheduledDate)
+        if (nextDue == null) {
+            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+        } else {
+            plannedPaymentRepository.update(
+                payment.copy(
+                    schedule = payment.schedule.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = scheduledDate
+                    )
+                )
+            )
+        }
+    }
+
+    suspend fun skipPlannedPayment(
+        paymentId: Long,
+        scheduledDate: Long
+    ) {
+        val payment = plannedPaymentRepository.getById(paymentId) ?: return
+        
+        val occurrence = PlannedPaymentOccurrence(
+            id = 0,
+            plannedPaymentId = paymentId,
+            scheduledDate = scheduledDate,
+            status = OccurrenceStatus.SKIPPED
+        )
+        plannedPaymentRepository.upsertOccurrence(occurrence)
+
+        val nextDue = PlannedPaymentService.calculateNextDueDate(payment, scheduledDate)
+        if (nextDue == null) {
+            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+        } else {
+            plannedPaymentRepository.update(
+                payment.copy(
+                    schedule = payment.schedule.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = scheduledDate
+                    )
+                )
+            )
+        }
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {

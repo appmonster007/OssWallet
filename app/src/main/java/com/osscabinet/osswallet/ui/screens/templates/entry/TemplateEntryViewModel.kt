@@ -10,9 +10,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class TemplateEntryViewModel(
+@HiltViewModel
+class TemplateEntryViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val accountRepository: AccountRepository,
@@ -36,9 +39,8 @@ class TemplateEntryViewModel(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
-                    tagRepository.getAllTags(),
-                    transactionUseCases.getTransactions(profileId)
-                ) { accounts, categories, tags, transactions ->
+                    tagRepository.getAllTags()
+                ) { accounts, categories, tags ->
                     val payees = transactionUseCases.getUniquePayees(profileId)
                     val notes = transactionUseCases.getUniqueNotes(profileId)
                     
@@ -48,8 +50,7 @@ class TemplateEntryViewModel(
                             categories = categories,
                             allTags = tags,
                             uniquePayees = payees,
-                            uniqueNotes = notes,
-                            allTransactions = transactions
+                            uniqueNotes = notes
                         )
                     }
                 }
@@ -185,8 +186,12 @@ class TemplateEntryViewModel(
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
             is TemplateEntryEvent.SetLinkedTransactionIds -> {
-                val linkedTxs = _state.value.allTransactions.filter { event.ids.contains(it.id) }
-                _state.update { it.copy(displayLinkedTxs = linkedTxs) }
+                viewModelScope.launch {
+                    val transactions = event.ids.mapNotNull { id ->
+                        transactionUseCases.getTransactionById(id)
+                    }
+                    _state.update { it.copy(displayLinkedTxs = transactions) }
+                }
             }
             is TemplateEntryEvent.RemoveLinkedTransaction -> {
                 _state.update { state ->
@@ -318,5 +323,13 @@ class TemplateEntryViewModel(
             }
             _state.update { it.copy(navTriggered = true) }
         }
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 }

@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @Composable
 fun BudgetFormBody(
     state: BudgetEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (BudgetEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -190,9 +191,8 @@ fun BudgetFormBody(
 
                     // Tags
                     EntryTagSection(
-                        tags = state.selectedTags.map { name -> 
-                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                        },
+                        selectedNames = state.selectedTags,
+                        allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) }
                     )
@@ -316,7 +316,7 @@ fun BudgetFormBody(
             }
         }
 
-        BudgetEntrySheets(state = state, onEvent = onEvent)
+        BudgetEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
 
         if (state.showSharedFilterDialog) {
             SharedFilterConfirmationDialog(

@@ -10,8 +10,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class SharedWalletViewModel(
+@HiltViewModel
+class SharedWalletViewModel @Inject constructor(
     private val repository: SharedWalletRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {

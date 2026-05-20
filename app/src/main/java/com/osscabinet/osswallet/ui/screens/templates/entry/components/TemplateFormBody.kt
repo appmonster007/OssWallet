@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 @Composable
 fun TemplateFormBody(
     state: TemplateEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (TemplateEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -78,9 +79,8 @@ fun TemplateFormBody(
                 onNoteChange = { onEvent(TemplateEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(TemplateEntryEvent.SetPayee(it)) },
-                selectedTags = state.tags.map { name -> 
-                    state.allTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                },
+                selectedNames = state.tags,
+                allAvailableTags = state.allTags,
                 onTagClick = { onEvent(TemplateEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
                 noteSuggestions = state.uniqueNotes,

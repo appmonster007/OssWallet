@@ -145,7 +145,8 @@ fun TransactionEntrySectionPreview() {
                 onNoteChange = {},
                 payee = "Luigi's Italian",
                 onPayeeChange = {},
-                selectedTags = listOf(
+                selectedNames = setOf("Food", "Social"),
+                allAvailableTags = listOf(
                     com.osscabinet.ossWallet.domain.model.Tag(name = "Food", colorHex = 0xFFEF5350.toInt()),
                     com.osscabinet.ossWallet.domain.model.Tag(name = "Social", colorHex = 0xFFAB47BC.toInt())
                 ),

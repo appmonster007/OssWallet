@@ -47,6 +47,7 @@ fun LoanEntryScreen(
     ) { innerPadding ->
         LoanFormBody(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )

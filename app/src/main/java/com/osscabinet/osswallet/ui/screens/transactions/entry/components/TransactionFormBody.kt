@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 fun TransactionFormBody(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -109,9 +111,8 @@ fun TransactionFormBody(
                 onNoteChange = { if (!state.isSplitMode) onEvent(TransactionEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
-                selectedTags = state.selectedTags.map { name -> 
-                    state.allTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                },
+                selectedNames = state.selectedTags,
+                allAvailableTags = state.allTags,
                 onTagClick = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) },
                 noteSuggestions = state.allNotes,
@@ -144,7 +145,8 @@ fun TransactionFormBody(
         // Bottom sheets and dialogs
         TransactionEntrySheets(
             state = state,
-            onEvent = onEvent
+            onEvent = onEvent,
+            onSearch = onSearch
         )
     }
 }

@@ -9,11 +9,14 @@ import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 
+@HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
-class MainViewModel(
+class MainViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,

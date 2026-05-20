@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class TagViewModel(
+@HiltViewModel
+class TagViewModel @Inject constructor(
     private val repository: TagRepository,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {

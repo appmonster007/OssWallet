@@ -8,8 +8,11 @@ import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ProfileRepositoryImpl(
+@Singleton
+class ProfileRepositoryImpl @Inject constructor(
     private val profileDao: ProfileDao,
     private val settingsDataStore: SettingsDataStore
 ) : ProfileRepository {

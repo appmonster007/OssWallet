@@ -32,12 +32,12 @@ fun TransactionListScreen(
     val listState by viewModel.listState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val allTags by viewModel.allTags.collectAsStateWithLifecycle()
     val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -74,9 +74,10 @@ fun TransactionListScreen(
 
     TransactionListContent(
         listState = listState,
-        allTransactions = allTransactions,
+        onSearchTransactions = { viewModel.searchTransactions(it) },
         accounts = accounts,
         categories = categories,
+        allTags = allTags,
         analyticsState = analyticsState,
         filter = filter,
         recordsSettings = recordsSettings,
@@ -110,6 +111,7 @@ fun TransactionListScreen(
                 is FilterEvent.Reset -> viewModel.resetToInitialFilter()
             }
         },
+        onAddTag = viewModel::addTag,
         revealedCardIds = revealedCardIds
     )
 }

@@ -10,13 +10,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.math.BigDecimal
 import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Mock implementation of SharedWalletRepository since actual Firebase configuration
  * and Firestore dependencies are not provided.
  * This simulates real-time cloud synchronization and collaborative tracking.
  */
-class SharedWalletRepositoryImpl(
+@Singleton
+class SharedWalletRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao
 ) : SharedWalletRepository {
 

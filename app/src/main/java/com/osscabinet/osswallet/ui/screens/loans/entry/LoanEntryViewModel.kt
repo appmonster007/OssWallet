@@ -3,19 +3,23 @@ package com.osscabinet.ossWallet.ui.screens.loans.entry
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class LoanEntryViewModel(
+@HiltViewModel
+class LoanEntryViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
-    private val transactionRepository: TransactionRepository,
+    private val transactionUseCases: TransactionUseCases,
     private val filterRepository: FilterRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
@@ -30,15 +34,14 @@ class LoanEntryViewModel(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
+                val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
+                val uniquePayees = transactionUseCases.getUniquePayees(profileId)
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags(),
-                    transactionRepository.getAllTransactions(profileId),
                     filterRepository.getAllFilters()
-                ) { accounts, categories, tags, transactions, filters ->
-                    val uniquePayees = transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted()
-                    val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
+                ) { accounts, categories, tags, filters ->
                     _state.update {
                         it.copy(
                             accounts = accounts,
@@ -47,7 +50,6 @@ class LoanEntryViewModel(
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
-                            allTransactions = transactions,
                             availableFilters = filters,
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
@@ -369,5 +371,13 @@ class LoanEntryViewModel(
             loanRepository.deleteLoan(id)
             _state.update { it.copy(navTriggered = true) }
         }
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 }

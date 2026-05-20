@@ -6,11 +6,8 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
@@ -28,8 +25,8 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
@@ -43,6 +40,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
@@ -53,6 +51,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 enum class DashboardSection {
     NET_WORTH,
@@ -61,7 +61,8 @@ enum class DashboardSection {
     ACCOUNTS
 }
 
-class DashboardViewModel(
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
@@ -69,10 +70,12 @@ class DashboardViewModel(
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computeCardUseCase: ComputeCardUseCase,
-    private val plannedPaymentRepository: PlannedPaymentRepository? = null,
-    private val budgetRepository: BudgetRepository? = null,
-    private val loanRepository: LoanRepository? = null,
-    private val transactionManager: TransactionManager? = null,
+    val cardComputerRegistry: CardComputerRegistry,
+    val transactionManager: TransactionManager,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val budgetRepository: BudgetRepository,
+    private val loanRepository: LoanRepository,
+    private val tagRepository: TagRepository,
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -80,7 +83,7 @@ class DashboardViewModel(
 
     val cardsConfig: StateFlow<DashboardCardsConfig> =
         cardRepository.getCardsConfig(cardScreenContext)
-            .stateIn(viewModelScope, SharingStarted.Eagerly, DashboardCardsConfig())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
 
@@ -125,11 +128,13 @@ class DashboardViewModel(
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             val plannedPaymentsFlow: Flow<List<PlannedPayment>> =
-                plannedPaymentRepository?.getActivePlannedPayments(profileId) ?: flowOf(emptyList())
+                plannedPaymentRepository.getActivePlannedPayments(profileId)
             val budgetsFlow: Flow<List<Budget>> =
-                budgetRepository?.getActiveBudgets(profileId) ?: flowOf(emptyList())
+                budgetRepository.getActiveBudgets(profileId)
             val loansFlow: Flow<List<Loan>> =
-                loanRepository?.getActiveLoans(profileId) ?: flowOf(emptyList())
+                loanRepository.getActiveLoans(profileId)
+            val tagsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.Tag>> =
+                tagRepository.getAllTags()
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
@@ -140,7 +145,8 @@ class DashboardViewModel(
                 cardsConfig,
                 plannedPaymentsFlow,
                 budgetsFlow,
-                loansFlow
+                loansFlow,
+                tagsFlow
             ) { args: Array<Any> -> args }
             .flatMapLatest { args ->
                 @Suppress("UNCHECKED_CAST")
@@ -160,6 +166,8 @@ class DashboardViewModel(
                 val budgets = args[8] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[9] as List<Loan>
+                @Suppress("UNCHECKED_CAST")
+                val tags = args[10] as List<com.osscabinet.ossWallet.domain.model.Tag>
 
                 if (!hasLoadedExchangeRates) {
                     return@flatMapLatest flowOf(DashboardUiState.Loading)
@@ -240,6 +248,7 @@ class DashboardViewModel(
                         allTransactions = allTransactions,
                         recentActivitiesState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
                         allCategories = categories,
+                        allTags = tags,
                         baseCurrency = baseCurrency,
                         exchangeRates = rates,
                         plannedPayments = plannedPayments,
@@ -258,15 +267,9 @@ class DashboardViewModel(
     fun quickConfirmById(id: Long) {
         val state = uiState.value as? DashboardUiState.Success ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
-        val repo = plannedPaymentRepository ?: return
-        val manager = transactionManager ?: return
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val occurrence = PlannedPaymentOccurrence(
-                id = 0,
-                plannedPaymentId = payment.id,
-                scheduledDate = payment.schedule.nextDueDate
-            )
+            val scheduledDate = payment.schedule.nextDueDate
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
@@ -276,63 +279,35 @@ class DashboardViewModel(
                 categoryId = payment.categoryId,
                 tags = payment.tags,
                 paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
-                timestamp = occurrence.scheduledDate,
+                timestamp = scheduledDate,
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",
                 isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate
+                transferRate = payment.transferRate,
+                sourcePlannedPaymentId = payment.id,
+                warrantyExpiration = payment.warrantyExpiration,
+                latitude = payment.latitude,
+                longitude = payment.longitude
             )
-            val transactionId = manager.handleSaveTransaction(null, request, profileId)
-            repo.upsertOccurrence(
-                occurrence.copy(
-                    status = OccurrenceStatus.CONFIRMED,
-                    generatedTransactionId = transactionId
-                )
+            transactionManager.handleSaveTransaction(
+                existingTransaction = null,
+                request = request,
+                profileId = profileId,
+                scheduledDate = scheduledDate
             )
-            val nextDue =
-                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-            if (nextDue == null) {
-                repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-            } else {
-                repo.update(
-                    payment.copy(
-                        schedule = payment.schedule.copy(
-                            nextDueDate = nextDue,
-                            lastTriggeredDate = occurrence.scheduledDate
-                        )
-                    )
-                )
-            }
         }
     }
 
     fun quickSkipById(id: Long) {
         val state = uiState.value as? DashboardUiState.Success ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
-        val repo = plannedPaymentRepository ?: return
         viewModelScope.launch {
-            val occurrence = PlannedPaymentOccurrence(
-                id = 0,
-                plannedPaymentId = payment.id,
+            transactionManager.skipPlannedPayment(
+                paymentId = payment.id,
                 scheduledDate = payment.schedule.nextDueDate
             )
-            repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
-            val nextDue =
-                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-            if (nextDue == null) {
-                repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-            } else {
-                repo.update(
-                    payment.copy(
-                        schedule = payment.schedule.copy(
-                            nextDueDate = nextDue,
-                            lastTriggeredDate = occurrence.scheduledDate
-                        )
-                    )
-                )
-            }
         }
     }
 
@@ -354,6 +329,7 @@ sealed class DashboardUiState {
         val allTransactions: List<Transaction>,
         val recentActivitiesState: TransactionListState,
         val allCategories: List<Category>,
+        val allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val plannedPayments: List<PlannedPayment> = emptyList(),

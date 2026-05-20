@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import kotlinx.coroutines.flow.Flow
 
 private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, String>(
     save = { Json.encodeToString(it.value) },
@@ -53,7 +54,7 @@ fun FilterSheetContent(
     accounts: List<Account>,
     allCategories: List<Category>,
     allTags: List<Tag> = emptyList(),
-    allTransactions: List<Transaction> = emptyList(),
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
@@ -306,7 +307,7 @@ fun FilterSheetContent(
             accounts = accounts,
             allCategories = allCategories,
             allTags = allTags,
-            allTransactions = allTransactions,
+            onSearchTransactions = onSearchTransactions,
             showAccountFilter = showAccountFilter && filterRules.allowAccountSelection,
             allAvailableCurrencies = allAvailableCurrencies,
             onImmediateApply = { newFilter, debounceMs ->
@@ -413,6 +414,7 @@ fun FilterSheetContentPeekPreview() {
                 filter = TransactionFilter(),
                 accounts = emptyList(),
                 allCategories = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 onFilterEvent = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,
@@ -445,6 +447,7 @@ fun FilterSheetContentPreview() {
                 filter = TransactionFilter(),
                 accounts = sampleAccounts,
                 allCategories = sampleCategories,
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 onFilterEvent = {},
                 onClose = {},
                 backgroundColor = AppColors.insetSurface,
@@ -490,6 +493,7 @@ fun FilterSheetContentLongPreview() {
                 accounts = sampleAccounts,
                 allCategories = sampleCategories,
                 allTags = sampleTags,
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 savedFilters = samplePresets,
                 onFilterEvent = {},
                 onClose = {},

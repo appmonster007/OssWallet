@@ -10,8 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -33,6 +37,8 @@ fun AeonEntryScaffold(
     containerColor: Color = AppColors.screenBackground,
     content: @Composable (PaddingValues) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Scaffold(
         modifier = modifier,
         containerColor = containerColor,
@@ -51,7 +57,7 @@ fun AeonEntryScaffold(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -60,26 +66,32 @@ fun AeonEntryScaffold(
                         IconButton(onClick = onResetClick) {
                             Icon(
                                 Icons.Rounded.RestartAlt,
-                                contentDescription = "Reset"
+                                contentDescription = stringResource(R.string.action_reset)
                             )
                         }
                     }
                     if (isEditMode && onDeleteClick != null) {
-                        IconButton(onClick = onDeleteClick) {
+                        IconButton(onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onDeleteClick()
+                        }) {
                             Icon(
                                 Icons.Rounded.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.action_delete),
                                 tint = AppColors.error
                             )
                         }
                     }
                     IconButton(
-                        onClick = onSaveClick,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onSaveClick()
+                        },
                         enabled = canSave
                     ) {
                         Icon(
                             Icons.Rounded.Done,
-                            contentDescription = "Save",
+                            contentDescription = stringResource(R.string.action_save),
                             tint = if (canSave) {
                                 AppColors.primary
                             } else {

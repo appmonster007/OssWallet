@@ -11,8 +11,11 @@ import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CardRepositoryImpl(
+@Singleton
+class CardRepositoryImpl @Inject constructor(
     private val settingsDataStore: SettingsDataStore
 ) : CardRepository {
     private val json = Json {

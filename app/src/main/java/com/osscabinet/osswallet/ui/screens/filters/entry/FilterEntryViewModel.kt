@@ -6,23 +6,27 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FilterEntryViewModel(
+@HiltViewModel
+class FilterEntryViewModel @Inject constructor(
     private val filterRepository: FilterRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
-    private val transactionRepository: TransactionRepository,
+    private val transactionUseCases: TransactionUseCases,
     private val tagRepository: TagRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
@@ -40,14 +44,12 @@ class FilterEntryViewModel(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
-                    transactionRepository.getAllTransactions(profileId),
                     tagRepository.getAllTags()
-                ) { accounts, categories, transactions, tags ->
+                ) { accounts, categories, tags ->
                     _state.update { 
                         it.copy(
                             accounts = accounts,
                             categories = categories,
-                            allTransactions = transactions,
                             availableTags = tags
                         )
                     }
@@ -222,5 +224,13 @@ class FilterEntryViewModel(
             filterRepository.deleteFilter(filter)
             _state.update { it.copy(navTriggered = true) }
         }
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 }

@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -63,8 +67,9 @@ fun AeonTagSelectionContent(
     }
     
     val filteredTags = remember(allTags, searchQuery) {
-        if (searchQuery.isBlank()) allTags
-        else allTags.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        val trimmed = searchQuery.trim()
+        if (trimmed.isBlank()) allTags
+        else allTags.filter { it.name.contains(trimmed, ignoreCase = true) || it.name.fuzzyMatch(trimmed) }
     }
 
     val filteredNames = remember(filteredTags) { filteredTags.map { it.name }.toSet() }
@@ -83,13 +88,13 @@ fun AeonTagSelectionContent(
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     currentSelection = currentSelection + filteredNames
                 }) {
-                    Icon(Icons.Rounded.SelectAll, contentDescription = "Select All")
+                    Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.action_select_all))
                 }
                 IconButton(onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     currentSelection = currentSelection - filteredNames
                 }) {
-                    Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All")
+                    Icon(Icons.Rounded.Deselect, contentDescription = stringResource(R.string.action_deselect_all))
                 }
                 IconButton(onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -100,18 +105,16 @@ fun AeonTagSelectionContent(
                     }
                     currentSelection = newSelection
                 }) {
-                    Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection")
+                    Icon(Icons.Rounded.Flip, contentDescription = stringResource(R.string.action_invert_selection))
                 }
             }
 
-            if (isSelectionModeEnabled || true) { // Always allow edit in management mode
-                IconButton(onClick = { isManagementMode = !isManagementMode }) {
-                    Icon(
-                        if (isManagementMode) Icons.Rounded.Check else Icons.Rounded.Edit,
-                        contentDescription = if (isManagementMode) "Done" else "Edit Tags",
-                        tint = if (isManagementMode) AppColors.primary else AppColors.contentPrimary
-                    )
-                }
+            IconButton(onClick = { isManagementMode = !isManagementMode }) {
+                Icon(
+                    if (isManagementMode) Icons.Rounded.Check else Icons.Rounded.Edit,
+                    contentDescription = if (isManagementMode) stringResource(R.string.action_done) else stringResource(R.string.action_edit_tags),
+                    tint = if (isManagementMode) AppColors.primary else AppColors.contentPrimary
+                )
             }
         }
     ) { padding ->
@@ -133,7 +136,7 @@ fun AeonTagSelectionContent(
                         verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         currentSelection.forEach { tagName ->
-                            val tagColor = allTags.find { it.name == tagName }?.colorHex?.let { Color(it) } 
+                            val tagColor = allTags.find { it.name.equals(tagName, ignoreCase = true) }?.colorHex?.let { Color(it) } 
                                 ?: AppColors.primary
                             
                             InputChip(
@@ -172,7 +175,7 @@ fun AeonTagSelectionContent(
                     AeonSearchField(
                         query = searchQuery,
                         onQueryChange = { searchQuery = it },
-                        placeholder = "Search or create...",
+                        placeholder = stringResource(R.string.tag_search_placeholder),
                         showBorder = false
                     )
                     
@@ -197,7 +200,7 @@ fun AeonTagSelectionContent(
                                             .border((dims.spacingXs / 4), AppColors.divider.copy(alpha = 0.3f), CircleShape)
                                     )
                                     Text(
-                                        "Create \"${searchQuery.trim()}\"",
+                                        stringResource(R.string.tag_create_new, searchQuery.trim()),
                                         style = AppTextStyles.listItemTitle,
                                         modifier = Modifier.weight(1f),
                                         maxLines = 1
@@ -216,7 +219,7 @@ fun AeonTagSelectionContent(
                                         contentPadding = PaddingValues(horizontal = dims.spacingLg, vertical = 0.dp),
                                         modifier = Modifier.height(dims.spacingXl + dims.spacingMd)
                                     ) {
-                                        Text("CREATE", style = AppTextStyles.listSectionHeader)
+                                        Text(stringResource(R.string.tag_create_action), style = AppTextStyles.listSectionHeader)
                                     }
                                 }
                                 
@@ -254,7 +257,7 @@ fun AeonTagSelectionContent(
                     verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                 ) {
                     filteredTags.forEach { tag ->
-                        val isSelected = isSelectionModeEnabled && tag.name in currentSelection
+                        val isSelected = isSelectionModeEnabled && currentSelection.any { it.equals(tag.name, ignoreCase = true) }
                         
                         EntrySelectionCard(
                             icon = Icons.AutoMirrored.Rounded.Label,
@@ -267,7 +270,11 @@ fun AeonTagSelectionContent(
                                     // In management mode, clicking selects for delete/edit? 
                                     // Usually we use the trailing icons.
                                 } else if (isSelectionModeEnabled) {
-                                    currentSelection = if (isSelected) currentSelection - tag.name else currentSelection + tag.name
+                                    currentSelection = if (isSelected) {
+                                        currentSelection.filter { !it.equals(tag.name, ignoreCase = true) }.toSet()
+                                    } else {
+                                        currentSelection + tag.name
+                                    }
                                 }
                             },
                             trailingContent = {
@@ -329,7 +336,7 @@ fun AeonTagSelectionContent(
                                 )
                                 Spacer(modifier = Modifier.height(dims.spacingSm))
                                 Text(
-                                    if (searchQuery.isBlank()) "No tags found" else "No match for \"$searchQuery\"",
+                                    if (searchQuery.isBlank()) stringResource(R.string.tag_no_tags_found) else stringResource(R.string.tag_no_match_query, searchQuery),
                                     style = AppTextStyles.transactionTitle,
                                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
@@ -358,7 +365,7 @@ fun AeonTagSelectionContent(
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = dims.spacingXs / 2)
                 ) {
                     Text(
-                        "Done (${currentSelection.size} selected)",
+                        pluralStringResource(R.plurals.tag_done_selected, currentSelection.size, currentSelection.size),
                         style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.5.sp

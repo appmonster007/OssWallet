@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.entry.*
 import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,7 +56,7 @@ fun FilterFields(
     accounts: List<Account>,
     allCategories: List<Category>,
     allTags: List<Tag> = emptyList(),
-    allTransactions: List<Transaction> = emptyList(),
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
@@ -156,7 +157,7 @@ fun FilterFields(
         }
         "LinkedTransactions" -> {
             AeonLinkedTransactionSelection(
-                transactions = allTransactions,
+                onSearch = onSearchTransactions,
                 currentTransactionId = null,
                 linkedIds = filter.linkedTransactionIds.toSet(),
                 accounts = accounts,
@@ -373,13 +374,9 @@ fun FilterFields(
 
                 // Tags (Moved from Context) - Similar to Transaction Entry Screen
                 if (filterRules.allowTagSelection) {
-                    val selectedTags = remember(filter.tags, allTags) {
-                        filter.tags.map { tagName ->
-                            allTags.find { it.name == tagName } ?: Tag(name = tagName)
-                        }
-                    }
                     EntryTagSection(
-                        tags = selectedTags,
+                        selectedNames = filter.tags,
+                        allAvailableTags = allTags,
                         onShowTagSheet = { activeSheet = "Tags" },
                         onRemoveTag = { tagName ->
                             onFilterChange(filter.copy(tags = filter.tags - tagName))

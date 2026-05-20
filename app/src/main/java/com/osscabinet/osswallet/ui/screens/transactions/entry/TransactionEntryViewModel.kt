@@ -16,7 +16,6 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
@@ -25,18 +24,23 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import javax.inject.Inject
 
 /**
  * ViewModel dedicated to transaction entry screen state management.
  * Handles all form state, validation, and transaction operations.
  */
-class TransactionEntryViewModel(
+@HiltViewModel
+class TransactionEntryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val transactionUseCases: TransactionUseCases,
     private val transactionManager: TransactionManager,
@@ -45,8 +49,7 @@ class TransactionEntryViewModel(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
-    private val templateRepository: TemplateRepository,
-    private val plannedPaymentRepository: PlannedPaymentRepository
+    private val templateRepository: TemplateRepository
 ) : BaseViewModel(settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
@@ -76,19 +79,15 @@ class TransactionEntryViewModel(
             val payees = transactionUseCases.getUniquePayees(profileId)
             val notes = transactionUseCases.getUniqueNotes(profileId)
             val mapsAccess = settingsRepository.mapsAccessEnabled.first()
-            val transactions = transactionUseCases.getTransactions(profileId).first()
 
             val isEditMode = transactionId != null && transactionId != -1L
             val existingTransaction = if (isEditMode) {
-                transactions.find { it.id == transactionId }
+                transactionUseCases.getTransactionById(transactionId!!)
             } else null
 
             val linkedTxs = if (isEditMode) {
                 transactionUseCases.getLinkedTransactions(transactionId!!).first()
             } else emptyList()
-
-            // Merge linkedTxs into transactions list to ensure they are available for display
-            val allRelevantTransactions = (transactions + linkedTxs).distinctBy { it.id }
 
             // Set default account if provided
             val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
@@ -110,7 +109,6 @@ class TransactionEntryViewModel(
                 allPayees = payees,
                 allNotes = notes,
                 mapsAccessEnabled = mapsAccess,
-                transactions = allRelevantTransactions,
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",
                 transactionType = initialType,
@@ -302,19 +300,33 @@ class TransactionEntryViewModel(
             }
 
             is TransactionEntryEvent.SetLocation -> update { it.copy(locationCoords = event.coords) }
-            is TransactionEntryEvent.AddLinkedTransaction -> update {
-                it.copy(linkedTransactionIds = it.linkedTransactionIds + event.id)
+            is TransactionEntryEvent.AddLinkedTransaction -> {
+                viewModelScope.launch {
+                    val tx = transactionUseCases.getTransactionById(event.id)
+                    tx?.let { newTx ->
+                        update { it.copy(
+                            linkedTransactionIds = it.linkedTransactionIds + event.id,
+                            linkedTxs = (it.linkedTxs + newTx).distinctBy { t -> t.id }
+                        ) }
+                    }
+                }
             }
 
             is TransactionEntryEvent.RemoveLinkedTransaction -> {
                 // Remove from local state. Database update happens on Save.
                 update { 
-                    it.copy(linkedTransactionIds = it.linkedTransactionIds.filter { id -> id != event.linkedTransactionId })
+                    it.copy(
+                        linkedTransactionIds = it.linkedTransactionIds.filter { id -> id != event.linkedTransactionId },
+                        linkedTxs = it.linkedTxs.filter { tx -> tx.id != event.linkedTransactionId }
+                    )
                 }
             }
 
-            is TransactionEntryEvent.SetLinkedTransactionIds -> update {
-                it.copy(linkedTransactionIds = event.ids)
+            is TransactionEntryEvent.SetLinkedTransactionIds -> {
+                viewModelScope.launch {
+                    val txs = event.ids.mapNotNull { transactionUseCases.getTransactionById(it) }
+                    update { it.copy(linkedTransactionIds = event.ids, linkedTxs = txs) }
+                }
             }
 
             is TransactionEntryEvent.SetAccount -> {
@@ -541,93 +553,39 @@ class TransactionEntryViewModel(
         viewModelScope.launch {
             val currentState = _state.value
             if (!currentState.canSave) return@launch
-            
+
+            if (currentState.isEditMode && currentState.existingTransaction == null) {
+                // Stale edit state — VM was not yet initialized with the existing transaction.
+                // Do not proceed to avoid creating a duplicate insert.
+                return@launch
+            }
+
             val profileId = settingsRepository.currentProfileId.first()
 
             if (currentState.isSplitMode) {
-                // Handle Split Transactions
-                val splitTransactionIds = mutableListOf<Long>()
-                
-                // If editing, delete original
-                if (currentState.isEditMode && currentState.transactionId != null) {
-                    transactionUseCases.deleteTransaction(currentState.transactionId)
-                }
-
-                currentState.splits.forEach { split ->
-                    val splitAmount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val request = buildBaseRequest().copy(
-                        name = currentState.categories.find { it.id == (split.categoryId ?: currentState.selectedCategoryId) }?.name ?: "Transaction",
-                        amount = if (currentState.isIncome) splitAmount else splitAmount.negate(),
-                        categoryId = split.categoryId ?: currentState.selectedCategoryId,
-                        note = split.note
-                    )
-                    
-                    val newId = transactionManager.handleSaveTransaction(null, request, profileId)
-                    splitTransactionIds.add(newId)
-                }
-                
-                // Link all split transactions together
-                if (splitTransactionIds.size > 1) {
-                    for (i in splitTransactionIds.indices) {
-                        for (j in i + 1 until splitTransactionIds.size) {
-                            transactionUseCases.addTransactionLink(splitTransactionIds[i], splitTransactionIds[j])
-                        }
+                val baseRequest = buildBaseRequest()
+                val id = transactionManager.handleSaveSplitTransactions(
+                    existingTransactionId = if (currentState.isEditMode) currentState.transactionId else null,
+                    splits = currentState.splits,
+                    baseRequest = baseRequest,
+                    profileId = profileId,
+                    categoryNameLookup = { catId -> 
+                        currentState.categories.find { it.id == catId }?.name ?: "Transaction" 
                     }
-                }
-                
-                onSuccess(splitTransactionIds.firstOrNull() ?: -1L)
+                )
+                onSuccess(id)
             } else {
                 val request = buildTransactionRequest() ?: return@launch
-                if (currentState.isEditMode && currentState.transactionId != null) {
-                    val existing = currentState.existingTransaction ?: return@launch
-                    val id = transactionManager.handleSaveTransaction(existing, request, profileId)
-                    updateLinkedTransactions(currentState.transactionId)
-                    onSuccess(id)
-                } else {
-                    val newId = transactionManager.handleSaveTransaction(null, request, profileId)
-                    
-                    // Add links for cloned transaction
-                    currentState.prefillDto?.clonedFromTransactionId?.let {
-                        transactionUseCases.addTransactionLink(newId, it)
-                    }
-
-                    // Handle Planned Payment side effects
-                    currentState.prefillDto?.sourcePlannedPaymentId?.let { paymentId ->
-                        val payment = plannedPaymentRepository.getById(paymentId)
-                        if (payment != null) {
-                            // Mark occurrence as confirmed
-                            val occurrence = PlannedPaymentOccurrence(
-                                id = 0,
-                                plannedPaymentId = paymentId,
-                                scheduledDate = payment.schedule.nextDueDate, // Assume we are confirming the next one
-                                status = OccurrenceStatus.CONFIRMED,
-                                generatedTransactionId = newId
-                            )
-                            plannedPaymentRepository.upsertOccurrence(occurrence)
-
-                            // Update planned payment next due date
-                            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.schedule.nextDueDate)
-                            if (nextDue == null) {
-                                plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-                            } else {
-                                plannedPaymentRepository.update(
-                                    payment.copy(
-                                        schedule = payment.schedule.copy(
-                                            nextDueDate = nextDue,
-                                            lastTriggeredDate = payment.schedule.nextDueDate
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    // Add any additional links
-                    currentState.linkedTransactionIds.forEach { linkedId ->
-                        transactionUseCases.addTransactionLink(newId, linkedId)
-                    }
-                    onSuccess(newId)
-                }
+                val id = transactionManager.handleSaveTransaction(
+                    existingTransaction = if (currentState.isEditMode) currentState.existingTransaction else null,
+                    request = request,
+                    profileId = profileId,
+                    linkedTransactionIds = currentState.linkedTransactionIds,
+                    clonedFromId = if (currentState.isEditMode) null else currentState.prefillDto?.clonedFromTransactionId,
+                    sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
+                    scheduledDate = currentState.prefillDto?.timestamp ?: currentState.selectedDateMillis
+                )
+                onSuccess(id)
             }
         }
     }
@@ -684,18 +642,6 @@ class TransactionEntryViewModel(
         }
     }
 
-    private suspend fun updateLinkedTransactions(transactionId: Long) {
-        val currentIds = _state.value.linkedTxs.map { it.id }.toSet()
-        val selectedIds = _state.value.linkedTransactionIds.toSet()
-
-        (currentIds - selectedIds).forEach { id ->
-            transactionUseCases.removeTransactionLink(transactionId, id)
-        }
-        (selectedIds - currentIds).forEach { id ->
-            transactionUseCases.addTransactionLink(transactionId, id)
-        }
-    }
-
     /**
      * Delete the current transaction.
      */
@@ -729,6 +675,14 @@ class TransactionEntryViewModel(
      */
     fun onScreenResume() {
         onEvent(TransactionEntryEvent.ClearNavigationTrigger)
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): kotlinx.coroutines.flow.Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 
     private inline fun update(transform: (TransactionEntryState) -> TransactionEntryState) {

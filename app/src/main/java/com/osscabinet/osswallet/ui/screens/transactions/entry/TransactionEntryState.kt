@@ -67,7 +67,6 @@ data class TransactionEntryState(
     val showTargetCurrencySheet: Boolean = false,
 
     // External data (populated from repositories)
-    val transactions: List<Transaction> = emptyList(),
     val categories: List<Category> = emptyList(),
     val accounts: List<Account> = emptyList(),
     val allTags: List<Tag> = emptyList(),
@@ -92,8 +91,7 @@ data class TransactionEntryState(
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
 
     val displayLinkedTxs: List<Transaction>
-        get() = linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }
-            .sortedByDescending { it.timestamp }
+        get() = linkedTxs.sortedByDescending { it.timestamp }
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

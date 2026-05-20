@@ -25,14 +25,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListContent(
     listState: TransactionListState,
-    allTransactions: List<Transaction>,
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
     analyticsState: AnalyticsUiState,
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
@@ -43,6 +45,7 @@ fun TransactionListContent(
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     revealedCardIds: List<Long> = emptyList()
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -88,9 +91,12 @@ fun TransactionListContent(
             filter = filter,
             accounts = accounts,
             categories = categories,
+            allTags = allTags,
+            onSearchTransactions = onSearchTransactions,
             savedFilters = savedFilters,
             onFilterEvent = onFilterEvent,
             onSaveFilterClick = onSaveFilterClick,
+            onAddTag = onAddTag,
             modifier = Modifier.fillMaxSize()
         )
     }
@@ -131,7 +137,7 @@ fun TransactionListContentPreview() {
             }
             TransactionListContent(
                 listState = TransactionListState(isEmpty = false),
-                allTransactions = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 accounts = listOf(sampleAccount),
                 categories = listOf(sampleCategory),
                 analyticsState = AnalyticsUiState.Loading,

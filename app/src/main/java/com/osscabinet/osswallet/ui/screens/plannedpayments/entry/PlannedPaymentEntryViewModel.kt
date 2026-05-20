@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -12,14 +13,18 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
 @OptIn(ExperimentalCoroutinesApi::class)
-class PlannedPaymentEntryViewModel(
+@HiltViewModel
+class PlannedPaymentEntryViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
-    private val transactionRepository: TransactionRepository,
+    private val transactionUseCases: TransactionUseCases,
     private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
@@ -34,16 +39,14 @@ class PlannedPaymentEntryViewModel(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
+                val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
+                val uniquePayees = transactionUseCases.getUniquePayees(profileId)
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     templateRepository.getAllTemplates(),
-                    tagRepository.getAllTags(),
-                    transactionRepository.getAllTransactions(profileId)
-                ) { accounts, categories, templates, tags, transactions ->
-                    val uniquePayees = transactions.map { it.payee }.filter { it.isNotBlank() }.distinct().sorted()
-                    val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
-                    
+                    tagRepository.getAllTags()
+                ) { accounts, categories, templates, tags ->
                     _state.update {
                         it.copy(
                             accounts = accounts,
@@ -52,8 +55,7 @@ class PlannedPaymentEntryViewModel(
                             availableTags = tags,
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
-                            currentProfileId = profileId,
-                            allTransactions = transactions
+                            currentProfileId = profileId
                         )
                     }
                 }
@@ -245,8 +247,14 @@ class PlannedPaymentEntryViewModel(
             is PlannedPaymentEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTagNames = event.tags) }
             is PlannedPaymentEntryEvent.SetLinkedTransactionIds -> {
-                val linkedTxs = _state.value.allTransactions.filter { event.ids.contains(it.id) }
-                _state.update { it.copy(displayLinkedTxs = linkedTxs) }
+                viewModelScope.launch {
+                    val profileId = settingsRepository.currentProfileId.first()
+                    // Fetch specific transactions by ID for display
+                    val transactions = event.ids.mapNotNull { id ->
+                        transactionUseCases.getTransactionById(id)
+                    }
+                    _state.update { it.copy(displayLinkedTxs = transactions) }
+                }
             }
             is PlannedPaymentEntryEvent.RemoveLinkedTransaction -> {
                 _state.update { state ->
@@ -457,5 +465,13 @@ class PlannedPaymentEntryViewModel(
                 _state.update { it.copy(transferRate = rate) }
             }
         }
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 }

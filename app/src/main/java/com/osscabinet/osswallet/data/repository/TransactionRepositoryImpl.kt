@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
+import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -16,9 +17,13 @@ import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TransactionRepositoryImpl(
+@Singleton
+class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
     private val transactionLinkDao: TransactionLinkDao,
@@ -213,12 +218,16 @@ class TransactionRepositoryImpl(
         return transactionDao.getTransactionById(id)?.toDomain()
     }
 
-    override suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary> {
-        return transactionDao.getCurrencySummaries(profileId)
+    override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> {
+        return transactionDao.getCurrencySummaries(profileId).map { dao ->
+            CurrencySummary(currency = dao.currency, totalIncome = dao.totalIncome, totalExpense = dao.totalExpense)
+        }
     }
 
-    override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary> {
-        return transactionDao.getCurrencySummariesInRange(profileId, start, end)
+    override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary> {
+        return transactionDao.getCurrencySummariesInRange(profileId, start, end).map { dao ->
+            CurrencySummary(currency = dao.currency, totalIncome = dao.totalIncome, totalExpense = dao.totalExpense)
+        }
     }
 
     // Link management implementations
@@ -249,6 +258,24 @@ class TransactionRepositoryImpl(
         }
     }
 
+    override fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> {
+        val trimmed = query.trim()
+        val sanitizedQuery = trimmed
+            .split(Regex("\\s+"))
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { "$it*" }
+
+        return if (sanitizedQuery.isBlank()) {
+            getAllTransactions(profileId)
+        } else {
+            val ftsFlow = transactionDao.searchTransactions(profileId, sanitizedQuery)
+            val categoryFlow = transactionDao.searchTransactionsByCategoryName(profileId, trimmed)
+            combine(ftsFlow, categoryFlow) { ftsResults, categoryResults ->
+                (ftsResults + categoryResults).distinctBy { it.id }
+            }.mapToDomain { it.toDomain() }
+        }
+    }
+
     override suspend fun getUniquePayees(profileId: Int): List<String> {
         return transactionDao.getUniquePayees(profileId)
     }
@@ -256,4 +283,7 @@ class TransactionRepositoryImpl(
     override suspend fun getUniqueNotes(profileId: Int): List<String> {
         return transactionDao.getUniqueNotes(profileId)
     }
+
+    override suspend fun <T> runAtomically(block: suspend () -> T): T =
+        database.withTransaction { block() }
 }

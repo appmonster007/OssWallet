@@ -7,8 +7,11 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class FilterRepositoryImpl(
+@Singleton
+class FilterRepositoryImpl @Inject constructor(
     private val filterDao: FilterDao
 ) : FilterRepository {
     override fun getAllFilters(): Flow<List<Filter>> = 

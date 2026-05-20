@@ -9,8 +9,11 @@ import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class LoanRepositoryImpl(
+@Singleton
+class LoanRepositoryImpl @Inject constructor(
     private val loanDao: LoanDao,
     private val loanPaymentDao: LoanPaymentDao,
     private val filterRepository: FilterRepository

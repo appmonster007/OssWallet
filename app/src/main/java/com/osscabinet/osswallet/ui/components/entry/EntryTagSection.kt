@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,12 +25,20 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EntryTagSection(
-    tags: List<Tag>,
+    selectedNames: Set<String>,
+    allAvailableTags: List<Tag>,
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "ADD TAG"
 ) {
+    val resolvedTags = remember(selectedNames, allAvailableTags) {
+        selectedNames.map { name ->
+            allAvailableTags.find { it.name.equals(name, ignoreCase = true) }
+                ?: Tag(name = name)
+        }
+    }
+
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -62,7 +71,7 @@ fun EntryTagSection(
         }
 
         // Selected Tags
-        tags.forEach { tag ->
+        resolvedTags.forEach { tag ->
             val tagColor = if (tag.colorHex != -1) Color(tag.colorHex) else AppColors.primary
             
             Surface(

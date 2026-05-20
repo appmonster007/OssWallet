@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 @Composable
 fun TemplateEntrySheets(
     state: TemplateEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (TemplateEntryEvent) -> Unit
 ) {
     if (state.isNumpadVisible) {
@@ -152,7 +153,7 @@ fun TemplateEntrySheets(
 
     if (state.showLinkedTransactionSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
+            onSearch = onSearch,
             currentTransactionId = null,
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,

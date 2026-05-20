@@ -51,6 +51,8 @@ fun AeonCardSettingsSheet(
                 filter = filter,
                 accounts = filterContext.accounts,
                 allCategories = filterContext.allCategories,
+                allTags = filterContext.allTags,
+                onSearchTransactions = filterContext.onSearchTransactions,
                 savedFilters = filterContext.savedFilters,
                 onFilterEvent = { event ->
                     if (event is FilterEvent.Apply) {

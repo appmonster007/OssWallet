@@ -17,7 +17,12 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
-import com.osscabinet.ossWallet.ui.components.cards.CardListCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
+import com.osscabinet.ossWallet.ui.components.cards.AccountActions
+import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.FilterActions
+import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
@@ -142,15 +147,24 @@ fun AnalyticsScreen(
                             filterContext = FilterSelectionContext(
                                 accounts = state.accounts,
                                 allCategories = state.allCategories,
-                                savedFilters = savedFilters
+                                allTags = state.allTags,
+                                savedFilters = savedFilters,
+                                onSearchTransactions = transactionViewModel::searchTransactions
                             ),
-                            callbacks = CardListCallbacks(
-                                onAccountClick = onAccountClick,
-                                onTransactionClick = onEditTransactionClick,
-                                onClone = { onCloneTransactionClick(it) },
-                                onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                            callbacks = AeonInteractionCallbacks(
+                                accountActions = AccountActions(
+                                    onClick = onAccountClick
+                                ),
+                                transactionActions = TransactionActions(
+                                    onClick = onEditTransactionClick,
+                                    onClone = { onCloneTransactionClick(it) },
+                                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                    onSplit = { onSplitTransactionClick(it) },
+                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                                ),
+                                tagActions = TagActions(
+                                    onAdd = transactionViewModel::addTag
+                                )
                             ),
                             disableCardFilterSheet = true,
                         )
@@ -165,6 +179,8 @@ fun AnalyticsScreen(
                 filter = screenFilter,
                 accounts = nonArchivedAccounts,
                 categories = state.allCategories,
+                allTags = state.allTags,
+                onSearchTransactions = { transactionViewModel.searchTransactions(it) },
                 savedFilters = savedFilters,
                 onFilterEvent = { event ->
                     when (event) {

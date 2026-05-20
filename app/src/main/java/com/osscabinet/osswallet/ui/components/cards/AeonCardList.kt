@@ -38,7 +38,7 @@ fun AeonCardList(
     animateCards: Boolean = true,
     currentTheme: String = "light",
     filterContext: FilterSelectionContext = FilterSelectionContext(),
-    callbacks: CardListCallbacks = CardListCallbacks(),
+    callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
     disableCardFilterSheet: Boolean = false,

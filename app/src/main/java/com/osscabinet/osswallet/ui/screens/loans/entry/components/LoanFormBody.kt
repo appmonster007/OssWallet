@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 @Composable
 fun LoanFormBody(
     state: LoanEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (LoanEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -234,9 +235,8 @@ fun LoanFormBody(
 
                     // Tags
                     EntryTagSection(
-                        tags = state.selectedTags.map { name -> 
-                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                        },
+                        selectedNames = state.selectedTags,
+                        allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
                     )
@@ -344,7 +344,7 @@ fun LoanFormBody(
             }
         }
 
-        LoanEntrySheets(state = state, onEvent = onEvent)
+        LoanEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
 
         if (state.showSharedFilterDialog) {
             SharedFilterConfirmationDialog(

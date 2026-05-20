@@ -8,8 +8,11 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class CurrencyViewModel(
+@HiltViewModel
+class CurrencyViewModel @Inject constructor(
     private val currencyRepository: CurrencyRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {

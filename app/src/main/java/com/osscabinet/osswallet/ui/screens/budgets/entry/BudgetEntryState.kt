@@ -64,7 +64,7 @@ data class BudgetEntryState(
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
-    val allTransactions: List<Transaction> = emptyList(),
+    val allPayees: List<String> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,

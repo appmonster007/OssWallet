@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 @Composable
 fun FilterFormBody(
     state: FilterEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (FilterEntryEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -197,9 +198,8 @@ fun FilterFormBody(
 
                     // Multi-select Tags
                     EntryTagSection(
-                        tags = state.selectedTags.map { name ->
-                            state.availableTags.find { it.name == name } ?: com.osscabinet.ossWallet.domain.model.Tag(name = name)
-                        },
+                        selectedNames = state.selectedTags,
+                        allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
                     )
@@ -290,6 +290,6 @@ fun FilterFormBody(
             }
         }
 
-        FilterEntrySheets(state = state, onEvent = onEvent)
+        FilterEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
     }
 }

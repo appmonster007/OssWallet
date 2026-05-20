@@ -13,9 +13,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AccountEntryViewModel(
+@HiltViewModel
+class AccountEntryViewModel @Inject constructor(
     private val accountUseCases: AccountUseCases,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
@@ -39,21 +42,28 @@ class AccountEntryViewModel(
                 },
                 computationRepository.exchangeRates
             ) { defaultCurrency, transactions, exchangeRates ->
-                val currentBalance = if (_state.value.isEditMode && _state.value.accountId != null) {
+                val accountId = _state.value.accountId
+                val currentBalance = if (_state.value.isEditMode && accountId != null) {
                     AggregationService.calculateAccountBalance(
-                        accountId = _state.value.accountId!!,
+                        accountId = accountId,
                         allTransactions = transactions,
                         accountCurrency = _state.value.primaryCurrency,
                         exchangeRates = exchangeRates
                     )
                 } else BigDecimal.ZERO
 
+                val currencyUsageMap = if (_state.value.isEditMode && accountId != null) {
+                    transactions.filter { it.accountId == accountId }
+                        .groupBy { it.currency }
+                        .mapValues { it.value.isNotEmpty() }
+                } else emptyMap()
+
                 _state.update {
                     it.copy(
                         defaultCurrency = defaultCurrency,
-                        allTransactions = transactions,
                         exchangeRates = exchangeRates,
-                        currentBalance = currentBalance
+                        currentBalance = currentBalance,
+                        currencyUsageMap = currencyUsageMap
                     )
                 }
             }.collect()

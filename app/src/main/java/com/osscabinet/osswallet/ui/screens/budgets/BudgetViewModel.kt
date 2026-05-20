@@ -23,12 +23,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-class BudgetViewModel(
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
+@HiltViewModel
+class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
-    settingsRepository: SettingsRepository,
-    private val transactionRepository: TransactionRepository? = null,
-    currencyRepository: CurrencyRepository? = null,
-    categoryRepository: CategoryRepository? = null
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val currencyRepository: CurrencyRepository,
+    settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,17 +47,12 @@ class BudgetViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val transactions: StateFlow<List<Transaction>> = if (transactionRepository != null) {
-        settingsRepository.currentProfileId
-            .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    } else {
-        MutableStateFlow(emptyList())
-    }
+    val transactions: StateFlow<List<Transaction>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories: StateFlow<List<Category>> = categoryRepository?.categories
-        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-        ?: MutableStateFlow(emptyList())
+    val categories: StateFlow<List<Category>> = categoryRepository.categories
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableTags: StateFlow<List<String>> = transactions
         .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
@@ -105,14 +104,12 @@ class BudgetViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     init {
-        if (currencyRepository != null) {
-            viewModelScope.launch {
-                settingsRepository.currency.collect { base ->
-                    try {
-                        val rates = currencyRepository.getExchangeRates(base)
-                        _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
-                    } catch (_: Exception) {
-                    }
+        viewModelScope.launch {
+            settingsRepository.currency.collect { base ->
+                try {
+                    val rates = currencyRepository.getExchangeRates(base)
+                    _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
+                } catch (_: Exception) {
                 }
             }
         }

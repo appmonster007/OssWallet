@@ -21,6 +21,7 @@ fun AeonFilterEntryPreview() {
                 isNoteRegex = true,
                 hasWarranty = true
             ),
+            onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
             onEvent = {},
             modifier = Modifier.padding(16.dp)
         )

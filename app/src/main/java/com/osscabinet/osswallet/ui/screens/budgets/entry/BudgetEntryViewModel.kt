@@ -4,23 +4,28 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class BudgetEntryViewModel(
+@HiltViewModel
+class BudgetEntryViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
-    private val transactionRepository: TransactionRepository,
+    private val transactionUseCases: TransactionUseCases,
     private val filterRepository: FilterRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
@@ -35,21 +40,21 @@ class BudgetEntryViewModel(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
+                val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
+                val payees = transactionUseCases.getUniquePayees(profileId)
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags(),
-                    transactionRepository.getAllTransactions(profileId),
                     filterRepository.getAllFilters()
-                ) { accounts, categories, tags, transactions, filters ->
-                    val uniqueNotes = transactions.map { it.note }.filter { it.isNotBlank() }.distinct().sorted()
+                ) { accounts, categories, tags, filters ->
                     _state.update {
                         it.copy(
                             accounts = accounts,
                             categories = categories,
-                            allTransactions = transactions,
                             availableTags = tags,
                             uniqueNotes = uniqueNotes,
+                            allPayees = payees,
                             currentProfileId = profileId,
                             availableFilters = filters,
                             selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else emptySet(),
@@ -355,5 +360,13 @@ class BudgetEntryViewModel(
             budgetRepository.delete(id)
             _state.update { it.copy(navTriggered = true) }
         }
+    }
+
+    /**
+     * Search transactions for linking.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        val profileId = settingsRepository.currentProfileId.first()
+        emitAll(transactionUseCases.searchTransactions(profileId, query))
     }
 }

@@ -68,7 +68,6 @@ data class LoanEntryState(
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
-    val allTransactions: List<Transaction> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),

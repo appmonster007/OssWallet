@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentE
 @Composable
 fun PlannedPaymentEntrySheets(
     state: PlannedPaymentEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (PlannedPaymentEntryEvent) -> Unit
 ) {
     if (state.showScheduleBuilder) {
@@ -210,7 +211,7 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showLinkedTransactionSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
+            onSearch = onSearch,
             currentTransactionId = null, // Planned payments don't have a transaction ID
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,

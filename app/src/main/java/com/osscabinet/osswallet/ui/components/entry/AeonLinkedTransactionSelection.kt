@@ -13,8 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -26,8 +29,8 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.util.fuzzyMatch
-import java.math.BigDecimal
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -37,7 +40,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
  */
 @Composable
 fun AeonLinkedTransactionSelection(
-    transactions: List<Transaction>,
+    onSearch: (String) -> Flow<List<Transaction>>,
     currentTransactionId: Long?,
     linkedIds: Set<Long>,
     accounts: List<Account>,
@@ -47,32 +50,40 @@ fun AeonLinkedTransactionSelection(
 ) {
     var selectedIds by remember { mutableStateOf(linkedIds) }
     var query by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
 
-    val filteredTransactions = remember(query, transactions) {
-        val base = transactions.filter { it.id != currentTransactionId }
-        if (query.isBlank()) {
-            base.sortedByDescending { it.timestamp }
+    LaunchedEffect(query) {
+        if (query.isEmpty()) {
+            debouncedQuery = ""
         } else {
-            base.filter { 
-                val categoryName = categories.find { cat -> cat.id == it.categoryId }?.name ?: ""
-                it.note.contains(query, ignoreCase = true) || 
-                it.payee.contains(query, ignoreCase = true) ||
-                categoryName.contains(query, ignoreCase = true) ||
-                it.note.fuzzyMatch(query) ||
-                it.payee.fuzzyMatch(query) ||
-                categoryName.fuzzyMatch(query)
-            }.sortedByDescending { it.timestamp }
+            delay(300)
+            debouncedQuery = query
         }
+    }
+
+    var searchResults by remember { mutableStateOf<List<Transaction>>(emptyList()) }
+    val searchFlow = remember(debouncedQuery) { onSearch(debouncedQuery) }
+    LaunchedEffect(debouncedQuery) {
+        searchFlow.collect { results ->
+            searchResults = results
+        }
+    }
+
+    val filteredTransactions = remember(searchResults, currentTransactionId) {
+        searchResults.filter { it.id != currentTransactionId }
     }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
-            title = "Link Records",
+            title = stringResource(R.string.link_records_title),
             onBack = onDismiss,
             actions = {
                 if (selectedIds.isNotEmpty()) {
                     TextButton(onClick = { selectedIds = emptySet() }) {
-                        Text("CLEAR ALL", style = AppTextStyles.listSectionHeader)
+                        Text(
+                            stringResource(R.string.action_clear_all).uppercase(),
+                            style = AppTextStyles.listSectionHeader
+                        )
                     }
                 }
             }
@@ -80,7 +91,7 @@ fun AeonLinkedTransactionSelection(
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        text = "Select related activities from your history to link them to this record.",
+                        text = stringResource(R.string.link_records_hint),
                         style = AppTextStyles.transactionTitle,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
@@ -89,7 +100,7 @@ fun AeonLinkedTransactionSelection(
                     AeonSearchField(
                         query = query,
                         onQueryChange = { query = it },
-                        placeholder = "Search by note or payee...",
+                        placeholder = stringResource(R.string.link_records_search_placeholder),
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
                     
@@ -122,11 +133,11 @@ fun AeonLinkedTransactionSelection(
                             ) {
                                 Box {
                                     AeonTransactionItem(
-                                        category = category?.name ?: "Unknown",
-                                        account = account?.name ?: "Unknown",
+                                        category = category?.name ?: stringResource(R.string.unknown),
+                                        account = account?.name ?: stringResource(R.string.unknown),
                                         amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
-                                        balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),
-                                        balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                                        balanceBefore = "",
+                                        balanceAfter = "",
                                         type = when (tx.transactionType) {
                                             TransactionType.TRANSFER -> CashFlowType.TRANSFER
                                             TransactionType.INCOME -> CashFlowType.INCOME
@@ -161,7 +172,7 @@ fun AeonLinkedTransactionSelection(
                                         ) {
                                             Icon(
                                                 Icons.Rounded.Check,
-                                                contentDescription = "Selected",
+                                                contentDescription = stringResource(R.string.selected_desc),
                                                 tint = AppColors.onPrimary,
                                                 modifier = Modifier.padding(4.dp)
                                             )
@@ -191,7 +202,11 @@ fun AeonLinkedTransactionSelection(
                             shape = RoundedCornerShape(20.dp)
                         ) {
                             Text(
-                                "Link ${selectedIds.size} Record${if (selectedIds.size != 1) "s" else ""}",
+                                pluralStringResource(
+                                    R.plurals.link_records_button_count,
+                                    selectedIds.size,
+                                    selectedIds.size
+                                ),
                                 style = AppTextStyles.listItemTitle
                             )
                         }

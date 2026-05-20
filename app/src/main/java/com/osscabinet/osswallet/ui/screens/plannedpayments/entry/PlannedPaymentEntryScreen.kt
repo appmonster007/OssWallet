@@ -52,12 +52,14 @@ fun PlannedPaymentEntryScreen(
     ) { innerPadding ->
         PlannedPaymentFormBody(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)
         )
 
         PlannedPaymentEntrySheets(
             state = state,
+            onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent
         )
 

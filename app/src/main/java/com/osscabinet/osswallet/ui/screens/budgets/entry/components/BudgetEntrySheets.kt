@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 @Composable
 fun BudgetEntrySheets(
     state: BudgetEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (BudgetEntryEvent) -> Unit
 ) {
     if (state.showNumpad) {
@@ -91,7 +92,7 @@ fun BudgetEntrySheets(
             onTagsSelected = {
                 onEvent(BudgetEntryEvent.SetTags(it))
             },
-            onAddTag = { name, _ -> 
+            onAddTag = { name, _ ->
                 onEvent(BudgetEntryEvent.SetTags(state.selectedTags + name))
             },
             onDismiss = { onEvent(BudgetEntryEvent.ShowTagSheet(false)) }
@@ -147,7 +148,7 @@ fun BudgetEntrySheets(
 
     if (state.showLinkSheet) {
         AeonLinkedTransactionSelection(
-            transactions = state.allTransactions,
+            onSearch = onSearch,
             currentTransactionId = null,
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,

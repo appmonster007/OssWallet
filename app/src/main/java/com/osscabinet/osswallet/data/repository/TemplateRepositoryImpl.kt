@@ -7,8 +7,11 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TemplateRepositoryImpl(
+@Singleton
+class TemplateRepositoryImpl @Inject constructor(
     private val templateDao: TemplateDao
 ) : TemplateRepository {
     override fun getAllTemplates(): Flow<List<Template>> = 

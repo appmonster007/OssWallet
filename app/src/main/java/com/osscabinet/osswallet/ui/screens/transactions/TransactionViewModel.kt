@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -43,9 +45,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class TransactionViewModel(
+@HiltViewModel
+class TransactionViewModel @Inject constructor(
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
     categoryRepository: CategoryRepository,
@@ -55,6 +60,7 @@ class TransactionViewModel(
     private val transactionManager: TransactionManager,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
+    private val tagRepository: TagRepository,
 ) : BaseViewModel(settingsRepository) {
 
     // Replace multiple filter states with single FilterManager
@@ -82,6 +88,9 @@ class TransactionViewModel(
     val plannedPaymentPrefill = _plannedPaymentPrefill.asStateFlow()
 
     val savedFilters = filterRepository.getAllFilters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val allTags = tagRepository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val categories = categoryRepository.categories
@@ -314,6 +323,12 @@ class TransactionViewModel(
         initializeRecordsFilter(_initialFilter.value)
     }
 
+    fun addTag(name: String, color: Int) {
+        viewModelScope.launch {
+            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))
+        }
+    }
+
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
@@ -507,6 +522,16 @@ class TransactionViewModel(
 
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
         return transactionUseCases.getLinkedTransactions(transactionId)
+    }
+
+    /**
+     * Search transactions for linking.
+     * Uses FTS-backed repository search.
+     */
+    fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        withProfile { profileId ->
+            emitAll(transactionUseCases.searchTransactions(profileId, query))
+        }
     }
 
     fun saveTemplateFromPattern(pattern: DiscoveredPattern) {

@@ -9,9 +9,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AccountViewModel(
+@HiltViewModel
+class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {

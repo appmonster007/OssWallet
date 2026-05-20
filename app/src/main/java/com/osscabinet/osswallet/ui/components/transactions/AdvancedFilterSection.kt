@@ -40,7 +40,7 @@ fun AdvancedFilterSection(
     accounts: List<Account>,
     allCategories: List<Category>,
     allTags: List<Tag> = emptyList(),
-    allTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction> = emptyList(),
+    onSearchTransactions: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     savedFilters: List<Filter> = emptyList(),
     modifier: Modifier = Modifier,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
@@ -275,7 +275,7 @@ fun AdvancedFilterSection(
                     accounts = accounts,
                     allCategories = allCategories,
                     allTags = allTags,
-                    allTransactions = allTransactions,
+                    onSearchTransactions = onSearchTransactions,
                     showAccountFilter = filterRules.allowAccountSelection,
                     onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) },
                     onAddTag = onAddTag,
@@ -296,6 +296,7 @@ fun AdvancedFilterSectionPreview() {
                 onFilterChange = {},
                 accounts = emptyList(),
                 allCategories = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 baseFilter = TransactionFilter(accountIds = setOf("1"))
             )
         }

@@ -3,8 +3,11 @@ package com.osscabinet.ossWallet.data.repository
 import com.osscabinet.ossWallet.data.local.*
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SettingsRepositoryImpl(
+@Singleton
+class SettingsRepositoryImpl @Inject constructor(
     private val settingsDataStore: SettingsDataStore
 ) : SettingsRepository {
     override val currency: Flow<String> = settingsDataStore.currency

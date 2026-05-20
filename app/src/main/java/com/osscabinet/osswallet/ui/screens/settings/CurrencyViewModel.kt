@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
+import com.osscabinet.ossWallet.domain.model.currency.CurrencyRate
 import com.osscabinet.ossWallet.domain.model.currency.CurrencyRates
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -41,16 +41,17 @@ class CurrencyViewModel @Inject constructor(
             try {
                 // CurrencyRepository doesn't return Flow of rates yet, using getExchangeRates
                 val ratesMap = currencyRepository.getExchangeRates(base, false)
+                val now = System.currentTimeMillis()
                 val entities = ratesMap.map { (code, rate) ->
-                    CurrencyRateEntity(
+                    CurrencyRate(
                         baseCurrency = base,
                         currencyCode = code,
                         rate = rate,
-                        timestamp = System.currentTimeMillis(),
-                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000L // 24h fallback
+                        timestamp = now,
+                        nextUpdate = now + 24 * 60 * 60 * 1000L // 24h fallback
                     )
                 }
-                _uiState.update { it.copy(rates = entities, lastUpdated = System.currentTimeMillis(), isLoading = false) }
+                _uiState.update { it.copy(rates = entities, lastUpdated = now, isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(syncError = e.message, isLoading = false) }
             }
@@ -101,7 +102,7 @@ class CurrencyViewModel @Inject constructor(
 }
 
 data class CurrencyUiState(
-    val rates: List<CurrencyRateEntity> = emptyList(),
+    val rates: List<CurrencyRate> = emptyList(),
     val baseCurrency: String = "",
     val lastUpdated: Long = 0,
     val isLoading: Boolean = false,

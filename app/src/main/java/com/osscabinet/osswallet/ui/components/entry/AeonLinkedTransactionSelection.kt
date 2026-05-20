@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.delay
@@ -135,7 +136,7 @@ fun AeonLinkedTransactionSelection(
                                     AeonTransactionItem(
                                         category = category?.name ?: stringResource(R.string.unknown),
                                         account = account?.name ?: stringResource(R.string.unknown),
-                                        amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                                        amount = formatCurrencyRight(tx.amount, tx.currency, precision = CurrencyFormatter.precision),
                                         balanceBefore = "",
                                         balanceAfter = "",
                                         type = when (tx.transactionType) {

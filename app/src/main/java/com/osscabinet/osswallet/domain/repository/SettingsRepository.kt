@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.domain.repository
 
-import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
+import com.osscabinet.ossWallet.domain.model.settings.DashboardSettings
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {

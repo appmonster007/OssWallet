@@ -51,7 +51,7 @@ fun AeonTagSelectionContent(
     onEditTag: (Tag) -> Unit,
     onDeleteTag: (Tag) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Transaction Tags",
+    title: String,
     isSelectionModeEnabled: Boolean = true
 ) {
     var searchQuery by remember { mutableStateOf("") }

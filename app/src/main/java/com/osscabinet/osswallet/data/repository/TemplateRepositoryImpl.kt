@@ -17,8 +17,11 @@ class TemplateRepositoryImpl @Inject constructor(
     override fun getAllTemplates(): Flow<List<Template>> = 
         templateDao.getAllTemplates().map { list -> list.map { it.toDomain() } }
 
-    override fun getStarredTemplates(): Flow<List<Template>> = 
+    override fun getStarredTemplates(): Flow<List<Template>> =
         templateDao.getStarredTemplates().map { list -> list.map { it.toDomain() } }
+
+    override fun getStarredTemplates(profileId: Int): Flow<List<Template>> =
+        templateDao.getStarredTemplates(profileId).map { list -> list.map { it.toDomain() } }
 
     override suspend fun updateStarStatus(id: Long, isStarred: Boolean) = 
         templateDao.updateStarStatus(id, isStarred)

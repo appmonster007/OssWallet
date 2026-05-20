@@ -5,6 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 
+// Categories are global and shared across all profiles.
 @Entity(
     tableName = "categories",
     indices = [Index(value = ["name"])]

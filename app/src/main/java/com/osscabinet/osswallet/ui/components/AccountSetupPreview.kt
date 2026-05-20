@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.AccountDetailSettings
-import com.osscabinet.ossWallet.data.local.AccountsViewSettings
-import com.osscabinet.ossWallet.data.local.DashboardSettings
-import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
+import com.osscabinet.ossWallet.domain.model.settings.DashboardSettings
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme

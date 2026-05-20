@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.data.local.WidgetInvalidationObserver
 import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.AppDatabase
@@ -57,9 +58,9 @@ class OssWalletApp : Application() {
             manager.createNotificationChannel(
                 NotificationChannel(
                     "planned_payments",
-                    "Planned Payments",
+                    getString(R.string.notification_channel_planned_payments_name),
                     NotificationManager.IMPORTANCE_DEFAULT
-                ).apply { description = "Reminders for upcoming planned payments" }
+                ).apply { description = getString(R.string.notification_channel_planned_payments_description) }
             )
         }
     }

@@ -2,7 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.settings
 
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry

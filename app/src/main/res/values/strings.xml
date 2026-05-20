@@ -81,6 +81,19 @@
         <item quantity="other">Link %1$d Records</item>
     </plurals>
 
+    <!-- Selection Titles -->
+    <string name="target_account_selection_title">Select Target Account</string>
+    <string name="target_currency_selection_title">Select Target Currency</string>
+
+    <!-- Tag Management -->
+    <string name="tag_manage_title">Manage Tags</string>
+    <string name="tag_delete_title">Delete Tag</string>
+    <string name="tag_edit_title">Edit Tag</string>
+    <string name="tag_edit_name_label">Tag Name</string>
+    <string name="tag_edit_color_label">Tag Color</string>
+    <string name="tag_delete_confirm_with_count">This tag is used in %1$d transactions. Are you sure you want to delete it? The tag will be removed from those transactions.</string>
+    <string name="tag_delete_confirm_simple">Are you sure you want to delete the tag \"%1$s\"?</string>
+
     <!-- Notification channels -->
     <string name="notification_channel_planned_payments_name">Planned Payments</string>
     <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>

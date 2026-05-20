@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 

@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -18,7 +17,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.data.local.AccountDetailSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -49,7 +48,6 @@ class AccountDetailViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     private val tagRepository: TagRepository,
-    @Suppress("UnusedPrivateMember") private val registry: CardComputerRegistry
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     private val accountId: String = checkNotNull(savedStateHandle["accountId"])

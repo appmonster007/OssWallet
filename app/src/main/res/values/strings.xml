@@ -80,4 +80,8 @@
         <item quantity="one">Link %1$d Record</item>
         <item quantity="other">Link %1$d Records</item>
     </plurals>
+
+    <!-- Notification channels -->
+    <string name="notification_channel_planned_payments_name">Planned Payments</string>
+    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>
 </resources>

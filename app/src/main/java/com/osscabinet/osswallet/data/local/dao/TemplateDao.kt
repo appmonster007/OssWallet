@@ -12,6 +12,9 @@ interface TemplateDao {
     @Query("SELECT * FROM templates WHERE isStarred = 1 ORDER BY displayOrder ASC")
     fun getStarredTemplates(): Flow<List<TemplateEntity>>
 
+    @Query("SELECT * FROM templates WHERE isStarred = 1 AND profileId = :profileId ORDER BY displayOrder ASC")
+    fun getStarredTemplates(profileId: Int): Flow<List<TemplateEntity>>
+
     @Query("UPDATE templates SET isStarred = :isStarred WHERE id = :templateId")
     suspend fun updateStarStatus(templateId: Long, isStarred: Boolean)
 

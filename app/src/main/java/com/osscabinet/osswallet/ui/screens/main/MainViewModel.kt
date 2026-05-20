@@ -38,6 +38,7 @@ class MainViewModel @Inject constructor(
         .map { accounts -> accounts.filter { !it.isArchived } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val starredTemplates: StateFlow<List<Template>> = templateRepository.getStarredTemplates()
+    val starredTemplates: StateFlow<List<Template>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> templateRepository.getStarredTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

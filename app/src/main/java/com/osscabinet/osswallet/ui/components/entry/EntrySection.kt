@@ -4,17 +4,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standard container for metadata/details in entry screens.
@@ -69,6 +73,22 @@ fun EntrySection(
             }
 
             content()
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntrySectionPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            EntrySection(
+                title = "Information",
+                icon = Icons.Rounded.Info
+            ) {
+                Text("This is the content of the entry section.", style = AppTextStyles.listItemTitle)
+                Text("It can contain multiple composables.", style = AppTextStyles.caption)
+            }
         }
     }
 }

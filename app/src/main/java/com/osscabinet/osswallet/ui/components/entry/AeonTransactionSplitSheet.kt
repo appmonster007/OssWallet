@@ -27,6 +27,8 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Generic bottom sheet to manage transaction splitting.
@@ -235,6 +237,33 @@ fun AeonTransactionSplitSheet(
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AeonTransactionSplitSheetPreview() {
+    OssWalletTheme {
+        AeonTransactionSplitSheet(
+            totalAmount = BigDecimal("100.00"),
+            currency = "USD",
+            splits = listOf(
+                TransactionSplit(amount = "60.00", categoryId = 1L, note = "Split 1"),
+                TransactionSplit(amount = "40.00", categoryId = 2L, note = "Split 2")
+            ),
+            categories = listOf(
+                Category(id = 1L, name = "Food", iconName = "Restaurant", colorHex = android.graphics.Color.parseColor("#FF5722"), isDefault = false, parentId = null),
+                Category(id = 2L, name = "Transport", iconName = "DirectionsBus", colorHex = android.graphics.Color.parseColor("#2196F3"), isDefault = false, parentId = null)
+            ),
+            onAddSplit = {},
+            onRemoveSplit = {},
+            onUpdateSplit = { _, _, _, _ -> },
+            onShowCategorySheet = {},
+            onToggleSplitMode = {},
+            onDismiss = {}
+        )
+    }
+}
+
+
 
 @Composable
 private fun SplitItem(

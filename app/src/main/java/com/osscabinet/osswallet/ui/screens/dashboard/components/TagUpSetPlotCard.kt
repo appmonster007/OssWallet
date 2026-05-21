@@ -16,11 +16,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
+import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -35,6 +39,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionSummaryBreakdown
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 @Composable
@@ -336,6 +341,34 @@ private fun TagUpSetSettingsSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TagUpSetPlotCardPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            TagUpSetPlotCard(
+                renderData = CardRenderData.TagUpSetPlot(
+                    config = TagUpSetPlotCardConfig(
+                        cardId = "test_tag_upset",
+                        title = "Monthly Tag Overlaps"
+                    ),
+                    sets = listOf(
+                        TagUpSetSet("Food", BigDecimal("500"), expense = BigDecimal("500"), transactionCount = 10),
+                        TagUpSetSet("Business", BigDecimal("300"), expense = BigDecimal("300"), transactionCount = 5),
+                        TagUpSetSet("Travel", BigDecimal("200"), expense = BigDecimal("200"), transactionCount = 3)
+                    ),
+                    intersections = listOf(
+                        TagUpSetIntersection(setOf("Food", "Business"), BigDecimal("100"), expense = BigDecimal("100"), transactionCount = 2),
+                        TagUpSetIntersection(setOf("Food"), BigDecimal("400"), expense = BigDecimal("400"), transactionCount = 8),
+                        TagUpSetIntersection(setOf("Business"), BigDecimal("200"), expense = BigDecimal("200"), transactionCount = 3)
+                    ),
+                    baseCurrency = "USD"
+                )
+            )
         }
     }
 }

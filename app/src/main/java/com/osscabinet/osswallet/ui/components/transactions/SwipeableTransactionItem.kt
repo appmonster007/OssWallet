@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -14,12 +13,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import com.osscabinet.ossWallet.ui.theme.WarningColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -38,6 +37,9 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.components.getIconByName
 
 const val ANIMATION_DURATION = 400
 const val ACTION_ITEM_SIZE = 64
@@ -59,91 +61,80 @@ fun SwipeableTransactionItem(
     var offsetX by remember { mutableStateOf(0f) }
     var swipeDirection by remember { mutableStateOf(SwipeDirection.NONE) }
     
-    val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
     
-    // Expressive motion configuration
-    val leftSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() } // Revealing right actions
-    val rightSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
-    val fullSwipeThresholdPx = with(density) { 220.dp.toPx() }
-
-    // External state synchronization
-    LaunchedEffect(isRevealed) {
-        if (!isRevealed) {
-            offsetX = 0f
-            swipeDirection = SwipeDirection.NONE
-        }
-    }
-
+    // Thresholds for action reveals
+    val actionItemSizePx = with(density) { ACTION_ITEM_SIZE.dp.toPx() }
+    val fullSwipeThresholdPx = actionItemSizePx * 1.5f
+    val leftSwipeThresholdPx = actionItemSizePx * 3.2f // Reveal 3 actions (Edit, Copy, Delete)
+    
     val animatedOffset by animateFloatAsState(
-        targetValue = offsetX,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        targetValue = if (isRevealed) {
+            if (swipeDirection == SwipeDirection.RIGHT) fullSwipeThresholdPx else -leftSwipeThresholdPx
+        } else offsetX,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "swipeOffset"
     )
-
-    // Calculate progress for expressive scaling (0 to 1)
-    val progress = when {
-        animatedOffset > 0f -> (animatedOffset / rightSwipeThresholdPx).coerceIn(0f, 1f)
-        animatedOffset < 0f -> (abs(animatedOffset) / leftSwipeThresholdPx).coerceIn(0f, 1f)
-        else -> 0f
-    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
-            .background(AppColors.cardSurface)
+            .background(AppColors.recessedSurface)
     ) {
-        // Actions Layer (Background)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(horizontal = AeonTheme.dimensions.listPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            // Right Swipe Content (Reveals Status Actions on the Left)
-            if (animatedOffset > 0) {
-                StatusActionsRow(
-                    currentStatus = transaction.status,
-                    onStatusChange = { status -> onEvent(TransactionItemEvent.StatusChange(transaction.id, status)) },
-                    progress = progress,
-                    onCollapse = { onEvent(TransactionItemEvent.Collapse(transaction.id)) },
-                    modifier = Modifier.align(Alignment.CenterStart)
-                )
-            }
-
-            // Left Swipe Content (Reveals Item Actions on the Right)
-            if (animatedOffset < 0) {
-                TransactionActionsRow(
-                    onSplit = { onEvent(TransactionItemEvent.Split(transaction.id)) },
-                    onClone = { onEvent(TransactionItemEvent.Clone(transaction.id)) },
-                    onDelete = { onEvent(TransactionItemEvent.Delete(transaction.id)) },
-                    progress = progress,
-                    onCollapse = { onEvent(TransactionItemEvent.Collapse(transaction.id)) },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                )
-            }
+        // Background Actions: Left side (revealed on Swipe Right)
+        if (offsetX > 0 || (isRevealed && swipeDirection == SwipeDirection.RIGHT)) {
+            StatusActionsRow(
+                currentStatus = transaction.status,
+                onStatusChange = { onEvent(TransactionItemEvent.StatusChange(transaction.id, it)) },
+                revealFraction = (abs(animatedOffset) / fullSwipeThresholdPx).coerceIn(0f, 1f),
+                onDismiss = { /* In this implementation, swipe complete handles dismissal */ },
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
         }
 
-        // Main Item Layer (Foreground)
-        Surface(
+        // Background Actions: Right side (revealed on Swipe Left)
+        if (offsetX < 0 || (isRevealed && swipeDirection == SwipeDirection.LEFT)) {
+            TransactionActionsRow(
+                onEdit = { onEvent(TransactionItemEvent.Expand(transaction.id)) },
+                onCopy = { onEvent(TransactionItemEvent.Clone(transaction.id)) },
+                onDelete = { onEvent(TransactionItemEvent.Delete(transaction.id)) },
+                revealFraction = (abs(animatedOffset) / leftSwipeThresholdPx).coerceIn(0f, 1f),
+                onDismiss = { /* In this implementation, swipe complete handles dismissal */ },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
+        }
+
+        // Foreground Content
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+                .background(AppColors.cardSurface)
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, dragAmount ->
-                            val newOffset = offsetX + dragAmount
-                            
-                            // Initialize direction
-                            if (swipeDirection == SwipeDirection.NONE && abs(dragAmount) > 0.5f) {
-                                swipeDirection = if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                        onDragEnd = {
+                            val threshold = if (swipeDirection == SwipeDirection.RIGHT) fullSwipeThresholdPx else leftSwipeThresholdPx
+                            if (abs(offsetX) > threshold / 2) {
+                                onEvent(TransactionItemEvent.FullSwipeRight(transaction.id)) // Fallback if no specific swipe event
+                            } else {
+                                offsetX = 0f
                             }
-
-                            // Constrain and apply offset with resistance
+                        },
+                        onDragCancel = {
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { _, delta ->
+                            val newOffset = offsetX + delta
+                            
+                            // Determine direction if not already set
+                            if (swipeDirection == SwipeDirection.NONE && abs(newOffset) > 10f) {
+                                swipeDirection = if (newOffset > 0f) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            
+                            // Apply resistance when pulling beyond thresholds
                             offsetX = when (swipeDirection) {
                                 SwipeDirection.RIGHT -> {
                                     if (newOffset > fullSwipeThresholdPx) {
@@ -157,51 +148,9 @@ fun SwipeableTransactionItem(
                                 }
                                 else -> newOffset
                             }
-                        },
-                        onDragEnd = {
-                            when (swipeDirection) {
-                                SwipeDirection.RIGHT -> {
-                                    if (offsetX >= fullSwipeThresholdPx) {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onEvent(TransactionItemEvent.FullSwipeRight(transaction.id))
-                                        offsetX = 0f
-                                        swipeDirection = SwipeDirection.NONE
-                                    } else if (offsetX > rightSwipeThresholdPx / 2) {
-                                        offsetX = rightSwipeThresholdPx
-                                        onEvent(TransactionItemEvent.Expand(transaction.id))
-                                    } else {
-                                        offsetX = 0f
-                                        swipeDirection = SwipeDirection.NONE
-                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
-                                    }
-                                }
-                                SwipeDirection.LEFT -> {
-                                    if (abs(offsetX) > leftSwipeThresholdPx / 2) {
-                                        offsetX = -leftSwipeThresholdPx
-                                        onEvent(TransactionItemEvent.Expand(transaction.id))
-                                    } else {
-                                        offsetX = 0f
-                                        swipeDirection = SwipeDirection.NONE
-                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
-                                    }
-                                }
-                                else -> {
-                                    offsetX = 0f
-                                    onEvent(TransactionItemEvent.Collapse(transaction.id))
-                                }
-                            }
-                        },
-                        onDragCancel = {
-                            offsetX = 0f
-                            swipeDirection = SwipeDirection.NONE
-                            onEvent(TransactionItemEvent.Collapse(transaction.id))
                         }
                     )
-                },
-            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            color = AppColors.panelSurface,
-            tonalElevation = if (animatedOffset != 0f) 8.dp else 0.dp,
-            shadowElevation = if (animatedOffset != 0f) 4.dp else 0.dp
+                }
         ) {
             content()
         }
@@ -212,32 +161,29 @@ fun SwipeableTransactionItem(
 fun StatusActionsRow(
     currentStatus: TransactionStatus,
     onStatusChange: (TransactionStatus) -> Unit,
-    progress: Float,
-    onCollapse: () -> Unit = {},
+    revealFraction: Float,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+        modifier = modifier.padding(start = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val statuses = TransactionStatus.values().filter { it != currentStatus }
-        statuses.forEachIndexed { index, status ->
-            val (icon, color) = when (status) {
-                TransactionStatus.CLEARED -> Icons.Rounded.CheckCircle to PositiveAmountColor
-                TransactionStatus.RECONCILE -> Icons.Rounded.AccountBalance to AccentBlue
-                TransactionStatus.UNCLEARED -> Icons.Rounded.Pending to WarningColor
-            }
-
-            val itemProgress = (progress * 1.5f - (index * 0.2f)).coerceIn(0f, 1f)
-
+        TransactionStatus.entries.forEach { status ->
+            val isSelected = currentStatus == status
+            val statusColor = try { Color(android.graphics.Color.parseColor(status.colorHex)) } catch (_: Exception) { AppColors.primary }
+            
             ExpressiveActionButton(
-                icon = icon,
+                icon = getIconByName(status.iconName),
                 label = status.displayName,
-                containerColor = color.copy(alpha = 0.12f),
-                contentColor = color,
-                scale = itemProgress,
-                onClick = { onStatusChange(status) }
+                containerColor = if (isSelected) statusColor else statusColor.copy(alpha = 0.15f),
+                contentColor = if (isSelected) Color.White else statusColor,
+                scale = revealFraction,
+                onClick = {
+                    onStatusChange(status)
+                    onDismiss()
+                }
             )
         }
     }
@@ -245,43 +191,42 @@ fun StatusActionsRow(
 
 @Composable
 fun TransactionActionsRow(
-    onSplit: () -> Unit,
-    onClone: () -> Unit,
+    onEdit: () -> Unit,
+    onCopy: () -> Unit,
     onDelete: () -> Unit,
-    progress: Float,
-    onCollapse: () -> Unit = {},
+    revealFraction: Float,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+        modifier = modifier.padding(end = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val actions = listOf(
-            Triple(Icons.Rounded.CallSplit, "Split", AppColors.primary),
-            Triple(Icons.Rounded.ContentCopy, "Clone", AppColors.tertiary),
-            Triple(Icons.Rounded.DeleteForever, "Delete", AppColors.error)
+        ExpressiveActionButton(
+            icon = Icons.Rounded.Edit,
+            label = "Edit",
+            containerColor = AccentBlue.copy(alpha = 0.15f),
+            contentColor = AccentBlue,
+            scale = revealFraction,
+            onClick = { onEdit(); onDismiss() }
         )
-
-        actions.forEachIndexed { index, (icon, label, color) ->
-            val itemProgress = (progress * 1.5f - (index * 0.15f)).coerceIn(0f, 1f)
-
-            ExpressiveActionButton(
-                icon = icon,
-                label = label,
-                containerColor = color.copy(alpha = 0.12f),
-                contentColor = color,
-                scale = itemProgress,
-                onClick = {
-                    when (label) {
-                        "Split" -> onSplit()
-                        "Clone" -> onClone()
-                        else -> onDelete()
-                    }
-                    onCollapse()
-                }
-            )
-        }
+        ExpressiveActionButton(
+            icon = Icons.Rounded.ContentCopy,
+            label = "Copy",
+            containerColor = PositiveAmountColor.copy(alpha = 0.15f),
+            contentColor = PositiveAmountColor,
+            scale = revealFraction,
+            onClick = { onCopy(); onDismiss() }
+        )
+        ExpressiveActionButton(
+            icon = Icons.Rounded.DeleteOutline,
+            label = "Delete",
+            containerColor = AppColors.error.copy(alpha = 0.15f),
+            contentColor = AppColors.error,
+            scale = revealFraction,
+            onClick = { onDelete(); onDismiss() }
+        )
     }
 }
 
@@ -296,29 +241,73 @@ fun ExpressiveActionButton(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.scale(scale)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .scale(scale)
+            .alpha(scale)
     ) {
         Surface(
-            modifier = Modifier
-                .size(44.dp)
-                .clickable { onClick() },
-            shape = CircleShape,
+            onClick = onClick,
             color = containerColor,
-            contentColor = contentColor
+            shape = CircleShape,
+            modifier = Modifier.size(44.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
         Text(
-            text = label,
-            style = AppTextStyles.transactionSwipeAction.copy(
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 10.sp
-            ),
-            color = contentColor.copy(alpha = 0.9f),
-            modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
+            text = label.uppercase(),
+            style = AppTextStyles.transactionSwipeAction,
+            color = contentColor.copy(alpha = 0.8f)
         )
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun ExpressiveActionButtonPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            ExpressiveActionButton(
+                icon = Icons.Rounded.Edit,
+                label = "Edit",
+                containerColor = AppColors.primaryContainer,
+                contentColor = AppColors.primary,
+                scale = 1f,
+                onClick = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SwipeableTransactionItemPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            SwipeableTransactionItem(
+                transaction = Transaction(
+                    id = 1L,
+                    name = "MacDonalds",
+                    amount = BigDecimal("100.00"),
+                    timestamp = System.currentTimeMillis(),
+                    currency = "USD",
+                    transactionType = TransactionType.EXPENSE,
+                    accountId = "acc1",
+                    categoryId = 1002L,
+                    note = "Lunch"
+                ),
+                isRevealed = false,
+                onEvent = {}
+            ) {
+                Text("Transaction Content")
+            }
+        }
+    }
+}

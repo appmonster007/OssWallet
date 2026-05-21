@@ -46,6 +46,9 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -582,6 +585,22 @@ fun FilterFields(
                     }
                 }
             }
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun FilterFieldsPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            FilterFields(
+                filter = TransactionFilter(),
+                onFilterChange = {},
+                accounts = emptyList(),
+                allCategories = emptyList(),
+                onSearchTransactions = { _ -> flowOf(emptyList()) }
+            )
         }
     }
 }

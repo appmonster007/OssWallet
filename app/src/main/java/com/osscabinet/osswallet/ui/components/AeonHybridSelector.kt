@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * A unified selector for regular lists that supports single-select, multi-select, and management modes.
@@ -99,6 +101,25 @@ fun <T, ID> AeonHybridSelector(
                         }
                     }
                 } else null
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonHybridSelectorPreview() {
+    val items = listOf("Category 1", "Category 2", "Category 3")
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonHybridSelector(
+                items = items,
+                mode = AeonSelectMode.SINGLE,
+                selectedIds = setOf("Category 1"),
+                onSelectionChange = {},
+                idMapper = { it },
+                labelMapper = { it },
+                iconMapper = { Icons.Rounded.Category }
             )
         }
     }

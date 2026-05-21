@@ -12,6 +12,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 /**
  * Calculator bottom sheet using the full CalculatorNumpad component.
@@ -66,5 +68,19 @@ fun AeonCalculatorSheet(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonCalculatorSheetPreview() {
+    OssWalletTheme {
+        AeonCalculatorSheet(
+            currentAmount = "1234.56",
+            transactionType = TransactionType.EXPENSE,
+            onAmountChanged = {},
+            onDismiss = {},
+            title = "Enter Amount"
+        )
     }
 }

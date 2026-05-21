@@ -19,10 +19,12 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun AeonDashedButton(
@@ -140,4 +142,45 @@ fun AeonExtendedFloatingActionButton(
             ) 
         }
     )
+}
+
+@Preview(showBackground = true, name = "Aeon Buttons Preview")
+@Composable
+fun AeonButtonsPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Dashed Buttons", style = MaterialTheme.typography.titleMedium)
+            AeonDashedButton(
+                onClick = {},
+                text = "Add Transaction",
+                icon = Icons.Rounded.Add
+            )
+            AeonDashedButton(
+                onClick = {},
+                text = "Error Action",
+                icon = Icons.Rounded.Add,
+                isError = true
+            )
+            AeonDashedButton(
+                onClick = {},
+                text = "Disabled Button",
+                icon = Icons.Rounded.Add,
+                enabled = false
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Floating Action Buttons", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonFloatingActionButton(onClick = {})
+                AeonExtendedFloatingActionButton(
+                    onClick = {},
+                    text = "New Transaction",
+                    icon = Icons.Rounded.Add
+                )
+            }
+        }
+    }
 }

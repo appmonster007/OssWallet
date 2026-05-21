@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,9 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Generic list item container for management screens.
@@ -132,6 +135,25 @@ fun ManagementListItem(
             if (additionalContent != null) {
                 additionalContent()
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ManagementListItemPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            ManagementListItem(
+                onClick = {},
+                icon = Icons.Rounded.AccountBalance,
+                iconTint = AppColors.primary,
+                title = "Checking Account",
+                subtitle = "Bank of America · **** 1234",
+                trailingContent = {
+                    Text("$2,500.00", style = AppTextStyles.managementItemTitle, color = AppColors.primary)
+                }
+            )
         }
     }
 }

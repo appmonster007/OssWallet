@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,5 +83,19 @@ fun AeonDateTimePicker(
             shape = RoundedCornerShape(32.dp),
             containerColor = AppColors.panelSurface
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonDateTimePickerPreview() {
+    OssWalletTheme {
+        Surface {
+            AeonDateTimePicker(
+                initialDateTime = System.currentTimeMillis(),
+                onDateTimeSelected = {},
+                onDismiss = {}
+            )
+        }
     }
 }

@@ -7,8 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -291,5 +293,21 @@ fun FilterFormBody(
         }
 
         FilterEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FilterFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            FilterFormBody(
+                state = FilterEntryState(
+                    name = "Recent Groceries"
+                ),
+                onSearch = { flowOf(emptyList()) },
+                onEvent = {}
+            )
+        }
     }
 }

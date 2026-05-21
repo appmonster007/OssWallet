@@ -18,13 +18,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -286,6 +289,22 @@ fun AdvancedFilterSection(
                     filterRules = filterRules
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AdvancedFilterSectionPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AdvancedFilterSection(
+                filter = TransactionFilter(),
+                onFilterChange = {},
+                accounts = emptyList(),
+                allCategories = emptyList(),
+                onSearchTransactions = { _ -> flowOf(emptyList()) }
+            )
         }
     }
 }

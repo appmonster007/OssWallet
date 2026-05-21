@@ -7,8 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -323,6 +325,24 @@ fun BudgetFormBody(
                 onDismiss = { onEvent(BudgetEntryEvent.ShowSharedFilterDialog(show = false)) },
                 onConfirmUpdateShared = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
                 onConfirmCreateNew = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BudgetFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            BudgetFormBody(
+                state = BudgetEntryState(
+                    name = "Monthly Groceries",
+                    limitAmount = "500",
+                    currency = "USD"
+                ),
+                onSearch = { flowOf(emptyList()) },
+                onEvent = {}
             )
         }
     }

@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 /**
  * Reusable tag selection section for entry screens.
@@ -104,5 +106,23 @@ fun EntryTagSection(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun EntryTagSectionPreview() {
+    OssWalletTheme {
+        EntryTagSection(
+            selectedNames = setOf("Groceries", "Urgent", "Work"),
+            allAvailableTags = listOf(
+                Tag(name = "Groceries", colorHex = android.graphics.Color.GREEN),
+                Tag(name = "Urgent", colorHex = android.graphics.Color.RED),
+                Tag(name = "Work", colorHex = android.graphics.Color.BLUE)
+            ),
+            onShowTagSheet = {},
+            onRemoveTag = {},
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }

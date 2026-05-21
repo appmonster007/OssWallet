@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -362,5 +363,26 @@ fun AeonTransactionItem(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonTransactionItemPreview() {
+    OssWalletTheme {
+        AeonTransactionItem(
+            category = "Food & Drinks",
+            account = "Main Wallet",
+            amount = "-$15.50",
+            balanceBefore = "$100.00",
+            balanceAfter = "$84.50",
+            type = CashFlowType.EXPENSE,
+            timestamp = "10:30 AM",
+            note = "Lunch at Subway",
+            tags = setOf("Lunch", "Work"),
+            icon = Icons.Rounded.Category,
+            iconBg = Color(0xFF4CAF50),
+            onClick = {}
+        )
     }
 }

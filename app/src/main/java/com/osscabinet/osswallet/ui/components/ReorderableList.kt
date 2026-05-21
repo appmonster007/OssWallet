@@ -6,7 +6,9 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -250,5 +252,36 @@ fun <T> ReorderableList(
                 }
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun ReorderableListPreview() {
+    val items = remember { mutableStateListOf("Item 1", "Item 2", "Item 3", "Item 4") }
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        ReorderableList(
+            items = items,
+            key = { it },
+            onReorder = { 
+                items.clear()
+                items.addAll(it)
+            },
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            itemContent = { item, isDragging ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    tonalElevation = 2.dp
+                ) {
+                    Text(
+                        text = item,
+                        modifier = Modifier.padding(24.dp),
+                        style = com.osscabinet.ossWallet.ui.theme.AppTextStyles.cardTitle
+                    )
+                }
+            }
+        )
     }
 }

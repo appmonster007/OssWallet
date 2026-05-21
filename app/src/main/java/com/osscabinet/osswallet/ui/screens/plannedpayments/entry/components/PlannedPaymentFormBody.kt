@@ -20,6 +20,10 @@ import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentE
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Main content layout for planned payment entry screen.
@@ -185,5 +189,23 @@ fun PlannedPaymentFormBody(
 
         // Dedicated sheets for selecting multi-value parameters
         PlannedPaymentEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PlannedPaymentFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            PlannedPaymentFormBody(
+                state = PlannedPaymentEntryState(
+                    name = "Netflix Subscription",
+                    amount = "15.99",
+                    currency = "USD"
+                ),
+                onSearch = { flowOf(emptyList()) },
+                onEvent = {}
+            )
+        }
     }
 }

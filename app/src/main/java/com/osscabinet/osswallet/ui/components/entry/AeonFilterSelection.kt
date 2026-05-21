@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
@@ -23,6 +24,8 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun AeonFilterSelection(
@@ -141,5 +144,21 @@ fun AeonFilterSelection(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonFilterSelectionPreview() {
+    OssWalletTheme {
+        AeonFilterSelection(
+            filters = listOf(
+                Filter(id = 1, name = "Monthly Groceries", filter = TransactionFilter()),
+                Filter(id = 2, name = "Yearly Travel", filter = TransactionFilter())
+            ),
+            selectedFilterId = 1,
+            onFilterSelected = {},
+            onDismiss = {}
+        )
     }
 }

@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Full-screen selection for Planned Payment Status.
@@ -31,3 +33,16 @@ fun AeonPlannedPaymentStatusSelection(
         colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
     )
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AeonPlannedPaymentStatusSelectionPreview() {
+    OssWalletTheme {
+        AeonPlannedPaymentStatusSelection(
+            selectedStatus = PlannedPaymentStatus.ACTIVE,
+            onStatusSelected = {},
+            onDismiss = {}
+        )
+    }
+}
+

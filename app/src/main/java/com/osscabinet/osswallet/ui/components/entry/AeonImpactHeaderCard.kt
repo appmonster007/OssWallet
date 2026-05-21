@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -252,6 +254,26 @@ fun <T> AeonImpactHeaderCard(
                     icon = nameIcon
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonImpactHeaderCardPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonImpactHeaderCard(
+                transactionType = TransactionType.EXPENSE,
+                onTypeSelected = {},
+                amount = "1,250.00",
+                currency = "USD",
+                onCurrencyClick = {},
+                onAmountClick = {},
+                name = "Monthly Rent",
+                onNameChange = {},
+                nameLabel = "BUDGET NAME"
+            )
         }
     }
 }

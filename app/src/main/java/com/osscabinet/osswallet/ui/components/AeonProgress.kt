@@ -17,6 +17,9 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material3.Surface
 
 @Composable
 fun AeonBudgetProgress(
@@ -71,6 +74,31 @@ fun AeonBudgetProgress(
                         )
                     )
             )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonBudgetProgressPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonBudgetProgress(
+                    label = "Groceries",
+                    current = BigDecimal("350.00"),
+                    total = BigDecimal("500.00"),
+                    color = Color.Blue,
+                    baseCurrency = "USD"
+                )
+                AeonBudgetProgress(
+                    label = "Dining Out",
+                    current = BigDecimal("120.00"),
+                    total = BigDecimal("100.00"),
+                    color = Color.Red,
+                    baseCurrency = "USD"
+                )
+            }
         }
     }
 }

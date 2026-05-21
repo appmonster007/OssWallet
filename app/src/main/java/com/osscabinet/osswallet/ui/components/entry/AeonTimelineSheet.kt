@@ -26,6 +26,8 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 /**
  * Dialog wrapping [AeonTimelinePeriodSelector] for selecting a [TimelineRange] in entry screens
@@ -78,5 +80,17 @@ fun AeonTimelineSheet(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonTimelineSheetPreview() {
+    OssWalletTheme {
+        AeonTimelineSheet(
+            selectedRange = TimelineRange.AllTime,
+            onRangeSelected = {},
+            onDismiss = {}
+        )
     }
 }

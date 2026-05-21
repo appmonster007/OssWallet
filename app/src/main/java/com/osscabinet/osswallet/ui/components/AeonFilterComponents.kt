@@ -5,6 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ViewDay
+import androidx.compose.material.icons.filled.CalendarViewMonth
+import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,6 +88,25 @@ fun AeonSegmentedControl(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AeonSegmentedControlPreview() {
+    val options = listOf(
+        AeonTimelineOption("Daily", Icons.Default.ViewDay),
+        AeonTimelineOption("Weekly", Icons.Default.ViewWeek),
+        AeonTimelineOption("Monthly", Icons.Default.CalendarViewMonth)
+    )
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonSegmentedControl(
+                options = options,
+                selectedOption = 1,
+                onOptionSelected = {}
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> AeonDropdown(
@@ -153,6 +176,25 @@ fun <T> AeonDropdown(
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
                 )
             }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AeonDropdownPreview() {
+    val options = listOf("Monthly", "Weekly", "Daily", "Yearly")
+    var selectedOption by remember { mutableStateOf(options[0]) }
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonDropdown(
+                label = "Period",
+                options = options,
+                selectedOption = selectedOption,
+                onOptionSelected = { selectedOption = it },
+                labelProvider = { it }
+            )
         }
     }
 }

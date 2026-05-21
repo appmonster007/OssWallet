@@ -315,3 +315,30 @@ fun AppDrawerContent(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AppDrawerContentPreview() {
+    val mockProfile = Profile(1, "OssWallet User", "USD")
+    val mockAccounts = listOf(
+        Account("1", "Main Savings", "USD", com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS, "#004D40", "AccountBalance", emptyList()),
+        Account("2", "Travel Fund", "EUR", com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS, "#B3261E", "Travel", emptyList())
+    )
+    
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        AppDrawerContent(
+            currentProfile = mockProfile,
+            nonArchivedAccounts = mockAccounts,
+            starredTemplates = emptyList(),
+            selectedDestination = "dashboard",
+            onDashboardClick = {},
+            onRecordsClick = {},
+            onAnalyticsClick = {},
+            onSettingsClick = {},
+            onExchangeRatesClick = {},
+            onAccountClick = {},
+            onTemplateClick = {},
+            onNavigate = { it() }
+        )
+    }
+}

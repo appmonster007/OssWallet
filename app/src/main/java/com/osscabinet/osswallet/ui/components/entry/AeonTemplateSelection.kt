@@ -27,6 +27,9 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import java.math.BigDecimal
 
 @Composable
 fun AeonTemplateSelection(
@@ -140,5 +143,40 @@ fun AeonTemplateSelection(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonTemplateSelectionPreview() {
+    OssWalletTheme {
+        AeonTemplateSelection(
+            templates = listOf(
+                Template(
+                    id = 1,
+                    name = "Rent",
+                    categoryId = 1,
+                    amount = BigDecimal("1000"),
+                    transactionType = TransactionType.EXPENSE,
+                    accountId = "1",
+                    currency = "USD"
+                ),
+                Template(
+                    id = 2,
+                    name = "Salary",
+                    categoryId = 2,
+                    amount = BigDecimal("5000"),
+                    transactionType = TransactionType.INCOME,
+                    accountId = "1",
+                    currency = "USD"
+                )
+            ),
+            categories = listOf(
+                Category(id = 1, name = "Housing", iconName = "Home", colorHex = -1, isDefault = true, parentId = null),
+                Category(id = 2, name = "Job", iconName = "Work", colorHex = -1, isDefault = true, parentId = null)
+            ),
+            onTemplateSelected = {},
+            onDismiss = {}
+        )
     }
 }

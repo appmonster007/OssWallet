@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 
 /**
  * Shared action card for entry screens.
@@ -138,6 +142,32 @@ fun EntryActionCard(
                         tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else AppColors.contentSecondary.copy(alpha = 0.4f)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryActionCardPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                EntryActionCard(
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    label = "ACCOUNT",
+                    value = "Cash",
+                    onClick = {},
+                    modifier = Modifier.weight(1f)
+                )
+                EntryActionCard(
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    label = "ACCOUNT",
+                    value = "Savings",
+                    onClick = {},
+                    isSelected = true,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

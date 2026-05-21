@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartG
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 @Composable
@@ -245,6 +246,47 @@ private fun CategorySpendingSettingsSheet(
                     onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
                 )
             }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CategorySpendingTrendCardPreview() {
+    val renderData = CardRenderData.CategorySpendingTrend(
+        config = CategorySpendingTrendCardConfig(cardId = "preview"),
+        buckets = listOf(
+            com.osscabinet.ossWallet.domain.card.CategorySpendingBucket(
+                label = "Jan",
+                epochMillis = 1704067200000L,
+                categoryAmounts = listOf(
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("1200.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("400.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("200.00"))
+                )
+            ),
+            com.osscabinet.ossWallet.domain.card.CategorySpendingBucket(
+                label = "Feb",
+                epochMillis = 1706745600000L,
+                categoryAmounts = listOf(
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("1200.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("350.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("150.00"))
+                )
+            )
+        ),
+        granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
+        activeCategories = listOf(
+            CategorySummary(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("2400.00")),
+            CategorySummary(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("750.00")),
+            CategorySummary(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("350.00"))
+        ),
+        baseCurrency = "USD"
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CategorySpendingTrendCard(renderData = renderData)
         }
     }
 }

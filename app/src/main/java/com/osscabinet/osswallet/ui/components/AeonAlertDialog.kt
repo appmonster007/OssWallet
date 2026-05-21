@@ -9,6 +9,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized Delete Confirmation Dialog.
@@ -70,5 +72,36 @@ fun AeonInfoDialog(
                 }
             }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonConfirmDeleteDialogPreview() {
+    OssWalletTheme {
+        Surface {
+            AeonConfirmDeleteDialog(
+                show = true,
+                title = "Delete Transaction?",
+                message = "Are you sure you want to delete this transaction? This action cannot be undone.",
+                onConfirm = {},
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonInfoDialogPreview() {
+    OssWalletTheme {
+        Surface {
+            AeonInfoDialog(
+                show = true,
+                title = "Account Info",
+                message = "This account is used for your monthly savings. You can manage your budget from the settings menu.",
+                onDismiss = {}
+            )
+        }
     }
 }

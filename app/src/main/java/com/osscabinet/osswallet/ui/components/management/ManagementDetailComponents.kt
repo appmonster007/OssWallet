@@ -13,6 +13,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
@@ -118,6 +122,39 @@ fun ScopeSection(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ScopeChipPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            ScopeChip(text = "Groceries", color = Color.Magenta)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ScopeSectionPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            ScopeSection(
+                label = "CATEGORIES",
+                icon = Icons.Rounded.Category,
+                allText = "All Categories",
+                isEmpty = false,
+                items = listOf(
+                    { ScopeChip("Food", Color.Red) },
+                    { ScopeChip("Drinks", Color.Blue) },
+                    { ScopeChip("Snacks", Color.Green) },
+                    { ScopeChip("Dinner", Color.Yellow) },
+                    { ScopeChip("Breakfast", Color.Cyan) },
+                    { ScopeChip("Lunch", Color.Magenta) }
+                )
+            )
         }
     }
 }

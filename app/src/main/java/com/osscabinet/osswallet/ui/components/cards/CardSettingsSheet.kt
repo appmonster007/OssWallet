@@ -27,10 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Shared scaffold for all card settings bottom sheets.
@@ -133,6 +135,38 @@ fun CardSettingsSection(
                 color = AppColors.contentSecondary.copy(alpha = 0.6f)
             )
             content()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+fun CardSettingsSheetPreview() {
+    OssWalletTheme {
+        CardSettingsSheet(
+            title = "Preview Card",
+            onDismiss = {},
+            onDelete = {}
+        ) {
+            CardSettingsSection("Section 1") {
+                Text("Content 1", color = AppColors.contentPrimary)
+            }
+            CardSettingsSection("Section 2") {
+                Text("Content 2", color = AppColors.contentPrimary)
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CardSettingsSectionPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.background, modifier = Modifier.padding(16.dp)) {
+            CardSettingsSection("Display Options") {
+                Text("Example Setting", color = AppColors.contentPrimary)
+            }
         }
     }
 }

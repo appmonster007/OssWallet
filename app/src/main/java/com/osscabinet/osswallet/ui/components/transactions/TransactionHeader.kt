@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -182,6 +183,31 @@ private data class TransactionHeaderStyles(
             breakdownValueStyle = AppTextStyles.metaLabel.copy(
                 fontSize = 8.sp,
             )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionHeaderPreview() {
+    OssWalletTheme {
+        TransactionHeader(
+            title = "Monday, Jan 22",
+            subtitle = "2 Transactions",
+            incomeByCurrency = mapOf("USD" to BigDecimal("150.00")),
+            expenseByCurrency = mapOf("USD" to BigDecimal("45.50"), "EUR" to BigDecimal("10.00")),
+            openingBalancesByCurrency = mapOf("USD" to BigDecimal("1200.00")),
+            closingBalancesByCurrency = mapOf("USD" to BigDecimal("1304.50")),
+            allCurrencies = listOf("USD", "EUR"),
+            incomeBase = BigDecimal("150.00"),
+            expenseBase = BigDecimal("56.50"),
+            netBase = BigDecimal("93.50"),
+            totalOpeningBalanceBase = BigDecimal("1200.00"),
+            totalClosingBalanceBase = BigDecimal("1293.50"),
+            baseCurrency = "USD",
+            showOpeningBalance = true,
+            showClosingBalance = true,
+            initiallyExpanded = true
         )
     }
 }

@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun EntryLocationRow(
@@ -66,6 +68,26 @@ fun EntryLocationRow(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
                 tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun EntryLocationRowPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            EntryLocationRow(
+                coords = null,
+                onShowLocationSheet = {}
+            )
+            EntryLocationRow(
+                coords = 1.23456 to 7.89012,
+                onShowLocationSheet = {}
             )
         }
     }

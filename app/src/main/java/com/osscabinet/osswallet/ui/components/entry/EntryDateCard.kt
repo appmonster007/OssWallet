@@ -18,6 +18,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material.icons.rounded.CalendarToday
 
 /**
  * Compact date selection card for entry screens.
@@ -76,6 +79,21 @@ fun EntryDateCard(
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryDateCardPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            EntryDateCard(
+                icon = Icons.Rounded.CalendarToday,
+                label = "TRANSACTION DATE",
+                dateMillis = System.currentTimeMillis(),
+                onClick = {}
             )
         }
     }

@@ -28,6 +28,8 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 fun CardType.toIcon(): ImageVector = when (this) {
     CardType.NET_WORTH -> Icons.Default.AccountBalance
@@ -137,6 +139,21 @@ fun CardTypeOption(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun CardTypeOptionPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CardTypeOption(
+                title = "Net Worth",
+                description = "Track your total assets and liabilities over time.",
+                onClick = {},
+                icon = Icons.Default.AccountBalance
+            )
+        }
+    }
+}
+
 /**
  * Data class representing a card type option for the add card dialog.
  */
@@ -221,5 +238,31 @@ fun GenericAddCardDialog(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GenericAddCardDialogPreview() {
+    OssWalletTheme {
+        GenericAddCardDialog(
+            onDismiss = {},
+            cardOptions = listOf(
+                CardTypeOptionData(
+                    title = "Net Worth",
+                    description = "Track your total assets and liabilities over time.",
+                    onClick = {},
+                    icon = Icons.Default.AccountBalance,
+                    category = CardCategory.SUMMARY
+                ),
+                CardTypeOptionData(
+                    title = "Cash Flow",
+                    description = "Monitor your income vs expenses.",
+                    onClick = {},
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    category = CardCategory.ANALYTICS
+                )
+            )
+        )
     }
 }

@@ -39,6 +39,8 @@ import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * NavigationTab - Data class for navigation tab
@@ -414,6 +416,25 @@ fun FabMenuItem(
             ) {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun UnifiedPillNavigationPreview() {
+    val tabs = listOf(
+        NavigationTab(Icons.Rounded.Dashboard, Icons.Rounded.Dashboard, "Dashboard"),
+        NavigationTab(Icons.Rounded.History, Icons.Rounded.History, "History")
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            UnifiedPillNavigation(
+                selectedTab = 0,
+                onTabSelected = {},
+                tabs = tabs,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
     }
 }

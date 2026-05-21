@@ -1,12 +1,18 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized Detail tier component for entry screens.
@@ -66,5 +72,26 @@ fun AeonDetailSection(
         }
 
         additionalContent?.invoke(this)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonDetailSectionPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonDetailSection(
+                note = "Lunch with team",
+                onNoteChange = {},
+                payee = "Starbucks",
+                onPayeeChange = {},
+                selectedNames = setOf("Business", "Food"),
+                allAvailableTags = listOf(
+                    Tag(name = "Business", colorHex = 0xFF2196F3.toInt()),
+                    Tag(name = "Food", colorHex = 0xFF4CAF50.toInt()),
+                    Tag(name = "Personal", colorHex = 0xFFFFC107.toInt())
+                )
+            )
+        }
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.tooling.preview.Preview
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -28,6 +29,8 @@ import com.google.android.gms.location.LocationServices
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -528,3 +531,30 @@ data class LocationSearchResult(
     val lat: Double,
     val lon: Double
 )
+
+@ThemePreviews
+@Composable
+fun AeonLocationSelectionContentPreview() {
+    OssWalletTheme {
+        AeonLocationSelectionContent(
+            title = "Location",
+            selectedCoords = 1.23456 to 7.89012,
+            selectedAddress = "123 Main St, New York, NY",
+            searchQuery = "",
+            searchResults = emptyList(),
+            searchHistory = listOf(
+                LocationSearchResult("Times Square", "Times Square", "New York, NY", 40.7580, -73.9855)
+            ),
+            isSearching = false,
+            searchError = null,
+            onBack = {},
+            onSearchQueryChange = {},
+            onSearchResultClick = {},
+            onClearHistory = {},
+            onManualPin = {},
+            onGetCurrentLocation = {},
+            onClear = {},
+            onConfirm = {}
+        )
+    }
+}

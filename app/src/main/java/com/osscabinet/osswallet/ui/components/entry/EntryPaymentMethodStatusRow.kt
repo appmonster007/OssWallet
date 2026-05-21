@@ -9,6 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.padding
 
 /**
  * A shared row for Payment Method and Status selection.
@@ -41,3 +45,19 @@ fun EntryPaymentMethodStatusRow(
         )
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun EntryPaymentMethodStatusRowPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            EntryPaymentMethodStatusRow(
+                paymentMethod = "Cash",
+                onPaymentMethodClick = {},
+                statusLabel = "Cleared",
+                onStatusClick = {}
+            )
+        }
+    }
+}
+

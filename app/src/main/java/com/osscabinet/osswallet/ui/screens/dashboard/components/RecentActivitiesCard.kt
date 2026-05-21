@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +86,60 @@ fun RecentActivitiesCard(
                 }
             }
         )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun RecentActivitiesCardPreview() {
+    val mockTransaction = com.osscabinet.ossWallet.domain.model.Transaction(
+        id = 1L,
+        name = "Starbucks",
+        amount = BigDecimal("5.50"),
+        timestamp = System.currentTimeMillis(),
+        currency = "USD",
+        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        accountId = "acc1",
+        categoryId = 1001L
+    )
+    val mockUiModel = com.osscabinet.ossWallet.domain.model.TransactionUiModel(
+        item = com.osscabinet.ossWallet.domain.model.TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
+        accountName = "Cash",
+        accountCurrency = "USD",
+        categoryName = "Food",
+        categoryIcon = "Restaurant",
+        categoryColor = 0xFF00FF00.toInt()
+    )
+    val mockGroup = com.osscabinet.ossWallet.domain.model.TransactionGroup(
+        key = "Today",
+        headerData = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.GroupHeaderData(
+            title = "Today",
+            subtitle = "July 15",
+            incomeByCurrency = emptyMap(),
+            expenseByCurrency = mapOf("USD" to BigDecimal("5.50")),
+            openingBalancesByCurrency = emptyMap(),
+            closingBalancesByCurrency = emptyMap(),
+            allCurrencies = listOf("USD"),
+            incomeBase = BigDecimal.ZERO,
+            expenseBase = BigDecimal("5.50"),
+            netBase = BigDecimal("-5.50"),
+            totalOpeningBalanceBase = BigDecimal.ZERO,
+            totalClosingBalanceBase = BigDecimal.ZERO
+        ),
+        transactions = listOf(mockUiModel)
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            RecentActivitiesCard(
+                listState = com.osscabinet.ossWallet.domain.model.TransactionListState(
+                    groups = listOf(mockGroup),
+                    isEmpty = false
+                ),
+                config = RecentActivitiesCardConfig(cardId = "preview"),
+                callbacks = CardCallbacks.RecentActivities(onRecordsClick = {}, onTransactionClick = {})
+            )
+        }
     }
 }
 

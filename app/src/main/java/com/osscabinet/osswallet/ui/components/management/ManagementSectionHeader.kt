@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Shared section header for management list screens (Budgets, Loans, etc.)
@@ -62,6 +64,20 @@ fun ManagementSectionHeader(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ManagementSectionHeaderPreview() {
+    OssWalletTheme {
+        Surface {
+            ManagementSectionHeader(
+                title = "Active Budgets",
+                sectionColor = Color(0xFF004D5F),
+                count = 3
+            )
         }
     }
 }

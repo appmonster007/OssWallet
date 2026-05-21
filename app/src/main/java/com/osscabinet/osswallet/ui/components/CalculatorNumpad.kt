@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
@@ -412,5 +413,52 @@ private fun CalculatorHistorySheet(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CalculatorNumpadPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CalculatorNumpad(
+                amount = "125.50",
+                onAmountChange = { _, _ -> },
+                onDone = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CalculatorDisplayPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp), color = AppColors.recessedSurface, shape = RoundedCornerShape(24.dp)) {
+            CalculatorDisplay(
+                expression = "50 + 75.50",
+                result = "125.50",
+                ghostResult = "125.50",
+                transactionType = TransactionType.EXPENSE,
+                isError = false,
+                onSave = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CalculatorHistorySheetPreview() {
+    OssWalletTheme {
+        CalculatorHistorySheet(
+            history = listOf(
+                CalculationHistoryItem("100 + 25", "125"),
+                CalculationHistoryItem("200 * 1.05", "210")
+            ),
+            onItemSelect = {},
+            onClearHistory = {},
+            onDismiss = {}
+        )
     }
 }

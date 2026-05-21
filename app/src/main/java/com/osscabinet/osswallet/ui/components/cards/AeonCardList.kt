@@ -18,6 +18,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Robust, unified card list component for all analytical screens.
@@ -155,3 +157,14 @@ private fun CardErrorState(message: String?) {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun CardErrorStatePreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CardErrorState(message = "Unable to compute net worth")
+        }
+    }
+}
+

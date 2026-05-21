@@ -82,3 +82,15 @@ fun ExchangeRateDialog(
         shape = RoundedCornerShape(24.dp)
     )
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun ExchangeRateDialogPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        ExchangeRateDialog(
+            initialRate = BigDecimal("1.25"),
+            onDismiss = {},
+            onConfirm = {}
+        )
+    }
+}

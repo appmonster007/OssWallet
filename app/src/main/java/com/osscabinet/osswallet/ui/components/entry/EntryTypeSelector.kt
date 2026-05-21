@@ -19,7 +19,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.*
 
 /**
@@ -105,6 +111,28 @@ fun <T> EntryTypeSelector(
                     )
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryTypeSelectorPreview() {
+    var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
+    val types = listOf(
+        Triple(Icons.Rounded.Remove, "Expense", TransactionType.EXPENSE),
+        Triple(Icons.Rounded.Add, "Income", TransactionType.INCOME),
+        Triple(Icons.Rounded.SwapHoriz, "Transfer", TransactionType.TRANSFER)
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            EntryTypeSelector(
+                selectedType = selectedType,
+                onTypeSelected = { selectedType = it },
+                types = types,
+                selectedColor = if (selectedType == TransactionType.INCOME) AppColors.primary else AppColors.error
+            )
         }
     }
 }

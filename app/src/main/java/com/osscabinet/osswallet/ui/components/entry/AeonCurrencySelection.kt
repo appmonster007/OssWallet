@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun AeonCurrencySelection(
@@ -56,5 +58,18 @@ fun AeonCurrencySelection(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonCurrencySelectionPreview() {
+    OssWalletTheme {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf("USD", "EUR"),
+            onSelectionChange = {},
+            onDismiss = {},
+            mode = AeonSelectMode.MULTI
+        )
     }
 }

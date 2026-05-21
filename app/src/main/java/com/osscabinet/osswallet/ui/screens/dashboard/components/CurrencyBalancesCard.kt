@@ -204,3 +204,22 @@ fun CurrencyBalanceItem(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CurrencyBalancesCardPreview() {
+    val items = listOf(
+        CurrencyAggregationItem("USD", BigDecimal("5000.00"), BigDecimal("5000.00")),
+        CurrencyAggregationItem("EUR", BigDecimal("1200.00"), BigDecimal("1320.00")),
+        CurrencyAggregationItem("GBP", BigDecimal("800.00"), BigDecimal("1040.00"))
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CurrencyBalancesCard(
+                currencyTotals = items,
+                baseCurrency = "USD",
+                config = CurrencyBalancesCardConfig(cardId = "preview")
+            )
+        }
+    }
+}

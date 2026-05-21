@@ -14,6 +14,9 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEv
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
@@ -154,4 +157,22 @@ fun TransactionFormBody(
 private fun formatDate(millis: Long): String {
     val formatter = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
     return formatter.format(java.util.Date(millis))
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            TransactionFormBody(
+                state = TransactionEntryState(
+                    amount = "125.00",
+                    selectedCurrency = "USD",
+                    note = "Dinner with friends"
+                ),
+                onEvent = {},
+                onSearch = { flowOf(emptyList()) }
+            )
+        }
+    }
 }

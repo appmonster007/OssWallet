@@ -26,6 +26,10 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
 
 /**
  * Editorial-style text input with icon and label for entry screens.
@@ -154,6 +158,22 @@ fun EntryEditorialInput(
                     }
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryEditorialInputPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            EntryEditorialInput(
+                value = "Lunch with friends",
+                onValueChange = {},
+                label = "NOTE",
+                icon = Icons.Rounded.Edit,
+                suggestions = listOf("Coffee", "Groceries", "Dinner")
+            )
         }
     }
 }

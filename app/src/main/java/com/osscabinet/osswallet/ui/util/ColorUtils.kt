@@ -35,45 +35,85 @@ fun Color.pastel(): Color {
 }
 
 /**
- * Creates a container color from a seed color, following Material You logic.
+ * Unified tint system as defined in colors.md Section 2.8 (Category Tint System).
+ * Returns a Pair of (Background Color, Ink Color) for accounts, categories, and tags.
  */
-fun Color.toContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
+fun Color.applyAeonTint(theme: String): Pair<Color, Color> {
+    val isDark = theme == "Dark" || theme == "Amoled"
+    val isAmoled = theme == "Amoled"
+    
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
     
-    if (isAmoled) {
-        // For Amoled, we want a very dark but slightly tinted surface
-        hsl[1] = hsl[1].coerceAtMost(0.15f)
-        hsl[2] = 0.08f // Slightly elevated from pure black
-    } else if (isDarkTheme) {
-        hsl[1] = hsl[1].coerceAtMost(0.25f)
-        hsl[2] = 0.18f
-    } else {
-        hsl[1] = hsl[1].coerceAtMost(0.3f)
-        hsl[2] = 0.94f // Even lighter for better text contrast
+    val backgroundColor: Color
+    val inkColor: Color
+    
+    when {
+        isAmoled -> {
+            // Pattern: Deeper background + brighter ink (higher contrast for OLED)
+            val bgHsl = hsl.copyOf()
+            bgHsl[1] = bgHsl[1].coerceIn(0.4f, 0.8f) // High saturation
+            bgHsl[2] = 0.08f // Very deep
+            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
+            
+            val inkHsl = hsl.copyOf()
+            inkHsl[1] = inkHsl[1].coerceAtMost(0.3f) // Pastel ink
+            inkHsl[2] = 0.95f // Brighter ink
+            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
+        }
+        isDark -> {
+            // Pattern: Saturated dark background + pastel ink
+            val bgHsl = hsl.copyOf()
+            bgHsl[1] = bgHsl[1].coerceIn(0.3f, 0.6f) // Saturated
+            bgHsl[2] = 0.18f // Dark
+            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
+            
+            val inkHsl = hsl.copyOf()
+            inkHsl[1] = inkHsl[1].coerceAtMost(0.4f) // Pastel
+            inkHsl[2] = 0.85f // Light ink
+            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
+        }
+        else -> {
+            // Pattern: Pastel background + saturated dark ink
+            val bgHsl = hsl.copyOf()
+            bgHsl[1] = bgHsl[1].coerceAtMost(0.3f) // Desaturated
+            bgHsl[2] = 0.92f // Very light pastel
+            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
+            
+            val inkHsl = hsl.copyOf()
+            inkHsl[1] = inkHsl[1].coerceIn(0.5f, 0.9f) // Saturated
+            inkHsl[2] = 0.25f // Dark ink
+            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
+        }
     }
     
-    return Color(ColorUtils.HSLToColor(hsl))
+    return backgroundColor to inkColor
+}
+
+/**
+ * Creates a container color from a seed color, following Material You logic.
+ */
+@Deprecated("Use applyAeonTint for consistent branding", ReplaceWith("applyAeonTint(theme).first"))
+fun Color.toContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
+    val theme = when {
+        isAmoled -> "Amoled"
+        isDarkTheme -> "Dark"
+        else -> "Light"
+    }
+    return applyAeonTint(theme).first
 }
 
 /**
  * Creates an on-container color that has high contrast with the container color.
  */
+@Deprecated("Use applyAeonTint for consistent branding", ReplaceWith("applyAeonTint(theme).second"))
 fun Color.toOnContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
-    val hsl = FloatArray(3)
-    ColorUtils.colorToHSL(this.toArgb(), hsl)
-    
-    if (isAmoled || isDarkTheme) {
-        // High contrast for dark backgrounds
-        hsl[1] = hsl[1].coerceAtMost(0.3f)
-        hsl[2] = 0.95f // Near white
-    } else {
-        // High contrast for light backgrounds
-        hsl[1] = hsl[1].coerceAtMost(0.4f)
-        hsl[2] = 0.12f // Near black
+    val theme = when {
+        isAmoled -> "Amoled"
+        isDarkTheme -> "Dark"
+        else -> "Light"
     }
-    
-    return Color(ColorUtils.HSLToColor(hsl))
+    return applyAeonTint(theme).second
 }
 
 /**

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
@@ -57,7 +58,8 @@ fun RecentActivitiesScreen(
     headerTitle: String = "Recent Activities",
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
-    showCurrencyBreakdown: Boolean = true
+    showCurrencyBreakdown: Boolean = true,
+    tagColors: Map<String, Int> = emptyMap()
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -120,33 +122,27 @@ fun RecentActivitiesScreen(
             } else {
                 listState.groups.forEach { group ->
                     stickyHeader {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(AppColors.screenBackground)
-                        ) {
-                            TransactionHeader(
-                                title = group.headerData.title,
-                                subtitle = group.headerData.subtitle,
-                                incomeByCurrency = group.headerData.incomeByCurrency,
-                                expenseByCurrency = group.headerData.expenseByCurrency,
-                                openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
-                                closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
-                                allCurrencies = group.headerData.allCurrencies,
-                                incomeBase = group.headerData.incomeBase,
-                                expenseBase = group.headerData.expenseBase,
-                                netBase = group.headerData.netBase,
-                                totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
-                                totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
-                                baseCurrency = baseCurrency,
-                                showOpeningBalance = showOpeningBalance,
-                                showClosingBalance = showClosingBalance,
-                                showCurrencyBreakdown = showCurrencyBreakdown
-                            )
-                        }
+                        TransactionHeader(
+                            title = group.headerData.title,
+                            subtitle = group.headerData.subtitle,
+                            incomeByCurrency = group.headerData.incomeByCurrency,
+                            expenseByCurrency = group.headerData.expenseByCurrency,
+                            openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
+                            closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
+                            allCurrencies = group.headerData.allCurrencies,
+                            incomeBase = group.headerData.incomeBase,
+                            expenseBase = group.headerData.expenseBase,
+                            netBase = group.headerData.netBase,
+                            totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
+                            totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
+                            baseCurrency = baseCurrency,
+                            showOpeningBalance = showOpeningBalance,
+                            showClosingBalance = showClosingBalance,
+                            showCurrencyBreakdown = showCurrencyBreakdown
+                        )
                     }
 
-                    items(group.transactions, key = { it.item.transaction.id }) { enriched ->
+                    itemsIndexed(group.transactions, key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
                         val transaction = enriched.item.transaction
 
                         SwipeableTransactionItem(
@@ -182,7 +178,8 @@ fun RecentActivitiesScreen(
                                 tags = transaction.tags,
                                 icon = getIconByName(enriched.categoryIcon),
                                 iconBg = Color(enriched.categoryColor),
-                                status = transaction.status
+                                status = transaction.status,
+                                showDividers = index < group.transactions.size - 1,
                             ) { onTransactionEvent(TransactionItemEvent.Click(transaction.id)) }
                         }
                     }

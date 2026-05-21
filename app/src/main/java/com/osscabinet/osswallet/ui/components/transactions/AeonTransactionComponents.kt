@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -99,7 +100,7 @@ fun AeonTransactionList(
                 )
             }
 
-            items(group.transactions, key = { it.item.transaction.id }) { enriched ->
+            itemsIndexed(group.transactions, key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
                 val tx = enriched.item.transaction
                 val icon = getIconByName(enriched.categoryIcon)
                 val iconBg = Color(enriched.categoryColor)
@@ -136,7 +137,8 @@ fun AeonTransactionList(
                         useNoteAsHeader = useNoteAsHeader,
                         showOpeningBalance = showOpeningBalance,
                         showClosingBalance = showClosingBalance,
-                        status = tx.status
+                        status = tx.status,
+                        showDividers = index < group.transactions.size - 1
                     ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
                 }
             }
@@ -171,7 +173,7 @@ fun AeonTransactionItem(
     showClosingBalance: Boolean = true,
     showDividers: Boolean = true,
     status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
-    containerColor: Color = AppColors.panelSurface,
+    containerColor: Color = AppColors.screenBackground,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -186,13 +188,13 @@ fun AeonTransactionItem(
         shape = RectangleShape
     ) {
         Column {
-            if (showDividers) {
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-            }
+//            if (showDividers) {
+//                HorizontalDivider(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    thickness = 0.5.dp,
+//                    color = AppColors.divider.copy(alpha = 0.5f)
+//                )
+//            }
 
             Column(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)) {
                 Row(
@@ -357,7 +359,7 @@ fun AeonTransactionItem(
 
             if (showDividers) {
                 HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )

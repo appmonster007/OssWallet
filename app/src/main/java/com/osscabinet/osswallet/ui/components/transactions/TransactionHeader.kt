@@ -68,12 +68,14 @@ fun TransactionHeader(
     val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = styles.surfaceColor
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = styles.surfaceColor,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
     ) {
         Column {
-            HorizontalDivider(thickness = 0.5.dp, color = styles.dividerColor)
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
                 // Row 1: Title Info
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -147,7 +149,7 @@ private data class TransactionHeaderStyles(
         fun default() = TransactionHeaderStyles(
             positiveColor = PositiveAmountColor,
             negativeColor = AppColors.error,
-            surfaceColor = AppColors.sheetSurface,
+            surfaceColor = AppColors.panelSurface,
             outlineColor = AppColors.border,
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,

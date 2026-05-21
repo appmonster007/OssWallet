@@ -43,6 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,9 +61,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
@@ -90,6 +95,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -226,8 +232,14 @@ fun DashboardScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            containerColor = AppColors.screenBackground,
             topBar = {
                 TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = AppColors.screenBackground,
+                        titleContentColor = AppColors.onScreenBackground,
+                        navigationIconContentColor = AppColors.onScreenBackground
+                    ),
                     navigationIcon = {
                         if (isTopLevel) {
                             IconButton(onClick = onMenuClick) {
@@ -370,128 +382,66 @@ fun DashboardContent(
     ) { page ->
         when (page) {
             0 -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColors.screenBackground)
-                ) {
-                // Header row with Add Card button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Glance",
-                        style = AppTextStyles.screenTitle,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(
-                        onClick = { onShowAddCardDialogChange(true) },
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add card",
-                            tint = AppColors.primary,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                        )
-                    }
-                }
-
-                    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-
-                    AeonCardList(
-                        cards = cardsConfig.cards,
-                        cardDataMap = state.cardDataMap,
-                        cardInput = CardInput(
-                            transactions = state.allTransactions,
-                            accounts = state.accounts,
-                            categories = state.allCategories,
-                            exchangeRates = state.exchangeRates,
-                            baseCurrency = state.baseCurrency,
-                            plannedPayments = state.plannedPayments,
-                            budgets = state.budgets,
-                            loans = state.loans,
-                            filter = TransactionFilter(excludeFuture = false)
-                        ),
-                        cardComputerRegistry = cardComputerRegistry,
-                        cardUpdateHandler = dashboardViewModel,
-                        onReorder = { dashboardViewModel.reorderCards(it) },
-                        onDelete = { dashboardViewModel.removeCard(it) },
-                        onRecordsClick = onRecordsClick,
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(
-                            start = AeonTheme.dimensions.screenPadding,
-                            end = AeonTheme.dimensions.screenPadding,
-                            top = AeonTheme.dimensions.spacingMd,
-                            bottom = scrollBottomPadding()
-                        ),
-                        animateCards = cardAnimationEnabled,
-                        currentTheme = currentTheme,
-                        filterContext = FilterSelectionContext(
-                            accounts = state.accounts,
-                            allCategories = state.allCategories,
-                            allTags = state.allTags,
-                            savedFilters = savedFilters,
-                            onSearchTransactions = transactionViewModel::searchTransactions
-                        ),
-                        callbacks = AeonInteractionCallbacks(
-                            accountActions = AccountActions(
-                                onManageClick = onManageAccountsClick,
-                                onClick = onAccountClick
-                            ),
-                            transactionActions = TransactionActions(
-                                onClick = onEditTransactionClick,
-                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                                onClone = { onCloneTransactionClick(it) },
-                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { onSplitTransactionClick(it) },
-                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
-                            ),
-                            paymentActions = PaymentActions(
-                                onConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
-                                onSkip = { id -> dashboardViewModel.quickSkipById(id) }
-                            ),
-                            filterActions = FilterActions(
-                                onSaveClick = onSaveFilterClick
-                            ),
-                            tagActions = TagActions(
-                                onAdd = { name, color -> 
-                                    transactionViewModel.addTag(name, color)
-                                }
-                            )
-                        ),
-                    )
-                }
+                val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
+                DashboardGlanceTab(
+                    state = state,
+                    cardsConfig = cardsConfig,
+                    cardComputerRegistry = cardComputerRegistry,
+                    cardUpdateHandler = dashboardViewModel,
+                    savedFilters = savedFilters,
+                    currentTheme = currentTheme,
+                    cardAnimationEnabled = cardAnimationEnabled,
+                    onShowAddCardDialogChange = onShowAddCardDialogChange,
+                    onRecordsClick = onRecordsClick,
+                    onManageAccountsClick = onManageAccountsClick,
+                    onAccountClick = onAccountClick,
+                    onSaveFilterClick = onSaveFilterClick,
+                    onEditTransactionClick = onEditTransactionClick,
+                    onCloneTransactionClick = onCloneTransactionClick,
+                    onSplitTransactionClick = onSplitTransactionClick,
+                    onSearchTransactions = transactionViewModel::searchTransactions,
+                    onItemExpanded = transactionViewModel::onItemExpanded,
+                    onItemCollapsed = transactionViewModel::onItemCollapsed,
+                    onStatusChange = transactionViewModel::quickUpdateStatus,
+                    onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
+                    onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
+                    onQuickConfirm = dashboardViewModel::quickConfirmById,
+                    onQuickSkip = dashboardViewModel::quickSkipById,
+                    onAddTag = transactionViewModel::addTag,
+                    onReorderCards = dashboardViewModel::reorderCards,
+                    onRemoveCard = dashboardViewModel::removeCard
+                )
             }
 
             1 -> {
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
                 val recentActivitiesBreakdown by dashboardViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
-                RecentActivitiesScreen(
-                    listState = state.recentActivitiesState,
-                    onRecordsClick = onRecordsClick,
-                    baseCurrency = state.baseCurrency,
-                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                    modifier = Modifier.fillMaxSize(),
+                DashboardRecentActivitiesTab(
+                    recentActivitiesState = state.recentActivitiesState,
                     revealedCardIds = revealedCardIds,
-                    showCurrencyBreakdown = recentActivitiesBreakdown,
+                    recentActivitiesBreakdown = recentActivitiesBreakdown,
+                    baseCurrency = state.baseCurrency,
+                    onRecordsClick = onRecordsClick,
                     onTransactionEvent = { event ->
                         when (event) {
                             is TransactionItemEvent.Click -> onEditTransactionClick(event.id)
                             is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                             is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                                event.id,
+                                event.status
+                            )
+
                             is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
+                                event.id
+                            )
+
                             is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                                event.id
+                            )
                         }
                     }
                 )
@@ -510,6 +460,155 @@ fun DashboardContent(
             }
         )
     }
+}
+
+@Composable
+fun DashboardGlanceTab(
+    state: DashboardUiState.Success,
+    cardsConfig: DashboardCardsConfig,
+    cardComputerRegistry: CardComputerRegistry,
+    cardUpdateHandler: CardUpdateHandler,
+    savedFilters: List<Filter>,
+    currentTheme: String,
+    cardAnimationEnabled: Boolean,
+    onShowAddCardDialogChange: (Boolean) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    onManageAccountsClick: () -> Unit,
+    onAccountClick: (String) -> Unit,
+    onSaveFilterClick: (TransactionFilter) -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit,
+    onSplitTransactionClick: (Long) -> Unit,
+    onSearchTransactions: (String) -> Flow<List<Transaction>>,
+    onItemExpanded: (Long) -> Unit,
+    onItemCollapsed: (Long) -> Unit,
+    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
+    onDeleteTransaction: (Long) -> Unit,
+    onFullSwipeRight: (Long) -> Unit,
+    onQuickConfirm: (Long) -> Unit,
+    onQuickSkip: (Long) -> Unit,
+    onAddTag: (String, Int) -> Unit,
+    onReorderCards: (List<CardConfig>) -> Unit,
+    onRemoveCard: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColors.screenBackground)
+    ) {
+        // Header row with Add Card button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = AeonTheme.dimensions.screenPadding,
+                    vertical = AeonTheme.dimensions.spacingMd
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Glance",
+                style = AppTextStyles.screenTitle,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(
+                onClick = { onShowAddCardDialogChange(true) },
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add card",
+                    tint = AppColors.primary,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                )
+            }
+        }
+
+        AeonCardList(
+            cards = cardsConfig.cards,
+            cardDataMap = state.cardDataMap,
+            cardInput = CardInput(
+                transactions = state.allTransactions,
+                accounts = state.accounts,
+                categories = state.allCategories,
+                exchangeRates = state.exchangeRates,
+                baseCurrency = state.baseCurrency,
+                plannedPayments = state.plannedPayments,
+                budgets = state.budgets,
+                loans = state.loans,
+                filter = TransactionFilter(excludeFuture = false)
+            ),
+            cardComputerRegistry = cardComputerRegistry,
+            cardUpdateHandler = cardUpdateHandler,
+            onReorder = onReorderCards,
+            onDelete = onRemoveCard,
+            onRecordsClick = onRecordsClick,
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(
+                start = AeonTheme.dimensions.screenPadding,
+                end = AeonTheme.dimensions.screenPadding,
+                top = AeonTheme.dimensions.spacingMd,
+                bottom = scrollBottomPadding()
+            ),
+            animateCards = cardAnimationEnabled,
+            currentTheme = currentTheme,
+            filterContext = FilterSelectionContext(
+                accounts = state.accounts,
+                allCategories = state.allCategories,
+                allTags = state.allTags,
+                savedFilters = savedFilters,
+                onSearchTransactions = onSearchTransactions
+            ),
+            callbacks = AeonInteractionCallbacks(
+                accountActions = AccountActions(
+                    onManageClick = onManageAccountsClick,
+                    onClick = onAccountClick
+                ),
+                transactionActions = TransactionActions(
+                    onClick = onEditTransactionClick,
+                    onItemExpanded = onItemExpanded,
+                    onItemCollapsed = onItemCollapsed,
+                    onStatusChange = onStatusChange,
+                    onClone = onCloneTransactionClick,
+                    onDelete = onDeleteTransaction,
+                    onSplit = onSplitTransactionClick,
+                    onFullSwipeRight = onFullSwipeRight
+                ),
+                paymentActions = PaymentActions(
+                    onConfirm = onQuickConfirm,
+                    onSkip = onQuickSkip
+                ),
+                filterActions = FilterActions(
+                    onSaveClick = onSaveFilterClick
+                ),
+                tagActions = TagActions(
+                    onAdd = onAddTag
+                )
+            ),
+        )
+    }
+}
+
+@Composable
+fun DashboardRecentActivitiesTab(
+    recentActivitiesState: TransactionListState,
+    revealedCardIds: List<Long>,
+    recentActivitiesBreakdown: Boolean,
+    baseCurrency: String,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    onTransactionEvent: (TransactionItemEvent) -> Unit
+) {
+    RecentActivitiesScreen(
+        listState = recentActivitiesState,
+        onRecordsClick = onRecordsClick,
+        baseCurrency = baseCurrency,
+        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+        modifier = Modifier.fillMaxSize(),
+        revealedCardIds = revealedCardIds,
+        showCurrencyBreakdown = recentActivitiesBreakdown,
+        onTransactionEvent = onTransactionEvent
+    )
 }
 
 @Composable
@@ -554,4 +653,3 @@ private fun getDashboardContextDisplayName(context: DashboardViewContext): Strin
         is DashboardViewContext.FocusSection -> "Section: ${context.section.name}"
     }
 }
-

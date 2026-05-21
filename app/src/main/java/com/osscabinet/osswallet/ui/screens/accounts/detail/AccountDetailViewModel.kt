@@ -178,6 +178,7 @@ class AccountDetailViewModel @Inject constructor(
                     groupingType = settings.transactionsSection.groupBy,
                     accounts = accounts,
                     categories = categories,
+                    allTags = tags,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates
                 ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }

@@ -160,6 +160,7 @@ fun TemplateEntrySheets(
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.allTags,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },

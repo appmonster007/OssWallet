@@ -131,7 +131,7 @@ fun AeonTransactionList(
                         type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                         timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                         note = tx.note,
-                        tags = tx.tags,
+                        tags = enriched.tags,
                         icon = icon,
                         iconBg = iconBg,
                         useNoteAsHeader = useNoteAsHeader,
@@ -165,7 +165,7 @@ fun AeonTransactionItem(
     type: CashFlowType,
     timestamp: String,
     note: String? = null,
-    tags: Set<String> = emptySet(),
+    tags: List<com.osscabinet.ossWallet.domain.model.TagUiModel> = emptyList(),
     icon: ImageVector? = null,
     iconBg: Color? = null,
     useNoteAsHeader: Boolean = false,
@@ -338,16 +338,17 @@ fun AeonTransactionItem(
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         tags.forEach { tag ->
+                            val tagColor = if (tag.color != -1) Color(tag.color) else AppColors.secondaryContainer
                             Surface(
                                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingXs),
-                                color = AppColors.secondaryContainer.copy(alpha = 0.3f),
+                                color = tagColor.copy(alpha = 0.2f),
                             ) {
                                 Text(
-                                    text = tag,
+                                    text = tag.name,
                                     style = AppTextStyles.transactionSwipeAction.copy(
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = AppColors.onSecondaryContainer
+                                        color = if (tag.color != -1) tagColor else AppColors.onSecondaryContainer
                                     ),
                                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXs, vertical = 2.dp)
                                 )
@@ -381,7 +382,10 @@ fun AeonTransactionItemPreview() {
             type = CashFlowType.EXPENSE,
             timestamp = "10:30 AM",
             note = "Lunch at Subway",
-            tags = setOf("Lunch", "Work"),
+            tags = listOf(
+                com.osscabinet.ossWallet.domain.model.TagUiModel("Lunch", -1),
+                com.osscabinet.ossWallet.domain.model.TagUiModel("Work", -1)
+            ),
             icon = Icons.Rounded.Category,
             iconBg = Color(0xFF4CAF50),
             onClick = {}

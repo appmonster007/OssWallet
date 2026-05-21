@@ -218,6 +218,7 @@ fun PlannedPaymentEntrySheets(
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.availableTags,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(PlannedPaymentEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },

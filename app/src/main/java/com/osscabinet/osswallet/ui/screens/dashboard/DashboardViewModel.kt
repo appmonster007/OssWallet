@@ -178,6 +178,7 @@ class DashboardViewModel @Inject constructor(
                     transactions = allTransactions,
                     accounts = accounts,
                     categories = categories,
+                    tags = tags,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
                     plannedPayments = plannedPayments,
@@ -238,6 +239,7 @@ class DashboardViewModel @Inject constructor(
                         groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
                         accounts = accounts,
                         categories = categories,
+                        allTags = tags,
                         baseCurrency = baseCurrency,
                         exchangeRates = rates
                     )

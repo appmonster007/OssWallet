@@ -164,6 +164,7 @@ fun FilterFields(
                 linkedIds = filter.linkedTransactionIds.toSet(),
                 accounts = accounts,
                 categories = allCategories,
+                allTags = allTags,
                     onLinkedTransactionsChanged = { ids ->
                     onFilterChange(filter.copy(linkedTransactionIds = ids.toSet()))
                 },

@@ -23,6 +23,10 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
     abstract fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
 
+    @Transaction
+    @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
+    abstract fun getAllTransactionsWithTags(profileId: Int): Flow<List<com.osscabinet.ossWallet.data.local.entity.TransactionWithTags>>
+
     @RawQuery(observedEntities = [TransactionEntity::class])
     abstract fun getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>
 
@@ -102,6 +106,12 @@ abstract class TransactionDao {
 
     @Upsert
     abstract suspend fun insertTransaction(transaction: TransactionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertTransactionTagCrossRef(crossRef: com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef)
+
+    @Query("DELETE FROM transaction_tag_cross_ref WHERE transactionId = :transactionId")
+    abstract suspend fun deleteTransactionTagCrossRefs(transactionId: Long)
 
     @Delete
     abstract suspend fun deleteTransaction(transaction: TransactionEntity)

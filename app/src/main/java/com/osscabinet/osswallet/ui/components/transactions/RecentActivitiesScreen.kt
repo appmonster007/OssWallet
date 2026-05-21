@@ -175,7 +175,7 @@ fun RecentActivitiesScreen(
                                 },
                                 timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(transaction.timestamp),
                                 note = transaction.note,
-                                tags = transaction.tags,
+                                tags = enriched.tags,
                                 icon = getIconByName(enriched.categoryIcon),
                                 iconBg = Color(enriched.categoryColor),
                                 status = transaction.status,

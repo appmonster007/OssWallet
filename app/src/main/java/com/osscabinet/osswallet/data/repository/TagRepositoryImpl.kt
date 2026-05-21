@@ -31,12 +31,11 @@ class TagRepositoryImpl @Inject constructor(
             tx.copy(tags = tx.tags - tag.name)
         }
         transactionDao.updateTransactions(updatedTransactions)
+        // Room CASCADE handles the transaction_tag_cross_ref deletion
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
     }
 
     override suspend fun getTransactionCountForTag(tagName: String): Int {
-        // More accurate check to avoid substring matches if possible, 
-        // but for now keeping it consistent with deletion logic
         return transactionDao.getTransactionsWithTag(tagName).size
     }
 
@@ -48,6 +47,8 @@ class TagRepositoryImpl @Inject constructor(
                 tx.copy(tags = currentTags)
             }
             transactionDao.updateTransactions(updatedTransactions)
+            // The junction table uses tagId, so no change needed there for a name change.
+            // But if the ID were to change (it doesn't here), we'd need more logic.
         }
         tagDao.insertTag(TagEntity(id = newTag.id, name = newTag.name, colorHex = newTag.colorHex))
     }

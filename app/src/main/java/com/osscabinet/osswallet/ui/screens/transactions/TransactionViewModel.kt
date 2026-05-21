@@ -187,6 +187,7 @@ class TransactionViewModel @Inject constructor(
             scopedHistoryWithBalance,
             accounts,
             categories,
+            allTags,
             baseCurrency,
             exchangeRates,
             recordsSettings
@@ -199,10 +200,12 @@ class TransactionViewModel @Inject constructor(
             val accounts = args[2] as List<com.osscabinet.ossWallet.domain.model.Account>
             @Suppress("UNCHECKED_CAST")
             val categories = args[3] as List<com.osscabinet.ossWallet.domain.model.Category>
-            val base = args[4] as String
             @Suppress("UNCHECKED_CAST")
-            val rates = args[5] as Map<String, BigDecimal>
-            val settings = args[6] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+            val tags = args[4] as List<com.osscabinet.ossWallet.domain.model.Tag>
+            val base = args[5] as String
+            @Suppress("UNCHECKED_CAST")
+            val rates = args[6] as Map<String, BigDecimal>
+            val settings = args[7] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 
             if (filtered.isEmpty()) return@combine TransactionListState()
 
@@ -212,6 +215,7 @@ class TransactionViewModel @Inject constructor(
                 groupingType = settings.groupBy,
                 accounts = accounts,
                 categories = categories,
+                allTags = tags,
                 baseCurrency = base,
                 exchangeRates = rates
             )

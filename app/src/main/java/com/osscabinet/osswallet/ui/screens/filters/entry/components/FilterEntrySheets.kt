@@ -97,6 +97,7 @@ fun FilterEntrySheets(
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.availableTags,
             onLinkedTransactionsChanged = { onEvent(FilterEntryEvent.SetLinkedTransactions(it)) },
             onDismiss = { onEvent(FilterEntryEvent.ShowLinkSheet(false)) }
         )

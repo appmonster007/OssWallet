@@ -23,6 +23,8 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.toUiModels
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
@@ -46,6 +48,7 @@ fun AeonLinkedTransactionSelection(
     linkedIds: Set<Long>,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<Tag> = emptyList(),
     onLinkedTransactionsChanged: (Set<Long>) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -146,7 +149,7 @@ fun AeonLinkedTransactionSelection(
                                         },
                                         timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                                         note = tx.note,
-                                        tags = tx.tags,
+                                        tags = tx.tags.toUiModels(allTags),
                                         icon = icon,
                                         iconBg = iconBg,
                                         showOpeningBalance = false,

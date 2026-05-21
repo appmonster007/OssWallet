@@ -116,6 +116,7 @@ fun BudgetDetailScreen(
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val allTags by transactionViewModel.allTags.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
@@ -317,13 +318,14 @@ fun BudgetDetailScreen(
                         } else {
                             val now = System.currentTimeMillis()
 
-                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, baseCurrency) {
+                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, baseCurrency, allTags) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = budgetTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
-                                    groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                                    groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
                                     accounts = accounts,
                                     categories = categoriesList,
+                                    allTags = allTags,
                                     baseCurrency = baseCurrency,
                                     exchangeRates = emptyMap()
                                 )

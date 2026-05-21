@@ -16,6 +16,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TransactionEntity::class,
         TransactionFtsEntity::class,
         TransactionLinkEntity::class,
+        TransactionTagCrossRef::class,
         CurrencyRateEntity::class,
         AccountEntity::class,
         CategoryEntity::class,
@@ -29,7 +30,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -52,6 +53,22 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `transaction_tag_cross_ref` (
+                        `transactionId` INTEGER NOT NULL, 
+                        `tagId` INTEGER NOT NULL, 
+                        PRIMARY KEY(`transactionId`, `tagId`), 
+                        FOREIGN KEY(`transactionId`) REFERENCES `transactions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                        FOREIGN KEY(`tagId`) REFERENCES `tags`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_tag_cross_ref_transactionId` ON `transaction_tag_cross_ref` (`transactionId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_tag_cross_ref_tagId` ON `transaction_tag_cross_ref` (`tagId`)")
+            }
         }
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -95,7 +112,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

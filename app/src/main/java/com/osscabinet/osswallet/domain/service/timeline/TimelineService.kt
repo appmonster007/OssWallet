@@ -411,6 +411,7 @@ object TimelineService {
         groupingType: TransactionGroupingType,
         accounts: List<Account>,
         categories: List<Category>,
+        allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int = this.precision
@@ -420,6 +421,8 @@ object TimelineService {
 
         val accountMap = accounts.associateBy { it.id }
         val categoryMap = categories.associateBy { it.id }
+        val tagMap = allTags.associateBy { it.name }
+        val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
 
         return sortedKeys.map { key ->
             val groupItems = groups[key] ?: emptyList()
@@ -433,6 +436,15 @@ object TimelineService {
                     CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                 } else tx.amount
 
+                val tagUiModels = tx.tags.map { tagName ->
+                    tagUiModelCache.getOrPut(tagName) {
+                        com.osscabinet.ossWallet.domain.model.TagUiModel(
+                            name = tagName,
+                            color = tagMap[tagName]?.colorHex ?: -1
+                        )
+                    }
+                }
+
                 TransactionUiModel(
                     item = txWithBalance,
                     accountName = account?.name ?: "Unknown",
@@ -440,6 +452,7 @@ object TimelineService {
                     categoryName = category?.name ?: "Uncategorized",
                     categoryIcon = category?.iconName,
                     categoryColor = category?.colorHex ?: 0,
+                    tags = tagUiModels,
                     amountInBase = amountInBase
                 )
             }

@@ -187,6 +187,7 @@ fun LoanEntrySheets(
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.availableTags,
             onLinkedTransactionsChanged = { onEvent(LoanEntryEvent.SetLinkedTransactions(it)) },
             onDismiss = { onEvent(LoanEntryEvent.ShowLinkSheet(false)) }
         )

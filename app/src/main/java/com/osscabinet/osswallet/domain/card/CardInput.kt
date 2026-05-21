@@ -22,6 +22,7 @@ data class CardInput(
     val transactions: List<Transaction> = emptyList(),
     val accounts: List<Account>,
     val categories: List<Category>,
+    val tags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
     val exchangeRates: Map<String, BigDecimal>,
     val baseCurrency: String,
     val filter: TransactionFilter = TransactionFilter(),

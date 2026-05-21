@@ -31,6 +31,7 @@ class RecentActivitiesCardComputer(
             groupingType = config.groupBy,
             accounts = input.accounts,
             categories = input.categories,
+            allTags = input.tags,
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates
         )

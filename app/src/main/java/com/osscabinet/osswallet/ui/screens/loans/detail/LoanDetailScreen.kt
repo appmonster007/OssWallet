@@ -116,6 +116,7 @@ fun LoanDetailScreen(
     // Single category source — always populated via TransactionViewModel.
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val allTags by transactionViewModel.allTags.collectAsStateWithLifecycle()
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
@@ -227,13 +228,14 @@ fun LoanDetailScreen(
                                 }
                             }
                         } else {
-                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, baseCurrency) {
+                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, baseCurrency, allTags) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = loanTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
                                     groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
                                     accounts = accounts,
                                     categories = categoriesList,
+                                    allTags = allTags,
                                     baseCurrency = baseCurrency,
                                     exchangeRates = emptyMap()
                                 )

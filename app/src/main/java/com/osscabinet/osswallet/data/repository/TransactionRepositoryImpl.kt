@@ -26,6 +26,7 @@ import javax.inject.Singleton
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
+    private val tagDao: com.osscabinet.ossWallet.data.local.dao.TagDao,
     private val transactionLinkDao: TransactionLinkDao,
     private val database: AppDatabase
 ) : TransactionRepository {
@@ -165,7 +166,29 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long {
-        return transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
+        return database.withTransaction {
+            val id = transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
+            syncTransactionTags(id, transaction.tags)
+            id
+        }
+    }
+
+    private suspend fun syncTransactionTags(transactionId: Long, tagNames: Set<String>) {
+        if (tagNames.isEmpty()) {
+            transactionDao.deleteTransactionTagCrossRefs(transactionId)
+            return
+        }
+
+        val tags = tagDao.getTagsByNamesSync(tagNames.toList())
+        transactionDao.deleteTransactionTagCrossRefs(transactionId)
+        tags.forEach { tag ->
+            transactionDao.insertTransactionTagCrossRef(
+                com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef(
+                    transactionId = transactionId,
+                    tagId = tag.id
+                )
+            )
+        }
     }
 
     override suspend fun saveTransfer(
@@ -176,6 +199,9 @@ class TransactionRepositoryImpl @Inject constructor(
         return database.withTransaction {
             val sourceId = transactionDao.insertTransactionWithBalanceUpdate(sourceTransaction.toEntity(profileId), accountDao)
             val targetId = transactionDao.insertTransactionWithBalanceUpdate(targetTransaction.toEntity(profileId), accountDao)
+
+            syncTransactionTags(sourceId, sourceTransaction.tags)
+            syncTransactionTags(targetId, targetTransaction.tags)
 
             // Create bi-directional links for transfers
             transactionLinkDao.insertLink(
@@ -196,11 +222,14 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
-        transactionDao.updateTransactionWithBalanceUpdate(
-            oldTransaction.toEntity(profileId),
-            newTransaction.toEntity(profileId),
-            accountDao
-        )
+        database.withTransaction {
+            transactionDao.updateTransactionWithBalanceUpdate(
+                oldTransaction.toEntity(profileId),
+                newTransaction.toEntity(profileId),
+                accountDao
+            )
+            syncTransactionTags(newTransaction.id, newTransaction.tags)
+        }
     }
 
     override suspend fun deleteTransaction(id: Long) {

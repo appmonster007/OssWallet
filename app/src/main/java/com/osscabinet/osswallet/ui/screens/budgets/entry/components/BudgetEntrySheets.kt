@@ -153,6 +153,7 @@ fun BudgetEntrySheets(
             linkedIds = state.linkedTransactionIds,
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.availableTags,
             onLinkedTransactionsChanged = { onEvent(BudgetEntryEvent.SetLinkedTransactions(it)) },
             onDismiss = { onEvent(BudgetEntryEvent.ShowLinkSheet(false)) }
         )

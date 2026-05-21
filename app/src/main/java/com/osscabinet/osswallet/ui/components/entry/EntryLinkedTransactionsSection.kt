@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.toUiModels
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
@@ -32,6 +33,7 @@ fun EntryLinkedTransactionsSection(
     linkedTransactions: List<Transaction>,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
     onShowSheet: () -> Unit,
     onRemoveLink: (Long) -> Unit
 ) {
@@ -85,6 +87,7 @@ fun EntryLinkedTransactionsSection(
                 tx = tx,
                 accountName = account?.name ?: "Unknown",
                 category = category,
+                allTags = allTags,
                 onRemove = { onRemoveLink(tx.id) }
             )
         }
@@ -96,6 +99,7 @@ private fun EntryLinkedTransactionItem(
     tx: Transaction,
     accountName: String,
     category: Category?,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag>,
     onRemove: () -> Unit
 ) {
     val categoryName = category?.name ?: "Unknown"
@@ -126,7 +130,7 @@ private fun EntryLinkedTransactionItem(
                 },
                 timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
                 note = tx.note,
-                tags = tx.tags,
+                tags = tx.tags.toUiModels(allTags),
                 icon = icon,
                 iconBg = iconBg,
                 showOpeningBalance = false,

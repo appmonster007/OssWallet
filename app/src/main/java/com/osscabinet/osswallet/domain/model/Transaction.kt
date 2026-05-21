@@ -33,6 +33,31 @@ data class TransactionWithBalance(
 )
 
 /**
+ * UI representation of a tag with its associated color.
+ */
+data class TagUiModel(
+    val name: String,
+    val color: Int
+)
+
+/**
+ * Maps a set of tag names to their UI models using a provided tag library.
+ * Memoizes results for performance during bulk operations.
+ */
+fun Set<String>.toUiModels(
+    allTags: List<Tag>,
+    cache: MutableMap<String, TagUiModel>? = null
+): List<TagUiModel> {
+    if (this.isEmpty()) return emptyList()
+    val tagMap = allTags.associateBy { it.name }
+    return this.map { name ->
+        cache?.getOrPut(name) {
+            TagUiModel(name, tagMap[name]?.colorHex ?: -1)
+        } ?: TagUiModel(name, tagMap[name]?.colorHex ?: -1)
+    }
+}
+
+/**
  * Enriched UI model for a transaction, containing all metadata needed for display.
  */
 data class TransactionUiModel(
@@ -42,6 +67,7 @@ data class TransactionUiModel(
     val categoryName: String,
     val categoryIcon: String?,
     val categoryColor: Int,
+    val tags: List<TagUiModel> = emptyList(),
     val amountInBase: BigDecimal? = null
 )
 

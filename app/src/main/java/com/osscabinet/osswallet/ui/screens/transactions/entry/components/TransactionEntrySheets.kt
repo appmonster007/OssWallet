@@ -106,6 +106,7 @@ fun TransactionEntrySheets(
             linkedIds = state.linkedTransactionIds.toSet(),
             accounts = state.accounts,
             categories = state.categories,
+            allTags = state.allTags,
             onLinkedTransactionsChanged = { ids ->
                 onEvent(TransactionEntryEvent.SetLinkedTransactionIds(ids.toList()))
             },

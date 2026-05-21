@@ -116,6 +116,7 @@ fun AeonEntryMetadataSection(
     state: AeonMetadataState,
     accounts: List<Account>,
     categories: List<Category>,
+    allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
     onShowLinkedTransactions: () -> Unit,
     onRemoveLink: (Long) -> Unit,
     onPaymentMethodClick: () -> Unit,
@@ -135,6 +136,7 @@ fun AeonEntryMetadataSection(
             linkedTransactions = state.linkedTransactions,
             accounts = accounts,
             categories = categories,
+            allTags = allTags,
             onShowSheet = onShowLinkedTransactions,
             onRemoveLink = onRemoveLink
         )

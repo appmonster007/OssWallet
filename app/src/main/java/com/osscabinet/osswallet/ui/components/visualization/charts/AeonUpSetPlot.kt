@@ -179,11 +179,6 @@ fun AeonUpSetPlot(
         }
     }
 
-    val horizontalScrollEnabled = dynamicFilteringMode == UpSetDynamicFilteringMode.OFF || 
-                                 dynamicFilteringMode == UpSetDynamicFilteringMode.HORIZONTAL
-    val verticalScrollEnabled = dynamicFilteringMode == UpSetDynamicFilteringMode.OFF || 
-                               dynamicFilteringMode == UpSetDynamicFilteringMode.VERTICAL
-
     val density = androidx.compose.ui.platform.LocalDensity.current
     val colWidthPx = with(density) { colWidth.toPx() }
     val rowHeightPx = with(density) { rowHeight.toPx() }
@@ -259,7 +254,7 @@ fun AeonUpSetPlot(
             // Intersection Size Bars (Horizontal Scroll)
             Box(
                 modifier = Modifier.width(finalViewportWidth)
-                    .horizontalScroll(horizontalScrollState, enabled = horizontalScrollEnabled)
+                    .horizontalScroll(horizontalScrollState, enabled = true)
             ) {
                 Row(
                     modifier = Modifier
@@ -291,7 +286,7 @@ fun AeonUpSetPlot(
             Column(
                 modifier = Modifier
                     .width(leftPanelWidth)
-                    .verticalScroll(verticalScrollState, enabled = verticalScrollEnabled)
+                    .verticalScroll(verticalScrollState, enabled = true)
             ) {
                 activeRowIndices.sorted().forEach { originalIdx ->
                     val set = data.sets[originalIdx]
@@ -313,8 +308,8 @@ fun AeonUpSetPlot(
             Box(
                 modifier = Modifier
                     .width(finalViewportWidth)
-                    .verticalScroll(verticalScrollState, enabled = verticalScrollEnabled)
-                    .horizontalScroll(horizontalScrollState, enabled = horizontalScrollEnabled)
+                    .verticalScroll(verticalScrollState, enabled = true)
+                    .horizontalScroll(horizontalScrollState, enabled = true)
             ) {
                 Canvas(
                     modifier = Modifier

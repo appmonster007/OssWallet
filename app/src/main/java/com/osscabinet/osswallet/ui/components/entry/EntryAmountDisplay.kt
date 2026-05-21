@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,12 +16,14 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized amount display with auto-resizing text and currency selector.
@@ -98,6 +101,33 @@ fun EntryAmountDisplay(
                 color = if (amount.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor,
                 modifier = Modifier.weight(1f, fill = false)
             )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryAmountDisplayPreview() {
+    OssWalletTheme {
+        Surface {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                EntryAmountDisplay(
+                    amount = "1,250.50",
+                    currency = "USD",
+                    onCurrencyClick = {},
+                    onAmountClick = {},
+                    label = "Amount"
+                )
+                
+                EntryAmountDisplay(
+                    amount = "",
+                    currency = "EUR",
+                    onCurrencyClick = {},
+                    onAmountClick = {},
+                    amountColor = AppColors.error,
+                    label = "Expense Amount"
+                )
+            }
         }
     }
 }

@@ -211,6 +211,29 @@ private fun IncomeExpenseLegendItem(color: Color, label: String) {
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun IncomeExpenseBarCardPreview() {
+    val buckets = listOf(
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Jan", 0, BigDecimal("5000"), BigDecimal("3500"), BigDecimal("1500")),
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Feb", 0, BigDecimal("5200"), BigDecimal("4000"), BigDecimal("1200")),
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Mar", 0, BigDecimal("4800"), BigDecimal("3800"), BigDecimal("1000"))
+    )
+    val renderData = CardRenderData.IncomeExpenseBar(
+        config = IncomeExpenseBarCardConfig(cardId = "preview"),
+        buckets = buckets,
+        granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
+        baseCurrency = "USD",
+        todayBucketIndex = 2
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            IncomeExpenseBarCard(renderData = renderData)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IncomeExpenseBarSettingsSheet(

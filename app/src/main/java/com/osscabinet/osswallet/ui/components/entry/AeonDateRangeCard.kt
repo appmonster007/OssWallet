@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 /**
  * Standardized date range card for filter screens.
@@ -41,6 +43,20 @@ fun AeonDateRangeCard(
             onClick = onEndClick,
             modifier = Modifier.weight(1f),
             placeholder = "End date..."
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonDateRangeCardPreview() {
+    OssWalletTheme {
+        AeonDateRangeCard(
+            startDateMillis = System.currentTimeMillis(),
+            endDateMillis = System.currentTimeMillis() + 86400000,
+            onStartClick = {},
+            onEndClick = {},
+            modifier = Modifier.padding(16.dp)
         )
     }
 }

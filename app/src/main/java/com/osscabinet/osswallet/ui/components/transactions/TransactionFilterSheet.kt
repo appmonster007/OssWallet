@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
@@ -33,6 +34,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
@@ -82,6 +84,21 @@ fun TransactionFilterSheet(
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
             accountNames = accountNames,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionFilterSheetPreview() {
+    OssWalletTheme {
+        TransactionFilterSheet(
+            filter = TransactionFilter(),
+            accounts = emptyList(),
+            categories = emptyList(),
+            onSearchTransactions = { _ -> flowOf(emptyList()) },
+            onFilterEvent = {},
+            onClose = {}
         )
     }
 }

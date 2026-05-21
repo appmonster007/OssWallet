@@ -2,11 +2,14 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Full-screen selection for Transaction Status.
@@ -33,4 +36,18 @@ fun AeonStatusSelection(
         colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) },
         mode = mode
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonStatusSelectionPreview() {
+    OssWalletTheme {
+        Surface {
+            AeonStatusSelection(
+                selectedStatuses = setOf(TransactionStatus.CLEARED),
+                onSelectionChange = {},
+                onDismiss = {}
+            )
+        }
+    }
 }

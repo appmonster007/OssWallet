@@ -13,12 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -313,6 +315,23 @@ fun AeonScheduleBuilder(
                     onDismiss()
                 }) { Text("DONE") }
             }
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 500, widthDp = 500)
+@Composable
+fun AeonScheduleBuilderPreview() {
+    OssWalletTheme {
+        AeonScheduleBuilder(
+            initialStartDate = System.currentTimeMillis(),
+            initialRecurrenceType = RecurrenceType.MONTHLY,
+            initialInterval = 1,
+            initialDayOfWeek = null,
+            initialDayOfMonth = null,
+            initialCronExpression = null,
+            onConfirm = { _, _, _, _, _, _ -> },
+            onDismiss = {}
         )
     }
 }

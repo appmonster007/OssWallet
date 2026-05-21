@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.tooling.preview.Preview
+import java.math.BigDecimal
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -212,6 +215,22 @@ fun AccountFormBody(
     }
 }
 
-
-
-
+@Preview(showBackground = true)
+@Composable
+fun AccountFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            AccountFormBody(
+                state = AccountEntryState(
+                    accountName = "Savings Account",
+                    structureType = AccountStructureType.SAVINGS,
+                    primaryCurrency = "USD",
+                    allowedCurrencies = setOf("USD", "EUR"),
+                    initialBalances = mapOf("USD" to "1000.00", "EUR" to "500.00"),
+                    accentColorHex = "#004D5F"
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}

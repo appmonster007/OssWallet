@@ -34,6 +34,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Optimized Timeline Period Selector.
@@ -432,4 +434,17 @@ private fun getRangeSubtitleText(range: TimelineRange): String {
 
     val displayFormat = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) dateFormat else yearFormat
     return "${displayFormat.format(Date(start))} - ${displayFormat.format(Date(end))}"
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonTimelinePeriodSelectorPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonTimelinePeriodSelector(
+                currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+                onRangeSelected = {}
+            )
+        }
+    }
 }

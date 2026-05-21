@@ -303,3 +303,66 @@ fun AeonFlowBadge(
     }
 }
 
+// ── PREVIEWS ─────────────────────────────────────────────────────────────
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AeonFlowComponentsPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Settings Toggle", style = AppTextStyles.listSectionHeader)
+            AeonSettingsToggle(
+                label = "Notifications",
+                description = "Enable push notifications for your account.",
+                checked = true,
+                onCheckedChange = {}
+            )
+            
+            Text("Base Conversion Toggle", style = AppTextStyles.listSectionHeader)
+            AeonBaseConversionToggle(
+                baseCurrency = "USD",
+                showBaseConversion = true,
+                onShowBaseConversionChange = {}
+            )
+            
+            Text("Layout Toggle", style = AppTextStyles.listSectionHeader)
+            AeonLayoutToggle(
+                layout = "grid",
+                onLayoutChange = {}
+            )
+            
+            Text("Grid Columns Settings", style = AppTextStyles.listSectionHeader)
+            AeonGridColumnsSettings(
+                gridColumns = 2,
+                onGridColumnsChange = {}
+            )
+            
+            Text("Flow Section Header", style = AppTextStyles.listSectionHeader)
+            AeonFlowSectionHeader(
+                title = "Transactions",
+                breadcrumbs = listOf("Accounts", "Savings"),
+                onBreadcrumbClick = {}
+            )
+            
+            Text("Flow Badges", style = AppTextStyles.listSectionHeader)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AeonFlowBadge(
+                    amount = BigDecimal("1500.00"),
+                    type = CashFlowType.INCOME,
+                    currency = "USD"
+                )
+                AeonFlowBadge(
+                    amount = BigDecimal("850.00"),
+                    type = CashFlowType.EXPENSE,
+                    currency = "USD"
+                )
+            }
+            
+            Text("Filter Indicator", style = AppTextStyles.listSectionHeader)
+            FilterActiveIndicator(count = 3)
+        }
+    }
+}

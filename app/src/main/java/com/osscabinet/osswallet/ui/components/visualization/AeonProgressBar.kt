@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material3.Surface
 
 @Composable
 fun AeonProgressBar(
@@ -54,5 +57,19 @@ fun AeonProgressBar(
                 .clip(CircleShape)
                 .background(color)
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonProgressBarPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonProgressBar(progress = 0.3f)
+                AeonProgressBar(progress = 0.7f, color = Color.Red)
+                AeonProgressBar(progress = 1.0f, color = Color.Green)
+            }
+        }
     }
 }

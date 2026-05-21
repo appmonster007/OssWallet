@@ -16,6 +16,8 @@ import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,4 +175,17 @@ fun TransactionListTopAppBar(
             }
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionListTopAppBarPreview() {
+    OssWalletTheme {
+        TransactionListTopAppBar(
+            filter = TransactionFilter(),
+            recordsSettings = TransactionSectionSettings(),
+            onBackClick = {},
+            onUpdateRecordsSettings = {}
+        )
+    }
 }

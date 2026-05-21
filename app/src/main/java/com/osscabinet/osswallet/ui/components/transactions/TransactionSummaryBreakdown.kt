@@ -16,6 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -249,6 +251,24 @@ fun TransactionSummaryBreakdown(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionSummaryBreakdownPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            TransactionSummaryBreakdown(
+                incomeByCurrency = mapOf("USD" to BigDecimal("1500.00"), "EUR" to BigDecimal("200.00")),
+                expenseByCurrency = mapOf("USD" to BigDecimal("800.00"), "EUR" to BigDecimal("50.00")),
+                incomeBase = BigDecimal("1700.00"),
+                expenseBase = BigDecimal("850.00"),
+                netBase = BigDecimal("850.00"),
+                baseCurrency = "USD",
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

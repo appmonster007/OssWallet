@@ -17,10 +17,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
@@ -38,6 +40,7 @@ import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun AeonAccountCardSmall(
@@ -214,7 +217,7 @@ fun AeonAccountCardLarge(
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-    
+
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
 
@@ -264,7 +267,7 @@ fun AeonAccountCardLarge(
                         )
                     }
 
-                    
+
                     // Income/Expense Badges
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AeonFlowBadge(
@@ -281,9 +284,9 @@ fun AeonAccountCardLarge(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -295,9 +298,9 @@ fun AeonAccountCardLarge(
                         color = contentColor
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -318,11 +321,11 @@ fun AeonAccountCardLarge(
                                 color = contentColor
                             )
                         }
-                        
+
                         val sortedCurrencyBalances = remember(currencyBalances) {
                             currencyBalances.toList().sortedBy { it.first }
                         }
-                        
+
                         sortedCurrencyBalances.forEach { (curr, bal) ->
                             Surface(
                                 color = contentColor.copy(alpha = 0.15f),
@@ -347,21 +350,21 @@ fun AeonAccountCardLarge(
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
 
                     Column(horizontalAlignment = Alignment.End) {
                         if (cardNumber != null) {
                             Text(
-                                cardNumber, 
-                                style = AppTextStyles.formSectionLabel, 
+                                cardNumber,
+                                style = AppTextStyles.formSectionLabel,
                                 color = contentColor.copy(alpha = 0.5f)
                             )
                         }
                         if (extraLabel != null) {
                             Text(
-                                extraLabel, 
-                                style = AppTextStyles.transactionSwipeAction, 
+                                extraLabel,
+                                style = AppTextStyles.transactionSwipeAction,
                                 color = contentColor.copy(alpha = 0.5f)
                             )
                         }
@@ -422,6 +425,112 @@ fun AccountSelection(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonAccountCardsPreview() {
+    val mockAccount = Account(
+        id = "1",
+        name = "Main Savings",
+        currencyCode = "USD",
+        structureType = AccountStructureType.SAVINGS,
+        colorHex = "#4CAF50",
+        icon = "Savings"
+    )
+
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AeonAccountCardSmall(
+                account = mockAccount,
+                balance = BigDecimal("1234.56"),
+                balanceInBase = BigDecimal("1234.56"),
+                baseCurrency = "USD",
+                isDarkTheme = false,
+                isAmoled = false,
+                onClick = {}
+            )
+
+            AeonAccountCardMedium(
+                account = mockAccount,
+                balance = BigDecimal("1234.56"),
+                balanceInBase = BigDecimal("1234.56"),
+                baseCurrency = "USD",
+                isDarkTheme = false,
+                isAmoled = false,
+                onClick = {}
+            )
+
+            AeonAccountCardLarge(
+                account = mockAccount,
+                balance = BigDecimal("1234.56"),
+                balanceInBase = BigDecimal("1234.56"),
+                baseCurrency = "USD",
+                isDarkTheme = false,
+                isAmoled = false,
+                onClick = {},
+                incomeInAccountCurrency = BigDecimal("500.00"),
+                expenseInAccountCurrency = BigDecimal("100.00")
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonAccountCardsDarkPreview() {
+    val mockAccount = Account(
+        id = "1",
+        name = "Main Savings",
+        currencyCode = "USD",
+        structureType = AccountStructureType.SAVINGS,
+        colorHex = "#4CAF50",
+        icon = "Savings"
+    )
+
+    OssWalletTheme(theme = "Dark") {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                AeonAccountCardSmall(
+                    account = mockAccount,
+                    balance = BigDecimal("1234.56"),
+                    balanceInBase = BigDecimal("1234.56"),
+                    baseCurrency = "USD",
+                    isDarkTheme = true,
+                    isAmoled = false,
+                    onClick = {}
+                )
+
+                AeonAccountCardMedium(
+                    account = mockAccount,
+                    balance = BigDecimal("1234.56"),
+                    balanceInBase = BigDecimal("1234.56"),
+                    baseCurrency = "USD",
+                    isDarkTheme = true,
+                    isAmoled = false,
+                    onClick = {}
+                )
+
+                AeonAccountCardLarge(
+                    account = mockAccount,
+                    balance = BigDecimal("1234.56"),
+                    balanceInBase = BigDecimal("1234.56"),
+                    baseCurrency = "USD",
+                    isDarkTheme = true,
+                    isAmoled = false,
+                    onClick = {},
+                    incomeInAccountCurrency = BigDecimal("500.00"),
+                    expenseInAccountCurrency = BigDecimal("100.00")
+                )
             }
         }
     }

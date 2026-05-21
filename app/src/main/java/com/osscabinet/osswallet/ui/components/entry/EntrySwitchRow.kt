@@ -12,6 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Repeat
 
 /**
  * Standardized row with an icon, label, and switch for entry screens.
@@ -67,5 +71,29 @@ fun EntrySwitchRow(
                 checkedTrackColor = AppColors.switchTrackOn
             )
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntrySwitchRowPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                EntrySwitchRow(
+                    label = "Repeat Monthly",
+                    checked = true,
+                    onCheckedChange = {},
+                    icon = Icons.Rounded.Repeat,
+                    subtitle = "Automatically create this transaction every month"
+                )
+                EntrySwitchRow(
+                    label = "Notify me",
+                    checked = false,
+                    onCheckedChange = {},
+                    icon = Icons.Rounded.Repeat
+                )
+            }
+        }
     }
 }

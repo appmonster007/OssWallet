@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import androidx.compose.ui.viewinterop.AndroidView
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.DelayedMapListener
@@ -288,6 +290,19 @@ private fun MapPlaceholder(modifier: Modifier) {
             Icons.Rounded.Map,
             contentDescription = null,
             tint = AppColors.contentSecondary.copy(alpha = 0.5f)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonOSMMapPreview() {
+    OssWalletTheme {
+        AeonOSMMap(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            onLocationSelected = {}
         )
     }
 }

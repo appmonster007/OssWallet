@@ -52,6 +52,8 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.PI
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun AeonHeroHeader(
@@ -1207,6 +1209,50 @@ fun VisualIdentitySection(
 
 
 
+@Preview(showBackground = true)
+@Composable
+fun AeonFormHeaderPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonFormHeader(
+                title = "New Account",
+                onSaveClick = {},
+                saveButtonEnabled = true,
+                accentColorHex = "#004D5F"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HorizontalColorSliderPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            HorizontalColorSlider(
+                value = 0.5f,
+                onValueChange = {},
+                range = 0f..1f,
+                brush = Brush.horizontalGradient(listOf(Color.Black, Color.White)),
+                label = "LIGHT"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonColorSelectionPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonColorSelection(
+                accentColorHex = "#4CAF50",
+                onColorSelected = {}
+            )
+        }
+    }
+}
+
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun AdvancedColorPickerSlidersPreview() {
@@ -1222,7 +1268,7 @@ fun AdvancedColorPickerSlidersPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Preview(showBackground = true)
 @Composable
 fun AdvancedColorPickerWheelPreview() {
     OssWalletTheme {
@@ -1232,6 +1278,55 @@ fun AdvancedColorPickerWheelPreview() {
                 onColorSelected = {},
                 modifier = Modifier.padding(24.dp),
                 initialPage = 1
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonHeroHeaderPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonHeroHeader(
+                title = "Savings Account",
+                subtitle = "Active Portfolio",
+                iconName = "AccountBalance",
+                accentColorHex = "#004D5F"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonFormComponentsExtraPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("AeonTextField", style = AppTextStyles.listSectionHeader)
+            AeonTextField(
+                value = "My Savings",
+                onValueChange = {},
+                placeholder = "Enter name..."
+            )
+
+            Text("AeonSlider", style = AppTextStyles.listSectionHeader)
+            AeonSlider(
+                value = 0.5f,
+                onValueChange = {},
+                range = 0f..1f,
+                brush = Brush.horizontalGradient(listOf(Color.Red, Color.Blue))
+            )
+
+            Text("VisualIdentitySection", style = AppTextStyles.listSectionHeader)
+            VisualIdentitySection(
+                selectedIconName = "Savings",
+                onIconSelected = {},
+                accentColorHex = "#4CAF50",
+                onColorSelected = {}
             )
         }
     }

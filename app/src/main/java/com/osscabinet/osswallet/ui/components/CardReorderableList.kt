@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -358,5 +359,36 @@ fun <T> CardReorderableList(
                 }
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CardReorderableListPreview() {
+    val items = remember { mutableStateListOf("Card 1", "Card 2", "Card 3") }
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        CardReorderableList(
+            items = items,
+            key = { it },
+            onReorder = { 
+                items.clear()
+                items.addAll(it)
+            },
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            itemContent = { item, isDragging, dragModifier ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth().then(dragModifier),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                ) {
+                    Text(
+                        text = item,
+                        modifier = Modifier.padding(24.dp),
+                        style = com.osscabinet.ossWallet.ui.theme.AppTextStyles.cardTitle
+                    )
+                }
+            }
+        )
     }
 }

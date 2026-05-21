@@ -114,6 +114,18 @@ fun CalculatorDialog(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CalculatorDialogPreview() {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        CalculatorDialog(
+            initialValue = "100 + 50",
+            onDismiss = {},
+            onConfirm = {}
+        )
+    }
+}
+
 // Simple expression evaluator
 fun eval(str: String): Double {
     return object : Any() {

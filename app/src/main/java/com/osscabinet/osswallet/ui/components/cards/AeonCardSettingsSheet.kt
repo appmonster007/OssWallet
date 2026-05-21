@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
@@ -68,5 +70,19 @@ fun AeonCardSettingsSheet(
                 baseFilter = baseFilter
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonCardSettingsSheetPreview() {
+    OssWalletTheme {
+        AeonCardSettingsSheet(
+            title = "Card Filter Settings",
+            filter = TransactionFilter(),
+            onFilterChange = {},
+            onDismiss = {},
+            filterContext = FilterSelectionContext()
+        )
     }
 }

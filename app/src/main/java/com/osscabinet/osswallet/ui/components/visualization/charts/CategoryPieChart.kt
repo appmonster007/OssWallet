@@ -31,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -193,6 +196,24 @@ fun CategoryBreakdownPieChart(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CategoryBreakdownPieChartPreview() {
+    val mockData = listOf(
+        CategoryPieChartData("Food", 1L, BigDecimal("500"), android.graphics.Color.RED, 0.5f),
+        CategoryPieChartData("Rent", 2L, BigDecimal("300"), android.graphics.Color.BLUE, 0.3f),
+        CategoryPieChartData("Others", 3L, BigDecimal("200"), android.graphics.Color.GREEN, 0.2f)
+    )
+    OssWalletTheme {
+        androidx.compose.material3.Surface {
+            CategoryBreakdownPieChart(
+                data = mockData,
+                modifier = Modifier.size(300.dp).padding(16.dp)
+            )
         }
     }
 }

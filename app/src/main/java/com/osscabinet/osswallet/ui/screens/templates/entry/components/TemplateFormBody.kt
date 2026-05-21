@@ -15,6 +15,10 @@ import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Main content layout for template entry screen.
@@ -107,6 +111,24 @@ fun TemplateFormBody(
                         locationLabel = "Template Location"
                     )
                 }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TemplateFormBodyPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            TemplateFormBody(
+                state = TemplateEntryState(
+                    name = "Grocery Template",
+                    amount = "50.00",
+                    currency = "USD"
+                ),
+                onSearch = { flowOf(emptyList()) },
+                onEvent = {}
             )
         }
     }

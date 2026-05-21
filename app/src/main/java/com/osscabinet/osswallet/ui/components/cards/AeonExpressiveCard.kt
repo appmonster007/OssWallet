@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Tune
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -33,6 +35,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -296,6 +299,30 @@ fun AeonCardFilterButton(
                 tint = if (isActive) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.6f),
                 modifier = Modifier.size(16.dp)
             )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonExpressiveCardPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonExpressiveCard(
+                title = "Net Worth",
+                subtitle = "Monthly · January 2024",
+                icon = Icons.Rounded.AccountBalance,
+                filter = TransactionFilter(),
+                onFilterChange = {},
+                displaySettings = {}
+            ) {
+                Text(
+                    text = "$12,450.00",
+                    style = AppTextStyles.heroAmount,
+                    color = AppColors.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }

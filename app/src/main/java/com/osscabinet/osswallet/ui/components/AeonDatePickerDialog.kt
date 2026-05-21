@@ -9,7 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.time.Instant
 import java.time.ZoneId
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,5 +82,33 @@ fun AeonDatePickerDialog(
         shape = RoundedCornerShape(32.dp)
     ) {
         DatePicker(state = state)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonDateFieldPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonDateField(
+                label = "Due Date",
+                dateMillis = System.currentTimeMillis(),
+                onDateSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonDatePickerDialogPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AeonDatePickerDialog(
+                selectedDateMillis = System.currentTimeMillis(),
+                onDateSelected = {},
+                onDismiss = {}
+            )
+        }
     }
 }

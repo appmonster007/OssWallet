@@ -10,7 +10,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
@@ -78,5 +81,20 @@ fun AeonSelectionScreen(
         contentWindowInsets = WindowInsets.systemBars
     ) { padding ->
         content(padding)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonSelectionScreenPreview() {
+    OssWalletTheme {
+        AeonSelectionScreen(
+            title = "Select Categories",
+            onBack = {}
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding).padding(16.dp)) {
+                Text("Content goes here")
+            }
+        }
     }
 }

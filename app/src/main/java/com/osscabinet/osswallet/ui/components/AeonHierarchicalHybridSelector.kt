@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * A unified hierarchical selector that supports single-select, multi-select, parent-selection, and management modes.
@@ -396,3 +398,89 @@ private fun <T, ID> HybridSelectItem(
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AeonHierarchicalHybridSelectorSinglePreview() {
+    val items = listOf(
+        PreviewItem(1, "Travel", null, Icons.Rounded.Flight),
+        PreviewItem(2, "Flights", 1, Icons.Rounded.AirplanemodeActive),
+        PreviewItem(3, "Hotel", 1, Icons.Rounded.Hotel),
+        PreviewItem(4, "Food", null, Icons.Rounded.Restaurant),
+        PreviewItem(5, "Groceries", 4, Icons.Rounded.ShoppingBasket),
+        PreviewItem(6, "Dining Out", 4, Icons.Rounded.Dining),
+    )
+    OssWalletTheme {
+        Surface(color = AppColors.background, modifier = Modifier.fillMaxSize()) {
+            AeonHierarchicalHybridSelector(
+                items = items,
+                mode = AeonSelectMode.SINGLE,
+                selectedIds = setOf(2L),
+                onSelectionChange = {},
+                idMapper = { it.id },
+                labelMapper = { it.name },
+                parentIdMapper = { it.parentId },
+                iconMapper = { it.icon },
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonHierarchicalHybridSelectorMultiPreview() {
+    val items = listOf(
+        PreviewItem(1, "Travel", null, Icons.Rounded.Flight),
+        PreviewItem(2, "Flights", 1, Icons.Rounded.AirplanemodeActive),
+        PreviewItem(3, "Hotel", 1, Icons.Rounded.Hotel),
+        PreviewItem(4, "Food", null, Icons.Rounded.Restaurant),
+        PreviewItem(5, "Groceries", 4, Icons.Rounded.ShoppingBasket),
+        PreviewItem(6, "Dining Out", 4, Icons.Rounded.Dining),
+    )
+    OssWalletTheme {
+        Surface(color = AppColors.background, modifier = Modifier.fillMaxSize()) {
+            AeonHierarchicalHybridSelector(
+                items = items,
+                mode = AeonSelectMode.MULTI,
+                selectedIds = setOf(2L, 5L),
+                onSelectionChange = {},
+                idMapper = { it.id },
+                labelMapper = { it.name },
+                parentIdMapper = { it.parentId },
+                iconMapper = { it.icon },
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonHierarchicalHybridSelectorManagementPreview() {
+    val items = listOf(
+        PreviewItem(1, "Travel", null, Icons.Rounded.Flight),
+        PreviewItem(2, "Flights", 1, Icons.Rounded.AirplanemodeActive),
+        PreviewItem(3, "Hotel", 1, Icons.Rounded.Hotel),
+        PreviewItem(4, "Food", null, Icons.Rounded.Restaurant),
+        PreviewItem(5, "Groceries", 4, Icons.Rounded.ShoppingBasket),
+        PreviewItem(6, "Dining Out", 4, Icons.Rounded.Dining),
+    )
+    OssWalletTheme {
+        Surface(color = AppColors.background, modifier = Modifier.fillMaxSize()) {
+            AeonHierarchicalHybridSelector(
+                items = items,
+                mode = AeonSelectMode.MANAGEMENT,
+                selectedIds = emptySet(),
+                onSelectionChange = {},
+                idMapper = { it.id },
+                labelMapper = { it.name },
+                parentIdMapper = { it.parentId },
+                iconMapper = { it.icon },
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+private data class PreviewItem(val id: Long, val name: String, val parentId: Long?, val icon: ImageVector)

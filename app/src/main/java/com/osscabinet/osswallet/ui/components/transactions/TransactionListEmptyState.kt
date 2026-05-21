@@ -2,7 +2,9 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,5 +26,15 @@ fun TransactionListEmptyState(
             style = AppTextStyles.listItemTitle,
             color = AppColors.border
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionListEmptyStatePreview() {
+    OssWalletTheme {
+        Surface {
+            TransactionListEmptyState()
+        }
     }
 }

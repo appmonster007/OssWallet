@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Full-screen selection for Payment Methods.
@@ -32,3 +34,16 @@ fun AeonPaymentMethodSelection(
         mode = mode
     )
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AeonPaymentMethodSelectionPreview() {
+    OssWalletTheme {
+        AeonPaymentMethodSelection(
+            selectedMethods = setOf(PaymentMethod.CASH),
+            onSelectionChange = {},
+            onDismiss = {}
+        )
+    }
+}
+

@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -363,5 +364,34 @@ fun AeonTagCreateDialog(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonTagSelectionDialogPreview() {
+    OssWalletTheme {
+        AeonTagSelectionDialog(
+            tags = listOf(
+                Tag(name = "Groceries", colorHex = android.graphics.Color.GREEN),
+                Tag(name = "Urgent", colorHex = android.graphics.Color.RED)
+            ),
+            selectedTags = setOf("Groceries"),
+            onTagsSelected = {},
+            onAddTag = { _, _ -> },
+            onDismiss = {}
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonTagCreateDialogPreview() {
+    OssWalletTheme {
+        AeonTagCreateDialog(
+            initialName = "New Tag",
+            onDismiss = {},
+            onConfirm = { _, _ -> }
+        )
     }
 }

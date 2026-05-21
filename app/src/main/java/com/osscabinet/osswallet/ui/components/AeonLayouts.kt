@@ -22,7 +22,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import androidx.compose.ui.input.pointer.pointerInput
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -233,3 +235,45 @@ fun AeonShimmer(
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AeonSectionHeaderPreview() {
+    OssWalletTheme {
+        AeonSectionHeader(
+            title = "Section Title",
+            modifier = Modifier.padding(16.dp),
+            trailing = {
+                Text("See All", style = AppTextStyles.metaLabel, color = AppColors.primary)
+            }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonShimmerPreview() {
+    OssWalletTheme {
+        AeonShimmer(innerPadding = PaddingValues(0.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DetailDrawerPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            DetailDrawer(
+                isOpen = true,
+                onClose = { },
+                onSwipeOpen = { }
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Content in drawer")
+                }
+            }
+        }
+    }
+}
+
+

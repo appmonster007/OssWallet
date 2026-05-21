@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -24,6 +25,7 @@ import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Loan Entry Form Body with Optimized Information Hierarchy.
@@ -351,6 +353,28 @@ fun LoanFormBody(
                 onDismiss = { onEvent(LoanEntryEvent.ShowSharedFilterDialog(show = false)) },
                 onConfirmUpdateShared = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
                 onConfirmCreateNew = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoanFormBodyPreview() {
+    OssWalletTheme {
+        Surface {
+            LoanFormBody(
+                state = LoanEntryState(
+                    name = "Business Expansion Loan",
+                    principalAmount = "50000",
+                    currency = "USD",
+                    loanType = LoanType.LENT,
+                    counterparty = "Tech Ventures Inc.",
+                    interestRate = "4.25",
+                    note = "Funding for new equipment."
+                ),
+                onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
+                onEvent = {}
             )
         }
     }

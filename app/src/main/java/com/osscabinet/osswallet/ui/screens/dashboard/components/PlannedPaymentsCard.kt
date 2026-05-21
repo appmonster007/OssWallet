@@ -340,6 +340,56 @@ private fun PlannedPaymentRow(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun PlannedPaymentsCardPreview() {
+    val mockSchedule = com.osscabinet.ossWallet.domain.model.PaymentSchedule(
+        recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(
+            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY,
+            interval = 1
+        ),
+        startDate = System.currentTimeMillis(),
+        nextDueDate = System.currentTimeMillis() + 86400000L
+    )
+
+    val overduePayment = com.osscabinet.ossWallet.domain.model.PlannedPayment(
+        id = 1L,
+        name = "Internet Bill",
+        categoryId = 1,
+        amount = BigDecimal("50.00"),
+        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        currency = "USD",
+        schedule = mockSchedule
+    )
+
+    val upcomingPayment = com.osscabinet.ossWallet.domain.model.PlannedPayment(
+        id = 2L,
+        name = "Netflix",
+        categoryId = 2,
+        amount = BigDecimal("15.99"),
+        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        currency = "USD",
+        schedule = mockSchedule
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            PlannedPaymentsCard(
+                upcoming = listOf(
+                    com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem(
+                        plannedPayment = upcomingPayment,
+                        scheduledDate = System.currentTimeMillis() + 86400000L,
+                        isOverdue = false
+                    )
+                ),
+                overdue = listOf(overduePayment),
+                config = PlannedPaymentsCardConfig(cardId = "preview"),
+                callbacks = CardCallbacks.PlannedPayments(onUpdate = {}, onDelete = {}, onItemClick = {})
+            )
+        }
+    }
+}
+
 private fun formatDate(epochMilli: Long): String {
     val date = Instant.ofEpochMilli(epochMilli).atOffset(ZoneOffset.UTC).toLocalDate()
     val today = LocalDate.now(ZoneOffset.UTC)

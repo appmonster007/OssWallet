@@ -12,11 +12,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun AeonAccountSelection(
@@ -78,4 +81,34 @@ fun AeonAccountSelection(
             }
         }
     )
+}
+
+@ThemePreviews
+@Composable
+fun AeonAccountSelectionPreview() {
+    OssWalletTheme {
+        AeonAccountSelection(
+            accounts = listOf(
+                Account(
+                    id = "1",
+                    name = "Savings",
+                    colorHex = "#4CAF50",
+                    currencyCode = "USD",
+                    structureType = AccountStructureType.SAVINGS,
+                    icon = "AccountBalance"
+                ),
+                Account(
+                    id = "2",
+                    name = "Checking",
+                    colorHex = "#2196F3",
+                    currencyCode = "USD",
+                    structureType = AccountStructureType.CHECKING,
+                    icon = "AccountBalance"
+                )
+            ),
+            selectedAccountIds = setOf("1"),
+            onSelectionChange = {},
+            onDismiss = {}
+        )
+    }
 }

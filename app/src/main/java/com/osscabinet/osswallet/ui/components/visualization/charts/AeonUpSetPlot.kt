@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
@@ -26,6 +27,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -372,4 +374,25 @@ fun AeonUpSetPlot(
     }
 }
 
-
+@Preview(showBackground = true)
+@Composable
+fun AeonUpSetPlotPreview() {
+    val sets = listOf(
+        AeonUpSetSet("Food", BigDecimal("500")),
+        AeonUpSetSet("Business", BigDecimal("300")),
+        AeonUpSetSet("Travel", BigDecimal("200"))
+    )
+    val intersections = listOf(
+        AeonUpSetIntersection(setOf(0, 1), BigDecimal("100"), count = 2),
+        AeonUpSetIntersection(setOf(0), BigDecimal("400"), count = 8),
+        AeonUpSetIntersection(setOf(1), BigDecimal("200"), count = 3)
+    )
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonUpSetPlot(
+                data = AeonUpSetData(sets, intersections),
+                currency = "USD"
+            )
+        }
+    }
+}

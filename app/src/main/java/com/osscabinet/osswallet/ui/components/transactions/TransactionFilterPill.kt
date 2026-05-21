@@ -34,7 +34,9 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -286,5 +288,24 @@ private fun FilterDialogContent(
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
             filterRules = CardFilterRules.DEFAULT.copy(allowTimelineSelection = false)
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionFilterPillPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            TransactionFilterPill(
+                filter = TransactionFilter(),
+                accounts = emptyList(),
+                categories = emptyList(),
+                savedFilters = emptyList(),
+                onSearchTransactions = { flowOf(emptyList()) },
+                onFilterEvent = {},
+                onSaveFilterClick = {},
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }

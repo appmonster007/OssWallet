@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * A generic full-screen selection sheet that provides a unified search and selection experience.
@@ -166,5 +168,22 @@ fun <T, ID> AeonSelectionSheet(
                 footerContent?.invoke(this)
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonSelectionSheetPreview() {
+    OssWalletTheme {
+        AeonSelectionSheet(
+            title = "Select Item",
+            onDismiss = {},
+            items = listOf("Apple", "Banana", "Cherry"),
+            selectedIds = setOf("Banana"),
+            onSelectionChange = {},
+            idMapper = { it },
+            labelMapper = { it },
+            mode = AeonSelectMode.MULTI
+        )
     }
 }

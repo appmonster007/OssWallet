@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,8 +18,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * A standardized search field for selection screens.
@@ -97,5 +101,18 @@ fun AeonSearchField(
                 unfocusedIndicatorColor = AppColors.transparent,
             )
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonSearchFieldPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonSearchField(
+                query = "Groceries",
+                onQueryChange = {}
+            )
+        }
     }
 }

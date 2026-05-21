@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
@@ -14,10 +16,12 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.
@@ -107,5 +111,22 @@ fun AeonEntryScaffold(
         }
     ) { innerPadding ->
         content(innerPadding)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonEntryScaffoldPreview() {
+    OssWalletTheme {
+        AeonEntryScaffold(
+            title = "New Transaction",
+            onBackClick = {},
+            onSaveClick = {},
+            canSave = true
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                Text("Content goes here")
+            }
+        }
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -36,6 +37,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -288,6 +290,43 @@ private fun NetWorthSettingsSheet(
                     onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NetWorthCardPreview() {
+    val currentMetrics = NetWorthMetrics(
+        netWorth = BigDecimal("15250.75"),
+        cashFlow = CashFlowResult(
+            totalIncomeInBase = BigDecimal("4500.00"),
+            totalExpensesInBase = BigDecimal("2350.50"),
+            totalTransfersInBase = BigDecimal.ZERO,
+            netInBase = BigDecimal("2149.50"),
+            breakdown = emptyList(),
+            filteredTransactions = emptyList()
+        )
+    )
+    val previousMetrics = NetWorthMetrics(
+        netWorth = BigDecimal("14100.25"),
+        cashFlow = CashFlowResult(
+            totalIncomeInBase = BigDecimal("4200.00"),
+            totalExpensesInBase = BigDecimal("2100.00"),
+            totalTransfersInBase = BigDecimal.ZERO,
+            netInBase = BigDecimal("2100.00"),
+            breakdown = emptyList(),
+            filteredTransactions = emptyList()
+        )
+    )
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            NetWorthCard(
+                currentMetrics = currentMetrics,
+                previousMetrics = previousMetrics,
+                baseCurrency = "USD",
+                config = NetWorthCardConfig(cardId = "net_worth", showComparison = true)
+            )
         }
     }
 }

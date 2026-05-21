@@ -22,10 +22,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Label
 
 /**
  * Compact action chip for entry screens.
@@ -104,6 +108,30 @@ fun EntryActionChip(
                 color = if (isSelected) selectedColor else AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun EntryActionChipPreview() {
+    OssWalletTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            EntryActionChip(
+                icon = Icons.Default.Label,
+                label = "Unselected",
+                onClick = {},
+                isSelected = false
+            )
+            EntryActionChip(
+                icon = Icons.Default.Add,
+                label = "Selected",
+                onClick = {},
+                isSelected = true
             )
         }
     }

@@ -2,35 +2,45 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionGroup
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionUiModel
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionGroup
-import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -49,7 +59,6 @@ fun RecentActivitiesScreen(
     showClosingBalance: Boolean = true,
     showCurrencyBreakdown: Boolean = true
 ) {
-
     Column(
         modifier = modifier.fillMaxSize()
     ) {
@@ -66,83 +75,93 @@ fun RecentActivitiesScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        Icons.Rounded.History,
+                        imageVector = Icons.Rounded.History,
                         contentDescription = null,
                         tint = AppColors.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        headerTitle,
+                        text = headerTitle,
                         style = AppTextStyles.screenSubTitle.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = AppColors.primary
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
-
-                TextButton(onClick = { onRecordsClick(filter) }) {
+                TextButton(
+                    onClick = { onRecordsClick(filter) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
                     Text(
-                        "VIEW ALL",
+                        text = "VIEW ALL",
                         style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = AppColors.primary
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            fontSize = 12.sp
+                        )
                     )
                 }
             }
         }
 
-        if (listState.isEmpty) {
-            TransactionListEmptyState(
-                modifier = Modifier.weight(1f)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = contentPadding
-            ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = contentPadding,
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            if (listState.isEmpty) {
+                item {
+                    TransactionListEmptyState(
+                        modifier = Modifier.padding(vertical = 32.dp)
+                    )
+                }
+            } else {
                 listState.groups.forEach { group ->
                     stickyHeader {
-                        TransactionHeader(
-                            title = group.headerData.title,
-                            subtitle = group.headerData.subtitle,
-                            incomeByCurrency = group.headerData.incomeByCurrency,
-                            expenseByCurrency = group.headerData.expenseByCurrency,
-                            openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
-                            closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
-                            allCurrencies = group.headerData.allCurrencies,
-                            incomeBase = group.headerData.incomeBase,
-                            expenseBase = group.headerData.expenseBase,
-                            netBase = group.headerData.netBase,
-                            totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
-                            totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
-                            baseCurrency = baseCurrency,
-                            showOpeningBalance = showOpeningBalance,
-                            showClosingBalance = showClosingBalance,
-                            showCurrencyBreakdown = showCurrencyBreakdown
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(AppColors.screenBackground)
+                        ) {
+                            TransactionHeader(
+                                title = group.headerData.title,
+                                subtitle = group.headerData.subtitle,
+                                incomeByCurrency = group.headerData.incomeByCurrency,
+                                expenseByCurrency = group.headerData.expenseByCurrency,
+                                openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
+                                closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
+                                allCurrencies = group.headerData.allCurrencies,
+                                incomeBase = group.headerData.incomeBase,
+                                expenseBase = group.headerData.expenseBase,
+                                netBase = group.headerData.netBase,
+                                totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
+                                totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
+                                baseCurrency = baseCurrency,
+                                showOpeningBalance = showOpeningBalance,
+                                showClosingBalance = showClosingBalance,
+                                showCurrencyBreakdown = showCurrencyBreakdown
+                            )
+                        }
                     }
 
                     items(group.transactions, key = { it.item.transaction.id }) { enriched ->
-                        val tx = enriched.item.transaction
-                        val icon = getIconByName(enriched.categoryIcon)
-                        val iconBg = Color(enriched.categoryColor)
+                        val transaction = enriched.item.transaction
 
                         SwipeableTransactionItem(
-                            transaction = tx,
-                            isRevealed = revealedCardIds.contains(tx.id),
+                            transaction = transaction,
+                            isRevealed = revealedCardIds.contains(transaction.id),
                             onEvent = onTransactionEvent
                         ) {
                             AeonTransactionItem(
                                 category = enriched.categoryName,
                                 account = enriched.accountName,
                                 amount = formatCurrencyRight(
-                                    tx.amount,
-                                    tx.currency
+                                    transaction.amount,
+                                    transaction.currency
                                 ),
-                                convertedAmount = if ((tx.currency != baseCurrency) && (enriched.amountInBase != null)) {
+                                convertedAmount = if ((transaction.currency != baseCurrency) && (enriched.amountInBase != null)) {
                                     formatCurrencyRight(enriched.amountInBase, baseCurrency)
                                 } else null,
                                 balanceBefore = formatCurrencyRight(
@@ -153,14 +172,18 @@ fun RecentActivitiesScreen(
                                     enriched.item.balanceAfter,
                                     enriched.accountCurrency
                                 ),
-                                type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
-                                note = tx.note,
-                                tags = tx.tags,
-                                icon = icon,
-                                iconBg = iconBg,
-                                status = tx.status
-                            ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
+                                type = when (transaction.transactionType) {
+                                    TransactionType.TRANSFER -> CashFlowType.TRANSFER
+                                    TransactionType.INCOME -> CashFlowType.INCOME
+                                    else -> CashFlowType.EXPENSE
+                                },
+                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(transaction.timestamp),
+                                note = transaction.note,
+                                tags = transaction.tags,
+                                icon = getIconByName(enriched.categoryIcon),
+                                iconBg = Color(enriched.categoryColor),
+                                status = transaction.status
+                            ) { onTransactionEvent(TransactionItemEvent.Click(transaction.id)) }
                         }
                     }
                 }
@@ -174,8 +197,8 @@ fun RecentActivitiesScreen(
 fun RecentActivitiesScreenPreview() {
     val mockTransaction = Transaction(
         id = 1L,
-        name = "Starbucks",
-        amount = BigDecimal("5.50"),
+        name = "Starbucks Coffee",
+        amount = BigDecimal("-5.50"),
         timestamp = System.currentTimeMillis(),
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
@@ -184,11 +207,11 @@ fun RecentActivitiesScreenPreview() {
     )
     val mockUiModel = TransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
-        accountName = "Cash",
+        accountName = "Primary Account",
         accountCurrency = "USD",
-        categoryName = "Food",
+        categoryName = "Food & Drinks",
         categoryIcon = "Restaurant",
-        categoryColor = 0xFF00FF00.toInt()
+        categoryColor = 0xFFFF9800.toInt()
     )
     val mockGroup = TransactionGroup(
         key = "Today",

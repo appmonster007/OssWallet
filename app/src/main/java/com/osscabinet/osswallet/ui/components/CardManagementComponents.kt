@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -175,12 +175,17 @@ fun GenericAddCardDialog(
     onDismiss: () -> Unit,
     cardOptions: List<CardTypeOptionData>
 ) {
-    val groupedOptions = cardOptions
-        .sortedWith(compareBy({ it.category.order }, { it.title }))
-        .groupBy { it.category }
+    val groupedOptions = remember(cardOptions) {
+        cardOptions
+            .sortedWith(compareBy({ it.category.order }, { it.title }))
+            .groupBy { it.category }
+    }
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = AppColors.drawerSurface,
         dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.border) },
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
@@ -188,7 +193,7 @@ fun GenericAddCardDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.8f)
+//                .fillMaxHeight(0.8f)
                 .padding(bottom = 16.dp)
         ) {
             Text(
@@ -204,7 +209,9 @@ fun GenericAddCardDialog(
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 groupedOptions.forEach { (category, options) ->

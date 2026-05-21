@@ -89,7 +89,6 @@ dependencies {
     implementation(libs.androidx.camera.core)
     implementation(libs.logging.interceptor)
     implementation(libs.okhttp)
-    implementation(libs.moshi.kotlin)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.material)
     implementation(libs.androidx.biometric)
@@ -125,6 +124,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.glance.appwidget.preview)
     debugImplementation(libs.androidx.glance.preview)
-    "ksp"(libs.androidx.room.compiler)
-    "ksp"(libs.moshi.kotlin.codegen)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.moshi.kotlin.codegen)
 }

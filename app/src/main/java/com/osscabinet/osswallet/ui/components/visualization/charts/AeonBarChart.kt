@@ -24,6 +24,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
@@ -44,7 +45,8 @@ fun AeonBarChart(
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     animate: Boolean = true,
     showGrid: Boolean = true,
-    showXAxisLabels: Boolean = true
+    showXAxisLabels: Boolean = true,
+    cornerRadius: Dp = 4.dp
 ) {
     if (groups.isEmpty() || groups.all { it.bars.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -201,24 +203,27 @@ fun AeonBarChart(
                     val isPositive = bar.value >= BigDecimal.ZERO
                     
                     val startVal = if (isPositive) currentPosAccumulator else currentNegAccumulator
-                    val startY = valueToY(startVal)
+                    val endVal = startVal + bar.value
                     
-                    // Apply animation
-                    val animatedEndVal = startVal + (bar.value.multiply(BigDecimal.valueOf(animationProgress.value.toDouble())))
-                    val animatedEndY = valueToY(animatedEndVal)
+                    // Correct stacking animation: both start and end points of the segment are scaled from baseline
+                    val animatedStart = startVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
+                    val animatedEnd = endVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
                     
-                    val top = if (isPositive) animatedEndY else startY
-                    val bottom = if (isPositive) startY else animatedEndY
+                    val startY = valueToY(animatedStart)
+                    val endY = valueToY(animatedEnd)
+                    
+                    val top = if (isPositive) endY else startY
+                    val bottom = if (isPositive) startY else endY
                     
                     drawRoundRect(
                         color = bar.color.copy(alpha = 0.85f),
                         topLeft = Offset(centerX - barWidth / 2, top),
                         size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                        cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
                     )
                     
-                    if (isPositive) currentPosAccumulator += bar.value
-                    else currentNegAccumulator += bar.value
+                    if (isPositive) currentPosAccumulator = endVal
+                    else currentNegAccumulator = endVal
                 }
                 
                 // 4. X-Axis Labels
@@ -320,7 +325,8 @@ fun AeonBarChart(
     currency: String = "USD",
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     barColor: Color = ChartColorBlue,
-    animate: Boolean = true
+    animate: Boolean = true,
+    cornerRadius: Dp = 4.dp
 ) {
     val groups = remember(data, barColor) {
         data.map { (label, value) ->
@@ -332,7 +338,8 @@ fun AeonBarChart(
         modifier = modifier,
         currency = currency,
         precision = precision,
-        animate = animate
+        animate = animate,
+        cornerRadius = cornerRadius
     )
 }
 
@@ -356,28 +363,26 @@ fun AeonBarChartSimplePreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Stacked Bar Chart")
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Mixed Stacked Bar Chart")
 @Composable
-fun AeonBarChartStackedPreview() {
+fun AeonBarChartMixedPreview() {
     OssWalletTheme {
         Box(modifier = Modifier.fillMaxWidth().height(300.dp).padding(16.dp)) {
             AeonBarChart(
                 groups = listOf(
                     AeonBarChartGroup("Jan", listOf(
-                        AeonBarChartBar(BigDecimal("500"), "Product A", ChartColorBlue),
-                        AeonBarChartBar(BigDecimal("300"), "Product B", ChartColorGreen)
+                        AeonBarChartBar(BigDecimal("500"), "Income", ChartColorGreen),
+                        AeonBarChartBar(BigDecimal("-300"), "Rent", ChartColorRed),
+                        AeonBarChartBar(BigDecimal("-100"), "Food", ChartColorOrange)
                     )),
                     AeonBarChartGroup("Feb", listOf(
-                        AeonBarChartBar(BigDecimal("400"), "Product A", ChartColorBlue),
-                        AeonBarChartBar(BigDecimal("600"), "Product B", ChartColorGreen)
+                        AeonBarChartBar(BigDecimal("200"), "Bonus", ChartColorGreen),
+                        AeonBarChartBar(BigDecimal("-800"), "Emergency", ChartColorRed),
+                        AeonBarChartBar(BigDecimal("-100"), "Misc", ChartColorOrange)
                     )),
                     AeonBarChartGroup("Mar", listOf(
-                        AeonBarChartBar(BigDecimal("700"), "Product A", ChartColorBlue),
-                        AeonBarChartBar(BigDecimal("200"), "Product B", ChartColorGreen)
-                    )),
-                    AeonBarChartGroup("Apr", listOf(
-                        AeonBarChartBar(BigDecimal("-200"), "Loss", ChartColorRed),
-                        AeonBarChartBar(BigDecimal("400"), "Gain", ChartColorBlue)
+                        AeonBarChartBar(BigDecimal("-500"), "Expense", ChartColorRed),
+                        AeonBarChartBar(BigDecimal("-400"), "Debt", ChartColorOrange)
                     ))
                 )
             )

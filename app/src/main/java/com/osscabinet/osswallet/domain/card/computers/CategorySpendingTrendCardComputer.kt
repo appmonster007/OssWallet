@@ -81,12 +81,12 @@ class CategorySpendingTrendCardComputer :
                 tx.timestamp in bucketStart..bucketEnd
             }
 
-            // Group by categoryId, sum converted amounts
+            // Group by categoryId, sum converted amounts (properly signed)
             val amountsByCategory = mutableMapOf<Long, BigDecimal>()
             bucketTx.forEach { tx ->
                 val catId = tx.categoryId
                 val converted = CurrencyService.convertAmount(
-                    amount = tx.amount.abs(),
+                    amount = tx.amount, // Respect sign: expenses are negative, income is positive
                     fromCurrency = tx.currency,
                     toCurrency = input.baseCurrency,
                     exchangeRates = input.exchangeRates,
@@ -98,14 +98,16 @@ class CategorySpendingTrendCardComputer :
 
             val categoryAmounts = amountsByCategory.mapNotNull { (catId, amount) ->
                 val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
+                
                 CategoryAmount(
                     categoryId = catId,
                     categoryName = cat.name,
                     colorHex = cat.colorHex,
                     nature = cat.nature,
+                    // Keep signed amount: negative for expenses (stack down), positive for income (stack up)
                     amount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
                 )
-            }.sortedByDescending { it.amount }
+            }.sortedBy { it.amount } // Sort such that most negative (largest expenses) are prominent
 
             CategorySpendingBucket(
                 label = label,
@@ -114,17 +116,19 @@ class CategorySpendingTrendCardComputer :
             )
         }
 
-        // Build active categories (those with any spending in the period)
+        // Build active categories (those with any transaction in the period)
         val activeCategories = categoryTotalsMap.mapNotNull { (catId, total) ->
             val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
+            
             CategorySummary(
                 categoryId = catId,
                 name = cat.name,
                 colorHex = cat.colorHex,
                 nature = cat.nature,
+                // Keep signed total: negative shows as expense, positive as income
                 totalAmount = total.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
-        }.sortedByDescending { it.totalAmount }
+        }.sortedBy { it.totalAmount }
 
         return CardRenderData.CategorySpendingTrend(
             config = config,

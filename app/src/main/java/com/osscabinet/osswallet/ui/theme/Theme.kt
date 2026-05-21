@@ -90,10 +90,10 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val AmoledColorScheme = darkColorScheme(
-    primary = PrimaryDark,
-    onPrimary = OnPrimaryDark,
-    primaryContainer = PrimaryContainerDark,
-    onPrimaryContainer = OnPrimaryContainerDark,
+    primary = PrimaryAmoled,
+    onPrimary = OnPrimaryAmoled,
+    primaryContainer = PrimaryContainerAmoled,
+    onPrimaryContainer = OnPrimaryContainerAmoled,
     secondary = SecondaryDark,
     onSecondary = OnSecondaryDark,
     secondaryContainer = SecondaryContainerDark,
@@ -106,22 +106,22 @@ private val AmoledColorScheme = darkColorScheme(
     onError = OnErrorDark,
     errorContainer = ErrorContainerDark,
     onErrorContainer = OnErrorContainerDark,
-    background = Color.Black,
-    onBackground = OnBackgroundDark,
-    surface = Color.Black,
-    onSurface = OnSurfaceDark,
-    surfaceVariant = Color(0xFF1B2327), // Matching Dark SurfaceContainerLow
-    onSurfaceVariant = OnSurfaceVariantDark,
-    outline = OutlineDark,
-    outlineVariant = Color(0xFF1B2327),
+    background = BackgroundAmoled,
+    onBackground = OnBackgroundAmoled,
+    surface = SurfaceAmoled,
+    onSurface = OnSurfaceAmoled,
+    surfaceVariant = SurfaceVariantAmoled,
+    onSurfaceVariant = OnSurfaceVariantAmoled,
+    outline = OutlineAmoled,
+    outlineVariant = OutlineVariantAmoled,
     inverseSurface = InverseSurfaceDark,
     inverseOnSurface = InverseOnSurfaceDark,
     scrim = Color.Black,
-    surfaceContainerLowest = Color.Black,
-    surfaceContainerLow = Color(0xFF1B2327), // Defined Carbon Slate elevation
-    surfaceContainer = Color(0xFF242C31),
-    surfaceContainerHigh = Color(0xFF2E363B),
-    surfaceContainerHighest = Color(0xFF384046)
+    surfaceContainerLowest = SurfaceContainerLowestAmoled,
+    surfaceContainerLow = SurfaceContainerLowAmoled,
+    surfaceContainer = SurfaceContainerAmoled,
+    surfaceContainerHigh = SurfaceContainerHighAmoled,
+    surfaceContainerHighest = SurfaceContainerHighestAmoled
 )
 
 /**

@@ -71,10 +71,10 @@ class BackupRepositoryImpl @Inject constructor(
         writeCsvToZip(zos, "categories.csv", listOf("id", "name", "iconName", "colorHex", "isDefault", "parentId"), 
             categoryDao.getAllCategoriesSync().map { listOf(it.id, it.name, it.iconName, it.colorHex, it.isDefault, it.parentId) })
         
-        writeCsvToZip(zos, "transactions.csv", listOf("id", "name", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "sourcePlannedPaymentId", "profileId", "latitude", "longitude", "warrantyExpiration", "status"), 
+        writeCsvToZip(zos, "transactions.csv", listOf("id", "name", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "sourcePlannedPaymentId", "profileId", "latitude", "longitude", "warrantyExpiration", "status"),
             transactionDao.getAllTransactionsSync().map { listOf(it.id, it.name, it.amount, it.timestamp, it.currency, it.transactionType, it.accountId, it.categoryId, it.tags, it.paymentMethod.name, it.payee, it.note, it.sourcePlannedPaymentId, it.profileId, it.latitude, it.longitude, it.warrantyExpiration, it.status.name) })
         
-        writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"), 
+        writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"),
             transactionLinkDao.getAllLinksSync().map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
         
         writeCsvToZip(zos, "budgets.csv", listOf("id", "name", "currency", "limitAmount", "alertThreshold", "rollover", "isArchived", "profileId", "filterId"), 
@@ -263,8 +263,8 @@ class BackupRepositoryImpl @Inject constructor(
                 transactionType = TransactionType.fromValue(p["transactionType"]), 
                 accountId = p["accountId"],
                 categoryId = p["categoryId"]?.toLongOrNull() ?: 1002, 
-                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(), 
-                paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) } ?: PaymentMethod.CASH, 
+                tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(),
+                paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) } ?: PaymentMethod.CASH,
                 payee = p["payee"] ?: "", 
                 note = p["note"] ?: "", 
                 sourcePlannedPaymentId = p["sourcePlannedPaymentId"]?.toLongOrNull(), 

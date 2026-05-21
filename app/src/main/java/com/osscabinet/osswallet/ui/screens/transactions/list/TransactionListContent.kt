@@ -72,7 +72,7 @@ fun TransactionListContent(
                         showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
                         showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
                         baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                        revealedCardIds = revealedCardIds
+                        revealedCardIds = revealedCardIds,
                     )
                 }
             }

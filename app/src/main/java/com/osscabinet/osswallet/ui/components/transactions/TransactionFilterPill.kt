@@ -65,7 +65,8 @@ fun TransactionFilterPill(
     onSaveFilterClick: (TransactionFilter) -> Unit,
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
-    bottomPadding: Dp = 16.dp
+    bottomPadding: Dp = 16.dp,
+    initialMorph: Float = 0f
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -76,7 +77,7 @@ fun TransactionFilterPill(
     val totalBottomPadding = bottomPadding + navigationBarHeight
 
     // 0f = compact pill, 1f = floating filter card.
-    val morph = remember { Animatable(0f) }
+    val morph = remember { Animatable(initialMorph) }
     val f by remember { derivedStateOf { morph.value.coerceIn(0f, 1f) } }
 
     // Intercept back press when the card is open — dismiss the card, not the screen.
@@ -112,7 +113,7 @@ fun TransactionFilterPill(
         val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
         val contentColor = lerp(AppColors.onSelectionContainer, AppColors.primary, f)
         val inactiveColor = lerp(AppColors.onSelectionContainer.copy(alpha = 0.4f), AppColors.contentSecondary.copy(alpha = 0.3f), f)
-        val selectorBg = lerp(AppColors.primaryContainer, AppColors.cardSurface, f)
+        val selectorBg = lerp(AppColors.primaryContainer, AppColors.sheetSurface, f)
 
         fun snapByDelta(rawPixelDelta: Float) {
             // Upward drag (negative delta) opens; downward drag closes.
@@ -291,9 +292,9 @@ private fun FilterDialogContent(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Pill Collapsed")
 @Composable
-fun TransactionFilterPillPreview() {
+fun TransactionFilterPillCollapsedPreview() {
     OssWalletTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             TransactionFilterPill(
@@ -301,10 +302,31 @@ fun TransactionFilterPillPreview() {
                 accounts = emptyList(),
                 categories = emptyList(),
                 savedFilters = emptyList(),
-                onSearchTransactions = { flowOf(emptyList()) },
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 onFilterEvent = {},
                 onSaveFilterClick = {},
-                modifier = Modifier.align(Alignment.BottomCenter)
+                initialMorph = 0f,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Filter Expanded")
+@Composable
+fun TransactionFilterPillExpandedPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            TransactionFilterPill(
+                filter = TransactionFilter(),
+                accounts = emptyList(),
+                categories = emptyList(),
+                savedFilters = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
+                onFilterEvent = {},
+                onSaveFilterClick = {},
+                initialMorph = 1f,
+                modifier = Modifier.fillMaxSize()
             )
         }
     }

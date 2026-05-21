@@ -19,15 +19,15 @@ import androidx.compose.ui.unit.dp
 
 // --- LIGHT THEME (Pristine Architect) ---
 
-val PrimaryLight = Color(0xFF006874) 
+val PrimaryLight = Color(0xFF4853A0) 
 val OnPrimaryLight = Color(0xFFFFFFFF)
-val PrimaryContainerLight = Color(0xFF9EEFFD)
-val OnPrimaryContainerLight = Color(0xFF001F24)
+val PrimaryContainerLight = Color(0xFFE0E0FF)
+val OnPrimaryContainerLight = Color(0xFF00006E)
 
-val SecondaryLight = Color(0xFF4D616C) 
+val SecondaryLight = Color(0xFF5B5D72) 
 val OnSecondaryLight = Color(0xFFFFFFFF)
-val SecondaryContainerLight = Color(0xFFD0E6F2)
-val OnSecondaryContainerLight = Color(0xFF081E27)
+val SecondaryContainerLight = Color(0xFFE0E1F9)
+val OnSecondaryContainerLight = Color(0xFF181A2C)
 
 val TertiaryLight = Color(0xFF5D5B7D) 
 val OnTertiaryLight = Color(0xFFFFFFFF)
@@ -39,38 +39,38 @@ val OnErrorLight = Color(0xFFFFFFFF)
 val ErrorContainerLight = Color(0xFFFFDAD6)
 val OnErrorContainerLight = Color(0xFF410002)
 
-// Refined Light Neutrals - Maximizing the White vs Slate gap
-val BackgroundLight = Color(0xFFFFFFFF) 
-val OnBackgroundLight = Color(0xFF101416)
+// Refined Light Neutrals (Aligned with colors.md Layer 2 & 3)
+val BackgroundLight = Color(0xFFEDECF3) 
+val OnBackgroundLight = Color(0xFF15151F)
 val SurfaceLight = Color(0xFFFFFFFF)
-val OnSurfaceLight = Color(0x00101416)
+val OnSurfaceLight = Color(0xFF15151F)
 
-val SurfaceVariantLight = Color(0xFFCAD4D9) // Level 3: Darkest Slate for recessed units
-val OnSurfaceVariantLight = Color(0xFF3F484C)
-val OutlineLight = Color(0xFF6F797D)
-val OutlineVariantLight = Color(0xFFBFC8CC)
+val SurfaceVariantLight = Color(0xFFF1F0F6) // Layer 4: Inputs / Tertiary
+val OnSurfaceVariantLight = Color(0xFF5E5E72)
+val OutlineLight = Color(0x1A282850) // rgba(40,40,80,0.10)
+val OutlineVariantLight = Color(0x14282850) // rgba(40,40,80,0.08)
 
-val InverseSurfaceLight = Color(0xFF2C3133)
-val InverseOnSurfaceLight = Color(0xFFEFF1F2)
+val InverseSurfaceLight = Color(0xFF20212C)
+val InverseOnSurfaceLight = Color(0xFFECEDF3)
 
-// Surface Container Family (Level 1-2 separation)
-val SurfaceContainerLowestLight = Color(0xFFFFFFFF)
-val SurfaceContainerLowLight = Color(0x00000000)  // Level 1: Initial elevation
-val SurfaceContainerLight = Color(0xFFE2E9ED)     
-val SurfaceContainerHighLight = Color(0xFFD6DFE5) // Level 2: Secondary elevation
-val SurfaceContainerHighestLight = Color(0xFFCAD5DC)
+// Surface Container Family (M3 Expressive Mapping)
+val SurfaceContainerLowestLight = Color(0xFFEDECF3) // Layer 2
+val SurfaceContainerLowLight = Color(0xFFFFFFFF)    // Layer 3
+val SurfaceContainerLight = Color(0xFFFFFFFF)       // Layer 3
+val SurfaceContainerHighLight = Color(0xFFF1F0F6)    // Layer 4
+val SurfaceContainerHighestLight = Color(0xFFF1F0F6) // Layer 4
 
 // --- DARK THEME (Midnight Slate) ---
 
-val PrimaryDark = Color(0xFF84D2E0) 
-val OnPrimaryDark = Color(0xFF00363D)
-val PrimaryContainerDark = Color(0xFF004F58)
-val OnPrimaryContainerDark = Color(0xFF9EEFFD)
+val PrimaryDark = Color(0xFFC5CBEE) 
+val OnPrimaryDark = Color(0xFF1A1A24)
+val PrimaryContainerDark = Color(0xFF303F90)
+val OnPrimaryContainerDark = Color(0xFFE0E0FF)
 
-val SecondaryDark = Color(0xFFB4CAD6) 
-val OnSecondaryDark = Color(0xFF1F333C)
-val SecondaryContainerDark = Color(0xFF354A53)
-val OnSecondaryContainerDark = Color(0xFFD0E6F2)
+val SecondaryDark = Color(0xFFC4C5DD) 
+val OnSecondaryDark = Color(0xFF2D2F42)
+val SecondaryContainerDark = Color(0xFF434559)
+val OnSecondaryContainerDark = Color(0xFFE0E1F9)
 
 val TertiaryDark = Color(0xFFC6C2EA) 
 val OnTertiaryDark = Color(0xFF2F2D4D)
@@ -82,31 +82,68 @@ val OnErrorDark = Color(0xFF690005)
 val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-// Refined Dark Neutrals - Deep Midnight for card pop
-val BackgroundDark = Color(0xFF050708) 
-val OnBackgroundDark = Color(0xFFE2E3E5)
-val SurfaceDark = Color(0xFF050708)
-val OnSurfaceDark = Color(0xFFE2E3E5)
+// Refined Dark Neutrals (Aligned with colors.md Layer 2 & 3)
+val BackgroundDark = Color(0xFF11111B) 
+val OnBackgroundDark = Color(0xFFECEDF3)
+val SurfaceDark = Color(0xFF20212C)
+val OnSurfaceDark = Color(0xFFECEDF3)
 
-val SurfaceVariantDark = Color(0xFF121619) // Level 3: Recessed "cut-out" units
-val OnSurfaceVariantDark = Color(0xFFBFC8CC)
-val OutlineDark = Color(0xFF70797D)
-val OutlineVariantDark = Color(0xFF3F484C)
+val SurfaceVariantDark = Color(0xFF2F3140) // Layer 4: Inputs / Tertiary
+val OnSurfaceVariantDark = Color(0xFF9092A0)
+val OutlineDark = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
+val OutlineVariantDark = Color(0x14FFFFFF) // rgba(255,255,255,0.08)
 
-val InverseSurfaceDark = Color(0xFFDEE3E5)
-val InverseOnSurfaceDark = Color(0xFF050708)
+val InverseSurfaceDark = Color(0xFFFFFFFF)
+val InverseOnSurfaceDark = Color(0xFF11111B)
 
-// Surface Container Family (Carbon Elevation)
-val SurfaceContainerLowestDark = Color(0xFF020304)
-val SurfaceContainerLowDark = Color(0xFF1D2429)  // Level 1: Elevated card
-val SurfaceContainerDark = Color(0xFF262E34)
-val SurfaceContainerHighDark = Color(0xFF303940) // Level 2: Highlighted row
-val SurfaceContainerHighestDark = Color(0xFF3B464E)
+// Surface Container Family (M3 Expressive Mapping)
+val SurfaceContainerLowestDark = Color(0xFF11111B) // Layer 2
+val SurfaceContainerLowDark = Color(0xFF20212C)    // Layer 3
+val SurfaceContainerDark = Color(0xFF20212C)       // Layer 3
+val SurfaceContainerHighDark = Color(0xFF2F3140)    // Layer 4
+val SurfaceContainerHighestDark = Color(0xFF2F3140) // Layer 4
+
+// --- AMOLED THEME (Midnight Slate) ---
+
+val PrimaryAmoled = Color(0xFFDDE2FA)
+val OnPrimaryAmoled = Color(0xFF000000)
+val PrimaryContainerAmoled = Color(0xFF2F3A88)
+val OnPrimaryContainerAmoled = Color(0xFFDDE2FA)
+
+val BackgroundAmoled = Color(0xFF000000)
+val OnBackgroundAmoled = Color(0xFFFFFFFF)
+val SurfaceAmoled = Color(0xFF050509)
+val OnSurfaceAmoled = Color(0xFFFFFFFF)
+
+val SurfaceVariantAmoled = Color(0xFF11111A)
+val OnSurfaceVariantAmoled = Color(0xFF9091A0)
+val OutlineAmoled = Color(0x24FFFFFF) // rgba(255,255,255,0.14)
+val OutlineVariantAmoled = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
+
+val SurfaceContainerLowestAmoled = Color(0xFF000000)
+val SurfaceContainerLowAmoled = Color(0xFF050509)
+val SurfaceContainerAmoled = Color(0xFF050509)
+val SurfaceContainerHighAmoled = Color(0xFF11111A)
+val SurfaceContainerHighestAmoled = Color(0xFF11111A)
+
+// --- GLASS THEME PREPARATION ---
+// Tokens for upcoming glass implementation as per colors.md
+
+val GlassBlurLight = 24.dp
+val GlassBlurDark = 28.dp
+
+val GlassSurfaceOpacityLight = 0.62f
+val GlassSurfaceOpacityDark = 0.09f
+val GlassSurface3OpacityLight = 0.42f
+val GlassSurface3OpacityDark = 0.07f
+
+val GlassBorderOpacityLight = 0.85f
+val GlassBorderOpacityDark = 0.22f
 
 // --- SPECIAL COLORS ---
 
-val PositiveAmountColor = Color(0xFF22C55E) // Emerald 500
-val NegativeAmountColor = Color(0xFFEF4444) // Red 500
+val PositiveAmountColor = Color(0xFF1E9B4F) // Aligned with colors.md Light
+val NegativeAmountColor = Color(0xFFC8463F) // Aligned with colors.md Light
 
 val SuccessColor = Color(0xFF22C55E)
 val WarningColor = Color(0xFFF59E0B)
@@ -207,6 +244,11 @@ object AppColors {
     val errorContainer       : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.errorContainer
     val onErrorContainer     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onErrorContainer
 
+    // ── Semantic Feedback (colors.md 2.7) ──────────────────────────────────
+    // Positive (Income/Profit) and Negative (Expense/Loss) colors.
+    val positive             : Color @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(0xFF5BE093) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFF4DCE85) else Color(0xFF1E9B4F)
+    val negative             : Color @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(0xFFF08782) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFFE27974) else Color(0xFFC8463F)
+
     // ── Screen Background ───────────────────────────────────────────────────
     // Outermost scaffold fill behind all content.
     val screenBackground     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
@@ -235,16 +277,16 @@ object AppColors {
     val recessedSurface          : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
     val inputSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
     val cardSurface              : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val cardSurfaceRaised        : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val sheetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val cardSurfaceRaised        : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val sheetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
     val cardSurfaceProminent     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val sheetSurfaceRaised       : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val componentOnCardSubtle    : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val componentOnCard          : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
-    val panelSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface
-    val drawerSurface            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface
-    val popupSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface
-    val insetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceColorAtElevation(20.dp)
+    val panelSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val drawerSurface            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val popupSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val insetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
 
     // Raw M3 surface tokens (for component params that require the M3 name)
     val surface                  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface

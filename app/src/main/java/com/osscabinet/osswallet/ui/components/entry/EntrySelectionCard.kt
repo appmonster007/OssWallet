@@ -3,13 +3,27 @@ package com.osscabinet.ossWallet.ui.components.entry
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,13 +33,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import androidx.compose.material.icons.rounded.Category
 
 enum class EntrySelectionMode {
     SINGLE, MULTI, MANAGEMENT
@@ -33,7 +46,7 @@ enum class EntrySelectionMode {
 
 /**
  * Standardized selection card for lists in entry screens.
- * Supports single, multi-selection, and management modes with consistent "Architect Slate" styling.
+ * Supports single, multi-selection, and management modes with consistent styling.
  */
 @Composable
 fun EntrySelectionCard(
@@ -50,79 +63,108 @@ fun EntrySelectionCard(
     val haptic = LocalHapticFeedback.current
     
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.recessedSurface,
-        label = "bg"
+        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary.copy(alpha = 0.08f)
+        else AppColors.recessedSurface,
+        label = "bgColor"
     )
     
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) AppColors.primary.copy(alpha = 0.3f) else AppColors.divider.copy(alpha = 0.1f),
-        label = "border"
+        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary
+        else AppColors.divider.copy(alpha = 0.2f),
+        label = "borderColor"
     )
-
-    val elevation by animateDpAsState(
-        targetValue = if (isSelected) 2.dp else 0.dp,
-        label = "elev"
+    
+    val borderWidth by animateDpAsState(
+        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) 1.5.dp else 0.5.dp,
+        label = "borderWidth"
     )
 
     Surface(
         onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
-        border = BorderStroke(0.5.dp, borderColor),
-        tonalElevation = elevation
+        border = BorderStroke(borderWidth, borderColor),
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .heightIn(min = 40.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else iconColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(44.dp)
+                color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(alpha = 0.15f) else iconColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) Icons.Rounded.CheckCircle else icon,
+                        imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = if (isSelected) AppColors.primary else iconColor
+                        modifier = Modifier.size(18.dp),
+                        tint = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else iconColor
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
                     style = AppTextStyles.listItemTitle.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
-                    color = if (isSelected) AppColors.primary else AppColors.contentPrimary
+                    color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary
                 )
                 if (detail != null) {
                     Text(
                         text = detail,
-                        style = AppTextStyles.metaLabel,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        style = AppTextStyles.transactionSwipeAction.copy(
+                            fontSize = 11.sp,
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        )
                     )
                 }
             }
-
+            
             if (trailingContent != null) {
                 trailingContent()
-            } else if (selectionMode == EntrySelectionMode.MANAGEMENT) {
-                Icon(
-                    imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Edit",
-                    modifier = Modifier.size(18.dp),
-                    tint = AppColors.contentSecondary.copy(alpha = 0.4f)
-                )
+            } else {
+                when (selectionMode) {
+                    EntrySelectionMode.SINGLE -> {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = "Selected",
+                                tint = AppColors.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    EntrySelectionMode.MULTI -> {
+                        Switch(
+                            checked = isSelected,
+                            onCheckedChange = { 
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onClick() 
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AppColors.switchThumbOn,
+                                checkedTrackColor = AppColors.primary
+                            )
+                        )
+                    }
+                    EntrySelectionMode.MANAGEMENT -> {
+                        Icon(
+                            imageVector = Icons.Rounded.Edit,
+                            contentDescription = "Edit",
+                            tint = AppColors.border,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -132,28 +174,31 @@ fun EntrySelectionCard(
 @Composable
 fun EntrySelectionCardPreview() {
     OssWalletTheme {
-        Surface(modifier = Modifier.padding(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                EntrySelectionCard(
-                    icon = Icons.Rounded.Category,
-                    label = "Unselected Card",
-                    isSelected = false,
-                    onClick = {}
-                )
-                EntrySelectionCard(
-                    icon = Icons.Rounded.Category,
-                    label = "Selected Card",
-                    isSelected = true,
-                    onClick = {}
-                )
-                EntrySelectionCard(
-                    icon = Icons.Rounded.Category,
-                    label = "Management Mode",
-                    isSelected = false,
-                    onClick = {},
-                    selectionMode = EntrySelectionMode.MANAGEMENT
-                )
-            }
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            EntrySelectionCard(
+                icon = Icons.Rounded.Category,
+                label = "Single Selection",
+                detail = "This is a detail text",
+                isSelected = true,
+                onClick = {}
+            )
+            EntrySelectionCard(
+                icon = Icons.Rounded.Category,
+                label = "Multi Selection",
+                isSelected = false,
+                selectionMode = EntrySelectionMode.MULTI,
+                onClick = {}
+            )
+            EntrySelectionCard(
+                icon = Icons.Rounded.Category,
+                label = "Management Mode",
+                isSelected = false,
+                selectionMode = EntrySelectionMode.MANAGEMENT,
+                onClick = {}
+            )
         }
     }
 }

@@ -12,13 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.rounded.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -75,124 +69,6 @@ fun EntrySection(
             }
 
             content()
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Light Mode")
-@Composable
-fun EntrySectionLightPreview() {
-    OssWalletTheme(theme = "Light") {
-        Surface(
-            color = AppColors.screenBackground,
-            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
-        ) {
-            EntrySection(
-                title = "Date Information",
-                icon = Icons.Default.CalendarToday
-            ) {
-                Text(
-                    text = "Sample content inside the section",
-                    style = AppTextStyles.transactionTitle
-                )
-                Text(
-                    text = "More content can be added here",
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Amoled Mode")
-@Composable
-fun EntrySectionAmoledPreview() {
-    OssWalletTheme(theme = "Amoled") {
-        Surface(
-            color = AppColors.screenBackground,
-            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
-        ) {
-            EntrySection(
-                title = "Metadata Details",
-                icon = Icons.Rounded.Info
-            ) {
-                Text(
-                    text = "Premium Amoled rendering with Carbon Slate container.",
-                    style = AppTextStyles.transactionTitle
-                )
-                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-                LinearProgressIndicator(
-                    progress = { 0.6f },
-                    modifier = Modifier.fillMaxWidth(),
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Transaction Entry Details")
-@Composable
-fun TransactionEntrySectionPreview() {
-    OssWalletTheme(theme = "Amoled") {
-        Surface(
-            color = AppColors.screenBackground,
-            modifier = Modifier.padding(AeonTheme.dimensions.screenPadding)
-        ) {
-            AeonDetailSection(
-                note = "Dinner with friends at the new Italian place",
-                onNoteChange = {},
-                payee = "Luigi's Italian",
-                onPayeeChange = {},
-                selectedNames = setOf("Food", "Social"),
-                allAvailableTags = listOf(
-                    com.osscabinet.ossWallet.domain.model.Tag(name = "Food", colorHex = 0xFFEF5350.toInt()),
-                    com.osscabinet.ossWallet.domain.model.Tag(name = "Social", colorHex = 0xFFAB47BC.toInt())
-                ),
-                additionalContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                        // Linked Transactions mock
-                        EntryLinkedTransactionsSection(
-                            linkedTransactions = emptyList(),
-                            accounts = emptyList(),
-                            categories = emptyList(),
-                            onShowSheet = {},
-                            onRemoveLink = {}
-                        )
-
-                        EntryPaymentMethodStatusRow(
-                            paymentMethod = "Cash",
-                            onPaymentMethodClick = {},
-                            statusLabel = "Cleared",
-                            onStatusClick = {},
-                            paymentMethodIcon = Icons.Rounded.Payments,
-                            statusIcon = Icons.Rounded.CheckCircle,
-                            statusIconTint = AppColors.primary,
-                            statusContainerColor = AppColors.primary.copy(alpha = 0.1f)
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
-                            thickness = (AeonTheme.dimensions.spacingXs / 8),
-                            color = AppColors.divider.copy(alpha = 0.2f)
-                        )
-
-                        EntryWarrantySection(
-                            enabled = true,
-                            onToggle = {},
-                            expirationMillis = System.currentTimeMillis() + 31536000000L,
-                            onDateClick = {}
-                        )
-
-                        EntryLocationRow(
-                            coords = null,
-                            onShowLocationSheet = {},
-                            label = "Transaction Location"
-                        )
-                    }
-                }
-            )
         }
     }
 }

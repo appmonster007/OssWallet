@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -412,101 +411,3 @@ internal fun FilterSheetDragHandle(
     }
 }
 
-@Preview(showBackground = true, name = "Filter Sheet - Peek Options")
-@Composable
-fun FilterSheetContentPeekPreview() {
-    OssWalletTheme {
-        Surface {
-            FilterSheetContent(
-                filter = TransactionFilter(),
-                accounts = emptyList(),
-                allCategories = emptyList(),
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                onFilterEvent = {},
-                onClose = {},
-                backgroundColor = AppColors.insetSurface,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Filter Sheet - Single Data (Expanded)")
-@Composable
-fun FilterSheetContentPreview() {
-    val sampleAccounts = listOf(
-        Account(
-            id = "1",
-            name = "Checking",
-            currencyCode = "USD",
-            structureType = AccountStructureType.CHECKING,
-            colorHex = "#FF0000",
-            icon = "account_balance",
-            allowedCurrencies = listOf("USD")
-        )
-    )
-    val sampleCategories = listOf(
-        Category(id = 1, name = "Food", iconName = "restaurant", colorHex = 0xFFFF0000.toInt(), isDefault = true, parentId = null)
-    )
-
-    OssWalletTheme {
-        Surface {
-            FilterSheetContent(
-                filter = TransactionFilter(),
-                accounts = sampleAccounts,
-                allCategories = sampleCategories,
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                onFilterEvent = {},
-                onClose = {},
-                backgroundColor = AppColors.insetSurface,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Filter Sheet - Long Content (Expanded)", heightDp = 1600)
-@Composable
-fun FilterSheetContentLongPreview() {
-    val sampleAccounts = listOf(
-        Account(id = "1", name = "Main Checking", currencyCode = "USD", structureType = AccountStructureType.CHECKING, colorHex = "#4CAF50", icon = "account_balance"),
-        Account(id = "2", name = "Savings", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, colorHex = "#2196F3", icon = "savings"),
-        Account(id = "3", name = "Credit Card", currencyCode = "USD", structureType = AccountStructureType.CREDIT_CARD, colorHex = "#F44336", icon = "credit_card"),
-        Account(id = "4", name = "Cash Wallet", currencyCode = "USD", structureType = AccountStructureType.CASH, colorHex = "#FFC107", icon = "payments")
-    )
-    val sampleCategories = listOf(
-        Category(id = 1, name = "Housing", iconName = "home", colorHex = 0xFF2196F3.toInt(), isDefault = true, parentId = null),
-        Category(id = 2, name = "Food", iconName = "restaurant", colorHex = 0xFFFF9800.toInt(), isDefault = true, parentId = null),
-        Category(id = 3, name = "Transport", iconName = "directions_car", colorHex = 0xFF4CAF50.toInt(), isDefault = true, parentId = null),
-        Category(id = 4, name = "Entertainment", iconName = "movie", colorHex = 0xFF9C27B0.toInt(), isDefault = true, parentId = null),
-        Category(id = 5, name = "Health", iconName = "medical_services", colorHex = 0xFFF44336.toInt(), isDefault = true, parentId = null)
-    )
-    val samplePresets = listOf(
-        Filter(id = 1, name = "High Value Expenses", filter = TransactionFilter(minAmount = java.math.BigDecimal(500))),
-        Filter(id = 2, name = "Tax Deductible", filter = TransactionFilter(categoryIds = setOf(1, 5))),
-        Filter(id = 3, name = "Uncleared Transfers", filter = TransactionFilter(statuses = setOf(
-            TransactionStatus.UNCLEARED)))
-    )
-    val sampleTags = listOf(
-        Tag(1, "Essential", 0xFF004D5F.toInt()),
-        Tag(2, "Leisure", 0xFF1A237E.toInt()),
-        Tag(3, "Work", 0xFF1B5E20.toInt())
-    )
-
-    OssWalletTheme {
-        Surface {
-            FilterSheetContent(
-                filter = TransactionFilter(
-                    hasWarranty = true,
-                    warrantyExpirationStart = System.currentTimeMillis()
-                ),
-                accounts = sampleAccounts,
-                allCategories = sampleCategories,
-                allTags = sampleTags,
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                savedFilters = samplePresets,
-                onFilterEvent = {},
-                onClose = {},
-                backgroundColor = AppColors.insetSurface,
-            )
-        }
-    }
-}

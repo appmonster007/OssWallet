@@ -19,7 +19,6 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
@@ -373,42 +372,4 @@ fun AeonUpSetPlot(
     }
 }
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 600)
-@Composable
-fun PreviewUpSetPlotLarge() {
-    val sets = (1..15).map { AeonUpSetSet("Tag $it", BigDecimal(it * 100)) }
-    val intersections = listOf(
-        AeonUpSetIntersection(setOf(0, 1, 2), BigDecimal(500), BigDecimal(600), BigDecimal(100), emptyMap(), emptyMap(), 10),
-        AeonUpSetIntersection(setOf(0, 1), BigDecimal(300), BigDecimal(400), BigDecimal(100), emptyMap(), emptyMap(), 5),
-        AeonUpSetIntersection(setOf(2, 3, 4, 5), BigDecimal(800), BigDecimal(1000), BigDecimal(200), emptyMap(), emptyMap(), 15),
-        AeonUpSetIntersection(setOf(6, 7), BigDecimal(200), BigDecimal(300), BigDecimal(100), emptyMap(), emptyMap(), 3),
-        AeonUpSetIntersection(setOf(0, 5, 10), BigDecimal(450), BigDecimal(600), BigDecimal(150), emptyMap(), emptyMap(), 8),
-        AeonUpSetIntersection(setOf(12, 13, 14), BigDecimal(1200), BigDecimal(1500), BigDecimal(300), emptyMap(), emptyMap(), 20),
-        AeonUpSetIntersection(setOf(1, 4, 7, 10), BigDecimal(150), BigDecimal(200), BigDecimal(50), emptyMap(), emptyMap(), 2),
-        AeonUpSetIntersection(setOf(8), BigDecimal(100), BigDecimal(150), BigDecimal(50), emptyMap(), emptyMap(), 1)
-    )
-    
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
-        Surface(color = Color.White, modifier = Modifier.padding(16.dp)) {
-            AeonUpSetPlot(
-                data = AeonUpSetData(sets, intersections),
-                currency = "USD",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 100, heightDp = 200)
-@Composable
-fun PreviewIntersectionBar() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
-        UpSetVerticalBar(
-            amount = "$1,200.00",
-            ratio = 0.6f,
-            onClick = {},
-            modifier = Modifier.width(24.dp).padding(16.dp)
-        )
-    }
-}
 

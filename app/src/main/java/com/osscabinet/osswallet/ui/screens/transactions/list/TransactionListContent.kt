@@ -6,24 +6,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
-import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
+import com.osscabinet.ossWallet.ui.components.transactions.*
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import kotlinx.coroutines.flow.Flow
 
@@ -99,54 +90,5 @@ fun TransactionListContent(
             onAddTag = onAddTag,
             modifier = Modifier.fillMaxSize()
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TransactionListContentPreview() {
-    val sampleAccount = Account(
-        id = "1",
-        name = "Checking",
-        currencyCode = "USD",
-        structureType = AccountStructureType.CHECKING,
-        colorHex = "#FF0000",
-        icon = "account_balance",
-        allowedCurrencies = listOf("USD")
-    )
-
-    val sampleCategory = Category(
-        id = 1L,
-        name = "Groceries",
-        iconName = "shopping_cart",
-        colorHex = 0xFFFF0000.toInt(),
-        isDefault = true,
-        parentId = null
-    )
-
-    var theme by remember { mutableStateOf("System") }
-    OssWalletTheme(theme = theme) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth().background(AppColors.insetSurface).padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Button(onClick = { theme = "Light" }) { Text("Light") }
-                Button(onClick = { theme = "Dark" }) { Text("Dark") }
-                Button(onClick = { theme = "Amoled" }) { Text("Amoled") }
-            }
-            TransactionListContent(
-                listState = TransactionListState(isEmpty = false),
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                accounts = listOf(sampleAccount),
-                categories = listOf(sampleCategory),
-                analyticsState = AnalyticsUiState.Loading,
-                filter = TransactionFilter(),
-                recordsSettings = TransactionSectionSettings(),
-                onTransactionEvent = {},
-                onBackClick = {},
-                onFilterEvent = {}
-            )
-        }
     }
 }

@@ -21,7 +21,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
@@ -413,18 +412,5 @@ private fun CalculatorHistorySheet(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalculatorNumpadPreview() {
-    OssWalletTheme {
-        CalculatorNumpad(
-            amount = "100",
-            onAmountChange = { _, _ -> },
-            transactionType = TransactionType.EXPENSE,
-            onDone = {}
-        )
     }
 }

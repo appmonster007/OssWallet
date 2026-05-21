@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -289,83 +288,6 @@ private fun NetWorthSettingsSheet(
                     onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Net Worth Card - Normal")
-@Composable
-fun NetWorthCardPreview() {
-    OssWalletTheme {
-        Surface(color = AppColors.screenBackground) {
-            Box(modifier = Modifier.padding(16.dp)) {
-                NetWorthCard(
-                    currentMetrics = NetWorthMetrics(
-                        netWorth = BigDecimal("125000.50"),
-                        cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
-                            totalIncomeInBase = BigDecimal("5000.00"),
-                            totalExpensesInBase = BigDecimal("3200.00")
-                        )
-                    ),
-                    baseCurrency = "USD",
-                    config = NetWorthCardConfig(cardId = "preview"),
-                    callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Net Worth Card - Amoled")
-@Composable
-fun NetWorthCardAmoledPreview() {
-    OssWalletTheme(theme = "Amoled") {
-        Surface(color = AppColors.screenBackground) {
-            Box(modifier = Modifier.padding(16.dp)) {
-                NetWorthCard(
-                    currentMetrics = NetWorthMetrics(
-                        netWorth = BigDecimal("125000.50"),
-                        cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
-                            totalIncomeInBase = BigDecimal("5000.00"),
-                            totalExpensesInBase = BigDecimal("3200.00")
-                        )
-                    ),
-                    baseCurrency = "USD",
-                    config = NetWorthCardConfig(cardId = "preview"),
-                    callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {})
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Net Worth Card - With Comparison")
-@Composable
-fun NetWorthCardComparisonPreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            NetWorthCard(
-                currentMetrics = NetWorthMetrics(
-                    netWorth = BigDecimal("125000.50"),
-                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
-                        totalIncomeInBase = BigDecimal("5500.00"),
-                        totalExpensesInBase = BigDecimal("2800.00")
-                    )
-                ),
-                baseCurrency = "USD",
-                config = NetWorthCardConfig(
-                    cardId = "preview_comparison",
-                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
-                ),
-                callbacks = CardCallbacks.NetWorth(onFontSizeChange = { _, _ -> }, onShowComparisonChange = { _, _ -> }, onFilterChange = { _, _ -> }, onDelete = {}),
-                previousMetrics = NetWorthMetrics(
-                    netWorth = BigDecimal("122300.50"),
-                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
-                        totalIncomeInBase = BigDecimal("4800.00"),
-                        totalExpensesInBase = BigDecimal("3000.00")
-                    )
-                )
-            )
         }
     }
 }

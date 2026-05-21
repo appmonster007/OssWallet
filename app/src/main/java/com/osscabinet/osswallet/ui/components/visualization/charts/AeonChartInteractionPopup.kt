@@ -56,9 +56,9 @@ fun AeonChartInteractionPopup(
     val tooltipWidthPx = tooltipWidth.value * density
 
     val xPos = (touchPoint.x - (tooltipWidthPx / 2))
-        .coerceIn(0f, chartWidthPx - tooltipWidthPx)
+        .coerceIn(0f, (chartWidthPx - tooltipWidthPx).coerceAtLeast(0f))
     val yPos = (touchPoint.y - tooltipHeightPxEstimate - 10f)
-        .coerceIn(0f, chartHeightPx - tooltipHeightPxEstimate)
+        .coerceIn(0f, (chartHeightPx - tooltipHeightPxEstimate).coerceAtLeast(0f))
 
     Surface(
         modifier = Modifier
@@ -101,7 +101,7 @@ fun AeonChartInteractionPopup(
             // Content: Value + Global %
             Column {
                 Text(
-                    text = formatCurrencyRight(value, currency, precision),
+                    text = formatCurrencyRight(value, currency, precision, shorten = true),
                     style = AppTextStyles.screenSubTitle.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp

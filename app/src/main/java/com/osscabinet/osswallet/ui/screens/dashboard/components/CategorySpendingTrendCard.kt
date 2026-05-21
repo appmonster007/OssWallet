@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
@@ -181,7 +182,10 @@ fun CategorySpendingTrendCard(
                         renderData.activeCategories.forEach { summary ->
                             CategorySummaryRow(
                                 summary = summary,
-                                currency = renderData.baseCurrency
+                                currency = renderData.baseCurrency,
+                                onClick = {
+                                    callbacks.onRecordsClick(displayFilter.forCategory(summary.categoryId))
+                                }
                             )
                         }
                     }
@@ -194,10 +198,15 @@ fun CategorySpendingTrendCard(
 @Composable
 private fun CategorySummaryRow(
     summary: CategorySummary,
-    currency: String
+    currency: String,
+    onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp, horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

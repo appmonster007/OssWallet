@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -249,41 +252,48 @@ fun AeonBarChart(
             
             // 5. Selection Highlight
             selectedIndex?.let { index ->
-                val x = indexToX(index, groups.size)
-                drawLine(
-                    color = ChartZeroLineColor.copy(alpha = 0.5f),
-                    start = Offset(x, topPadding),
-                    end = Offset(x, heightPx - bottomPadding),
-                    strokeWidth = 2.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                )
+                if (index in groups.indices) {
+                    val x = indexToX(index, groups.size)
+                    drawLine(
+                        color = ChartZeroLineColor.copy(alpha = 0.5f),
+                        start = Offset(x, topPadding),
+                        end = Offset(x, heightPx - bottomPadding),
+                        strokeWidth = 2.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                    )
+                }
             }
         }
 
         // 6. Tooltip
         selectedIndex?.let { index ->
-            val group = groups[index]
+            val group = groups.getOrNull(index) ?: return@let
             val x = indexToX(index, groups.size)
             
             val tooltipWidth = 180.dp
-            val tooltipHeight = (40 + group.bars.size * 25).dp
+            val tooltipHeight = (40 + group.bars.size * 25).dp.coerceAtMost(240.dp)
             val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
             val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
-            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, widthPx - tooltipWidthPx)
-            val yPos = (topPadding).coerceIn(0f, heightPx - tooltipHeightPx)
+            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, (widthPx - tooltipWidthPx).coerceAtLeast(0f))
+            val yPos = (topPadding).coerceIn(0f, (heightPx - tooltipHeightPx).coerceAtLeast(0f))
 
             Surface(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
+                    .heightIn(max = 240.dp)
                     .clip(RoundedCornerShape(dims.spacingMd)),
                 color = AppColors.insetSurface.copy(alpha = 0.95f),
                 tonalElevation = dims.spacingSm,
                 shadowElevation = dims.spacingSm,
                 border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border.copy(alpha = 0.2f))
             ) {
-                Column(modifier = Modifier.padding(dims.spacingMd)) {
+                Column(
+                    modifier = Modifier
+                        .padding(dims.spacingMd)
+                        .verticalScroll(rememberScrollState())
+                ) {
                     Text(group.label, style = AppTextStyles.cardDelta, color = AppColors.contentPrimary)
                     Spacer(modifier = Modifier.height(dims.spacingSm))
                     
@@ -293,17 +303,27 @@ fun AeonBarChart(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
                                         .background(bar.color, RoundedCornerShape(2.dp))
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(bar.label, style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary)
+                                Text(
+                                    text = bar.label,
+                                    style = AppTextStyles.transactionSwipeAction,
+                                    color = AppColors.contentSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                formatCurrencyRight(bar.value, currency, precision),
+                                text = formatCurrencyRight(bar.value, currency, precision, shorten = true),
                                 style = AppTextStyles.formSectionLabel,
                                 color = AppColors.contentPrimary
                             )

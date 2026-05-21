@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
@@ -448,9 +449,9 @@ fun AeonLineChart(
                 val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
                 val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
-                val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, w - tooltipWidthPx)
+                val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, (w - tooltipWidthPx).coerceAtLeast(0f))
                 // Show tooltip above the middle of the chart
-                val yPos = (topPadding).coerceIn(0f, h - tooltipHeightPx)
+                val yPos = (topPadding).coerceIn(0f, (h - tooltipHeightPx).coerceAtLeast(0f))
 
                 Surface(
                     modifier = Modifier
@@ -480,7 +481,10 @@ fun AeonLineChart(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Box(
                                             modifier = Modifier
                                                 .size(dims.spacingSm)
@@ -490,11 +494,14 @@ fun AeonLineChart(
                                         Text(
                                             text = s.name,
                                             style = AppTextStyles.transactionSwipeAction,
-                                            color = AppColors.contentSecondary
+                                            color = AppColors.contentSecondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = formatCurrencyRight(p.y, currency, precision),
+                                        text = formatCurrencyRight(p.y, currency, precision, shorten = true),
                                         style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )

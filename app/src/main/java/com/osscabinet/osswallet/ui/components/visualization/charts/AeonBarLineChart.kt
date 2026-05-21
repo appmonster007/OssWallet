@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.*
@@ -443,8 +444,8 @@ fun AeonBarLineChart(
             val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
             val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
-            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, widthPx - tooltipWidthPx)
-            val yPos = (topPadding - 10f).coerceIn(0f, heightPx - tooltipHeightPx)
+            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, (widthPx - tooltipWidthPx).coerceAtLeast(0f))
+            val yPos = (topPadding - 10f).coerceIn(0f, (heightPx - tooltipHeightPx).coerceAtLeast(0f))
 
             val label = xLabels.getOrNull(index)
             val barVal = effectiveBarData.getOrNull(index)
@@ -475,7 +476,7 @@ fun AeonBarLineChart(
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Income:", style = AppTextStyles.transactionSwipeAction)
                                 Text(
-                                    formatCurrencyRight(incomeVal, currency, precision),
+                                    formatCurrencyRight(incomeVal, currency, precision, shorten = true),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorPositive
                                 )
@@ -485,7 +486,7 @@ fun AeonBarLineChart(
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Expense:", style = AppTextStyles.transactionSwipeAction)
                                 Text(
-                                    formatCurrencyRight(expenseVal, currency, precision),
+                                    formatCurrencyRight(expenseVal, currency, precision, shorten = true),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorNegative
                                 )
@@ -495,7 +496,7 @@ fun AeonBarLineChart(
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                             Text("Flow:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatCurrencyRight(barVal, currency, precision),
+                                formatCurrencyRight(barVal, currency, precision, shorten = true),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
                             )
@@ -506,7 +507,7 @@ fun AeonBarLineChart(
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                             Text("Net:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatCurrencyRight(lineVal, currency, precision),
+                                formatCurrencyRight(lineVal, currency, precision, shorten = true),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = lineColor
                             )

@@ -193,7 +193,8 @@ fun GenericAddCardDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-//                .fillMaxHeight(0.8f)
+                .fillMaxHeight(0.9f)
+                .statusBarsPadding()
                 .padding(bottom = 16.dp)
         ) {
             Text(

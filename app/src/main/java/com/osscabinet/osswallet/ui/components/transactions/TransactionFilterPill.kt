@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -287,29 +286,5 @@ private fun FilterDialogContent(
             accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
             filterRules = CardFilterRules.DEFAULT.copy(allowTimelineSelection = false)
         )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
-@Composable
-fun TransactionFilterPillPreview() {
-    OssWalletTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            TransactionFilterPill(
-                filter = TransactionFilter(timelineRange = TimelineRange.AllTime),
-                accounts = emptyList(),
-                categories = emptyList(),
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                savedFilters = emptyList(),
-                onFilterEvent = {},
-                onSaveFilterClick = {},
-                modifier = Modifier.fillMaxSize()
-            )
-        }
     }
 }

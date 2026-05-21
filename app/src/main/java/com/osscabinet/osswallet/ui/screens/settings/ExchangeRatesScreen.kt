@@ -28,7 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.currency.CurrencyRate
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -722,78 +721,3 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
 
 // --- PREVIEWS ---
 
-private val mockRates = listOf(
-    CurrencyRate("USD", "USD", 1.0, 0, 0),
-    CurrencyRate("EUR", "USD", 0.92, 0, 0),
-    CurrencyRate("GBP", "USD", 0.79, 0, 0),
-    CurrencyRate("JPY", "USD", 150.5, 0, 0),
-    CurrencyRate("INR", "USD", 83.0, 0, 0),
-    CurrencyRate("AUD", "USD", 1.52, 0, 0),
-    CurrencyRate("CAD", "USD", 1.35, 0, 0)
-)
-
-private val mockUiState = CurrencyUiState(
-    rates = mockRates,
-    baseCurrency = "USD",
-    lastUpdated = System.currentTimeMillis()
-)
-
-@Preview(showBackground = true, name = "Rates Tab - Light")
-@Composable
-fun PreviewRatesTabLight() {
-    OssWalletTheme(theme = "Light") {
-        Surface(color = AppColors.screenBackground) {
-            RatesTab(mockUiState)
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Rates Tab - Dark")
-@Composable
-fun PreviewRatesTabDark() {
-    OssWalletTheme(theme = "Dark") {
-        Surface(color = AppColors.screenBackground) {
-            RatesTab(mockUiState)
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Rates Tab - Amoled")
-@Composable
-fun PreviewRatesTabAmoled() {
-    OssWalletTheme(theme = "Amoled") {
-        Surface(color = AppColors.screenBackground) {
-            RatesTab(mockUiState)
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Converter Tab - Light")
-@Composable
-fun PreviewConverterTabLight() {
-    OssWalletTheme(theme = "Light") {
-        Surface(color = AppColors.screenBackground) {
-            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Converter Tab - Dark")
-@Composable
-fun PreviewConverterTabDark() {
-    OssWalletTheme(theme = "Dark") {
-        Surface(color = AppColors.screenBackground) {
-            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Converter Tab - Amoled")
-@Composable
-fun PreviewConverterTabAmoled() {
-    OssWalletTheme(theme = "Amoled") {
-        Surface(color = AppColors.screenBackground) {
-            ConverterTab(mockUiState, onConvert = { _, _, _, cb -> cb(0.92) })
-        }
-    }
-}

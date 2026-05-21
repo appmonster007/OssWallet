@@ -20,7 +20,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -363,44 +362,6 @@ fun AeonTagCreateDialog(
                     }
                 }
             }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun AeonTagSelectionDialogPreview() {
-    val tags = listOf(
-        Tag(1, "Shopping", 0xFF004D5F.toInt()),
-        Tag(2, "Travel", 0xFF1A237E.toInt()),
-        Tag(3, "Food", 0xFF1B5E20.toInt()),
-        Tag(4, "Healthcare", 0xFFB71C1C.toInt()),
-        Tag(5, "Education", 0xFF4A148C.toInt())
-    )
-    
-    OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            AeonTagSelectionDialog(
-                tags = tags,
-                selectedTags = setOf("Shopping", "Food"),
-                onTagsSelected = {},
-                onAddTag = { _, _ -> },
-                onDismiss = {}
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-fun AeonTagCreateDialogPreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            AeonTagCreateDialog(
-                initialName = "Work",
-                onDismiss = {},
-                onConfirm = { _, _ -> }
-            )
         }
     }
 }

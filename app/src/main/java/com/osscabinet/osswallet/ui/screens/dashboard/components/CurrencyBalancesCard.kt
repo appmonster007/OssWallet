@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
@@ -205,21 +204,3 @@ fun CurrencyBalanceItem(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun CurrencyBalancesCardPreview() {
-    val items = listOf(
-        CurrencyAggregationItem("USD", BigDecimal("15000000.00"), BigDecimal("1500.00")),
-        CurrencyAggregationItem("EUR", BigDecimal("100000.00"), BigDecimal("1300.50")),
-        CurrencyAggregationItem("GBP", BigDecimal("500.00"), BigDecimal("650.00"))
-    )
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            CurrencyBalancesCard(
-                currencyTotals = items,
-                baseCurrency = "USD",
-                config = CurrencyBalancesCardConfig(cardId = "preview")
-            )
-        }
-    }
-}

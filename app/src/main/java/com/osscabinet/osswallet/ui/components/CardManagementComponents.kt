@@ -28,7 +28,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.ui.tooling.preview.Preview
 
 fun CardType.toIcon(): ImageVector = when (this) {
     CardType.NET_WORTH -> Icons.Default.AccountBalance
@@ -220,29 +219,6 @@ fun GenericAddCardDialog(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GenericAddCardDialogPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
-        Surface(color = AppColors.screenBackground) {
-            val options = listOf(
-                CardTypeOptionData("Net Worth", "Overall balance across all accounts", {}, Icons.Default.AccountBalance, CardCategory.SUMMARY),
-                CardTypeOptionData("Cash Flow", "Income and expenses summary", {}, Icons.AutoMirrored.Filled.TrendingUp, CardCategory.SUMMARY),
-                CardTypeOptionData("Budgets", "Track your spending against set limits", {}, Icons.Default.Savings, CardCategory.TRACKING),
-                CardTypeOptionData("Category Pie Chart", "Spending distribution across categories", {}, Icons.Default.PieChart, CardCategory.ANALYTICS)
-            )
-            // Note: ModalBottomSheet might not render well in some preview environments
-            // This is just a structural representation
-            Column {
-                 options.groupBy { it.category }.forEach { (category, opts) ->
-                     Text(category.displayName, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
-                     opts.forEach { CardTypeOption(it.title, it.description, it.onClick, it.icon) }
-                 }
             }
         }
     }

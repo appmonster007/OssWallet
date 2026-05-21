@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -87,70 +86,3 @@ fun TransactionFilterSheet(
     }
 }
 
-@Preview(showBackground = false)
-@Composable
-fun TransactionFilterSheetPreview() {
-    var theme by remember { mutableStateOf("Light") }
-    OssWalletTheme(theme = theme) {
-        Surface(color = AppColors.screenBackground) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                TransactionFilterSheet(
-                    filter = TransactionFilter(),
-                    accounts = listOf(
-                        Account(
-                            id = "1",
-                            name = "Cash",
-                            currencyCode = "USD",
-                            structureType = AccountStructureType.CASH,
-                            colorHex = "#FF0000",
-                            icon = "wallet"
-                        ),
-                        Account(
-                            id = "2",
-                            name = "Bank",
-                            currencyCode = "USD",
-                            structureType = AccountStructureType.CHECKING,
-                            colorHex = "#00FF00",
-                            icon = "account_balance"
-                        )
-                    ),
-                    categories = listOf(
-                        Category(
-                            id = 1,
-                            name = "Food",
-                            iconName = "restaurant",
-                            colorHex = 0xFFFF0000.toInt(),
-                            isDefault = true,
-                            parentId = null
-                        ),
-                        Category(
-                            id = 2,
-                            name = "Transport",
-                            iconName = "directions_bus",
-                            colorHex = 0xFF00FF00.toInt(),
-                            isDefault = true,
-                            parentId = null
-                        )
-                    ),
-                    onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                    onFilterEvent = {},
-                    onClose = {}
-                )
-
-                // Theme Switcher
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(onClick = { theme = "Light" }) { Text("Light") }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { theme = "Dark" }) { Text("Dark") }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { theme = "Amoled" }) { Text("Amoled") }
-                }
-            }
-        }
-    }
-}

@@ -104,7 +104,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
@@ -556,78 +555,3 @@ private fun getDashboardContextDisplayName(context: DashboardViewContext): Strin
     }
 }
 
-// --- PREVIEWS ---
-
-@Composable
-private fun DashboardReviewContent() {
-    val netWorthMetrics = NetWorthMetrics(
-        netWorth = BigDecimal("125000.50"),
-        cashFlow = CashFlowResult.empty().copy(
-            totalIncomeInBase = BigDecimal("5000.00"),
-            totalExpensesInBase = BigDecimal("3200.00")
-        )
-    )
-
-    val budget1 = Budget(
-        id = 1L, name = "Food", currency = "USD", limitAmount = BigDecimal("1000.00"),
-        timelineRange = TimelineRange.AllTime, profileId = 1
-    )
-    val budgets = listOf(
-        BudgetProgress(
-            budget = budget1,
-            spent = BigDecimal("450.00"),
-            limit = BigDecimal("1000.00"),
-            remaining = BigDecimal("550.00"),
-            percentage = 0.45f,
-            alertLevel = BudgetAlertLevel.NONE
-        )
-    )
-
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        NetWorthCard(
-            currentMetrics = netWorthMetrics,
-            baseCurrency = "USD",
-            config = NetWorthCardConfig(cardId = "networth")
-        )
-
-        BudgetsCard(
-            items = budgets,
-            config = BudgetsCardConfig(cardId = "budgets", title = "Budgets")
-        )
-    }
-}
-
-@Preview(name = "Dashboard - Light Mode", showBackground = true)
-@Composable
-fun DashboardLightPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Light") {
-        Surface(color = AppColors.screenBackground) {
-            DashboardReviewContent()
-        }
-    }
-}
-
-@Preview(name = "Dashboard - Dark Mode", showBackground = true)
-@Composable
-fun DashboardDarkPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Dark") {
-        Surface(color = AppColors.screenBackground) {
-            DashboardReviewContent()
-        }
-    }
-}
-
-@Preview(name = "Dashboard - Amoled Mode", showBackground = true)
-@Composable
-fun DashboardAmoledPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = "Amoled") {
-        Surface(color = AppColors.screenBackground) {
-            DashboardReviewContent()
-        }
-    }
-}

@@ -23,8 +23,6 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import kotlinx.coroutines.delay
 
@@ -288,23 +286,6 @@ fun AdvancedFilterSection(
                     filterRules = filterRules
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AdvancedFilterSectionPreview() {
-    OssWalletTheme {
-        Surface {
-            AdvancedFilterSection(
-                filter = TransactionFilter(),
-                onFilterChange = {},
-                accounts = emptyList(),
-                allCategories = emptyList(),
-                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
-                baseFilter = TransactionFilter(accountIds = setOf("1"))
-            )
         }
     }
 }

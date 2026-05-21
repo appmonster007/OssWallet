@@ -35,7 +35,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
@@ -415,69 +414,6 @@ fun FabMenuItem(
             ) {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             }
-        }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 800)
-@Composable
-fun UnifiedPillNavigationPreview() {
-    val tabs = listOf(
-        NavigationTab(
-            icon = Icons.Rounded.Dashboard,
-            selectedIcon = Icons.Rounded.Dashboard,
-            label = "Glance"
-        ),
-        NavigationTab(
-            icon = Icons.Rounded.History,
-            selectedIcon = Icons.Rounded.History,
-            label = "Activities"
-        )
-    )
-    OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground)) {
-            UnifiedPillNavigation(
-                selectedTab = 0,
-                onTabSelected = {},
-                tabs = tabs,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 800)
-@Composable
-fun UnifiedPillNavigationExpandedPreview() {
-    val tabs = listOf(
-        NavigationTab(
-            icon = Icons.Rounded.Dashboard,
-            selectedIcon = Icons.Rounded.Dashboard,
-            label = "Glance"
-        ),
-        NavigationTab(
-            icon = Icons.Rounded.History,
-            selectedIcon = Icons.Rounded.History,
-            label = "Activities"
-        )
-    )
-    OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground)) {
-            UnifiedPillNavigation(
-                selectedTab = 0,
-                onTabSelected = {},
-                tabs = tabs,
-                isFabExpanded = true,
-                onFabToggle = {},
-                fabMenu = {
-                    TransactionFabMenu(
-                        isExpanded = true,
-                        templates = emptyList(),
-                        onAddClick = { _, _ -> }
-                    )
-                },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
     }
 }

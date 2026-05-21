@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -214,26 +213,5 @@ fun AccountFormBody(
 }
 
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 2500, name = "Account Entry Screen - Create")
-@Composable
-fun AccountEntryCreatePreview() {
-    OssWalletTheme {
-        Surface {
-            AccountFormBody(
-                state = AccountEntryState(
-                    accountName = "Global Savings",
-                    structureType = AccountStructureType.SAVINGS,
-                    primaryCurrency = "USD",
-                    allowedCurrencies = setOf("USD", "EUR", "GBP"),
-                    initialBalances = mapOf("USD" to "1000.00", "EUR" to "500.00", "GBP" to "250.00"),
-                    selectedIconName = "Savings",
-                    accentColorHex = "#004D5F",
-                    isEditMode = false
-                ),
-                onEvent = {}
-            )
-        }
-    }
-}
 
 

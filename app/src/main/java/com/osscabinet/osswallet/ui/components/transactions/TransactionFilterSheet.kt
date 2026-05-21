@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
@@ -70,21 +71,23 @@ fun TransactionFilterSheet(
         },
         scrimColor = Color.Black.copy(alpha = 0.5f),
     ) {
-        FilterSheetContent(
-            filter = filter,
-            accounts = accounts,
-            allCategories = categories,
-            allTags = allTags,
-            onSearchTransactions = onSearchTransactions,
-            savedFilters = savedFilters,
-            onFilterEvent = onFilterEvent,
-            onSaveFilterClick = onSaveFilterClick,
-            onAddTag = onAddTag,
-            onClose = onClose,
-            backgroundColor = backgroundColor,
-            showAccountFilter = showAccountFilter,
-            accountNames = accountNames,
-        )
+        Box(modifier = Modifier.statusBarsPadding()) {
+            FilterSheetContent(
+                filter = filter,
+                accounts = accounts,
+                allCategories = categories,
+                allTags = allTags,
+                onSearchTransactions = onSearchTransactions,
+                savedFilters = savedFilters,
+                onFilterEvent = onFilterEvent,
+                onSaveFilterClick = onSaveFilterClick,
+                onAddTag = onAddTag,
+                onClose = onClose,
+                backgroundColor = backgroundColor,
+                showAccountFilter = showAccountFilter,
+                accountNames = accountNames,
+            )
+        }
     }
 }
 

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -95,17 +96,38 @@ fun CategorySpendingTrendCard(
             )
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 natureOptions.forEachIndexed { index, (nature, label) ->
+                    val isSelected = selectedNature == nature
+                    val natureColor = when (nature) {
+                        CategoryNatureFilter.MUST -> AppColors.error
+                        CategoryNatureFilter.NEED -> ChartColorOrange
+                        CategoryNatureFilter.WANT -> AppColors.accent
+                        else -> AppColors.contentSecondary
+                    }
+
                     SegmentedButton(
-                        selected = selectedNature == nature,
+                        selected = isSelected,
                         onClick = {
                             selectedNature = nature
                             callbacks.onUpdate(config.copy(selectedNature = nature))
                         },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = natureOptions.size),
+                        colors = if (nature != CategoryNatureFilter.ALL) {
+                            SegmentedButtonDefaults.colors(
+                                activeContainerColor = natureColor.copy(alpha = 0.12f),
+                                activeContentColor = natureColor,
+                                activeBorderColor = natureColor,
+                                inactiveContentColor = natureColor.copy(alpha = 0.6f)
+                            )
+                        } else {
+                            SegmentedButtonDefaults.colors()
+                        },
                         label = {
                             Text(
                                 text = label,
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                                style = AppTextStyles.caption.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
                             )
                         }
                     )
@@ -125,7 +147,8 @@ fun CategorySpendingTrendCard(
                     modifier = Modifier.fillMaxWidth().height(220.dp),
                     currency = renderData.baseCurrency,
                     showGrid = config.showGridLines,
-                    showXAxisLabels = true
+                    showXAxisLabels = true,
+                    cornerRadius = 0.dp
                 )
             }
 
@@ -260,26 +283,26 @@ fun CategorySpendingTrendCardPreview() {
                 label = "Jan",
                 epochMillis = 1704067200000L,
                 categoryAmounts = listOf(
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("1200.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("400.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("200.00"))
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-1200.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-400.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Refund", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("50.00"))
                 )
             ),
             com.osscabinet.ossWallet.domain.card.CategorySpendingBucket(
                 label = "Feb",
                 epochMillis = 1706745600000L,
                 categoryAmounts = listOf(
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("1200.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("350.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("150.00"))
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-1200.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-350.00")),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Gift", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("150.00"))
                 )
             )
         ),
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
         activeCategories = listOf(
-            CategorySummary(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("2400.00")),
-            CategorySummary(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("750.00")),
-            CategorySummary(3L, "Dining", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("350.00"))
+            CategorySummary(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-2400.00")),
+            CategorySummary(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-750.00")),
+            CategorySummary(3L, "Wants (Net)", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("200.00"))
         ),
         baseCurrency = "USD"
     )
@@ -299,7 +322,7 @@ private fun buildChartGroups(
 ): List<AeonBarChartGroup> {
     return renderData.buckets.map { bucket ->
         val bars = bucket.categoryAmounts
-            .filter { it.amount > BigDecimal.ZERO }
+            .filter { it.amount.signum() != 0 } // Include both positive and negative non-zero values
             .map { catAmount ->
                 val color = when (catAmount.nature) {
                     CategoryNature.MUST -> mustColor

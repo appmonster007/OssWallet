@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.alpha
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
@@ -238,28 +240,38 @@ private fun TagUpSetSettingsSheet(
                         color = AppColors.contentSecondary
                     )
                 }
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = AppColors.sheetSurface,
-                    modifier = Modifier.height(40.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (config.maxTags != 7) {
                         IconButton(
-                            onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
-                            modifier = Modifier.size(40.dp)
+                            onClick = { onUpdate(config.copy(maxTags = 7)) },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                            Icon(Icons.Default.Refresh, contentDescription = "Reset to 7", tint = AppColors.contentSecondary, modifier = Modifier.size(18.dp))
                         }
-                        Text(
-                            text = "${config.maxTags}",
-                            style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                        IconButton(
-                            onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = AppColors.sheetSurface,
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                            }
+                            Text(
+                                text = "${config.maxTags}",
+                                style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            IconButton(
+                                onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                            }
                         }
                     }
                 }
@@ -278,28 +290,40 @@ private fun TagUpSetSettingsSheet(
                         color = AppColors.contentSecondary
                     )
                 }
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = AppColors.sheetSurface,
-                    modifier = Modifier.height(40.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                val screenWidthDp = LocalConfiguration.current.screenWidthDp
+                val defaultIntersections = maxOf(1, (screenWidthDp - 32 - 120 - 8) / 24)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (config.maxIntersections != defaultIntersections) {
                         IconButton(
-                            onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
-                            modifier = Modifier.size(40.dp)
+                            onClick = { onUpdate(config.copy(maxIntersections = defaultIntersections)) },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                            Icon(Icons.Default.Refresh, contentDescription = "Reset to default", tint = AppColors.contentSecondary, modifier = Modifier.size(18.dp))
                         }
-                        Text(
-                            text = "${config.maxIntersections}",
-                            style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                        IconButton(
-                            onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = AppColors.sheetSurface,
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                            }
+                            Text(
+                                text = "${config.maxIntersections}",
+                                style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            IconButton(
+                                onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                            }
                         }
                     }
                 }

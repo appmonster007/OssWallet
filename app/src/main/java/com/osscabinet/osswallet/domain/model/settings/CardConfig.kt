@@ -418,7 +418,7 @@ data class TagUpSetPlotCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    val maxTags: Int = 10,
+    val maxTags: Int = 7,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
     val tagSortMode: UpSetTagSortMode = UpSetTagSortMode.DECREASING_ABS,

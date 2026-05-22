@@ -161,18 +161,23 @@ fun TransactionFilterPill(
         val selectorBg    = lerp(AppColors.primaryContainer,                         AppColors.sheetSurface,                          f)
 
         // ── Dismiss layer ─────────────────────────────────────────────────────
-        // Always present so taps outside the pill close the overlay regardless of morph state.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) { detectTapGestures { actions.collapse() } },
-        )
+        // Only intercepts taps when the pill is open; collapsed pill must not block TopAppBar.
+        if (isOpen) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) { detectTapGestures { actions.collapse() } },
+            )
+        }
 
         // ── Scrim ──────────────────────────────────────────────────────────────
-        // Always in the tree; alpha is driven by morph (no composition churn).
+        // Starts below the status bar so the background does not draw behind it,
+        // leaving status bar icons unaffected without any forced color override.
+        val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         Box(
             Modifier
                 .fillMaxSize()
+                .padding(top = statusBarTop)
                 .background(Color.Black.copy(alpha = f * 0.4f)),
         )
 

@@ -1,543 +1,870 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import android.Manifest
-import androidx.compose.animation.*
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
+import android.annotation.SuppressLint
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.GpsFixed
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.json.JSONArray
+import org.json.JSONObject
 import org.osmdroid.util.GeoPoint
+import java.net.HttpURLConnection
+import java.net.URL
 import java.net.URLEncoder
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun AeonLocationSelection(
-    currentCoords: Pair<Double, Double>?,
-    onLocationSelected: (Pair<Double, Double>?) -> Unit,
-    onDismiss: () -> Unit,
-    title: String = "Location"
-) {
-    val context = LocalContext.current
-    var selectedCoords by remember { mutableStateOf(currentCoords) }
-    var selectedAddress by remember { mutableStateOf<String?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
-    var searchResults by remember { mutableStateOf(emptyList<LocationSearchResult>()) }
-    var searchHistory by remember { mutableStateOf(emptyList<LocationSearchResult>()) }
-    var isSearching by remember { mutableStateOf(false) }
-    var searchError by remember { mutableStateOf<String?>(null) }
-    var searchActive by remember { mutableStateOf(false) }
+// ─────────────────────────────────────────────────────────────────────────────
+// Domain model (private to this file)
+// ─────────────────────────────────────────────────────────────────────────────
 
-    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-
-    fun getCurrentLocation() {
-        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-        if (locationPermissionState.status.isGranted) {
-            try {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        selectedCoords = it.latitude to it.longitude
-                    }
-                }
-            } catch (_: SecurityException) {}
-        } else {
-            locationPermissionState.launchPermissionRequest()
-        }
-    }
-
-    suspend fun performSearch(query: String) {
-        if (query.isBlank()) return
-        isSearching = true
-        searchError = null
-        withContext(Dispatchers.IO) {
-            try {
-                val client = OkHttpClient()
-                val encodedQuery = URLEncoder.encode(query, "UTF-8")
-                val request = Request.Builder()
-                    .url("https://nominatim.openstreetmap.org/search?q=$encodedQuery&format=json&limit=5&addressdetails=1")
-                    .header("User-Agent", "OssWallet-Android-App")
-                    .build()
-
-                client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        val body = response.body?.string() ?: ""
-                        val jsonArray = JSONArray(body)
-                        val results = mutableListOf<LocationSearchResult>()
-                        for (i in 0 until jsonArray.length()) {
-                            val obj = jsonArray.getJSONObject(i)
-                            val address = obj.optJSONObject("address")
-                            
-                            val mainName = address?.let { addr ->
-                                addr.optString("road").takeIf { it.isNotBlank() }
-                                    ?: addr.optString("amenity").takeIf { it.isNotBlank() }
-                                    ?: addr.optString("building").takeIf { it.isNotBlank() }
-                                    ?: addr.optString("house_number").takeIf { it.isNotBlank() }
-                                    ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
-                            } ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
-                            
-                            val secondaryName = obj.getString("display_name")
-                                .replaceFirst(mainName, "")
-                                .trim().trimStart(',')
-                                .trim()
-
-                            results.add(
-                                LocationSearchResult(
-                                    display = obj.getString("display_name"),
-                                    mainText = mainName,
-                                    secondaryText = secondaryName,
-                                    lat = obj.getDouble("lat"),
-                                    lon = obj.getDouble("lon")
-                                )
-                            )
-                        }
-                        withContext(Dispatchers.Main) {
-                            searchResults = results
-                            isSearching = false
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            searchError = "Search failed"
-                            isSearching = false
-                        }
-                    }
-                }
-            } catch (_: Exception) {
-                withContext(Dispatchers.Main) {
-                    searchError = "Network error"
-                    isSearching = false
-                }
-            }
-        }
-    }
-
-    suspend fun reverseGeocode(lat: Double, lon: Double) {
-        withContext(Dispatchers.IO) {
-            try {
-                val client = OkHttpClient()
-                val request = Request.Builder()
-                    .url("https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&addressdetails=1")
-                    .header("User-Agent", "OssWallet-Android-App")
-                    .build()
-
-                client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        val body = response.body?.string() ?: ""
-                        val json = org.json.JSONObject(body)
-                        val displayName = json.optString("display_name", "")
-                        withContext(Dispatchers.Main) {
-                            selectedAddress = displayName
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    LaunchedEffect(locationPermissionState.status.isGranted) {
-        if (selectedCoords == null) {
-            if (locationPermissionState.status.isGranted) {
-                getCurrentLocation()
-            } else {
-                locationPermissionState.launchPermissionRequest()
-            }
-        }
-    }
-
-    LaunchedEffect(selectedCoords) {
-        selectedCoords?.let { (lat, lon) ->
-            reverseGeocode(lat, lon)
-        } ?: run {
-            selectedAddress = null
-        }
-    }
-
-    LaunchedEffect(searchQuery) {
-        if (searchQuery.length > 2) {
-            delay(600)
-            performSearch(searchQuery)
-        } else {
-            searchResults = emptyList()
-            searchError = null
-        }
-    }
-
-    AeonFullScreenDialog(onDismissRequest = onDismiss) {
-        AeonLocationSelectionContent(
-            selectedCoords = selectedCoords,
-            selectedAddress = selectedAddress,
-            searchQuery = searchQuery,
-            searchResults = searchResults,
-            searchHistory = searchHistory,
-            isSearching = isSearching,
-            searchError = searchError,
-            searchActive = searchActive,
-            onBack = onDismiss,
-            onSearchQueryChange = { searchQuery = it },
-            onSearchActiveChange = { searchActive = it },
-            onSearchResultClick = { result ->
-                selectedCoords = result.lat to result.lon
-                searchActive = false
-                searchQuery = result.display
-                searchHistory = (listOf(result) + searchHistory.filter { it.display != result.display }).take(5)
-            },
-            onClearHistory = { searchHistory = emptyList() },
-            onManualPin = { geoPoint ->
-                selectedCoords = geoPoint.latitude to geoPoint.longitude
-                searchQuery = ""
-            },
-            onGetCurrentLocation = { getCurrentLocation() },
-            onClear = { selectedCoords = null; searchQuery = "" },
-            onConfirm = {
-                onLocationSelected(selectedCoords)
-                onDismiss()
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AeonLocationSelectionContent(
-    selectedCoords: Pair<Double, Double>?,
-    selectedAddress: String?,
-    searchQuery: String,
-    searchResults: List<LocationSearchResult>,
-    searchHistory: List<LocationSearchResult>,
-    isSearching: Boolean,
-    searchError: String?,
-    searchActive: Boolean,
-    onBack: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
-    onSearchActiveChange: (Boolean) -> Unit,
-    onSearchResultClick: (LocationSearchResult) -> Unit,
-    onClearHistory: () -> Unit,
-    onManualPin: (GeoPoint) -> Unit,
-    onGetCurrentLocation: () -> Unit,
-    onClear: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // [1] Immersive Map Background
-        AeonOSMMap(
-            initialPoint = GeoPoint(
-                selectedCoords?.first ?: 0.0,
-                selectedCoords?.second ?: 0.0
-            ),
-            onLocationSelected = onManualPin,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Top Shadow Scrim for control legibility
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.15f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        // [2] Floating Search Bar (Aeon Style)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .zIndex(2f)
-        ) {
-            DockedSearchBar(
-                query = searchQuery,
-                onQueryChange = onSearchQueryChange,
-                onSearch = { /* Handled by LaunchedEffect */ },
-                active = searchActive,
-                onActiveChange = onSearchActiveChange,
-                placeholder = { Text("Search location...", style = AppTextStyles.listItemTitle.copy(color = AppColors.contentSecondary)) },
-                leadingIcon = {
-                    IconButton(onClick = { if (searchActive) onSearchActiveChange(false) else onBack() }) {
-                        Icon(
-                            if (searchActive) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back",
-                            tint = AppColors.primary
-                        )
-                    }
-                },
-                trailingIcon = {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                            color = AppColors.primary
-                        )
-                    } else if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Rounded.Clear, contentDescription = "Clear", tint = AppColors.contentSecondary)
-                        }
-                    }
-                },
-                colors = SearchBarDefaults.colors(
-                    containerColor = AppColors.panelSurface,
-                    dividerColor = AppColors.divider
-                ),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 4.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize()
-            ) {
-                val displayResults = if (searchQuery.isEmpty()) searchHistory else searchResults
-                
-                if (searchError != null) {
-                    Text(
-                        text = searchError,
-                        color = AppColors.error,
-                        style = AppTextStyles.caption,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-
-                if (searchQuery.isEmpty() && searchHistory.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "RECENT",
-                            style = AppTextStyles.transactionSwipeAction.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = AppColors.primary
-                        )
-                        TextButton(onClick = onClearHistory) {
-                            Text("Clear All", style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold), color = AppColors.error)
-                        }
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(displayResults) { result ->
-                        ListItem(
-                            headlineContent = { 
-                                Text(
-                                    result.mainText, 
-                                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
-                                ) 
-                            },
-                            supportingContent = {
-                                Text(
-                                    result.secondaryText,
-                                    style = AppTextStyles.caption,
-                                    color = AppColors.contentSecondary
-                                )
-                            },
-                            modifier = Modifier.clickable { onSearchResultClick(result) },
-                            leadingContent = { 
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (searchQuery.isEmpty()) AppColors.secondaryContainer else AppColors.accentContainer,
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            if (searchQuery.isEmpty()) Icons.Rounded.History else Icons.Rounded.Place, 
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = if (searchQuery.isEmpty()) AppColors.onSecondaryContainer else AppColors.onAccentContainer
-                                        )
-                                    }
-                                }
-                            },
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                        )
-                    }
-                }
-            }
-        }
-
-        // [3] My Location FAB
-        FloatingActionButton(
-            onClick = onGetCurrentLocation,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-                .padding(bottom = if (selectedCoords != null) 176.dp else 24.dp),
-            containerColor = AppColors.panelSurface,
-            contentColor = AppColors.primary,
-            shape = CircleShape,
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-        ) {
-            Icon(Icons.Rounded.MyLocation, contentDescription = "My Location")
-        }
-
-        // [4] Floating Action Card (Aeon Style)
-        AnimatedVisibility(
-            visible = selectedCoords != null,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-                .navigationBarsPadding()
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                color = AppColors.panelSurface,
-                tonalElevation = 8.dp,
-                shadowElevation = 16.dp,
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.5f))
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = AppColors.accentContainer,
-                            modifier = Modifier.size(52.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Place,
-                                    contentDescription = null,
-                                    tint = AppColors.onAccentContainer,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-                        
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = selectedAddress?.split(",")?.firstOrNull() ?: "Selected Location",
-                                style = AppTextStyles.screenTitle.copy(fontSize = 18.sp),
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords?.first ?: 0.0, selectedCoords?.second ?: 0.0),
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
-
-                        IconButton(onClick = onClear) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Clear", tint = AppColors.error)
-                        }
-                    }
-
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.primary,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Confirm Location", 
-                            style = AppTextStyles.managementItemTitle
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-data class LocationSearchResult(
-    val display: String,
-    val mainText: String,
-    val secondaryText: String,
+private data class LocationResult(
+    val displayName: String,
+    val shortName: String,
     val lat: Double,
     val lon: Double
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Nominatim helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun nominatimSearch(query: String): List<LocationResult> {
+    val encoded = URLEncoder.encode(query, "UTF-8")
+    val url = "https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=6&addressdetails=1"
+    val conn = URL(url).openConnection() as HttpURLConnection
+    conn.setRequestProperty("User-Agent", "OssWallet/1.0")
+    conn.connect()
+    val body = conn.inputStream.bufferedReader().readText()
+    conn.disconnect()
+
+    val arr = JSONArray(body)
+    return (0 until arr.length()).map { i ->
+        val obj = arr.getJSONObject(i)
+        val displayName = obj.optString("display_name", "")
+        val lat = obj.optString("lat", "0").toDoubleOrNull() ?: 0.0
+        val lon = obj.optString("lon", "0").toDoubleOrNull() ?: 0.0
+        val address = obj.optJSONObject("address")
+        val cityName = address?.run {
+            optString("city").ifBlank { optString("town").ifBlank { optString("village").ifBlank { optString("suburb") } } }
+        } ?: ""
+        val shortName = cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: displayName }
+        LocationResult(displayName, shortName, lat, lon)
+    }
+}
+
+private fun nominatimReverse(lat: Double, lon: Double): LocationResult? = try {
+    val url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json"
+    val conn = URL(url).openConnection() as HttpURLConnection
+    conn.setRequestProperty("User-Agent", "OssWallet/1.0")
+    conn.connect()
+    val body = conn.inputStream.bufferedReader().readText()
+    conn.disconnect()
+
+    val obj = JSONObject(body)
+    val displayName = obj.optString("display_name", "")
+    val rawName = obj.optString("name", "")
+    val address = obj.optJSONObject("address")
+    val cityName = address?.run {
+        optString("city").ifBlank { optString("town").ifBlank { optString("village").ifBlank { optString("suburb") } } }
+    } ?: ""
+    val shortName = rawName.ifBlank { cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: "" } }
+    LocationResult(displayName, shortName, lat, lon)
+} catch (_: Exception) { null }
+
+@SuppressLint("MissingPermission")
+private fun fetchLastLocation(
+    context: android.content.Context,
+    onResult: (android.location.Location?) -> Unit
+) {
+    LocationServices.getFusedLocationProviderClient(context)
+        .lastLocation
+        .addOnSuccessListener { onResult(it) }
+        .addOnFailureListener { onResult(null) }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main composable
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun AeonLocationSelection(
+    currentCoords: Pair<Double, Double>?,
+    onLocationSelected: (Pair<Double, Double>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context        = LocalContext.current
+    val clipboard      = LocalClipboardManager.current
+    val haptics        = LocalHapticFeedback.current
+    val focusManager   = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val initialGeoPoint = remember(currentCoords) {
+        currentCoords?.let { GeoPoint(it.first, it.second) } ?: GeoPoint(20.0, 0.0)
+    }
+
+    var mapCenter        by remember { mutableStateOf(initialGeoPoint) }
+    var mapZoom          by remember { mutableDoubleStateOf(if (currentCoords != null) 14.0 else 2.0) }
+    var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(if (currentCoords != null) initialGeoPoint else null) }
+    var selectedLocation by remember { mutableStateOf<LocationResult?>(null) }
+    var isGeocoding      by remember { mutableStateOf(currentCoords != null) }
+
+    var searchQuery      by remember { mutableStateOf("") }
+    var searchResults    by remember { mutableStateOf<List<LocationResult>>(emptyList()) }
+    val recentLocations  = remember { mutableStateListOf<LocationResult>() }
+    var isSearchActive   by remember { mutableStateOf(false) }
+
+    var showPanel          by remember { mutableStateOf(currentCoords != null) }
+    var isLocating         by remember { mutableStateOf(false) }
+    var isSearchFocused    by remember { mutableStateOf(false) }
+    var visibleResultCount by remember { mutableIntStateOf(0) }
+
+    // ── Colors / dims (captured once outside lambdas) ────────────────────────
+    val accentColor          = AppColors.accent
+    val accentArgb           = accentColor.toArgb()
+    val cardSurface          = AppColors.cardSurface
+    val contentPrimary       = AppColors.contentPrimary
+    val contentSecondary     = AppColors.contentSecondary
+    val accentContainer      = AppColors.accentContainer
+    val onAccentContainer    = AppColors.onAccentContainer
+    val dividerColor         = AppColors.divider
+    val dims                 = AeonTheme.dimensions
+
+    val statusBarTop  = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarBottom  = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    // ── Initial reverse-geocode ───────────────────────────────────────────────
+    LaunchedEffect(Unit) {
+        if (currentCoords != null) {
+            val result = withContext(Dispatchers.IO) {
+                nominatimReverse(currentCoords.first, currentCoords.second)
+            }
+            selectedLocation = result
+            isGeocoding = false
+        }
+    }
+
+    // ── Debounced forward-search ──────────────────────────────────────────────
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isBlank()) { searchResults = emptyList(); return@LaunchedEffect }
+        delay(400)
+        searchResults = withContext(Dispatchers.IO) {
+            try { nominatimSearch(searchQuery) } catch (_: Exception) { emptyList() }
+        }
+    }
+
+    // ── Shared: select a geo-point and begin geocoding ────────────────────────
+    fun selectPoint(geoPoint: GeoPoint, zoom: Double = 15.0) {
+        focusManager.clearFocus()
+        searchQuery    = ""
+        isSearchActive = false
+        selectedGeoPoint = geoPoint
+        mapCenter = geoPoint
+        mapZoom   = zoom
+        selectedLocation = null
+        isGeocoding = true
+        showPanel   = true
+        coroutineScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                nominatimReverse(geoPoint.latitude, geoPoint.longitude)
+            }
+            selectedLocation = result
+            isGeocoding = false
+        }
+    }
+
+    // ── Permission launcher for GPS ───────────────────────────────────────────
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            isLocating = true
+            fetchLastLocation(context) { loc ->
+                isLocating = false
+                if (loc != null) selectPoint(GeoPoint(loc.latitude, loc.longitude), zoom = 16.0)
+            }
+        }
+    }
+
+    fun onGpsClick() {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (granted) {
+            isLocating = true
+            fetchLastLocation(context) { loc ->
+                isLocating = false
+                if (loc != null) selectPoint(GeoPoint(loc.latitude, loc.longitude), zoom = 16.0)
+            }
+        } else {
+            permissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    // ── Staggered search result entrance ─────────────────────────────────────
+    LaunchedEffect(searchResults) {
+        visibleResultCount = 0
+        searchResults.forEachIndexed { index, _ ->
+            delay(60L)
+            visibleResultCount = index + 1
+        }
+    }
+
+    // ── Animated state for search bar elevation + GPS button position ─────────
+    val searchElevation by animateDpAsState(
+        targetValue = if (isSearchFocused) 12.dp else 6.dp,
+        label       = "searchElevation"
+    )
+    val gpsPaddingBottom by animateDpAsState(
+        targetValue = if (showPanel) 240.dp + navBarBottom else dims.spacingXl + navBarBottom,
+        label       = "gpsPaddingBottom"
+    )
+
+    // ── GPS pulse ring animation ──────────────────────────────────────────────
+    val gpsRingTransition = rememberInfiniteTransition(label = "gpsRing")
+    val gpsRingScale by gpsRingTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.65f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart),
+        label = "gpsRingScale"
+    )
+    val gpsRingAlpha by gpsRingTransition.animateFloat(
+        initialValue = 0.6f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart),
+        label = "gpsRingAlpha"
+    )
+
+    val showDropdown = isSearchActive && (searchResults.isNotEmpty() || (searchQuery.isBlank() && recentLocations.isNotEmpty()))
+    val searchFocusRequester = remember { FocusRequester() }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // UI
+    // ─────────────────────────────────────────────────────────────────────────
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // ── 1. Map ────────────────────────────────────────────────────────
+            AeonOSMMap(
+                modifier     = Modifier.fillMaxSize(),
+                center       = mapCenter,
+                zoom         = mapZoom,
+                selectedPoint = selectedGeoPoint,
+                accentArgb   = accentArgb,
+                onMapTap     = { selectPoint(it) }
+            )
+
+            // ── 2. Top bar: back + search pill ────────────────────────────────
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(
+                        top   = statusBarTop + dims.spacingMd,
+                        start = dims.screenPadding,
+                        end   = dims.screenPadding
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
+            ) {
+                // Back
+                Surface(
+                    modifier      = Modifier.size(44.dp),
+                    shape         = CircleShape,
+                    color         = cardSurface,
+                    shadowElevation = 6.dp,
+                    onClick       = onDismiss
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector     = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint            = contentPrimary,
+                            modifier        = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                // Search pill — elevation and background animate on focus
+                Surface(
+                    modifier        = Modifier.weight(1f).height(52.dp),
+                    shape           = RoundedCornerShape(dims.chipCornerRadius),
+                    color           = if (isSearchFocused) AppColors.panelSurface else cardSurface,
+                    shadowElevation = searchElevation
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(horizontal = dims.spacingMd),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint        = contentSecondary,
+                            modifier    = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(dims.spacingSm))
+                        BasicTextField(
+                            value       = searchQuery,
+                            onValueChange = { q ->
+                                searchQuery    = q
+                                isSearchActive = true
+                            },
+                            modifier    = Modifier
+                                .weight(1f)
+                                .focusRequester(searchFocusRequester)
+                                .onFocusChanged { isSearchFocused = it.isFocused },
+                            singleLine  = true,
+                            textStyle   = AppTextStyles.transactionTitle.copy(color = contentPrimary),
+                            decorationBox = { inner ->
+                                Box {
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            "Search for a place…",
+                                            style = AppTextStyles.transactionTitle.copy(
+                                                color = contentSecondary.copy(alpha = 0.55f)
+                                            )
+                                        )
+                                    }
+                                    inner()
+                                }
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = searchQuery.isNotEmpty(),
+                            enter   = fadeIn(),
+                            exit    = fadeOut()
+                        ) {
+                            IconButton(
+                                onClick  = { searchQuery = ""; isSearchActive = false; focusManager.clearFocus() },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = "Clear search",
+                                    modifier = Modifier.size(18.dp),
+                                    tint     = contentSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 3. Search results / recents dropdown ──────────────────────────
+            AnimatedVisibility(
+                visible  = showDropdown,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(
+                        top   = statusBarTop + dims.spacingMd + 52.dp + dims.spacingXs,
+                        start = dims.screenPadding + 44.dp + dims.spacingSm,
+                        end   = dims.screenPadding
+                    ),
+                enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                exit  = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
+            ) {
+                Surface(
+                    shape           = RoundedCornerShape(dims.containerCornerRadius),
+                    color           = cardSurface,
+                    shadowElevation = 12.dp,
+                    modifier        = Modifier.heightIn(max = 300.dp)
+                ) {
+                    LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingXs)) {
+                        if (searchQuery.isBlank() && recentLocations.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "RECENT",
+                                    style    = AppTextStyles.sectionOverline,
+                                    color    = contentSecondary,
+                                    modifier = Modifier.padding(
+                                        horizontal = dims.spacingLg,
+                                        vertical   = dims.spacingXs
+                                    )
+                                )
+                            }
+                            items(recentLocations.take(5), key = { idx -> "recent_$idx" }) { loc ->
+                                LocationRow(loc, contentPrimary, contentSecondary, cardSurface) {
+                                    selectPoint(GeoPoint(loc.lat, loc.lon))
+                                    selectedLocation = loc
+                                    isGeocoding = false
+                                }
+                            }
+                        } else if (searchResults.isNotEmpty()) {
+                            itemsIndexed(searchResults, key = { idx, _ -> "search_$idx" }) { idx, loc ->
+                                AnimatedVisibility(
+                                    visible = idx < visibleResultCount,
+                                    enter   = fadeIn(tween(180)) + expandVertically(tween(180))
+                                ) {
+                                    LocationRow(loc, contentPrimary, contentSecondary, cardSurface) {
+                                        selectPoint(GeoPoint(loc.lat, loc.lon))
+                                        selectedLocation = loc
+                                        isGeocoding = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 4. GPS button (bottom-end, above the panel) — animated position ─
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = dims.spacingLg, bottom = gpsPaddingBottom)
+                    .size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Pulsing ring while locating
+                if (isLocating) {
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = gpsRingScale
+                                scaleY = gpsRingScale
+                                alpha  = gpsRingAlpha
+                            }
+                    ) {
+                        drawCircle(
+                            color  = accentColor,
+                            radius = size.minDimension / 2f,
+                            style  = Stroke(width = 2.dp.toPx())
+                        )
+                    }
+                }
+                Surface(
+                    modifier        = Modifier.size(48.dp),
+                    shape           = CircleShape,
+                    color           = cardSurface,
+                    shadowElevation = 6.dp,
+                    onClick         = ::onGpsClick
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        if (isLocating) {
+                            CircularProgressIndicator(
+                                modifier    = Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color       = accentColor
+                            )
+                        } else {
+                            Icon(
+                                Icons.Rounded.GpsFixed,
+                                contentDescription = "My location",
+                                tint     = accentColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── 5. Location panel (scrim-free, slides up from bottom) ─────────
+            AnimatedVisibility(
+                visible  = showPanel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit  = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+            ) {
+                Surface(
+                    modifier        = Modifier.fillMaxWidth(),
+                    shape           = RoundedCornerShape(topStart = dims.dialogCornerRadius, topEnd = dims.dialogCornerRadius),
+                    color           = cardSurface,
+                    shadowElevation = 20.dp,
+                    tonalElevation  = 2.dp
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+
+                        // Drag handle + dismiss row
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = dims.spacingMd),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 40.dp, height = 5.dp)
+                                    .background(dividerColor.copy(alpha = 0.45f), CircleShape)
+                            )
+                            // Small × to dismiss panel without picking a location
+                            IconButton(
+                                onClick  = { showPanel = false; selectedGeoPoint = null; selectedLocation = null },
+                                modifier = Modifier.align(Alignment.CenterEnd).padding(end = dims.spacingMd).size(32.dp)
+                            ) {
+                                Icon(Icons.Rounded.Close, contentDescription = "Dismiss", tint = contentSecondary, modifier = Modifier.size(18.dp))
+                            }
+                        }
+
+                        // Content area — transitions between loading and loaded
+                        AnimatedContent(
+                            targetState = isGeocoding to selectedLocation,
+                            transitionSpec = {
+                                (fadeIn() + expandVertically()).togetherWith(fadeOut() + shrinkVertically())
+                            },
+                            label = "panelContent"
+                        ) { (geocoding, location) ->
+                            if (geocoding || location == null) {
+                                // Shimmer skeleton — two text lines
+                                val shimmerTransition = rememberInfiniteTransition(label = "shimmer")
+                                val shimmerX by shimmerTransition.animateFloat(
+                                    initialValue  = 0f,
+                                    targetValue   = 800f,
+                                    animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing)),
+                                    label         = "shimmerX"
+                                )
+                                val shimmerBrush = Brush.linearGradient(
+                                    colors = listOf(AppColors.insetSurface, AppColors.divider, AppColors.insetSurface),
+                                    start  = Offset(shimmerX - 400f, 0f),
+                                    end    = Offset(shimmerX, 0f)
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+                                    verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.68f)
+                                            .height(16.dp)
+                                            .background(shimmerBrush, RoundedCornerShape(8.dp))
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.44f)
+                                            .height(12.dp)
+                                            .background(shimmerBrush, RoundedCornerShape(6.dp))
+                                    )
+                                }
+                            } else {
+                                LocationPanelBody(
+                                    location          = location,
+                                    accentContainer   = accentContainer,
+                                    onAccentContainer = onAccentContainer,
+                                    contentPrimary    = contentPrimary,
+                                    contentSecondary  = contentSecondary,
+                                    dividerColor      = dividerColor,
+                                    onCopy = {
+                                        clipboard.setText(AnnotatedString("${location.lat}, ${location.lon}"))
+                                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    }
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier  = Modifier.padding(horizontal = dims.screenPadding),
+                            color     = dividerColor.copy(alpha = 0.5f),
+                            thickness = 0.5.dp
+                        )
+
+                        // Confirm button
+                        Button(
+                            onClick = {
+                                val loc = selectedLocation ?: return@Button
+                                if (recentLocations.none { it.lat == loc.lat && it.lon == loc.lon }) {
+                                    recentLocations.add(0, loc)
+                                    if (recentLocations.size > 5) recentLocations.removeAt(recentLocations.size - 1)
+                                }
+                                onLocationSelected(Pair(loc.lat, loc.lon))
+                                onDismiss()
+                            },
+                            enabled  = selectedLocation != null && !isGeocoding,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+                            shape    = RoundedCornerShape(dims.buttonCornerRadius)
+                        ) {
+                            Text(
+                                "Confirm Location",
+                                style    = AppTextStyles.cardSectionTitle.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(vertical = dims.spacingXs)
+                            )
+                        }
+
+                        Spacer(Modifier.height(navBarBottom + dims.spacingXs))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panel body — location name, coord chips, copy action
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun LocationPanelBody(
+    location: LocationResult,
+    accentContainer: Color,
+    onAccentContainer: Color,
+    contentPrimary: Color,
+    contentSecondary: Color,
+    dividerColor: Color,
+    onCopy: () -> Unit
+) {
+    val dims = AeonTheme.dimensions
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = dims.screenPadding)
+            .padding(top = dims.spacingMd, bottom = dims.spacingLg)
+    ) {
+        // Place name — visually dominant anchor
+        if (location.shortName.isNotBlank()) {
+            Text(
+                text     = location.shortName,
+                style    = AppTextStyles.heroAmount.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                color    = contentPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(dims.spacingXs))
+        }
+
+        // Full address — caption style, muted
+        Text(
+            text     = location.displayName,
+            style    = AppTextStyles.caption.copy(fontSize = 12.sp),
+            color    = contentSecondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Spacer(Modifier.height(dims.spacingLg))
+
+        // Coord chips + copy button on one row
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
+        ) {
+            CoordChip("Lat", location.lat, accentContainer, onAccentContainer)
+            CoordChip("Lon", location.lon, accentContainer, onAccentContainer)
+
+            Spacer(Modifier.weight(1f))
+
+            TextButton(
+                onClick      = onCopy,
+                contentPadding = PaddingValues(horizontal = dims.spacingMd, vertical = 0.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.ContentCopy,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(Modifier.width(dims.spacingXs))
+                Text("Copy", style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.SemiBold))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoordChip(
+    label: String,
+    value: Double,
+    containerColor: Color,
+    contentColor: Color
+) {
+    val dims = AeonTheme.dimensions
+    Surface(
+        shape = RoundedCornerShape(dims.chipCornerRadius),
+        color = containerColor
+    ) {
+        Row(
+            modifier  = Modifier.padding(horizontal = dims.spacingMd, vertical = dims.spacingXs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
+        ) {
+            Icon(
+                Icons.Rounded.Explore,
+                contentDescription = null,
+                tint     = contentColor,
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
+            )
+            Text(
+                "$label: ${"%.5f".format(value)}",
+                style = AppTextStyles.metaLabel,
+                color = contentColor
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dropdown row
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun LocationRow(
+    location: LocationResult,
+    contentPrimary: Color,
+    contentSecondary: Color,
+    containerColor: Color,
+    onClick: () -> Unit
+) {
+    ListItem(
+        headlineContent = {
+            Text(location.shortName, style = AppTextStyles.transactionTitle, color = contentPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        supportingContent = {
+            Text(location.displayName, style = AppTextStyles.transactionSubtitle, color = contentSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        leadingContent = {
+            Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = contentSecondary, modifier = Modifier.size(20.dp))
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+        colors   = ListItemDefaults.colors(containerColor = containerColor)
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Previews
+// ─────────────────────────────────────────────────────────────────────────────
+
 @ThemePreviews
 @Composable
-fun AeonLocationSelectionContentPreview() {
+fun AeonLocationSelectionEmptyPreview() {
     OssWalletTheme {
-        AeonLocationSelectionContent(
-            selectedCoords = 1.23456 to 7.89012,
-            selectedAddress = "123 Main St, New York, NY",
-            searchQuery = "",
-            searchResults = emptyList(),
-            searchHistory = listOf(
-                LocationSearchResult("Times Square", "Times Square", "New York, NY", 40.7580, -73.9855)
-            ),
-            isSearching = false,
-            searchError = null,
-            searchActive = false,
-            onBack = {},
-            onSearchQueryChange = {},
-            onSearchActiveChange = {},
-            onSearchResultClick = {},
-            onClearHistory = {},
-            onManualPin = {},
-            onGetCurrentLocation = {},
-            onClear = {},
-            onConfirm = {}
-        )
+        AeonLocationSelection(currentCoords = null, onLocationSelected = {}, onDismiss = {})
+    }
+}
+
+@ThemePreviews
+@Composable
+fun AeonLocationSelectionWithPinPreview() {
+    OssWalletTheme {
+        AeonLocationSelection(currentCoords = Pair(37.7749, -122.4194), onLocationSelected = {}, onDismiss = {})
+    }
+}
+
+@ThemePreviews
+@Composable
+fun LocationPanelPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.cardSurface) {
+            LocationPanelBody(
+                location = LocationResult(
+                    displayName  = "Ferry Building, 1 Ferry Building, San Francisco, CA 94111, United States",
+                    shortName    = "Ferry Building",
+                    lat          = 37.79520,
+                    lon          = -122.39390
+                ),
+                accentContainer   = AppColors.accentContainer,
+                onAccentContainer = AppColors.onAccentContainer,
+                contentPrimary    = AppColors.contentPrimary,
+                contentSecondary  = AppColors.contentSecondary,
+                dividerColor      = AppColors.divider,
+                onCopy            = {}
+            )
+        }
     }
 }

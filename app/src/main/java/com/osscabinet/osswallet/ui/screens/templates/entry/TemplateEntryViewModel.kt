@@ -31,6 +31,11 @@ class TemplateEntryViewModel @Inject constructor(
 
     init {
         loadInitialData()
+        viewModelScope.launch {
+            effectiveShortlistedCurrencies.collect { currencies ->
+                _state.update { it.copy(shortlistedCurrencies = currencies) }
+            }
+        }
     }
 
     private fun loadInitialData() {

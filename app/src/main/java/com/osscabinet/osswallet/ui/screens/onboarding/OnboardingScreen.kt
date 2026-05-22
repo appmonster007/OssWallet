@@ -19,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,7 +46,7 @@ fun OnboardingScreen(
     onComplete: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState { 5 }
+    val pagerState = rememberPagerState { 6 }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -59,7 +61,7 @@ fun OnboardingScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Step ${pagerState.currentPage + 1} of 5",
+                        text = "Step ${pagerState.currentPage + 1} of 6",
                         style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -91,7 +93,7 @@ fun OnboardingScreen(
             ) {
                 Column {
                     LinearProgressIndicator(
-                        progress = { (pagerState.currentPage + 1).toFloat() / 5 },
+                        progress = { (pagerState.currentPage + 1).toFloat() / 6 },
                         modifier = Modifier.fillMaxWidth().height(4.dp),
                         color = AppColors.primary,
                         trackColor = AppColors.divider.copy(alpha = 0.1f)
@@ -107,7 +109,7 @@ fun OnboardingScreen(
                     ) {
                         Button(
                             onClick = {
-                                if (pagerState.currentPage < 4) {
+                                if (pagerState.currentPage < 5) {
                                     scope.launch {
                                         pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                     }
@@ -115,7 +117,8 @@ fun OnboardingScreen(
                                     viewModel.onEvent(OnboardingEvent.CompleteOnboarding)
                                 }
                             },
-                            enabled = !uiState.isCompleting,
+                            enabled = !uiState.isCompleting &&
+                                (pagerState.currentPage != 4 || uiState.shortlistedCurrencies.isNotEmpty()),
                             modifier = Modifier.height(56.dp),
                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                             colors = ButtonDefaults.buttonColors(
@@ -132,12 +135,12 @@ fun OnboardingScreen(
                                 )
                             } else {
                                 Text(
-                                    if (pagerState.currentPage < 4) "NEXT" else "GET STARTED",
+                                    if (pagerState.currentPage < 5) "NEXT" else "GET STARTED",
                                     style = AppTextStyles.listSectionHeader
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
-                                    if (pagerState.currentPage < 4) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
+                                    if (pagerState.currentPage < 5) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -176,7 +179,12 @@ fun OnboardingScreen(
                         availableCurrencies = uiState.availableCurrencies,
                         onCurrencySelected = { viewModel.onEvent(OnboardingEvent.CurrencySelected(it)) }
                     )
-                    4 -> AppearanceStep(
+                    4 -> ShortlistStep(
+                        availableCurrencies = uiState.availableCurrencies,
+                        selectedCurrencies = uiState.shortlistedCurrencies,
+                        onSelectionChange = { viewModel.onEvent(OnboardingEvent.ShortlistedCurrenciesChanged(it)) }
+                    )
+                    5 -> AppearanceStep(
                         selectedTheme = uiState.selectedTheme,
                         onThemeSelected = { viewModel.onEvent(OnboardingEvent.ThemeSelected(it)) },
                         selectedPrecision = uiState.decimalPrecision,
@@ -407,6 +415,154 @@ private fun CurrencyStep(
                     val isSelected = selectedCurrency == metadata.code
                     Surface(
                         onClick = { onCurrencySelected(metadata.code) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
+                        border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = if (isSelected) AppColors.primary.copy(alpha = 0.2f) else AppColors.recessedSurface
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        getCurrencySymbol(metadata.code),
+                                        style = AppTextStyles.cardSectionTitle,
+                                        color = if (isSelected) AppColors.primary else AppColors.contentSecondary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    metadata.name,
+                                    style = AppTextStyles.listItemTitle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
+                                )
+                                Text(
+                                    "${metadata.code} • ${metadata.country}",
+                                    style = AppTextStyles.transactionSwipeAction,
+                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = AppColors.primary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun ShortlistStep(
+    availableCurrencies: List<CurrencyMetadata>,
+    selectedCurrencies: Set<String>,
+    onSelectionChange: (Set<String>) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCurrencies = remember(searchQuery, availableCurrencies) {
+        availableCurrencies.filter {
+            it.code.contains(searchQuery, ignoreCase = true) ||
+            it.name.contains(searchQuery, ignoreCase = true)
+        }
+    }
+    val filteredCodes = remember(filteredCurrencies) { filteredCurrencies.map { it.code }.toSet() }
+    val haptic = LocalHapticFeedback.current
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        StepHeader(
+            icon = Icons.Rounded.Bookmarks,
+            title = "Active Currencies",
+            description = "Select the currencies you work with — they'll appear across all forms."
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Search currencies...") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Rounded.Clear, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = AppColors.cardSurface,
+                    focusedContainerColor = AppColors.cardSurface,
+                    unfocusedIndicatorColor = AppColors.divider.copy(alpha = 0.1f),
+                    focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f)
+                )
+            )
+            if (filteredCodes.isNotEmpty()) {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onSelectionChange(selectedCurrencies + filteredCodes)
+                }) {
+                    Icon(Icons.Rounded.SelectAll, contentDescription = "Select All", tint = AppColors.primary)
+                }
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onSelectionChange(selectedCurrencies - filteredCodes)
+                }) {
+                    Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All", tint = AppColors.contentSecondary)
+                }
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    val toggled = selectedCurrencies.toMutableSet()
+                    filteredCodes.forEach { code ->
+                        if (code in toggled) toggled.remove(code) else toggled.add(code)
+                    }
+                    onSelectionChange(toggled)
+                }) {
+                    Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection", tint = AppColors.contentSecondary)
+                }
+            }
+        }
+        if (selectedCurrencies.isNotEmpty()) {
+            Text(
+                "${selectedCurrencies.size} selected",
+                style = AppTextStyles.transactionSwipeAction,
+                color = AppColors.contentSecondary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        Surface(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = AppColors.cardSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredCurrencies, key = { it.code }) { metadata ->
+                    val isSelected = metadata.code in selectedCurrencies
+                    Surface(
+                        onClick = {
+                            onSelectionChange(
+                                if (isSelected) selectedCurrencies - metadata.code
+                                else selectedCurrencies + metadata.code
+                            )
+                        },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
                         border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null

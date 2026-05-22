@@ -53,6 +53,7 @@ data class TemplateEntryState(
     val allTags: List<Tag> = emptyList(),
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
+    val shortlistedCurrencies: List<String> = emptyList(),
 
     // Metadata
     val templateId: Long? = null,

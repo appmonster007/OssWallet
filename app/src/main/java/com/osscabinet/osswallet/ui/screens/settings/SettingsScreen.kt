@@ -53,8 +53,10 @@ fun SettingsScreen(
     onTemplatesClick: () -> Unit,
     onManageFiltersClick: () -> Unit,
     onSmartSuggestionsClick: () -> Unit,
+    onShortlistedCurrenciesClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
+    val shortlistedCurrencies by viewModel.shortlistedCurrencies.collectAsStateWithLifecycle()
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
@@ -490,6 +492,13 @@ fun SettingsScreen(
                     subtitle = availableProviders.find { it.id == currencyProviderId }?.name ?: "Select Provider",
                     icon = Icons.Rounded.Api,
                     onClick = { showProviderDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Active Currencies",
+                    subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" } ?: "All currencies",
+                    icon = Icons.Rounded.Bookmarks,
+                    onClick = { navigate { onShortlistedCurrenciesClick() } }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(

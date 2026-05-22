@@ -243,7 +243,9 @@ fun TransactionEntrySheets(
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetCurrency(it)) }
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowCurrencySheet(false)) }
+            onDismiss = { onEvent(TransactionEntryEvent.ShowCurrencySheet(false)) },
+            currencies = state.selectedAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
+                ?: state.shortlistedCurrencies.ifEmpty { null }
         )
     }
 
@@ -254,7 +256,9 @@ fun TransactionEntrySheets(
                 ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = stringResource(R.string.target_currency_selection_title)
+            title = stringResource(R.string.target_currency_selection_title),
+            currencies = if (state.targetAccount == null) state.fullProviderCurrencies.ifEmpty { null }
+                         else state.targetAccount.allowedCurrencies.toList().ifEmpty { null }
         )
     }
 }

@@ -31,7 +31,11 @@ fun TemplateFormBody(
     onEvent: (TemplateEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val allCurrencies = remember { CurrencyService.getAllCurrencies() }
+    val sourceCurrencies = remember(state.accountId, state.accounts, state.shortlistedCurrencies) {
+        state.accounts.find { it.id == state.accountId }
+            ?.allowedCurrencies?.toList()?.ifEmpty { null }
+            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -61,7 +65,7 @@ fun TemplateFormBody(
                 onTargetCurrencyClick = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = allCurrencies
+                supportedCurrencies = sourceCurrencies
             )
 
             // CONTEXT: Action cards row: Account, Category

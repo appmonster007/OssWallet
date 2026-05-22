@@ -188,7 +188,21 @@ fun OssWalletNavGraph(
                     onTemplatesClick = { navController.navigate(Screen.TemplateList.route) },
                     onManageFiltersClick = { navController.navigate(Screen.FilterList.route) },
                     onSmartSuggestionsClick = { navController.navigate(Screen.SmartSuggestions.route) },
+                    onShortlistedCurrenciesClick = { navController.navigate(Screen.ShortlistedCurrencies.route) },
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.ShortlistedCurrencies.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesScreen(
+                    viewModel = settingsViewModel,
+                    onBack = { navController.popBackStack() }
                 )
             }
 

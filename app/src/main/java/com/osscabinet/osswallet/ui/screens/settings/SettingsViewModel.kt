@@ -125,6 +125,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setShortlistedCurrencies(currencies: Set<String>) {
+        viewModelScope.launch {
+            settingsRepository.saveShortlistedCurrencies(currencies)
+        }
+    }
+
     fun fetchAndSaveRates(baseCurrency: String) {
         viewModelScope.launch {
             try {

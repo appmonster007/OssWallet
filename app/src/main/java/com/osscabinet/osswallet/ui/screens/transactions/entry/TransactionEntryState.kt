@@ -75,6 +75,8 @@ data class TransactionEntryState(
     val allNotes: List<String> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val mapsAccessEnabled: Boolean = false,
+    val shortlistedCurrencies: List<String> = emptyList(),
+    val fullProviderCurrencies: List<String> = emptyList(),
 
     // Edit mode data
     val transactionId: Long? = null,

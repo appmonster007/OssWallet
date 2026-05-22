@@ -118,19 +118,15 @@ fun FilterEntrySheets(
     }
 
     if (state.showCurrencySheet) {
-        val allCurrencies = listOf("USD", "EUR", "GBP", "JPY", "INR", "CAD", "AUD", "CHF", "CNY")
-        AeonSelectionSheet(
-            title = "Filter Currencies",
-            onDismiss = { onEvent(FilterEntryEvent.ShowCurrencySheet(false)) },
-            items = allCurrencies,
-            selectedIds = state.selectedCurrencies,
-            onSelectionChange = { ids -> 
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCurrencies(ids)) 
+        AeonCurrencySelection(
+            selectedCurrencies = state.selectedCurrencies,
+            onSelectionChange = { ids ->
+                onEvent(FilterEntryEvent.SetCurrencies(ids))
             },
-            idMapper = { it },
-            labelMapper = { it },
+            onDismiss = { onEvent(FilterEntryEvent.ShowCurrencySheet(false)) },
             mode = AeonSelectMode.MULTI,
-            iconMapper = { Icons.Rounded.AttachMoney }
+            title = "Filter Currencies",
+            currencies = state.shortlistedCurrencies.ifEmpty { null }
         )
     }
 

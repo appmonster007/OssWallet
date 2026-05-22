@@ -43,6 +43,7 @@ class SettingsDataStore(private val context: Context) {
         val USER_NAME_KEY = stringPreferencesKey("user_name")
         val USE_SYSTEM_FONT_KEY = booleanPreferencesKey("use_system_font")
         val SELECTED_FONT_KEY = stringPreferencesKey("selected_font")
+        val SHORTLISTED_CURRENCIES_KEY = stringSetPreferencesKey("shortlisted_currencies")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
@@ -175,6 +176,10 @@ class SettingsDataStore(private val context: Context) {
 
     val analyticsCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[ANALYTICS_CARDS_CONFIG_KEY] ?: ""
+    }
+
+    val shortlistedCurrencies: Flow<Set<String>?> = context.dataStore.data.map { preferences ->
+        preferences[SHORTLISTED_CURRENCIES_KEY]
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -346,6 +351,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveAnalyticsCardsConfig(config: String) {
         context.dataStore.edit { preferences ->
             preferences[ANALYTICS_CARDS_CONFIG_KEY] = config
+        }
+    }
+
+    suspend fun saveShortlistedCurrencies(currencies: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[SHORTLISTED_CURRENCIES_KEY] = currencies
         }
     }
 }

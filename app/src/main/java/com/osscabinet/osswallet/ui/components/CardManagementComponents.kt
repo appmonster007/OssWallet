@@ -169,80 +169,90 @@ data class CardTypeOptionData(
  * Generic add card dialog that can be used across all screens.
  * Takes a list of card type options and displays them.
  */
+/**
+ * Generic add card dialog rewritten with best-practice scrolling and inset management.
+ * 
+ * Uses a single LazyColumn as the root content to ensure stable nested scrolling
+ * and prevents the "bouncing" glitch found in Material 3 BottomSheets.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GenericAddCardDialog(
     onDismiss: () -> Unit,
     cardOptions: List<CardTypeOptionData>
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    
     val groupedOptions = remember(cardOptions) {
         cardOptions
             .sortedWith(compareBy({ it.category.order }, { it.title }))
             .groupBy { it.category }
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppColors.drawerSurface,
         dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.border) },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.9f)
-                .statusBarsPadding()
-                .padding(bottom = 16.dp)
+                .statusBarsPadding(), // Ensures content stays below status bar at all times
+            contentPadding = PaddingValues(
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
+            )
         ) {
-            Text(
-                text = "Add New Card",
-                style = AppTextStyles.heroAmount,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-            )
-            Text(
-                text = "Select a card type to add to your screen",
-                style = AppTextStyles.caption,
-                color = AppColors.contentSecondary,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-            )
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Add New Card",
+                        style = AppTextStyles.heroAmount
+                    )
+                    Text(
+                        text = "Select a card type to add to your screen",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                    )
+                }
+            }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false),
-                contentPadding = PaddingValues(bottom = 32.dp)
-            ) {
-                groupedOptions.forEach { (category, options) ->
-                    stickyHeader {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(AppColors.drawerSurface)
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = category.displayName.uppercase(),
-                                style = AppTextStyles.sectionOverline,
-                                color = AppColors.primary
-                            )
-                        }
-                    }
-
-                    items(options) { option ->
-                        CardTypeOption(
-                            title = option.title,
-                            description = option.description,
-                            onClick = option.onClick,
-                            icon = option.icon
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp),
-                            color = AppColors.border.copy(alpha = 0.3f)
+            groupedOptions.forEach { (category, options) ->
+                stickyHeader(key = category.name) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(AppColors.drawerSurface)
+                            .padding(horizontal = 24.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = category.displayName.uppercase(),
+                            style = AppTextStyles.sectionOverline,
+                            color = AppColors.primary
                         )
                     }
+                }
+
+                items(
+                    items = options,
+                    key = { it.title + category.name }
+                ) { option ->
+                    CardTypeOption(
+                        title = option.title,
+                        description = option.description,
+                        onClick = option.onClick,
+                        icon = option.icon
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                        color = AppColors.border.copy(alpha = 0.3f)
+                    )
                 }
             }
         }

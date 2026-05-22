@@ -1,13 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -20,7 +20,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Standardised bottom sheet for configuring card filters.
- * Scoped to filtering only — card deletion lives in the display settings dialog.
+ * Rewritten using Single-Root Scrollable best practices for maximum stability.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,45 +34,56 @@ fun AeonCardSettingsSheet(
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter()
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = AppColors.sheetSurface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
+                .statusBarsPadding(), // Ensures content respects status bar when expanded
+            contentPadding = PaddingValues(
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
+            )
         ) {
-            Text(
-                title,
-                style = AppTextStyles.heroAmount,
-                modifier = Modifier
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                    .align(Alignment.CenterHorizontally)
-            )
-            
-            FilterSheetContent(
-                filter = filter,
-                accounts = filterContext.accounts,
-                allCategories = filterContext.allCategories,
-                allTags = filterContext.allTags,
-                onSearchTransactions = filterContext.onSearchTransactions,
-                savedFilters = filterContext.savedFilters,
-                onFilterEvent = { event ->
-                    when (event) {
-                        is FilterEvent.Apply -> onFilterChange(event.filter)
-                        is FilterEvent.Reset -> onFilterChange(baseFilter)
-                        else -> {}
-                    }
-                },
-                onSaveFilterClick = onSaveFilterClick,
-                onClose = onDismiss,
-                backgroundColor = AppColors.transparent,
-                filterRules = filterRules,
-                baseFilter = baseFilter
-            )
+            item {
+                Text(
+                    text = title,
+                    style = AppTextStyles.heroAmount,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            item {
+                FilterSheetContent(
+                    filter = filter,
+                    accounts = filterContext.accounts,
+                    allCategories = filterContext.allCategories,
+                    allTags = filterContext.allTags,
+                    onSearchTransactions = filterContext.onSearchTransactions,
+                    savedFilters = filterContext.savedFilters,
+                    onFilterEvent = { event ->
+                        when (event) {
+                            is FilterEvent.Apply -> onFilterChange(event.filter)
+                            is FilterEvent.Reset -> onFilterChange(baseFilter)
+                            else -> {}
+                        }
+                    },
+                    onSaveFilterClick = onSaveFilterClick,
+                    onClose = onDismiss,
+                    backgroundColor = Color.Transparent,
+                    filterRules = filterRules,
+                    baseFilter = baseFilter
+                )
+            }
         }
     }
 }

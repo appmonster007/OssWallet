@@ -262,6 +262,12 @@ enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
 enum class UpSetDynamicFilteringMode { OFF, HORIZONTAL, VERTICAL }
 
 @Serializable
+enum class UpSetTagSortMode { NAME_ASC, NAME_DESC, DECREASING_ABS, INCREASING_ABS, DECREASING, INCREASING }
+
+@Serializable
+enum class UpSetIntersectionSortMode { DECREASING_ABS, INCREASING_ABS, DECREASING, INCREASING }
+
+@Serializable
 @SerialName("planned_payments")
 data class PlannedPaymentsCardConfig(
     override val cardId: String,
@@ -415,6 +421,8 @@ data class TagUpSetPlotCardConfig(
     val maxTags: Int = 10,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
+    val tagSortMode: UpSetTagSortMode = UpSetTagSortMode.DECREASING_ABS,
+    val intersectionSortMode: UpSetIntersectionSortMode = UpSetIntersectionSortMode.DECREASING_ABS,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.TAG_UPSET_PLOT

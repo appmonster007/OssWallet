@@ -4,6 +4,8 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
+import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import java.math.BigDecimal
@@ -83,7 +85,17 @@ class TagUpSetPlotCardComputer(
             }
             .filter { it.key != "unspecified" }
             .toList()
-            .sortedByDescending { it.second.income.subtract(it.second.expense).abs() }
+            .let { list ->
+                val net = { p: Pair<String, IndividualTagStats> -> p.second.income.subtract(p.second.expense) }
+                when (config.tagSortMode) {
+                    UpSetTagSortMode.NAME_ASC       -> list.sortedBy { it.first }
+                    UpSetTagSortMode.NAME_DESC      -> list.sortedByDescending { it.first }
+                    UpSetTagSortMode.DECREASING_ABS -> list.sortedByDescending { net(it).abs() }
+                    UpSetTagSortMode.INCREASING_ABS -> list.sortedBy { net(it).abs() }
+                    UpSetTagSortMode.DECREASING     -> list.sortedByDescending { net(it) }
+                    UpSetTagSortMode.INCREASING     -> list.sortedBy { net(it) }
+                }
+            }
 
         val topTags = tagTotals.map { it.first }.toSet()
 
@@ -151,7 +163,14 @@ class TagUpSetPlotCardComputer(
                     transactionCount = results.sumOf { it.transactionCount }
                 )
             }
-            .sortedByDescending { it.amount.abs() }
+            .let { list ->
+                when (config.intersectionSortMode) {
+                    UpSetIntersectionSortMode.DECREASING_ABS -> list.sortedByDescending { it.amount.abs() }
+                    UpSetIntersectionSortMode.INCREASING_ABS -> list.sortedBy { it.amount.abs() }
+                    UpSetIntersectionSortMode.DECREASING     -> list.sortedByDescending { it.amount }
+                    UpSetIntersectionSortMode.INCREASING     -> list.sortedBy { it.amount }
+                }
+            }
 
         val sets = tagTotals.map { (tag, stats) ->
             TagUpSetSet(

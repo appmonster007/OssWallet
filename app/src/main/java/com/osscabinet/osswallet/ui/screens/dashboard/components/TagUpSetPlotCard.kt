@@ -22,7 +22,10 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
+import androidx.compose.ui.draw.alpha
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
+import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
+import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -338,6 +341,92 @@ private fun TagUpSetSettingsSheet(
                                 )
                             }
                         )
+                    }
+                }
+            }
+        }
+        CardSettingsSection("Sorting") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Tags",
+                    style = AppTextStyles.transactionTitle,
+                    modifier = Modifier.weight(1f)
+                )
+                SingleChoiceSegmentedButtonRow {
+                    val tagPairs = listOf(
+                        UpSetTagSortMode.NAME_ASC to UpSetTagSortMode.NAME_DESC,
+                        UpSetTagSortMode.DECREASING_ABS to UpSetTagSortMode.INCREASING_ABS,
+                        UpSetTagSortMode.DECREASING to UpSetTagSortMode.INCREASING
+                    )
+                    tagPairs.forEachIndexed { index, (pairA, pairB) ->
+                        val isSelected = config.tagSortMode == pairA || config.tagSortMode == pairB
+                        val displayed = if (isSelected) config.tagSortMode else pairA
+                        SegmentedButton(
+                            selected = isSelected,
+                            onClick = {
+                                onUpdate(config.copy(tagSortMode = if (config.tagSortMode == pairA) pairB else pairA))
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = tagPairs.size),
+                            icon = {}
+                        ) {
+                            Text(
+                                text = when (displayed) {
+                                    UpSetTagSortMode.NAME_ASC       -> "Az"
+                                    UpSetTagSortMode.NAME_DESC      -> "Za"
+                                    UpSetTagSortMode.DECREASING_ABS -> "|↓|"
+                                    UpSetTagSortMode.INCREASING_ABS -> "|↑|"
+                                    UpSetTagSortMode.DECREASING     -> "↓"
+                                    UpSetTagSortMode.INCREASING     -> "↑"
+                                },
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
+                            )
+                        }
+                    }
+                }
+            }
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Intersections",
+                    style = AppTextStyles.transactionTitle,
+                    modifier = Modifier.weight(1f)
+                )
+                SingleChoiceSegmentedButtonRow {
+                    val intPairs = listOf(
+                        UpSetIntersectionSortMode.DECREASING_ABS to UpSetIntersectionSortMode.INCREASING_ABS,
+                        UpSetIntersectionSortMode.DECREASING to UpSetIntersectionSortMode.INCREASING
+                    )
+                    intPairs.forEachIndexed { index, (pairA, pairB) ->
+                        val isSelected = config.intersectionSortMode == pairA || config.intersectionSortMode == pairB
+                        val displayed = if (isSelected) config.intersectionSortMode else pairA
+                        SegmentedButton(
+                            selected = isSelected,
+                            onClick = {
+                                onUpdate(config.copy(intersectionSortMode = if (config.intersectionSortMode == pairA) pairB else pairA))
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = intPairs.size),
+                            icon = {}
+                        ) {
+                            Text(
+                                text = when (displayed) {
+                                    UpSetIntersectionSortMode.DECREASING_ABS -> "|↓|"
+                                    UpSetIntersectionSortMode.INCREASING_ABS -> "|↑|"
+                                    UpSetIntersectionSortMode.DECREASING     -> "↓"
+                                    UpSetIntersectionSortMode.INCREASING     -> "↑"
+                                },
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
+                            )
+                        }
                     }
                 }
             }

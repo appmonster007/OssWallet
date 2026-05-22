@@ -25,8 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -245,6 +247,11 @@ fun AeonExpressiveCard(
                 dismissOnClickOutside = false, // pill handles outside-tap itself
             ),
         ) {
+            // Disable the Dialog's built-in window dim so our morph-driven scrim
+            // inside TransactionFilterPill is the sole overlay.
+            val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+            SideEffect { dialogWindow?.setDimAmount(0f) }
+
             TransactionFilterPill(
                 filter = filter,
                 accounts = filterContext.accounts,

@@ -2,7 +2,9 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import android.Manifest
 import androidx.compose.animation.*
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,30 +12,30 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.tooling.preview.Preview
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -52,7 +54,6 @@ fun AeonLocationSelection(
     title: String = "Location"
 ) {
     val context = LocalContext.current
-    rememberCoroutineScope()
     var selectedCoords by remember { mutableStateOf(currentCoords) }
     var selectedAddress by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
@@ -60,11 +61,14 @@ fun AeonLocationSelection(
     var searchHistory by remember { mutableStateOf(emptyList<LocationSearchResult>()) }
     var isSearching by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf<String?>(null) }
+    var searchActive by remember { mutableStateOf(false) }
 
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     fun getCurrentLocation() {
+        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
         if (locationPermissionState.status.isGranted) {
             try {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -72,8 +76,7 @@ fun AeonLocationSelection(
                         selectedCoords = it.latitude to it.longitude
                     }
                 }
-            } catch (_: SecurityException) {
-            }
+            } catch (_: SecurityException) {}
         } else {
             locationPermissionState.launchPermissionRequest()
         }
@@ -109,23 +112,10 @@ fun AeonLocationSelection(
                                     ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
                             } ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
                             
-                            val secondaryElements = mutableListOf<String>()
-                            address?.let { addr ->
-                                addr.optString("suburb").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                                addr.optString("city").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                                    ?: addr.optString("town").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                                    ?: addr.optString("village").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                                addr.optString("state").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                                addr.optString("country").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
-                            }
-                            
-                            var secondaryName = secondaryElements.distinct().joinToString(", ")
-                            if (secondaryName.isBlank()) {
-                                secondaryName = obj.getString("display_name")
-                                    .replaceFirst(mainName, "")
-                                    .trim().trimStart(',')
-                                    .trim()
-                            }
+                            val secondaryName = obj.getString("display_name")
+                                .replaceFirst(mainName, "")
+                                .trim().trimStart(',')
+                                .trim()
 
                             results.add(
                                 LocationSearchResult(
@@ -148,7 +138,7 @@ fun AeonLocationSelection(
                         }
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 withContext(Dispatchers.Main) {
                     searchError = "Network error"
                     isSearching = false
@@ -210,7 +200,6 @@ fun AeonLocationSelection(
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonLocationSelectionContent(
-            title = title,
             selectedCoords = selectedCoords,
             selectedAddress = selectedAddress,
             searchQuery = searchQuery,
@@ -218,11 +207,13 @@ fun AeonLocationSelection(
             searchHistory = searchHistory,
             isSearching = isSearching,
             searchError = searchError,
+            searchActive = searchActive,
             onBack = onDismiss,
-            onSearchQueryChange = { query -> searchQuery = query },
+            onSearchQueryChange = { searchQuery = it },
+            onSearchActiveChange = { searchActive = it },
             onSearchResultClick = { result ->
                 selectedCoords = result.lat to result.lon
-                searchResults = emptyList()
+                searchActive = false
                 searchQuery = result.display
                 searchHistory = (listOf(result) + searchHistory.filter { it.display != result.display }).take(5)
             },
@@ -230,7 +221,6 @@ fun AeonLocationSelection(
             onManualPin = { geoPoint ->
                 selectedCoords = geoPoint.latitude to geoPoint.longitude
                 searchQuery = ""
-                searchResults = emptyList()
             },
             onGetCurrentLocation = { getCurrentLocation() },
             onClear = { selectedCoords = null; searchQuery = "" },
@@ -242,9 +232,9 @@ fun AeonLocationSelection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AeonLocationSelectionContent(
-    title: String,
     selectedCoords: Pair<Double, Double>?,
     selectedAddress: String?,
     searchQuery: String,
@@ -252,8 +242,10 @@ fun AeonLocationSelectionContent(
     searchHistory: List<LocationSearchResult>,
     isSearching: Boolean,
     searchError: String?,
+    searchActive: Boolean,
     onBack: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
+    onSearchActiveChange: (Boolean) -> Unit,
     onSearchResultClick: (LocationSearchResult) -> Unit,
     onClearHistory: () -> Unit,
     onManualPin: (GeoPoint) -> Unit,
@@ -261,262 +253,252 @@ fun AeonLocationSelectionContent(
     onClear: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AeonSelectionScreen(
-        title = title,
-        onBack = onBack
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
+        // [1] Immersive Map Background
+        AeonOSMMap(
+            initialPoint = GeoPoint(
+                selectedCoords?.first ?: 0.0,
+                selectedCoords?.second ?: 0.0
+            ),
+            onLocationSelected = onManualPin,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Top Shadow Scrim for control legibility
         Box(
             modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            AeonOSMMap(
-                initialPoint = GeoPoint(
-                    selectedCoords?.first ?: 0.0,
-                    selectedCoords?.second ?: 0.0
-                ),
-                onLocationSelected = onManualPin
-            )
+                .fillMaxWidth()
+                .height(140.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.15f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
 
-            Column(
+        // [2] Floating Search Bar (Aeon Style)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .zIndex(2f)
+        ) {
+            DockedSearchBar(
+                query = searchQuery,
+                onQueryChange = onSearchQueryChange,
+                onSearch = { /* Handled by LaunchedEffect */ },
+                active = searchActive,
+                onActiveChange = onSearchActiveChange,
+                placeholder = { Text("Search location...", style = AppTextStyles.listItemTitle.copy(color = AppColors.contentSecondary)) },
+                leadingIcon = {
+                    IconButton(onClick = { if (searchActive) onSearchActiveChange(false) else onBack() }) {
+                        Icon(
+                            if (searchActive) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = AppColors.primary
+                        )
+                    }
+                },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = AppColors.primary
+                        )
+                    } else if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(Icons.Rounded.Clear, contentDescription = "Clear", tint = AppColors.contentSecondary)
+                        }
+                    }
+                },
+                colors = SearchBarDefaults.colors(
+                    containerColor = AppColors.panelSurface,
+                    dividerColor = AppColors.divider
+                ),
+                shape = RoundedCornerShape(24.dp),
+                tonalElevation = 4.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .zIndex(1f)
+                    .animateContentSize()
             ) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = AppColors.panelSurface.copy(alpha = 0.95f),
-                    tonalElevation = 8.dp,
-                    shadowElevation = 12.dp,
-                    border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.5f))
-                ) {
-                    Column {
-                        TextField(
-                            value = searchQuery,
-                            onValueChange = onSearchQueryChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search location...", style = AppTextStyles.listItemTitle) },
-                            leadingIcon = { 
-                                if (isSearching) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        strokeWidth = 2.dp,
-                                        color = AppColors.primary
-                                    )
-                                } else {
-                                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.primary)
-                                }
-                            },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { onSearchQueryChange("") }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Clear")
-                                    }
-                                }
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = AppColors.transparent,
-                                unfocusedContainerColor = AppColors.transparent,
-                                disabledContainerColor = AppColors.transparent,
-                                focusedIndicatorColor = AppColors.transparent,
-                                unfocusedIndicatorColor = AppColors.transparent,
+                val displayResults = if (searchQuery.isEmpty()) searchHistory else searchResults
+                
+                if (searchError != null) {
+                    Text(
+                        text = searchError,
+                        color = AppColors.error,
+                        style = AppTextStyles.caption,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                if (searchQuery.isEmpty() && searchHistory.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "RECENT",
+                            style = AppTextStyles.transactionSwipeAction.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
                             ),
-                            singleLine = true,
-                            textStyle = AppTextStyles.listItemTitle
+                            color = AppColors.primary
                         )
-
-                        val displayResults = if (searchQuery.isEmpty()) searchHistory else searchResults
-                        
-                        if (displayResults.isNotEmpty() || searchError != null) {
-                            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider)
-                            
-                            if (searchError != null) {
-                                Text(
-                                    text = searchError,
-                                    color = AppColors.error,
-                                    style = AppTextStyles.caption,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
-
-                            if (searchQuery.isEmpty() && searchHistory.isNotEmpty()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "RECENT SEARCHES",
-                                        style = AppTextStyles.transactionSwipeAction.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 0.5.sp
-                                        ),
-                                        color = AppColors.primary
-                                    )
-                                    TextButton(
-                                        onClick = onClearHistory,
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier.height(24.dp)
-                                    ) {
-                                        Text("Clear All", style = AppTextStyles.transactionSwipeAction)
-                                    }
-                                }
-                            }
-
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 280.dp)
-                            ) {
-                                items(displayResults) { result ->
-                                    ListItem(
-                                        headlineContent = { 
-                                            Text(
-                                                result.mainText, 
-                                                maxLines = 1,
-                                                style = AppTextStyles.formFieldValue
-                                            ) 
-                                        },
-                                        supportingContent = {
-                                            Text(
-                                                result.secondaryText,
-                                                maxLines = 1,
-                                                style = AppTextStyles.caption,
-                                                color = AppColors.contentSecondary
-                                            )
-                                        },
-                                        modifier = Modifier.clickable { onSearchResultClick(result) },
-                                        leadingContent = { 
-                                            Surface(
-                                                shape = CircleShape,
-                                                color = if (searchQuery.isEmpty()) 
-                                                    AppColors.secondaryContainer 
-                                                else 
-                                                    AppColors.accentContainer,
-                                                modifier = Modifier.size(36.dp)
-                                            ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Icon(
-                                                        if (searchQuery.isEmpty()) Icons.Rounded.History else Icons.Rounded.Place, 
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(20.dp),
-                                                        tint = if (searchQuery.isEmpty())
-                                                            AppColors.onSecondaryContainer
-                                                        else
-                                                            AppColors.onAccentContainer
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
+                        TextButton(onClick = onClearHistory) {
+                            Text("Clear All", style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold), color = AppColors.error)
                         }
                     }
                 }
-            }
 
-            FloatingActionButton(
-                onClick = onGetCurrentLocation,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(24.dp)
-                    .padding(bottom = if (selectedCoords != null) 210.dp else 24.dp),
-                containerColor = AppColors.accentContainer,
-                contentColor = AppColors.onPrimaryContainer,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Rounded.MyLocation, contentDescription = "My Location")
-            }
-
-            AnimatedVisibility(
-                visible = selectedCoords != null,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                Surface(
+                LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    color = AppColors.panelSurface,
-                    tonalElevation = 8.dp,
-                    shadowElevation = 24.dp,
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f))
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 20.dp, vertical = 24.dp)
-                            .windowInsetsPadding(WindowInsets.navigationBars),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        if (selectedCoords != null) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
+                    items(displayResults) { result ->
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    result.mainText, 
+                                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                                ) 
+                            },
+                            supportingContent = {
+                                Text(
+                                    result.secondaryText,
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.contentSecondary
+                                )
+                            },
+                            modifier = Modifier.clickable { onSearchResultClick(result) },
+                            leadingContent = { 
                                 Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = AppColors.primary.copy(alpha = 0.1f),
-                                    modifier = Modifier.size(56.dp)
+                                    shape = CircleShape,
+                                    color = if (searchQuery.isEmpty()) AppColors.secondaryContainer else AppColors.accentContainer,
+                                    modifier = Modifier.size(40.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            Icons.Rounded.Place,
+                                            if (searchQuery.isEmpty()) Icons.Rounded.History else Icons.Rounded.Place, 
                                             contentDescription = null,
-                                            tint = AppColors.primary,
-                                            modifier = Modifier.size(28.dp)
+                                            modifier = Modifier.size(20.dp),
+                                            tint = if (searchQuery.isEmpty()) AppColors.onSecondaryContainer else AppColors.onAccentContainer
                                         )
                                     }
                                 }
-                                
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = selectedAddress?.split(",")?.firstOrNull() ?: "Selected Location",
-                                        style = AppTextStyles.cardSectionTitle,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords.first, selectedCoords.second),
-                                        style = AppTextStyles.caption,
-                                        color = AppColors.contentSecondary,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                    }
+                }
+            }
+        }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+        // [3] My Location FAB
+        FloatingActionButton(
+            onClick = onGetCurrentLocation,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+                .padding(bottom = if (selectedCoords != null) 176.dp else 24.dp),
+            containerColor = AppColors.panelSurface,
+            contentColor = AppColors.primary,
+            shape = CircleShape,
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+        ) {
+            Icon(Icons.Rounded.MyLocation, contentDescription = "My Location")
+        }
+
+        // [4] Floating Action Card (Aeon Style)
+        AnimatedVisibility(
+            visible = selectedCoords != null,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+                .navigationBarsPadding()
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                color = AppColors.panelSurface,
+                tonalElevation = 8.dp,
+                shadowElevation = 16.dp,
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = AppColors.accentContainer,
+                            modifier = Modifier.size(52.dp)
                         ) {
-                            OutlinedIconButton(
-                                onClick = onClear,
-                                modifier = Modifier.size(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, AppColors.divider)
-                            ) {
-                                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Clear", tint = AppColors.error)
-                            }
-
-                            Button(
-                                onClick = onConfirm,
-                                enabled = selectedCoords != null,
-                                modifier = Modifier.weight(1f).height(56.dp),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text("Confirm Location", style = AppTextStyles.managementItemTitle)
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Place,
+                                    contentDescription = null,
+                                    tint = AppColors.onAccentContainer,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = selectedAddress?.split(",")?.firstOrNull() ?: "Selected Location",
+                                style = AppTextStyles.screenTitle.copy(fontSize = 18.sp),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = selectedAddress?.substringAfter(",")?.trim() ?: "%.6f, %.6f".format(selectedCoords?.first ?: 0.0, selectedCoords?.second ?: 0.0),
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+
+                        IconButton(onClick = onClear) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Clear", tint = AppColors.error)
+                        }
+                    }
+
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.primary,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Confirm Location", 
+                            style = AppTextStyles.managementItemTitle
+                        )
                     }
                 }
             }
@@ -537,7 +519,6 @@ data class LocationSearchResult(
 fun AeonLocationSelectionContentPreview() {
     OssWalletTheme {
         AeonLocationSelectionContent(
-            title = "Location",
             selectedCoords = 1.23456 to 7.89012,
             selectedAddress = "123 Main St, New York, NY",
             searchQuery = "",
@@ -547,8 +528,10 @@ fun AeonLocationSelectionContentPreview() {
             ),
             isSearching = false,
             searchError = null,
+            searchActive = false,
             onBack = {},
             onSearchQueryChange = {},
+            onSearchActiveChange = {},
             onSearchResultClick = {},
             onClearHistory = {},
             onManualPin = {},

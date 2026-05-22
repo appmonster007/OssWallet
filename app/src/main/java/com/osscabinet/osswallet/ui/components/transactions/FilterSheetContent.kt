@@ -94,13 +94,10 @@ fun FilterSheetContent(
         }
     }
 
-    val scrollState = rememberScrollState()
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(backgroundColor)
-            .verticalScroll(scrollState)
             .padding(AeonTheme.dimensions.screenPadding)
     ) {
         // 1. Base Scope Indicator (if any)
@@ -358,9 +355,6 @@ fun FilterSheetContent(
                 Text("Save as Preset", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
             }
         }
-
-        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

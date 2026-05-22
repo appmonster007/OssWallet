@@ -1,8 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,8 +24,8 @@ import kotlinx.coroutines.flow.flowOf
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
- * General purpose transaction filter sheet rewritten with best-practice architecture.
- * Ensures smooth scrolling and immersive status bar support.
+ * Transaction filter sheet implementation.
+ * Uses Modifier.statusBarsPadding() on the sheet to stop at the status bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,42 +44,37 @@ fun TransactionFilterSheet(
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onClose,
         sheetState = sheetState,
         containerColor = backgroundColor,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle()
-        },
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         scrimColor = Color.Black.copy(alpha = 0.5f),
+        modifier = Modifier.statusBarsPadding(),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding(), // Ensures content stays below status bar at all times
-            contentPadding = PaddingValues(
-                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
-            )
         ) {
-            item {
-                FilterSheetContent(
-                    filter = filter,
-                    accounts = accounts,
-                    allCategories = categories,
-                    allTags = allTags,
-                    onSearchTransactions = onSearchTransactions,
-                    savedFilters = savedFilters,
-                    onFilterEvent = onFilterEvent,
-                    onSaveFilterClick = onSaveFilterClick,
-                    onAddTag = onAddTag,
-                    onClose = onClose,
-                    backgroundColor = Color.Transparent,
-                    showAccountFilter = showAccountFilter,
-                    accountNames = accountNames,
-                )
-            }
+            FilterSheetContent(
+                filter = filter,
+                accounts = accounts,
+                allCategories = categories,
+                onSearchTransactions = onSearchTransactions,
+                onFilterEvent = onFilterEvent,
+                onClose = onClose,
+                allTags = allTags,
+                savedFilters = savedFilters,
+                onSaveFilterClick = onSaveFilterClick,
+                backgroundColor = Color.Transparent,
+                showAccountFilter = showAccountFilter,
+                accountNames = accountNames,
+                onAddTag = onAddTag,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

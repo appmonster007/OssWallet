@@ -1,26 +1,25 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
- * Standardised bottom sheet for configuring card filters.
- * Rewritten using Single-Root Scrollable best practices for maximum stability.
+ * Standardized bottom sheet for configuring card filters.
+ * Uses Modifier.statusBarsPadding() on the sheet to stop at the status bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,56 +33,49 @@ fun AeonCardSettingsSheet(
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter()
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppColors.sheetSurface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        modifier = Modifier.statusBarsPadding(),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding(), // Ensures content respects status bar when expanded
-            contentPadding = PaddingValues(
-                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
-            )
         ) {
-            item {
-                Text(
-                    text = title,
-                    style = AppTextStyles.heroAmount,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = title,
+                style = AppTextStyles.heroAmount,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
 
-            item {
-                FilterSheetContent(
-                    filter = filter,
-                    accounts = filterContext.accounts,
-                    allCategories = filterContext.allCategories,
-                    allTags = filterContext.allTags,
-                    onSearchTransactions = filterContext.onSearchTransactions,
-                    savedFilters = filterContext.savedFilters,
-                    onFilterEvent = { event ->
-                        when (event) {
-                            is FilterEvent.Apply -> onFilterChange(event.filter)
-                            is FilterEvent.Reset -> onFilterChange(baseFilter)
-                            else -> {}
-                        }
-                    },
-                    onSaveFilterClick = onSaveFilterClick,
-                    onClose = onDismiss,
-                    backgroundColor = Color.Transparent,
-                    filterRules = filterRules,
-                    baseFilter = baseFilter
-                )
-            }
+            FilterSheetContent(
+                filter = filter,
+                accounts = filterContext.accounts,
+                allCategories = filterContext.allCategories,
+                onSearchTransactions = filterContext.onSearchTransactions,
+                onFilterEvent = { event ->
+                    when (event) {
+                        is FilterEvent.Apply -> onFilterChange(event.filter)
+                        is FilterEvent.Reset -> onFilterChange(baseFilter)
+                        else -> {}
+                    }
+                },
+                onClose = onDismiss,
+                modifier = Modifier.weight(1f),
+                allTags = filterContext.allTags,
+                savedFilters = filterContext.savedFilters,
+                onSaveFilterClick = onSaveFilterClick,
+                backgroundColor = Color.Transparent,
+                filterRules = filterRules,
+                baseFilter = baseFilter
+            )
         }
     }
 }

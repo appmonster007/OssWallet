@@ -141,7 +141,8 @@ fun LoanEntrySheets(
             },
             onDismiss = { onEvent(LoanEntryEvent.ShowCurrencyFilterSheet(false)) },
             mode = AeonSelectMode.MULTI,
-            title = "Filter Currencies"
+            title = "Filter Currencies",
+            currencies = state.shortlistedCurrencies.ifEmpty { null }
         )
     }
 

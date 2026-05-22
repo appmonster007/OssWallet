@@ -34,6 +34,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val accountDetailCardsConfig: Flow<String> = settingsDataStore.accountDetailCardsConfig
     override val accountsViewCardsConfig: Flow<String> = settingsDataStore.accountsViewCardsConfig
     override val analyticsCardsConfig: Flow<String> = settingsDataStore.analyticsCardsConfig
+    override val shortlistedCurrencies: Flow<Set<String>?> = settingsDataStore.shortlistedCurrencies
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
     override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
@@ -59,4 +60,5 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveAccountDetailCardsConfig(config: String) = settingsDataStore.saveAccountDetailCardsConfig(config)
     override suspend fun saveAccountsViewCardsConfig(config: String) = settingsDataStore.saveAccountsViewCardsConfig(config)
     override suspend fun saveAnalyticsCardsConfig(config: String) = settingsDataStore.saveAnalyticsCardsConfig(config)
+    override suspend fun saveShortlistedCurrencies(currencies: Set<String>) = settingsDataStore.saveShortlistedCurrencies(currencies)
 }

@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -56,6 +57,14 @@ class TransactionEntryViewModel @Inject constructor(
     val state: StateFlow<TransactionEntryState> = _state.asStateFlow()
 
     private var initialTimestamp: Long = System.currentTimeMillis()
+
+    init {
+        viewModelScope.launch {
+            effectiveShortlistedCurrencies.collect { currencies ->
+                _state.update { it.copy(shortlistedCurrencies = currencies) }
+            }
+        }
+    }
 
     /**
      * Initialize the ViewModel with entry parameters.
@@ -112,9 +121,11 @@ class TransactionEntryViewModel @Inject constructor(
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",
                 transactionType = initialType,
-                selectedTemplateName = null, // Will be set by applyPrefill
+                selectedTemplateName = null,
                 selectedDateMillis = initialTimestamp,
-                selectedCategoryId = defaultCategory?.id ?: 1002L
+                selectedCategoryId = defaultCategory?.id ?: 1002L,
+                shortlistedCurrencies = effectiveShortlistedCurrencies.value,
+                fullProviderCurrencies = CurrencyService.getAllCurrencies()
             )
 
             // Initialize from template ID if provided

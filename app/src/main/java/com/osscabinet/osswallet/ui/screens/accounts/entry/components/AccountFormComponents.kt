@@ -42,26 +42,27 @@ fun CurrencyManagementSection(
     onAllowedCurrenciesChange: (Set<String>) -> Unit,
     accentColorHex: String,
     isEditMode: Boolean = false,
-    currencyUsageMap: Map<String, Boolean> = emptyMap()
+    currencyUsageMap: Map<String, Boolean> = emptyMap(),
+    shortlistedCurrencies: List<String> = emptyList()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
     val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
-    
+
     val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
-    
+
     val allCurrencies = remember {
         getAvailableCurrencies()
             .map { it.currencyCode }
             .distinct()
             .sorted()
     }
-    
+
     val filteredCurrencies = if (searchQuery.isBlank()) {
-        commonCurrencies
+        shortlistedCurrencies.ifEmpty { commonCurrencies }
     } else {
-        allCurrencies.filter { 
-            it.contains(searchQuery, ignoreCase = true) || 
+        allCurrencies.filter {
+            it.contains(searchQuery, ignoreCase = true) ||
             try { java.util.Currency.getInstance(it).displayName.contains(searchQuery, ignoreCase = true) } catch (e: Exception) { false }
         }
     }

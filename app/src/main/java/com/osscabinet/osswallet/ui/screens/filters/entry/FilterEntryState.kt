@@ -52,7 +52,8 @@ data class FilterEntryState(
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
-    val existingFilter: Filter? = null
+    val existingFilter: Filter? = null,
+    val shortlistedCurrencies: List<String> = emptyList()
 ) {
     val canSave: Boolean 
         get() = name.isNotBlank() && !navTriggered

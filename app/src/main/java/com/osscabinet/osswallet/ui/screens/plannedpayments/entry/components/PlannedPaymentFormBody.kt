@@ -36,7 +36,11 @@ fun PlannedPaymentFormBody(
     onEvent: (PlannedPaymentEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val allCurrencies = remember { CurrencyService.getAllCurrencies() }
+    val sourceCurrencies = remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
+        state.accounts.find { it.id == state.selectedAccountId }
+            ?.allowedCurrencies?.toList()?.ifEmpty { null }
+            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -66,7 +70,7 @@ fun PlannedPaymentFormBody(
                 onTargetCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = allCurrencies
+                supportedCurrencies = sourceCurrencies
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category

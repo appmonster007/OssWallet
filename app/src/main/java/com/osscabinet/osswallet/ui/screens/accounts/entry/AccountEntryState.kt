@@ -29,7 +29,8 @@ data class AccountEntryState(
     val existingAccount: Account? = null,
     val currencyUsageMap: Map<String, Boolean> = emptyMap(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    val defaultCurrency: String = "USD"
+    val defaultCurrency: String = "USD",
+    val shortlistedCurrencies: List<String> = emptyList()
 ) {
     val canSave: Boolean
         get() {

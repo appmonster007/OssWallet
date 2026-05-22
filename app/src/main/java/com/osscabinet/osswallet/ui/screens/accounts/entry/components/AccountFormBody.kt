@@ -136,7 +136,8 @@ fun AccountFormBody(
                         onAllowedCurrenciesChange = { onEvent(AccountEntryEvent.SetAllowedCurrencies(it)) },
                         accentColorHex = state.accentColorHex,
                         isEditMode = state.isEditMode,
-                        currencyUsageMap = state.currencyUsageMap
+                        currencyUsageMap = state.currencyUsageMap,
+                        shortlistedCurrencies = state.shortlistedCurrencies
                     )
                 }
             }

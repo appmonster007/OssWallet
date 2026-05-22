@@ -19,14 +19,15 @@ fun AeonCurrencySelection(
     onSelectionChange: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
     mode: AeonSelectMode = AeonSelectMode.SINGLE,
-    title: String = "Select Currency"
+    title: String = "Select Currency",
+    currencies: List<String>? = null
 ) {
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = title,
             onBack = onDismiss
         ) { padding ->
-            val allCurrencies = remember { CurrencyService.getAllCurrencies() }
+            val allCurrencies = remember(currencies) { currencies ?: CurrencyService.getAllCurrencies() }
             var query by remember { mutableStateOf("") }
             val filtered = remember(query) {
                 if (query.isBlank()) allCurrencies

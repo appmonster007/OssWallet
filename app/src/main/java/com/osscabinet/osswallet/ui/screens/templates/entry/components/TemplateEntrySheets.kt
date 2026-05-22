@@ -103,7 +103,8 @@ fun TemplateEntrySheets(
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetCurrency(it)) }
             },
-            onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) }
+            onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) },
+            currencies = state.shortlistedCurrencies.ifEmpty { null }
         )
     }
 
@@ -114,7 +115,8 @@ fun TemplateEntrySheets(
                 ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = "Select Target Currency"
+            title = "Select Target Currency",
+            currencies = state.selectedTargetAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
         )
     }
 

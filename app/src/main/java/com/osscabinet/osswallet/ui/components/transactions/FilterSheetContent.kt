@@ -1,11 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -27,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,19 +43,24 @@ private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, Stri
 )
 
 
+/**
+ * Scrollable filter sheet content using Column + verticalScroll.
+ * Integrates correctly with ModalBottomSheet's drag-to-dismiss gesture.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterSheetContent(
     filter: TransactionFilter,
     accounts: List<Account>,
     allCategories: List<Category>,
-    allTags: List<Tag> = emptyList(),
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
-    savedFilters: List<Filter> = emptyList(),
     onFilterEvent: (FilterEvent) -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onClose: () -> Unit,
-    backgroundColor: Color = AppColors.sheetSurface,
+    modifier: Modifier = Modifier,
+    allTags: List<Tag> = emptyList(),
+    savedFilters: List<Filter> = emptyList(),
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
+    backgroundColor: Color = AppColors.transparent,
     showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onAddTag: (String, Int) -> Unit = { _, _ -> },
@@ -94,13 +93,26 @@ fun FilterSheetContent(
         }
     }
 
+    val allAvailableCurrencies = remember(accounts) {
+        accounts.flatMap { account ->
+            account.allowedCurrencies.ifEmpty { listOf(account.currencyCode) }
+        }.distinct().sorted()
+    }
+
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .background(backgroundColor)
-            .padding(AeonTheme.dimensions.screenPadding)
+            .padding(
+                start = AeonTheme.dimensions.screenPadding,
+                top = AeonTheme.dimensions.spacingMd,
+                end = AeonTheme.dimensions.screenPadding,
+                bottom = AeonTheme.dimensions.spacingXl
+            ),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
-        // 1. Base Scope Indicator (if any)
+        // 1. Base Scope Indicator
         val hasBaseFilters = countActiveFilters(baseFilter) > 0
         if (hasBaseFilters) {
             Text(
@@ -114,7 +126,9 @@ fun FilterSheetContent(
             
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
             ) {
                 items(items = baseFilter.categoryIds.toList()) { id ->
                     FilterChip(
@@ -141,7 +155,7 @@ fun FilterSheetContent(
                     )
                 }
             }
-            Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
         }
 
         // 2. Timeline Selector
@@ -155,10 +169,8 @@ fun FilterSheetContent(
                 },
                 swipeEntireComponent = true
             )
-
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
         // 3. Future Transactions Toggle
@@ -174,7 +186,6 @@ fun FilterSheetContent(
             )
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
         // 4. Title row + Reset
@@ -208,9 +219,7 @@ fun FilterSheetContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
-
-        // 5. Active Filter Chips (quick removal)
+        // 5. Active Filter Chips
         val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
         if (activeFiltersRelative > 0) {
             LazyRow(
@@ -293,16 +302,9 @@ fun FilterSheetContent(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         }
 
-        // 6. Filter fields — always visible
-        val allAvailableCurrencies = remember(accounts) {
-            accounts.flatMap { account ->
-                account.allowedCurrencies.ifEmpty { listOf(account.currencyCode) }
-            }.distinct().sorted()
-        }
-
+        // 6. Filter fields
         FilterFields(
             filter = localFilter,
             onFilterChange = {
@@ -322,7 +324,7 @@ fun FilterSheetContent(
             filterRules = filterRules
         )
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -352,60 +354,26 @@ fun FilterSheetContent(
             ) {
                 Icon(Icons.Default.Save, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Save as Preset", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+                Text("Save Preset", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
             }
         }
+        Spacer(modifier = Modifier.navigationBarsPadding())
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 
-
+@Preview(showBackground = true)
 @Composable
-internal fun FilterSheetDragHandle(
-    isExpanded: Boolean,
-    onClick: () -> Unit,
-    backgroundColor: Color
-) {
-    val accentColor = AppColors.primary
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "handle_rotation"
-    )
-    val pullTabHeight = 20.dp
-
-    val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = topPadding),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        // Flat bookmark-style pull tab: wide, short, gently rounded top corners only.
-        Box(
-            modifier = Modifier
-                .size(width = 88.dp, height = pullTabHeight)
-                .background(
-                    backgroundColor,
-                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
-                )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(14.dp)
-                    .graphicsLayer { rotationZ = rotation },
-                tint = accentColor.copy(alpha = 0.55f)
-            )
-        }
+fun FilterSheetContentPreview() {
+    OssWalletTheme {
+        FilterSheetContent(
+            filter = TransactionFilter(),
+            accounts = emptyList(),
+            allCategories = emptyList(),
+            onSearchTransactions = { _ -> flowOf(emptyList()) },
+            onFilterEvent = {},
+            onClose = {}
+        )
     }
 }
-
-

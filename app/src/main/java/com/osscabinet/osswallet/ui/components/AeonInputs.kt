@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -73,14 +74,23 @@ fun CurrencySelector(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.widthIn(min = 160.dp)
+            containerColor = AppColors.cardSurface,
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            modifier = Modifier.widthIn(min = 120.dp, max = 200.dp)
         ) {
             if (baseList.size > 6) {
                 TextField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text("Search currencies...") },
+                    placeholder = {
+                        Text(
+                            "Search...",
+                            style = AppTextStyles.drawerItemLabel,
+                            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                        )
+                    },
                     singleLine = true,
+                    textStyle = AppTextStyles.drawerItemLabel.copy(color = AppColors.contentPrimary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -88,29 +98,48 @@ fun CurrencySelector(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = AppColors.primary
                     )
                 )
-                HorizontalDivider()
+                HorizontalDivider(color = AppColors.divider.copy(alpha = 0.3f))
             }
             filteredList.forEach { currency ->
+                val isSelected = currency == selectedCurrency
                 DropdownMenuItem(
-                    text = { Text(currency) },
+                    text = {
+                        Text(
+                            currency,
+                            style = AppTextStyles.drawerItemLabel.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) AppColors.primary else AppColors.contentPrimary
+                            )
+                        )
+                    },
                     onClick = {
                         onCurrencySelected(currency)
                         expanded = false
                         query = ""
                     },
-                    trailingIcon = if (currency == selectedCurrency) {
+                    trailingIcon = if (isSelected) {
                         {
                             Icon(
                                 Icons.Rounded.Check,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
                                 tint = AppColors.primary
                             )
                         }
-                    } else null
+                    } else null,
+                    colors = MenuItemColors(
+                        textColor = AppColors.contentPrimary,
+                        leadingIconColor = AppColors.contentSecondary,
+                        trailingIconColor = AppColors.primary,
+                        disabledTextColor = AppColors.contentSecondary.copy(alpha = 0.4f),
+                        disabledLeadingIconColor = AppColors.contentSecondary.copy(alpha = 0.4f),
+                        disabledTrailingIconColor = AppColors.contentSecondary.copy(alpha = 0.4f)
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
         }

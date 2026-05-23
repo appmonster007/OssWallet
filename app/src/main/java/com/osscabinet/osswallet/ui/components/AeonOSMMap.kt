@@ -153,18 +153,21 @@ fun AeonOSMMap(
     val contentPrimaryArgb = contentPrimaryColor.toArgb()
 
     // ── Stable MapView ────────────────────────────────────────────────────────
-    val mapView = remember(context) {
-        Configuration.getInstance().userAgentValue = context.packageName
-        MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
-            setMultiTouchControls(true)   // pinch-to-zoom + double-tap zoom
-            setBuiltInZoomControls(false) // we draw our own
+    val mapView = remember(context, isPreview) {
+        if (isPreview) null else {
+            Configuration.getInstance().userAgentValue = context.packageName
+            MapView(context).apply {
+                setTileSource(TileSourceFactory.MAPNIK)
+                setMultiTouchControls(true)   // pinch-to-zoom + double-tap zoom
+                setBuiltInZoomControls(false) // we draw our own
+            }
         }
     }
 
     // ── Compass rotation (polled, not observed) ───────────────────────────────
     var mapRotation by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(mapView) {
+        if (mapView == null) return@LaunchedEffect
         while (true) {
             delay(80)
             mapRotation = mapView.mapOrientation
@@ -197,15 +200,17 @@ fun AeonOSMMap(
     )
 
     // ── Sync center / zoom from caller (only when they change) ────────────────
-    LaunchedEffect(center, zoom) {
-        mapView.controller.animateTo(center)
-        mapView.controller.setZoom(zoom)
+    LaunchedEffect(center, zoom, mapView) {
+        mapView?.controller?.animateTo(center)
+        mapView?.controller?.setZoom(zoom)
     }
 
     // ── Gesture overlays — set up ONCE, never recreated ───────────────────────
     val currentOnMapTap by rememberUpdatedState(onMapTap)
 
     LaunchedEffect(mapView) {
+        if (mapView == null) return@LaunchedEffect
+
         // Two-finger rotation
         val rotationOverlay = RotationGestureOverlay(mapView).apply { isEnabled = true }
         mapView.overlays.add(0, rotationOverlay)
@@ -224,7 +229,9 @@ fun AeonOSMMap(
     // ── Pin marker — reuse stable instance, only move / redraw on change ──────
     val markerRef = remember { mutableStateOf<Marker?>(null) }
 
-    LaunchedEffect(selectedPoint, accentArgb) {
+    LaunchedEffect(selectedPoint, accentArgb, mapView) {
+        if (mapView == null) return@LaunchedEffect
+
         if (selectedPoint == null) {
             markerRef.value?.let { mapView.overlays.remove(it) }
             markerRef.value = null
@@ -252,6 +259,7 @@ fun AeonOSMMap(
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     DisposableEffect(mapView) {
+        if (mapView == null) return@DisposableEffect onDispose {}
         mapView.onResume()
         onDispose { mapView.onPause() }
     }
@@ -282,7 +290,7 @@ fun AeonOSMMap(
         } else {
             // ── Live osmdroid map ─────────────────────────────────────────────
             AndroidView(
-                factory  = { mapView },
+                factory  = { mapView!! },
                 modifier = Modifier.fillMaxSize(),
                 update   = { /* all state sync via LaunchedEffect above */ }
             )
@@ -367,7 +375,7 @@ fun AeonOSMMap(
                 color           = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
                 border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView.mapOrientation = 0f }
+                onClick         = { mapView?.mapOrientation = 0f }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -392,7 +400,7 @@ fun AeonOSMMap(
                 color           = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
                 border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView.controller.zoomIn() }
+                onClick         = { mapView?.controller?.zoomIn() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Add, contentDescription = "Zoom in", tint = Color(contentPrimaryArgb), modifier = Modifier.size(22.dp))
@@ -405,7 +413,7 @@ fun AeonOSMMap(
                 color           = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
                 border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView.controller.zoomOut() }
+                onClick         = { mapView?.controller?.zoomOut() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Remove, contentDescription = "Zoom out", tint = Color(contentPrimaryArgb), modifier = Modifier.size(22.dp))

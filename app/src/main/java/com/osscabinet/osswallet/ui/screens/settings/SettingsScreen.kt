@@ -54,6 +54,7 @@ fun SettingsScreen(
     onManageFiltersClick: () -> Unit,
     onSmartSuggestionsClick: () -> Unit,
     onShortlistedCurrenciesClick: () -> Unit,
+    onOpenInWebClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val shortlistedCurrencies by viewModel.shortlistedCurrencies.collectAsStateWithLifecycle()
@@ -701,6 +702,13 @@ fun SettingsScreen(
             }
 
             SettingsSection("DATA & SECURITY") {
+                SettingsItem(
+                    title = "Open in Web",
+                    subtitle = "Browse your data on the same WiFi network",
+                    icon = Icons.Rounded.Wifi,
+                    onClick = { navigate(onOpenInWebClick) }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Import Backup",
                     subtitle = "Restore your history from a file",

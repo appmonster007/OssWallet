@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OssWallet — Web View</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f5f5f5; --border: #e0e0e0;
+    --text: #1a1a1a; --text-muted: #666666;
+    --accent: #1976D2; --accent-hover: #1565C0;
+    --danger: #c62828; --success: #2e7d32; --warning: #f57f17;
+    --sidebar-w: 220px; --header-h: 56px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212; --surface: #1e1e1e; --border: #2c2c2c;
+      --text: #e0e0e0; --text-muted: #9e9e9e;
+      --accent: #42a5f5; --accent-hover: #64b5f6;
+      --danger: #ef5350; --success: #66bb6a; --warning: #ffa726;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
+  #app { display: flex; flex-direction: column; height: 100%; }
+  #header { display: flex; align-items: center; height: var(--header-h); padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--border); gap: 12px; flex-shrink: 0; }
+  #header h1 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+  #main { display: flex; flex: 1; overflow: hidden; }
+  #sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; color: var(--text); text-decoration: none; font-size: 0.92rem; }
+  .nav-item:hover { background: var(--border); }
+  .nav-item.active { background: var(--accent); color: #fff; }
+  .nav-icon { width: 20px; text-align: center; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; }
+  .stat-value.positive { color: var(--success); }
+  .stat-value.negative { color: var(--danger); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 12px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  td { padding: 12px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  tr:last-child td { border-bottom: none; }
+  .amount-income { color: var(--success); font-weight: 600; }
+  .amount-expense { color: var(--danger); font-weight: 600; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background 0.15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  #login-page { display: flex; align-items: center; justify-content: center; min-height: 100dvh; background: var(--bg); padding: 24px; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 40px; max-width: 380px; width: 100%; }
+  .login-card h2 { font-size: 1.4rem; margin-bottom: 8px; }
+  .login-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+  .code-input { width: 100%; padding: 14px; font-size: 1.6rem; letter-spacing: 0.35em; text-align: center; text-transform: uppercase; font-weight: 700; font-family: monospace; border: 2px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); outline: none; }
+  .code-input:focus { border-color: var(--accent); }
+  .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
+  .login-submit { width: 100%; margin-top: 20px; padding: 12px; font-size: 1rem; }
+  .pagination { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .page-info { font-size: 0.85rem; color: var(--text-muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-income { background: #e8f5e9; color: var(--success); }
+  .badge-expense { background: #ffebee; color: var(--danger); }
+  .badge-transfer { background: #e3f2fd; color: var(--accent); }
+  @media (prefers-color-scheme: dark) {
+    .badge-income { background: #1b5e20; } .badge-expense { background: #b71c1c; } .badge-transfer { background: #0d47a1; }
+  }
+  #hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: var(--text); font-size: 1.4rem; }
+  @media (max-width: 700px) {
+    #hamburger { display: block; }
+    #sidebar { position: fixed; top: 0; left: 0; height: 100%; z-index: 200; transform: translateX(-100%); transition: transform 0.25s; }
+    #sidebar.open { transform: translateX(0); }
+    #content { padding: 16px; }
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
+    #overlay.visible { display: block; }
+  }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 40px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-wrap { display: flex; justify-content: center; }
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; }
+  .alert-warn { background: #fff3e0; color: var(--warning); border: 1px solid #ffe0b2; }
+  @media (prefers-color-scheme: dark) { .alert-warn { background: #3e2000; border-color: #bf360c; } }
+  .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
+  .empty-state { text-align: center; color: var(--text-muted); padding: 60px 0; }
+</style>
+</head>
+<body>
+
+<div id="login-page" style="display:none;">
+  <div class="login-card">
+    <h2>OssWallet Web View</h2>
+    <p>Enter the access code shown on your phone to continue.</p>
+    <input class="code-input" id="code-input" type="text" maxlength="8" placeholder="XXXXXXXX" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="error-msg" id="login-error"></div>
+    <button class="btn btn-primary login-submit" id="login-btn">Verify</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="header">
+    <button id="hamburger" aria-label="Menu">&#9776;</button>
+    <h1>OssWallet</h1>
+    <button class="btn btn-ghost" id="logout-btn" style="font-size:0.85rem; padding:6px 12px;">Log out</button>
+  </div>
+  <div id="main">
+    <div id="overlay"></div>
+    <nav id="sidebar">
+      <a class="nav-item" href="#/accounts"><span class="nav-icon">&#128178;</span> Accounts</a>
+      <a class="nav-item" href="#/transactions"><span class="nav-icon">&#8644;</span> Transactions</a>
+      <a class="nav-item" href="#/summary"><span class="nav-icon">&#128200;</span> Summary</a>
+    </nav>
+    <main id="content">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  const baseUrl = window.location.origin;
+  let token = sessionStorage.getItem('oss_token') || '';
+
+  const loginPage = document.getElementById('login-page');
+  const appPage   = document.getElementById('app');
+  const content   = document.getElementById('content');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('overlay');
+
+  if (token) { showApp(); route(); } else { showLogin(); }
+
+  document.getElementById('code-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+
+  async function doLogin() {
+    const btn   = document.getElementById('login-btn');
+    const input = document.getElementById('code-input');
+    const errEl = document.getElementById('login-error');
+    const code  = input.value.trim().toUpperCase();
+    if (code.length < 8) { errEl.textContent = 'Enter the full 8-character code.'; return; }
+    btn.disabled = true; btn.textContent = 'Verifying…'; errEl.textContent = '';
+    try {
+      const res  = await fetch(baseUrl + '/api/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode: code })
+      });
+      const json = await res.json();
+      if (res.status === 429) {
+        errEl.textContent = json.error || 'Too many attempts. Wait 60 seconds.';
+      } else if (json.success && json.data?.token) {
+        token = json.data.token;
+        sessionStorage.setItem('oss_token', token);
+        showApp(); navigate('#/accounts');
+      } else {
+        errEl.textContent = 'Incorrect code. Try again.';
+      }
+    } catch { errEl.textContent = 'Connection error. Is the server still running?'; }
+    finally { btn.disabled = false; btn.textContent = 'Verify'; }
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    token = ''; sessionStorage.removeItem('oss_token'); showLogin();
+    document.getElementById('code-input').value = '';
+    document.getElementById('login-error').textContent = '';
+  });
+
+  document.getElementById('hamburger').addEventListener('click', () => {
+    sidebar.classList.toggle('open'); overlay.classList.toggle('visible');
+  });
+  overlay.addEventListener('click', closeSidebar);
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
+
+  window.addEventListener('hashchange', route);
+  function route() {
+    const hash = location.hash || '#/accounts';
+    updateActiveNav(hash); closeSidebar();
+    if (hash.startsWith('#/accounts'))          renderAccounts();
+    else if (hash.startsWith('#/transactions')) renderTransactions();
+    else if (hash.startsWith('#/summary'))      renderSummary();
+    else renderAccounts();
+  }
+  function navigate(hash) { location.hash = hash; }
+  function updateActiveNav(hash) {
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('active', hash.startsWith(el.getAttribute('href')));
+    });
+  }
+
+  async function apiFetch(path) {
+    const res = await fetch(baseUrl + path, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showLogin(); throw new Error('Session expired'); }
+    return res.json();
+  }
+
+  function showLogin() { loginPage.style.display = 'flex'; appPage.style.display = 'none'; setTimeout(() => document.getElementById('code-input').focus(), 100); }
+  function showApp()   { loginPage.style.display = 'none';  appPage.style.display = 'flex'; }
+  function setContent(html) { content.innerHTML = html; }
+  function showSpinner() { setContent('<div class="loading-wrap"><div class="spinner"></div></div>'); }
+
+  function fmt(amount, currency) {
+    try { return new Intl.NumberFormat(navigator.language, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
+    catch { return amount.toFixed(2) + ' ' + currency; }
+  }
+  function fmtRaw(n) { return n.toLocaleString(navigator.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtDate(ts) { return new Date(ts).toLocaleDateString(navigator.language, { year: 'numeric', month: 'short', day: 'numeric' }); }
+  function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  async function renderAccounts() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/accounts');
+      if (!json.success) { setContent('<p class="empty-state">Failed to load accounts.</p>'); return; }
+      const accounts = json.data || [];
+      if (accounts.length === 0) { setContent('<p class="empty-state">No accounts found.</p>'); return; }
+      let html = '<h2 class="section-title">Accounts</h2><div class="card-grid">';
+      for (const acc of accounts) {
+        const balClass = acc.balance >= 0 ? 'positive' : 'negative';
+        html += `<div class="stat-card">
+          <div class="stat-label">${esc(acc.type)}</div>
+          <div style="font-weight:600; margin-bottom:8px;">${esc(acc.name)}</div>
+          <div class="stat-value ${balClass}">${fmt(acc.balance, acc.currency)}</div>
+          <div style="margin-top:12px;">
+            <a class="btn btn-ghost" style="font-size:0.8rem; padding:4px 10px;" href="#/transactions?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View transactions</a>
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading accounts.</p>'); }
+  }
+
+  async function renderTransactions() {
+    const params      = new URLSearchParams(location.hash.split('?')[1] || '');
+    const accountId   = params.get('accountId') || '';
+    const accountName = params.get('accountName') ? decodeURIComponent(params.get('accountName')) : '';
+    const page        = parseInt(params.get('page') || '0', 10);
+    showSpinner();
+    try {
+      let url = `/api/transactions?page=${page}&limit=25`;
+      if (accountId) url += `&accountId=${encodeURIComponent(accountId)}`;
+      const json = await apiFetch(url);
+      if (!json.success) { setContent('<p class="empty-state">Failed to load transactions.</p>'); return; }
+      const data = json.data || { items: [], total: 0, page: 0, limit: 25, hasMore: false };
+      let title = accountName ? `Transactions — ${esc(accountName)}` : 'Transactions';
+      let html = `<h2 class="section-title">${title}</h2>`;
+      if (data.items.length === 0) {
+        html += '<p class="empty-state">No transactions found.</p>';
+      } else {
+        html += `<div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+        for (const tx of data.items) {
+          const amtClass  = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
+          const sign      = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
+          const badgeCls  = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
+          html += `<tr>
+            <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
+            <td>${esc(tx.title)}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}</td>
+            <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${esc(tx.accountName)}</td>
+            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
+            <td style="text-align:right" class="${amtClass}">${sign}${fmt(tx.amount, tx.currency)}</td>
+          </tr>`;
+        }
+        html += '</tbody></table></div>';
+        const totalPages = Math.ceil(data.total / data.limit);
+        html += `<div class="pagination">
+          <span class="page-info">Page ${page + 1} of ${totalPages} (${data.total} total)</span>
+          ${page > 0 ? `<button class="btn btn-ghost" onclick="navPage(${page - 1})">&#8592; Prev</button>` : ''}
+          ${data.hasMore ? `<button class="btn btn-primary" onclick="navPage(${page + 1})">Next &#8594;</button>` : ''}
+        </div></div>`;
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading transactions.</p>'); }
+  }
+
+  window.navPage = function(page) {
+    const params = new URLSearchParams(location.hash.split('?')[1] || '');
+    params.set('page', page);
+    location.hash = '#/transactions?' + params.toString();
+  };
+
+  async function renderSummary() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/summary');
+      if (!json.success) { setContent('<p class="empty-state">Failed to load summary.</p>'); return; }
+      const d = json.data;
+      const netClass  = d.netWorth >= 0 ? 'positive' : 'negative';
+      const cashFlow  = d.monthlyIncome - d.monthlyExpenses;
+      const cashClass = cashFlow >= 0 ? 'positive' : 'negative';
+      setContent(`
+        <h2 class="section-title">Summary — ${esc(d.month)}</h2>
+        <div class="card-grid">
+          <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${netClass}">${fmtRaw(d.netWorth)}</div></div>
+          <div class="stat-card"><div class="stat-label">Income this month</div><div class="stat-value positive">+${fmtRaw(d.monthlyIncome)}</div></div>
+          <div class="stat-card"><div class="stat-label">Expenses this month</div><div class="stat-value negative">−${fmtRaw(d.monthlyExpenses)}</div></div>
+          <div class="stat-card"><div class="stat-label">Cash flow</div><div class="stat-value ${cashClass}">${cashFlow >= 0 ? '+' : '−'}${fmtRaw(Math.abs(cashFlow))}</div></div>
+        </div>
+        <div class="alert alert-warn">Amounts are shown in each account's native currency. Multi-currency net worth may not reflect real-time exchange rates.</div>
+      `);
+    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading summary.</p>'); }
+  }
+})();
+</script>
+</body>
+</html>

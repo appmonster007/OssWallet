@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt)
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("plugin.serialization") version "2.2.10"
 }
 
 val localProps = Properties().also { props ->
@@ -105,6 +105,19 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.osmdroid.android)
+
+    // Ktor embedded HTTP server (Open in Web feature)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.compression)
+    implementation(libs.ktor.server.default.headers)
+    debugImplementation(libs.ktor.server.call.logging)
+    // QR code generation
+    implementation(libs.qrcode.kotlin.android)
 
     // Hilt
     implementation(libs.hilt.android)

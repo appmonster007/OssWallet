@@ -94,4 +94,5 @@ sealed class Screen(val route: String) {
     object SmartSuggestions : Screen("smart_suggestions")
     object Onboarding : Screen("onboarding")
     object ShortlistedCurrencies : Screen("shortlisted_currencies")
+    object OpenInWeb : Screen("open_in_web")
 }

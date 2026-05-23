@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
+import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -47,6 +49,12 @@ fun AnalyticsScreen(
     settingsViewModel: SettingsViewModel,
     onRecordsClick: (TransactionFilter) -> Unit,
     onAccountClick: (String) -> Unit,
+    onNavigateToPlannedPaymentList: () -> Unit = {},
+    onNavigateToBudgetList: () -> Unit = {},
+    onNavigateToLoanList: () -> Unit = {},
+    onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
+    onNavigateToBudgetDetail: (Long) -> Unit = {},
+    onNavigateToLoanDetail: (Long) -> Unit = {},
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
@@ -153,7 +161,16 @@ fun AnalyticsScreen(
                             ),
                             callbacks = AeonInteractionCallbacks(
                                 accountActions = AccountActions(
-                                    onClick = onAccountClick
+                                    onClick = onAccountClick,
+                                    onSeeAll = { /* Analytics doesn't have a standard account list link */ }
+                                ),
+                                budgetActions = BudgetActions(
+                                    onClick = onNavigateToBudgetDetail,
+                                    onSeeAll = onNavigateToBudgetList
+                                ),
+                                loanActions = LoanActions(
+                                    onClick = onNavigateToLoanDetail,
+                                    onSeeAll = onNavigateToLoanList
                                 ),
                                 transactionActions = TransactionActions(
                                     onClick = onEditTransactionClick,
@@ -161,6 +178,10 @@ fun AnalyticsScreen(
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                     onSplit = { onSplitTransactionClick(it) },
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                                ),
+                                paymentActions = PaymentActions(
+                                    onClick = onNavigateToPlannedPaymentDetail,
+                                    onSeeAll = onNavigateToPlannedPaymentList
                                 ),
                                 tagActions = TagActions(
                                     onAdd = transactionViewModel::addTag

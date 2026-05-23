@@ -43,6 +43,10 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.BackgroundAmoled
+import com.osscabinet.ossWallet.ui.theme.BackgroundDark
+import com.osscabinet.ossWallet.ui.theme.LocalAppColorScheme
+import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -69,6 +73,14 @@ fun AccountHeroCard(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
+    val scheme = LocalAppColorScheme.current
+    val theme = when (scheme.background) {
+        BackgroundAmoled -> "Amoled"
+        BackgroundDark -> "Dark"
+        else -> "Light"
+    }
+    val (containerColor, contentColor) = accountColor.applyAeonTint(theme)
+
     val balanceInBase = CurrencyService.convertAmount(
         amount = balance,
         fromCurrency = account.currencyCode,
@@ -80,8 +92,11 @@ fun AccountHeroCard(
         title = account.name,
         subtitle = account.structureType.displayName,
         icon = icon,
-        iconColor = accountColor,
-        accentColor = accountColor,
+        iconColor = contentColor,
+        accentColor = contentColor,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        backgroundIcon = icon,
         modifier = modifier.clickable { callbacks.onClick?.invoke() },
         headerModifier = headerModifier,
         filterEnabled = false,
@@ -99,7 +114,7 @@ fun AccountHeroCard(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp
                     ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    color = contentColor.copy(alpha = 0.6f)
                 )
 
                 val balanceParts =
@@ -116,7 +131,7 @@ fun AccountHeroCard(
                         withStyle(
                             SpanStyle(
                                 fontWeight = FontWeight.Light,
-                                color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                                color = contentColor.copy(alpha = 0.5f),
                                 fontSize = 18.sp
                             )
                         ) {
@@ -128,7 +143,7 @@ fun AccountHeroCard(
                         fontSize = 32.sp,
                         letterSpacing = (-1).sp
                     ),
-                    color = AppColors.contentPrimary
+                    color = contentColor
                 )
 
                 if (account.currencyCode != baseCurrency) {
@@ -142,7 +157,7 @@ fun AccountHeroCard(
                         }",
                         style = AppTextStyles.transactionTitle.copy(
                             fontWeight = FontWeight.Medium,
-                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                            color = contentColor.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -158,7 +173,7 @@ fun AccountHeroCard(
                     amount = income,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                    color = AppColors.primary,
+                    color = contentColor,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
                 )
@@ -167,7 +182,7 @@ fun AccountHeroCard(
                     amount = expense,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                    color = AppColors.error,
+                    color = contentColor,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
                 )
@@ -181,7 +196,7 @@ fun AccountHeroCard(
                         style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
-                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                            color = contentColor.copy(alpha = 0.8f)
                         )
                     )
 
@@ -191,11 +206,11 @@ fun AccountHeroCard(
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = AppColors.sheetSurface,
+                                color = contentColor.copy(alpha = 0.1f),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(
                                     1.dp,
-                                    AppColors.divider.copy(alpha = 0.2f)
+                                    contentColor.copy(alpha = 0.1f)
                                 ),
                                 modifier = Modifier.clickable { callbacks.onClickCurrency?.invoke(curr) }
                             ) {
@@ -211,7 +226,7 @@ fun AccountHeroCard(
                                         curr,
                                         style = AppTextStyles.transactionSwipeAction.copy(
                                             fontWeight = FontWeight.Black,
-                                            color = accountColor
+                                            color = contentColor
                                         )
                                     )
                                     Text(
@@ -219,7 +234,8 @@ fun AccountHeroCard(
                                         style = AppTextStyles.transactionTitle.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = (-0.2).sp
-                                        )
+                                        ),
+                                        color = contentColor
                                     )
                                 }
                             }
@@ -275,7 +291,7 @@ private fun FlowSummaryItem(
                 style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                color = AppColors.contentPrimary
+                color = color
             )
         }
     }

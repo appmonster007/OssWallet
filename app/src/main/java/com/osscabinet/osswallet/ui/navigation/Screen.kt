@@ -12,6 +12,10 @@ sealed class Screen(val route: String) {
         }
     }
     object Settings : Screen("settings")
+    object SettingsDisplay : Screen("settings_display")
+    object SettingsCurrency : Screen("settings_currency")
+    object SettingsData : Screen("settings_data")
+    object SettingsSecurity : Screen("settings_security")
     object TransactionList : Screen("transaction_list?filter={filter}&topLevel={topLevel}") {
         fun createRoute(filter: String? = null, topLevel: Boolean = true): String {
             val params = mutableListOf<String>()

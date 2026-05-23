@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -44,26 +43,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
-import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
-import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.toChartColor
-import com.osscabinet.ossWallet.ui.util.generateShade
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import java.math.BigDecimal
-import java.math.RoundingMode
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.generateShade
+import com.osscabinet.ossWallet.ui.util.toChartColor
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun CategoryPieChartCard(
@@ -81,9 +79,10 @@ fun CategoryPieChartCard(
     previousTotal: BigDecimal? = null,
     showFilterButton: Boolean = true
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -91,10 +90,10 @@ fun CategoryPieChartCard(
         else -> isSystemInDarkTheme()
     }
     val isAmoled = currentTheme == "Amoled"
-    
+
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }
-    
+
     val filteredData = remember(data, config.showOnlyActiveCategories) {
         if (config.showOnlyActiveCategories) {
             data.filter { it.amount.signum() != 0 }
@@ -102,9 +101,9 @@ fun CategoryPieChartCard(
             data
         }
     }
-    
+
     val currentData = navigationStack.last()
-    
+
     // Sync with external data changes
     LaunchedEffect(filteredData) {
         navigationStack = listOf(filteredData)
@@ -123,7 +122,12 @@ fun CategoryPieChartCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategoryPieChartSettingsSheet(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            CategoryPieChartSettingsSheet(
+                config = config,
+                onUpdate = { callbacks.onUpdate(it) },
+                onDelete = callbacks.onDelete,
+                onDismiss = onDismiss
+            )
         }
     ) {
         if (navigationStack.size > 1) {
@@ -144,7 +148,7 @@ fun CategoryPieChartCard(
                         tint = AppColors.primary
                     )
                 }
-                
+
                 navigationStack.drop(1).forEachIndexed { index, stack ->
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
@@ -152,10 +156,10 @@ fun CategoryPieChartCard(
                         modifier = Modifier.size(16.dp),
                         tint = AppColors.border
                     )
-                    
+
                     val prevStack = navigationStack[index]
                     val name = prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
-                    
+
                     TextButton(
                         onClick = { navigationStack = navigationStack.take(index + 2) },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
@@ -186,7 +190,7 @@ fun CategoryPieChartCard(
                 } else {
                     val otherSum = others.sumOf { it.amount }
                     val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                    
+
                     top + CategoryPieChartData(
                         category = "Other",
                         categoryId = -1L, // Special ID for "Other"
@@ -218,13 +222,13 @@ fun CategoryPieChartCard(
                     } else {
                         Color(item.colorHex)
                     }
-                    
+
                     val displayColor = if (navigationStack.size > 1) {
                         baseColor.generateShade(index, groupedData.size, isDarkTheme, isAmoled)
                     } else {
                         baseColor.toChartColor(isDarkTheme, isAmoled)
                     }
-                    
+
                     val sliceValue = item.amount
                     val globalValue = data.sumOf { it.amount }
 
@@ -234,13 +238,13 @@ fun CategoryPieChartCard(
                         color = displayColor,
                         hasSubcategories = item.hasSubcategories,
                         subcategoryCount = item.subcategoryCount,
-                        percentageOfTotal = if (globalValue.signum() != 0) 
-                            sliceValue.divide(globalValue, 4, RoundingMode.HALF_UP).toFloat() 
-                            else 0f,
+                        percentageOfTotal = if (globalValue.signum() != 0)
+                            sliceValue.divide(globalValue, 4, RoundingMode.HALF_UP).toFloat()
+                        else 0f,
                         id = item.categoryId
                     )
                 }
-                
+
                 AeonPieChart(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
@@ -260,8 +264,9 @@ fun CategoryPieChartCard(
                     },
                     onNavigateToRecords = { slice ->
                         val clickedItem = groupedData.find { it.category == slice.label }
-                        val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
-                        
+                        val categoryIds =
+                            clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
+
                         callbacks.onRecordsClick(
                             config.filter.copy(
                                 categoryIds = categoryIds.map { it.toLong() }.toSet()
@@ -271,18 +276,22 @@ fun CategoryPieChartCard(
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No category data", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+                    Text(
+                        "No category data",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
                 }
             }
         }
-        
+
         // Optimized Legend
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             CategoryLegend(
-                data = groupedData, 
+                data = groupedData,
                 navigationStack = navigationStack,
-                isDarkTheme = isDarkTheme, 
+                isDarkTheme = isDarkTheme,
                 isAmoled = isAmoled,
                 showFullBreakdown = config.showFullBreakdown,
                 onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
@@ -302,14 +311,36 @@ private fun CategoryPieChartSettingsSheet(
 ) {
     CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            SettingsSwitchRow("Show Labels", config.showLabels) { onUpdate(config.copy(showLabels = it)) }
-            SettingsSwitchRow("Show Legend", config.showLegend) { onUpdate(config.copy(showLegend = it)) }
-            SettingsSwitchRow("Rounded Visuals", config.rounded, subtitle = "Apply spacing and modern segment styles") { onUpdate(config.copy(rounded = it)) }
+            SettingsSwitchRow(
+                "Show Labels",
+                config.showLabels
+            ) { onUpdate(config.copy(showLabels = it)) }
+            SettingsSwitchRow(
+                "Show Legend",
+                config.showLegend
+            ) { onUpdate(config.copy(showLegend = it)) }
+            SettingsSwitchRow(
+                "Rounded Visuals",
+                config.rounded,
+                subtitle = "Apply spacing and modern segment styles"
+            ) { onUpdate(config.copy(rounded = it)) }
         }
         CardSettingsSection("Data") {
-            SettingsSwitchRow("Full Breakdown", config.showFullBreakdown, subtitle = "Show all categories instead of top 5") { onUpdate(config.copy(showFullBreakdown = it)) }
-            SettingsSwitchRow("Active Only", config.showOnlyActiveCategories, subtitle = "Only show categories with non-zero values") { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-            SettingsSwitchRow("Show Comparison", config.showComparison, subtitle = "Compare to previous period in chart center") { onUpdate(config.copy(showComparison = it)) }
+            SettingsSwitchRow(
+                "Full Breakdown",
+                config.showFullBreakdown,
+                subtitle = "Show all categories instead of top 5"
+            ) { onUpdate(config.copy(showFullBreakdown = it)) }
+            SettingsSwitchRow(
+                "Active Only",
+                config.showOnlyActiveCategories,
+                subtitle = "Only show categories with non-zero values"
+            ) { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            SettingsSwitchRow(
+                "Show Comparison",
+                config.showComparison,
+                subtitle = "Compare to previous period in chart center"
+            ) { onUpdate(config.copy(showComparison = it)) }
         }
     }
 }
@@ -338,9 +369,9 @@ private fun SettingsSwitchRow(
 
 @Composable
 fun CategoryLegend(
-    data: List<CategoryPieChartData>, 
+    data: List<CategoryPieChartData>,
     navigationStack: List<List<CategoryPieChartData>>,
-    isDarkTheme: Boolean, 
+    isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
     onToggleBreakdown: (Boolean) -> Unit
@@ -360,7 +391,7 @@ fun CategoryLegend(
             } else {
                 Color(item.colorHex)
             }
-            
+
             val displayColor = if (navigationStack.size > 1) {
                 baseColor.generateShade(index, data.size, isDarkTheme, isAmoled)
             } else {
@@ -377,7 +408,7 @@ fun CategoryLegend(
                     color = displayColor,
                     border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
                 ) {}
-                
+
                 Text(
                     text = item.category,
                     style = AppTextStyles.drawerItemLabel.copy(
@@ -386,7 +417,7 @@ fun CategoryLegend(
                     ),
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Text(
                     text = formatAmount(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
@@ -397,7 +428,7 @@ fun CategoryLegend(
                 )
             }
         }
-        
+
         if (!showFullBreakdown && data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
@@ -439,34 +470,130 @@ private fun formatCurrency(amount: BigDecimal): String {
 @Composable
 fun CategoryPieChartCardPreview() {
     val subData = listOf(
-        CategoryPieChartData(category = "Coffee", categoryId = null, amount = BigDecimal("50.00"), colorHex = 0xFF795548.toInt(), percentage = 0.1f),
-        CategoryPieChartData(category = "Dinner", categoryId = null, amount = BigDecimal("150.00"), colorHex = 0xFFFF9800.toInt(), percentage = 0.3f)
-    )
-    
-    val richData = listOf(
-        CategoryPieChartData(category = "Housing", categoryId = null, amount = BigDecimal("1200.00"), colorHex = 0xFF2196F3.toInt(), percentage = 0.6f),
         CategoryPieChartData(
-            category = "Food & Dining", categoryId = null, amount = BigDecimal("450.00"), colorHex = 0xFFFF5722.toInt(), percentage = 0.225f,
+            category = "Coffee",
+            categoryId = null,
+            amount = BigDecimal("50.00"),
+            colorHex = 0xFF795548.toInt(),
+            percentage = 0.1f
+        ),
+        CategoryPieChartData(
+            category = "Dinner",
+            categoryId = null,
+            amount = BigDecimal("150.00"),
+            colorHex = 0xFFFF9800.toInt(),
+            percentage = 0.3f
+        )
+    )
+
+    val richData = listOf(
+        CategoryPieChartData(
+            category = "Housing",
+            categoryId = null,
+            amount = BigDecimal("1200.00"),
+            colorHex = 0xFF2196F3.toInt(),
+            percentage = 0.6f
+        ),
+        CategoryPieChartData(
+            category = "Food & Dining",
+            categoryId = null,
+            amount = BigDecimal("450.00"),
+            colorHex = 0xFFFF5722.toInt(),
+            percentage = 0.225f,
             hasSubcategories = true,
             subcategoryData = subData
         ),
-        CategoryPieChartData(category = "Transport", categoryId = null, amount = BigDecimal("150.00"), colorHex = 0xFF4CAF50.toInt(), percentage = 0.075f),
-        CategoryPieChartData(category = "Entertainment", categoryId = null, amount = BigDecimal("200.00"), colorHex = 0xFF9C27B0.toInt(), percentage = 0.1f),
-        CategoryPieChartData(category = "Misc 1", categoryId = null, amount = BigDecimal("10.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 2", categoryId = null, amount = BigDecimal("9.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 3", categoryId = null, amount = BigDecimal("8.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 4", categoryId = null, amount = BigDecimal("7.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 5", categoryId = null, amount = BigDecimal("6.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 6", categoryId = null, amount = BigDecimal("5.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 7", categoryId = null, amount = BigDecimal("4.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 8", categoryId = null, amount = BigDecimal("3.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 9", categoryId = null, amount = BigDecimal("2.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryPieChartData(category = "Misc 10", categoryId = null, amount = BigDecimal("1.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f)
+        CategoryPieChartData(
+            category = "Transport",
+            categoryId = null,
+            amount = BigDecimal("150.00"),
+            colorHex = 0xFF4CAF50.toInt(),
+            percentage = 0.075f
+        ),
+        CategoryPieChartData(
+            category = "Entertainment",
+            categoryId = null,
+            amount = BigDecimal("200.00"),
+            colorHex = 0xFF9C27B0.toInt(),
+            percentage = 0.1f
+        ),
+        CategoryPieChartData(
+            category = "Misc 1",
+            categoryId = null,
+            amount = BigDecimal("10.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 2",
+            categoryId = null,
+            amount = BigDecimal("9.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 3",
+            categoryId = null,
+            amount = BigDecimal("8.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 4",
+            categoryId = null,
+            amount = BigDecimal("7.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 5",
+            categoryId = null,
+            amount = BigDecimal("6.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 6",
+            categoryId = null,
+            amount = BigDecimal("5.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 7",
+            categoryId = null,
+            amount = BigDecimal("4.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 8",
+            categoryId = null,
+            amount = BigDecimal("3.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 9",
+            categoryId = null,
+            amount = BigDecimal("2.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryPieChartData(
+            category = "Misc 10",
+            categoryId = null,
+            amount = BigDecimal("1.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        )
     )
 
     OssWalletTheme {
         Column(
-            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CategoryPieChartCard(

@@ -1,18 +1,33 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,9 +35,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Colorize
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,24 +66,29 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.ColorUtils
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.BrandPresetColorHexes
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
+import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import kotlinx.coroutines.launch
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.math.PI
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun AeonHeroHeader(
@@ -66,7 +101,8 @@ fun AeonHeroHeader(
     onTitleChange: ((String) -> Unit)? = null,
     onIconClick: (() -> Unit)? = null
 ) {
-    val currentAccentColor = accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
+    val currentAccentColor =
+        accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
 
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
@@ -84,9 +120,9 @@ fun AeonHeroHeader(
                 Surface(
                     modifier = Modifier
                         .size(AeonTheme.dimensions.iconSize3xl)
-                        .then(if (onIconClick != null) Modifier.clickable { 
+                        .then(if (onIconClick != null) Modifier.clickable {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onIconClick() 
+                            onIconClick()
                         } else Modifier),
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = currentAccentColor
@@ -130,7 +166,7 @@ fun AeonHeroHeader(
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
-                    
+
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
@@ -151,9 +187,9 @@ fun AeonHeroHeader(
                 Surface(
                     modifier = Modifier
                         .size(AeonTheme.dimensions.iconSize3xl)
-                        .then(if (onIconClick != null) Modifier.clickable { 
+                        .then(if (onIconClick != null) Modifier.clickable {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onIconClick() 
+                            onIconClick()
                         } else Modifier),
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = currentAccentColor
@@ -225,7 +261,8 @@ fun AeonFormHeader(
     modifier: Modifier = Modifier,
     saveButtonText: String = "SAVE"
 ) {
-    val currentAccentColor = accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
+    val currentAccentColor =
+        accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -245,7 +282,10 @@ fun AeonFormHeader(
         ) {
             Text(
                 saveButtonText,
-                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXl, vertical = AeonTheme.dimensions.spacingSm),
+                modifier = Modifier.padding(
+                    horizontal = AeonTheme.dimensions.spacingXl,
+                    vertical = AeonTheme.dimensions.spacingSm
+                ),
                 style = AppTextStyles.drawerItemLabel.copy(
                     fontWeight = FontWeight.Bold,
                     color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.border
@@ -266,7 +306,9 @@ fun AeonTextField(
     height: Dp = 44.dp
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth().height(height),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = AppColors.insetSurface.copy(alpha = 0.4f)
     ) {
@@ -275,7 +317,12 @@ fun AeonTextField(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (leadingIcon != null) {
-                Icon(leadingIcon, contentDescription = null, tint = AppColors.border, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                Icon(
+                    leadingIcon,
+                    contentDescription = null,
+                    tint = AppColors.border,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                )
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
             }
             if (prefix != null) {
@@ -301,7 +348,10 @@ fun AeonTextField(
                 cursorBrush = SolidColor(AppColors.primary),
                 singleLine = true,
                 decorationBox = { innerTextField ->
-                    if (value.isEmpty()) Text(placeholder, color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                    if (value.isEmpty()) Text(
+                        placeholder,
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
                     innerTextField()
                 }
             )
@@ -325,8 +375,12 @@ fun AeonSlider(
     Box(
         modifier = modifier
             .then(
-                if (isHorizontal) Modifier.fillMaxWidth().height(height) 
-                else Modifier.fillMaxHeight().width(height)
+                if (isHorizontal) Modifier
+                    .fillMaxWidth()
+                    .height(height)
+                else Modifier
+                    .fillMaxHeight()
+                    .width(height)
             )
             .shadow(
                 elevation = 8.dp,
@@ -339,7 +393,7 @@ fun AeonSlider(
             .background(brush)
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onPress = { 
+                    onPress = {
                         isDragging = true
                         try {
                             awaitRelease()
@@ -348,8 +402,10 @@ fun AeonSlider(
                         }
                     }
                 ) { offset ->
-                    val progress = if (isHorizontal) (offset.x / size.width) else (1f - (offset.y / size.height))
-                    val newValue = progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
+                    val progress =
+                        if (isHorizontal) (offset.x / size.width) else (1f - (offset.y / size.height))
+                    val newValue =
+                        progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
                     onValueChange(newValue)
                 }
             }
@@ -359,8 +415,10 @@ fun AeonSlider(
                     onDragEnd = { isDragging = false },
                     onDragCancel = { isDragging = false }
                 ) { change, _ ->
-                    val progress = if (isHorizontal) (change.position.x / size.width) else (1f - (change.position.y / size.height))
-                    val newValue = progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
+                    val progress =
+                        if (isHorizontal) (change.position.x / size.width) else (1f - (change.position.y / size.height))
+                    val newValue =
+                        progress.coerceIn(0f, 1f) * (range.endInclusive - range.start) + range.start
                     onValueChange(newValue)
                 }
             }
@@ -422,7 +480,7 @@ fun HorizontalColorSlider(
                 modifier = Modifier.width(32.dp)
             )
         }
-        
+
         AeonSlider(
             value = value,
             onValueChange = onValueChange,
@@ -431,7 +489,7 @@ fun HorizontalColorSlider(
             isHorizontal = true,
             modifier = Modifier.weight(1f)
         )
-        
+
         Text(
             if (range.endInclusive <= 1f) "${(value * 100).toInt()}%" else "${value.toInt()}°",
             style = AppTextStyles.transactionSwipeAction.copy(
@@ -489,7 +547,8 @@ fun ColorWheel(
                     ) { change, _ ->
                         val outerRadius = minOf(size.width, size.height) / 2f
                         val innerRadius = outerRadius * 0.65f
-                        val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                        val center =
+                            androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
                         val dx = change.position.x - center.x
                         val dy = change.position.y - center.y
                         val dist = sqrt(dx * dx + dy * dy)
@@ -498,17 +557,21 @@ fun ColorWheel(
                         val sqLeft = center.x - sqSize / 2f
                         val sqTop = center.y - sqSize / 2f
 
-                        val inSqRect = change.position.x >= sqLeft && change.position.x <= sqLeft + sqSize &&
-                            change.position.y >= sqTop && change.position.y <= sqTop + sqSize
+                        val inSqRect =
+                            change.position.x >= sqLeft && change.position.x <= sqLeft + sqSize &&
+                                    change.position.y >= sqTop && change.position.y <= sqTop + sqSize
 
                         if (inSqRect) {
                             val sat = ((change.position.x - sqLeft) / sqSize).coerceIn(0f, 1f)
                             val light = 1f - ((change.position.y - sqTop) / sqSize).coerceIn(0f, 1f)
-                            val newColorInt = ColorUtils.HSLToColor(floatArrayOf(hsl[0], sat, light))
+                            val newColorInt =
+                                ColorUtils.HSLToColor(floatArrayOf(hsl[0], sat, light))
                             onColorSelected(Color(newColorInt))
                         } else if (dist in innerRadius..outerRadius) {
-                            val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
-                            val newColorInt = ColorUtils.HSLToColor(floatArrayOf(angle, hsl[1], hsl[2]))
+                            val angle = (atan2(dy, dx) * 180 / PI).toFloat()
+                                .let { if (it < 0) it + 360f else it }
+                            val newColorInt =
+                                ColorUtils.HSLToColor(floatArrayOf(angle, hsl[1], hsl[2]))
                             onColorSelected(Color(newColorInt))
                         }
                     }
@@ -517,7 +580,8 @@ fun ColorWheel(
                     detectTapGestures { offset ->
                         val outerRadius = minOf(size.width, size.height) / 2f
                         val innerRadius = outerRadius * 0.65f
-                        val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                        val center =
+                            androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
                         val dx = offset.x - center.x
                         val dy = offset.y - center.y
                         val dist = sqrt(dx * dx + dy * dy)
@@ -527,16 +591,19 @@ fun ColorWheel(
                         val sqTop = center.y - sqSize / 2f
 
                         val inSqRect = offset.x >= sqLeft && offset.x <= sqLeft + sqSize &&
-                            offset.y >= sqTop && offset.y <= sqTop + sqSize
+                                offset.y >= sqTop && offset.y <= sqTop + sqSize
 
                         if (inSqRect) {
                             val sat = ((offset.x - sqLeft) / sqSize).coerceIn(0f, 1f)
                             val light = 1f - ((offset.y - sqTop) / sqSize).coerceIn(0f, 1f)
-                            val newColorInt = ColorUtils.HSLToColor(floatArrayOf(hsl[0], sat, light))
+                            val newColorInt =
+                                ColorUtils.HSLToColor(floatArrayOf(hsl[0], sat, light))
                             onColorSelected(Color(newColorInt))
                         } else if (dist in innerRadius..outerRadius) {
-                            val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
-                            val newColorInt = ColorUtils.HSLToColor(floatArrayOf(angle, hsl[1], hsl[2]))
+                            val angle = (atan2(dy, dx) * 180 / PI).toFloat()
+                                .let { if (it < 0) it + 360f else it }
+                            val newColorInt =
+                                ColorUtils.HSLToColor(floatArrayOf(angle, hsl[1], hsl[2]))
                             onColorSelected(Color(newColorInt))
                         }
                     }
@@ -548,7 +615,13 @@ fun ColorWheel(
 
             // Draw hue ring with sweep gradient
             val hueColors = listOf(
-                Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+                Color.Red,
+                Color.Yellow,
+                Color.Green,
+                Color.Cyan,
+                Color.Blue,
+                Color.Magenta,
+                Color.Red
             )
             drawCircle(
                 brush = Brush.sweepGradient(hueColors, center),
@@ -674,7 +747,10 @@ fun AdvancedColorPickerContent(
                 .height(40.dp),
             shape = CircleShape,
             color = AppColors.insetSurface.copy(alpha = 0.4f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                AppColors.divider.copy(alpha = 0.1f)
+            )
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 val selectedTabX = animateDpAsState(
@@ -686,14 +762,22 @@ fun AdvancedColorPickerContent(
                 Box(
                     modifier = Modifier
                         .padding(4.dp)
-                        .offset { androidx.compose.ui.unit.IntOffset(selectedTabX.value.roundToPx(), 0) }
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(
+                                selectedTabX.value.roundToPx(),
+                                0
+                            )
+                        }
                         .width(102.dp)
                         .fillMaxHeight()
                         .background(AppColors.primary, CircleShape)
                         .border(1.dp, ColorOnLight.copy(alpha = 0.15f), CircleShape)
                 )
 
-                Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     listOf("Sliders", "Wheel").forEachIndexed { index, title ->
                         val isSelected = pagerState.currentPage == index
                         Box(
@@ -726,12 +810,16 @@ fun AdvancedColorPickerContent(
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().height(280.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp)
         ) { page ->
             if (page == 0) {
                 // HSL Sliders page — label+value row above each full-width slider
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
                 ) {
                     // HUE
@@ -743,12 +831,18 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "HUE",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${hsl.first.toInt()}°",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -762,7 +856,15 @@ fun AdvancedColorPickerContent(
                             },
                             range = 0f..360f,
                             brush = Brush.horizontalGradient(
-                                listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
+                                listOf(
+                                    Color.Red,
+                                    Color.Yellow,
+                                    Color.Green,
+                                    Color.Cyan,
+                                    Color.Blue,
+                                    Color.Magenta,
+                                    Color.Red
+                                )
                             ),
                             modifier = Modifier.fillMaxWidth(),
                             height = 24.dp
@@ -770,8 +872,10 @@ fun AdvancedColorPickerContent(
                     }
 
                     // SATURATION
-                    val greyAtL = Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, 0f, hsl.third)))
-                    val vividAtL = Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, 1f, hsl.third)))
+                    val greyAtL =
+                        Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, 0f, hsl.third)))
+                    val vividAtL =
+                        Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, 1f, hsl.third)))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -780,12 +884,18 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "SATURATION",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${(hsl.second * 100).toInt()}%",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -805,7 +915,8 @@ fun AdvancedColorPickerContent(
                     }
 
                     // LIGHTNESS
-                    val midHue = Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, hsl.second, 0.5f)))
+                    val midHue =
+                        Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, hsl.second, 0.5f)))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -814,12 +925,18 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "LIGHTNESS",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${(hsl.third * 100).toInt()}%",
-                                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -832,7 +949,13 @@ fun AdvancedColorPickerContent(
                                 onColorSelected(newHex)
                             },
                             range = 0f..1f,
-                            brush = Brush.horizontalGradient(listOf(Color.Black, midHue, Color.White)),
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color.Black,
+                                    midHue,
+                                    Color.White
+                                )
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                             height = 24.dp
                         )
@@ -841,13 +964,23 @@ fun AdvancedColorPickerContent(
             } else {
                 // Wheel page
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
                 ) {
                     val currentHslColor = hexInput.toColorInt().let {
                         if (it != -1) Color(it)
-                        else Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, hsl.second, hsl.third)))
+                        else Color(
+                            ColorUtils.HSLToColor(
+                                floatArrayOf(
+                                    hsl.first,
+                                    hsl.second,
+                                    hsl.third
+                                )
+                            )
+                        )
                     }
                     ColorWheel(
                         selectedColor = currentHslColor,
@@ -891,13 +1024,25 @@ fun AdvancedColorPickerContent(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(initialColorHex.toColorInt().let { if (it != -1) Color(it) else Color.Gray })
+                            .background(
+                                initialColorHex.toColorInt()
+                                    .let { if (it != -1) Color(it) else Color.Gray })
                     )
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(Color(ColorUtils.HSLToColor(floatArrayOf(hsl.first, hsl.second, hsl.third))))
+                            .background(
+                                Color(
+                                    ColorUtils.HSLToColor(
+                                        floatArrayOf(
+                                            hsl.first,
+                                            hsl.second,
+                                            hsl.third
+                                        )
+                                    )
+                                )
+                            )
                     )
                 }
             }
@@ -911,7 +1056,8 @@ fun AdvancedColorPickerContent(
                             val newHsl = hexToHsl(hexInput)
                             hsl = newHsl
                             onColorSelected(hexInput)
-                        } catch (_: Exception) {}
+                        } catch (_: Exception) {
+                        }
                     }
                 },
                 placeholder = "#AABBCC",
@@ -988,7 +1134,10 @@ fun AeonColorSelection(
 
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         if (showTitle) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+            ) {
                 AeonFlowSectionHeader(title = "ACCENT BRAND COLOR")
                 if (isColorLocked) {
                     Icon(
@@ -1000,9 +1149,9 @@ fun AeonColorSelection(
                 }
             }
         }
-        
+
         val alpha = if (isColorLocked) 0.5f else 1f
-        
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1023,9 +1172,9 @@ fun AeonColorSelection(
                             if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
                             else AppColors.transparent
                         )
-                        .clickable(enabled = !isColorLocked) { 
+                        .clickable(enabled = !isColorLocked) {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onColorSelected(colorHex) 
+                            onColorSelected(colorHex)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1050,23 +1199,40 @@ fun AeonColorSelection(
         }
         Row(
             modifier = Modifier.alpha(alpha),
-            verticalAlignment = Alignment.CenterVertically, 
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
-            val color = accentColorHex.toColorInt().let { if (it != -1) Color(it) else Color.DarkGray }
-            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(color))
+            val color =
+                accentColorHex.toColorInt().let { if (it != -1) Color(it) else Color.DarkGray }
+            Box(modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(color))
             AeonTextField(
                 value = accentColorHex,
-                onValueChange = { if (!isColorLocked && it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
+                onValueChange = {
+                    if (!isColorLocked && it.length <= 7) onColorSelected(
+                        if (it.startsWith(
+                                "#"
+                            )
+                        ) it else "#$it"
+                    )
+                },
                 placeholder = DefaultAccentColorHex,
                 prefix = "HEX",
                 modifier = Modifier.weight(1f)
             )
             IconButton(
                 onClick = { if (!isColorLocked) showColorPicker = true },
-                modifier = Modifier.size(44.dp).background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
             ) {
-                Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker", modifier = Modifier.size(20.dp))
+                Icon(
+                    Icons.Rounded.Colorize,
+                    contentDescription = "Color Picker",
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -1090,14 +1256,22 @@ fun VisualIdentitySection(
     isColorLocked: Boolean = false
 ) {
     var iconSearchQuery by remember { mutableStateOf("") }
-    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }.take(10)
+    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter {
+        it.contains(
+            iconSearchQuery,
+            ignoreCase = true
+        )
+    }.take(10)
     var showAllIcons by remember { mutableStateOf(false) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
         Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
             AeonFlowSectionHeader(title = "IDENTIFIER ICON")
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            ) {
                 AeonTextField(
                     value = iconSearchQuery,
                     onValueChange = { iconSearchQuery = it },
@@ -1107,53 +1281,82 @@ fun VisualIdentitySection(
                 )
                 IconButton(
                     onClick = { showAllIcons = true },
-                    modifier = Modifier.size(44.dp).background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
                 ) {
-                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons", modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Rounded.GridView,
+                        contentDescription = "View All Icons",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
             if (filteredIcons.isNotEmpty()) {
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = AeonTheme.dimensions.spacingSm),
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
                     filteredIcons.forEach { name ->
                         val icon = AppIconMap[name]!!
                         val isSelected = selectedIconName == name
-                        val accentColor = accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
+                        val accentColor = accentColorHex.toColorInt()
+                            .let { if (it != -1) Color(it) else AppColors.primary }
                         Surface(
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl).clickable { 
-                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                                onIconSelected(name) 
-                            },
+                            modifier = Modifier
+                                .size(AeonTheme.dimensions.iconSize2xl)
+                                .clickable {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                    onIconSelected(name)
+                                },
                             shape = CircleShape,
-                            color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
+                            color = if (isSelected) accentColor else AppColors.insetSurface.copy(
+                                alpha = 0.3f
+                            ),
                             contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                         ) {
-                            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) }
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                )
+                            }
                         }
                     }
                 }
-            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
+            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(
+                    selectedIconName
+                )
+            ) {
                 // Show currently selected icon if search is blank
                 Row(
-                    verticalAlignment = Alignment.CenterVertically, 
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
                     modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)
                 ) {
-                    val accentColor = accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
+                    val accentColor = accentColorHex.toColorInt()
+                        .let { if (it != -1) Color(it) else AppColors.primary }
                     Surface(
                         modifier = Modifier.size(48.dp),
                         shape = CircleShape,
                         color = accentColor,
                         contentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
                     ) {
-                        Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                AppIconMap[selectedIconName]!!,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                     Text(
-                        selectedIconName, 
+                        selectedIconName,
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.Medium,
                             color = AppColors.contentSecondary
@@ -1177,24 +1380,37 @@ fun VisualIdentitySection(
             text = {
                 Box(modifier = Modifier.height(400.dp)) {
                     FlowRow(
-                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         AppIconMap.forEach { (name, icon) ->
                             val isSelected = selectedIconName == name
-                            val accentColor = accentColorHex.toColorInt().let { if (it != -1) Color(it) else AppColors.primary }
+                            val accentColor = accentColorHex.toColorInt()
+                                .let { if (it != -1) Color(it) else AppColors.primary }
                             Surface(
-                                modifier = Modifier.size(48.dp).clickable { 
-                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                                    onIconSelected(name)
-                                    showAllIcons = false
-                                },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clickable {
+                                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                        onIconSelected(name)
+                                        showAllIcons = false
+                                    },
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(alpha = 0.3f),
+                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(
+                                    alpha = 0.3f
+                                ),
                                 contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                             ) {
-                                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -1206,7 +1422,6 @@ fun VisualIdentitySection(
         )
     }
 }
-
 
 
 @Preview(showBackground = true)
@@ -1253,7 +1468,7 @@ fun AeonColorSelectionPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Preview(showBackground = true)
 @Composable
 fun AdvancedColorPickerSlidersPreview() {
     OssWalletTheme {
@@ -1303,7 +1518,9 @@ fun AeonHeroHeaderPreview() {
 fun AeonFormComponentsExtraPreview() {
     OssWalletTheme {
         Column(
-            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text("AeonTextField", style = AppTextStyles.listSectionHeader)

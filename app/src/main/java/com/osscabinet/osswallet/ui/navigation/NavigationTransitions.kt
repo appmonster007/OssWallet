@@ -25,9 +25,12 @@ private const val EXPRESSIVE_DURATION = 350
 
 // Material 3 Expressive easing curves (no bounce)
 // Standard emphasized decelerate: cubic-bezier(0.2, 0.0, 0, 1.0) - smooth slow down
-private val emphasizedDecelerate = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0.0f, 0f, 1.0f)
+private val emphasizedDecelerate =
+    androidx.compose.animation.core.CubicBezierEasing(0.2f, 0.0f, 0f, 1.0f)
+
 // Standard emphasized accelerate: cubic-bezier(0.4, 0.0, 1, 1.0) - smooth speed up
-private val emphasizedAccelerate = androidx.compose.animation.core.CubicBezierEasing(0.4f, 0.0f, 1f, 1.0f)
+private val emphasizedAccelerate =
+    androidx.compose.animation.core.CubicBezierEasing(0.4f, 0.0f, 1f, 1.0f)
 
 /**
  * Standard screen enter - slides in from right with fade and subtle scale

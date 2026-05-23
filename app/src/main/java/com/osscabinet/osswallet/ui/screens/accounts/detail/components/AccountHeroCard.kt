@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.core.graphics.toColorInt
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,25 +30,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.BackgroundAmoled
 import com.osscabinet.ossWallet.ui.theme.BackgroundDark
 import com.osscabinet.ossWallet.ui.theme.LocalAppColorScheme
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun AccountHeroCard(
@@ -180,7 +179,15 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = contentColor,
                     modifier = Modifier.weight(1f),
-                    onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
+                    onClick = {
+                        callbacks.onClickIncome?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(
+                                    TransactionType.INCOME
+                                )
+                            )
+                        )
+                    }
                 )
                 FlowSummaryItem(
                     label = "Expense",
@@ -189,7 +196,15 @@ fun AccountHeroCard(
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = contentColor,
                     modifier = Modifier.weight(1f),
-                    onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
+                    onClick = {
+                        callbacks.onClickExpense?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(
+                                    TransactionType.EXPENSE
+                                )
+                            )
+                        )
+                    }
                 )
             }
 
@@ -217,7 +232,11 @@ fun AccountHeroCard(
                                     1.dp,
                                     contentColor.copy(alpha = 0.1f)
                                 ),
-                                modifier = Modifier.clickable { callbacks.onClickCurrency?.invoke(curr) }
+                                modifier = Modifier.clickable {
+                                    callbacks.onClickCurrency?.invoke(
+                                        curr
+                                    )
+                                }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(
@@ -306,7 +325,15 @@ private fun FlowSummaryItem(
 @Composable
 fun AccountHeroCardPreview() {
     val account =
-        Account("1", "Wealth Fund", "USD", AccountStructureType.INVESTMENT, "#004D40", "AccountBalance", emptyList())
+        Account(
+            "1",
+            "Wealth Fund",
+            "USD",
+            AccountStructureType.INVESTMENT,
+            "#004D40",
+            "AccountBalance",
+            emptyList()
+        )
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         Box(modifier = Modifier.padding(24.dp)) {
             AccountHeroCard(

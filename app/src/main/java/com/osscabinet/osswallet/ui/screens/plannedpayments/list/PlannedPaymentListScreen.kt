@@ -1,23 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.list
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,18 +20,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -47,20 +37,15 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,21 +55,17 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
-import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import java.math.RoundingMode
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -350,7 +331,10 @@ fun PlannedPaymentListScreen(
                                     onResume = { viewModel.resume(item.plannedPayment) },
                                     onConfirm = {
                                         if (onConfirmClick != null) {
-                                            onConfirmClick(item.plannedPayment.id, item.scheduledDate)
+                                            onConfirmClick(
+                                                item.plannedPayment.id,
+                                                item.scheduledDate
+                                            )
                                         } else {
                                             viewModel.quickConfirm(
                                                 item.plannedPayment,
@@ -461,13 +445,15 @@ private fun PlannedPaymentListItem(
     val dateColor =
         if (isOverdue) AppColors.error else AppColors.contentSecondary.copy(alpha = 0.6f)
 
-    val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
+    val recurrenceLabel =
+        PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
     val formattedAmount = remember(payment.amount) {
         payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
 
     val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat
-    val statusColor = if (isOverdue) AppColors.error else Color(android.graphics.Color.parseColor(payment.status.colorHex))
+    val statusColor =
+        if (isOverdue) AppColors.error else Color(android.graphics.Color.parseColor(payment.status.colorHex))
 
     ManagementListItem(
         onClick = onTap,

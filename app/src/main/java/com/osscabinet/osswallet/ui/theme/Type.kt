@@ -18,7 +18,11 @@ import com.osscabinet.ossWallet.R
  * [displayFamily] is used for headings/display text; [bodyFamily] for body/label text.
  * For [SYSTEM] both resolve to [FontFamily.Default].
  */
-enum class AppFont(val displayName: String, val displayFamily: FontFamily, val bodyFamily: FontFamily) {
+enum class AppFont(
+    val displayName: String,
+    val displayFamily: FontFamily,
+    val bodyFamily: FontFamily
+) {
     MANROPE(
         displayName = "Manrope",
         displayFamily = FontFamily(Font(R.font.manrope)),
@@ -44,43 +48,133 @@ enum class AppFont(val displayName: String, val displayFamily: FontFamily, val b
 // Typographic scale: sizes, weights, spacing — defined once with no font concern.
 // Font selection only injects fontFamily via createTypography(); nothing else changes.
 private val displayScale = object {
-    val large  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val medium = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val small  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val headlineLarge  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val headlineMedium = TextStyle(fontWeight = FontWeight.Normal, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val headlineSmall  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp,    fontFeatureSettings = "tnum")
-    val titleLarge  = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 18.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp, fontFeatureSettings = "tnum")
-    val titleMedium = TextStyle(fontWeight = FontWeight.Bold,   fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp,  fontFeatureSettings = "tnum")
-    val titleSmall  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,  fontFeatureSettings = "tnum")
+    val large = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 45.sp,
+        lineHeight = 52.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val medium = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val small = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val headlineLarge = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val headlineMedium = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val headlineSmall = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val titleLarge = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.15.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val titleMedium = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val titleSmall = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.4.sp,
+        fontFeatureSettings = "tnum"
+    )
 }
 
 private val bodyScale = object {
-    val large  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp, fontFeatureSettings = "tnum")
-    val medium = TextStyle(fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,  fontFeatureSettings = "tnum")
-    val small  = TextStyle(fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp,  fontFeatureSettings = "tnum")
-    val labelLarge  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
-    val labelMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
-    val labelSmall  = TextStyle(fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp, letterSpacing = 0.5.sp, fontFeatureSettings = "tnum")
+    val large = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val medium = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.4.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val small = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val labelLarge = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val labelMedium = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val labelSmall = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.sp,
+        lineHeight = 14.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
 }
 
 // Only fontFamily is injected here. All other properties come from the scale objects above.
 fun createTypography(font: AppFont): Typography = Typography(
-    displayLarge   = displayScale.large.copy(fontFamily = font.displayFamily),
-    displayMedium  = displayScale.medium.copy(fontFamily = font.displayFamily),
-    displaySmall   = displayScale.small.copy(fontFamily = font.displayFamily),
-    headlineLarge  = displayScale.headlineLarge.copy(fontFamily = font.displayFamily),
+    displayLarge = displayScale.large.copy(fontFamily = font.displayFamily),
+    displayMedium = displayScale.medium.copy(fontFamily = font.displayFamily),
+    displaySmall = displayScale.small.copy(fontFamily = font.displayFamily),
+    headlineLarge = displayScale.headlineLarge.copy(fontFamily = font.displayFamily),
     headlineMedium = displayScale.headlineMedium.copy(fontFamily = font.displayFamily),
-    headlineSmall  = displayScale.headlineSmall.copy(fontFamily = font.displayFamily),
-    titleLarge     = displayScale.titleLarge.copy(fontFamily = font.displayFamily),
-    titleMedium    = displayScale.titleMedium.copy(fontFamily = font.displayFamily),
-    titleSmall     = displayScale.titleSmall.copy(fontFamily = font.displayFamily),
-    bodyLarge      = bodyScale.large.copy(fontFamily = font.bodyFamily),
-    bodyMedium     = bodyScale.medium.copy(fontFamily = font.bodyFamily),
-    bodySmall      = bodyScale.small.copy(fontFamily = font.bodyFamily),
-    labelLarge     = bodyScale.labelLarge.copy(fontFamily = font.bodyFamily),
-    labelMedium    = bodyScale.labelMedium.copy(fontFamily = font.bodyFamily),
-    labelSmall     = bodyScale.labelSmall.copy(fontFamily = font.bodyFamily),
+    headlineSmall = displayScale.headlineSmall.copy(fontFamily = font.displayFamily),
+    titleLarge = displayScale.titleLarge.copy(fontFamily = font.displayFamily),
+    titleMedium = displayScale.titleMedium.copy(fontFamily = font.displayFamily),
+    titleSmall = displayScale.titleSmall.copy(fontFamily = font.displayFamily),
+    bodyLarge = bodyScale.large.copy(fontFamily = font.bodyFamily),
+    bodyMedium = bodyScale.medium.copy(fontFamily = font.bodyFamily),
+    bodySmall = bodyScale.small.copy(fontFamily = font.bodyFamily),
+    labelLarge = bodyScale.labelLarge.copy(fontFamily = font.bodyFamily),
+    labelMedium = bodyScale.labelMedium.copy(fontFamily = font.bodyFamily),
+    labelSmall = bodyScale.labelSmall.copy(fontFamily = font.bodyFamily),
 )
 
 val Typography.labelExtraSmall: TextStyle
@@ -102,7 +196,10 @@ object AppTextStyles {
     // Section date / group title row above a list of transactions.
     val transactionGroupTitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
 
     // Amount displayed on the transaction row (positive / negative numeral).
     val transactionAmount: TextStyle
@@ -216,7 +313,10 @@ object AppTextStyles {
     // Chip label with extra-bold weight (e.g. active filter chip).
     val chipLabelBold: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.sp
+            )
 
     // ── Navigation & Screen Headers ──────────────────────────────────────────
     // Top-level screen title in a TopAppBar.
@@ -253,7 +353,10 @@ object AppTextStyles {
     // Chart legend item label.
     val chartLegendLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp)
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = 9.sp
+            )
 
     // Chart empty-state message.
     val chartEmptyMessage: TextStyle

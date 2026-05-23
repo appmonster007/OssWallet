@@ -23,9 +23,16 @@ abstract class BaseViewModel(
     val shortlistedCurrencies: StateFlow<Set<String>?> = settingsRepository.shortlistedCurrencies
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val effectiveShortlistedCurrencies: StateFlow<List<String>> = settingsRepository.shortlistedCurrencies
-        .map { it?.takeIf { s -> s.isNotEmpty() }?.sorted() ?: CurrencyService.getAllCurrencies() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CurrencyService.getAllCurrencies())
+    val effectiveShortlistedCurrencies: StateFlow<List<String>> =
+        settingsRepository.shortlistedCurrencies
+            .map {
+                it?.takeIf { s -> s.isNotEmpty() }?.sorted() ?: CurrencyService.getAllCurrencies()
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                CurrencyService.getAllCurrencies()
+            )
 
     /**
      * Executes a block of code with the current profile ID.

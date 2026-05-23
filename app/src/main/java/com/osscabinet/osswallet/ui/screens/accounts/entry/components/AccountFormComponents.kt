@@ -1,37 +1,50 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.util.isDark
-import java.util.Currency.getAvailableCurrencies
-import com.osscabinet.ossWallet.ui.theme.*
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
+import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import java.util.Currency.getAvailableCurrencies
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,9 +60,37 @@ fun CurrencyManagementSection(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
-    val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { AppColors.primary }
+    val accentColor = try {
+        Color(android.graphics.Color.parseColor(accentColorHex))
+    } catch (e: Exception) {
+        AppColors.primary
+    }
 
-    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
+    val commonCurrencies = listOf(
+        "USD",
+        "EUR",
+        "GBP",
+        "JPY",
+        "CHF",
+        "CAD",
+        "AUD",
+        "INR",
+        "SGD",
+        "HKD",
+        "CNY",
+        "BRL",
+        "IDR",
+        "MYR",
+        "THB",
+        "PHP",
+        "VND",
+        "KRW",
+        "RUB",
+        "TRY",
+        "ZAR",
+        "MXN",
+        "ILS"
+    )
 
     val allCurrencies = remember {
         getAvailableCurrencies()
@@ -63,7 +104,14 @@ fun CurrencyManagementSection(
     } else {
         allCurrencies.filter {
             it.contains(searchQuery, ignoreCase = true) ||
-            try { java.util.Currency.getInstance(it).displayName.contains(searchQuery, ignoreCase = true) } catch (e: Exception) { false }
+                    try {
+                        java.util.Currency.getInstance(it).displayName.contains(
+                            searchQuery,
+                            ignoreCase = true
+                        )
+                    } catch (e: Exception) {
+                        false
+                    }
         }
     }
 
@@ -90,18 +138,26 @@ fun CurrencyManagementSection(
                         color = AppColors.contentSecondary.copy(alpha = 0.5f)
                     )
                 }
-                
+
                 Surface(
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
                     color = AppColors.primary,
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonSize.D6.value),
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.spacingMd,
+                            vertical = AeonSize.D6.value
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
                     ) {
-                        Icon(Icons.Rounded.Dashboard, contentDescription = null, tint = Color.White, modifier = Modifier.size(AeonSize.D14.value))
+                        Icon(
+                            Icons.Rounded.Dashboard,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(AeonSize.D14.value)
+                        )
                         Text(
                             allowedCurrencies.size.toString(),
                             style = AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
@@ -110,7 +166,7 @@ fun CurrencyManagementSection(
                     }
                 }
             }
-            
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
@@ -118,10 +174,18 @@ fun CurrencyManagementSection(
                 border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.cardPadding,
+                        vertical = AeonTheme.dimensions.spacingMd
+                    ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.primary.copy(alpha = 0.5f), modifier = Modifier.size(AeonSize.D20.value))
+                    Icon(
+                        Icons.Rounded.Search,
+                        contentDescription = null,
+                        tint = AppColors.primary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(AeonSize.D20.value)
+                    )
                     Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                     BasicTextField(
                         value = searchQuery,
@@ -130,7 +194,11 @@ fun CurrencyManagementSection(
                         textStyle = AppTextStyles.listItemTitle.copy(color = AppColors.contentPrimary),
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) Text("Search assets...", style = AppTextStyles.listItemTitle, color = AppColors.contentSecondary.copy(alpha = 0.3f))
+                            if (searchQuery.isEmpty()) Text(
+                                "Search assets...",
+                                style = AppTextStyles.listItemTitle,
+                                color = AppColors.contentSecondary.copy(alpha = 0.3f)
+                            )
                             innerTextField()
                         }
                     )
@@ -146,7 +214,7 @@ fun CurrencyManagementSection(
                     style = AppTextStyles.sectionOverline,
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
-                
+
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -192,11 +260,14 @@ fun CurrencyManagementSection(
                 if (searchQuery.isBlank()) {
                     Text(
                         "SEE ALL",
-                        style = AppTextStyles.tagLabel.copy(fontWeight = FontWeight.Black, color = AppColors.primary)
+                        style = AppTextStyles.tagLabel.copy(
+                            fontWeight = FontWeight.Black,
+                            color = AppColors.primary
+                        )
                     )
                 }
             }
-            
+
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -214,7 +285,10 @@ fun CurrencyManagementSection(
                         border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = AeonSize.D14.value, vertical = AeonTheme.dimensions.spacingMd),
+                            modifier = Modifier.padding(
+                                horizontal = AeonSize.D14.value,
+                                vertical = AeonTheme.dimensions.spacingMd
+                            ),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
                         ) {
@@ -241,7 +315,9 @@ fun CurrencyTile(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.width(100.dp).height(70.dp),
+        modifier = Modifier
+            .width(100.dp)
+            .height(70.dp),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = if (isPrimary) accentColor else AppColors.recessedSurface.copy(alpha = 0.5f),
         border = BorderStroke(
@@ -253,25 +329,37 @@ fun CurrencyTile(
             if (!isPrimary) {
                 IconButton(
                     onClick = onRemove,
-                    modifier = Modifier.align(Alignment.TopEnd).size(AeonTheme.dimensions.buttonCornerRadius).padding(AeonSize.D4.value)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(AeonTheme.dimensions.buttonCornerRadius)
+                        .padding(AeonSize.D4.value)
                 ) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs), tint = AppColors.contentSecondary.copy(alpha = 0.4f))
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Remove",
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
+                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                    )
                 }
             } else {
                 Surface(
-                    modifier = Modifier.align(Alignment.TopEnd).padding(AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(AeonTheme.dimensions.spacingSm),
                     shape = CircleShape,
                     color = Color.White.copy(alpha = 0.2f)
                 ) {
                     Icon(
-                        Icons.Rounded.Star, 
-                        contentDescription = "Primary", 
-                        modifier = Modifier.padding(AeonSize.D4.value).size(AeonSize.D10.value),
+                        Icons.Rounded.Star,
+                        contentDescription = "Primary",
+                        modifier = Modifier
+                            .padding(AeonSize.D4.value)
+                            .size(AeonSize.D10.value),
                         tint = Color.White
                     )
                 }
             }
-            
+
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally

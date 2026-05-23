@@ -63,7 +63,8 @@ fun PlannedPayment.toEntity(): PlannedPaymentEntity = PlannedPaymentEntity(
     autoConfirm = autoConfirm,
     status = status,
     profileId = profileId,
-    templateId = templateId ?: throw IllegalArgumentException("TemplateId cannot be null for PlannedPaymentEntity")
+    templateId = templateId
+        ?: throw IllegalArgumentException("TemplateId cannot be null for PlannedPaymentEntity")
 )
 
 fun PlannedPaymentOccurrenceEntity.toDomain(): PlannedPaymentOccurrence = PlannedPaymentOccurrence(
@@ -74,10 +75,11 @@ fun PlannedPaymentOccurrenceEntity.toDomain(): PlannedPaymentOccurrence = Planne
     status = status
 )
 
-fun PlannedPaymentOccurrence.toEntity(): PlannedPaymentOccurrenceEntity = PlannedPaymentOccurrenceEntity(
-    id = id,
-    plannedPaymentId = plannedPaymentId,
-    scheduledDate = scheduledDate,
-    generatedTransactionId = generatedTransactionId,
-    status = status
-)
+fun PlannedPaymentOccurrence.toEntity(): PlannedPaymentOccurrenceEntity =
+    PlannedPaymentOccurrenceEntity(
+        id = id,
+        plannedPaymentId = plannedPaymentId,
+        scheduledDate = scheduledDate,
+        generatedTransactionId = generatedTransactionId,
+        status = status
+    )

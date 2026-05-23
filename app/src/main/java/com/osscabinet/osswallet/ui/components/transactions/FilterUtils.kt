@@ -1,7 +1,10 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
@@ -13,38 +16,38 @@ fun countActiveFilters(
     rules: CardFilterRules? = null
 ): Int {
     var count = 0
-    
+
     // 1. Timeline
     if (filter.timelineRange != baseFilter.timelineRange) count++
-    
+
     // 2. Accounts
     if (filter.accountIds != baseFilter.accountIds) count++
-    
+
     // 3. Transaction Types
     if (filter.transactionTypes != baseFilter.transactionTypes) count++
-    
+
     // 4. Categories
     if (filter.categoryIds != baseFilter.categoryIds) count++
-    
+
     // 5. Currencies
     if (filter.currencies != baseFilter.currencies) count++
-    
+
     // 6. Dates
     if (filter.timelineRange != TimelineRange.AllTime) count++
-    
+
     // 7. Payment Methods
     if (filter.paymentMethods != baseFilter.paymentMethods) count++
-    
+
     // 8. Queries
     if (filter.queryNote != baseFilter.queryNote) count++
     if (filter.queryPayee != baseFilter.queryPayee) count++
-    
+
     // 9. Amount
     if (filter.minAmount != baseFilter.minAmount || filter.maxAmount != baseFilter.maxAmount) count++
-    
+
     // 10. Statuses
     if (filter.statuses != baseFilter.statuses) count++
-    
+
     // 11. Tags
     if (filter.tags != baseFilter.tags) count++
 
@@ -75,7 +78,13 @@ fun removeFilter(
 }
 
 fun formatDateRange(startDate: Long?, endDate: Long?): String {
-    val start = startDate?.let { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()).format(java.util.Date(it)) } ?: "Start"
-    val end = endDate?.let { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()).format(java.util.Date(it)) } ?: "End"
+    val start = startDate?.let {
+        java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+            .format(java.util.Date(it))
+    } ?: "Start"
+    val end = endDate?.let {
+        java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+            .format(java.util.Date(it))
+    } ?: "End"
     return "$start - $end"
 }

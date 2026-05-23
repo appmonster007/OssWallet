@@ -1,21 +1,43 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CardRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.LoanRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,8 +68,9 @@ class AnalyticsViewModel @Inject constructor(
     }
 
     // Analytics cards config - now using cardRepository
-    val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+    val cardsConfig: StateFlow<DashboardCardsConfig> =
+        cardRepository.getCardsConfig(cardScreenContext)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     val uiState: StateFlow<AnalyticsUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
@@ -65,20 +88,27 @@ class AnalyticsViewModel @Inject constructor(
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val transactions = args[0] as List<Transaction>
+
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[1] as List<Account>
+
                 @Suppress("UNCHECKED_CAST")
                 val categories = args[2] as List<Category>
+
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedRates = args[5] as Boolean
+
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[6] as List<PlannedPayment>
+
                 @Suppress("UNCHECKED_CAST")
                 val budgets = args[7] as List<Budget>
+
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[8] as List<Loan>
+
                 @Suppress("UNCHECKED_CAST")
                 val tags = args[9] as List<Tag>
 
@@ -110,7 +140,9 @@ class AnalyticsViewModel @Inject constructor(
         combine(cardsConfig, uiState, _screenFilter) { cards, state, sf ->
             Triple(cards, state, sf)
         }.transformLatest { (cards, state, screenFilter) ->
-            if (state !is AnalyticsUiState.Success) { emit(emptyMap()); return@transformLatest }
+            if (state !is AnalyticsUiState.Success) {
+                emit(emptyMap()); return@transformLatest
+            }
             val input = CardInput(
                 profileId = state.profileId,
                 transactions = state.allTransactions,
@@ -142,5 +174,6 @@ sealed class AnalyticsUiState {
         val budgets: List<Budget> = emptyList(),
         val loans: List<Loan> = emptyList()
     ) : AnalyticsUiState()
+
     data class Error(val message: String) : AnalyticsUiState()
 }

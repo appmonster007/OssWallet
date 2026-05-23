@@ -52,7 +52,8 @@ class OpenInWebViewModel @Inject constructor(
         viewModelScope.launch {
             webServerRepository.setEnabled(enabled)
             val intent = Intent(context, WebServerService::class.java).apply {
-                action = if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
+                action =
+                    if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
             }
             context.startForegroundService(intent)
         }

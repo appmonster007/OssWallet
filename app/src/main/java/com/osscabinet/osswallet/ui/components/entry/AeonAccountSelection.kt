@@ -1,21 +1,19 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -57,13 +55,13 @@ fun AeonAccountSelection(
                     modifier = Modifier.padding(bottom = dims.spacingSm)
                 )
             }
-            
+
             if (allowOutsideWallet) {
                 AeonHybridSelector(
                     items = listOf(null),
                     mode = mode,
                     selectedIds = if (selectedAccountIds.contains("")) setOf(null) else emptySet<String?>(),
-                    onSelectionChange = { 
+                    onSelectionChange = {
                         onSelectionChange(selectedAccountIds + "") // Simplistic mapping for "Outside"
                         if (mode == AeonSelectMode.SINGLE) onDismiss()
                     },

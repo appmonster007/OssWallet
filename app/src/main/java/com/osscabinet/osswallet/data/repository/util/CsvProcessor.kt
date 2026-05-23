@@ -8,9 +8,9 @@ object CsvProcessor {
         val sb = StringBuilder()
         sb.append(headers.joinToString(",") { "\"${it.replace("\"", "\"\"")}\"" }).append("\n")
         rows.forEach { row ->
-            sb.append(row.joinToString(",") { 
+            sb.append(row.joinToString(",") {
                 val str = it?.toString() ?: ""
-                "\"${str.replace("\"", "\"\"")}\"" 
+                "\"${str.replace("\"", "\"\"")}\""
             }).append("\n")
         }
         return sb.toString()

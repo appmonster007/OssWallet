@@ -1,15 +1,19 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,12 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.util.UUID
-
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
@@ -81,8 +79,9 @@ class PlannedPaymentViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val categories = categoryRepository.getAllCategoriesSync()
-            val categoryName = categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
-            
+            val categoryName =
+                categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
+
             val request = TransactionRequest(
                 name = categoryName,
                 amount = payment.amount,

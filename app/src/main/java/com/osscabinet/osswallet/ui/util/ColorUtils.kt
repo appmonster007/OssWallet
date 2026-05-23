@@ -24,13 +24,13 @@ fun String.toColorInt(): Int = try {
 fun Color.pastel(): Color {
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
-    
+
     // Adjust saturation to be subtle (e.g., 20-40%)
     hsl[1] = hsl[1].coerceAtMost(0.35f).coerceAtLeast(0.15f)
-    
+
     // Adjust lightness to be very light (e.g., 90-95%)
     hsl[2] = 0.92f
-    
+
     return Color(ColorUtils.HSLToColor(hsl))
 }
 
@@ -41,13 +41,13 @@ fun Color.pastel(): Color {
 fun Color.applyAeonTint(theme: String): Pair<Color, Color> {
     val isDark = theme == "Dark" || theme == "Amoled"
     val isAmoled = theme == "Amoled"
-    
+
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
-    
+
     val backgroundColor: Color
     val inkColor: Color
-    
+
     when {
         isAmoled -> {
             // Pattern: Deeper background + brighter ink (higher contrast for OLED)
@@ -55,38 +55,40 @@ fun Color.applyAeonTint(theme: String): Pair<Color, Color> {
             bgHsl[1] = bgHsl[1].coerceIn(0.4f, 0.8f) // High saturation
             bgHsl[2] = 0.08f // Very deep
             backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-            
+
             val inkHsl = hsl.copyOf()
             inkHsl[1] = inkHsl[1].coerceAtMost(0.3f) // Pastel ink
             inkHsl[2] = 0.95f // Brighter ink
             inkColor = Color(ColorUtils.HSLToColor(inkHsl))
         }
+
         isDark -> {
             // Pattern: Saturated dark background + pastel ink
             val bgHsl = hsl.copyOf()
             bgHsl[1] = bgHsl[1].coerceIn(0.3f, 0.6f) // Saturated
             bgHsl[2] = 0.18f // Dark
             backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-            
+
             val inkHsl = hsl.copyOf()
             inkHsl[1] = inkHsl[1].coerceAtMost(0.4f) // Pastel
             inkHsl[2] = 0.85f // Light ink
             inkColor = Color(ColorUtils.HSLToColor(inkHsl))
         }
+
         else -> {
             // Pattern: Pastel background + saturated dark ink
             val bgHsl = hsl.copyOf()
             bgHsl[1] = bgHsl[1].coerceAtMost(0.3f) // Desaturated
             bgHsl[2] = 0.92f // Very light pastel
             backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-            
+
             val inkHsl = hsl.copyOf()
             inkHsl[1] = inkHsl[1].coerceIn(0.5f, 0.9f) // Saturated
             inkHsl[2] = 0.25f // Dark ink
             inkColor = Color(ColorUtils.HSLToColor(inkHsl))
         }
     }
-    
+
     return backgroundColor to inkColor
 }
 
@@ -123,7 +125,7 @@ fun Color.toOnContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): C
 fun Color.toChartColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
-    
+
     if (isAmoled || isDarkTheme) {
         // In dark themes, we want slightly desaturated but brighter tones
         // to avoid "neon" vibration while maintaining legibility.
@@ -135,7 +137,7 @@ fun Color.toChartColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
         hsl[1] = hsl[1].coerceAtMost(0.9f).coerceAtLeast(0.6f)
         hsl[2] = hsl[2].coerceAtMost(0.6f).coerceAtLeast(0.4f)
     }
-    
+
     return Color(ColorUtils.HSLToColor(hsl))
 }
 
@@ -144,32 +146,37 @@ fun Color.toChartColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
  * It adjusts the lightness and saturation to create a cohesive but distinct palette 
  * within the SAME color family (no hue shift).
  */
-fun Color.generateShade(index: Int, total: Int, isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
+fun Color.generateShade(
+    index: Int,
+    total: Int,
+    isDarkTheme: Boolean,
+    isAmoled: Boolean = false
+): Color {
     if (total <= 1) return this
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
-    
+
     val ratio = index.toFloat() / (total - 1).toFloat()
-    
+
     // NO Hue Shift - stick to the exact family
     // hsl[0] = hsl[0] // Preserve original hue
-    
+
     if (isDarkTheme || isAmoled) {
         // High-contrast alternating steps for Dark Mode
         // We alternate lightness to create separation without changing the core color
         val altFactor = if (index % 2 == 0) 0.15f else -0.15f
         hsl[2] = (0.7f + (ratio * 0.15f) + altFactor).coerceIn(0.5f, 0.92f)
-        
+
         // Vary saturation to add depth
         hsl[1] = (hsl[1] * (0.6f + (1f - ratio) * 0.4f)).coerceIn(0.2f, 0.85f)
     } else {
         // High-contrast alternating steps for Light Mode
         val altFactor = if (index % 2 == 0) 0.18f else -0.18f
         hsl[2] = (0.55f + ((1f - ratio) * 0.35f) + altFactor).coerceIn(0.25f, 0.88f)
-        
+
         // Maintain saturation for clarity on white
         hsl[1] = (hsl[1] * (0.8f + ratio * 0.2f)).coerceIn(0.4f, 1.0f)
     }
-    
+
     return Color(ColorUtils.HSLToColor(hsl))
 }

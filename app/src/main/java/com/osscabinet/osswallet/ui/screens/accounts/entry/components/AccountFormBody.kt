@@ -2,31 +2,53 @@ package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AccountTree
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.tooling.preview.Preview
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.domain.model.Account
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.entry.*
-import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -40,12 +62,16 @@ fun AccountFormBody(
     onEvent: (AccountEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accentColor = try { Color(android.graphics.Color.parseColor(state.accentColorHex)) } catch (_: Exception) { AppColors.primary }
+    val accentColor = try {
+        Color(android.graphics.Color.parseColor(state.accentColorHex))
+    } catch (_: Exception) {
+        AppColors.primary
+    }
     var showTypeSelector by remember { mutableStateOf(false) }
 
     val types = AccountStructureType.entries.toTypedArray()
     val scrollState = rememberScrollState()
-    
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -78,7 +104,7 @@ fun AccountFormBody(
                             style = AppTextStyles.sectionOverline,
                             color = AppColors.contentSecondary.copy(alpha = 0.5f)
                         )
-                        
+
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -107,13 +133,13 @@ fun AccountFormBody(
                                         )
                                     }
                                 }
-                                
+
                                 Text(
                                     text = currentType.displayName,
                                     style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
                                     modifier = Modifier.weight(1f)
                                 )
-                                
+
                                 Icon(
                                     Icons.Rounded.KeyboardArrowDown,
                                     contentDescription = "Select Type",
@@ -134,7 +160,13 @@ fun AccountFormBody(
                         primaryCurrency = state.primaryCurrency,
                         onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
                         allowedCurrencies = state.allowedCurrencies,
-                        onAllowedCurrenciesChange = { onEvent(AccountEntryEvent.SetAllowedCurrencies(it)) },
+                        onAllowedCurrenciesChange = {
+                            onEvent(
+                                AccountEntryEvent.SetAllowedCurrencies(
+                                    it
+                                )
+                            )
+                        },
                         accentColorHex = state.accentColorHex,
                         isEditMode = state.isEditMode,
                         currencyUsageMap = state.currencyUsageMap,
@@ -145,10 +177,13 @@ fun AccountFormBody(
 
             // DETAIL: Initial balances with Calculator integration
             if (!state.isEditMode && state.allowedCurrencies.isNotEmpty()) {
-                EntrySection(title = "INITIAL BALANCES", icon = Icons.Rounded.AccountBalanceWallet) {
+                EntrySection(
+                    title = "INITIAL BALANCES",
+                    icon = Icons.Rounded.AccountBalanceWallet
+                ) {
                     state.allowedCurrencies.forEach { currencyCode ->
                         val requester = remember { BringIntoViewRequester() }
-                        
+
                         EntryEditorialInput(
                             value = state.initialBalances[currencyCode] ?: "",
                             onValueChange = { /* Calculator handles this */ },
@@ -161,7 +196,7 @@ fun AccountFormBody(
                                 .clickable { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) },
                             enabled = false
                         )
-                        
+
                         // Smart scroll when this currency becomes active in calculator
                         LaunchedEffect(state.showCalculator, state.activeBalanceCurrency) {
                             if (state.showCalculator && state.activeBalanceCurrency == currencyCode) {

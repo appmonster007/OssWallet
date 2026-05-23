@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.di
 
 import android.content.Context
+import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.query.DatabaseQueryServiceImpl
 import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.query.TransactionQueryBuilder
@@ -13,18 +15,16 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.widget.WorkManagerWidgetRefreshTrigger
-import com.osscabinet.ossWallet.data.local.dao.TransactionDao
-import com.osscabinet.ossWallet.data.local.AppDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
+import javax.inject.Singleton
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -78,9 +78,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideExchangeRateProviderRegistry(): ExchangeRateProviderRegistry {
-        return ExchangeRateProviderRegistry(listOf(
-            ExchangeRateApiProvider(RetrofitClient.exchangeRateApi),
-            FrankfurterProvider(RetrofitClient.frankfurterApi)
-        ))
+        return ExchangeRateProviderRegistry(
+            listOf(
+                ExchangeRateApiProvider(RetrofitClient.exchangeRateApi),
+                FrankfurterProvider(RetrofitClient.frankfurterApi)
+            )
+        )
     }
 }

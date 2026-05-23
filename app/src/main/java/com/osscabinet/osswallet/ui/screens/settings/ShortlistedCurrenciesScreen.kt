@@ -1,16 +1,45 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.Flip
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -38,7 +67,7 @@ fun ShortlistedCurrenciesScreen(
     val filtered = remember(searchQuery, availableCurrencies) {
         availableCurrencies.filter {
             it.code.contains(searchQuery, ignoreCase = true) ||
-            it.name.contains(searchQuery, ignoreCase = true)
+                    it.name.contains(searchQuery, ignoreCase = true)
         }
     }
     val filteredCodes = remember(filtered) { filtered.map { it.code }.toSet() }
@@ -107,10 +136,16 @@ fun ShortlistedCurrenciesScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 placeholder = { Text("Search currencies...") },
                 leadingIcon = {
-                    Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Rounded.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -130,7 +165,9 @@ fun ShortlistedCurrenciesScreen(
             )
 
             Surface(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 color = AppColors.cardSurface,
                 border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
@@ -144,15 +181,21 @@ fun ShortlistedCurrenciesScreen(
                         val isSelected = metadata.code in selected
                         Surface(
                             onClick = {
-                                val next = if (isSelected) selected - metadata.code else selected + metadata.code
+                                val next =
+                                    if (isSelected) selected - metadata.code else selected + metadata.code
                                 if (next.isNotEmpty()) viewModel.setShortlistedCurrencies(next)
                             },
                             shape = RoundedCornerShape(12.dp),
                             color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
-                            border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null
+                            border = if (isSelected) BorderStroke(
+                                0.5.dp,
+                                AppColors.primary.copy(alpha = 0.3f)
+                            ) else null
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(

@@ -1,27 +1,45 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionChip
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import androidx.compose.material3.Surface
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.flow.flowOf
 
@@ -36,11 +54,12 @@ fun PlannedPaymentFormBody(
     onEvent: (PlannedPaymentEntryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val sourceCurrencies = remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
-        state.accounts.find { it.id == state.selectedAccountId }
-            ?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
-    }
+    val sourceCurrencies =
+        remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
+            state.accounts.find { it.id == state.selectedAccountId }
+                ?.allowedCurrencies?.toList()?.ifEmpty { null }
+                ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+        }
 
     val targetCurrencies = remember(state.targetAccountId, state.accounts) {
         state.accounts.find { it.id == state.targetAccountId }
@@ -65,7 +84,13 @@ fun PlannedPaymentFormBody(
                 onTypeSelected = { onEvent(PlannedPaymentEntryEvent.SetTransactionType(it)) },
                 amount = state.amount,
                 currency = state.currency,
-                onCurrencyClick = { currency -> onEvent(PlannedPaymentEntryEvent.SetCurrency(currency)) },
+                onCurrencyClick = { currency ->
+                    onEvent(
+                        PlannedPaymentEntryEvent.SetCurrency(
+                            currency
+                        )
+                    )
+                },
                 onAmountClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true)) },
                 name = state.name,
                 onNameChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
@@ -73,7 +98,13 @@ fun PlannedPaymentFormBody(
                 isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
                 targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { currency -> onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(currency)) },
+                onTargetCurrencyClick = { currency ->
+                    onEvent(
+                        PlannedPaymentEntryEvent.SetTargetCurrency(
+                            currency
+                        )
+                    )
+                },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
                 supportedCurrencies = sourceCurrencies,
@@ -96,7 +127,13 @@ fun PlannedPaymentFormBody(
 
                     val scheduleSummary = PlannedPaymentService.buildScheduleSummary(
                         state.startDateMillis,
-                        RecurrenceRule(state.recurrenceType, state.recurrenceInterval, state.dayOfWeek, state.dayOfMonth, state.cronExpression)
+                        RecurrenceRule(
+                            state.recurrenceType,
+                            state.recurrenceInterval,
+                            state.dayOfWeek,
+                            state.dayOfMonth,
+                            state.cronExpression
+                        )
                     )
 
                     EntryActionCard(
@@ -118,7 +155,13 @@ fun PlannedPaymentFormBody(
                     selectedCategory = state.categories.find { it.id == state.selectedCategoryId },
                     onCategoryClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
                     targetAccount = state.accounts.find { it.id == state.targetAccountId },
-                    onTargetAccountClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) }
+                    onTargetAccountClick = {
+                        onEvent(
+                            PlannedPaymentEntryEvent.ShowTargetAccountSheet(
+                                true
+                            )
+                        )
+                    }
                 )
             }
 
@@ -147,18 +190,46 @@ fun PlannedPaymentFormBody(
                         ),
                         accounts = state.accounts,
                         categories = state.categories,
-                        onShowLinkedTransactions = { onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(true)) },
-                        onRemoveLink = { txId -> onEvent(PlannedPaymentEntryEvent.RemoveLinkedTransaction(state.plannedPaymentId ?: -1L, txId)) },
-                        onPaymentMethodClick = { onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(true)) },
+                        onShowLinkedTransactions = {
+                            onEvent(
+                                PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(
+                                    true
+                                )
+                            )
+                        },
+                        onRemoveLink = { txId ->
+                            onEvent(
+                                PlannedPaymentEntryEvent.RemoveLinkedTransaction(
+                                    state.plannedPaymentId ?: -1L,
+                                    txId
+                                )
+                            )
+                        },
+                        onPaymentMethodClick = {
+                            onEvent(
+                                PlannedPaymentEntryEvent.ShowPaymentMethodSheet(
+                                    true
+                                )
+                            )
+                        },
                         onStatusClick = { onEvent(PlannedPaymentEntryEvent.SetTransactionStatus(it)) },
                         onWarrantyToggle = { onEvent(PlannedPaymentEntryEvent.SetWarrantyEnabled(it)) },
-                        onWarrantyDateClick = { onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(true)) },
+                        onWarrantyDateClick = {
+                            onEvent(
+                                PlannedPaymentEntryEvent.ShowWarrantyDatePicker(
+                                    true
+                                )
+                            )
+                        },
                         onLocationClick = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },
                         locationLabel = "Payment Location",
                         additionalTopContent = {
-                             // Planned Payment Status Row
-                            val ppStatusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
-                            val ppStatusIcon = com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName] ?: Icons.Rounded.CheckCircle
+                            // Planned Payment Status Row
+                            val ppStatusColor =
+                                Color(android.graphics.Color.parseColor(state.status.colorHex))
+                            val ppStatusIcon =
+                                com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName]
+                                    ?: Icons.Rounded.CheckCircle
 
                             EntryActionChip(
                                 icon = ppStatusIcon,
@@ -174,7 +245,13 @@ fun PlannedPaymentFormBody(
                             EntrySwitchRow(
                                 label = "Has End Date",
                                 checked = state.hasEndDate,
-                                onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
+                                onCheckedChange = {
+                                    onEvent(
+                                        PlannedPaymentEntryEvent.SetHasEndDate(
+                                            it
+                                        )
+                                    )
+                                },
                                 icon = Icons.Rounded.EventBusy
                             )
 
@@ -183,14 +260,26 @@ fun PlannedPaymentFormBody(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "END DATE",
                                     dateMillis = state.endDateMillis,
-                                    onClick = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) }
+                                    onClick = {
+                                        onEvent(
+                                            PlannedPaymentEntryEvent.ShowEndDatePicker(
+                                                true
+                                            )
+                                        )
+                                    }
                                 )
                             }
 
                             EntrySwitchRow(
                                 label = "Auto-confirm Transaction",
                                 checked = state.autoConfirm,
-                                onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
+                                onCheckedChange = {
+                                    onEvent(
+                                        PlannedPaymentEntryEvent.SetAutoConfirm(
+                                            it
+                                        )
+                                    )
+                                },
                                 icon = Icons.Rounded.AutoFixHigh
                             )
                         }

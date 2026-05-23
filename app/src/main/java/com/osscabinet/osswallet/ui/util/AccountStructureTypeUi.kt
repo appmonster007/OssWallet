@@ -2,7 +2,11 @@ package com.osscabinet.ossWallet.ui.util
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.AccountStructureType

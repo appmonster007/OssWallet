@@ -1,23 +1,35 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.entry.*
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
+import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.flow.flowOf
-import com.osscabinet.ossWallet.ui.theme.AppColors
 
 /**
  * Main content layout for transaction entry screen.
@@ -58,7 +70,13 @@ fun TransactionFormBody(
                 isTransfer = state.isTransfer,
                 targetAccountId = state.targetAccount?.id,
                 targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { currency -> onEvent(TransactionEntryEvent.SetTargetCurrency(currency)) },
+                onTargetCurrencyClick = { currency ->
+                    onEvent(
+                        TransactionEntryEvent.SetTargetCurrency(
+                            currency
+                        )
+                    )
+                },
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
                 isSplitMode = state.isSplitMode,
@@ -107,7 +125,13 @@ fun TransactionFormBody(
                     selectedCategory = state.categories.find { it.id == state.selectedCategoryId },
                     onCategoryClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
                     targetAccount = state.targetAccount,
-                    onTargetAccountClick = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(true)) },
+                    onTargetAccountClick = {
+                        onEvent(
+                            TransactionEntryEvent.ShowTargetAccountSheet(
+                                true
+                            )
+                        )
+                    },
                     isSplitMode = state.isSplitMode,
                     splitCount = state.splits.size,
                     onSplitClick = { onEvent(TransactionEntryEvent.ShowSplitSheet(true)) }
@@ -140,12 +164,37 @@ fun TransactionFormBody(
                         accounts = state.accounts,
                         categories = state.categories,
                         allTags = state.allTags,
-                        onShowLinkedTransactions = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
-                        onRemoveLink = { txId -> onEvent(TransactionEntryEvent.RemoveLinkedTransaction(state.transactionId ?: -1L, txId)) },
-                        onPaymentMethodClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },
+                        onShowLinkedTransactions = {
+                            onEvent(
+                                TransactionEntryEvent.ShowLinkedTransactionSheet(
+                                    true
+                                )
+                            )
+                        },
+                        onRemoveLink = { txId ->
+                            onEvent(
+                                TransactionEntryEvent.RemoveLinkedTransaction(
+                                    state.transactionId ?: -1L,
+                                    txId
+                                )
+                            )
+                        },
+                        onPaymentMethodClick = {
+                            onEvent(
+                                TransactionEntryEvent.ShowPaymentMethodSheet(
+                                    true
+                                )
+                            )
+                        },
                         onStatusClick = { onEvent(TransactionEntryEvent.SetStatus(it)) },
                         onWarrantyToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
-                        onWarrantyDateClick = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) },
+                        onWarrantyDateClick = {
+                            onEvent(
+                                TransactionEntryEvent.ShowWarrantyDatePicker(
+                                    true
+                                )
+                            )
+                        },
                         onLocationClick = { onEvent(TransactionEntryEvent.ShowLocationSheet(true)) },
                         locationLabel = "Transaction Location"
                     )

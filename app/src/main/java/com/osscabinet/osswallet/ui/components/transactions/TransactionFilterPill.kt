@@ -8,10 +8,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -39,11 +57,11 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import kotlin.math.abs
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Floating pill at the bottom of the screen.
@@ -110,13 +128,13 @@ fun TransactionFilterPill(
     val pillHorizMargin = 24.dp
 
     BoxWithConstraints(modifier = modifier) {
-        val maxHPx       = with(density) { maxHeight.toPx() }
-        val pillHPx      = with(density) { pillH.toPx() }
-        val bottomPx     = with(density) { totalBottomPadding.toPx() }
-        val expandedHPx  = maxHPx * 0.8f
+        val maxHPx = with(density) { maxHeight.toPx() }
+        val pillHPx = with(density) { pillH.toPx() }
+        val bottomPx = with(density) { totalBottomPadding.toPx() }
+        val expandedHPx = maxHPx * 0.8f
 
         val collapsedTopPx = maxHPx - bottomPx - pillHPx
-        val expandedTopPx  = maxHPx - bottomPx - expandedHPx
+        val expandedTopPx = maxHPx - bottomPx - expandedHPx
         // Total pixel distance the pill travels between collapsed and expanded.
         val dragRange = (collapsedTopPx - expandedTopPx).coerceAtLeast(1f)
 
@@ -138,7 +156,10 @@ fun TransactionFilterPill(
                     return Offset.Zero
                 }
 
-                override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
                     if (available.y > 0f && morph.value > 0f) {
                         val flickPx = with(density) { 300.dp.toPx() }
                         if (available.y > flickPx) actions.collapse() else actions.settle()
@@ -151,16 +172,20 @@ fun TransactionFilterPill(
 
         val f = morph.value.coerceIn(0f, 1f)
 
-        val surfaceH    = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
-        val offsetYPx   = collapsedTopPx + (expandedTopPx - collapsedTopPx) * f
+        val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
+        val offsetYPx = collapsedTopPx + (expandedTopPx - collapsedTopPx) * f
         val horizMargin = lerp(pillHorizMargin, 8.dp, f)
-        val corner      = lerp(28.dp, 20.dp, f)
-        val elevation   = lerp(6.dp, 12.dp, f)
+        val corner = lerp(28.dp, 20.dp, f)
+        val elevation = lerp(6.dp, 12.dp, f)
 
-        val surfaceColor  = lerp(AppColors.componentOnCard,                          AppColors.cardSurfaceProminent,                  f)
-        val contentColor  = lerp(AppColors.onSelectionContainer,                     AppColors.primary,                               f)
-        val inactiveColor = lerp(AppColors.onSelectionContainer.copy(alpha = 0.4f),  AppColors.contentSecondary.copy(alpha = 0.3f),   f)
-        val selectorBg    = lerp(AppColors.primaryContainer,                         AppColors.sheetSurface,                          f)
+        val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
+        val contentColor = lerp(AppColors.onSelectionContainer, AppColors.primary, f)
+        val inactiveColor = lerp(
+            AppColors.onSelectionContainer.copy(alpha = 0.4f),
+            AppColors.contentSecondary.copy(alpha = 0.3f),
+            f
+        )
+        val selectorBg = lerp(AppColors.primaryContainer, AppColors.sheetSurface, f)
 
         // ── Dismiss layer ─────────────────────────────────────────────────────
         // Only intercepts taps when the pill is open; collapsed pill must not block TopAppBar.
@@ -244,8 +269,8 @@ fun TransactionFilterPill(
                                     val flick = with(density) { 300.dp.toPx() }
                                     when {
                                         vy < -flick -> actions.expand()
-                                        vy > flick  -> actions.collapse()
-                                        else        -> actions.settle()
+                                        vy > flick -> actions.collapse()
+                                        else -> actions.settle()
                                     }
                                 }
                             }
@@ -283,7 +308,11 @@ fun TransactionFilterPill(
                     onAddTag = onAddTag,
                     onClose = {},
                     backgroundColor = AppColors.cardSurfaceProminent,
-                    accountNames = remember(accounts) { accounts.associateBy({ it.id }, { it.name }) },
+                    accountNames = remember(accounts) {
+                        accounts.associateBy(
+                            { it.id },
+                            { it.name })
+                    },
                     filterRules = filterRules.copy(allowTimelineSelection = false),
                     baseFilter = baseFilter
                 )
@@ -305,7 +334,9 @@ private class PillActions(
     private val scope: CoroutineScope,
     private val onDismissState: State<(() -> Unit)?>,
 ) {
-    fun expand()  { scope.launch { morph.animateTo(1f, pillSpring()) } }
+    fun expand() {
+        scope.launch { morph.animateTo(1f, pillSpring()) }
+    }
 
     fun collapse() {
         scope.launch {

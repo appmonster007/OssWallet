@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,37 +24,30 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.*
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -106,7 +98,9 @@ fun AeonTransactionList(
                 )
             }
 
-            itemsIndexed(group.transactions, key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
+            itemsIndexed(
+                group.transactions,
+                key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
                 val tx = enriched.item.transaction
                 val icon = getIconByName(enriched.categoryIcon)
                 val iconBg = Color(enriched.categoryColor)
@@ -195,10 +189,10 @@ fun AeonTransactionItem(
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
-    val headerText = if (isNoteHeader) (if (showNote) note else if (showCategory) category else "") 
-                    else (if (showCategory) category else if (showNote) note else "")
-    val bottomText = if (isNoteHeader) (if (showCategory) category else "") 
-                    else (if (showNote) note else "")
+    val headerText = if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
+    else (if (showCategory) category else if (showNote) note else "")
+    val bottomText = if (isNoteHeader) (if (showCategory) category else "")
+    else (if (showNote) note else "")
 
     Surface(
         modifier = modifier
@@ -216,7 +210,12 @@ fun AeonTransactionItem(
 //                )
 //            }
 
-            Column(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = AeonTheme.dimensions.listPadding,
+                    vertical = AeonTheme.dimensions.spacingSm
+                )
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -330,7 +329,9 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp
                                     ),
-                                    color = (if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error).copy(alpha = 0.8f)
+                                    color = (if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error).copy(
+                                        alpha = 0.8f
+                                    )
                                 )
                             }
 
@@ -366,7 +367,8 @@ fun AeonTransactionItem(
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         tags.forEach { tag ->
-                            val tagColor = if (tag.color != -1) Color(tag.color) else AppColors.secondaryContainer
+                            val tagColor =
+                                if (tag.color != -1) Color(tag.color) else AppColors.secondaryContainer
                             Surface(
                                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingXs),
                                 color = tagColor.copy(alpha = 0.2f),
@@ -378,7 +380,10 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         color = if (tag.color != -1) tagColor else AppColors.onSecondaryContainer
                                     ),
-                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingXs, vertical = 2.dp)
+                                    modifier = Modifier.padding(
+                                        horizontal = AeonTheme.dimensions.spacingXs,
+                                        vertical = 2.dp
+                                    )
                                 )
                             }
                         }

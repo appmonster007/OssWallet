@@ -13,7 +13,15 @@ class CashFlowCardComputer(
 ) : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
     override val supportedType = CardType.CASH_FLOW
 
-    override suspend fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
-        return CardAggregationService.computeCashFlowCard(queryService, input.profileId, input, config)
+    override suspend fun compute(
+        input: CardInput,
+        config: CashFlowCardConfig
+    ): CardRenderData.CashFlow {
+        return CardAggregationService.computeCashFlowCard(
+            queryService,
+            input.profileId,
+            input,
+            config
+        )
     }
 }

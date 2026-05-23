@@ -1,14 +1,34 @@
 package com.osscabinet.ossWallet.ui.components.accounts
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -24,23 +44,22 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
-import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.AeonSearchField
-import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.toContainerColor
-import com.osscabinet.ossWallet.ui.util.toOnContainerColor
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.toContainerColor
+import com.osscabinet.ossWallet.ui.util.toOnContainerColor
+import java.math.BigDecimal
 
 @Composable
 fun AeonAccountCardSmall(
@@ -54,7 +73,11 @@ fun AeonAccountCardSmall(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
+    val accountColor = try {
+        Color(android.graphics.Color.parseColor(account.colorHex))
+    } catch (e: Exception) {
+        AppColors.primary
+    }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -126,7 +149,11 @@ fun AeonAccountCardMedium(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
+    val accountColor = try {
+        Color(android.graphics.Color.parseColor(account.colorHex))
+    } catch (e: Exception) {
+        AppColors.primary
+    }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -213,7 +240,11 @@ fun AeonAccountCardLarge(
     onClickIncome: (() -> Unit)? = null,
     onClickExpense: (() -> Unit)? = null
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { AppColors.primary }
+    val accountColor = try {
+        Color(android.graphics.Color.parseColor(account.colorHex))
+    } catch (e: Exception) {
+        AppColors.primary
+    }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -295,7 +326,13 @@ fun AeonAccountCardLarge(
                     )
                     if (account.currencyCode != baseCurrency) {
                         Text(
-                            text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
+                            text = "≈ ${
+                                formatCurrencyRight(
+                                    balanceInBase,
+                                    baseCurrency,
+                                    shorten = true
+                                )
+                            }",
                             style = AppTextStyles.metaLabel,
                             color = contentColor.copy(alpha = 0.6f)
                         )
@@ -335,7 +372,10 @@ fun AeonAccountCardLarge(
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 6.dp
+                                    ),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -388,24 +428,32 @@ fun AccountSelection(
     var query by remember { mutableStateOf("") }
     val filteredAccounts = remember(query, accounts) {
         if (query.isBlank()) accounts.sortedBy { it.name }
-        else accounts.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
+        else accounts.filter {
+            it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(
+                query
+            )
+        }
             .sortedBy { it.name }
     }
-    
+
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = "Select Account",
             onBack = onDismiss
         ) { padding ->
-            Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
                 AeonSearchField(
                     query = query,
                     onQueryChange = { query = it },
                     placeholder = "Search accounts..."
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Box(modifier = Modifier.weight(1f, fill = false)) {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(

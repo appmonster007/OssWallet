@@ -9,7 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.math.BigDecimal
-import java.util.*
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,8 +24,18 @@ class SharedWalletRepositoryImpl @Inject constructor(
 ) : SharedWalletRepository {
 
     private val mockedWallets = mutableListOf<SharedWallet>(
-        SharedWallet(id = "wallet_1", name = "Family Expenses", ownerId = "user_me", memberIds = listOf("user_me", "user_wife")),
-        SharedWallet(id = "wallet_2", name = "Trip to Japan", ownerId = "user_me", memberIds = listOf("user_me", "user_friend1", "user_friend2"))
+        SharedWallet(
+            id = "wallet_1",
+            name = "Family Expenses",
+            ownerId = "user_me",
+            memberIds = listOf("user_me", "user_wife")
+        ),
+        SharedWallet(
+            id = "wallet_2",
+            name = "Trip to Japan",
+            ownerId = "user_me",
+            memberIds = listOf("user_me", "user_friend1", "user_friend2")
+        )
     )
 
     override fun getSharedWallets(): Flow<List<SharedWallet>> = flow {
@@ -47,7 +57,14 @@ class SharedWalletRepositoryImpl @Inject constructor(
 
     override suspend fun createWallet(name: String): String {
         val newId = UUID.randomUUID().toString()
-        mockedWallets.add(SharedWallet(id = newId, name = name, ownerId = "user_me", memberIds = listOf("user_me")))
+        mockedWallets.add(
+            SharedWallet(
+                id = newId,
+                name = name,
+                ownerId = "user_me",
+                memberIds = listOf("user_me")
+            )
+        )
         return newId
     }
 
@@ -55,7 +72,14 @@ class SharedWalletRepositoryImpl @Inject constructor(
         // Simulating joining a wallet by invite code
         delay(1000)
         if (inviteCode == "OSSWALLET123") {
-            mockedWallets.add(SharedWallet(id = "shared_3", name = "Roommate Pool", ownerId = "user_other", memberIds = listOf("user_other", "user_me")))
+            mockedWallets.add(
+                SharedWallet(
+                    id = "shared_3",
+                    name = "Roommate Pool",
+                    ownerId = "user_other",
+                    memberIds = listOf("user_other", "user_me")
+                )
+            )
         }
     }
 
@@ -71,8 +95,26 @@ class SharedWalletRepositoryImpl @Inject constructor(
 
     private fun generateMockSharedTransactions(walletId: String): List<Transaction> {
         return listOf(
-            Transaction(id = 100, name = "Groceries (Synced)", amount = BigDecimal("45.0"), timestamp = System.currentTimeMillis() - 100000, currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "mock_acc", categoryId = 1L),
-            Transaction(id = 101, name = "Rent Shared", amount = BigDecimal("1200.0"), timestamp = System.currentTimeMillis() - 500000, currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "mock_acc", categoryId = 4L)
+            Transaction(
+                id = 100,
+                name = "Groceries (Synced)",
+                amount = BigDecimal("45.0"),
+                timestamp = System.currentTimeMillis() - 100000,
+                currency = "USD",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "mock_acc",
+                categoryId = 1L
+            ),
+            Transaction(
+                id = 101,
+                name = "Rent Shared",
+                amount = BigDecimal("1200.0"),
+                timestamp = System.currentTimeMillis() - 500000,
+                currency = "USD",
+                transactionType = TransactionType.EXPENSE,
+                accountId = "mock_acc",
+                categoryId = 4L
+            )
         )
     }
 }

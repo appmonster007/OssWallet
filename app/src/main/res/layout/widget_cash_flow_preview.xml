@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Preview at 3x2 default size (~180×110dp). Layout mirrors the live Glance
+<?xml version="1.0" encoding="utf-8"?><!-- Preview at 3x2 default size (~180×110dp). Layout mirrors the live Glance
      widget at scale=1.0 — header with totals, column labels, currency rows. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

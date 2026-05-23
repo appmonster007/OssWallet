@@ -6,9 +6,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object TimeUtils {
-    
+
     var use24HourFormat: Boolean = false
-    
+
     fun formatDateTime(millis: Long, is24Hour: Boolean = use24HourFormat): String {
         val pattern = if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a"
         val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())

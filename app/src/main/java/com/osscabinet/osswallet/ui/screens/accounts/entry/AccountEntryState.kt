@@ -13,7 +13,7 @@ data class AccountEntryState(
     val selectedIconName: String = "AccountBalance",
     val accentColorHex: String = "#004D5F",
     val currentBalance: BigDecimal = BigDecimal.ZERO,
-    
+
     // UI State
     val showStructureSheet: Boolean = false,
     val showIconSheet: Boolean = false,
@@ -24,7 +24,7 @@ data class AccountEntryState(
     val isEditMode: Boolean = false,
     val accountId: String? = null,
     val navTriggered: Boolean = false,
-    
+
     // External data
     val existingAccount: Account? = null,
     val currencyUsageMap: Map<String, Boolean> = emptyMap(),
@@ -34,7 +34,8 @@ data class AccountEntryState(
 ) {
     val canSave: Boolean
         get() {
-            val isBalanceValid = initialBalances.values.all { it.isEmpty() || it.toBigDecimalOrNull() != null }
+            val isBalanceValid =
+                initialBalances.values.all { it.isEmpty() || it.toBigDecimalOrNull() != null }
             return accountName.isNotBlank() && primaryCurrency.isNotBlank() &&
                     allowedCurrencies.isNotEmpty() && (isEditMode || isBalanceValid)
         }

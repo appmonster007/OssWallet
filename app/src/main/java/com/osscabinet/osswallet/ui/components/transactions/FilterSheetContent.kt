@@ -1,41 +1,71 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, String>(
     save = { Json.encodeToString(it.value) },
@@ -122,7 +152,7 @@ fun FilterSheetContent(
                 ),
                 color = AppColors.secondary.copy(alpha = 0.7f)
             )
-            
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
@@ -338,10 +368,10 @@ fun FilterSheetContent(
             }
 
             Button(
-                onClick = { 
+                onClick = {
                     debounceJob.value?.cancel()
                     onFilterEvent(FilterEvent.Apply(localFilter))
-                    onSaveFilterClick(localFilter) 
+                    onSaveFilterClick(localFilter)
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
@@ -352,7 +382,10 @@ fun FilterSheetContent(
             ) {
                 Icon(Icons.Default.Save, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Save Preset", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+                Text(
+                    "Save Preset",
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                )
             }
         }
         Spacer(modifier = Modifier.navigationBarsPadding())

@@ -4,23 +4,39 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionContent
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 
 /**
  * Screen for managing tags in settings.
@@ -68,7 +84,10 @@ fun TagListScreen(
             tag = tagToEdit!!,
             onDismiss = { tagToEdit = null },
             onConfirm = { newName, newColor ->
-                viewModel.updateTag(tagToEdit!!.name, tagToEdit!!.copy(name = newName, colorHex = newColor))
+                viewModel.updateTag(
+                    tagToEdit!!.name,
+                    tagToEdit!!.copy(name = newName, colorHex = newColor)
+                )
                 tagToEdit = null
             }
         )
@@ -79,7 +98,7 @@ fun TagListScreen(
         tags = tags,
         selectedTags = emptySet<String>(),
         onTagsSelected = { onBackClick() },
-        onAddTag = { name, color -> 
+        onAddTag = { name, color ->
             viewModel.addTag(name, color)
         },
         onEditTag = { tag ->
@@ -115,9 +134,12 @@ fun EditTagDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                Text(stringResource(R.string.tag_edit_color_label), style = AppTextStyles.drawerItemLabel)
-                
+
+                Text(
+                    stringResource(R.string.tag_edit_color_label),
+                    style = AppTextStyles.drawerItemLabel
+                )
+
                 TagPresetColors.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { color ->

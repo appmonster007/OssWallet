@@ -13,7 +13,7 @@ sealed class Token {
     data class Parenthesis(val symbol: Char) : Token()
     object Percent : Token()
     object UnaryMinus : Token()
-    
+
     fun toDisplayString(): String = when (this) {
         is Number -> value
         is Operator -> when (symbol) {
@@ -22,6 +22,7 @@ sealed class Token {
             '-' -> "−"
             else -> symbol.toString()
         }
+
         is Parenthesis -> symbol.toString()
         is Percent -> "%"
         is UnaryMinus -> "−"
@@ -75,13 +76,14 @@ sealed class CalculatorAction {
  * Deterministic reducer for the financial expression engine
  */
 fun calculatorReducer(
-    state: CalculatorState, 
-    action: CalculatorAction, 
+    state: CalculatorState,
+    action: CalculatorAction,
     evaluator: ExpressionEvaluator = ExpressionEvaluator()
 ): CalculatorState {
     return when (action) {
         is CalculatorAction.SetInitialType -> {
-            val initialTokens = if (action.type == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
+            val initialTokens =
+                if (action.type == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
             state.copy(
                 transactionType = action.type,
                 tokens = initialTokens,
@@ -100,6 +102,7 @@ fun calculatorReducer(
                         currentTokens.dropLast(1) + Token.Number(lastToken.value + action.number)
                     }
                 }
+
                 is Token.Percent, is Token.Parenthesis -> {
                     if (lastToken is Token.Parenthesis && lastToken.symbol == '(') {
                         currentTokens + Token.Number(action.number)
@@ -108,20 +111,23 @@ fun calculatorReducer(
                         currentTokens + Token.Operator('*') + Token.Number(action.number)
                     }
                 }
+
                 else -> currentTokens + Token.Number(action.number)
             }
-            
+
             updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
 
         is CalculatorAction.AppendOperator -> {
             if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
                 // Empty or just UnaryMinus + Operator toggles type
-                val newType = if (action.operator == '-') TransactionType.EXPENSE else TransactionType.INCOME
-                val newTokens = if (newType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
+                val newType =
+                    if (action.operator == '-') TransactionType.EXPENSE else TransactionType.INCOME
+                val newTokens =
+                    if (newType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
                 return state.copy(
-                    transactionType = newType, 
-                    tokens = newTokens, 
+                    transactionType = newType,
+                    tokens = newTokens,
                     display = if (newType == TransactionType.EXPENSE) "-0" else "0",
                     isCalculated = false
                 )
@@ -132,6 +138,7 @@ fun calculatorReducer(
                 is Token.UnaryMinus -> {
                     if (action.operator == '+') emptyList() else state.tokens
                 }
+
                 is Token.Parenthesis -> {
                     if (lastToken.symbol == '(' && action.operator == '-') {
                         state.tokens + Token.UnaryMinus
@@ -141,6 +148,7 @@ fun calculatorReducer(
                         state.tokens + Token.Operator(action.operator)
                     }
                 }
+
                 else -> state.tokens + Token.Operator(action.operator)
             }
             updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
@@ -173,16 +181,18 @@ fun calculatorReducer(
 
         CalculatorAction.Percent -> {
             val lastToken = state.tokens.lastOrNull()
-            val newTokens = if (lastToken is Token.Number || (lastToken is Token.Parenthesis && lastToken.symbol == ')')) {
-                state.tokens + Token.Percent
-            } else {
-                state.tokens
-            }
+            val newTokens =
+                if (lastToken is Token.Number || (lastToken is Token.Parenthesis && lastToken.symbol == ')')) {
+                    state.tokens + Token.Percent
+                } else {
+                    state.tokens
+                }
             updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
 
         CalculatorAction.Clear -> {
-            val initialTokens = if (state.transactionType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
+            val initialTokens =
+                if (state.transactionType == TransactionType.EXPENSE) listOf(Token.UnaryMinus) else emptyList()
             state.copy(
                 tokens = initialTokens,
                 display = if (state.transactionType == TransactionType.EXPENSE) "-0" else "0",
@@ -203,6 +213,7 @@ fun calculatorReducer(
                         state.tokens.dropLast(1)
                     }
                 }
+
                 else -> state.tokens.dropLast(1)
             }
             updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
@@ -219,7 +230,7 @@ fun calculatorReducer(
                     result.signum() < 0 -> TransactionType.EXPENSE
                     else -> TransactionType.INCOME
                 }
-                
+
                 val newHistoryItem = CalculationHistoryItem(
                     expression = state.displayExpression,
                     result = if (result.signum() < 0) "−$absoluteResult" else absoluteResult
@@ -249,7 +260,7 @@ fun calculatorReducer(
             val resultVal = action.item.result.replace("−", "-")
             val isNegative = resultVal.startsWith("-")
             val absVal = resultVal.removePrefix("-")
-            
+
             val newTokens = if (isNegative) {
                 listOf(Token.UnaryMinus, Token.Number(absVal))
             } else {
@@ -272,14 +283,14 @@ fun calculatorReducer(
 }
 
 private fun updateStateWithTokens(
-    state: CalculatorState, 
-    newTokens: List<Token>, 
+    state: CalculatorState,
+    newTokens: List<Token>,
     evaluator: ExpressionEvaluator
 ): CalculatorState {
     val ghost = if (newTokens.isNotEmpty()) {
         evaluateTokens(newTokens, evaluator)?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
     } else ""
-    
+
     val displayVal = if (newTokens.isEmpty()) {
         "0"
     } else {

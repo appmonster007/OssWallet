@@ -1,6 +1,10 @@
 package com.osscabinet.ossWallet.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import kotlinx.coroutines.flow.Flow
@@ -12,7 +16,10 @@ interface PlannedPaymentOccurrenceDao {
     fun getOccurrencesForPayment(plannedPaymentId: Long): Flow<List<PlannedPaymentOccurrenceEntity>>
 
     @Query("SELECT * FROM planned_payment_occurrences WHERE plannedPaymentId = :plannedPaymentId AND scheduledDate = :scheduledDate LIMIT 1")
-    suspend fun getOccurrenceForDate(plannedPaymentId: Long, scheduledDate: Long): PlannedPaymentOccurrenceEntity?
+    suspend fun getOccurrenceForDate(
+        plannedPaymentId: Long,
+        scheduledDate: Long
+    ): PlannedPaymentOccurrenceEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PlannedPaymentOccurrenceEntity): Long

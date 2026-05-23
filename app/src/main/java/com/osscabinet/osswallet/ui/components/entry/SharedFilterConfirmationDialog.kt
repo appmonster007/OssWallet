@@ -1,15 +1,23 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.CallSplit
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -34,9 +42,9 @@ fun SharedFilterConfirmationDialog(
                     text = "This filter is also used by other budgets or loans. How would you like to save your changes?",
                     style = AppTextStyles.transactionTitle
                 )
-                
+
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-                
+
                 // Option 1: Update Shared
                 Surface(
                     onClick = onConfirmUpdateShared,
@@ -50,12 +58,18 @@ fun SharedFilterConfirmationDialog(
                     ) {
                         Icon(Icons.Rounded.Share, contentDescription = null)
                         Column {
-                            Text(text = "Update Shared Filter", style = AppTextStyles.listSectionHeader)
-                            Text(text = "Apply changes to all linked entities", style = AppTextStyles.caption)
+                            Text(
+                                text = "Update Shared Filter",
+                                style = AppTextStyles.listSectionHeader
+                            )
+                            Text(
+                                text = "Apply changes to all linked entities",
+                                style = AppTextStyles.caption
+                            )
                         }
                     }
                 }
-                
+
                 // Option 2: Create New (Fork)
                 Surface(
                     onClick = onConfirmCreateNew,
@@ -69,8 +83,14 @@ fun SharedFilterConfirmationDialog(
                     ) {
                         Icon(Icons.AutoMirrored.Rounded.CallSplit, contentDescription = null)
                         Column {
-                            Text(text = "Create Private Copy", style = AppTextStyles.listSectionHeader)
-                            Text(text = "Only apply changes to this item", style = AppTextStyles.caption)
+                            Text(
+                                text = "Create Private Copy",
+                                style = AppTextStyles.listSectionHeader
+                            )
+                            Text(
+                                text = "Only apply changes to this item",
+                                style = AppTextStyles.caption
+                            )
                         }
                     }
                 }

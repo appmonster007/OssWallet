@@ -17,16 +17,16 @@ class ProfileRepositoryImpl @Inject constructor(
     private val settingsDataStore: SettingsDataStore
 ) : ProfileRepository {
 
-    override fun getAllProfiles(): Flow<List<Profile>> = 
+    override fun getAllProfiles(): Flow<List<Profile>> =
         profileDao.getAllProfiles().map { entities -> entities.map { it.toDomain() } }
 
-    override suspend fun insertProfile(profile: Profile) = 
+    override suspend fun insertProfile(profile: Profile) =
         profileDao.insertProfile(profile.toEntity())
 
     override suspend fun getCurrentProfileId(): Flow<Int> = settingsDataStore.currentProfileId
 
     override suspend fun setCurrentProfileId(id: Int) = settingsDataStore.saveCurrentProfileId(id)
 
-    override suspend fun getProfileById(id: Int): Profile? = 
+    override suspend fun getProfileById(id: Int): Profile? =
         profileDao.getProfileById(id)?.toDomain()
 }

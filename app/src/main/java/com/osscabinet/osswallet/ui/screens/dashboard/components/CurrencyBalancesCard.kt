@@ -2,18 +2,24 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,15 +28,18 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
+import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
 @Composable
 fun CurrencyBalancesCard(
@@ -47,9 +56,10 @@ fun CurrencyBalancesCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -65,7 +75,12 @@ fun CurrencyBalancesCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CurrencyBalancesSettingsSheet(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
+            CurrencyBalancesSettingsSheet(
+                config = config,
+                baseCurrency = baseCurrency,
+                callbacks = callbacks,
+                onDismiss = onDismiss
+            )
         }
     ) {
         if (currencyTotals.isEmpty()) {
@@ -93,7 +108,12 @@ fun CurrencyBalancesCard(
                                 inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
                                 showBaseConversion = config.showBaseConversion,
-                                onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) },
+                                onClick = {
+                                    callbacks.onCurrencyClick?.invoke(
+                                        item.currency,
+                                        config.filter.timelineRange
+                                    )
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -117,7 +137,12 @@ fun CurrencyBalancesCard(
                         inBase = item.amountInBase,
                         baseCurrency = baseCurrency,
                         showBaseConversion = config.showBaseConversion,
-                        onClick = { callbacks.onCurrencyClick?.invoke(item.currency, config.filter.timelineRange) }
+                        onClick = {
+                            callbacks.onCurrencyClick?.invoke(
+                                item.currency,
+                                config.filter.timelineRange
+                            )
+                        }
                     )
                 }
             }
@@ -133,7 +158,11 @@ private fun CurrencyBalancesSettingsSheet(
     callbacks: CardCallbacks.CurrencyBalances,
     onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Currency Balances", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+    CardSettingsSheet(
+        title = "Currency Balances",
+        onDismiss = onDismiss,
+        onDelete = callbacks.onDelete
+    ) {
         CardSettingsSection("Display") {
             AeonLayoutToggle(
                 layout = config.layout,
@@ -142,7 +171,12 @@ private fun CurrencyBalancesSettingsSheet(
             AeonBaseConversionToggle(
                 baseCurrency = baseCurrency,
                 showBaseConversion = config.showBaseConversion,
-                onShowBaseConversionChange = { callbacks.onShowBaseConversionChange(config.cardId, it) }
+                onShowBaseConversionChange = {
+                    callbacks.onShowBaseConversionChange(
+                        config.cardId,
+                        it
+                    )
+                }
             )
         }
     }

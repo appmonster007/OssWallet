@@ -1,30 +1,20 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
-import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
-import com.osscabinet.ossWallet.ui.components.cards.LoanActions
-import com.osscabinet.ossWallet.ui.screens.accounts.*
-import com.osscabinet.ossWallet.ui.screens.transactions.*
-import com.osscabinet.ossWallet.ui.screens.templates.*
-import com.osscabinet.ossWallet.ui.screens.settings.*
-import com.osscabinet.ossWallet.ui.screens.analytics.*
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
-import com.osscabinet.ossWallet.ui.util.GenericViewModelFactory
-
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -37,11 +27,9 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
-import androidx.activity.compose.BackHandler
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,41 +45,36 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
-import com.osscabinet.ossWallet.ui.components.cards.AccountActions
-import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
-import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.TagActions
+import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
@@ -100,30 +83,14 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
-import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
-import com.osscabinet.ossWallet.domain.model.Budget
-import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
-import com.osscabinet.ossWallet.domain.model.BudgetProgress
-import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
-import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
-import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Surface
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(
@@ -312,7 +279,13 @@ fun DashboardScreen(
                         onNavigateToPlannedPaymentList = { navigate(onNavigateToPlannedPaymentList) },
                         onNavigateToBudgetList = { navigate(onNavigateToBudgetList) },
                         onNavigateToLoanList = { navigate(onNavigateToLoanList) },
-                        onNavigateToPlannedPaymentDetail = { id -> navigate { onNavigateToPlannedPaymentDetail(id) } },
+                        onNavigateToPlannedPaymentDetail = { id ->
+                            navigate {
+                                onNavigateToPlannedPaymentDetail(
+                                    id
+                                )
+                            }
+                        },
                         onNavigateToBudgetDetail = { id -> navigate { onNavigateToBudgetDetail(id) } },
                         onNavigateToLoanDetail = { id -> navigate { onNavigateToLoanDetail(id) } },
                         onRecordsClick = { context -> navigate { onRecordsClick(context) } },
@@ -409,93 +382,99 @@ fun DashboardContent(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Top
         ) { page ->
-        when (page) {
-            0 -> {
-                val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-                DashboardGlanceTab(
-                    state = state,
-                    cardsConfig = cardsConfig,
-                    cardComputerRegistry = cardComputerRegistry,
-                    cardUpdateHandler = dashboardViewModel,
-                    savedFilters = savedFilters,
-                    currentTheme = currentTheme,
-                    cardAnimationEnabled = cardAnimationEnabled,
-                    onShowAddCardDialogChange = { onShowAddCardDialogChange(it) },
-                    onRecordsClick = onRecordsClick,
-                    onManageAccountsClick = onManageAccountsClick,
-                    onAccountClick = onAccountClick,
-                    onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
-                    onNavigateToBudgetList = onNavigateToBudgetList,
-                    onNavigateToLoanList = onNavigateToLoanList,
-                    onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
-                    onNavigateToBudgetDetail = onNavigateToBudgetDetail,
-                    onNavigateToLoanDetail = onNavigateToLoanDetail,
-                    onSaveFilterClick = onSaveFilterClick,
-                    onEditTransactionClick = onEditTransactionClick,
-                    onCloneTransactionClick = onCloneTransactionClick,
-                    onSplitTransactionClick = onSplitTransactionClick,
-                    onSearchTransactions = transactionViewModel::searchTransactions,
-                    onItemExpanded = transactionViewModel::onItemExpanded,
-                    onItemCollapsed = transactionViewModel::onItemCollapsed,
-                    onStatusChange = transactionViewModel::quickUpdateStatus,
-                    onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
-                    onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
-                    onQuickConfirm = dashboardViewModel::quickConfirmById,
-                    onQuickSkip = dashboardViewModel::quickSkipById,
-                    onAddTag = transactionViewModel::addTag,
-                    onReorderCards = dashboardViewModel::reorderCards,
-                    onRemoveCard = dashboardViewModel::removeCard
-                )
-            }
+            when (page) {
+                0 -> {
+                    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
+                    DashboardGlanceTab(
+                        state = state,
+                        cardsConfig = cardsConfig,
+                        cardComputerRegistry = cardComputerRegistry,
+                        cardUpdateHandler = dashboardViewModel,
+                        savedFilters = savedFilters,
+                        currentTheme = currentTheme,
+                        cardAnimationEnabled = cardAnimationEnabled,
+                        onShowAddCardDialogChange = { onShowAddCardDialogChange(it) },
+                        onRecordsClick = onRecordsClick,
+                        onManageAccountsClick = onManageAccountsClick,
+                        onAccountClick = onAccountClick,
+                        onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
+                        onNavigateToBudgetList = onNavigateToBudgetList,
+                        onNavigateToLoanList = onNavigateToLoanList,
+                        onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
+                        onNavigateToBudgetDetail = onNavigateToBudgetDetail,
+                        onNavigateToLoanDetail = onNavigateToLoanDetail,
+                        onSaveFilterClick = onSaveFilterClick,
+                        onEditTransactionClick = onEditTransactionClick,
+                        onCloneTransactionClick = onCloneTransactionClick,
+                        onSplitTransactionClick = onSplitTransactionClick,
+                        onSearchTransactions = transactionViewModel::searchTransactions,
+                        onItemExpanded = transactionViewModel::onItemExpanded,
+                        onItemCollapsed = transactionViewModel::onItemCollapsed,
+                        onStatusChange = transactionViewModel::quickUpdateStatus,
+                        onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
+                        onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
+                        onQuickConfirm = dashboardViewModel::quickConfirmById,
+                        onQuickSkip = dashboardViewModel::quickSkipById,
+                        onAddTag = transactionViewModel::addTag,
+                        onReorderCards = dashboardViewModel::reorderCards,
+                        onRemoveCard = dashboardViewModel::removeCard
+                    )
+                }
 
-            1 -> {
-                val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-                val recentActivitiesBreakdown by dashboardViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
+                1 -> {
+                    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+                    val recentActivitiesBreakdown by dashboardViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
-                DashboardRecentActivitiesTab(
-                    recentActivitiesState = state.recentActivitiesState,
-                    revealedCardIds = revealedCardIds,
-                    recentActivitiesBreakdown = recentActivitiesBreakdown,
-                    baseCurrency = state.baseCurrency,
-                    onRecordsClick = onRecordsClick,
-                    onTransactionEvent = { event ->
-                        when (event) {
-                            is TransactionItemEvent.Click -> onEditTransactionClick(event.id)
-                            is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
-                            is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
-                                event.id,
-                                event.status
-                            )
+                    DashboardRecentActivitiesTab(
+                        recentActivitiesState = state.recentActivitiesState,
+                        revealedCardIds = revealedCardIds,
+                        recentActivitiesBreakdown = recentActivitiesBreakdown,
+                        baseCurrency = state.baseCurrency,
+                        onRecordsClick = onRecordsClick,
+                        onTransactionEvent = { event ->
+                            when (event) {
+                                is TransactionItemEvent.Click -> onEditTransactionClick(event.id)
+                                is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
+                                    event.id
+                                )
 
-                            is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
-                                event.id
-                            )
+                                is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(
+                                    event.id
+                                )
 
-                            is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
-                                event.id
-                            )
+                                is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                                    event.id,
+                                    event.status
+                                )
+
+                                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
+                                    event.id
+                                )
+
+                                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                                    event.id
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
-    }
 
-    // Add Card Dialog
-    if (showAddCardDialog) {
-        CardTypeSelectionDialog(
-            screenContext = ScreenContext.DASHBOARD,
-            onDismiss = { onShowAddCardDialogChange(false) },
-            onCardTypeSelected = { cardType ->
-                dashboardViewModel.addCard(cardType)
-                onShowAddCardDialogChange(false)
-            }
-        )
+        // Add Card Dialog
+        if (showAddCardDialog) {
+            CardTypeSelectionDialog(
+                screenContext = ScreenContext.DASHBOARD,
+                onDismiss = { onShowAddCardDialogChange(false) },
+                onCardTypeSelected = { cardType ->
+                    dashboardViewModel.addCard(cardType)
+                    onShowAddCardDialogChange(false)
+                }
+            )
+        }
     }
-}
 }
 
 @Composable
@@ -673,7 +652,10 @@ fun DashboardViewIndicator(
         modifier = Modifier
             .fillMaxWidth()
             .background(AppColors.accentContainer)
-            .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
+            .padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = AeonTheme.dimensions.spacingMd
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

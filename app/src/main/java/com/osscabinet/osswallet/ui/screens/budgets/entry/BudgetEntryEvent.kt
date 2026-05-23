@@ -6,7 +6,9 @@ sealed class BudgetEntryEvent {
     data class SetName(val name: String) : BudgetEntryEvent()
     data class SetLimitAmount(val amount: String) : BudgetEntryEvent()
     data class SetCurrency(val currency: String) : BudgetEntryEvent()
-    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) : BudgetEntryEvent()
+    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) :
+        BudgetEntryEvent()
+
     data class SetTrackTypes(val types: Set<TransactionType>) : BudgetEntryEvent()
     data class SetAlertThreshold(val threshold: Float) : BudgetEntryEvent()
     data class SetRollover(val rollover: Boolean) : BudgetEntryEvent()
@@ -15,8 +17,12 @@ sealed class BudgetEntryEvent {
     data class SetAccountIds(val ids: Set<String>) : BudgetEntryEvent()
     data class SetCurrencies(val currencies: Set<String>) : BudgetEntryEvent()
     data class SetTags(val tags: Set<String>) : BudgetEntryEvent()
-    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) : BudgetEntryEvent()
-    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) : BudgetEntryEvent()
+    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) :
+        BudgetEntryEvent()
+
+    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) :
+        BudgetEntryEvent()
+
     data class SetLinkedTransactions(val ids: Set<Long>) : BudgetEntryEvent()
     data class SetQueryNote(val query: String) : BudgetEntryEvent()
     data class SetNoteRegex(val isRegex: Boolean) : BudgetEntryEvent()
@@ -34,7 +40,7 @@ sealed class BudgetEntryEvent {
     data object MakeFilterUnique : BudgetEntryEvent()
     data class SetDeleteFilterWithBudget(val delete: Boolean) : BudgetEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : BudgetEntryEvent()
-    
+
     // Visibility
     data class ShowNumpad(val show: Boolean) : BudgetEntryEvent()
     data class ShowTimelineSheet(val show: Boolean) : BudgetEntryEvent()
@@ -51,9 +57,9 @@ sealed class BudgetEntryEvent {
     data class ShowMaxAmountSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowWarrantyStartPicker(val show: Boolean) : BudgetEntryEvent()
     data class ShowWarrantyEndPicker(val show: Boolean) : BudgetEntryEvent()
-    
+
     data class SetAccountQuery(val query: String) : BudgetEntryEvent()
     data class SetCategoryQuery(val query: String) : BudgetEntryEvent()
-    
+
     data object TriggerNavigation : BudgetEntryEvent()
 }

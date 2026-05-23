@@ -3,12 +3,15 @@ package com.osscabinet.ossWallet.ui.screens.previews
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.AccountFormBody
-import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
+import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.screens.filters.entry.components.FilterFormBody
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
@@ -17,8 +20,12 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 1000, name = "Account Entry Screen - Edit")
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 1000,
+    name = "Account Entry Screen - Edit"
+)
 @Composable
 fun AccountEntryEditPreview() {
     OssWalletTheme {
@@ -40,7 +47,12 @@ fun AccountEntryEditPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 800, name = "Visual Identity Dialog Preview")
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 800,
+    name = "Visual Identity Dialog Preview"
+)
 @Composable
 fun VisualIdentityDialogPreview() {
     OssWalletTheme {
@@ -56,7 +68,12 @@ fun VisualIdentityDialogPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 400, heightDp = 800, name = "Category Entry Dialog Preview")
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 800,
+    name = "Category Entry Dialog Preview"
+)
 @Composable
 fun CategoryEntryDialogPreview() {
     OssWalletTheme {
@@ -64,8 +81,22 @@ fun CategoryEntryDialogPreview() {
             CategoryEditSheet(
                 category = null,
                 parentCategories = listOf(
-                    Category(id = 1L, name = "Food", iconName = "Fastfood", colorHex = 0xFF4CAF50.toInt(), isDefault = false, parentId = null),
-                    Category(id = 2L, name = "Transport", iconName = "DirectionsBus", colorHex = 0xFF2196F3.toInt(), isDefault = false, parentId = null)
+                    Category(
+                        id = 1L,
+                        name = "Food",
+                        iconName = "Fastfood",
+                        colorHex = 0xFF4CAF50.toInt(),
+                        isDefault = false,
+                        parentId = null
+                    ),
+                    Category(
+                        id = 2L,
+                        name = "Transport",
+                        iconName = "DirectionsBus",
+                        colorHex = 0xFF2196F3.toInt(),
+                        isDefault = false,
+                        parentId = null
+                    )
                 ),
                 onDismiss = {},
                 onSave = { _, _, _, _, _ -> }
@@ -73,6 +104,7 @@ fun CategoryEntryDialogPreview() {
         }
     }
 }
+
 @Composable
 fun FullLoanEntryPreview() {
     OssWalletTheme {

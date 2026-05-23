@@ -1,12 +1,18 @@
 package com.osscabinet.ossWallet.ui.screens.filters.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import java.math.BigDecimal
 
 data class FilterEntryState(
     val name: String = "",
-    
+
     // Filter fields
     val selectedTransactionTypes: Set<TransactionType> = emptySet(),
     val selectedAccountIds: Set<String> = emptySet(),
@@ -27,12 +33,12 @@ data class FilterEntryState(
     val warrantyExpirationEnd: Long? = null,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
     val excludeFuture: Boolean = true,
-    
+
     // UI State
     val isEditMode: Boolean = false,
     val filterId: Long? = null,
     val navTriggered: Boolean = false,
-    
+
     // Sheet visibility
     val showAccountSheet: Boolean = false,
     val showCategorySheet: Boolean = false,
@@ -47,7 +53,7 @@ data class FilterEntryState(
     val showTimelineSheet: Boolean = false,
     val showWarrantyStartPicker: Boolean = false,
     val showWarrantyEndPicker: Boolean = false,
-    
+
     // External data
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
@@ -55,9 +61,9 @@ data class FilterEntryState(
     val existingFilter: Filter? = null,
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
-    val canSave: Boolean 
+    val canSave: Boolean
         get() = name.isNotBlank() && !navTriggered
-    
+
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
         transactionTypes = selectedTransactionTypes,
         accountIds = selectedAccountIds,

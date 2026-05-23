@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class OnboardingState(
@@ -52,9 +52,11 @@ class OnboardingViewModel @Inject constructor(
     private val providerRegistry: ExchangeRateProviderRegistry
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(OnboardingState(
-        availableProviders = providerRegistry.getAllProviders()
-    ))
+    private val _uiState = MutableStateFlow(
+        OnboardingState(
+            availableProviders = providerRegistry.getAllProviders()
+        )
+    )
     val uiState: StateFlow<OnboardingState> = _uiState.asStateFlow()
 
     private val _onboardingCompleted = MutableSharedFlow<Unit>()
@@ -81,17 +83,23 @@ class OnboardingViewModel @Inject constructor(
             is OnboardingEvent.UserNameChanged -> {
                 _uiState.update { it.copy(userName = event.name) }
             }
+
             is OnboardingEvent.CurrencySelected -> {
-                _uiState.update { it.copy(
-                    selectedCurrency = event.currency,
-                    shortlistedCurrencies = it.shortlistedCurrencies + event.currency
-                ) }
+                _uiState.update {
+                    it.copy(
+                        selectedCurrency = event.currency,
+                        shortlistedCurrencies = it.shortlistedCurrencies + event.currency
+                    )
+                }
             }
+
             is OnboardingEvent.ProviderSelected -> {
                 _uiState.update { state ->
                     val currencies = state.currenciesPerProvider[event.providerId]
                         ?: emptyList()
-                    val newBase = if (currencies.any { c -> c.code == state.selectedCurrency }) state.selectedCurrency else (currencies.firstOrNull()?.code ?: "USD")
+                    val newBase =
+                        if (currencies.any { c -> c.code == state.selectedCurrency }) state.selectedCurrency else (currencies.firstOrNull()?.code
+                            ?: "USD")
                     state.copy(
                         selectedProviderId = event.providerId,
                         availableCurrencies = currencies,
@@ -100,18 +108,22 @@ class OnboardingViewModel @Inject constructor(
                     )
                 }
             }
+
             is OnboardingEvent.ShortlistedCurrenciesChanged -> {
                 _uiState.update { it.copy(shortlistedCurrencies = event.currencies + it.selectedCurrency) }
             }
+
             is OnboardingEvent.ThemeSelected -> {
                 _uiState.update { it.copy(selectedTheme = event.theme) }
                 viewModelScope.launch {
                     settingsRepository.saveTheme(event.theme)
                 }
             }
+
             is OnboardingEvent.PrecisionSelected -> {
                 _uiState.update { it.copy(decimalPrecision = event.precision) }
             }
+
             OnboardingEvent.CompleteOnboarding -> {
                 completeOnboarding()
             }
@@ -120,7 +132,7 @@ class OnboardingViewModel @Inject constructor(
 
     private fun completeOnboarding() {
         if (_uiState.value.isCompleting) return
-        
+
         _uiState.update { it.copy(isCompleting = true) }
         viewModelScope.launch {
             try {
@@ -133,7 +145,7 @@ class OnboardingViewModel @Inject constructor(
                     state.availableCurrencies.map { it.code }.toSet()
                 }
                 settingsRepository.saveShortlistedCurrencies(shortlist)
-                
+
                 // Create initial profile
                 profileRepository.insertProfile(
                     Profile(
@@ -144,7 +156,7 @@ class OnboardingViewModel @Inject constructor(
                 )
                 settingsRepository.saveCurrentProfileId(1)
                 settingsRepository.saveOnboardingCompleted(true)
-                
+
                 _onboardingCompleted.emit(Unit)
             } catch (e: Exception) {
                 _uiState.update { it.copy(isCompleting = false) }

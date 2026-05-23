@@ -1,20 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.transactions
 
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
-
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
-import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -23,11 +20,14 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,9 +35,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -45,7 +45,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -107,9 +106,10 @@ class TransactionViewModel @Inject constructor(
                 com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings()
             )
 
-    val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> = settingsRepository.currentProfileId
-        .flatMapLatest { accountRepository.getAllAccounts(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> =
+        settingsRepository.currentProfileId
+            .flatMapLatest { accountRepository.getAllAccounts(it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val baseCurrency: StateFlow<String> = computationRepository.selectedCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
@@ -172,7 +172,7 @@ class TransactionViewModel @Inject constructor(
             recordsFilter.map { it.timelineRange }.distinctUntilChanged()
         ) { absoluteTxs, timelineRange ->
             val (_, endTime) = TimelineService.getDateRange(timelineRange)
-            
+
             if (endTime == null) absoluteTxs
             else absoluteTxs.filter { it.transaction.timestamp <= endTime }
         }.stateIn(
@@ -194,18 +194,24 @@ class TransactionViewModel @Inject constructor(
         ) { args: Array<*> ->
             @Suppress("UNCHECKED_CAST")
             val filtered = args[0] as List<TransactionWithBalance>
+
             @Suppress("UNCHECKED_CAST")
             val absolute = args[1] as List<TransactionWithBalance>
+
             @Suppress("UNCHECKED_CAST")
             val accounts = args[2] as List<com.osscabinet.ossWallet.domain.model.Account>
+
             @Suppress("UNCHECKED_CAST")
             val categories = args[3] as List<com.osscabinet.ossWallet.domain.model.Category>
+
             @Suppress("UNCHECKED_CAST")
             val tags = args[4] as List<com.osscabinet.ossWallet.domain.model.Tag>
             val base = args[5] as String
+
             @Suppress("UNCHECKED_CAST")
             val rates = args[6] as Map<String, BigDecimal>
-            val settings = args[7] as com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+            val settings =
+                args[7] as com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 
             if (filtered.isEmpty()) return@combine TransactionListState()
 
@@ -246,17 +252,17 @@ class TransactionViewModel @Inject constructor(
                 plannedPaymentRepository.getAllPlannedPayments(profileId)
             ) { transactions, templates, plannedPayments ->
                 val rawPatterns = PatternDiscoveryService.discoverPatterns(transactions)
-                
+
                 rawPatterns.map { pattern ->
-                    val existsAsTemplate = templates.any { 
+                    val existsAsTemplate = templates.any {
                         (it.name.equals(pattern.name, ignoreCase = true) ||
-                        it.payee?.equals(pattern.payee, ignoreCase = true) == true)
+                                it.payee?.equals(pattern.payee, ignoreCase = true) == true)
                     }
-                    val existsAsPlannedPayment = plannedPayments.any { 
+                    val existsAsPlannedPayment = plannedPayments.any {
                         it.name.equals(pattern.name, ignoreCase = true) ||
-                        it.payee?.equals(pattern.payee, ignoreCase = true) == true
+                                it.payee?.equals(pattern.payee, ignoreCase = true) == true
                     }
-                    
+
                     pattern.copy(
                         existsAsTemplate = existsAsTemplate,
                         existsAsPlannedPayment = existsAsPlannedPayment
@@ -290,7 +296,10 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end)))
+        recordsFilterManager.setFilter(
+            "date",
+            TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end))
+        )
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
@@ -299,7 +308,10 @@ class TransactionViewModel @Inject constructor(
 
     fun setIncomeTypeFilter(type: com.osscabinet.ossWallet.domain.model.TransactionType?) {
         if (type != null) {
-            recordsFilterManager.setFilter("type", TransactionFilter(transactionTypes = setOf(type)))
+            recordsFilterManager.setFilter(
+                "type",
+                TransactionFilter(transactionTypes = setOf(type))
+            )
         } else {
             recordsFilterManager.removeFilter("type")
         }
@@ -329,7 +341,12 @@ class TransactionViewModel @Inject constructor(
 
     fun addTag(name: String, color: Int) {
         viewModelScope.launch {
-            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))
+            tagRepository.insertTag(
+                com.osscabinet.ossWallet.domain.model.Tag(
+                    name = name,
+                    colorHex = color
+                )
+            )
         }
     }
 
@@ -401,16 +418,17 @@ class TransactionViewModel @Inject constructor(
                 // If it's a transfer, try to find the linked transaction to get the target account and rate
                 if (transaction.categoryId == 1003L) {
                     val linkedTxs = transactionUseCases.getLinkedTransactions(transactionId).first()
-                    val targetTx = linkedTxs.find { 
-                        it.categoryId == 1003L && 
-                        it.accountId != transaction.accountId &&
-                        it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
+                    val targetTx = linkedTxs.find {
+                        it.categoryId == 1003L &&
+                                it.accountId != transaction.accountId &&
+                                it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {
-                            targetTx.amount.abs().divide(transaction.amount.abs(), 6, RoundingMode.HALF_UP)
+                            targetTx.amount.abs()
+                                .divide(transaction.amount.abs(), 6, RoundingMode.HALF_UP)
                         } else BigDecimal.ONE
-                        
+
                         prefill = prefill.copy(
                             targetAccountId = targetTx.accountId,
                             targetCurrency = targetTx.currency,
@@ -418,7 +436,7 @@ class TransactionViewModel @Inject constructor(
                         )
                     }
                 }
-                
+
                 _prefillDto.value = prefill
             } else {
                 _prefillDto.value = null
@@ -572,7 +590,7 @@ class TransactionViewModel @Inject constructor(
     fun setPlannedPaymentPrefillFromTemplate(template: com.osscabinet.ossWallet.domain.model.Template) {
         val now = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
         val startEpoch = now.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-        
+
         _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
             template = template,
             schedule = com.osscabinet.ossWallet.domain.model.PaymentSchedule(

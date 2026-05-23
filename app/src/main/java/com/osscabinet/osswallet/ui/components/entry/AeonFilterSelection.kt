@@ -1,7 +1,17 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -9,12 +19,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
@@ -45,7 +62,12 @@ fun AeonFilterSelection(
             var query by remember { mutableStateOf("") }
             val filtered = remember(query, filters) {
                 if (query.isBlank()) filters
-                else filters.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
+                else filters.filter {
+                    it.name.contains(
+                        query,
+                        ignoreCase = true
+                    ) || it.name.fuzzyMatch(query)
+                }
             }
 
             Column(
@@ -58,15 +80,18 @@ fun AeonFilterSelection(
                     onQueryChange = { query = it },
                     placeholder = "Search filters..."
                 )
-                
+
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(dims.spacingLg))
-                    
+
                     Surface(
                         onClick = { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
                         color = AppColors.primary.copy(alpha = 0.1f),
-                        border = BorderStroke((dims.spacingXs / 4), AppColors.primary.copy(alpha = 0.2f)),
+                        border = BorderStroke(
+                            (dims.spacingXs / 4),
+                            AppColors.primary.copy(alpha = 0.2f)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -76,7 +101,11 @@ fun AeonFilterSelection(
                         ) {
                             Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
                             Spacer(modifier = Modifier.width(dims.spacingSm))
-                            Text("Create New Filter", color = AppColors.primary, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Create New Filter",
+                                color = AppColors.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -93,9 +122,9 @@ fun AeonFilterSelection(
                             onClick = { onFilterSelected(filter.id); onDismiss() },
                             shape = RoundedCornerShape(dims.componentCornerRadius),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (filter.id == selectedFilterId) 
-                                    AppColors.selectionContainer 
-                                else 
+                                containerColor = if (filter.id == selectedFilterId)
+                                    AppColors.selectionContainer
+                                else
                                     AppColors.insetSurface.copy(alpha = 0.3f)
                             )
                         ) {
@@ -119,17 +148,25 @@ fun AeonFilterSelection(
                                 }
                                 Spacer(modifier = Modifier.width(dims.spacingLg))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(filter.name, style = AppTextStyles.screenSubTitle, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        filter.name,
+                                        style = AppTextStyles.screenSubTitle,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                     val detailText = buildString {
                                         if (filter.filter.categoryIds.isEmpty()) append("All Categories")
                                         else append("${filter.filter.categoryIds.size} Categories")
-                                        
+
                                         append(" • ")
-                                        
+
                                         if (filter.filter.accountIds.isEmpty()) append("All Accounts")
                                         else append("${filter.filter.accountIds.size} Accounts")
                                     }
-                                    Text(detailText, style = AppTextStyles.caption, color = AppColors.border)
+                                    Text(
+                                        detailText,
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.border
+                                    )
                                 }
                                 if (filter.id == selectedFilterId) {
                                     Icon(

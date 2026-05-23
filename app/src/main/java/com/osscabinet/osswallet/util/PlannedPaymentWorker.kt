@@ -8,7 +8,11 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.osscabinet.ossWallet.di.PlannedPaymentWorkerEntryPoint
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import kotlinx.coroutines.flow.first
@@ -31,17 +35,19 @@ class PlannedPaymentWorker(
 
         val allCategories = ep.categoryRepository().getAllCategoriesSync()
         val due = repo.getDue(profileId).filter { it.schedule.nextDueDate <= now }
-        
+
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
-                val amount = if (payment.transactionType == TransactionType.INCOME || payment.transactionType == TransactionType.TRANSFER) {
-                    payment.amount.abs()
-                } else {
-                    payment.amount.abs().negate()
-                }
+                val amount =
+                    if (payment.transactionType == TransactionType.INCOME || payment.transactionType == TransactionType.TRANSFER) {
+                        payment.amount.abs()
+                    } else {
+                        payment.amount.abs().negate()
+                    }
 
                 val request = TransactionRequest(
-                    name = allCategories.find { it.id == payment.categoryId }?.name ?: "Planned Payment",
+                    name = allCategories.find { it.id == payment.categoryId }?.name
+                        ?: "Planned Payment",
                     amount = amount,
                     transactionType = payment.transactionType,
                     accountId = payment.accountId ?: "",
@@ -76,7 +82,8 @@ class PlannedPaymentWorker(
                 )
             }
 
-            val nextDate = PlannedPaymentService.calculateNextDueDate(payment, payment.schedule.nextDueDate)
+            val nextDate =
+                PlannedPaymentService.calculateNextDueDate(payment, payment.schedule.nextDueDate)
             if (nextDate != null) {
                 repo.update(
                     payment.copy(

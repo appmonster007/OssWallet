@@ -1,6 +1,16 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -8,27 +18,40 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
 
 /**
  * Generic bottom sheet to manage transaction splitting.
@@ -96,7 +119,9 @@ fun AeonTransactionSplitSheet(
                     Icon(
                         Icons.Rounded.Add,
                         contentDescription = "Add Split",
-                        modifier = Modifier.padding(dims.spacingSm).size(dims.containerCornerRadius),
+                        modifier = Modifier
+                            .padding(dims.spacingSm)
+                            .size(dims.containerCornerRadius),
                         tint = AppColors.primary
                     )
                 }
@@ -109,7 +134,10 @@ fun AeonTransactionSplitSheet(
                     .padding(horizontal = dims.spacingXl, vertical = dims.spacingLg),
                 color = AppColors.recessedSurface,
                 shape = RoundedCornerShape(dims.cardCornerRadius),
-                border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.2f))
+                border = androidx.compose.foundation.BorderStroke(
+                    (dims.spacingXs / 8),
+                    AppColors.divider.copy(alpha = 0.2f)
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(dims.containerCornerRadius),
@@ -179,7 +207,11 @@ fun AeonTransactionSplitSheet(
                     text = "Allocation must match total amount",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = dims.spacingXl, end = dims.spacingXl, bottom = dims.spacingMd),
+                        .padding(
+                            start = dims.spacingXl,
+                            end = dims.spacingXl,
+                            bottom = dims.spacingMd
+                        ),
                     textAlign = TextAlign.Center,
                     style = AppTextStyles.chipLabel,
                     color = AppColors.error
@@ -250,8 +282,22 @@ fun AeonTransactionSplitSheetPreview() {
                 TransactionSplit(amount = "40.00", categoryId = 2L, note = "Split 2")
             ),
             categories = listOf(
-                Category(id = 1L, name = "Food", iconName = "Restaurant", colorHex = android.graphics.Color.parseColor("#FF5722"), isDefault = false, parentId = null),
-                Category(id = 2L, name = "Transport", iconName = "DirectionsBus", colorHex = android.graphics.Color.parseColor("#2196F3"), isDefault = false, parentId = null)
+                Category(
+                    id = 1L,
+                    name = "Food",
+                    iconName = "Restaurant",
+                    colorHex = android.graphics.Color.parseColor("#FF5722"),
+                    isDefault = false,
+                    parentId = null
+                ),
+                Category(
+                    id = 2L,
+                    name = "Transport",
+                    iconName = "DirectionsBus",
+                    colorHex = android.graphics.Color.parseColor("#2196F3"),
+                    isDefault = false,
+                    parentId = null
+                )
             ),
             onAddSplit = {},
             onRemoveSplit = {},
@@ -262,7 +308,6 @@ fun AeonTransactionSplitSheetPreview() {
         )
     }
 }
-
 
 
 @Composable
@@ -280,7 +325,10 @@ private fun SplitItem(
         modifier = Modifier.fillMaxWidth(),
         color = AppColors.recessedSurface,
         shape = RoundedCornerShape(dims.cardCornerRadius),
-        border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.3f))
+        border = androidx.compose.foundation.BorderStroke(
+            (dims.spacingXs / 8),
+            AppColors.divider.copy(alpha = 0.3f)
+        )
     ) {
         Column(modifier = Modifier.padding(dims.spacingLg)) {
             Row(
@@ -295,12 +343,16 @@ private fun SplitItem(
                     shape = RoundedCornerShape(dims.componentCornerRadius)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = dims.spacingMd, vertical = dims.spacingSm),
+                        modifier = Modifier.padding(
+                            horizontal = dims.spacingMd,
+                            vertical = dims.spacingSm
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = (category?.colorHex?.let { Color(it) } ?: AppColors.primary).copy(alpha = 0.1f),
+                            color = (category?.colorHex?.let { Color(it) }
+                                ?: AppColors.primary).copy(alpha = 0.1f),
                             modifier = Modifier.size(dims.spacing2xl)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -308,7 +360,8 @@ private fun SplitItem(
                                     getIconByName(category?.iconName),
                                     contentDescription = null,
                                     modifier = Modifier.size(dims.iconSizeSm),
-                                    tint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
+                                    tint = category?.colorHex?.let { Color(it) }
+                                        ?: AppColors.primary
                                 )
                             }
                         }
@@ -342,7 +395,13 @@ private fun SplitItem(
                             }
                         },
                         modifier = Modifier.width(dims.iconSize3xl + dims.spacingXl),
-                        placeholder = { Text("0.00", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth()) },
+                        placeholder = {
+                            Text(
+                                "0.00",
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = AppColors.transparent,
                             unfocusedContainerColor = AppColors.transparent,
@@ -360,7 +419,9 @@ private fun SplitItem(
 
                 IconButton(
                     onClick = onRemove,
-                    modifier = Modifier.padding(start = dims.spacingXs).size(dims.spacingXl + dims.spacingMd)
+                    modifier = Modifier
+                        .padding(start = dims.spacingXs)
+                        .size(dims.spacingXl + dims.spacingMd)
                 ) {
                     Icon(
                         Icons.Rounded.DeleteOutline,
@@ -378,7 +439,12 @@ private fun SplitItem(
                 value = split.note,
                 onValueChange = { onUpdate(null, it, null) },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Add a note for this split...", style = AppTextStyles.caption) },
+                placeholder = {
+                    Text(
+                        "Add a note for this split...",
+                        style = AppTextStyles.caption
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = AppColors.cardSurface.copy(alpha = 0.4f),
                     unfocusedContainerColor = AppColors.cardSurface.copy(alpha = 0.2f),

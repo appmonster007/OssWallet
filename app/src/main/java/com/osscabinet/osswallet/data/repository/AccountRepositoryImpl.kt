@@ -14,7 +14,7 @@ class AccountRepositoryImpl @Inject constructor(
     private val accountDao: AccountDao
 ) : AccountRepository {
 
-    override fun getAllAccounts(profileId: Int): Flow<List<Account>> = 
+    override fun getAllAccounts(profileId: Int): Flow<List<Account>> =
         accountDao.getAllAccounts(profileId).mapToDomain { it.toDomain() }
 
     override suspend fun getAllAccountsSync(profileId: Int): List<Account> {

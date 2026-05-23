@@ -1,20 +1,30 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-import com.osscabinet.ossWallet.ui.components.transactions.*
-import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import kotlinx.coroutines.flow.Flow
 
@@ -77,7 +87,8 @@ fun TransactionListContent(
                         showTags = recordsSettings.showTags,
                         showTimestamp = recordsSettings.showTimestamp,
                         showIcon = recordsSettings.showIcon,
-                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
+                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency
+                            ?: "USD",
                         revealedCardIds = revealedCardIds,
                     )
                 }

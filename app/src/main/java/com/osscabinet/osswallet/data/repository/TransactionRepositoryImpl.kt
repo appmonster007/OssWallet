@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.data.repository
 
-import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.room.withTransaction
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
@@ -10,11 +10,10 @@ import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -39,24 +38,36 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getAllTransactionsSync(profileId).mapToDomain { it.toDomain() }
     }
 
-    override fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
+    override fun getFilteredTransactions(
+        profileId: Int,
+        filter: TransactionFilter
+    ): Flow<List<Transaction>> {
         val (query, args) = buildFilteredQuery(profileId, filter)
         val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
-        
+
         return transactionDao.getFilteredTransactions(sqliteQuery).mapToDomain { entity ->
             // Note: applyRegexFilter still needs to be applied after mapping or inside mapToDomain
             entity.toDomain()
         }.map { applyRegexFilter(it, filter) }
     }
 
-    override suspend fun getFilteredTransactionsSync(profileId: Int, filter: TransactionFilter): List<Transaction> {
+    override suspend fun getFilteredTransactionsSync(
+        profileId: Int,
+        filter: TransactionFilter
+    ): List<Transaction> {
         val (query, args) = buildFilteredQuery(profileId, filter)
         val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
 
-        return applyRegexFilter(transactionDao.getFilteredTransactionsSync(sqliteQuery).mapToDomain { it.toDomain() }, filter)
+        return applyRegexFilter(
+            transactionDao.getFilteredTransactionsSync(sqliteQuery).mapToDomain { it.toDomain() },
+            filter
+        )
     }
 
-    private fun buildFilteredQuery(profileId: Int, filter: TransactionFilter): Pair<String, List<Any>> {
+    private fun buildFilteredQuery(
+        profileId: Int,
+        filter: TransactionFilter
+    ): Pair<String, List<Any>> {
         val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ?")
         val args = mutableListOf<Any>(profileId)
 
@@ -139,7 +150,10 @@ class TransactionRepositoryImpl @Inject constructor(
         return Pair(queryBuilder.toString(), args)
     }
 
-    private fun applyRegexFilter(domainTransactions: List<Transaction>, filter: TransactionFilter): List<Transaction> {
+    private fun applyRegexFilter(
+        domainTransactions: List<Transaction>,
+        filter: TransactionFilter
+    ): List<Transaction> {
         return if (filter.isNoteRegex || filter.isPayeeRegex) {
             domainTransactions.filter { transaction ->
                 val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
@@ -167,7 +181,10 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long {
         return database.withTransaction {
-            val id = transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
+            val id = transactionDao.insertTransactionWithBalanceUpdate(
+                transaction.toEntity(profileId),
+                accountDao
+            )
             syncTransactionTags(id, transaction.tags)
             id
         }
@@ -197,8 +214,12 @@ class TransactionRepositoryImpl @Inject constructor(
         profileId: Int
     ): Pair<Long, Long> {
         return database.withTransaction {
-            val sourceId = transactionDao.insertTransactionWithBalanceUpdate(sourceTransaction.toEntity(profileId), accountDao)
-            val targetId = transactionDao.insertTransactionWithBalanceUpdate(targetTransaction.toEntity(profileId), accountDao)
+            val sourceId = transactionDao.insertTransactionWithBalanceUpdate(
+                sourceTransaction.toEntity(profileId), accountDao
+            )
+            val targetId = transactionDao.insertTransactionWithBalanceUpdate(
+                targetTransaction.toEntity(profileId), accountDao
+            )
 
             syncTransactionTags(sourceId, sourceTransaction.tags)
             syncTransactionTags(targetId, targetTransaction.tags)
@@ -221,7 +242,11 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
+    override suspend fun updateTransaction(
+        oldTransaction: Transaction,
+        newTransaction: Transaction,
+        profileId: Int
+    ) {
         database.withTransaction {
             transactionDao.updateTransactionWithBalanceUpdate(
                 oldTransaction.toEntity(profileId),
@@ -239,8 +264,12 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByAccount(accountId, profileId).mapToDomain { it.toDomain() }
+    override fun getTransactionsByAccount(
+        accountId: String,
+        profileId: Int
+    ): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByAccount(accountId, profileId)
+            .mapToDomain { it.toDomain() }
     }
 
     override suspend fun getTransactionById(id: Long): Transaction? {
@@ -249,13 +278,25 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> {
         return transactionDao.getCurrencySummaries(profileId).map { dao ->
-            CurrencySummary(currency = dao.currency, totalIncome = dao.totalIncome, totalExpense = dao.totalExpense)
+            CurrencySummary(
+                currency = dao.currency,
+                totalIncome = dao.totalIncome,
+                totalExpense = dao.totalExpense
+            )
         }
     }
 
-    override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary> {
+    override suspend fun getCurrencySummariesInRange(
+        profileId: Int,
+        start: Long,
+        end: Long
+    ): List<CurrencySummary> {
         return transactionDao.getCurrencySummariesInRange(profileId, start, end).map { dao ->
-            CurrencySummary(currency = dao.currency, totalIncome = dao.totalIncome, totalExpense = dao.totalExpense)
+            CurrencySummary(
+                currency = dao.currency,
+                totalIncome = dao.totalIncome,
+                totalExpense = dao.totalExpense
+            )
         }
     }
 

@@ -10,7 +10,8 @@ import java.security.SecureRandom
  */
 class SecurePassphraseManager(context: Context) {
 
-    private val sharedPreferences = context.getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
+    private val sharedPreferences =
+        context.getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
 
     companion object {
         private const val PASSPHRASE_KEY = "db_passphrase"
@@ -22,7 +23,7 @@ class SecurePassphraseManager(context: Context) {
      */
     fun getOrGeneratePassphrase(): ByteArray {
         val storedPassphrase = sharedPreferences.getString(PASSPHRASE_KEY, null)
-        
+
         return if (storedPassphrase != null) {
             // Decode stored passphrase
             android.util.Base64.decode(storedPassphrase, android.util.Base64.NO_WRAP)
@@ -31,7 +32,10 @@ class SecurePassphraseManager(context: Context) {
             val newPassphrase = generateSecurePassphrase()
             // Store it
             sharedPreferences.edit()
-                .putString(PASSPHRASE_KEY, android.util.Base64.encodeToString(newPassphrase, android.util.Base64.NO_WRAP))
+                .putString(
+                    PASSPHRASE_KEY,
+                    android.util.Base64.encodeToString(newPassphrase, android.util.Base64.NO_WRAP)
+                )
                 .apply()
             newPassphrase
         }

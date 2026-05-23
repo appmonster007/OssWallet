@@ -2,40 +2,54 @@ package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
-import com.osscabinet.ossWallet.ui.components.cards.LoanActions
-import com.osscabinet.ossWallet.domain.card.*
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonShimmer
+import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
+import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
-import com.osscabinet.ossWallet.ui.components.cards.AccountActions
-import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
-import com.osscabinet.ossWallet.ui.components.cards.FilterActions
-import com.osscabinet.ossWallet.ui.components.cards.TagActions
+import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.TagActions
+import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
-import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
-import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
@@ -68,7 +82,9 @@ fun AnalyticsScreen(
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
-    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
+        initialValue = true
+    )
 
     var showAddCardDialog by remember { mutableStateOf(false) }
 
@@ -86,7 +102,10 @@ fun AnalyticsScreen(
                             }
                         } else {
                             IconButton(onClick = onBackClick) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
                             }
                         }
                     },
@@ -110,11 +129,16 @@ fun AnalyticsScreen(
                         showAccounts = false
                     )
                 }
+
                 is AnalyticsUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
                         Text(state.message)
                     }
                 }
+
                 is AnalyticsUiState.Success -> {
                     Column(
                         modifier = Modifier
@@ -177,7 +201,11 @@ fun AnalyticsScreen(
                                     onClone = { onCloneTransactionClick(it) },
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                     onSplit = { onSplitTransactionClick(it) },
-                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                                    onFullSwipeRight = {
+                                        transactionViewModel.toggleStatusClearedUncleared(
+                                            it
+                                        )
+                                    }
                                 ),
                                 paymentActions = PaymentActions(
                                     onClick = onNavigateToPlannedPaymentDetail,
@@ -210,6 +238,7 @@ fun AnalyticsScreen(
                         is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
                             screenFilter.copy(timelineRange = event.range)
                         )
+
                         else -> {}
                     }
                 },

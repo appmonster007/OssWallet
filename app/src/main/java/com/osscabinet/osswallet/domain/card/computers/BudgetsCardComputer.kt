@@ -12,14 +12,23 @@ import com.osscabinet.ossWallet.domain.service.management.BudgetService
 class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
     override val supportedType = CardType.BUDGETS
 
-    override suspend fun compute(input: CardInput, config: BudgetsCardConfig): CardRenderData.Budgets {
+    override suspend fun compute(
+        input: CardInput,
+        config: BudgetsCardConfig
+    ): CardRenderData.Budgets {
         val now = System.currentTimeMillis()
 
         // Budgets should NOT follow the global timeline filter (e.g. Dashboard "Today")
         // but should respect global Account/Category filters if explicitly merged.
         // We use a clean filter for budgets that ignores the timeline of input.filter.
-        val baseBudgetFilter = input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        val mergedFilter = resolveEffectiveFilter(baseBudgetFilter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val baseBudgetFilter =
+            input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        val mergedFilter = resolveEffectiveFilter(
+            baseBudgetFilter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
         val filteredTx = TransactionFilterService.filter(input.transactions, mergedFilter)
 
         val budgets = if (config.showArchived) input.budgets
@@ -45,6 +54,10 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             BudgetService.buildProgress(budget, spent, rollover)
         }
 
-        return CardRenderData.Budgets(config = config, items = items, displayCurrency = input.displayCurrency)
+        return CardRenderData.Budgets(
+            config = config,
+            items = items,
+            displayCurrency = input.displayCurrency
+        )
     }
 }

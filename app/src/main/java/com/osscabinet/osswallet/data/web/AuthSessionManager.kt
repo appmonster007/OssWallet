@@ -8,7 +8,8 @@ import java.util.concurrent.ConcurrentHashMap
 class AuthSessionManager {
 
     private var currentAccessCode: String = ""
-    @Volatile private var activeSession: MutableSession? = null
+    @Volatile
+    private var activeSession: MutableSession? = null
     private val failedAttempts = ConcurrentHashMap<String, AttemptRecord>()
     private val secureRandom = SecureRandom()
 
@@ -21,7 +22,9 @@ class AuthSessionManager {
     ) {
         val expiresAt: Long get() = lastActivityAt + SESSION_TIMEOUT_MS
         fun isExpired() = System.currentTimeMillis() > expiresAt
-        fun refresh() { lastActivityAt = System.currentTimeMillis() }
+        fun refresh() {
+            lastActivityAt = System.currentTimeMillis()
+        }
     }
 
     fun initialize() {

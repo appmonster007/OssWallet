@@ -1,12 +1,21 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,7 +95,10 @@ fun EntrySectionPreview() {
                 title = "Information",
                 icon = Icons.Rounded.Info
             ) {
-                Text("This is the content of the entry section.", style = AppTextStyles.listItemTitle)
+                Text(
+                    "This is the content of the entry section.",
+                    style = AppTextStyles.listItemTitle
+                )
                 Text("It can contain multiple composables.", style = AppTextStyles.caption)
             }
         }

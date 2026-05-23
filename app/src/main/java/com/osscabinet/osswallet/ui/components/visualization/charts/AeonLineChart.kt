@@ -6,32 +6,62 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
+import com.osscabinet.ossWallet.ui.theme.ChartDotHighlight
+import com.osscabinet.ossWallet.ui.theme.ChartGridColor
+import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
+import com.osscabinet.ossWallet.ui.theme.ColorTransparent
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * High-fidelity, interactive line chart with area gradients and dashed grids.
@@ -75,24 +105,27 @@ fun AeonLineChart(
 
     val verticalGuideColor = ChartZeroLineColor
     val dims = AeonTheme.dimensions
-    
+
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
         val leftPadding = with(density) { 50.dp.toPx() }
         val xLabelHeight = with(density) { 14.dp.toPx() }
-        val bottomPadding = with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
+        val bottomPadding =
+            with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
         val topPadding = with(density) { dims.spacingLg.toPx() }
         val rightPadding = with(density) { dims.spacing2xl.toPx() } // Increased for marker labels
-        
+
         val chartWidth = w - leftPadding - rightPadding
         val chartHeight = h - bottomPadding - topPadding
-        
+
         // Dynamic scaling logic
         val allPoints = series.flatMap { it.dataPoints.map { p -> p.y } }
-        val confidencePoints = series.flatMap { s -> s.confidenceIntervals?.flatMap { listOf(it.first, it.second) } ?: emptyList() }
+        val confidencePoints = series.flatMap { s ->
+            s.confidenceIntervals?.flatMap { listOf(it.first, it.second) } ?: emptyList()
+        }
         val allValues = allPoints + confidencePoints
-        
+
         if (allValues.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No data available", style = AppTextStyles.caption)
@@ -102,11 +135,12 @@ fun AeonLineChart(
 
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
-        
+
         // Calculate a "nice" step size based on the data range
         val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
         val roughStep = dataRange / 4.0
-        val mag = Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
+        val mag =
+            Math.pow(10.0, kotlin.math.floor(kotlin.math.log10(roughStep.coerceAtLeast(1e-10))))
         val niceMultiplier = when {
             roughStep / mag <= 1.0 -> 1.0
             roughStep / mag <= 2.0 -> 2.0
@@ -118,10 +152,12 @@ fun AeonLineChart(
         // Align boundaries and add 1-step buffer to ensure ticks strictly outside data
         val effectiveMinY = minY.divide(niceStep, 0, RoundingMode.FLOOR).multiply(niceStep)
         val effectiveMaxY = maxY.divide(niceStep, 0, RoundingMode.CEILING).multiply(niceStep)
-        val effectiveRangeY = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
+        val effectiveRangeY =
+            (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         fun valueToY(value: BigDecimal): Float {
-            val normalized = (value - effectiveMinY).divide(effectiveRangeY, 10, RoundingMode.HALF_UP).toFloat()
+            val normalized =
+                (value - effectiveMinY).divide(effectiveRangeY, 10, RoundingMode.HALF_UP).toFloat()
             return topPadding + chartHeight - (normalized * chartHeight)
         }
 
@@ -135,14 +171,14 @@ fun AeonLineChart(
 
         fun findClosestIndex(offsetX: Float): Int {
             if (series.isEmpty()) return -1
-            
+
             // Use the first series that has data points
             val referenceSeries = series.firstOrNull { it.dataPoints.isNotEmpty() } ?: return -1
             val totalPoints = referenceSeries.dataPoints.size
-            
+
             var closestIndex = -1
             var minDistance = Float.MAX_VALUE
-            
+
             for (i in 0 until totalPoints) {
                 val dx = indexToX(i.toFloat(), totalPoints)
                 val distance = abs(offsetX - dx)
@@ -151,7 +187,7 @@ fun AeonLineChart(
                     closestIndex = i
                 }
             }
-            
+
             return if (minDistance < 100f) closestIndex else -1
         }
 
@@ -225,7 +261,10 @@ fun AeonLineChart(
                             val x = indexToX(index.toFloat(), s.dataPoints.size)
                             val y = valueToY(intervals[index].second)
                             val animY = zeroY + (y - zeroY) * animationProgress.value
-                            if (index == 0) confidencePath.moveTo(x, animY) else confidencePath.lineTo(x, animY)
+                            if (index == 0) confidencePath.moveTo(
+                                x,
+                                animY
+                            ) else confidencePath.lineTo(x, animY)
                         }
                         // Bottom boundary (reverse)
                         for (index in (s.dataPoints.size - 1) downTo 0) {
@@ -299,7 +338,12 @@ fun AeonLineChart(
                         width = strokePx,
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round,
-                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(12f, 8f)) else null
+                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(
+                            floatArrayOf(
+                                12f,
+                                8f
+                            )
+                        ) else null
                     )
                 )
 
@@ -310,8 +354,17 @@ fun AeonLineChart(
                         val raw = valueToY(pts[lastIdx].y)
                         zeroY + (raw - zeroY) * animationProgress.value
                     }
-                    drawCircle(color = ChartDotHighlight, radius = strokePx * 1.5f, center = Offset(ex, ey))
-                    drawCircle(color = s.color, radius = strokePx * 1.5f, center = Offset(ex, ey), style = Stroke(width = strokePx * 0.6f))
+                    drawCircle(
+                        color = ChartDotHighlight,
+                        radius = strokePx * 1.5f,
+                        center = Offset(ex, ey)
+                    )
+                    drawCircle(
+                        color = s.color,
+                        radius = strokePx * 1.5f,
+                        center = Offset(ex, ey),
+                        style = Stroke(width = strokePx * 0.6f)
+                    )
                 }
             }
 
@@ -323,7 +376,10 @@ fun AeonLineChart(
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                 }
-                val labelY = topPadding + chartHeight + with(density) { dims.spacing2xl.toPx() } - with(density) { 2.dp.toPx() }
+                val labelY =
+                    topPadding + chartHeight + with(density) { dims.spacing2xl.toPx() } - with(
+                        density
+                    ) { 2.dp.toPx() }
 
                 // Derive jump from the minimum pixel gap a label needs so they never overlap.
                 // "dd/MM" at 9sp is ~32dp wide; this scales correctly with chart width and data density.
@@ -332,30 +388,46 @@ fun AeonLineChart(
                 if (xAxisLabels.isNotEmpty()) {
                     val total = xAxisLabels.size
                     val lastIdx = total - 1
-                    val jump = maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
+                    val jump =
+                        maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
                     val threshold = (jump / 2).coerceAtLeast(1)
                     val nearestLowerJump = (lastIdx / jump) * jump
-                    val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
+                    val skipNearestLowerJump =
+                        lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                     xAxisLabels.forEachIndexed { index, lbl ->
                         if (lbl == null) return@forEachIndexed
                         val show = index == 1 || index == lastIdx ||
-                            (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                        if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index.toFloat(), total), labelY, labelPaint)
+                                (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
+                        if (show) drawContext.canvas.nativeCanvas.drawText(
+                            lbl,
+                            indexToX(index.toFloat(), total),
+                            labelY,
+                            labelPaint
+                        )
                     }
                 } else {
                     val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
                     if (labelSeries != null) {
                         val total = labelSeries.dataPoints.size
                         val lastIdx = total - 1
-                        val jump = maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
+                        val jump = maxOf(
+                            1,
+                            kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt()
+                        )
                         val threshold = (jump / 2).coerceAtLeast(1)
                         val nearestLowerJump = (lastIdx / jump) * jump
-                        val skipNearestLowerJump = lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
+                        val skipNearestLowerJump =
+                            lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
                         labelSeries.dataPoints.forEachIndexed { index, point ->
                             val lbl = point.label ?: return@forEachIndexed
                             val show = index == 1 || index == lastIdx ||
-                                (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                            if (show) drawContext.canvas.nativeCanvas.drawText(lbl, indexToX(index.toFloat(), total), labelY, labelPaint)
+                                    (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
+                            if (show) drawContext.canvas.nativeCanvas.drawText(
+                                lbl,
+                                indexToX(index.toFloat(), total),
+                                labelY,
+                                labelPaint
+                            )
                         }
                     }
                 }
@@ -377,7 +449,10 @@ fun AeonLineChart(
                 val markerLabelPaint = android.graphics.Paint().apply {
                     textSize = with(density) { 9.sp.toPx() }
                     isAntiAlias = true
-                    typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+                    typeface = android.graphics.Typeface.create(
+                        android.graphics.Typeface.DEFAULT,
+                        android.graphics.Typeface.BOLD
+                    )
                 }
 
                 var lastMarkerX = -1000f
@@ -388,7 +463,8 @@ fun AeonLineChart(
                     val x = indexToX(marker.x, totalXSlots.coerceAtLeast(1))
                     val markerColor = marker.color.copy(alpha = 0.6f)
 
-                    currentLevel = if (abs(x - lastMarkerX) < markerMinGapPx) (currentLevel + 1) % 3 else 0
+                    currentLevel =
+                        if (abs(x - lastMarkerX) < markerMinGapPx) (currentLevel + 1) % 3 else 0
                     lastMarkerX = x
 
                     drawLine(
@@ -396,7 +472,12 @@ fun AeonLineChart(
                         start = Offset(x, topPadding),
                         end = Offset(x, topPadding + chartHeight),
                         strokeWidth = 1.dp.toPx(),
-                        pathEffect = if (marker.isDashed) PathEffect.dashPathEffect(floatArrayOf(10f, 10f)) else null
+                        pathEffect = if (marker.isDashed) PathEffect.dashPathEffect(
+                            floatArrayOf(
+                                10f,
+                                10f
+                            )
+                        ) else null
                     )
 
                     val isAtEnd = x > leftPadding + chartWidth * markerEndThreshold
@@ -404,7 +485,8 @@ fun AeonLineChart(
                     markerLabelPaint.textAlign =
                         if (isAtEnd) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
 
-                    val labelY = topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
+                    val labelY =
+                        topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
                     drawContext.canvas.nativeCanvas.drawText(
                         marker.label,
                         if (isAtEnd) x - markerLabelNudgePx else x + markerLabelNudgePx,
@@ -423,14 +505,23 @@ fun AeonLineChart(
                     strokeWidth = (dims.spacingXs / 4).toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
-                
+
                 // Draw focus dots for all series at this index
                 series.forEach { s ->
                     if (selectedIndex < s.dataPoints.size) {
                         val p = s.dataPoints[selectedIndex]
                         val y = valueToY(p.y)
-                        drawCircle(color = ChartDotHighlight, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y))
-                        drawCircle(color = s.color, radius = (dims.spacingXs * 1.25f).toPx(), center = Offset(x, y), style = Stroke(width = (dims.spacingXs / 2).toPx()))
+                        drawCircle(
+                            color = ChartDotHighlight,
+                            radius = (dims.spacingXs * 1.25f).toPx(),
+                            center = Offset(x, y)
+                        )
+                        drawCircle(
+                            color = s.color,
+                            radius = (dims.spacingXs * 1.25f).toPx(),
+                            center = Offset(x, y),
+                            style = Stroke(width = (dims.spacingXs / 2).toPx())
+                        )
                     }
                 }
             }
@@ -442,14 +533,16 @@ fun AeonLineChart(
                 val totalPoints = referenceSeries.dataPoints.size
                 val x = indexToX(selectedIndex.toFloat(), totalPoints)
                 val label = referenceSeries.dataPoints[selectedIndex].label
-                
+
                 // Boundary-aware multi-series tooltip
                 val tooltipWidth = 180.dp
-                val tooltipHeight = (40 + series.size * 25).dp // Dynamic height based on number of series
+                val tooltipHeight =
+                    (40 + series.size * 25).dp // Dynamic height based on number of series
                 val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
                 val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
-                val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, (w - tooltipWidthPx).coerceAtLeast(0f))
+                val xPos =
+                    (x - tooltipWidthPx / 2).coerceIn(0f, (w - tooltipWidthPx).coerceAtLeast(0f))
                 // Show tooltip above the middle of the chart
                 val yPos = (topPadding).coerceIn(0f, (h - tooltipHeightPx).coerceAtLeast(0f))
 
@@ -461,7 +554,10 @@ fun AeonLineChart(
                     color = AppColors.insetSurface.copy(alpha = 0.95f),
                     tonalElevation = dims.spacingSm,
                     shadowElevation = dims.spacingSm,
-                    border = androidx.compose.foundation.BorderStroke((dims.spacingXs / 8), AppColors.border.copy(alpha = 0.2f))
+                    border = androidx.compose.foundation.BorderStroke(
+                        (dims.spacingXs / 8),
+                        AppColors.border.copy(alpha = 0.2f)
+                    )
                 ) {
                     Column(modifier = Modifier.padding(dims.spacingMd)) {
                         if (label != null) {
@@ -472,12 +568,14 @@ fun AeonLineChart(
                                 modifier = Modifier.padding(bottom = dims.spacingSm)
                             )
                         }
-                        
+
                         series.forEach { s ->
                             if (selectedIndex < s.dataPoints.size) {
                                 val p = s.dataPoints[selectedIndex]
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = (dims.spacingXs / 2)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = (dims.spacingXs / 2)),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -488,7 +586,10 @@ fun AeonLineChart(
                                         Box(
                                             modifier = Modifier
                                                 .size(dims.spacingSm)
-                                                .background(s.color, RoundedCornerShape(dims.spacingXs / 2))
+                                                .background(
+                                                    s.color,
+                                                    RoundedCornerShape(dims.spacingXs / 2)
+                                                )
                                         )
                                         Spacer(modifier = Modifier.width(dims.spacingSm))
                                         Text(
@@ -501,7 +602,12 @@ fun AeonLineChart(
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = formatCurrencyRight(p.y, currency, precision, shorten = true),
+                                        text = formatCurrencyRight(
+                                            p.y,
+                                            currency,
+                                            precision,
+                                            shorten = true
+                                        ),
                                         style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
@@ -519,7 +625,12 @@ fun AeonLineChart(
 @Composable
 fun AeonLineChartPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(AeonTheme.dimensions.screenPadding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(AeonTheme.dimensions.screenPadding)
+        ) {
             AeonLineChart(
                 series = listOf(
                     AeonLineChartSeries(

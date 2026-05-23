@@ -2,13 +2,28 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,11 +37,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
-import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import kotlin.math.roundToInt
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @Composable
@@ -47,12 +67,12 @@ fun AeonChartInteractionPopup(
     onNavigateToRecords: () -> Unit = {},
 ) {
     val dims = AeonTheme.dimensions
-    
+
     // Boundary-Aware Tooltip Positioning
     val tooltipWidth = if (hasSubcategories) 240.dp else 180.dp
     // Height is dynamic based on content but we need an estimate for positioning
     val tooltipHeightPxEstimate = 140.dp.value * density
-    
+
     val tooltipWidthPx = tooltipWidth.value * density
 
     val xPos = (touchPoint.x - (tooltipWidthPx / 2))
@@ -136,7 +156,9 @@ fun AeonChartInteractionPopup(
                 if (hasSubcategories && subcategoryCount > 1) {
                     Button(
                         onClick = onDrillInClick,
-                        modifier = Modifier.weight(1f).height(dims.spacing2xl),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(dims.spacing2xl),
                         contentPadding = PaddingValues(horizontal = dims.spacingSm),
                         shape = RoundedCornerShape(dims.spacingSm),
                         colors = ButtonDefaults.buttonColors(
@@ -148,10 +170,14 @@ fun AeonChartInteractionPopup(
                             }
                         )
                     ) {
-                        Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(dims.iconSizeXs + 2.dp))
+                        Icon(
+                            Icons.Default.ZoomIn,
+                            null,
+                            modifier = Modifier.size(dims.iconSizeXs + 2.dp)
+                        )
                         Spacer(modifier = Modifier.width(dims.spacingXs))
                         Text(
-                            "DIVE IN ($subcategoryCount)", 
+                            "DIVE IN ($subcategoryCount)",
                             style = AppTextStyles.transactionSwipeAction.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
@@ -159,10 +185,12 @@ fun AeonChartInteractionPopup(
                         )
                     }
                 }
-                
+
                 Button(
                     onClick = onNavigateToRecords,
-                    modifier = Modifier.weight(1f).height(dims.spacing2xl),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(dims.spacing2xl),
                     contentPadding = PaddingValues(horizontal = dims.spacingSm),
                     shape = RoundedCornerShape(dims.spacingSm),
                     colors = ButtonDefaults.buttonColors(
@@ -170,10 +198,14 @@ fun AeonChartInteractionPopup(
                         contentColor = AppColors.primary
                     )
                 ) {
-                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(dims.iconSizeXs + 2.dp))
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        null,
+                        modifier = Modifier.size(dims.iconSizeXs + 2.dp)
+                    )
                     Spacer(modifier = Modifier.width(dims.spacingXs))
                     Text(
-                        "RECORDS", 
+                        "RECORDS",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp
@@ -189,7 +221,9 @@ fun AeonChartInteractionPopup(
 @Composable
 fun AeonChartInteractionPopupPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.size(300.dp).padding(20.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier
+            .size(300.dp)
+            .padding(20.dp), contentAlignment = Alignment.Center) {
             AeonChartInteractionPopup(
                 name = "Food & Dining",
                 value = BigDecimal("450.75"),

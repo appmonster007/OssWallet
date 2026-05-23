@@ -1,24 +1,26 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -69,6 +71,7 @@ fun <T, ID> AeonHybridSelector(
                             }
                             onSelectionChange(newSelected)
                         }
+
                         AeonSelectMode.MANAGEMENT -> onEditClick(item)
                         else -> {}
                     }
@@ -82,7 +85,10 @@ fun <T, ID> AeonHybridSelector(
                 trailingContent = if (mode == AeonSelectMode.MANAGEMENT) {
                     {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(onClick = { onAddChildClick(item) }, modifier = Modifier.size(32.dp)) {
+                            IconButton(
+                                onClick = { onAddChildClick(item) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     Icons.Rounded.Add,
                                     contentDescription = "Add",
@@ -90,7 +96,10 @@ fun <T, ID> AeonHybridSelector(
                                     tint = AppColors.primary
                                 )
                             }
-                            IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(32.dp)) {
+                            IconButton(
+                                onClick = { onEditClick(item) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     Icons.Rounded.Edit,
                                     contentDescription = "Edit",

@@ -1,16 +1,50 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AirplanemodeActive
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Dining
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Flight
+import androidx.compose.material.icons.rounded.Hotel
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.ShoppingBasket
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -113,7 +147,11 @@ fun <T, ID> AeonHierarchicalHybridSelector(
                         color = AppColors.insetSurface.copy(alpha = 0.5f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(noneIcon, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                noneIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -180,8 +218,12 @@ private fun <T, ID> RecursiveHybridNode(
     val itemId = idMapper(item)
     val children = allItems.filter { parentIdMapper(it) == itemId }.sortedBy { labelMapper(it) }
     var expanded by remember {
-        mutableStateOf(startExpanded && (selectedIds.contains(itemId) ||
-            selectedIds.any { id -> allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId }))
+        mutableStateOf(
+            startExpanded && (selectedIds.contains(itemId) ||
+                selectedIds.any { id ->
+                    allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId
+                })
+        )
     }
 
     // Alternating contrast backgrounds for levels
@@ -216,7 +258,8 @@ private fun <T, ID> RecursiveHybridNode(
                         AeonSelectMode.SINGLE -> onSelectionChange(setOf(itemId))
                         AeonSelectMode.PARENT -> onParentSelected(itemId)
                         AeonSelectMode.MULTI -> {
-                            val descendants = collectDescendantIds(itemId, allItems, idMapper, parentIdMapper)
+                            val descendants =
+                                collectDescendantIds(itemId, allItems, idMapper, parentIdMapper)
                             val newSelected = if (itemId in selectedIds) {
                                 selectedIds - itemId - descendants
                             } else {
@@ -224,6 +267,7 @@ private fun <T, ID> RecursiveHybridNode(
                             }
                             onSelectionChange(newSelected)
                         }
+
                         AeonSelectMode.MANAGEMENT -> onEditClick(item)
                     }
                 }
@@ -384,12 +428,13 @@ private fun <T, ID> HybridSelectItem(
                         )
                     }
                 }
+
                 AeonSelectMode.MULTI -> {
                     Switch(
                         checked = isSelected,
-                        onCheckedChange = { 
+                        onCheckedChange = {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onClick() 
+                            onClick()
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = AppColors.switchThumbOn,
@@ -397,6 +442,7 @@ private fun <T, ID> HybridSelectItem(
                         )
                     )
                 }
+
                 AeonSelectMode.MANAGEMENT -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         IconButton(onClick = onAddChildClick, modifier = Modifier.size(32.dp)) {
@@ -506,4 +552,9 @@ fun AeonHierarchicalHybridSelectorManagementPreview() {
     }
 }
 
-private data class PreviewItem(val id: Long, val name: String, val parentId: Long?, val icon: ImageVector)
+private data class PreviewItem(
+    val id: Long,
+    val name: String,
+    val parentId: Long?,
+    val icon: ImageVector
+)

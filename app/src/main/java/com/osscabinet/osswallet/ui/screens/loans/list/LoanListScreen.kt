@@ -1,28 +1,38 @@
 package com.osscabinet.ossWallet.ui.screens.loans.list
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,13 +41,13 @@ import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.theme.WarningColor
+import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +86,9 @@ fun LoanListScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             if (loans.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -112,8 +124,15 @@ fun LoanListScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(
+                        start = AeonTheme.dimensions.screenPadding,
+                        end = AeonTheme.dimensions.screenPadding,
+                        top = AeonTheme.dimensions.screenPadding,
+                        bottom = scrollBottomPadding()
+                    ),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                 ) {
                     if (active.isNotEmpty()) {
@@ -173,7 +192,8 @@ private fun LoanItem(
 ) {
     val typeLabel = if (loan.loanType == LoanType.LENT) "Lent to" else "Borrowed from"
     val accentColor = if (loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
-    val loanIcon = if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
+    val loanIcon =
+        if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
 
     ManagementListItem(
         onClick = onEdit,

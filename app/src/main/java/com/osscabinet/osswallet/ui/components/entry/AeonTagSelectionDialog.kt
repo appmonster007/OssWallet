@@ -1,9 +1,25 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,8 +27,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,12 +60,11 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonColorSelection
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -72,7 +100,12 @@ fun AeonTagSelectionDialog(
     val filteredTags = remember(allAvailableTags, debouncedQuery) {
         val trimmed = debouncedQuery.trim()
         if (trimmed.isBlank()) allAvailableTags
-        else allAvailableTags.filter { it.name.contains(trimmed, ignoreCase = true) || it.name.fuzzyMatch(trimmed) }
+        else allAvailableTags.filter {
+            it.name.contains(
+                trimmed,
+                ignoreCase = true
+            ) || it.name.fuzzyMatch(trimmed)
+        }
     }
 
     val exactMatchExists = remember(allAvailableTags, searchQuery) {
@@ -111,8 +144,8 @@ fun AeonTagSelectionDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .onGloballyPositioned { 
-                                searchFieldHeight = it.size.height 
+                            .onGloballyPositioned {
+                                searchFieldHeight = it.size.height
                             }
                     ) {
                         AeonSearchField(
@@ -126,7 +159,9 @@ fun AeonTagSelectionDialog(
                     // Showing always now to allow selection from existing tags even when not searching
                     Popup(
                         alignment = Alignment.TopStart,
-                        offset = IntOffset(0, searchFieldHeight + with(density) { 4.dp.roundToPx() })
+                        offset = IntOffset(
+                            0,
+                            searchFieldHeight + with(density) { 4.dp.roundToPx() })
                     ) {
                         Column { // Changed from Box to Column to provide ColumnScope
                             AnimatedVisibility(
@@ -141,7 +176,10 @@ fun AeonTagSelectionDialog(
                                     shape = RoundedCornerShape(16.dp),
                                     color = AppColors.componentOnCard,
                                     tonalElevation = 8.dp,
-                                    border = BorderStroke(0.5.dp, AppColors.outlineVariant.copy(alpha = 0.5f))
+                                    border = BorderStroke(
+                                        0.5.dp,
+                                        AppColors.outlineVariant.copy(alpha = 0.5f)
+                                    )
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -155,13 +193,23 @@ fun AeonTagSelectionDialog(
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Row(
-                                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 8.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                                 ) {
-                                                    Icon(Icons.Rounded.Add, null, tint = AppColors.primary, modifier = Modifier.size(20.dp))
+                                                    Icon(
+                                                        Icons.Rounded.Add,
+                                                        null,
+                                                        tint = AppColors.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
                                                     Text(
-                                                        stringResource(R.string.tag_create_new, trimmed),
+                                                        stringResource(
+                                                            R.string.tag_create_new,
+                                                            trimmed
+                                                        ),
                                                         color = AppColors.primary,
                                                         style = AppTextStyles.listItemTitle
                                                     )
@@ -170,11 +218,21 @@ fun AeonTagSelectionDialog(
                                         }
 
                                         filteredTags.forEach { tag ->
-                                            val isSelected = currentSelection.any { it.equals(tag.name, ignoreCase = true) }
+                                            val isSelected = currentSelection.any {
+                                                it.equals(
+                                                    tag.name,
+                                                    ignoreCase = true
+                                                )
+                                            }
                                             TextButton(
                                                 onClick = {
                                                     currentSelection = if (isSelected) {
-                                                        currentSelection.filter { !it.equals(tag.name, ignoreCase = true) }.toSet()
+                                                        currentSelection.filter {
+                                                            !it.equals(
+                                                                tag.name,
+                                                                ignoreCase = true
+                                                            )
+                                                        }.toSet()
                                                     } else {
                                                         currentSelection + tag.name
                                                     }
@@ -184,23 +242,33 @@ fun AeonTagSelectionDialog(
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Row(
-                                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 8.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
                                                             .size(12.dp)
-                                                            .background(Color(tag.colorHex), RoundedCornerShape(2.dp))
+                                                            .background(
+                                                                Color(tag.colorHex),
+                                                                RoundedCornerShape(2.dp)
+                                                            )
                                                     )
                                                     Text(
-                                                        tag.name, 
+                                                        tag.name,
                                                         color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
                                                         style = AppTextStyles.listItemTitle,
                                                         modifier = Modifier.weight(1f)
                                                     )
                                                     if (isSelected) {
-                                                        Icon(Icons.Rounded.Check, null, tint = AppColors.primary, modifier = Modifier.size(16.dp))
+                                                        Icon(
+                                                            Icons.Rounded.Check,
+                                                            null,
+                                                            tint = AppColors.primary,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
                                                     }
                                                 }
                                             }
@@ -228,14 +296,25 @@ fun AeonTagSelectionDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         currentSelection.forEach { tagName ->
-                            val tagColor = allAvailableTags.find { it.name.equals(tagName, ignoreCase = true) }?.colorHex?.let { Color(it) }
+                            val tagColor = allAvailableTags.find {
+                                it.name.equals(
+                                    tagName,
+                                    ignoreCase = true
+                                )
+                            }?.colorHex?.let { Color(it) }
                                 ?: AppColors.primary
-                            
+
                             InputChip(
                                 selected = true,
                                 onClick = { currentSelection = currentSelection - tagName },
                                 label = { Text(tagName) },
-                                trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(16.dp)) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = InputChipDefaults.inputChipColors(
                                     selectedContainerColor = tagColor.copy(alpha = 0.12f),
@@ -346,7 +425,7 @@ fun AeonTagCreateDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { 
+                        onClick = {
                             if (name.isNotBlank()) {
                                 val colorInt = try {
                                     android.graphics.Color.parseColor(accentColorHex)

@@ -1,12 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,18 +16,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
 
 /**
  * Unified transaction header composable that can be used for both weekly and daily transaction summaries.
@@ -85,7 +85,13 @@ fun TransactionHeader(
                     )
                     if (!showCurrencyBreakdown) {
                         Text(
-                            text = "∑ ${formatCurrencyRight(netBase, baseCurrency, shorten = true)}",
+                            text = "∑ ${
+                                formatCurrencyRight(
+                                    netBase,
+                                    baseCurrency,
+                                    shorten = true
+                                )
+                            }",
                             style = styles.baseValueStyle,
                             color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
                             textAlign = TextAlign.Center,

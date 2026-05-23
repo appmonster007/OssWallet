@@ -1,15 +1,24 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import java.math.BigDecimal
 
 data class BudgetEntryState(
     val name: String = "",
     val limitAmount: String = "",
     val currency: String = "USD",
     val timelineRange: TimelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
-    val selectedTrackTypes: Set<TransactionType> = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+    val selectedTrackTypes: Set<TransactionType> = setOf(
+        TransactionType.EXPENSE,
+        TransactionType.INCOME
+    ),
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
     val note: String = "",
@@ -73,7 +82,7 @@ data class BudgetEntryState(
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
     val canSave: Boolean
-        get() = name.isNotBlank() && 
-                 limitAmount.toBigDecimalOrNull() != null &&
-                 !navTriggered
+        get() = name.isNotBlank() &&
+                limitAmount.toBigDecimalOrNull() != null &&
+                !navTriggered
 }

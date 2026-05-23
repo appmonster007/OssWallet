@@ -38,7 +38,11 @@ class ExchangeRateApiProvider(
         }
     }
 
-    override suspend fun convertCurrencyAmount(amount: Double, from: String, to: String): Result<Double> {
+    override suspend fun convertCurrencyAmount(
+        amount: Double,
+        from: String,
+        to: String
+    ): Result<Double> {
         return fetchRate(from, to).map { it * amount }
     }
 
@@ -58,7 +62,13 @@ class ExchangeRateApiProvider(
         AMD("AMD", "Armenian Dram", "Armenia"),
         ANG("ANG", "Netherlands Antillian Guilder", "Netherlands Antilles"),
         AOA("AOA", "Angolan Kwanza", "Angola"),
-        ARS("ARS", "Argentine Peso", "Argentina", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        ARS(
+            "ARS",
+            "Argentine Peso",
+            "Argentina",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         AUD("AUD", "Australian Dollar", "Australia"),
         AWG("AWG", "Aruban Florin", "Aruba"),
         AZN("AZN", "Azerbaijani Manat", "Azerbaijan"),
@@ -138,7 +148,13 @@ class ExchangeRateApiProvider(
         LKR("LKR", "Sri Lanka Rupee", "Sri Lanka"),
         LRD("LRD", "Liberian Dollar", "Liberia"),
         LSL("LSL", "Lesotho Loti", "Lesotho"),
-        LYD("LYD", "Libyan Dinar", "Libya", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        LYD(
+            "LYD",
+            "Libyan Dinar",
+            "Libya",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         MAD("MAD", "Moroccan Dirham", "Morocco"),
         MDL("MDL", "Moldovan Leu", "Moldova"),
         MGA("MGA", "Malagasy Ariary", "Madagascar"),
@@ -182,9 +198,21 @@ class ExchangeRateApiProvider(
         SLE("SLE", "Sierra Leonean Leone", "Sierra Leone"),
         SOS("SOS", "Somali Shilling", "Somalia"),
         SRD("SRD", "Surinamese Dollar", "Suriname"),
-        SSP("SSP", "South Sudanese Pound", "South Sudan", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        SSP(
+            "SSP",
+            "South Sudanese Pound",
+            "South Sudan",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         STN("STN", "São Tomé and Príncipe Dobra", "São Tomé and Príncipe"),
-        SYP("SYP", "Syrian Pound", "Syria", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        SYP(
+            "SYP",
+            "Syrian Pound",
+            "Syria",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         SZL("SZL", "Eswatini Lilangeni", "Eswatini"),
         THB("THB", "Thai Baht", "Thailand"),
         TJS("TJS", "Tajikistani Somoni", "Tajikistan"),
@@ -201,7 +229,13 @@ class ExchangeRateApiProvider(
         USD("USD", "United States Dollar", "United States"),
         UYU("UYU", "Uruguayan Peso", "Uruguay"),
         UZS("UZS", "Uzbekistani So'm", "Uzbekistan"),
-        VES("VES", "Venezuelan Bolívar Soberano", "Venezuela", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        VES(
+            "VES",
+            "Venezuelan Bolívar Soberano",
+            "Venezuela",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         VND("VND", "Vietnamese Đồng", "Vietnam"),
         VUV("VUV", "Vanuatu Vatu", "Vanuatu"),
         WST("WST", "Samoan Tālā", "Samoa"),
@@ -210,10 +244,22 @@ class ExchangeRateApiProvider(
         XDR("XDR", "Special Drawing Rights", "International Monetary Fund"),
         XOF("XOF", "West African CFA franc", "CFA"),
         XPF("XPF", "CFP Franc", "Collectivités d'Outre-Mer"),
-        YER("YER", "Yemeni Rial", "Yemen", true, "Heightened volatility & substantial differences between actually available rates and official ones."),
+        YER(
+            "YER",
+            "Yemeni Rial",
+            "Yemen",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        ),
         ZAR("ZAR", "South African Rand", "South Africa"),
         ZMW("ZMW", "Zambian Kwacha", "Zambia"),
-        ZWL("ZWL", "Zimbabwean Dollar", "Zimbabwe", true, "Heightened volatility & substantial differences between actually available rates and official ones.");
+        ZWL(
+            "ZWL",
+            "Zimbabwean Dollar",
+            "Zimbabwe",
+            true,
+            "Heightened volatility & substantial differences between actually available rates and official ones."
+        );
 
         fun toMetadata(): CurrencyMetadata = CurrencyMetadata(
             code = code,

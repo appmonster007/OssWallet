@@ -58,7 +58,7 @@ data class AeonDimensions(
     val listPadding: Dp = AeonSize.D12.value,
     // Spacing between items in a Grid
     val gridPadding: Dp = AeonSize.D12.value,
-    
+
     /**
      * SEMANTIC SPACING
      * Vertical and horizontal gaps between related components.
@@ -77,7 +77,7 @@ data class AeonDimensions(
     val spacing2xl: Dp = AeonSize.D32.value,
     // Hero sections or large empty states
     val spacing3xl: Dp = AeonSize.D48.value,
-    
+
     /**
      * ICON SIZES
      * Standardized bounding boxes for vector assets.
@@ -96,7 +96,7 @@ data class AeonDimensions(
     val iconSize2xl: Dp = AeonSize.D52.value,
     // Massive empty state or landing icons
     val iconSize3xl: Dp = AeonSize.D64.value,
-    
+
     /**
      * CORNER RADII
      * The curvature that defines the Aeon look.

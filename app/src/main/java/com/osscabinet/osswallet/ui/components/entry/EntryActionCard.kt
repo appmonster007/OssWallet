@@ -5,10 +5,23 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -20,15 +33,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
 
 /**
  * Shared action card for entry screens.
@@ -61,7 +72,7 @@ fun EntryActionCard(
         else AppColors.cardSurface,
         label = "bgColor"
     )
-    
+
     val borderColor by animateColorAsState(
         if (isSelected) selectedColor
         else AppColors.divider.copy(alpha = 0.15f),
@@ -118,7 +129,9 @@ fun EntryActionCard(
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     ),
-                    color = if (isSelected) selectedColor.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(alpha = 0.6f)
+                    color = if (isSelected) selectedColor.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(
+                        alpha = 0.6f
+                    )
                 )
                 Text(
                     text = value,
@@ -143,7 +156,9 @@ fun EntryActionCard(
                         trailingIcon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else AppColors.contentSecondary.copy(alpha = 0.4f)
+                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else AppColors.contentSecondary.copy(
+                            alpha = 0.4f
+                        )
                     )
                 }
             }

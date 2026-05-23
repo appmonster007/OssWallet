@@ -132,7 +132,8 @@ private data class LocationResult(
 
 private fun nominatimSearch(query: String): List<LocationResult> {
     val encoded = URLEncoder.encode(query, "UTF-8")
-    val url = "https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=6&addressdetails=1"
+    val url =
+        "https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=6&addressdetails=1"
     val conn = URL(url).openConnection() as HttpURLConnection
     conn.setRequestProperty("User-Agent", "OssWallet/1.0")
     conn.connect()
@@ -147,9 +148,18 @@ private fun nominatimSearch(query: String): List<LocationResult> {
         val lon = obj.optString("lon", "0").toDoubleOrNull() ?: 0.0
         val address = obj.optJSONObject("address")
         val cityName = address?.run {
-            optString("city").ifBlank { optString("town").ifBlank { optString("village").ifBlank { optString("suburb") } } }
+            optString("city").ifBlank {
+                optString("town").ifBlank {
+                    optString("village").ifBlank {
+                        optString(
+                            "suburb"
+                        )
+                    }
+                }
+            }
         } ?: ""
-        val shortName = cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: displayName }
+        val shortName =
+            cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: displayName }
         LocationResult(displayName, shortName, lat, lon)
     }
 }
@@ -167,11 +177,22 @@ private fun nominatimReverse(lat: Double, lon: Double): LocationResult? = try {
     val rawName = obj.optString("name", "")
     val address = obj.optJSONObject("address")
     val cityName = address?.run {
-        optString("city").ifBlank { optString("town").ifBlank { optString("village").ifBlank { optString("suburb") } } }
+        optString("city").ifBlank {
+            optString("town").ifBlank {
+                optString("village").ifBlank {
+                    optString(
+                        "suburb"
+                    )
+                }
+            }
+        }
     } ?: ""
-    val shortName = rawName.ifBlank { cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: "" } }
+    val shortName =
+        rawName.ifBlank { cityName.ifBlank { displayName.split(",").firstOrNull()?.trim() ?: "" } }
     LocationResult(displayName, shortName, lat, lon)
-} catch (_: Exception) { null }
+} catch (_: Exception) {
+    null
+}
 
 @SuppressLint("MissingPermission")
 private fun fetchLastLocation(
@@ -194,10 +215,10 @@ fun AeonLocationSelection(
     onLocationSelected: (gpsLocation: String, locationName: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val context        = LocalContext.current
-    val clipboard      = LocalClipboardManager.current
-    val haptics        = LocalHapticFeedback.current
-    val focusManager   = LocalFocusManager.current
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val haptics = LocalHapticFeedback.current
+    val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
 
     val parsedCoords = remember(gpsLocation) {
@@ -210,20 +231,20 @@ fun AeonLocationSelection(
         parsedCoords?.let { GeoPoint(it.first, it.second) } ?: GeoPoint(20.0, 0.0)
     }
 
-    var mapCenter        by remember { mutableStateOf(initialGeoPoint) }
-    var mapZoom          by remember { mutableDoubleStateOf(if (parsedCoords != null) 14.0 else 2.0) }
+    var mapCenter by remember { mutableStateOf(initialGeoPoint) }
+    var mapZoom by remember { mutableDoubleStateOf(if (parsedCoords != null) 14.0 else 2.0) }
     var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(if (parsedCoords != null) initialGeoPoint else null) }
     var selectedLocation by remember { mutableStateOf<LocationResult?>(null) }
-    var isGeocoding      by remember { mutableStateOf(parsedCoords != null) }
+    var isGeocoding by remember { mutableStateOf(parsedCoords != null) }
 
-    var searchQuery      by remember { mutableStateOf("") }
-    var searchResults    by remember { mutableStateOf<List<LocationResult>>(emptyList()) }
-    val recentLocations  = remember { mutableStateListOf<LocationResult>() }
-    var isSearchActive   by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<LocationResult>>(emptyList()) }
+    val recentLocations = remember { mutableStateListOf<LocationResult>() }
+    var isSearchActive by remember { mutableStateOf(false) }
 
-    var showPanel          by remember { mutableStateOf(parsedCoords != null) }
-    var isLocating         by remember { mutableStateOf(false) }
-    var isSearchFocused    by remember { mutableStateOf(false) }
+    var showPanel by remember { mutableStateOf(parsedCoords != null) }
+    var isLocating by remember { mutableStateOf(false) }
+    var isSearchFocused by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
 
     val isInspectionMode = LocalInspectionMode.current
@@ -243,24 +264,30 @@ fun AeonLocationSelection(
     // ── Debounced forward-search ──────────────────────────────────────────────
     LaunchedEffect(searchQuery) {
         if (isInspectionMode) return@LaunchedEffect
-        if (searchQuery.isBlank()) { searchResults = emptyList(); return@LaunchedEffect }
+        if (searchQuery.isBlank()) {
+            searchResults = emptyList(); return@LaunchedEffect
+        }
         delay(400)
         searchResults = withContext(Dispatchers.IO) {
-            try { nominatimSearch(searchQuery) } catch (_: Exception) { emptyList() }
+            try {
+                nominatimSearch(searchQuery)
+            } catch (_: Exception) {
+                emptyList()
+            }
         }
     }
 
     // ── Shared: select a geo-point and begin geocoding ────────────────────────
     fun selectPoint(geoPoint: GeoPoint, zoom: Double = 15.0) {
         focusManager.clearFocus()
-        searchQuery    = ""
+        searchQuery = ""
         isSearchActive = false
         selectedGeoPoint = geoPoint
         mapCenter = geoPoint
-        mapZoom   = zoom
+        mapZoom = zoom
         selectedLocation = null
         isGeocoding = true
-        showPanel   = true
+        showPanel = true
         coroutineScope.launch {
             if (isInspectionMode) {
                 isGeocoding = false
@@ -404,29 +431,29 @@ private fun AeonLocationSelectionContent(
     }
 
     // Colors / dims
-    val accentColor          = AppColors.accent
-    val accentArgb           = accentColor.toArgb()
-    val cardSurface          = AppColors.cardSurface
-    val panelSurface         = AppColors.panelSurface
-    val contentPrimary       = AppColors.contentPrimary
-    val contentSecondary     = AppColors.contentSecondary
-    val accentContainer      = AppColors.accentContainer
-    val onAccentContainer    = AppColors.onAccentContainer
-    val dividerColor         = AppColors.divider
-    val borderColor          = AppColors.border
-    val dims                 = AeonTheme.dimensions
+    val accentColor = AppColors.accent
+    val accentArgb = accentColor.toArgb()
+    val cardSurface = AppColors.cardSurface
+    val panelSurface = AppColors.panelSurface
+    val contentPrimary = AppColors.contentPrimary
+    val contentSecondary = AppColors.contentSecondary
+    val accentContainer = AppColors.accentContainer
+    val onAccentContainer = AppColors.onAccentContainer
+    val dividerColor = AppColors.divider
+    val borderColor = AppColors.border
+    val dims = AeonTheme.dimensions
 
-    val statusBarTop  = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val navBarBottom  = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     // ── Animated state for search bar elevation + GPS button position ─────────
     val searchElevation by animateDpAsState(
         targetValue = if (isSearchFocused) 8.dp else 4.dp,
-        label       = "searchElevation"
+        label = "searchElevation"
     )
     val gpsPaddingBottom by animateDpAsState(
         targetValue = if (showPanel) 240.dp + navBarBottom + dims.spacingMd else dims.spacingXl + navBarBottom,
-        label       = "gpsPaddingBottom"
+        label = "gpsPaddingBottom"
     )
 
     // ── GPS pulse ring animation ──────────────────────────────────────────────
@@ -442,18 +469,19 @@ private fun AeonLocationSelectionContent(
         label = "gpsRingAlpha"
     )
 
-    val showDropdown = isSearchActive && (searchResults.isNotEmpty() || (searchQuery.isBlank() && recentLocations.isNotEmpty()))
+    val showDropdown =
+        isSearchActive && (searchResults.isNotEmpty() || (searchQuery.isBlank() && recentLocations.isNotEmpty()))
 
     Box(modifier = modifier.fillMaxSize()) {
 
         // ── 1. Map ────────────────────────────────────────────────────────
         AeonOSMMap(
-            modifier     = Modifier.fillMaxSize(),
-            center       = mapCenter,
-            zoom         = mapZoom,
+            modifier = Modifier.fillMaxSize(),
+            center = mapCenter,
+            zoom = mapZoom,
             selectedPoint = selectedPoint,
-            accentArgb   = accentArgb,
-            onMapTap     = onMapTap
+            accentArgb = accentArgb,
+            onMapTap = onMapTap
         )
 
         // ── 2. Top bar: back + search pill ────────────────────────────────
@@ -462,38 +490,43 @@ private fun AeonLocationSelectionContent(
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .padding(
-                    top   = statusBarTop + dims.spacingMd,
+                    top = statusBarTop + dims.spacingMd,
                     start = dims.screenPadding,
-                    end   = dims.screenPadding
+                    end = dims.screenPadding
                 ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             // Back
             Surface(
-                modifier      = Modifier.size(44.dp),
-                shape         = CircleShape,
-                color         = cardSurface,
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = cardSurface,
                 shadowElevation = 6.dp,
-                onClick       = onDismiss
+                onClick = onDismiss
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector     = Icons.AutoMirrored.Rounded.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Back",
-                        tint            = contentPrimary,
-                        modifier        = Modifier.size(22.dp)
+                        tint = contentPrimary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
 
             // Search pill — elevation and background animate on focus
             Surface(
-                modifier        = Modifier.weight(1f).height(52.dp),
-                shape           = RoundedCornerShape(24.dp), // Match AeonSearchField
-                color           = if (isSearchFocused) panelSurface else cardSurface.copy(alpha = 0.9f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(24.dp), // Match AeonSearchField
+                color = if (isSearchFocused) panelSurface else cardSurface.copy(alpha = 0.9f),
                 shadowElevation = searchElevation,
-                border          = if (isSearchFocused) BorderStroke(1.dp, accentColor.copy(alpha = 0.5f)) else BorderStroke(0.5.dp, borderColor.copy(alpha = 0.2f))
+                border = if (isSearchFocused) BorderStroke(
+                    1.dp,
+                    accentColor.copy(alpha = 0.5f)
+                ) else BorderStroke(0.5.dp, borderColor.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier
@@ -504,19 +537,19 @@ private fun AeonLocationSelectionContent(
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = null,
-                        tint        = if (isSearchFocused) accentColor else contentSecondary,
-                        modifier    = Modifier.size(20.dp)
+                        tint = if (isSearchFocused) accentColor else contentSecondary,
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(dims.spacingSm))
                     BasicTextField(
-                        value       = searchQuery,
+                        value = searchQuery,
                         onValueChange = onSearchQueryChange,
-                        modifier    = Modifier
+                        modifier = Modifier
                             .weight(1f)
                             .focusRequester(searchFocusRequester)
                             .onFocusChanged { onSearchFocusChange(it.isFocused) },
-                        singleLine  = true,
-                        textStyle   = AppTextStyles.transactionTitle.copy(color = contentPrimary),
+                        singleLine = true,
+                        textStyle = AppTextStyles.transactionTitle.copy(color = contentPrimary),
                         decorationBox = { inner ->
                             Box {
                                 if (searchQuery.isEmpty()) {
@@ -533,18 +566,18 @@ private fun AeonLocationSelectionContent(
                     )
                     AnimatedVisibility(
                         visible = searchQuery.isNotEmpty(),
-                        enter   = fadeIn(),
-                        exit    = fadeOut()
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
                         IconButton(
-                            onClick  = onClearSearch,
+                            onClick = onClearSearch,
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Rounded.Close,
                                 contentDescription = "Clear search",
                                 modifier = Modifier.size(18.dp),
-                                tint     = contentSecondary
+                                tint = contentSecondary
                             )
                         }
                     }
@@ -554,35 +587,35 @@ private fun AeonLocationSelectionContent(
 
         // ── 3. Search results / recents dropdown ──────────────────────────
         AnimatedVisibility(
-            visible  = showDropdown,
+            visible = showDropdown,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .padding(
-                    top   = statusBarTop + dims.spacingMd + 52.dp + dims.spacingSm,
+                    top = statusBarTop + dims.spacingMd + 52.dp + dims.spacingSm,
                     start = dims.screenPadding + 44.dp + dims.spacingSm,
-                    end   = dims.screenPadding
+                    end = dims.screenPadding
                 ),
             enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            exit  = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
+            exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
             Surface(
-                shape           = RoundedCornerShape(dims.containerCornerRadius),
-                color           = cardSurface,
+                shape = RoundedCornerShape(dims.containerCornerRadius),
+                color = cardSurface,
                 shadowElevation = 12.dp,
-                border          = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
-                modifier        = Modifier.heightIn(max = 320.dp)
+                border = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
+                modifier = Modifier.heightIn(max = 320.dp)
             ) {
                 LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingSm)) {
                     if (searchQuery.isBlank() && recentLocations.isNotEmpty()) {
                         item {
                             Text(
                                 "RECENT PLACES",
-                                style    = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
-                                color    = contentSecondary,
+                                style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                                color = contentSecondary,
                                 modifier = Modifier.padding(
                                     horizontal = dims.spacingLg,
-                                    vertical   = dims.spacingXs
+                                    vertical = dims.spacingXs
                                 )
                             )
                         }
@@ -595,7 +628,7 @@ private fun AeonLocationSelectionContent(
                         itemsIndexed(searchResults, key = { idx, _ -> "search_$idx" }) { idx, loc ->
                             AnimatedVisibility(
                                 visible = idx < visibleResultCount,
-                                enter   = fadeIn(tween(180)) + expandVertically(tween(180))
+                                enter = fadeIn(tween(180)) + expandVertically(tween(180))
                             ) {
                                 LocationRow(loc, contentPrimary, contentSecondary, cardSurface) {
                                     onLocationClick(loc)
@@ -623,36 +656,36 @@ private fun AeonLocationSelectionContent(
                         .graphicsLayer {
                             scaleX = gpsRingScale
                             scaleY = gpsRingScale
-                            alpha  = gpsRingAlpha
+                            alpha = gpsRingAlpha
                         }
                 ) {
                     drawCircle(
-                        color  = accentColor,
+                        color = accentColor,
                         radius = size.minDimension / 2f,
-                        style  = Stroke(width = 2.dp.toPx())
+                        style = Stroke(width = 2.dp.toPx())
                     )
                 }
             }
             Surface(
-                modifier        = Modifier.size(48.dp),
-                shape           = RoundedCornerShape(16.dp), // Match AeonFloatingActionButton
-                color           = cardSurface,
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(16.dp), // Match AeonFloatingActionButton
+                color = cardSurface,
                 shadowElevation = 6.dp,
-                border          = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
-                onClick         = onGpsClick
+                border = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
+                onClick = onGpsClick
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (isLocating) {
                         CircularProgressIndicator(
-                            modifier    = Modifier.size(22.dp),
+                            modifier = Modifier.size(22.dp),
                             strokeWidth = 2.dp,
-                            color       = accentColor
+                            color = accentColor
                         )
                     } else {
                         Icon(
                             Icons.Rounded.GpsFixed,
                             contentDescription = "My location",
-                            tint     = accentColor,
+                            tint = accentColor,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -662,20 +695,23 @@ private fun AeonLocationSelectionContent(
 
         // ── 5. Location panel (scrim-free, slides up from bottom) ─────────
         AnimatedVisibility(
-            visible  = showPanel,
+            visible = showPanel,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit  = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
             Surface(
-                modifier        = Modifier.fillMaxWidth(),
-                shape           = RoundedCornerShape(topStart = dims.dialogCornerRadius, topEnd = dims.dialogCornerRadius),
-                color           = cardSurface.copy(alpha = 0.98f),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(
+                    topStart = dims.dialogCornerRadius,
+                    topEnd = dims.dialogCornerRadius
+                ),
+                color = cardSurface.copy(alpha = 0.98f),
                 shadowElevation = 24.dp,
-                tonalElevation  = 4.dp,
-                border          = BorderStroke(1.dp, borderColor.copy(alpha = 0.05f))
+                tonalElevation = 4.dp,
+                border = BorderStroke(1.dp, borderColor.copy(alpha = 0.05f))
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -693,10 +729,18 @@ private fun AeonLocationSelectionContent(
                         )
                         // Small × to dismiss panel without picking a location
                         IconButton(
-                            onClick  = onPanelDismiss,
-                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = dims.spacingMd).size(32.dp)
+                            onClick = onPanelDismiss,
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = dims.spacingMd)
+                                .size(32.dp)
                         ) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Dismiss", tint = contentSecondary, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Dismiss",
+                                tint = contentSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
 
@@ -712,20 +756,32 @@ private fun AeonLocationSelectionContent(
                             // Shimmer skeleton — two text lines
                             val shimmerTransition = rememberInfiniteTransition(label = "shimmer")
                             val shimmerX by shimmerTransition.animateFloat(
-                                initialValue  = 0f,
-                                targetValue   = 800f,
-                                animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing)),
-                                label         = "shimmerX"
+                                initialValue = 0f,
+                                targetValue = 800f,
+                                animationSpec = infiniteRepeatable(
+                                    tween(
+                                        1200,
+                                        easing = LinearEasing
+                                    )
+                                ),
+                                label = "shimmerX"
                             )
                             val shimmerBrush = Brush.linearGradient(
-                                colors = listOf(AppColors.insetSurface, AppColors.divider, AppColors.insetSurface),
-                                start  = Offset(shimmerX - 400f, 0f),
-                                end    = Offset(shimmerX, 0f)
+                                colors = listOf(
+                                    AppColors.insetSurface,
+                                    AppColors.divider,
+                                    AppColors.insetSurface
+                                ),
+                                start = Offset(shimmerX - 400f, 0f),
+                                end = Offset(shimmerX, 0f)
                             )
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+                                    .padding(
+                                        horizontal = dims.screenPadding,
+                                        vertical = dims.spacingLg
+                                    ),
                                 verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                             ) {
                                 Box(
@@ -743,40 +799,40 @@ private fun AeonLocationSelectionContent(
                             }
                         } else {
                             LocationPanelBody(
-                                location          = location,
-                                accentContainer   = accentContainer,
+                                location = location,
+                                accentContainer = accentContainer,
                                 onAccentContainer = onAccentContainer,
-                                contentPrimary    = contentPrimary,
-                                contentSecondary  = contentSecondary,
+                                contentPrimary = contentPrimary,
+                                contentSecondary = contentSecondary,
                                 onCopy = onCopyCoords
                             )
                         }
                     }
 
                     HorizontalDivider(
-                        modifier  = Modifier.padding(horizontal = dims.screenPadding),
-                        color     = dividerColor.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = dims.screenPadding),
+                        color = dividerColor.copy(alpha = 0.5f),
                         thickness = 0.5.dp
                     )
 
                     // Confirm button
                     Button(
                         onClick = onConfirmLocation,
-                        enabled  = selectedLocation != null && !isGeocoding,
+                        enabled = selectedLocation != null && !isGeocoding,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg)
                             .height(56.dp),
-                        shape    = RoundedCornerShape(dims.buttonCornerRadius),
-                        colors   = ButtonDefaults.buttonColors(
+                        shape = RoundedCornerShape(dims.buttonCornerRadius),
+                        colors = ButtonDefaults.buttonColors(
                             containerColor = accentColor,
-                            contentColor   = AppColors.onAccent
+                            contentColor = AppColors.onAccent
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                     ) {
                         Text(
                             "Confirm Location",
-                            style    = AppTextStyles.cardSectionTitle.copy(
+                            style = AppTextStyles.cardSectionTitle.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 0.5.sp
                             )
@@ -814,9 +870,9 @@ private fun LocationPanelBody(
         // Place name — visually dominant anchor
         if (location.shortName.isNotBlank()) {
             Text(
-                text     = location.shortName,
-                style    = AppTextStyles.heroAmount.copy(fontSize = 20.sp),
-                color    = contentPrimary,
+                text = location.shortName,
+                style = AppTextStyles.heroAmount.copy(fontSize = 20.sp),
+                color = contentPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -825,9 +881,9 @@ private fun LocationPanelBody(
 
         // Full address — caption style, muted
         Text(
-            text     = location.displayName,
-            style    = AppTextStyles.caption,
-            color    = contentSecondary,
+            text = location.displayName,
+            style = AppTextStyles.caption,
+            color = contentSecondary,
             maxLines = 2,
             lineHeight = 16.sp,
             overflow = TextOverflow.Ellipsis
@@ -837,8 +893,8 @@ private fun LocationPanelBody(
 
         // Coord chips + copy button on one row
         Row(
-            modifier              = Modifier.fillMaxWidth(),
-            verticalAlignment     = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             CoordChip("Latitude", location.lat, accentContainer, onAccentContainer)
@@ -880,14 +936,14 @@ private fun CoordChip(
         color = containerColor
     ) {
         Row(
-            modifier  = Modifier.padding(horizontal = dims.spacingLg, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = dims.spacingLg, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             Icon(
                 Icons.Rounded.Explore,
                 contentDescription = null,
-                tint     = contentColor,
+                tint = contentColor,
                 modifier = Modifier.size(14.dp)
             )
             Text(
@@ -947,7 +1003,7 @@ private fun LocationRow(
             }
         },
         modifier = Modifier.clickable(onClick = onClick),
-        colors   = ListItemDefaults.colors(containerColor = containerColor)
+        colors = ListItemDefaults.colors(containerColor = containerColor)
     )
 }
 
@@ -1004,7 +1060,10 @@ fun AeonLocationSelectionEmptyPreview() {
 @Composable
 fun AeonLocationSelectionWithPinPreview() {
     OssWalletTheme {
-        AeonLocationSelection(gpsLocation = "37.7749,-122.4194", onLocationSelected = { _, _ -> }, onDismiss = {})
+        AeonLocationSelection(
+            gpsLocation = "37.7749,-122.4194",
+            onLocationSelected = { _, _ -> },
+            onDismiss = {})
     }
 }
 
@@ -1015,16 +1074,16 @@ fun LocationPanelPreview() {
         Surface(color = AppColors.cardSurface) {
             LocationPanelBody(
                 location = LocationResult(
-                    displayName  = "Ferry Building, 1 Ferry Building, San Francisco, CA 94111, United States",
-                    shortName    = "Ferry Building",
-                    lat          = 37.79520,
-                    lon          = -122.39390
+                    displayName = "Ferry Building, 1 Ferry Building, San Francisco, CA 94111, United States",
+                    shortName = "Ferry Building",
+                    lat = 37.79520,
+                    lon = -122.39390
                 ),
-                accentContainer   = AppColors.accentContainer,
+                accentContainer = AppColors.accentContainer,
                 onAccentContainer = AppColors.onAccentContainer,
-                contentPrimary    = AppColors.contentPrimary,
-                contentSecondary  = AppColors.contentSecondary,
-                onCopy            = {}
+                contentPrimary = AppColors.contentPrimary,
+                contentSecondary = AppColors.contentSecondary,
+                onCopy = {}
             )
         }
     }

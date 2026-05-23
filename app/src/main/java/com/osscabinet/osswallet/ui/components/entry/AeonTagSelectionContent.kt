@@ -1,11 +1,26 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -22,24 +37,39 @@ import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Flip
 import androidx.compose.material.icons.rounded.SelectAll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -59,17 +89,21 @@ fun AeonTagSelectionContent(
     var isManagementMode by remember { mutableStateOf(!isSelectionModeEnabled) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
-    
+
     // Track newly added tags locally for immediate feedback
     var localTags by remember { mutableStateOf(emptyList<Tag>()) }
     val allTags = remember(tags, localTags) {
         (tags + localTags).distinctBy { it.name }.sortedBy { it.name }
     }
-    
+
     val filteredTags = remember(allTags, searchQuery) {
         val trimmed = searchQuery.trim()
         if (trimmed.isBlank()) allTags
-        else allTags.filter { it.name.contains(trimmed, ignoreCase = true) || it.name.fuzzyMatch(trimmed) }
+        else allTags.filter {
+            it.name.contains(trimmed, ignoreCase = true) || it.name.fuzzyMatch(
+                trimmed
+            )
+        }
     }
 
     val filteredNames = remember(filteredTags) { filteredTags.map { it.name }.toSet() }
@@ -88,13 +122,19 @@ fun AeonTagSelectionContent(
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     currentSelection = currentSelection + filteredNames
                 }) {
-                    Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.action_select_all))
+                    Icon(
+                        Icons.Rounded.SelectAll,
+                        contentDescription = stringResource(R.string.action_select_all)
+                    )
                 }
                 IconButton(onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     currentSelection = currentSelection - filteredNames
                 }) {
-                    Icon(Icons.Rounded.Deselect, contentDescription = stringResource(R.string.action_deselect_all))
+                    Icon(
+                        Icons.Rounded.Deselect,
+                        contentDescription = stringResource(R.string.action_deselect_all)
+                    )
                 }
                 IconButton(onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -105,14 +145,19 @@ fun AeonTagSelectionContent(
                     }
                     currentSelection = newSelection
                 }) {
-                    Icon(Icons.Rounded.Flip, contentDescription = stringResource(R.string.action_invert_selection))
+                    Icon(
+                        Icons.Rounded.Flip,
+                        contentDescription = stringResource(R.string.action_invert_selection)
+                    )
                 }
             }
 
             IconButton(onClick = { isManagementMode = !isManagementMode }) {
                 Icon(
                     if (isManagementMode) Icons.Rounded.Check else Icons.Rounded.Edit,
-                    contentDescription = if (isManagementMode) stringResource(R.string.action_done) else stringResource(R.string.action_edit_tags),
+                    contentDescription = if (isManagementMode) stringResource(R.string.action_done) else stringResource(
+                        R.string.action_edit_tags
+                    ),
                     tint = if (isManagementMode) AppColors.primary else AppColors.contentPrimary
                 )
             }
@@ -136,14 +181,25 @@ fun AeonTagSelectionContent(
                         verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         currentSelection.forEach { tagName ->
-                            val tagColor = allTags.find { it.name.equals(tagName, ignoreCase = true) }?.colorHex?.let { Color(it) } 
+                            val tagColor = allTags.find {
+                                it.name.equals(
+                                    tagName,
+                                    ignoreCase = true
+                                )
+                            }?.colorHex?.let { Color(it) }
                                 ?: AppColors.primary
-                            
+
                             InputChip(
                                 selected = true,
                                 onClick = { currentSelection = currentSelection - tagName },
                                 label = { Text(tagName, style = AppTextStyles.drawerItemLabel) },
-                                trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(dims.iconSizeXs + 4.dp)) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        null,
+                                        modifier = Modifier.size(dims.iconSizeXs + 4.dp)
+                                    )
+                                },
                                 shape = RoundedCornerShape(dims.spacingMd),
                                 colors = InputChipDefaults.inputChipColors(
                                     selectedContainerColor = tagColor.copy(alpha = 0.12f),
@@ -165,7 +221,7 @@ fun AeonTagSelectionContent(
 
             // Search and Create Row
             var selectedColor by remember { mutableStateOf(TagPresetColors.first()) }
-            
+
             Surface(
                 shape = RoundedCornerShape(dims.spacingXl),
                 color = AppColors.recessedSurface,
@@ -178,7 +234,7 @@ fun AeonTagSelectionContent(
                         placeholder = stringResource(R.string.tag_search_placeholder),
                         showBorder = false
                     )
-                    
+
                     // Creation Dropdown (only if no exact match)
                     AnimatedVisibility(visible = searchQuery.isNotBlank() && !exactMatchExists) {
                         Column {
@@ -187,7 +243,7 @@ fun AeonTagSelectionContent(
                                 thickness = (dims.spacingXs / 8),
                                 color = AppColors.divider.copy(alpha = 0.2f)
                             )
-                            
+
                             Column(modifier = Modifier.padding(dims.spacingLg)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -197,7 +253,11 @@ fun AeonTagSelectionContent(
                                         modifier = Modifier
                                             .size(dims.spacingXl)
                                             .background(selectedColor, CircleShape)
-                                            .border((dims.spacingXs / 4), AppColors.divider.copy(alpha = 0.3f), CircleShape)
+                                            .border(
+                                                (dims.spacingXs / 4),
+                                                AppColors.divider.copy(alpha = 0.3f),
+                                                CircleShape
+                                            )
                                     )
                                     Text(
                                         stringResource(R.string.tag_create_new, searchQuery.trim()),
@@ -207,7 +267,8 @@ fun AeonTagSelectionContent(
                                     )
                                     Button(
                                         onClick = {
-                                            val newTag = Tag(0, searchQuery.trim(), selectedColor.toArgb())
+                                            val newTag =
+                                                Tag(0, searchQuery.trim(), selectedColor.toArgb())
                                             localTags = localTags + newTag
                                             if (isSelectionModeEnabled) {
                                                 currentSelection = currentSelection + newTag.name
@@ -216,15 +277,21 @@ fun AeonTagSelectionContent(
                                             searchQuery = ""
                                         },
                                         shape = RoundedCornerShape(dims.spacingMd),
-                                        contentPadding = PaddingValues(horizontal = dims.spacingLg, vertical = 0.dp),
+                                        contentPadding = PaddingValues(
+                                            horizontal = dims.spacingLg,
+                                            vertical = 0.dp
+                                        ),
                                         modifier = Modifier.height(dims.spacingXl + dims.spacingMd)
                                     ) {
-                                        Text(stringResource(R.string.tag_create_action), style = AppTextStyles.listSectionHeader)
+                                        Text(
+                                            stringResource(R.string.tag_create_action),
+                                            style = AppTextStyles.listSectionHeader
+                                        )
                                     }
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(dims.spacingLg))
-                                
+
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
                                 ) {
@@ -257,8 +324,13 @@ fun AeonTagSelectionContent(
                     verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                 ) {
                     filteredTags.forEach { tag ->
-                        val isSelected = isSelectionModeEnabled && currentSelection.any { it.equals(tag.name, ignoreCase = true) }
-                        
+                        val isSelected = isSelectionModeEnabled && currentSelection.any {
+                            it.equals(
+                                tag.name,
+                                ignoreCase = true
+                            )
+                        }
+
                         EntrySelectionCard(
                             icon = Icons.AutoMirrored.Rounded.Label,
                             label = tag.name,
@@ -271,7 +343,12 @@ fun AeonTagSelectionContent(
                                     // Usually we use the trailing icons.
                                 } else if (isSelectionModeEnabled) {
                                     currentSelection = if (isSelected) {
-                                        currentSelection.filter { !it.equals(tag.name, ignoreCase = true) }.toSet()
+                                        currentSelection.filter {
+                                            !it.equals(
+                                                tag.name,
+                                                ignoreCase = true
+                                            )
+                                        }.toSet()
                                     } else {
                                         currentSelection + tag.name
                                     }
@@ -285,30 +362,30 @@ fun AeonTagSelectionContent(
                                             modifier = Modifier.size(dims.spacing2xl)
                                         ) {
                                             Icon(
-                                                Icons.Rounded.Edit, 
-                                                null, 
-                                                tint = AppColors.primary, 
+                                                Icons.Rounded.Edit,
+                                                null,
+                                                tint = AppColors.primary,
                                                 modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
                                         IconButton(
-                                            onClick = { 
+                                            onClick = {
                                                 onDeleteTag(tag)
                                             },
                                             modifier = Modifier.size(dims.spacing2xl)
                                         ) {
                                             Icon(
-                                                Icons.Rounded.DeleteOutline, 
-                                                null, 
-                                                tint = AppColors.error, 
+                                                Icons.Rounded.DeleteOutline,
+                                                null,
+                                                tint = AppColors.error,
                                                 modifier = Modifier.size(dims.containerCornerRadius)
                                             )
                                         }
                                     }
                                 } else if (isSelected) {
                                     Icon(
-                                        Icons.Rounded.CheckCircle, 
-                                        null, 
+                                        Icons.Rounded.CheckCircle,
+                                        null,
                                         tint = AppColors.primary,
                                         modifier = Modifier.size(dims.spacingXl)
                                     )
@@ -319,7 +396,7 @@ fun AeonTagSelectionContent(
                             }
                         )
                     }
-                    
+
                     if (filteredTags.isEmpty()) {
                         Box(
                             modifier = Modifier
@@ -329,21 +406,24 @@ fun AeonTagSelectionContent(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    Icons.AutoMirrored.Rounded.Label, 
-                                    null, 
+                                    Icons.AutoMirrored.Rounded.Label,
+                                    null,
                                     tint = AppColors.divider,
                                     modifier = Modifier.size(dims.iconSize2xl)
                                 )
                                 Spacer(modifier = Modifier.height(dims.spacingSm))
                                 Text(
-                                    if (searchQuery.isBlank()) stringResource(R.string.tag_no_tags_found) else stringResource(R.string.tag_no_match_query, searchQuery),
+                                    if (searchQuery.isBlank()) stringResource(R.string.tag_no_tags_found) else stringResource(
+                                        R.string.tag_no_match_query,
+                                        searchQuery
+                                    ),
                                     style = AppTextStyles.transactionTitle,
                                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                             }
                         }
                     }
-                    
+
                     // Bottom padding for scroll
                     Spacer(modifier = Modifier.height(dims.spacingXl))
                 }
@@ -365,7 +445,11 @@ fun AeonTagSelectionContent(
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = dims.spacingXs / 2)
                 ) {
                     Text(
-                        pluralStringResource(R.plurals.tag_done_selected, currentSelection.size, currentSelection.size),
+                        pluralStringResource(
+                            R.plurals.tag_done_selected,
+                            currentSelection.size,
+                            currentSelection.size
+                        ),
                         style = AppTextStyles.screenSubTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.5.sp

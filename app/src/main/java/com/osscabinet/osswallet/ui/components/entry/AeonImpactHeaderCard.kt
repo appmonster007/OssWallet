@@ -2,29 +2,44 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.CallSplit
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.Title
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Convenience overload for TransactionType.
@@ -95,7 +110,8 @@ fun AeonImpactHeaderCard(
         onExchangeRateClick = onExchangeRateClick,
         isSplitMode = isSplitMode,
         onSplitClick = onSplitClick,
-        amountColor = amountColor ?: Color(android.graphics.Color.parseColor(transactionType.colorHex)),
+        amountColor = amountColor
+            ?: Color(android.graphics.Color.parseColor(transactionType.colorHex)),
         supportedCurrencies = supportedCurrencies,
         targetSupportedCurrencies = targetSupportedCurrencies
     )
@@ -140,7 +156,10 @@ fun <T> AeonImpactHeaderCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = AppColors.cardSurface,
-        border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), AppColors.divider.copy(alpha = 0.15f)),
+        border = BorderStroke(
+            (AeonTheme.dimensions.spacingXs / 8),
+            AppColors.divider.copy(alpha = 0.15f)
+        ),
         shadowElevation = 0.dp
     ) {
         Column(
@@ -175,7 +194,9 @@ fun <T> AeonImpactHeaderCard(
                     if (onSplitClick != null && !isTransfer) {
                         IconButton(
                             onClick = onSplitClick,
-                            modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm).size(AeonTheme.dimensions.iconSizeLg)
+                            modifier = Modifier
+                                .padding(end = AeonTheme.dimensions.spacingSm)
+                                .size(AeonTheme.dimensions.iconSizeLg)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -191,8 +212,8 @@ fun <T> AeonImpactHeaderCard(
                                     Icons.AutoMirrored.Rounded.CallSplit,
                                     contentDescription = "Split Transaction",
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                    tint = if (isSplitMode) AppColors.primary 
-                                           else AppColors.contentSecondary.copy(alpha = 0.4f)
+                                    tint = if (isSplitMode) AppColors.primary
+                                    else AppColors.contentSecondary.copy(alpha = 0.4f)
                                 )
                             }
                         }
@@ -207,12 +228,18 @@ fun <T> AeonImpactHeaderCard(
                     onClick = onExchangeRateClick,
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     color = AppColors.primary.copy(alpha = 0.08f),
-                    border = BorderStroke((AeonTheme.dimensions.spacingXs / 8), AppColors.primary.copy(alpha = 0.15f))
+                    border = BorderStroke(
+                        (AeonTheme.dimensions.spacingXs / 8),
+                        AppColors.primary.copy(alpha = 0.15f)
+                    )
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingSm)
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.spacingMd,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        )
                     ) {
                         Icon(
                             Icons.Rounded.CurrencyExchange,
@@ -221,17 +248,20 @@ fun <T> AeonImpactHeaderCard(
                             tint = AppColors.primary
                         )
                         Text(
-                            text = "1:${transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
+                            text = "1:${
+                                transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()
+                            }",
                             style = AppTextStyles.chipLabel,
                             color = AppColors.primary
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 EntryAmountDisplay(
-                    amount = (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate).setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    amount = (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate)
+                        .setScale(2, RoundingMode.HALF_UP).toPlainString(),
                     currency = targetCurrency ?: currency,
                     onCurrencyClick = onTargetCurrencyClick,
                     onAmountClick = onAmountClick,

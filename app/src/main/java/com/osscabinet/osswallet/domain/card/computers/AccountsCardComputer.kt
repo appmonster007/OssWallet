@@ -13,7 +13,15 @@ class AccountsCardComputer(
 ) : CardDataComputer<AccountsCardConfig, CardRenderData.Accounts> {
     override val supportedType = CardType.ACCOUNTS
 
-    override suspend fun compute(input: CardInput, config: AccountsCardConfig): CardRenderData.Accounts {
-        return CardAggregationService.computeAccountsCard(queryService, input.profileId, input, config)
+    override suspend fun compute(
+        input: CardInput,
+        config: AccountsCardConfig
+    ): CardRenderData.Accounts {
+        return CardAggregationService.computeAccountsCard(
+            queryService,
+            input.profileId,
+            input,
+            config
+        )
     }
 }

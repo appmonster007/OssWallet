@@ -1,6 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.smartsuggestions
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,26 +18,44 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +68,8 @@ fun SmartSuggestionsScreen(
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
-    val visiblePatterns = patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
+    val visiblePatterns =
+        patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
 
     Scaffold(
         topBar = {
@@ -105,7 +134,8 @@ fun SmartSuggestionsScreen(
                             onAcceptAsPlannedPayment()
                         },
                         onDismiss = {
-                            dismissedPatterns = dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
+                            dismissedPatterns =
+                                dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
                         }
                     )
                 }
@@ -141,7 +171,10 @@ private fun SuggestionListItem(
                     color = AppColors.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingXs),
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.spacingSm,
+                            vertical = AeonTheme.dimensions.spacingXs
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
@@ -223,9 +256,14 @@ private fun SuggestionListItem(
             ) {
                 Column(modifier = Modifier.padding(AeonTheme.dimensions.spacingMd)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                        val categoryName = categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
+                        val categoryName =
+                            categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
                         DetailItem("Category", categoryName, Modifier.weight(1f))
-                        DetailItem("Account", pattern.accountId ?: "Outside Wallet", Modifier.weight(1f))
+                        DetailItem(
+                            "Account",
+                            pattern.accountId ?: "Outside Wallet",
+                            Modifier.weight(1f)
+                        )
                     }
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                     Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
@@ -240,7 +278,7 @@ private fun SuggestionListItem(
                     }
                 }
             }
-            
+
             Text(
                 text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
                 style = AppTextStyles.transactionSwipeAction,
@@ -271,7 +309,7 @@ private fun SuggestionListItem(
                         )
                     }
                 }
-                
+
                 if (!pattern.existsAsTemplate) {
                     Column(modifier = Modifier.weight(1f)) {
                         FilledTonalButton(

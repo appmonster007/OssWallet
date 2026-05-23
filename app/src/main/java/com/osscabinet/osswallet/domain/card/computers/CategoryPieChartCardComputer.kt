@@ -17,9 +17,17 @@ class CategoryPieChartCardComputer :
     CardDataComputer<CategoryPieChartCardConfig, CardRenderData.CategoryPieChart> {
     override val supportedType = CardType.CATEGORY_PIE_CHART
 
-    override suspend fun compute(input: CardInput, config: CategoryPieChartCardConfig): CardRenderData.CategoryPieChart {
+    override suspend fun compute(
+        input: CardInput,
+        config: CategoryPieChartCardConfig
+    ): CardRenderData.CategoryPieChart {
         // Step 1 & 2: Resolve effective filter using the canonical pipeline
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = resolveEffectiveFilter(
+            input.filter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
 
         // Expand category IDs to include children using the pre-computed cache
         val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
@@ -49,22 +57,23 @@ class CategoryPieChartCardComputer :
         )
 
         // Step 4: Compute previous period total if comparison is enabled
-        val previousTotal: BigDecimal? = if (config.showComparison && finalFilter.timelineRange !is TimelineRange.AllTime) {
-            val (prevStart, prevEnd) = TimelineService.getPreviousRange(finalFilter.timelineRange)
-            if (prevStart != null && prevEnd != null) {
-                val prevFilter = finalFilter.copy(
-                    timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
-                )
-                val prevTx = TransactionFilterService.filter(input.transactions, prevFilter)
-                val prevTree = AggregationService.buildCategoryTree(
-                    transactions = prevTx,
-                    allCategories = input.categories,
-                    exchangeRates = input.exchangeRates,
-                    baseCurrency = input.displayCurrency
-                )
-                prevTree.sumOf { it.netBalance.abs() }
+        val previousTotal: BigDecimal? =
+            if (config.showComparison && finalFilter.timelineRange !is TimelineRange.AllTime) {
+                val (prevStart, prevEnd) = TimelineService.getPreviousRange(finalFilter.timelineRange)
+                if (prevStart != null && prevEnd != null) {
+                    val prevFilter = finalFilter.copy(
+                        timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
+                    )
+                    val prevTx = TransactionFilterService.filter(input.transactions, prevFilter)
+                    val prevTree = AggregationService.buildCategoryTree(
+                        transactions = prevTx,
+                        allCategories = input.categories,
+                        exchangeRates = input.exchangeRates,
+                        baseCurrency = input.displayCurrency
+                    )
+                    prevTree.sumOf { it.netBalance.abs() }
+                } else null
             } else null
-        } else null
 
         return CardRenderData.CategoryPieChart(config, tree, input.displayCurrency, previousTotal)
     }

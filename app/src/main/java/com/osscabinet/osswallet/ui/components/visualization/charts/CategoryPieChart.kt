@@ -2,19 +2,14 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -23,24 +18,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import kotlin.math.atan2
-import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.sin
 import kotlin.math.sqrt
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
  * Interactive pie wheel chart for category breakdown.
@@ -59,12 +50,12 @@ fun CategoryBreakdownPieChart(
     var currentData by remember { mutableStateOf(data) }
     val backgroundColor = AppColors.screenBackground
     val surfaceColor = AppColors.panelSurface
-    
+
     // When data changes, reset to top-level view
     if (data != currentData && !showSubcategories) {
         currentData = data
     }
-    
+
     Box(modifier = modifier) {
         Canvas(
             modifier = Modifier
@@ -75,19 +66,19 @@ fun CategoryBreakdownPieChart(
                         val currentTime = System.currentTimeMillis()
                         val isDoubleClick = currentTime - lastTapTime < 300L
                         lastTapTime = currentTime
-                        
+
                         val centerX = size.width / 2
                         val centerY = size.height / 2
                         val dx = offset.x - centerX
                         val dy = offset.y - centerY
                         val distance = sqrt(dx * dx + dy * dy)
                         val radius = min(size.width, size.height) / 2 * 0.8f
-                        
+
                         if (distance <= radius) {
                             val angle = atan2(dy, dx).let {
                                 if (it < 0) it + 2 * Math.PI else it
                             }.toFloat()
-                            
+
                             var currentAngle = 0f
                             for (segment in currentData) {
                                 val sweepAngle = segment.percentage * 360f
@@ -116,12 +107,12 @@ fun CategoryBreakdownPieChart(
             val centerY = size.height / 2
             val radius = min(size.width, size.height) / 2 * 0.8f
             var startAngle = -90f
-            
+
             for (segment in currentData) {
                 val sweepAngle = segment.percentage * 360f
                 val isSelected = selectedSegment?.category == segment.category
                 val segmentRadius = if (isSelected) radius * 1.05f else radius
-                
+
                 drawArc(
                     color = Color(segment.colorHex),
                     startAngle = startAngle,
@@ -133,7 +124,7 @@ fun CategoryBreakdownPieChart(
                         centerY - segmentRadius
                     )
                 )
-                
+
                 // Draw segment separator
                 drawArc(
                     color = backgroundColor,
@@ -146,10 +137,10 @@ fun CategoryBreakdownPieChart(
                         centerY - segmentRadius
                     )
                 )
-                
+
                 startAngle += sweepAngle
             }
-            
+
             // Draw center circle for donut chart effect
             drawArc(
                 color = surfaceColor,
@@ -163,7 +154,7 @@ fun CategoryBreakdownPieChart(
                 )
             )
         }
-        
+
         // Center text overlay
         if (showLabels) {
             Box(
@@ -212,14 +203,16 @@ fun CategoryBreakdownPieChartPreview() {
         androidx.compose.material3.Surface {
             CategoryBreakdownPieChart(
                 data = mockData,
-                modifier = Modifier.size(300.dp).padding(16.dp)
+                modifier = Modifier
+                    .size(300.dp)
+                    .padding(16.dp)
             )
         }
     }
 }
 
-private fun formatCurrency(amount: java.math.BigDecimal): String {
-    return if (amount >= java.math.BigDecimal.ZERO) {
+private fun formatCurrency(amount: BigDecimal): String {
+    return if (amount >= BigDecimal.ZERO) {
         "+$amount"
     } else {
         amount.toString()

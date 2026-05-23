@@ -14,9 +14,17 @@ class CategoryTreemapCardComputer :
     CardDataComputer<CategoryTreemapCardConfig, CardRenderData.CategoryTreemap> {
     override val supportedType = CardType.CATEGORY_TREEMAP
 
-    override suspend fun compute(input: CardInput, config: CategoryTreemapCardConfig): CardRenderData.CategoryTreemap {
+    override suspend fun compute(
+        input: CardInput,
+        config: CategoryTreemapCardConfig
+    ): CardRenderData.CategoryTreemap {
         // Step 1 & 2: Resolve effective filter using the canonical pipeline
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = resolveEffectiveFilter(
+            input.filter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
 
         // Expand category IDs to include children using the pre-computed cache
         val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)

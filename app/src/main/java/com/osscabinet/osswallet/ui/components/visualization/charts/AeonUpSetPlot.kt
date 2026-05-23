@@ -1,34 +1,48 @@
 package com.osscabinet.ossWallet.ui.components.visualization.charts
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.ui.theme.*
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -50,7 +64,7 @@ private fun UpSetHorizontalBar(
         contentAlignment = Alignment.CenterStart
     ) {
         val barColor = if (isPositive) ChartColorGreen else AppColors.error
-        
+
         // Horizontal Bar
         Box(
             modifier = Modifier
@@ -75,7 +89,7 @@ private fun UpSetHorizontalBar(
                     .background(barColor.copy(alpha = 0.25f))
             )
         }
-        
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -95,7 +109,7 @@ private fun UpSetHorizontalBar(
             Text(
                 text = amount,
                 style = AppTextStyles.caption.copy(
-                    fontSize = 9.sp, 
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     fontFeatureSettings = "tnum"
                 ),
@@ -123,7 +137,9 @@ private fun UpSetVerticalBar(
         val barColor = if (isPositive) ChartColorGreen else AppColors.error
 
         // Track & Bar
-        Box(modifier = Modifier.fillMaxHeight().width(18.dp)) {
+        Box(modifier = Modifier
+            .fillMaxHeight()
+            .width(18.dp)) {
             // Background track
             Box(
                 modifier = Modifier
@@ -142,7 +158,7 @@ private fun UpSetVerticalBar(
                     .background(barColor.copy(alpha = 0.5f))
             )
         }
-        
+
         // Amount label - always at the bottom as per original design
         Box(
             modifier = Modifier
@@ -154,7 +170,7 @@ private fun UpSetVerticalBar(
             Text(
                 text = amount,
                 style = AppTextStyles.caption.copy(
-                    fontSize = 8.5.sp, 
+                    fontSize = 8.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFeatureSettings = "tnum"
                 ),
@@ -165,7 +181,8 @@ private fun UpSetVerticalBar(
                     .align(Alignment.BottomCenter)
                     .graphicsLayer(rotationZ = -90f)
                     .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
+                        val placeable =
+                            measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
                         layout(placeable.height, placeable.width) {
                             placeable.place(
                                 x = -(placeable.width / 2 - placeable.height / 2),
@@ -219,23 +236,24 @@ fun AeonUpSetPlot(
     val viewportWidthPx = with(density) { viewportWidth.toPx() }
     val viewportHeightPx = with(density) { viewportHeight.toPx() }
 
-    val activeRowIndices = remember(horizontalScrollState.value, data.intersections, dynamicFilteringMode) {
-        if (dynamicFilteringMode != UpSetDynamicFilteringMode.HORIZONTAL) {
-            data.sets.indices.toSet()
-        } else {
-            val hValue = horizontalScrollState.value
-            val firstVisible = (hValue / colWidthPx).toInt()
-            val lastVisible = ((hValue + viewportWidthPx) / colWidthPx).toInt()
-            
-            val visibleIntersections = data.intersections.subList(
-                firstVisible.coerceIn(0, data.intersections.size),
-                (lastVisible + 1).coerceIn(0, data.intersections.size)
-            )
-            
-            // Maintain original index order for smooth scrolling
-            visibleIntersections.flatMap { it.setIndices }.toSet().sorted().toSet()
+    val activeRowIndices =
+        remember(horizontalScrollState.value, data.intersections, dynamicFilteringMode) {
+            if (dynamicFilteringMode != UpSetDynamicFilteringMode.HORIZONTAL) {
+                data.sets.indices.toSet()
+            } else {
+                val hValue = horizontalScrollState.value
+                val firstVisible = (hValue / colWidthPx).toInt()
+                val lastVisible = ((hValue + viewportWidthPx) / colWidthPx).toInt()
+
+                val visibleIntersections = data.intersections.subList(
+                    firstVisible.coerceIn(0, data.intersections.size),
+                    (lastVisible + 1).coerceIn(0, data.intersections.size)
+                )
+
+                // Maintain original index order for smooth scrolling
+                visibleIntersections.flatMap { it.setIndices }.toSet().sorted().toSet()
+            }
         }
-    }
 
     val activeColIndices = remember(verticalScrollState.value, data.sets, dynamicFilteringMode) {
         if (dynamicFilteringMode != UpSetDynamicFilteringMode.VERTICAL) {
@@ -244,7 +262,7 @@ fun AeonUpSetPlot(
             val vValue = verticalScrollState.value
             val firstVisible = (vValue / rowHeightPx).toInt()
             val lastVisible = ((vValue + viewportHeightPx) / rowHeightPx).toInt()
-            
+
             val visibleTagIndices = data.sets.indices.toList().subList(
                 firstVisible.coerceIn(0, data.sets.size),
                 (lastVisible + 1).coerceIn(0, data.sets.size)
@@ -283,10 +301,11 @@ fun AeonUpSetPlot(
         // Top row: Empty | Intersection Bars
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.width(leftPanelWidth))
-            
+
             // Intersection Size Bars (Horizontal Scroll)
             Box(
-                modifier = Modifier.width(finalViewportWidth)
+                modifier = Modifier
+                    .width(finalViewportWidth)
                     .horizontalScroll(horizontalScrollState, enabled = true)
             ) {
                 Row(
@@ -298,11 +317,18 @@ fun AeonUpSetPlot(
                 ) {
                     Spacer(modifier = Modifier.width(gutterWidth))
                     renderedIntersections.forEach { intersection ->
-                        val magnitudeRatio = intersection.value.abs().divide(maxIntMagnitude.coerceAtLeast(BigDecimal.ONE), 4, RoundingMode.HALF_UP).toFloat()
+                        val magnitudeRatio = intersection.value.abs().divide(
+                            maxIntMagnitude.coerceAtLeast(BigDecimal.ONE),
+                            4,
+                            RoundingMode.HALF_UP
+                        ).toFloat()
                         val isPositive = intersection.value >= BigDecimal.ZERO
-                        
+
                         UpSetVerticalBar(
-                            amount = CurrencyFormatter.formatShortCurrency(intersection.value, currency),
+                            amount = CurrencyFormatter.formatShortCurrency(
+                                intersection.value,
+                                currency
+                            ),
                             magnitudeRatio = magnitudeRatio,
                             isPositive = isPositive,
                             onClick = { onIntersectionClick(intersection) },
@@ -312,11 +338,13 @@ fun AeonUpSetPlot(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // Main content: Set names + Bars | Dot Matrix
-        Row(modifier = Modifier.fillMaxWidth().height(finalViewportHeight)) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .height(finalViewportHeight)) {
             // Left Panel: Set names, Amounts + Bars (Vertical Scroll)
             Column(
                 modifier = Modifier
@@ -325,9 +353,13 @@ fun AeonUpSetPlot(
             ) {
                 activeRowIndices.sorted().forEach { originalIdx ->
                     val set = data.sets[originalIdx]
-                    val magnitudeRatio = set.total.abs().divide(maxSetMagnitude.coerceAtLeast(BigDecimal.ONE), 4, RoundingMode.HALF_UP).toFloat()
+                    val magnitudeRatio = set.total.abs().divide(
+                        maxSetMagnitude.coerceAtLeast(BigDecimal.ONE),
+                        4,
+                        RoundingMode.HALF_UP
+                    ).toFloat()
                     val isPositive = set.total >= BigDecimal.ZERO
-                    
+
                     UpSetHorizontalBar(
                         name = set.name,
                         amount = CurrencyFormatter.formatShortCurrency(set.total, currency),
@@ -358,9 +390,11 @@ fun AeonUpSetPlot(
 
                     renderedIntersections.forEachIndexed { colIdx, intersection ->
                         val x = offsetX + dx * (colIdx + 0.5f)
-                        
+
                         if (intersection.setIndices.size > 1) {
-                            val renderedIndices = intersection.setIndices.mapNotNull { originalToRenderedIndex[it] }.sorted()
+                            val renderedIndices =
+                                intersection.setIndices.mapNotNull { originalToRenderedIndex[it] }
+                                    .sorted()
                             if (renderedIndices.size > 1) {
                                 val minY = dy * (renderedIndices.first() + 0.5f)
                                 val maxY = dy * (renderedIndices.last() + 0.5f)
@@ -377,7 +411,7 @@ fun AeonUpSetPlot(
                             val renderedRowIdx = originalToRenderedIndex[originalRowIdx] ?: continue
                             val y = dy * (renderedRowIdx + 0.5f)
                             val isActive = intersection.setIndices.contains(originalRowIdx)
-                            
+
                             if (isActive) {
                                 drawCircle(
                                     color = dotColorActive,
@@ -396,7 +430,7 @@ fun AeonUpSetPlot(
                         }
                     }
                 }
-                
+
                 // Overlay invisible clickable boxes for intersection interactivity
                 Row {
                     Spacer(modifier = Modifier.width(gutterWidth))
@@ -414,7 +448,7 @@ fun AeonUpSetPlot(
     }
 }
 
-@Preview(showBackground = true, name = "Mixed Data UpSet", widthDp=300)
+@Preview(showBackground = true, name = "Mixed Data UpSet", widthDp = 300)
 @Composable
 fun AeonUpSetPlotPreview() {
     val sets = listOf(

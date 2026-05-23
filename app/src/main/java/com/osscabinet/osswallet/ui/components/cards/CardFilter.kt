@@ -2,7 +2,11 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 
 /**
  * Centralized filtering logic for card data.
@@ -27,6 +31,7 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
                 accounts
             }
         }
+
         is CurrencyBalancesCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 accounts.filter { it.id in filter.accountIds }
@@ -34,6 +39,7 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
                 accounts
             }
         }
+
         is CashFlowCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 accounts.filter { it.id in filter.accountIds }
@@ -41,6 +47,7 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
                 accounts
             }
         }
+
         is AccountsCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 accounts.filter { it.id in filter.accountIds }
@@ -48,6 +55,7 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
                 accounts
             }
         }
+
         else -> accounts
     }
 }
@@ -64,6 +72,7 @@ fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transac
                 transactions
             }
         }
+
         is CurrencyBalancesCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 transactions.filter { it.accountId in filter.accountIds }
@@ -71,6 +80,7 @@ fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transac
                 transactions
             }
         }
+
         is CashFlowCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 transactions.filter { it.accountId in filter.accountIds }
@@ -78,6 +88,7 @@ fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transac
                 transactions
             }
         }
+
         is AccountsCardConfig -> {
             if (filter.accountIds.isNotEmpty()) {
                 transactions.filter { it.accountId in filter.accountIds }
@@ -85,6 +96,7 @@ fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transac
                 transactions
             }
         }
+
         else -> transactions
     }
 }

@@ -10,7 +10,7 @@ sealed class AccountEntryEvent {
     data class SetInitialBalance(val currency: String, val balance: String) : AccountEntryEvent()
     data class SetIcon(val icon: String) : AccountEntryEvent()
     data class SetColor(val color: String) : AccountEntryEvent()
-    
+
     data class ShowStructureSheet(val show: Boolean) : AccountEntryEvent()
     data class ShowIconSheet(val show: Boolean) : AccountEntryEvent()
     data class ShowColorSheet(val show: Boolean) : AccountEntryEvent()

@@ -14,19 +14,19 @@ import javax.inject.Singleton
 class FilterRepositoryImpl @Inject constructor(
     private val filterDao: FilterDao
 ) : FilterRepository {
-    override fun getAllFilters(): Flow<List<Filter>> = 
+    override fun getAllFilters(): Flow<List<Filter>> =
         filterDao.getAllFilters().map { list -> list.map { it.toDomain() } }
 
-    override suspend fun getFilterById(id: Long): Filter? = 
+    override suspend fun getFilterById(id: Long): Filter? =
         filterDao.getFilterById(id)?.toDomain()
 
     override suspend fun insertFilter(filter: Filter): Long =
         filterDao.insertFilter(filter.toEntity())
 
-    override suspend fun updateFilter(filter: Filter) = 
+    override suspend fun updateFilter(filter: Filter) =
         filterDao.updateFilter(filter.toEntity())
 
-    override suspend fun deleteFilter(filter: Filter) = 
+    override suspend fun deleteFilter(filter: Filter) =
         filterDao.deleteFilter(filter.toEntity())
 
     override suspend fun getFilterUsageCount(filterId: Long): Int =

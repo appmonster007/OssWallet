@@ -3,39 +3,80 @@ package com.osscabinet.ossWallet.ui.screens.templates.list
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.SwapVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.ReorderableList
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
-import com.osscabinet.ossWallet.ui.theme.*
-import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +137,8 @@ fun TemplateListScreenContent(
     )
 
     LaunchedEffect(starredTemplates) {
-        if (editList.isEmpty() || editList.size != starredTemplates.size || editList.map { it.id }.toSet() != starredTemplates.map { it.id }.toSet()) {
+        if (editList.isEmpty() || editList.size != starredTemplates.size || editList.map { it.id }
+                .toSet() != starredTemplates.map { it.id }.toSet()) {
             editList = starredTemplates
         } else {
             // Update properties but keep order
@@ -117,7 +159,12 @@ fun TemplateListScreenContent(
             TopAppBar(
                 title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
                 navigationIcon = {
-                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { onBackClick }) {
+                    IconButton(
+                        onClick = if (isReorderMode) {
+                            { isReorderMode = false }
+                        } else {
+                            onBackClick
+                        }) {
                         Icon(
                             if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = if (isReorderMode) "Cancel" else "Back"
@@ -156,10 +203,14 @@ fun TemplateListScreenContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(AppColors.screenBackground),
-                    contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
+                    contentPadding = PaddingValues(
+                        start = AeonTheme.dimensions.screenPadding,
+                        end = AeonTheme.dimensions.screenPadding,
+                        top = AeonTheme.dimensions.screenPadding,
+                        bottom = scrollBottomPadding()
+                    ),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
-                ) {
-                    template, isDragging ->
+                ) { template, isDragging ->
                     ReorderTemplateItem(
                         template = template,
                         isDragging = isDragging
@@ -172,7 +223,12 @@ fun TemplateListScreenContent(
                     .fillMaxSize()
                     .padding(padding)
                     .background(AppColors.screenBackground),
-                contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
+                contentPadding = PaddingValues(
+                    start = AeonTheme.dimensions.screenPadding,
+                    end = AeonTheme.dimensions.screenPadding,
+                    top = AeonTheme.dimensions.screenPadding,
+                    bottom = scrollBottomPadding()
+                ),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
             ) {
                 items(templates, key = { it.id }) { template ->
@@ -218,7 +274,11 @@ fun ReorderTemplateItem(
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
             Icon(Icons.Rounded.Star, contentDescription = null, tint = AppColors.primary)
             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Text(template.name, modifier = Modifier.weight(1f), style = AppTextStyles.screenSubTitle)
+            Text(
+                template.name,
+                modifier = Modifier.weight(1f),
+                style = AppTextStyles.screenSubTitle
+            )
         }
     }
 }
@@ -303,7 +363,11 @@ fun TemplateItem(
                 )
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Rounded.DeleteOutline, contentDescription = "Delete", tint = AppColors.error)
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    contentDescription = "Delete",
+                    tint = AppColors.error
+                )
             }
         }
     }
@@ -323,7 +387,7 @@ fun TemplateDialog(
     var type by remember { mutableStateOf(template?.transactionType ?: TransactionType.EXPENSE) }
     var note by remember { mutableStateOf(template?.note ?: "") }
     var accountId by remember { mutableStateOf(template?.accountId) }
-    
+
     var showAccountPicker by remember { mutableStateOf(false) }
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
 
@@ -357,7 +421,7 @@ fun TemplateDialog(
                     label = { Text("Default Note (Optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Surface(
                     onClick = { showAccountPicker = true },
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingSm),
@@ -369,12 +433,18 @@ fun TemplateDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(selectedAccount?.name ?: "Default Account (Optional)", color = if (selectedAccount != null) AppColors.contentPrimary else AppColors.border)
+                        Text(
+                            selectedAccount?.name ?: "Default Account (Optional)",
+                            color = if (selectedAccount != null) AppColors.contentPrimary else AppColors.border
+                        )
                         Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
                     }
                 }
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                ) {
                     FilterChip(
                         selected = type == TransactionType.EXPENSE,
                         onClick = { type = TransactionType.EXPENSE },
@@ -394,7 +464,16 @@ fun TemplateDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(name, categoryId, amount.toDoubleOrNull() ?: 0.0, type, note.ifBlank { null }, accountId) }) {
+            Button(onClick = {
+                onConfirm(
+                    name,
+                    categoryId,
+                    amount.toDoubleOrNull() ?: 0.0,
+                    type,
+                    note.ifBlank { null },
+                    accountId
+                )
+            }) {
                 Text("Save")
             }
         },

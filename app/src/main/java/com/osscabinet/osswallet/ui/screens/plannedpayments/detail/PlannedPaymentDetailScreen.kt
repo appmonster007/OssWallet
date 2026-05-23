@@ -1,7 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -9,37 +19,67 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
-import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.NeutralStatusColor
+import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +129,8 @@ fun PlannedPaymentDetailScreen(
     }
 
     val accountName = remember(payment.accountId, accounts) {
-        accounts.find { it.id == payment.accountId }?.name ?: payment.accountId?.take(8) ?: "Unknown"
+        accounts.find { it.id == payment.accountId }?.name ?: payment.accountId?.take(8)
+        ?: "Unknown"
     }
     val categoryName = remember(payment.categoryId, categories) {
         categories.find { it.id == payment.categoryId }?.name ?: "Unknown"
@@ -161,6 +202,7 @@ fun PlannedPaymentDetailScreen(
                         TransactionType.TRANSFER -> AccentBlue
                         else -> AppColors.error
                     }
+
                     PlannedPaymentStatus.PAUSED -> NeutralStatusColor
                     else -> NeutralStatusColor
                 }
@@ -210,7 +252,10 @@ fun PlannedPaymentDetailScreen(
                                 statusLabel,
                                 style = AppTextStyles.formSectionLabel,
                                 color = statusColor,
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
+                                modifier = Modifier.padding(
+                                    horizontal = AeonTheme.dimensions.spacingMd,
+                                    vertical = AeonTheme.dimensions.spacingXs
+                                )
                             )
                         }
                         val typeLabel = payment.transactionType.displayName
@@ -222,7 +267,10 @@ fun PlannedPaymentDetailScreen(
                                 typeLabel,
                                 style = AppTextStyles.transactionSwipeAction,
                                 color = AppColors.contentSecondary,
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingXs)
+                                modifier = Modifier.padding(
+                                    horizontal = AeonTheme.dimensions.spacingMd,
+                                    vertical = AeonTheme.dimensions.spacingXs
+                                )
                             )
                         }
                     }
@@ -614,7 +662,12 @@ private fun PastOccurrenceItem(
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
     val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
-        OccurrenceStatus.CONFIRMED -> Triple("Confirmed", AppColors.primary, Icons.Rounded.CheckCircle)
+        OccurrenceStatus.CONFIRMED -> Triple(
+            "Confirmed",
+            AppColors.primary,
+            Icons.Rounded.CheckCircle
+        )
+
         OccurrenceStatus.SKIPPED -> Triple("Skipped", NeutralStatusColor, Icons.Rounded.Cancel)
         OccurrenceStatus.PENDING -> Triple(
             "Pending",

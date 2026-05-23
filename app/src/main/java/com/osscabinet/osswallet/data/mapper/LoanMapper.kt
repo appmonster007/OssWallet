@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanWithFilter
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import com.osscabinet.ossWallet.domain.model.LoanType
 
 fun LoanWithFilter.toDomain(): Loan {
     val filterDomain = filter.toDomain()

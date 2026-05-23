@@ -5,10 +5,16 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.query.*
+import com.osscabinet.ossWallet.domain.model.query.AggregatedData
+import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
+import com.osscabinet.ossWallet.domain.model.query.MetricConfig
+import com.osscabinet.ossWallet.domain.model.query.RawAggregateResult
+import com.osscabinet.ossWallet.domain.model.query.TimeGranularity
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 
 /**
@@ -41,8 +47,9 @@ class DatabaseQueryServiceImpl(
         timeGranularity: TimeGranularity?,
         useCase: AggregationPlanner.UseCase
     ): Result<List<AggregatedData>> {
-        val cacheKey = "agg_${profileId}_${dimensions}_${metrics}_${filter.hashCode()}_${timeGranularity}_$useCase"
-        
+        val cacheKey =
+            "agg_${profileId}_${dimensions}_${metrics}_${filter.hashCode()}_${timeGranularity}_$useCase"
+
         cache.get<List<AggregatedData>>(cacheKey)?.let {
             return Result.success(it)
         }
@@ -50,10 +57,10 @@ class DatabaseQueryServiceImpl(
         return try {
             val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
             val query = queryBuilder.buildAggregationQuery(profileId, filter, plan)
-            
+
             val rawResults = transactionDao.aggregateTransactionsSync(query)
             val processed = processResults(rawResults, plan)
-            
+
             cache.put(cacheKey, processed)
             Result.success(processed)
         } catch (e: Exception) {
@@ -127,9 +134,9 @@ class DatabaseQueryServiceImpl(
                     .filter { it.isNotEmpty() }
                     .sorted()
                     .joinToString(",")
-                
-                row.copy(dimensions = row.dimensions.toMutableMap().apply { 
-                    put(AggregationDimension.TAG_COMBINATIONS, cleanVal) 
+
+                row.copy(dimensions = row.dimensions.toMutableMap().apply {
+                    put(AggregationDimension.TAG_COMBINATIONS, cleanVal)
                 })
             }
         }
@@ -142,7 +149,7 @@ class DatabaseQueryServiceImpl(
         target: AggregationDimension
     ): List<AggregatedData> {
         val expanded = mutableListOf<AggregatedData>()
-        
+
         data.forEach { row ->
             val rawValue = row.dimensions[target] ?: ""
             if (rawValue.isBlank() || rawValue == "unspecified") {
@@ -159,7 +166,8 @@ class DatabaseQueryServiceImpl(
                 }
 
                 tags.forEach { tag ->
-                    expanded.add(row.copy(
+                    expanded.add(
+                        row.copy(
                         dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }
                     ))
                 }

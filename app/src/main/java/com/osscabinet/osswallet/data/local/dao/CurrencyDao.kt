@@ -4,9 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
-
 import androidx.room.Transaction
+import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 
 @Dao
 interface CurrencyDao {

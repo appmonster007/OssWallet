@@ -1,15 +1,28 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.runtime.*
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,10 +32,12 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -30,8 +45,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import java.math.BigDecimal
 
 @Composable
@@ -51,9 +64,10 @@ fun IncomeExpenseBarCard(
 
     var isCumulative by rememberSaveable { mutableStateOf(config.isCumulative) }
 
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -82,7 +96,8 @@ fun IncomeExpenseBarCard(
             val modeOptions = listOf("Trend", "Cumulative")
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 modeOptions.forEachIndexed { index, label ->
-                    val isSelected = (isCumulative && label == "Cumulative") || (!isCumulative && label == "Trend")
+                    val isSelected =
+                        (isCumulative && label == "Cumulative") || (!isCumulative && label == "Trend")
                     SegmentedButton(
                         selected = isSelected,
                         onClick = {
@@ -90,7 +105,10 @@ fun IncomeExpenseBarCard(
                             isCumulative = newCumulative
                             callbacks.onUpdate(config.copy(isCumulative = newCumulative))
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = modeOptions.size),
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = modeOptions.size
+                        ),
                         label = {
                             Text(
                                 text = label,
@@ -104,7 +122,11 @@ fun IncomeExpenseBarCard(
             // Net total for the period (sum of all bucket net values)
             val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
             Text(
-                text = CurrencyFormatter.formatCurrencyRight(netTotal, renderData.baseCurrency, CurrencyService.precision),
+                text = CurrencyFormatter.formatCurrencyRight(
+                    netTotal,
+                    renderData.baseCurrency,
+                    CurrencyService.precision
+                ),
                 style = AppTextStyles.cardSecondaryAmount,
                 color = AppColors.contentPrimary,
                 modifier = Modifier.padding(horizontal = 2.dp)
@@ -217,9 +239,27 @@ private fun IncomeExpenseLegendItem(color: Color, label: String) {
 @Composable
 fun IncomeExpenseBarCardPreview() {
     val buckets = listOf(
-        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Jan", 0, BigDecimal("5000"), BigDecimal("3500"), BigDecimal("1500")),
-        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Feb", 0, BigDecimal("5200"), BigDecimal("4000"), BigDecimal("1200")),
-        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint("Mar", 0, BigDecimal("4800"), BigDecimal("3800"), BigDecimal("1000"))
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
+            "Jan",
+            0,
+            BigDecimal("5000"),
+            BigDecimal("3500"),
+            BigDecimal("1500")
+        ),
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
+            "Feb",
+            0,
+            BigDecimal("5200"),
+            BigDecimal("4000"),
+            BigDecimal("1200")
+        ),
+        com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
+            "Mar",
+            0,
+            BigDecimal("4800"),
+            BigDecimal("3800"),
+            BigDecimal("1000")
+        )
     )
     val renderData = CardRenderData.IncomeExpenseBar(
         config = IncomeExpenseBarCardConfig(cardId = "preview"),
@@ -243,7 +283,11 @@ private fun IncomeExpenseBarSettingsSheet(
     callbacks: CardCallbacks.IncomeExpenseBar,
     onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Income & Expense", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+    CardSettingsSheet(
+        title = "Income & Expense",
+        onDismiss = onDismiss,
+        onDelete = callbacks.onDelete
+    ) {
         CardSettingsSection("Display") {
             Row(
                 modifier = Modifier.fillMaxWidth(),

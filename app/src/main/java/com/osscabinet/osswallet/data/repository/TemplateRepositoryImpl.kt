@@ -14,7 +14,7 @@ import javax.inject.Singleton
 class TemplateRepositoryImpl @Inject constructor(
     private val templateDao: TemplateDao
 ) : TemplateRepository {
-    override fun getAllTemplates(): Flow<List<Template>> = 
+    override fun getAllTemplates(): Flow<List<Template>> =
         templateDao.getAllTemplates().map { list -> list.map { it.toDomain() } }
 
     override fun getStarredTemplates(): Flow<List<Template>> =
@@ -23,28 +23,28 @@ class TemplateRepositoryImpl @Inject constructor(
     override fun getStarredTemplates(profileId: Int): Flow<List<Template>> =
         templateDao.getStarredTemplates(profileId).map { list -> list.map { it.toDomain() } }
 
-    override suspend fun updateStarStatus(id: Long, isStarred: Boolean) = 
+    override suspend fun updateStarStatus(id: Long, isStarred: Boolean) =
         templateDao.updateStarStatus(id, isStarred)
 
     override suspend fun insertTemplate(template: Template): Long =
         templateDao.insertTemplate(template.toEntity())
 
-    override suspend fun updateTemplate(template: Template) = 
+    override suspend fun updateTemplate(template: Template) =
         templateDao.updateTemplate(template.toEntity())
 
-    override suspend fun deleteTemplate(template: Template) = 
+    override suspend fun deleteTemplate(template: Template) =
         templateDao.deleteTemplate(template.toEntity())
 
-    override suspend fun getTemplateByName(name: String): Template? = 
+    override suspend fun getTemplateByName(name: String): Template? =
         templateDao.getTemplateByName(name)?.toDomain()
 
     override suspend fun getTemplateById(id: Long): Template? =
         templateDao.getTemplateById(id)?.toDomain()
 
-    override suspend fun updateTemplates(templates: List<Template>) = 
+    override suspend fun updateTemplates(templates: List<Template>) =
         templateDao.updateTemplates(templates.map { it.toEntity() })
 
-    override suspend fun getAllTemplatesSync(): List<Template> = 
+    override suspend fun getAllTemplatesSync(): List<Template> =
         templateDao.getAllTemplatesSync().map { it.toDomain() }
 
     override suspend fun clearAll() = templateDao.clearAll()

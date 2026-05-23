@@ -1,15 +1,17 @@
 package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 fun FilterEntity.toDomain(): Filter {
-    val resolvedTimelineRange = if (timelineRange is TimelineRange.AllTime && (startDate != null || endDate != null)) {
-        TimelineRange.CustomRange(startDate, endDate)
-    } else {
-        timelineRange
-    }
+    val resolvedTimelineRange =
+        if (timelineRange is TimelineRange.AllTime && (startDate != null || endDate != null)) {
+            TimelineRange.CustomRange(startDate, endDate)
+        } else {
+            timelineRange
+        }
 
     return Filter(
         id = id,

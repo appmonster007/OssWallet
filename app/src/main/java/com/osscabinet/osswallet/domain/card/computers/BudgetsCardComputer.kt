@@ -31,14 +31,16 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.displayCurrency,
-                now = now
+                now = now,
+                allCategories = input.categories
             )
             val spent = BudgetService.calculateSpent(
                 budget = budget,
                 transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.displayCurrency,
-                now = now
+                now = now,
+                allCategories = input.categories
             )
             BudgetService.buildProgress(budget, spent, rollover)
         }

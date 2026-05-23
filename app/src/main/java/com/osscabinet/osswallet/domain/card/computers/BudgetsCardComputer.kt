@@ -30,19 +30,19 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 budget = budget,
                 transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
-                baseCurrency = input.baseCurrency,
+                baseCurrency = input.displayCurrency,
                 now = now
             )
             val spent = BudgetService.calculateSpent(
                 budget = budget,
                 transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
-                baseCurrency = input.baseCurrency,
+                baseCurrency = input.displayCurrency,
                 now = now
             )
             BudgetService.buildProgress(budget, spent, rollover)
         }
 
-        return CardRenderData.Budgets(config = config, items = items)
+        return CardRenderData.Budgets(config = config, items = items, displayCurrency = input.displayCurrency)
     }
 }

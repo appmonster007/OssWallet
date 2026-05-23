@@ -57,6 +57,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 fun NetWorthCard(
     currentMetrics: NetWorthMetrics,
     baseCurrency: String,
+    displayCurrency: String = baseCurrency,
     config: NetWorthCardConfig,
     previousMetrics: NetWorthMetrics? = null,
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
@@ -102,7 +103,7 @@ fun NetWorthCard(
 
             Column {
                 Text(
-                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, shorten = true),
+                    text = formatCurrencyRight(currentMetrics.netWorth, displayCurrency, shorten = true),
                     style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = baseFontSize,
@@ -110,6 +111,14 @@ fun NetWorthCard(
                     ),
                     color = AppColors.contentPrimary
                 )
+
+                currentMetrics.netWorthInBase?.let { inBase ->
+                    Text(
+                        text = "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
+                        style = AppTextStyles.metaLabel,
+                        color = AppColors.contentPrimary.copy(alpha = 0.6f)
+                    )
+                }
 
                 if (config.showComparison && previousMetrics != null) {
                     val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)
@@ -147,7 +156,7 @@ fun NetWorthCard(
                 FlowBadge(
                     label = "INCOME",
                     amount = currentMetrics.cashFlow.totalIncomeInBase,
-                    currency = baseCurrency,
+                    currency = displayCurrency,
                     color = PositiveAmountColor,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
@@ -156,7 +165,7 @@ fun NetWorthCard(
                 FlowBadge(
                     label = "EXPENSE",
                     amount = currentMetrics.cashFlow.totalExpensesInBase,
-                    currency = baseCurrency,
+                    currency = displayCurrency,
                     color = AppColors.error,
                     modifier = Modifier.weight(1f),
                     onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },

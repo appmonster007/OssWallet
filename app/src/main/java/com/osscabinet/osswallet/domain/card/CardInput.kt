@@ -25,6 +25,7 @@ data class CardInput(
     val tags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
     val exchangeRates: Map<String, BigDecimal>,
     val baseCurrency: String,
+    val displayCurrency: String = baseCurrency,
     val filter: TransactionFilter = TransactionFilter(),
     // When true the inherited filter's timeline is always authoritative — even AllTime.
     // Set by screens that own the timeline (Analytics). Dashboard leaves this false so

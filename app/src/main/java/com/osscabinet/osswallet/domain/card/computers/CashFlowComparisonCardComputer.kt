@@ -55,7 +55,7 @@ class CashFlowComparisonCardComputer(
             buckets = fullBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.baseCurrency,
+            baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
             today = today
         )
@@ -70,7 +70,7 @@ class CashFlowComparisonCardComputer(
                 buckets = prevBuckets,
                 baseFilter = mergedFilter,
                 profileId = input.profileId,
-                baseCurrency = input.baseCurrency,
+                baseCurrency = input.displayCurrency,
                 exchangeRates = input.exchangeRates,
                 today = today
             )
@@ -86,7 +86,7 @@ class CashFlowComparisonCardComputer(
             buckets = lastYearBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.baseCurrency,
+            baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
             today = today
         )
@@ -96,7 +96,7 @@ class CashFlowComparisonCardComputer(
             currentSeries = currentSeries,
             previousSeries = previousSeries,
             lastYearSeries = lastYearSeries,
-            baseCurrency = input.baseCurrency,
+            baseCurrency = input.displayCurrency,
             granularity = granularity,
             periodLabels = fullBuckets.map { it.third },
             currentTotalBuckets = fullBuckets.size,

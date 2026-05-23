@@ -287,16 +287,19 @@ fun AeonAccountCardLarge(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column {
                     Text(
                         formatCurrencyRight(balance, account.currencyCode, shorten = true),
                         style = AppTextStyles.calculatorDisplay,
                         color = contentColor
                     )
+                    if (account.currencyCode != baseCurrency) {
+                        Text(
+                            text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
+                            style = AppTextStyles.metaLabel,
+                            color = contentColor.copy(alpha = 0.6f)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

@@ -88,7 +88,7 @@ class CategorySpendingTrendCardComputer :
                 val converted = CurrencyService.convertAmount(
                     amount = tx.amount, // Respect sign: expenses are negative, income is positive
                     fromCurrency = tx.currency,
-                    toCurrency = input.baseCurrency,
+                    toCurrency = input.displayCurrency,
                     exchangeRates = input.exchangeRates,
                     precision = 10
                 )
@@ -135,7 +135,7 @@ class CategorySpendingTrendCardComputer :
             buckets = buckets,
             granularity = granularity,
             activeCategories = activeCategories,
-            baseCurrency = input.baseCurrency
+            baseCurrency = input.displayCurrency
         )
     }
 

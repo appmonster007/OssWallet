@@ -48,7 +48,7 @@ class CategoryPieChartCardComputer :
             transactions = filteredTx,
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
+            baseCurrency = input.displayCurrency
         )
 
         // Step 4: Compute previous period total if comparison is enabled
@@ -63,12 +63,12 @@ class CategoryPieChartCardComputer :
                     transactions = prevTx,
                     allCategories = input.categories,
                     exchangeRates = input.exchangeRates,
-                    baseCurrency = input.baseCurrency
+                    baseCurrency = input.displayCurrency
                 )
                 prevTree.sumOf { it.netBalance.abs() }
             } else null
         } else null
 
-        return CardRenderData.CategoryPieChart(config, tree, previousTotal)
+        return CardRenderData.CategoryPieChart(config, tree, input.displayCurrency, previousTotal)
     }
 }

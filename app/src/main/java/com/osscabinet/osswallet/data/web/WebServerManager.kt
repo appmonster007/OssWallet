@@ -5,8 +5,13 @@ import android.graphics.Bitmap
 import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.LoanRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -44,7 +49,12 @@ class WebServerManager @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val settingsRepository: SettingsRepository,
-    private val webServerPreferences: WebServerPreferences
+    private val webServerPreferences: WebServerPreferences,
+    private val budgetRepository: BudgetRepository,
+    private val loanRepository: LoanRepository,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val tagRepository: TagRepository,
+    private val currencyRepository: CurrencyRepository
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -87,7 +97,12 @@ class WebServerManager @Inject constructor(
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            budgetRepository = budgetRepository,
+            loanRepository = loanRepository,
+            plannedPaymentRepository = plannedPaymentRepository,
+            tagRepository = tagRepository,
+            currencyRepository = currencyRepository
         )
 
         try {

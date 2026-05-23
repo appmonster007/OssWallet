@@ -224,10 +224,12 @@ fun TransactionFilterPill(
                                     vt.addPosition(change.uptimeMillis, change.position)
                                     val dy = change.position.y - change.previousPosition.y
 
-                                    if (!dragging &&
-                                        abs(change.position.y - down.position.y) > viewConfiguration.touchSlop
-                                    ) {
-                                        dragging = true
+                                    if (!dragging) {
+                                        val totalDx = abs(change.position.x - down.position.x)
+                                        val totalDy = abs(change.position.y - down.position.y)
+                                        if (totalDy > viewConfiguration.touchSlop && totalDy >= totalDx) {
+                                            dragging = true
+                                        }
                                     }
 
                                     if (dragging) {

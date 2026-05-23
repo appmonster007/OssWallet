@@ -71,6 +71,12 @@ fun TransactionListContent(
                         showClosingBalance = recordsSettings.showClosingBalance,
                         showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
                         showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
+                        showAccount = recordsSettings.showAccount,
+                        showCategory = recordsSettings.showCategory,
+                        showNote = recordsSettings.showNote,
+                        showTags = recordsSettings.showTags,
+                        showTimestamp = recordsSettings.showTimestamp,
+                        showIcon = recordsSettings.showIcon,
                         baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
                         revealedCardIds = revealedCardIds,
                     )

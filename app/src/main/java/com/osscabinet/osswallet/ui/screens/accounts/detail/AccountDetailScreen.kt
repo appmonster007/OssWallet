@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
@@ -272,7 +275,11 @@ fun AccountDetailScreen(
             )
         }
     ) { screenPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+            var userScrollEnabled by remember { mutableStateOf(true) }
+
         when (val state = uiState) {
             is AccountDetailUiState.Loading -> {
                 AeonShimmer(
@@ -289,9 +296,22 @@ fun AccountDetailScreen(
             is AccountDetailUiState.Success -> {
                 HorizontalPager(
                     state = pagerState,
+                    userScrollEnabled = userScrollEnabled,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(screenPadding),
+                        .padding(screenPadding)
+                        .pointerInput(widthPx) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    val down = event.changes.firstOrNull { it.changedToDown() }
+                                    if (down != null) {
+                                        val x = down.position.x
+                                        userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
+                                    }
+                                }
+                            }
+                        },
                     verticalAlignment = Alignment.Top
                 ) { page ->
                     when (page) {

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.loans.detail
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -47,6 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
@@ -186,12 +191,29 @@ fun LoanDetailScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+            var userScrollEnabled by remember { mutableStateOf(true) }
+
             HorizontalPager(
                 state = pagerState,
+                userScrollEnabled = userScrollEnabled,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(paddingValues)
+                    .pointerInput(widthPx) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val down = event.changes.firstOrNull { it.changedToDown() }
+                                if (down != null) {
+                                    val x = down.position.x
+                                    userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
+                                }
+                            }
+                        }
+                    },
                 verticalAlignment = Alignment.Top
             ) { page ->
                 when (page) {

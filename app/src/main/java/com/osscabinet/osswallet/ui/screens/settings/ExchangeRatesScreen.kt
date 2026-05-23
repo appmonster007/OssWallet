@@ -24,6 +24,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -183,12 +187,30 @@ fun ExchangeRatesScreen(
             }
         }
     ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) { page ->
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+            var userScrollEnabled by remember { mutableStateOf(true) }
+
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = userScrollEnabled,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .pointerInput(widthPx) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val down = event.changes.firstOrNull { it.changedToDown() }
+                                if (down != null) {
+                                    val x = down.position.x
+                                    userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
+                                }
+                            }
+                        }
+                    }
+            ) { page ->
             when (page) {
                 0 -> RatesTab(uiState)
                 1 -> ConverterTab(
@@ -200,6 +222,7 @@ fun ExchangeRatesScreen(
             }
         }
     }
+}
 }
 
 @Composable

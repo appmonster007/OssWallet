@@ -2,24 +2,21 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -30,14 +27,24 @@ fun CurrencySelector(
     onCurrencySelected: (String) -> Unit,
     supportedCurrencies: List<String>
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
+
+    val baseList = remember(supportedCurrencies) {
+        if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
+    }
+    val filteredList = remember(query, baseList) {
+        if (query.isBlank()) baseList
+        else baseList.filter { it.contains(query, ignoreCase = true) }
+    }
 
     Box {
         Surface(
-            modifier = Modifier.clickable { 
+            modifier = Modifier.clickable {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                showDialog = true 
+                query = ""
+                expanded = true
             },
             shape = RoundedCornerShape(12.dp),
             color = AppColors.insetSurface.copy(alpha = 0.4f)
@@ -55,7 +62,7 @@ fun CurrencySelector(
                     )
                 )
                 Icon(
-                    Icons.Rounded.KeyboardArrowDown,
+                    if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = AppColors.contentSecondary
@@ -63,49 +70,48 @@ fun CurrencySelector(
             }
         }
 
-        if (showDialog) {
-            var query by remember { mutableStateOf("") }
-            val baseList = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
-            val filteredList = remember(query, baseList) {
-                if (query.isBlank()) baseList
-                else baseList.filter { it.contains(query, ignoreCase = true) }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.widthIn(min = 160.dp)
+        ) {
+            if (baseList.size > 6) {
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search currencies...") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+                HorizontalDivider()
             }
-
-            AeonFullScreenDialog(onDismissRequest = { showDialog = false }) {
-                AeonSelectionScreen(
-                    title = "Select Currency",
-                    onBack = { showDialog = false }
-                ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp, vertical = 16.dp)) {
-                        AeonSearchField(
-                            query = query,
-                            onQueryChange = { query = it },
-                            placeholder = "Search currency code..."
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Box(modifier = Modifier.weight(1f, fill = false)) {
-                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                AeonHybridSelector(
-                                    items = filteredList,
-                                    mode = AeonSelectMode.SINGLE,
-                                    selectedIds = if (selectedCurrency.isNotEmpty()) setOf(
-                                        selectedCurrency
-                                    ) else emptySet(),
-                                    onSelectionChange = { ids ->
-                                        ids.firstOrNull()?.let {
-                                            onCurrencySelected(it)
-                                            showDialog = false
-                                        }
-                                    },
-                                    idMapper = { it },
-                                    labelMapper = { it }
-                                )
-                            }
+            filteredList.forEach { currency ->
+                DropdownMenuItem(
+                    text = { Text(currency) },
+                    onClick = {
+                        onCurrencySelected(currency)
+                        expanded = false
+                        query = ""
+                    },
+                    trailingIcon = if (currency == selectedCurrency) {
+                        {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = AppColors.primary
+                            )
                         }
-                    }
-                }
+                    } else null
+                )
             }
         }
     }

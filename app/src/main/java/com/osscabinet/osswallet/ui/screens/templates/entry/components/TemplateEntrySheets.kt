@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
-import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
@@ -94,29 +93,6 @@ fun TemplateEntrySheets(
             onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
             onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTagSheet(false)) }
-        )
-    }
-
-    if (state.showCurrencySheet) {
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.currency),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetCurrency(it)) }
-            },
-            onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) },
-            currencies = state.shortlistedCurrencies.ifEmpty { null }
-        )
-    }
-
-    if (state.showTargetCurrencySheet) {
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.targetCurrency ?: "USD"),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) }
-            },
-            onDismiss = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = "Select Target Currency",
-            currencies = state.selectedTargetAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
         )
     }
 

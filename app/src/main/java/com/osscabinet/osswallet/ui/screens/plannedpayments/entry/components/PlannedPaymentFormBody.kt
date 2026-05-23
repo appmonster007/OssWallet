@@ -42,6 +42,12 @@ fun PlannedPaymentFormBody(
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
+    val targetCurrencies = remember(state.targetAccountId, state.accounts) {
+        state.accounts.find { it.id == state.targetAccountId }
+            ?.allowedCurrencies?.toList()?.ifEmpty { null }
+            ?: CurrencyService.getAllCurrencies()
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -59,7 +65,7 @@ fun PlannedPaymentFormBody(
                 onTypeSelected = { onEvent(PlannedPaymentEntryEvent.SetTransactionType(it)) },
                 amount = state.amount,
                 currency = state.currency,
-                onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(true)) },
+                onCurrencyClick = { currency -> onEvent(PlannedPaymentEntryEvent.SetCurrency(currency)) },
                 onAmountClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true)) },
                 name = state.name,
                 onNameChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
@@ -67,10 +73,11 @@ fun PlannedPaymentFormBody(
                 isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
                 targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
+                onTargetCurrencyClick = { currency -> onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(currency)) },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = sourceCurrencies
+                supportedCurrencies = sourceCurrencies,
+                targetSupportedCurrencies = targetCurrencies
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category

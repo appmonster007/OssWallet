@@ -20,8 +20,7 @@ data class DiscoveredPattern(
     val paymentMethod: PaymentMethod,
     val note: String,
     val tags: Set<String>,
-    val latitude: Double?,
-    val longitude: Double?,
+    val gpsLocation: String? = null,
     val warrantyExpiration: Long?,
     val recurrenceRule: RecurrenceRule?,
     val confidence: Float,
@@ -99,8 +98,7 @@ object PatternDiscoveryService {
             paymentMethod = lastTx.paymentMethod,
             note = lastTx.note,
             tags = lastTx.tags,
-            latitude = lastTx.latitude,
-            longitude = lastTx.longitude,
+            gpsLocation = lastTx.gpsLocation,
             warrantyExpiration = lastTx.warrantyExpiration,
             recurrenceRule = recurrenceResult.rule,
             confidence = totalConfidence,
@@ -171,10 +169,6 @@ object PatternDiscoveryService {
      * Converts a discovered pattern into a Template.
      */
     fun toTemplate(pattern: DiscoveredPattern): Template {
-        val locationString = if (pattern.latitude != null && pattern.longitude != null) {
-            "${pattern.latitude},${pattern.longitude}"
-        } else null
-
         return Template(
             id = 0,
             name = pattern.name,
@@ -186,7 +180,7 @@ object PatternDiscoveryService {
             accountId = pattern.accountId,
             note = pattern.note,
             payee = pattern.payee,
-            location = locationString,
+            gpsLocation = pattern.gpsLocation,
             paymentMethod = pattern.paymentMethod,
             currency = pattern.currency,
             tags = pattern.tags,
@@ -210,9 +204,7 @@ object PatternDiscoveryService {
             accountId = pattern.accountId,
             note = pattern.note,
             payee = pattern.payee,
-            location = if (pattern.latitude != null && pattern.longitude != null) "${pattern.latitude},${pattern.longitude}" else null,
-            latitude = pattern.latitude,
-            longitude = pattern.longitude,
+            gpsLocation = pattern.gpsLocation,
             paymentMethod = pattern.paymentMethod,
             currency = pattern.currency,
             tags = pattern.tags,

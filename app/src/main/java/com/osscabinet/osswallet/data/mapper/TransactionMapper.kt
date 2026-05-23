@@ -25,8 +25,7 @@ fun TransactionEntity.toDomain(): Transaction {
         payee = payee,
         note = note,
         sourcePlannedPaymentId = sourcePlannedPaymentId,
-        latitude = latitude,
-        longitude = longitude,
+        gpsLocation = gpsLocation,
         warrantyExpiration = warrantyExpiration,
         status = status
     )
@@ -50,8 +49,7 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         payee = payee,
         note = note,
         sourcePlannedPaymentId = sourcePlannedPaymentId,
-        latitude = latitude,
-        longitude = longitude,
+        gpsLocation = gpsLocation,
         warrantyExpiration = warrantyExpiration,
         status = status
     )

@@ -188,8 +188,8 @@ private fun fetchLastLocation(
 
 @Composable
 fun AeonLocationSelection(
-    currentCoords: Pair<Double, Double>?,
-    onLocationSelected: (Pair<Double, Double>) -> Unit,
+    gpsLocation: String?,
+    onLocationSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context        = LocalContext.current
@@ -198,22 +198,28 @@ fun AeonLocationSelection(
     val focusManager   = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
 
-    val initialGeoPoint = remember(currentCoords) {
-        currentCoords?.let { GeoPoint(it.first, it.second) } ?: GeoPoint(20.0, 0.0)
+    val parsedCoords = remember(gpsLocation) {
+        gpsLocation?.split(",")?.takeIf { it.size == 2 }?.let {
+            it[0].toDoubleOrNull()?.let { lat -> it[1].toDoubleOrNull()?.let { lon -> lat to lon } }
+        }
+    }
+
+    val initialGeoPoint = remember(parsedCoords) {
+        parsedCoords?.let { GeoPoint(it.first, it.second) } ?: GeoPoint(20.0, 0.0)
     }
 
     var mapCenter        by remember { mutableStateOf(initialGeoPoint) }
-    var mapZoom          by remember { mutableDoubleStateOf(if (currentCoords != null) 14.0 else 2.0) }
-    var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(if (currentCoords != null) initialGeoPoint else null) }
+    var mapZoom          by remember { mutableDoubleStateOf(if (parsedCoords != null) 14.0 else 2.0) }
+    var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(if (parsedCoords != null) initialGeoPoint else null) }
     var selectedLocation by remember { mutableStateOf<LocationResult?>(null) }
-    var isGeocoding      by remember { mutableStateOf(currentCoords != null) }
+    var isGeocoding      by remember { mutableStateOf(parsedCoords != null) }
 
     var searchQuery      by remember { mutableStateOf("") }
     var searchResults    by remember { mutableStateOf<List<LocationResult>>(emptyList()) }
     val recentLocations  = remember { mutableStateListOf<LocationResult>() }
     var isSearchActive   by remember { mutableStateOf(false) }
 
-    var showPanel          by remember { mutableStateOf(currentCoords != null) }
+    var showPanel          by remember { mutableStateOf(parsedCoords != null) }
     var isLocating         by remember { mutableStateOf(false) }
     var isSearchFocused    by remember { mutableStateOf(false) }
     var visibleResultCount by remember { mutableIntStateOf(0) }
@@ -234,9 +240,9 @@ fun AeonLocationSelection(
 
     // ── Initial reverse-geocode ───────────────────────────────────────────────
     LaunchedEffect(Unit) {
-        if (currentCoords != null) {
+        if (parsedCoords != null) {
             val result = withContext(Dispatchers.IO) {
-                nominatimReverse(currentCoords.first, currentCoords.second)
+                nominatimReverse(parsedCoords.first, parsedCoords.second)
             }
             selectedLocation = result
             isGeocoding = false
@@ -671,7 +677,7 @@ fun AeonLocationSelection(
                                     recentLocations.add(0, loc)
                                     if (recentLocations.size > 5) recentLocations.removeAt(recentLocations.size - 1)
                                 }
-                                onLocationSelected(Pair(loc.lat, loc.lon))
+                                onLocationSelected("${loc.lat},${loc.lon}")
                                 onDismiss()
                             },
                             enabled  = selectedLocation != null && !isGeocoding,
@@ -834,7 +840,7 @@ private fun LocationRow(
 @Composable
 fun AeonLocationSelectionEmptyPreview() {
     OssWalletTheme {
-        AeonLocationSelection(currentCoords = null, onLocationSelected = {}, onDismiss = {})
+        AeonLocationSelection(gpsLocation = null, onLocationSelected = {}, onDismiss = {})
     }
 }
 
@@ -842,7 +848,7 @@ fun AeonLocationSelectionEmptyPreview() {
 @Composable
 fun AeonLocationSelectionWithPinPreview() {
     OssWalletTheme {
-        AeonLocationSelection(currentCoords = Pair(37.7749, -122.4194), onLocationSelected = {}, onDismiss = {})
+        AeonLocationSelection(gpsLocation = "37.7749,-122.4194", onLocationSelected = {}, onDismiss = {})
     }
 }
 

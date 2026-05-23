@@ -204,11 +204,9 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showLocationSheet) {
         AeonLocationSelection(
-            currentCoords = if (state.latitude != null && state.longitude != null) {
-                state.latitude to state.longitude
-            } else null,
-            onLocationSelected = { coords ->
-                onEvent(PlannedPaymentEntryEvent.SetLocation("", coords?.first, coords?.second))
+            gpsLocation = state.gpsLocation,
+            onLocationSelected = { gpsStr ->
+                onEvent(PlannedPaymentEntryEvent.SetLocation(gpsStr))
                 onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(false)) }

@@ -180,9 +180,7 @@ class TransactionEntryViewModel @Inject constructor(
             warrantyExpirationMillis = transaction.warrantyExpiration
                 ?: (System.currentTimeMillis() + 31536000000L),
             isWarrantyEnabled = transaction.warrantyExpiration != null,
-            locationCoords = transaction.latitude?.let { lat ->
-                transaction.longitude?.let { lng -> lat to lng }
-            },
+            gpsLocation = transaction.gpsLocation,
             selectedAccount = selectedAcc,
             selectedCurrency = transaction.currency,
             targetAccount = targetAcc,
@@ -218,9 +216,7 @@ class TransactionEntryViewModel @Inject constructor(
             warrantyExpirationMillis = prefill.warrantyExpiration
                 ?: System.currentTimeMillis() + 31536000000L,
             isWarrantyEnabled = prefill.warrantyExpiration != null,
-            locationCoords = prefill.latitude?.let { lat ->
-                prefill.longitude?.let { lng -> lat to lng }
-            },
+            gpsLocation = prefill.gpsLocation,
             linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
                 ?: prefill.linkedTransactionIds,
             selectedAccount = prefillAcc,
@@ -310,7 +306,7 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(warrantyExpirationMillis = event.millis)
             }
 
-            is TransactionEntryEvent.SetLocation -> update { it.copy(locationCoords = event.coords) }
+            is TransactionEntryEvent.SetLocation -> update { it.copy(gpsLocation = event.gpsLocation) }
             is TransactionEntryEvent.AddLinkedTransaction -> {
                 viewModelScope.launch {
                     val tx = transactionUseCases.getTransactionById(event.id)
@@ -541,8 +537,7 @@ class TransactionEntryViewModel @Inject constructor(
             timestamp = finalTimestamp,
             payee = currentState.payee,
             note = currentState.note,
-            latitude = currentState.locationCoords?.first,
-            longitude = currentState.locationCoords?.second,
+            gpsLocation = currentState.gpsLocation,
             warrantyExpiration = if (currentState.isWarrantyEnabled) {
                 currentState.warrantyExpirationMillis
             } else null,
@@ -627,8 +622,7 @@ class TransactionEntryViewModel @Inject constructor(
             timestamp = finalTimestamp,
             payee = currentState.payee,
             note = currentState.note,
-            latitude = currentState.locationCoords?.first,
-            longitude = currentState.locationCoords?.second,
+            gpsLocation = currentState.gpsLocation,
             warrantyExpiration = if (currentState.isWarrantyEnabled) {
                 currentState.warrantyExpirationMillis
             } else null,

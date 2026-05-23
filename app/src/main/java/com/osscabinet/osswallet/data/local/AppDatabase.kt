@@ -30,7 +30,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -53,6 +53,117 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ── transactions: replace latitude+longitude with gpsLocation ──────────
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `transactions_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `amount` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `currency` TEXT NOT NULL,
+                        `transactionType` TEXT NOT NULL,
+                        `accountId` TEXT,
+                        `categoryId` INTEGER NOT NULL,
+                        `tags` TEXT NOT NULL,
+                        `paymentMethod` TEXT NOT NULL,
+                        `payee` TEXT NOT NULL,
+                        `note` TEXT NOT NULL,
+                        `sourcePlannedPaymentId` INTEGER,
+                        `profileId` INTEGER NOT NULL,
+                        `gpsLocation` TEXT,
+                        `warrantyExpiration` INTEGER,
+                        `status` TEXT NOT NULL,
+                        FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO `transactions_new`
+                    SELECT `id`, `name`, `amount`, `timestamp`, `currency`, `transactionType`,
+                           `accountId`, `categoryId`, `tags`, `paymentMethod`, `payee`, `note`,
+                           `sourcePlannedPaymentId`, `profileId`,
+                           CASE WHEN `latitude` IS NOT NULL AND `longitude` IS NOT NULL
+                                THEN (`latitude` || ',' || `longitude`)
+                                ELSE NULL END,
+                           `warrantyExpiration`, `status`
+                    FROM `transactions`
+                """.trimIndent())
+                db.execSQL("DROP TABLE `transactions`")
+                db.execSQL("ALTER TABLE `transactions_new` RENAME TO `transactions`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_accountId` ON `transactions` (`accountId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_categoryId` ON `transactions` (`categoryId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_profileId` ON `transactions` (`profileId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_timestamp` ON `transactions` (`timestamp`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_status` ON `transactions` (`status`)")
+                // Recreate FTS triggers pointing at the new table
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE rowid = old.id;
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE rowid = old.id;
+                    END
+                """.trimIndent())
+
+                // ── templates: replace latitude+longitude with gpsLocation ────────────
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `templates_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `categoryId` INTEGER NOT NULL,
+                        `amount` TEXT NOT NULL,
+                        `transactionType` TEXT NOT NULL,
+                        `icon` TEXT,
+                        `colorHex` TEXT,
+                        `accountId` TEXT,
+                        `targetAccountId` TEXT,
+                        `targetCurrency` TEXT,
+                        `transferRate` TEXT NOT NULL,
+                        `note` TEXT,
+                        `payee` TEXT,
+                        `location` TEXT,
+                        `gpsLocation` TEXT,
+                        `warrantyExpiration` INTEGER,
+                        `transactionStatus` TEXT NOT NULL,
+                        `paymentMethod` TEXT,
+                        `currency` TEXT NOT NULL,
+                        `tags` TEXT NOT NULL,
+                        `isStarred` INTEGER NOT NULL,
+                        `displayOrder` INTEGER NOT NULL,
+                        `profileId` INTEGER NOT NULL,
+                        FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO `templates_new`
+                    SELECT `id`, `name`, `categoryId`, `amount`, `transactionType`, `icon`, `colorHex`,
+                           `accountId`, `targetAccountId`, `targetCurrency`, `transferRate`, `note`, `payee`,
+                           `location`,
+                           CASE WHEN `latitude` IS NOT NULL AND `longitude` IS NOT NULL
+                                THEN (`latitude` || ',' || `longitude`)
+                                ELSE NULL END,
+                           `warrantyExpiration`, `transactionStatus`, `paymentMethod`, `currency`,
+                           `tags`, `isStarred`, `displayOrder`, `profileId`
+                    FROM `templates`
+                """.trimIndent())
+                db.execSQL("DROP TABLE `templates`")
+                db.execSQL("ALTER TABLE `templates_new` RENAME TO `templates`")
+            }
         }
 
         val MIGRATION_6_7 = object : Migration(6, 7) {
@@ -112,7 +223,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

@@ -144,11 +144,9 @@ fun TemplateEntrySheets(
 
     if (state.showLocationSheet) {
         AeonLocationSelection(
-            currentCoords = if (state.latitude != null && state.longitude != null) {
-                state.latitude!! to state.longitude!!
-            } else null,
-            onLocationSelected = { coords ->
-                onEvent(TemplateEntryEvent.SetLocation("", coords?.first, coords?.second))
+            gpsLocation = state.gpsLocation,
+            onLocationSelected = { gpsStr ->
+                onEvent(TemplateEntryEvent.SetLocation(gpsStr))
                 onEvent(TemplateEntryEvent.ShowLocationSheet(false))
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowLocationSheet(false)) }

@@ -104,7 +104,7 @@ data class AeonMetadataState(
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val isWarrantyEnabled: Boolean = false,
     val warrantyExpiration: Long = System.currentTimeMillis(),
-    val location: Pair<Double, Double>? = null,
+    val gpsLocation: String? = null,
     val linkedTransactions: List<Transaction> = emptyList()
 )
 
@@ -175,7 +175,7 @@ fun AeonEntryMetadataSection(
 
         // Location
         EntryLocationRow(
-            coords = state.location,
+            gpsLocation = state.gpsLocation,
             onShowLocationSheet = onLocationClick,
             label = locationLabel
         )

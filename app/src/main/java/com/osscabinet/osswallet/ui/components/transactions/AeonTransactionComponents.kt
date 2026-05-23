@@ -69,6 +69,12 @@ fun AeonTransactionList(
     showClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
     showCurrencyBreakdown: Boolean = true,
+    showAccount: Boolean = true,
+    showCategory: Boolean = true,
+    showNote: Boolean = true,
+    showTags: Boolean = true,
+    showTimestamp: Boolean = true,
+    showIcon: Boolean = true,
     baseCurrency: String,
     revealedCardIds: List<Long> = emptyList()
 ) {
@@ -138,6 +144,12 @@ fun AeonTransactionList(
                         showOpeningBalance = showOpeningBalance,
                         showClosingBalance = showClosingBalance,
                         status = tx.status,
+                        showAccount = showAccount,
+                        showCategory = showCategory,
+                        showNote = showNote,
+                        showTags = showTags,
+                        showTimestamp = showTimestamp,
+                        showIcon = showIcon,
                         showDividers = index < group.transactions.size - 1
                     ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
                 }
@@ -173,12 +185,20 @@ fun AeonTransactionItem(
     showClosingBalance: Boolean = true,
     showDividers: Boolean = true,
     status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
+    showAccount: Boolean = true,
+    showCategory: Boolean = true,
+    showNote: Boolean = true,
+    showTags: Boolean = true,
+    showTimestamp: Boolean = true,
+    showIcon: Boolean = true,
     containerColor: Color = AppColors.screenBackground,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
-    val headerText = if (isNoteHeader) note else category
-    val bottomText = if (isNoteHeader) category else note
+    val headerText = if (isNoteHeader) (if (showNote) note else if (showCategory) category else "") 
+                    else (if (showCategory) category else if (showNote) note else "")
+    val bottomText = if (isNoteHeader) (if (showCategory) category else "") 
+                    else (if (showNote) note else "")
 
     Surface(
         modifier = modifier
@@ -200,79 +220,85 @@ fun AeonTransactionItem(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            shape = CircleShape,
-                            color = (iconBg ?: AppColors.primaryContainer).copy(
-                                alpha = 0.2f
-                            )
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    icon ?: Icons.Rounded.Category,
-                                    contentDescription = null,
-                                    tint = iconBg ?: AppColors.primary,
-                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                                )
-                            }
-                        }
-
-                        // Status indicator
-                        if (status != com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED) {
+                    if (showIcon) {
+                        Box(modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)) {
                             Surface(
-                                modifier = Modifier
-                                    .size(AeonTheme.dimensions.iconSizeXs)
-                                    .align(Alignment.BottomStart),
+                                modifier = Modifier.fillMaxSize(),
                                 shape = CircleShape,
-                                color = when (status) {
-                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> PositiveAmountColor
-
-                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> AccentBlue
-
-                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> AppColors.transparent
-                                }
+                                color = (iconBg ?: AppColors.primaryContainer).copy(
+                                    alpha = 0.2f
+                                )
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
-                                        imageVector = when (status) {
-                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Icons.Rounded.Check
-                                            else -> Icons.Rounded.Sync
-                                        },
+                                        icon ?: Icons.Rounded.Category,
                                         contentDescription = null,
-                                        tint = ColorOnDark,
-                                        modifier = Modifier.size(6.dp)
+                                        tint = iconBg ?: AppColors.primary,
+                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                                     )
                                 }
                             }
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
+                            // Status indicator
+                            if (status != com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED) {
+                                Surface(
+                                    modifier = Modifier
+                                        .size(AeonTheme.dimensions.iconSizeXs)
+                                        .align(Alignment.BottomStart),
+                                    shape = CircleShape,
+                                    color = when (status) {
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> PositiveAmountColor
+
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> AccentBlue
+
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> AppColors.transparent
+                                    }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = when (status) {
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Icons.Rounded.Check
+                                                else -> Icons.Rounded.Sync
+                                            },
+                                            contentDescription = null,
+                                            tint = ColorOnDark,
+                                            modifier = Modifier.size(6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
+                    }
 
                     Row(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                headerText,
-                                style = AppTextStyles.transactionTitle.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                ),
-                                maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                account,
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 10.sp
-                                ),
-                                color = AppColors.border,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            if (!headerText.isNullOrEmpty()) {
+                                Text(
+                                    headerText,
+                                    style = AppTextStyles.transactionTitle.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    ),
+                                    maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (showAccount) {
+                                Text(
+                                    account,
+                                    style = AppTextStyles.transactionSwipeAction.copy(
+                                        fontSize = 10.sp
+                                    ),
+                                    color = AppColors.border,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                             if (!bottomText.isNullOrBlank()) {
                                 Text(
                                     bottomText,
@@ -321,17 +347,19 @@ fun AeonTransactionItem(
                                 )
                             }
 
-                            Text(
-                                timestamp,
-                                style = AppTextStyles.transactionAmountMeta,
-                                color = AppColors.contentSecondary.copy(alpha = 0.8f),
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
+                            if (showTimestamp) {
+                                Text(
+                                    timestamp,
+                                    style = AppTextStyles.transactionAmountMeta,
+                                    color = AppColors.contentSecondary.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
 
-                if (tags.isNotEmpty()) {
+                if (showTags && tags.isNotEmpty()) {
                     FlowRow(
                         modifier = Modifier.padding(top = AeonTheme.dimensions.spacingSm),
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs),

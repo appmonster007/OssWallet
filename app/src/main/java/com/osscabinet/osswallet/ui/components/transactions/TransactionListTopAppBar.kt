@@ -171,6 +171,85 @@ fun TransactionListTopAppBar(
                             showMoreMenu = false
                         }
                     )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Show Account") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showAccount,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showAccount = !recordsSettings.showAccount))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Category") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showCategory,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showCategory = !recordsSettings.showCategory))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Note") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showNote,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showNote = !recordsSettings.showNote))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Tags") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showTags,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showTags = !recordsSettings.showTags))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Timestamp") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showTimestamp,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showTimestamp = !recordsSettings.showTimestamp))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Icon") },
+                        leadingIcon = {
+                            Checkbox(
+                                checked = recordsSettings.showIcon,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(showIcon = !recordsSettings.showIcon))
+                            showMoreMenu = false
+                        }
+                    )
                 }
             }
         }

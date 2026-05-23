@@ -59,6 +59,13 @@ fun RecentActivitiesScreen(
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
     showCurrencyBreakdown: Boolean = true,
+    useNoteAsHeader: Boolean = false,
+    showAccount: Boolean = true,
+    showCategory: Boolean = true,
+    showNote: Boolean = true,
+    showTags: Boolean = true,
+    showTimestamp: Boolean = true,
+    showIcon: Boolean = true,
     tagColors: Map<String, Int> = emptyMap()
 ) {
     Column(
@@ -178,7 +185,16 @@ fun RecentActivitiesScreen(
                                 tags = enriched.tags,
                                 icon = getIconByName(enriched.categoryIcon),
                                 iconBg = Color(enriched.categoryColor),
+                                useNoteAsHeader = useNoteAsHeader,
+                                showOpeningBalance = showOpeningBalance,
+                                showClosingBalance = showClosingBalance,
                                 status = transaction.status,
+                                showAccount = showAccount,
+                                showCategory = showCategory,
+                                showNote = showNote,
+                                showTags = showTags,
+                                showTimestamp = showTimestamp,
+                                showIcon = showIcon,
                                 showDividers = index < group.transactions.size - 1,
                             ) { onTransactionEvent(TransactionItemEvent.Click(transaction.id)) }
                         }

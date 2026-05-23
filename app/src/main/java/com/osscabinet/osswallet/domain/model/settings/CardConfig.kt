@@ -337,6 +337,15 @@ data class RecentActivitiesCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY,
     val showCurrencyBreakdown: Boolean = false,
+    val useNoteAsHeader: Boolean = false,
+    val showOpeningBalance: Boolean = false,
+    val showClosingBalance: Boolean = true,
+    val showAccount: Boolean = true,
+    val showCategory: Boolean = true,
+    val showNote: Boolean = true,
+    val showTags: Boolean = true,
+    val showTimestamp: Boolean = true,
+    val showIcon: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.RECENT_ACTIVITIES

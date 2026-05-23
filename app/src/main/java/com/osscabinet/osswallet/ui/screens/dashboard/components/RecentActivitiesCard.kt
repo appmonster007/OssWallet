@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -11,8 +14,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
@@ -27,6 +32,8 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
 
 @Composable
@@ -72,6 +79,15 @@ fun RecentActivitiesCard(
             modifier = Modifier.height(300.dp),
             showHeader = false,
             showCurrencyBreakdown = config.showCurrencyBreakdown,
+            useNoteAsHeader = config.useNoteAsHeader,
+            showOpeningBalance = config.showOpeningBalance,
+            showClosingBalance = config.showClosingBalance,
+            showAccount = config.showAccount,
+            showCategory = config.showCategory,
+            showNote = config.showNote,
+            showTags = config.showTags,
+            showTimestamp = config.showTimestamp,
+            showIcon = config.showIcon,
             revealedCardIds = emptyList(),
             onTransactionEvent = { event ->
                 when (event) {
@@ -152,7 +168,7 @@ private fun RecentActivitiesSettingsSheet(
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Recent Activities", onDismiss = onDismiss, onDelete = onDelete) {
-        CardSettingsSection("Group By") {
+        CardSettingsSection("Grouping") {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 TransactionGroupingType.entries.forEachIndexed { index, type ->
                     SegmentedButton(
@@ -174,5 +190,90 @@ private fun RecentActivitiesSettingsSheet(
                 }
             }
         }
+
+        CardSettingsSection("Components") {
+            SettingsSwitchRow(
+                label = "Use Note as Header",
+                checked = config.useNoteAsHeader,
+                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Account",
+                checked = config.showAccount,
+                onCheckedChange = { onUpdate(config.copy(showAccount = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Category",
+                checked = config.showCategory,
+                onCheckedChange = { onUpdate(config.copy(showCategory = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Note",
+                checked = config.showNote,
+                onCheckedChange = { onUpdate(config.copy(showNote = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Tags",
+                checked = config.showTags,
+                onCheckedChange = { onUpdate(config.copy(showTags = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Timestamp",
+                checked = config.showTimestamp,
+                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Icon",
+                checked = config.showIcon,
+                onCheckedChange = { onUpdate(config.copy(showIcon = it)) }
+            )
+        }
+
+        CardSettingsSection("Balances") {
+            SettingsSwitchRow(
+                label = "Show Opening Balance",
+                checked = config.showOpeningBalance,
+                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Closing Balance",
+                checked = config.showClosingBalance,
+                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) }
+            )
+            SettingsSwitchRow(
+                label = "Show Currency Breakdown",
+                checked = config.showCurrencyBreakdown,
+                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    subtitle: String? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = AppTextStyles.transactionTitle)
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }

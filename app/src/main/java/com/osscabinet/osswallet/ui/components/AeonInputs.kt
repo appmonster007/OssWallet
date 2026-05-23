@@ -1,10 +1,10 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -107,6 +107,9 @@ fun CurrencySelector(
             filteredList.forEach { currency ->
                 val isSelected = currency == selectedCurrency
                 DropdownMenuItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (isSelected) AppColors.primary.copy(alpha = 0.1f) else Color.Transparent),
                     text = {
                         Text(
                             currency,
@@ -121,16 +124,6 @@ fun CurrencySelector(
                         expanded = false
                         query = ""
                     },
-                    trailingIcon = if (isSelected) {
-                        {
-                            Icon(
-                                Icons.Rounded.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = AppColors.primary
-                            )
-                        }
-                    } else null,
                     colors = MenuItemColors(
                         textColor = AppColors.contentPrimary,
                         leadingIconColor = AppColors.contentSecondary,

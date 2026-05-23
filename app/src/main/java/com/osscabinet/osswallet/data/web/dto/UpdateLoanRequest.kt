@@ -12,7 +12,8 @@ data class UpdateLoanRequest(
     val startDate: Long? = null,
     val expectedSettlementDate: Long? = null,
     val interestRate: Double? = null,
-    val note: String? = null
+    val note: String? = null,
+    val linkedAccountId: String? = null
 )
 
 @Serializable

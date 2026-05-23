@@ -23,7 +23,10 @@ data class FilterDto(
     val minAmount: Double? = null,
     val maxAmount: Double? = null,
     val hasWarranty: Boolean? = null,
-    val excludeFuture: Boolean = true
+    val excludeFuture: Boolean = true,
+    val warrantyExpirationStart: Long? = null,
+    val warrantyExpirationEnd: Long? = null,
+    val linkedTransactionIds: List<Long> = emptyList()
 )
 
 @Serializable
@@ -46,5 +49,8 @@ data class CreateFilterRequest(
     val minAmount: Double? = null,
     val maxAmount: Double? = null,
     val hasWarranty: Boolean? = null,
-    val excludeFuture: Boolean = true
+    val excludeFuture: Boolean = true,
+    val warrantyExpirationStart: Long? = null,
+    val warrantyExpirationEnd: Long? = null,
+    val linkedTransactionIds: List<Long> = emptyList()
 )

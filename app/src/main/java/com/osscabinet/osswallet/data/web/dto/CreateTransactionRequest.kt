@@ -15,5 +15,8 @@ data class CreateTransactionRequest(
     val payee: String = "",
     val tags: List<String> = emptyList(),
     val paymentMethod: String = "CASH",
-    val status: String = "CLEARED"
+    val status: String = "CLEARED",
+    val gpsLocation: String? = null,
+    val location: String? = null,
+    val warrantyExpiration: Long? = null
 )

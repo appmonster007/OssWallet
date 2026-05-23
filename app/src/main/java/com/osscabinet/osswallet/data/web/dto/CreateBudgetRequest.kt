@@ -10,5 +10,8 @@ data class CreateBudgetRequest(
     val timelineType: String,  // "MONTHLY", "YEARLY", etc.
     val categoryIds: List<Long> = emptyList(),
     val alertThreshold: Double = 0.8,
-    val rollover: Boolean = false
+    val rollover: Boolean = false,
+    val accountIds: List<String> = emptyList(),
+    val trackTypes: List<String> = emptyList(),
+    val filterId: Long? = null
 )

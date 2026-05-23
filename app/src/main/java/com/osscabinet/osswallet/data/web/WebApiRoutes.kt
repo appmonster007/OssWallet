@@ -39,6 +39,13 @@ import com.osscabinet.ossWallet.data.web.dto.UpdateLoanRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdatePlannedPaymentRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateSettingsRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateTransactionRequest
+import com.osscabinet.ossWallet.data.web.dto.TemplateDto
+import com.osscabinet.ossWallet.data.web.dto.CreateTemplateRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateTemplateRequest
+import com.osscabinet.ossWallet.data.web.dto.AddCardRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderCardsRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderAccountsRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderCategoriesRequest
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -49,6 +56,7 @@ import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -65,6 +73,8 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
@@ -75,6 +85,7 @@ import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
@@ -114,7 +125,8 @@ class WebApiRoutes(
     private val currencyRepository: CurrencyRepository,
     private val filterRepository: FilterRepository,
     private val cardRepository: CardRepository,
-    private val cardComputerRegistry: CardComputerRegistry
+    private val cardComputerRegistry: CardComputerRegistry,
+    private val templateRepository: TemplateRepository
 ) {
     fun Application.installRoutes() {
         routing {
@@ -301,7 +313,10 @@ class WebApiRoutes(
                             payee = req.payee,
                             note = req.note,
                             status = TransactionStatus.entries.find { it.name.equals(req.status, ignoreCase = true) }
-                                ?: TransactionStatus.CLEARED
+                                ?: TransactionStatus.CLEARED,
+                            gpsLocation = req.gpsLocation,
+                            location = req.location,
+                            warrantyExpiration = req.warrantyExpiration
                         )
                         val newId = transactionRepository.insertTransaction(tx, profileId)
                         val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
@@ -462,7 +477,12 @@ class WebApiRoutes(
                             categoryIds = req.categoryIds.toSet(),
                             alertThreshold = req.alertThreshold.toFloat(),
                             rollover = req.rollover,
-                            profileId = profileId
+                            profileId = profileId,
+                            accountIds = req.accountIds.toSet(),
+                            trackTypes = req.trackTypes.mapNotNull { t ->
+                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+                            }.toSet(),
+                            filterId = req.filterId
                         )
                         val newId = budgetRepository.insert(budget)
                         call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
@@ -541,7 +561,7 @@ class WebApiRoutes(
                             expectedSettlementDate = req.expectedSettlementDate,
                             interestRate = req.interestRate?.toFloat(),
                             note = req.note,
-                            linkedAccountId = "",
+                            linkedAccountId = req.linkedAccountId,
                             profileId = profileId
                         )
                         val newId = loanRepository.insertLoan(loan)
@@ -643,10 +663,16 @@ class WebApiRoutes(
                         val req = call.receive<CreatePlannedPaymentRequest>()
                         val recurrenceType = RecurrenceType.entries.find { it.name.equals(req.recurrenceType, ignoreCase = true) }
                             ?: RecurrenceType.MONTHLY
-                        val rule = RecurrenceRule(type = recurrenceType, interval = req.recurrenceInterval)
+                        val rule = RecurrenceRule(
+                            type = recurrenceType,
+                            interval = req.recurrenceInterval,
+                            dayOfWeek = req.dayOfWeek,
+                            dayOfMonth = req.dayOfMonth
+                        )
                         val schedule = PaymentSchedule(
                             recurrenceRule = rule,
                             startDate = req.startDate,
+                            endDate = req.endDate,
                             nextDueDate = req.startDate
                         )
                         val payment = PlannedPayment(
@@ -657,7 +683,20 @@ class WebApiRoutes(
                                 ?: TransactionType.EXPENSE,
                             categoryId = req.categoryId,
                             accountId = req.accountId,
+                            targetAccountId = req.targetAccountId,
+                            targetCurrency = req.targetCurrency,
+                            transferRate = BigDecimal.valueOf(req.transferRate),
                             note = req.note,
+                            payee = req.payee,
+                            location = req.location,
+                            gpsLocation = req.gpsLocation,
+                            warrantyExpiration = req.warrantyExpiration,
+                            transactionStatus = TransactionStatus.entries.find { it.name.equals(req.transactionStatus, ignoreCase = true) }
+                                ?: TransactionStatus.CLEARED,
+                            paymentMethod = req.paymentMethod?.let { m ->
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                            },
+                            tags = req.tags.toSet(),
                             schedule = schedule,
                             autoConfirm = req.autoConfirm,
                             profileId = profileId
@@ -1187,7 +1226,10 @@ class WebApiRoutes(
                             note = req.note ?: old.note,
                             status = req.status?.let { s ->
                                 TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: old.status
-                            } ?: old.status
+                            } ?: old.status,
+                            gpsLocation = req.gpsLocation ?: old.gpsLocation,
+                            location = req.location ?: old.location,
+                            warrantyExpiration = req.warrantyExpiration ?: old.warrantyExpiration
                         )
                         transactionRepository.updateTransaction(old, updated, profileId)
                         val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
@@ -1262,7 +1304,12 @@ class WebApiRoutes(
                             categoryIds = req.categoryIds?.toSet() ?: existing.categoryIds,
                             alertThreshold = req.alertThreshold?.toFloat() ?: existing.alertThreshold,
                             rollover = req.rollover ?: existing.rollover,
-                            isArchived = req.isArchived ?: existing.isArchived
+                            isArchived = req.isArchived ?: existing.isArchived,
+                            accountIds = req.accountIds?.toSet() ?: existing.accountIds,
+                            trackTypes = req.trackTypes?.mapNotNull { t ->
+                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+                            }?.toSet() ?: existing.trackTypes,
+                            filterId = req.filterId ?: existing.filterId
                         )
                         budgetRepository.update(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
@@ -1315,7 +1362,8 @@ class WebApiRoutes(
                             startDate = req.startDate ?: existing.startDate,
                             expectedSettlementDate = req.expectedSettlementDate ?: existing.expectedSettlementDate,
                             interestRate = req.interestRate?.toFloat() ?: existing.interestRate,
-                            note = req.note ?: existing.note
+                            note = req.note ?: existing.note,
+                            linkedAccountId = req.linkedAccountId ?: existing.linkedAccountId
                         )
                         loanRepository.updateLoan(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
@@ -1387,15 +1435,21 @@ class WebApiRoutes(
                         val existing = plannedPaymentRepository.getById(id)
                             ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
                         val req = call.receive<UpdatePlannedPaymentRequest>()
-                        val recurrenceRule = if (req.recurrenceType != null || req.recurrenceInterval != null) {
+                        val recurrenceRule = if (req.recurrenceType != null || req.recurrenceInterval != null || req.dayOfWeek != null || req.dayOfMonth != null) {
                             val type = req.recurrenceType?.let { t ->
                                 RecurrenceType.entries.find { it.name.equals(t, ignoreCase = true) }
                             } ?: existing.schedule.recurrenceRule.type
-                            RecurrenceRule(type = type, interval = req.recurrenceInterval ?: existing.schedule.recurrenceRule.interval)
+                            RecurrenceRule(
+                                type = type,
+                                interval = req.recurrenceInterval ?: existing.schedule.recurrenceRule.interval,
+                                dayOfWeek = req.dayOfWeek ?: existing.schedule.recurrenceRule.dayOfWeek,
+                                dayOfMonth = req.dayOfMonth ?: existing.schedule.recurrenceRule.dayOfMonth
+                            )
                         } else existing.schedule.recurrenceRule
                         val schedule = existing.schedule.copy(
                             recurrenceRule = recurrenceRule,
-                            startDate = req.startDate ?: existing.schedule.startDate
+                            startDate = req.startDate ?: existing.schedule.startDate,
+                            endDate = req.endDate ?: existing.schedule.endDate
                         )
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
@@ -1406,7 +1460,21 @@ class WebApiRoutes(
                             } ?: existing.transactionType,
                             categoryId = req.categoryId ?: existing.categoryId,
                             accountId = req.accountId ?: existing.accountId,
+                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
+                            targetCurrency = req.targetCurrency ?: existing.targetCurrency,
+                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: existing.transferRate,
                             note = req.note ?: existing.note,
+                            payee = req.payee ?: existing.payee,
+                            location = req.location ?: existing.location,
+                            gpsLocation = req.gpsLocation ?: existing.gpsLocation,
+                            warrantyExpiration = req.warrantyExpiration ?: existing.warrantyExpiration,
+                            transactionStatus = req.transactionStatus?.let { s ->
+                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: existing.transactionStatus
+                            } ?: existing.transactionStatus,
+                            paymentMethod = req.paymentMethod?.let { m ->
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                            } ?: existing.paymentMethod,
+                            tags = req.tags?.toSet() ?: existing.tags,
                             schedule = schedule,
                             autoConfirm = req.autoConfirm ?: existing.autoConfirm
                         )
@@ -1571,6 +1639,14 @@ class WebApiRoutes(
                         val req = call.receive<UpdateSettingsRequest>()
                         req.baseCurrency?.let { settingsRepository.saveCurrency(it) }
                         req.decimalPrecision?.let { settingsRepository.saveDecimalPrecision(it) }
+                        req.theme?.let { settingsRepository.saveTheme(it) }
+                        req.selectedFont?.let { settingsRepository.saveSelectedFont(it) }
+                        req.use24HourFormat?.let { settingsRepository.saveUse24HourFormat(it) }
+                        req.userName?.let { settingsRepository.saveUserName(it) }
+                        req.mapsAccessEnabled?.let { settingsRepository.saveMapsAccessEnabled(it) }
+                        req.autoSaveExchangeRates?.let { settingsRepository.saveAutoSaveExchangeRates(it) }
+                        req.cardAnimationEnabled?.let { settingsRepository.saveCardAnimationEnabled(it) }
+                        req.currencyProvider?.let { settingsRepository.saveCurrencyProvider(it) }
                         val profileId = settingsRepository.currentProfileId.first()
                         val baseCurrency = settingsRepository.currency.first()
                         val precision = settingsRepository.decimalPrecision.first()
@@ -1579,6 +1655,237 @@ class WebApiRoutes(
                             baseCurrency = baseCurrency,
                             decimalPrecision = precision
                         )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Templates ─────────────────────────────────────────────────────────
+                get("/templates") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val templates = templateRepository.getAllTemplatesSync()
+                        val dtos = templates.map { it.toTemplateDto() }
+                        call.respond(ApiResponse(success = true, data = dtos))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                post("/templates") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val req = call.receive<CreateTemplateRequest>()
+                        val template = Template(
+                            name = req.name,
+                            categoryId = req.categoryId,
+                            amount = BigDecimal.valueOf(req.amount),
+                            transactionType = TransactionType.entries.find { it.name.equals(req.transactionType, ignoreCase = true) }
+                                ?: TransactionType.EXPENSE,
+                            currency = req.currency,
+                            accountId = req.accountId,
+                            targetAccountId = req.targetAccountId,
+                            targetCurrency = req.targetCurrency,
+                            transferRate = BigDecimal.valueOf(req.transferRate),
+                            note = req.note,
+                            payee = req.payee,
+                            location = req.location,
+                            gpsLocation = req.gpsLocation,
+                            warrantyExpiration = req.warrantyExpiration,
+                            transactionStatus = TransactionStatus.entries.find { it.name.equals(req.transactionStatus, ignoreCase = true) }
+                                ?: TransactionStatus.CLEARED,
+                            paymentMethod = req.paymentMethod?.let { m ->
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                            },
+                            tags = req.tags.toSet(),
+                            icon = req.icon,
+                            colorHex = req.colorHex,
+                            isStarred = req.isStarred,
+                            displayOrder = req.displayOrder,
+                            profileId = profileId
+                        )
+                        val newId = templateRepository.insertTemplate(template)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                get("/templates/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val template = templateRepository.getTemplateById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                        call.respond(ApiResponse(success = true, data = template.toTemplateDto()))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/templates/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = templateRepository.getTemplateById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                        val req = call.receive<UpdateTemplateRequest>()
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            categoryId = req.categoryId ?: existing.categoryId,
+                            amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
+                            transactionType = req.transactionType?.let { t ->
+                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.transactionType
+                            } ?: existing.transactionType,
+                            currency = req.currency ?: existing.currency,
+                            accountId = req.accountId ?: existing.accountId,
+                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
+                            targetCurrency = req.targetCurrency ?: existing.targetCurrency,
+                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: existing.transferRate,
+                            note = req.note ?: existing.note,
+                            payee = req.payee ?: existing.payee,
+                            location = req.location ?: existing.location,
+                            gpsLocation = req.gpsLocation ?: existing.gpsLocation,
+                            warrantyExpiration = req.warrantyExpiration ?: existing.warrantyExpiration,
+                            transactionStatus = req.transactionStatus?.let { s ->
+                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: existing.transactionStatus
+                            } ?: existing.transactionStatus,
+                            paymentMethod = req.paymentMethod?.let { m ->
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                            } ?: existing.paymentMethod,
+                            tags = req.tags?.toSet() ?: existing.tags,
+                            icon = req.icon ?: existing.icon,
+                            colorHex = req.colorHex ?: existing.colorHex,
+                            isStarred = req.isStarred ?: existing.isStarred,
+                            displayOrder = req.displayOrder ?: existing.displayOrder
+                        )
+                        templateRepository.updateTemplate(updated)
+                        call.respond(ApiResponse(success = true, data = updated.toTemplateDto()))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                delete("/templates/{id}") {
+                    if (!authenticate(authSessionManager)) return@delete
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val template = templateRepository.getTemplateById(id)
+                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                        templateRepository.deleteTemplate(template)
+                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Dashboard card management ─────────────────────────────────────────
+                post("/dashboard/cards") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val req = call.receive<AddCardRequest>()
+                        val cardType = CardType.entries.find { it.name.equals(req.cardType, ignoreCase = true) || it.serialName.equals(req.cardType, ignoreCase = true) }
+                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Unknown cardType: ${req.cardType}"))
+                        val currentConfig = cardRepository.dashboardCardsConfig.first()
+                        val existingCount = currentConfig.cards.size
+                        val newCard = cardType.toDefaultCardConfig(existingCount)
+                        cardRepository.addDashboardCard(newCard)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("cardId" to newCard.cardId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                delete("/dashboard/cards/{cardId}") {
+                    if (!authenticate(authSessionManager)) return@delete
+                    try {
+                        val cardId = call.parameters["cardId"]
+                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid cardId"))
+                        cardRepository.removeDashboardCard(cardId)
+                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to cardId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/dashboard/cards/reorder") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val req = call.receive<ReorderCardsRequest>()
+                        val currentConfig = cardRepository.dashboardCardsConfig.first()
+                        val cardMap = currentConfig.cards.associateBy { it.cardId }
+                        val reordered = req.cardIds.mapIndexedNotNull { index, cardId ->
+                            cardMap[cardId]?.let { it.withOrder(index) }
+                        }
+                        cardRepository.reorderDashboardCards(reordered)
+                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to reordered.size)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Transaction clone ─────────────────────────────────────────────────
+                post("/transactions/{id}/clone") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val original = transactionRepository.getTransactionById(id)
+                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
+                        val clone = original.copy(id = 0, timestamp = System.currentTimeMillis())
+                        val newId = transactionRepository.insertTransaction(clone, profileId)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Account reorder ───────────────────────────────────────────────────
+                put("/accounts/reorder") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val req = call.receive<ReorderAccountsRequest>()
+                        val allAccounts = accountRepository.getAllAccountsSync(profileId)
+                        val accountMap = allAccounts.associateBy { it.id }
+                        val reordered = req.accountIds.mapNotNull { accountMap[it] }
+                        accountRepository.updateAccounts(reordered, profileId)
+                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to reordered.size)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Loan payment delete ───────────────────────────────────────────────
+                delete("/loans/{loanId}/payments/{paymentId}") {
+                    if (!authenticate(authSessionManager)) return@delete
+                    try {
+                        val paymentId = call.parameters["paymentId"]?.toLongOrNull()
+                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid paymentId"))
+                        loanRepository.deletePayment(paymentId)
+                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to paymentId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Category reorder ──────────────────────────────────────────────────
+                put("/categories/reorder") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val req = call.receive<ReorderCategoriesRequest>()
+                        val allCategories = categoryRepository.getAllCategoriesSync()
+                        val categoryMap = allCategories.associateBy { it.id }
+                        req.categoryIds.forEachIndexed { index, catId ->
+                            val cat = categoryMap[catId] ?: return@forEachIndexed
+                            categoryRepository.upsertCategory(cat)
+                        }
+                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to req.categoryIds.size)))
                     } catch (e: Exception) {
                         call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
                     }
@@ -1943,6 +2250,54 @@ class WebApiRoutes(
             hasWarranty = hasWarranty,
             excludeFuture = excludeFuture
         )
+    }
+
+    private fun Template.toTemplateDto() = TemplateDto(
+        id = id,
+        name = name,
+        categoryId = categoryId,
+        amount = amount.toDouble(),
+        transactionType = transactionType.name,
+        currency = currency,
+        accountId = accountId,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate.toDouble(),
+        note = note,
+        payee = payee,
+        location = location,
+        gpsLocation = gpsLocation,
+        warrantyExpiration = warrantyExpiration,
+        transactionStatus = transactionStatus.name,
+        paymentMethod = paymentMethod?.name,
+        tags = tags.toList(),
+        icon = icon,
+        colorHex = colorHex,
+        isStarred = isStarred,
+        displayOrder = displayOrder
+    )
+
+    private fun CardType.toDefaultCardConfig(order: Int): CardConfig {
+        val cardId = "${serialName}_${System.currentTimeMillis()}"
+        return CardConfig.createDefault(type = this, context = ScreenContext.DASHBOARD, cardId = cardId)
+    }
+
+    private fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
+        is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> copy(order = newOrder)
     }
 
     private fun loadIndexHtml(): String {

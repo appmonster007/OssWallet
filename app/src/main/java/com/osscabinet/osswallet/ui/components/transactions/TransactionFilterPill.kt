@@ -76,6 +76,8 @@ fun TransactionFilterPill(
     modifier: Modifier = Modifier,
     bottomPadding: Dp = 16.dp,
     initialMorph: Float = 0f,
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter()
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -280,7 +282,8 @@ fun TransactionFilterPill(
                     onClose = {},
                     backgroundColor = AppColors.cardSurfaceProminent,
                     accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
-                    filterRules = CardFilterRules.DEFAULT.copy(allowTimelineSelection = false),
+                    filterRules = filterRules.copy(allowTimelineSelection = false),
+                    baseFilter = baseFilter
                 )
             }
         }

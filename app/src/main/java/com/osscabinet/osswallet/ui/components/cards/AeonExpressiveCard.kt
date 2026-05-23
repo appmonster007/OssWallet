@@ -263,6 +263,8 @@ fun AeonExpressiveCard(
                 onSaveFilterClick = onSaveFilterClick,
                 onDismiss = { showFilterSheet = false },
                 modifier = Modifier.fillMaxSize(),
+                filterRules = filterRules ?: CardFilterRules.DEFAULT,
+                baseFilter = baseFilter
             )
         }
     }

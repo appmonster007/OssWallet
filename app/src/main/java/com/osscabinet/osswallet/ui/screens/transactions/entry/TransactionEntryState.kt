@@ -27,6 +27,7 @@ data class TransactionEntryState(
 
     // Location
     val gpsLocation: String? = null,
+    val location: String? = null,
 
     // Linked transactions
     val linkedTransactionIds: List<Long> = emptyList(),

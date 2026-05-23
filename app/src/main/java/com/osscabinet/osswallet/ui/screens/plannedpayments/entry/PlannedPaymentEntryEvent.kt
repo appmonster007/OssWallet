@@ -26,7 +26,7 @@ sealed class PlannedPaymentEntryEvent {
     data class SetCategoryId(val id: Long) : PlannedPaymentEntryEvent()
     data class SetPayee(val payee: String) : PlannedPaymentEntryEvent()
     data class SetNote(val note: String) : PlannedPaymentEntryEvent()
-    data class SetLocation(val gpsLocation: String?) : PlannedPaymentEntryEvent()
+    data class SetLocation(val gpsLocation: String?, val location: String? = null) : PlannedPaymentEntryEvent()
     data class SetWarrantyEnabled(val enabled: Boolean) : PlannedPaymentEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : PlannedPaymentEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : PlannedPaymentEntryEvent()

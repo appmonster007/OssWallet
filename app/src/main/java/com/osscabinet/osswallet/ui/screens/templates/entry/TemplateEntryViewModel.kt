@@ -176,7 +176,7 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
-            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation) }
+            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation, location = event.location ?: "") }
             is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
             is TemplateEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }

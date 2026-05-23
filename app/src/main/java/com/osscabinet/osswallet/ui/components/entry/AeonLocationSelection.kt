@@ -191,7 +191,7 @@ private fun fetchLastLocation(
 @Composable
 fun AeonLocationSelection(
     gpsLocation: String?,
-    onLocationSelected: (String) -> Unit,
+    onLocationSelected: (gpsLocation: String, locationName: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context        = LocalContext.current
@@ -343,7 +343,7 @@ fun AeonLocationSelection(
                     recentLocations.add(0, loc)
                     if (recentLocations.size > 5) recentLocations.removeAt(recentLocations.size - 1)
                 }
-                onLocationSelected("${loc.lat},${loc.lon}")
+                onLocationSelected("${loc.lat},${loc.lon}", selectedLocation?.displayName)
                 onDismiss()
             },
             onPanelDismiss = {
@@ -996,7 +996,7 @@ fun AeonLocationSelectionContentPreview() {
 @Composable
 fun AeonLocationSelectionEmptyPreview() {
     OssWalletTheme {
-        AeonLocationSelection(gpsLocation = null, onLocationSelected = {}, onDismiss = {})
+        AeonLocationSelection(gpsLocation = null, onLocationSelected = { _, _ -> }, onDismiss = {})
     }
 }
 
@@ -1004,7 +1004,7 @@ fun AeonLocationSelectionEmptyPreview() {
 @Composable
 fun AeonLocationSelectionWithPinPreview() {
     OssWalletTheme {
-        AeonLocationSelection(gpsLocation = "37.7749,-122.4194", onLocationSelected = {}, onDismiss = {})
+        AeonLocationSelection(gpsLocation = "37.7749,-122.4194", onLocationSelected = { _, _ -> }, onDismiss = {})
     }
 }
 

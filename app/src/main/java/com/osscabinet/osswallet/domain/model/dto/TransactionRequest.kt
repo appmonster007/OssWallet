@@ -22,6 +22,7 @@ data class TransactionRequest(
     val payee: String = "",
     val note: String = "",
     val gpsLocation: String? = null,
+    val location: String? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val sourcePlannedPaymentId: Long? = null,

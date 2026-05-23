@@ -135,6 +135,7 @@ class TransactionManager(
             payee = request.payee,
             note = request.note,
             gpsLocation = request.gpsLocation,
+            location = request.location,
             warrantyExpiration = request.warrantyExpiration,
             status = request.status,
             sourcePlannedPaymentId = request.sourcePlannedPaymentId
@@ -278,6 +279,7 @@ class TransactionManager(
             payee = payee,
             note = note,
             gpsLocation = gpsLocation,
+            location = location,
             warrantyExpiration = warrantyExpiration,
             status = status,
             sourcePlannedPaymentId = sourcePlannedPaymentId

@@ -181,6 +181,7 @@ class TransactionEntryViewModel @Inject constructor(
                 ?: (System.currentTimeMillis() + 31536000000L),
             isWarrantyEnabled = transaction.warrantyExpiration != null,
             gpsLocation = transaction.gpsLocation,
+            location = transaction.location,
             selectedAccount = selectedAcc,
             selectedCurrency = transaction.currency,
             targetAccount = targetAcc,
@@ -217,6 +218,7 @@ class TransactionEntryViewModel @Inject constructor(
                 ?: System.currentTimeMillis() + 31536000000L,
             isWarrantyEnabled = prefill.warrantyExpiration != null,
             gpsLocation = prefill.gpsLocation,
+            location = prefill.location,
             linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
                 ?: prefill.linkedTransactionIds,
             selectedAccount = prefillAcc,
@@ -306,7 +308,7 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(warrantyExpirationMillis = event.millis)
             }
 
-            is TransactionEntryEvent.SetLocation -> update { it.copy(gpsLocation = event.gpsLocation) }
+            is TransactionEntryEvent.SetLocation -> update { it.copy(gpsLocation = event.gpsLocation, location = event.location) }
             is TransactionEntryEvent.AddLinkedTransaction -> {
                 viewModelScope.launch {
                     val tx = transactionUseCases.getTransactionById(event.id)
@@ -538,6 +540,7 @@ class TransactionEntryViewModel @Inject constructor(
             payee = currentState.payee,
             note = currentState.note,
             gpsLocation = currentState.gpsLocation,
+            location = currentState.location,
             warrantyExpiration = if (currentState.isWarrantyEnabled) {
                 currentState.warrantyExpirationMillis
             } else null,
@@ -623,6 +626,7 @@ class TransactionEntryViewModel @Inject constructor(
             payee = currentState.payee,
             note = currentState.note,
             gpsLocation = currentState.gpsLocation,
+            location = currentState.location,
             warrantyExpiration = if (currentState.isWarrantyEnabled) {
                 currentState.warrantyExpirationMillis
             } else null,

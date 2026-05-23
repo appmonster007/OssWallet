@@ -101,6 +101,7 @@ fun TemplateFormBody(
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
                             gpsLocation = state.gpsLocation,
+                            locationName = state.location.ifBlank { null },
                             linkedTransactions = state.displayLinkedTxs
                         ),
                         accounts = state.accounts,

@@ -30,7 +30,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -205,6 +205,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `transactions` ADD COLUMN `location` TEXT")
+            }
+        }
+
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_categories_name` ON `categories` (`name`)")
@@ -223,7 +229,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

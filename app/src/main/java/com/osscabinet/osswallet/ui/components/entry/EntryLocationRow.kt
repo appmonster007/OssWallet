@@ -12,15 +12,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import kotlin.math.abs
+
+private fun formatGpsNsew(gpsLocation: String): String? {
+    val parts = gpsLocation.split(",")
+    if (parts.size != 2) return null
+    val lat = parts[0].toDoubleOrNull() ?: return null
+    val lon = parts[1].toDoubleOrNull() ?: return null
+    val ns = if (lat >= 0) "N" else "S"
+    val ew = if (lon >= 0) "E" else "W"
+    return "%.5f°%s  %.5f°%s".format(abs(lat), ns, abs(lon), ew)
+}
 
 @Composable
 fun EntryLocationRow(
     gpsLocation: String?,
+    locationName: String? = null,
     onShowLocationSheet: () -> Unit,
     label: String = "Location"
 ) {
@@ -50,22 +64,43 @@ fun EntryLocationRow(
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label,
                     style = AppTextStyles.transactionSwipeAction.copy(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 )
-                Text(
-                    text = gpsLocation?.let {
-                        val parts = it.split(",")
-                        if (parts.size == 2) "${parts[0].take(8)}, ${parts[1].take(8)}" else it
-                    } ?: "Add Location",
-                    style = AppTextStyles.transactionAmount
-                )
+                if (gpsLocation == null) {
+                    Text(
+                        text = "Add Location",
+                        style = AppTextStyles.transactionAmount
+                    )
+                } else {
+                    if (!locationName.isNullOrBlank()) {
+                        Text(
+                            text = locationName,
+                            style = AppTextStyles.transactionAmount.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            ),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    val gpsFormatted = formatGpsNsew(gpsLocation)
+                    if (gpsFormatted != null) {
+                        Text(
+                            text = gpsFormatted,
+                            style = AppTextStyles.transactionSwipeAction.copy(
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
@@ -85,10 +120,17 @@ fun EntryLocationRowPreview() {
         ) {
             EntryLocationRow(
                 gpsLocation = null,
+                locationName = null,
                 onShowLocationSheet = {}
             )
             EntryLocationRow(
-                gpsLocation = "1.23456,7.89012",
+                gpsLocation = "37.77490,-122.41940",
+                locationName = null,
+                onShowLocationSheet = {}
+            )
+            EntryLocationRow(
+                gpsLocation = "48.85341,2.34880",
+                locationName = "Rue de Rivoli, 1er Arrondissement, Paris, Île-de-France, France Métropolitaine, 75001, France",
                 onShowLocationSheet = {}
             )
         }

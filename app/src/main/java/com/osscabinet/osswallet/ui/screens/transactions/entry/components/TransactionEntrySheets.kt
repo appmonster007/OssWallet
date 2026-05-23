@@ -169,8 +169,8 @@ fun TransactionEntrySheets(
     if (state.showLocationSheet) {
         AeonLocationSelection(
             gpsLocation = state.gpsLocation,
-            onLocationSelected = { gpsStr ->
-                onEvent(TransactionEntryEvent.SetLocation(gpsStr))
+            onLocationSelected = { gpsStr, locationName ->
+                onEvent(TransactionEntryEvent.SetLocation(gpsStr, locationName))
                 onEvent(TransactionEntryEvent.ShowLocationSheet(false))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowLocationSheet(false)) }

@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import java.math.BigDecimal
 
 /**
@@ -34,5 +35,8 @@ data class CardInput(
     val plannedPayments: List<PlannedPayment> = emptyList(),
     val budgets: List<Budget> = emptyList(),
     val loans: List<Loan> = emptyList(),
-    val loanPayments: Map<Long, List<LoanPayment>> = emptyMap()
+    val loanPayments: Map<Long, List<LoanPayment>> = emptyMap(),
+    // Pre-computed hierarchy — built once in ComputeCardUseCase before dispatching to all cards.
+    // Default is Empty; ComputeCardUseCase always enriches it before compute.
+    val categoryHierarchy: CategoryHierarchyCache = CategoryHierarchyCache.Empty
 )

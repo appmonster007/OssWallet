@@ -23,6 +23,28 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
+ * Collects all descendant IDs of [rootId] by walking [allItems] with the given mappers.
+ * Used to cascade select/deselect children when a parent is toggled in MULTI mode.
+ */
+private fun <T, ID> collectDescendantIds(
+    rootId: ID,
+    allItems: List<T>,
+    idMapper: (T) -> ID,
+    parentIdMapper: (T) -> ID?
+): Set<ID> {
+    val result = mutableSetOf<ID>()
+    val queue = ArrayDeque<ID>()
+    allItems.filter { parentIdMapper(it) == rootId }.forEach { queue.add(idMapper(it)) }
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        if (result.add(current)) {
+            allItems.filter { parentIdMapper(it) == current }.forEach { queue.add(idMapper(it)) }
+        }
+    }
+    return result
+}
+
+/**
  * A unified hierarchical selector that supports single-select, multi-select, parent-selection, and management modes.
  * Implements a "layered" hierarchical design with left-aligned expansion controls.
  * Generic version that works with any data type and any ID type.
@@ -194,10 +216,11 @@ private fun <T, ID> RecursiveHybridNode(
                         AeonSelectMode.SINGLE -> onSelectionChange(setOf(itemId))
                         AeonSelectMode.PARENT -> onParentSelected(itemId)
                         AeonSelectMode.MULTI -> {
+                            val descendants = collectDescendantIds(itemId, allItems, idMapper, parentIdMapper)
                             val newSelected = if (itemId in selectedIds) {
-                                selectedIds - itemId
+                                selectedIds - itemId - descendants
                             } else {
-                                selectedIds + itemId
+                                selectedIds + itemId + descendants
                             }
                             onSelectionChange(newSelected)
                         }

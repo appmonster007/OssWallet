@@ -35,7 +35,9 @@ class CategorySpendingTrendCardComputer :
         input: CardInput,
         config: CategorySpendingTrendCardConfig
     ): CardRenderData.CategorySpendingTrend {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = if (rawFilter.categoryIds.isEmpty()) rawFilter
+            else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
         // Build category nature lookup from full categories list

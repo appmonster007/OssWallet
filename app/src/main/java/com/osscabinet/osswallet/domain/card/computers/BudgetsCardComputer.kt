@@ -15,11 +15,13 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
     override suspend fun compute(input: CardInput, config: BudgetsCardConfig): CardRenderData.Budgets {
         val now = System.currentTimeMillis()
 
-        // Resolve effective filter using canonical pipeline, then single-pass filter
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        // Budgets should NOT follow the global timeline filter (e.g. Dashboard "Today")
+        // but should respect global Account/Category filters if explicitly merged.
+        // We use a clean filter for budgets that ignores the timeline of input.filter.
+        val baseBudgetFilter = input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        val mergedFilter = resolveEffectiveFilter(baseBudgetFilter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val filteredTx = TransactionFilterService.filter(input.transactions, mergedFilter)
 
-        // BudgetService applies its own period/category/account rules on top of filteredTx.
         val budgets = if (config.showArchived) input.budgets
         else input.budgets.filter { !it.isArchived }
 

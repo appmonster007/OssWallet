@@ -12,6 +12,9 @@ interface LoanPaymentDao {
     @Query("SELECT * FROM loan_payments WHERE loanId = :loanId ORDER BY date DESC")
     suspend fun getPaymentsForLoanSync(loanId: Long): List<LoanPaymentEntity>
 
+    @Query("SELECT * FROM loan_payments ORDER BY date DESC")
+    fun getAllPayments(): Flow<List<LoanPaymentEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(payment: LoanPaymentEntity): Long
 

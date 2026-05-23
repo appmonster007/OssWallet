@@ -77,6 +77,7 @@ fun AccountsCard(
         icon = Icons.Rounded.AccountBalanceWallet,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,

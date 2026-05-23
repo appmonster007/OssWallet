@@ -215,6 +215,25 @@
 
   /* ── Category indent ───────────────────────────────────────── */
   .cat-child { padding-left: 28px; }
+
+  /* ── Dashboard cards ───────────────────────────────────────── */
+  .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .dash-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .dash-card-title { font-weight: 700; font-size: 1rem; flex: 1; min-width: 0; }
+  .filter-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); white-space: nowrap; }
+  .dash-card-actions { display: flex; gap: 4px; margin-left: auto; }
+  .currency-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  .currency-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; }
+  .currency-code { font-size: 0.85rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .currency-balance { font-size: 1.1rem; font-weight: 700; }
+  .currency-base { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .treemap-wrap { overflow-x: auto; }
+  .manage-card-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .manage-card-row:last-child { border-bottom: none; }
+  .manage-card-name { flex: 1; font-size: 0.9rem; font-weight: 500; }
+  .add-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-top: 4px; }
+  .add-card-btn { padding: 10px; text-align: center; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.15s; }
+  .add-card-btn:hover { background: color-mix(in srgb, var(--accent) 15%, var(--surface2)); border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -526,6 +545,124 @@
     return `<div class="progress-track"><div class="progress-fill ${esc(cls)}" style="width:${w}%"></div></div>`;
   }
 
+  /* Multi-line SVG chart — series:[{name,points:[],labels:[],color,opacity}] */
+  function svgLineChart(seriesList, w, h) {
+    w = w || 560; h = h || 160;
+    if (!seriesList || !seriesList.length) return '<p class="empty-state">No data</p>';
+    const first = seriesList.find(s => s.points && s.points.length);
+    if (!first || !first.points.length) return '<p class="empty-state">No data</p>';
+    const n = first.points.length;
+    const allVals = seriesList.flatMap(s => s.points || []);
+    const minVal = Math.min(0, ...allVals);
+    const maxVal = Math.max(...allVals, 1);
+    const range = maxVal - minVal || 1;
+    const pl = 40, pr = 10, pt = 10, pb = 22;
+    const cw = w - pl - pr, ch = h - pt - pb;
+    let svg = '';
+    for (let gi = 0; gi <= 4; gi++) {
+      const gy = (pt + ch * gi / 4).toFixed(1);
+      svg += `<line x1="${pl}" y1="${gy}" x2="${w - pr}" y2="${gy}" stroke="var(--border)" stroke-width="1"/>`;
+    }
+    seriesList.forEach(s => {
+      if (!s.points || !s.points.length) return;
+      const pts = s.points.map((v, i) => {
+        const px = pl + (n <= 1 ? cw / 2 : i * cw / (n - 1));
+        const py = pt + ch - ((v - minVal) / range) * ch;
+        return `${px.toFixed(1)},${py.toFixed(1)}`;
+      }).join(' ');
+      svg += `<polyline points="${pts}" fill="none" stroke="${esc(s.color||'#1976D2')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="${s.opacity!=null?s.opacity:1}"/>`;
+    });
+    const labels = first.labels || [];
+    if (labels.length) {
+      const step = Math.max(1, Math.ceil(n / 7));
+      for (let i = 0; i < n; i += step) {
+        const px = (pl + (n <= 1 ? cw / 2 : i * cw / (n - 1))).toFixed(1);
+        svg += `<text x="${px}" y="${h - 5}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(labels[i]||'').slice(0,8))}</text>`;
+      }
+    }
+    return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+  }
+
+  /* Stacked bar chart — buckets:[{label,categories:[{categoryName,amount}]}] colorMap:{name:color} */
+  function svgStackedBarsChart(buckets, colorMap, w, h) {
+    w = w || 560; h = h || 140;
+    if (!buckets || !buckets.length) return '<p class="empty-state">No data</p>';
+    const maxTotal = Math.max(...buckets.map(b => (b.categories||[]).reduce((s,c)=>s+Math.abs(c.amount||0),0)), 1);
+    const count = buckets.length;
+    const usableW = w - 40;
+    const slotW = Math.floor(usableW / count);
+    const barW = Math.max(4, slotW - 4);
+    const chartH = h - 24;
+    let rects = '';
+    buckets.forEach((b, i) => {
+      const x = 40 + i * slotW;
+      let y = chartH;
+      (b.categories||[]).forEach((cat, ci) => {
+        const bh = Math.round((Math.abs(cat.amount||0) / maxTotal) * chartH);
+        if (bh > 0) {
+          const color = colorMap[cat.categoryName] || CHART_COLORS[ci % CHART_COLORS.length];
+          y -= bh;
+          rects += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${esc(color)}" opacity="0.85"><title>${esc(cat.categoryName)}: ${fmtRaw(Math.abs(cat.amount||0))}</title></rect>`;
+        }
+      });
+      rects += `<text x="${(x+barW/2).toFixed(1)}" y="${h-4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(b.label||'').slice(0,6))}</text>`;
+    });
+    return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="overflow:visible;display:block" preserveAspectRatio="none">${rects}</svg>`;
+  }
+
+  /* Horizontal-slice treemap — items:[{categoryName,amount,percentage,colorHex}] */
+  function svgTreemapChart(items, w, h) {
+    w = w || 560; h = h || 180;
+    if (!items || !items.length) return '<p class="empty-state">No data</p>';
+    const sorted = [...items].filter(x=>(x.amount||0)>0).sort((a,b)=>(b.amount||0)-(a.amount||0));
+    if (!sorted.length) return '<p class="empty-state">No data</p>';
+    const total = sorted.reduce((s,x)=>s+(x.amount||0),0);
+    let rects='', texts='', x=0;
+    sorted.forEach((item, i) => {
+      const pct = (item.amount||0) / total;
+      const iw = Math.round(pct * w);
+      if (iw < 1) return;
+      const color = item.colorHex || CHART_COLORS[i % CHART_COLORS.length];
+      rects += `<rect x="${x}" y="0" width="${iw}" height="${h}" fill="${esc(color)}" opacity="0.82" rx="2"><title>${esc(item.categoryName)}: ${fmtRaw(item.amount||0)} (${fmtRaw(item.percentage||pct*100,1)}%)</title></rect>`;
+      if (iw > 44) {
+        const maxChars = Math.max(1, Math.floor(iw/7));
+        const label = item.categoryName.length > maxChars ? item.categoryName.slice(0,maxChars)+'…' : item.categoryName;
+        texts += `<text x="${(x+iw/2).toFixed(1)}" y="${(h/2-5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">${esc(label)}</text>`;
+        texts += `<text x="${(x+iw/2).toFixed(1)}" y="${(h/2+11).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.88)">${fmtRaw(item.percentage||pct*100,1)}%</text>`;
+      }
+      x += iw;
+    });
+    return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="display:block;border-radius:6px;overflow:hidden" preserveAspectRatio="none">${rects}${texts}</svg>`;
+  }
+
+  /* Filter badge showing applied card filter */
+  function filterBadge(fs) {
+    if (!fs) return '';
+    const parts = [];
+    if (fs.timelineType && fs.timelineType !== 'ALL_TIME') {
+      const map = { THIS_MONTH:'This Month', LAST_MONTH:'Last Month', THIS_YEAR:'This Year', LAST_YEAR:'Last Year', TODAY:'Today', THIS_WEEK:'This Week', THIS_QUARTER:'This Quarter', CUSTOM:'Custom' };
+      parts.push(map[fs.timelineType] || fs.timelineType);
+    }
+    if (fs.transactionTypes && fs.transactionTypes.length) parts.push(fs.transactionTypes.join('/'));
+    if (fs.currencies && fs.currencies.length) parts.push(fs.currencies.join(', '));
+    if (fs.accountIds && fs.accountIds.length) parts.push(`${fs.accountIds.length} acct`);
+    return parts.length ? `<span class="filter-badge">${esc(parts.join(' · '))}</span>` : '';
+  }
+
+  /* Wraps a rendered dashboard card in the standard header+body shell */
+  function dashCardWrap(card, bodyHtml) {
+    return `<div class="dash-card" data-card-id="${esc(card.cardId)}">
+      <div class="dash-card-header">
+        <span class="dash-card-title">${esc(card.title||'')}</span>
+        ${filterBadge(card.filterSummary)}
+        <div class="dash-card-actions">
+          <button class="btn-icon" title="Remove card" onclick="removeDashboardCard('${esc(card.cardId)}')">✕</button>
+        </div>
+      </div>
+      <div class="dash-card-body">${bodyHtml}</div>
+    </div>`;
+  }
+
   /* ── Category + account select options ───────────────── */
   function catOptions(includeBlank) {
     let o = includeBlank ? '<option value="">— None —</option>' : '';
@@ -553,126 +690,341 @@
     try {
       const json = await apiFetch('/api/dashboard');
       if (!json.success) { showError('Failed to load dashboard.'); return; }
-      const d = json.data;
-      const netClass  = (d.netWorth  || 0) >= 0 ? 'positive' : 'negative';
-      const cashClass = (d.cashFlow  || 0) >= 0 ? 'positive' : 'negative';
-      const cur = d.baseCurrency || cachedSettings.baseCurrency || 'USD';
+      const cards = (Array.isArray(json.data) ? json.data : [])
+        .filter(c => c.isEnabled !== false)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-      let html = `<h2 class="section-title">Dashboard <span style="font-size:0.8rem; color:var(--text-muted); font-weight:400">${esc(d.month || '')}</span></h2>`;
-
-      /* ── Stat cards ─ */
-      html += `<div class="card-grid">
-        <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${netClass}">${fmt(d.netWorth || 0, cur)}</div></div>
-        <div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value positive">+${fmt(d.monthlyIncome || 0, cur)}</div></div>
-        <div class="stat-card"><div class="stat-label">Monthly Expenses</div><div class="stat-value negative">−${fmt(d.monthlyExpenses || 0, cur)}</div></div>
-        <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cashClass}">${(d.cashFlow||0) >= 0 ? '+' : ''}${fmt(d.cashFlow || 0, cur)}</div></div>
+      let html = `<div class="page-header">
+        <h2 class="section-title">Dashboard</h2>
+        <button class="btn btn-ghost btn-sm" onclick="openManageCards()">⚙️ Manage Cards</button>
       </div>`;
 
-      /* ── Accounts ─ */
-      const accs = d.accounts || cachedAccounts || [];
-      if (accs.length) {
-        html += `<div class="section-sub">Accounts</div><div class="card-grid">`;
-        accs.slice(0, 6).forEach(acc => {
-          const bc = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
-          html += `<div class="stat-card">
-            <div class="stat-label">${esc(acc.type || '')}</div>
-            <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
-            <div class="stat-value ${bc}" style="font-size:1.15rem">${fmt(acc.balance || 0, acc.currency)}</div>
-            <div style="margin-top:10px"><a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View records</a></div>
-          </div>`;
+      if (!cards.length) {
+        html += '<div class="alert alert-warn">No dashboard cards are enabled. Click <strong>Manage Cards</strong> to add some.</div>';
+      } else {
+        cards.forEach(card => {
+          const d = card.data || {};
+          switch (d.type) {
+            case 'NetWorth':          html += renderNetWorthCard(card, d); break;
+            case 'CashFlow':          html += renderCashFlowCard(card, d); break;
+            case 'CurrencyBalances':  html += renderCurrencyBalancesCard(card, d); break;
+            case 'Accounts':          html += renderAccountsDashCard(card, d); break;
+            case 'Budgets':           html += renderBudgetsDashCard(card, d); break;
+            case 'PlannedPayments':   html += renderPlannedPaymentsDashCard(card, d); break;
+            case 'Loans':             html += renderLoansDashCard(card, d); break;
+            case 'RecentActivities':  html += renderRecentActivitiesCard(card, d); break;
+            case 'CategoryBreakdown':
+              if (card.cardType === 'CATEGORY_TREEMAP') html += renderCategoryTreemapCard(card, d);
+              else                                      html += renderCategoryPieChartCard(card, d);
+              break;
+            case 'CashFlowComparison':     html += renderCashFlowComparisonCard(card, d); break;
+            case 'IncomeExpenseBar':        html += renderIncomeExpenseBarCard(card, d); break;
+            case 'CategorySpendingTrend':   html += renderCategorySpendingTrendCard(card, d); break;
+            case 'TagUpSetPlot':            html += renderTagUpSetPlotCard(card, d); break;
+            case 'Error':
+              html += dashCardWrap(card, `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`);
+              break;
+            default:
+              html += dashCardWrap(card, `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`);
+          }
         });
-        html += `</div>`;
       }
-
-      /* ── Budgets ─ */
-      const budgets = d.budgets || [];
-      if (budgets.length) {
-        html += `<div class="section-sub">Top Budgets</div><div class="card">`;
-        budgets.slice(0, 5).forEach(b => {
-          const pct = Math.min(999, Math.round((b.spent || 0) / (b.limitAmount || 1) * 100));
-          html += `<div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:4px">
-              <span style="font-weight:600">${esc(b.name)}</span>
-              <span style="color:var(--text-muted)">${fmt(b.spent||0,b.currency)} / ${fmt(b.limitAmount||0,b.currency)}</span>
-            </div>
-            ${progressBar(pct)}
-            <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);margin-top:2px">${pct}%</div>
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
-      /* ── Upcoming payments ─ */
-      const upcoming = (d.upcomingPayments || []).concat(d.overduePayments || []);
-      if (upcoming.length) {
-        html += `<div class="section-sub">Upcoming &amp; Overdue Payments</div><div class="card"><div class="table-wrap"><table>
-          <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Status</th></tr></thead><tbody>`;
-        upcoming.slice(0, 8).forEach(p => {
-          const overdue = p.isOverdue ? '<span class="badge badge-overdue">Overdue</span>' : '';
-          html += `<tr>
-            <td>${esc(p.name)}${overdue ? '&nbsp;' + overdue : ''}</td>
-            <td>${fmt(p.amount||0, p.currency)}</td>
-            <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
-            <td><span class="badge ${p.isOverdue ? 'badge-overdue' : 'badge-active'}">${esc(p.status||'')}</span></td>
-          </tr>`;
-        });
-        html += `</tbody></table></div></div>`;
-      }
-
-      /* ── Recent transactions ─ */
-      const txs = d.recentTransactions || [];
-      if (txs.length) {
-        html += `<div class="section-sub">Recent Transactions</div><div class="card"><div class="table-wrap"><table>
-          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
-        txs.slice(0, 10).forEach(tx => {
-          const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
-          const sign     = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
-          const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
-          html += `<tr>
-            <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-            <td>${esc(tx.title)}</td>
-            <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
-            <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
-          </tr>`;
-        });
-        html += `</tbody></table></div></div>`;
-      }
-
-      /* ── Category breakdown chart ─ */
-      const breakdown = d.categoryBreakdown || [];
-      if (breakdown.length) {
-        const slices = breakdown.slice(0, 8).map((c, i) => ({
-          label: c.categoryName, value: c.amount, color: CHART_COLORS[i % CHART_COLORS.length]
-        }));
-        let legendHtml = '<div class="chart-legend">';
-        slices.forEach((s, i) => {
-          legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.label)}</span></div>`;
-        });
-        legendHtml += '</div>';
-        html += `<div class="section-sub">Category Breakdown</div>
-          <div class="card" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">
-            ${svgDonut(slices, 180)}
-            ${legendHtml}
-          </div>`;
-      }
-
-      /* ── Cash flow chart ─ */
-      const cfPoints = d.cashFlowPoints || [];
-      if (cfPoints.length) {
-        const points = cfPoints.slice(-6).map(p => ({ label: p.label, income: p.income, expense: p.expense }));
-        html += `<div class="section-sub">Cash Flow (Last 6 Months)</div>
-          <div class="card">
-            ${svgBars(points, 560, 140)}
-            <div class="chart-legend" style="margin-top:8px">
-              <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
-              <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
-            </div>
-          </div>`;
-      }
-
       setContent(html);
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading dashboard.'); }
+  }
+
+  /* ── Individual dashboard card renderers ─────────────── */
+
+  function renderNetWorthCard(card, d) {
+    const cur = d.currency || cachedSettings.baseCurrency || 'USD';
+    const nwCls = (d.netWorth||0) >= 0 ? 'positive' : 'negative';
+    const cfCls = (d.cashFlow||0) >= 0 ? 'positive' : 'negative';
+    return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
+      <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0, cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0, cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0, cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':''}${fmt(d.cashFlow||0, cur)}</div></div>
+    </div>`);
+  }
+
+  function renderCashFlowCard(card, d) {
+    const cur = d.currency || cachedSettings.baseCurrency || 'USD';
+    const netCls = (d.net||0) >= 0 ? 'positive' : 'negative';
+    return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
+      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0, cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Expense</div><div class="stat-value negative">−${fmt(d.expense||0, cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':''}${fmt(d.net||0, cur)}</div></div>
+    </div>`);
+  }
+
+  function renderCurrencyBalancesCard(card, d) {
+    const items = d.items || [];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No currency balances.</p>');
+    let body = '<div class="currency-grid">';
+    items.forEach(item => {
+      const cls = (item.balance||0) >= 0 ? 'amount-income' : 'amount-expense';
+      body += `<div class="currency-item">
+        <div class="currency-code">${esc(item.currency)}</div>
+        <div class="currency-balance ${cls}">${fmtRaw(item.balance||0)}</div>
+        ${d.baseCurrency && item.currency !== d.baseCurrency && item.balanceInBase != null
+          ? `<div class="currency-base">≈ ${fmt(item.balanceInBase, d.baseCurrency)}</div>` : ''}
+      </div>`;
+    });
+    return dashCardWrap(card, body + '</div>');
+  }
+
+  function renderAccountsDashCard(card, d) {
+    const accounts = d.accounts || [];
+    if (!accounts.length) return dashCardWrap(card, '<p class="empty-state">No accounts.</p>');
+    let body = '<div class="card-grid" style="margin-bottom:0">';
+    accounts.forEach(acc => {
+      const cls = (acc.balance||0) >= 0 ? 'positive' : 'negative';
+      body += `<div class="stat-card">
+        <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
+        <div class="stat-value ${cls}" style="font-size:1.1rem">${fmt(acc.balance||0, acc.currency)}</div>
+        ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px">
+          <span class="amount-income">+${fmtRaw(acc.income||0)}</span>
+          <span class="amount-expense">−${fmtRaw(acc.expense||0)}</span>
+        </div>` : ''}
+        <div style="margin-top:8px">
+          <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
+        </div>
+      </div>`;
+    });
+    return dashCardWrap(card, body + '</div>');
+  }
+
+  function renderBudgetsDashCard(card, d) {
+    const items = d.items || [];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No budgets.</p>');
+    let body = '';
+    items.forEach(b => {
+      const pct = Math.round(b.percentage || 0);
+      const alertCls = b.alertLevel === 'EXCEEDED' ? 'progress-red' : b.alertLevel === 'WARNING' ? 'progress-orange' : 'progress-green';
+      const archived = b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted);font-size:0.68rem">Archived</span>' : '';
+      body += `<div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
+          <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.name)} ${archived}</span>
+          <span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${esc(b.period||'')}</span>
+          <span style="font-weight:700;white-space:nowrap;color:${b.alertLevel==='EXCEEDED'?'var(--danger)':b.alertLevel==='WARNING'?'var(--warning)':'var(--success)'}">${pct}%</span>
+        </div>
+        ${progressBar(pct, alertCls)}
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px;flex-wrap:wrap;gap:4px">
+          <span>Spent: ${fmt(b.spent||0, b.currency)}</span>
+          <span>Remaining: ${fmt(b.remaining||0, b.currency)}</span>
+          <span>Limit: ${fmt(b.limitAmount||0, b.currency)}</span>
+        </div>
+      </div>`;
+    });
+    return dashCardWrap(card, body);
+  }
+
+  function renderPlannedPaymentsDashCard(card, d) {
+    const upcoming = d.upcoming || [];
+    const overdue  = d.overdue  || [];
+    if (!upcoming.length && !overdue.length) return dashCardWrap(card, '<p class="empty-state">No upcoming or overdue payments.</p>');
+    let body = '';
+    if (overdue.length) {
+      body += `<div style="margin-bottom:12px"><div class="overdue-header" style="font-size:0.9rem">⚠️ Overdue (${overdue.length})</div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Amount</th><th>Due</th><th>Account</th><th>Actions</th></tr></thead><tbody>`;
+      overdue.forEach(p => {
+        body += `<tr>
+          <td>${esc(p.name)}<br><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'')}</small></td>
+          <td>${fmt(p.amount||0, p.currency)}</td>
+          <td style="color:var(--danger);white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
+          <td>${esc(p.accountName||'—')}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓</button>
+            <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
+          </td>
+        </tr>`;
+      });
+      body += '</tbody></table></div></div>';
+    }
+    if (upcoming.length) {
+      body += `<div><div class="upcoming-header" style="font-size:0.9rem">📅 Upcoming (${upcoming.length})</div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Amount</th><th>Due</th><th>Recurrence</th><th>Category</th></tr></thead><tbody>`;
+      upcoming.forEach(p => {
+        body += `<tr>
+          <td>${esc(p.name)}</td>
+          <td>${fmt(p.amount||0, p.currency)}</td>
+          <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
+          <td><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'—')}</small></td>
+          <td>${esc(p.categoryName||'—')}</td>
+        </tr>`;
+      });
+      body += '</tbody></table></div></div>';
+    }
+    return dashCardWrap(card, body);
+  }
+
+  function renderLoansDashCard(card, d) {
+    const items = d.items || [];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No loans.</p>');
+    let body = '<div class="card-grid" style="margin-bottom:0">';
+    items.forEach(loan => {
+      const repaidPct = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
+      const typeBadge   = loan.loanType==='LENT'    ? 'badge-lent'    : 'badge-borrowed';
+      const statusBadge = loan.status==='SETTLED'   ? 'badge-settled' : 'badge-active';
+      body += `<div class="stat-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div><div style="font-weight:700">${esc(loan.name)}</div><div style="font-size:0.78rem;color:var(--text-muted)">${esc(loan.lenderOrBorrowerName||'')}</div></div>
+          <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+            <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
+            <span class="badge ${statusBadge}">${esc(loan.status)}</span>
+          </div>
+        </div>
+        <div style="font-weight:700;margin-bottom:6px">${fmt(loan.principalAmount||0, loan.currency)}</div>
+        ${progressBar(repaidPct, repaidPct>=100?'progress-green':'progress-orange')}
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px">
+          <span>Paid: ${fmt(loan.totalPaid||0, loan.currency)}</span>
+          <span>Left: ${fmt(loan.remainingBalance||0, loan.currency)}</span>
+        </div>
+        ${loan.interestAccrued ? `<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued, loan.currency)}</div>` : ''}
+      </div>`;
+    });
+    return dashCardWrap(card, body + '</div>');
+  }
+
+  function renderRecentActivitiesCard(card, d) {
+    const txs = d.transactions || [];
+    if (!txs.length) return dashCardWrap(card, '<p class="empty-state">No recent activity.</p>');
+    let body = `<div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Tags</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+    txs.forEach(tx => {
+      const amtCls = tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
+      const sign   = tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
+      const bdgCls = tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
+      const tags   = tx.tags && tx.tags.length
+        ? tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' ')
+        : '—';
+      body += `<tr>
+        <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
+        <td><span class="badge ${bdgCls}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td>
+        <td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td>
+        <td>${esc(tx.accountName||'—')}</td>
+        <td>${tags}</td>
+        <td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
+      </tr>`;
+    });
+    body += '</tbody></table></div>';
+    if (d.total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${d.total} total transactions</div>`;
+    return dashCardWrap(card, body);
+  }
+
+  function renderCategoryPieChartCard(card, d) {
+    const items = d.items || [];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No category data.</p>');
+    const top8 = items.slice(0, 8);
+    const rest = items.slice(8);
+    const slices = [...top8];
+    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0) });
+    const chartSlices = slices.map((c, i) => ({ label:c.categoryName, value:c.amount, color:CHART_COLORS[i%CHART_COLORS.length] }));
+    let legend = '<div class="chart-legend" style="flex:1">';
+    slices.forEach((c, i) => {
+      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span></div>`;
+    });
+    legend += '</div>';
+    return dashCardWrap(card, `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(chartSlices,160)}${legend}</div>`);
+  }
+
+  function renderCategoryTreemapCard(card, d) {
+    const items = d.items || [];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No category data.</p>');
+    const treemapItems = items.map((c, i) => ({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:CHART_COLORS[i%CHART_COLORS.length] }));
+    let legend = '<div class="chart-legend" style="margin-top:12px">';
+    items.slice(0,8).forEach((c,i) => {
+      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`;
+    });
+    legend += '</div>';
+    return dashCardWrap(card, `<div class="treemap-wrap">${svgTreemapChart(treemapItems,560,180)}</div>${legend}`);
+  }
+
+  function renderCashFlowComparisonCard(card, d) {
+    const current  = d.current  || [];
+    const previous = d.previous || [];
+    const lastYear = d.lastYear || [];
+    if (!current.length) return dashCardWrap(card, '<p class="empty-state">No comparison data.</p>');
+    const labels = current.map(p => p.label||'');
+    const series = [
+      { name:'Current',   color:'#1976D2', opacity:1,   labels, points:current.map(p=>p.net||0) },
+      { name:'Previous',  color:'#9e9e9e', opacity:0.7, labels, points:previous.map(p=>p.net||0) },
+      { name:'Last Year', color:'#bdbdbd', opacity:0.55,labels, points:lastYear.map(p=>p.net||0) },
+    ].filter(s => s.points.length && s.points.some(v=>v!==0));
+    const body = `${svgLineChart(series,560,160)}
+      <div class="chart-legend" style="margin-top:10px">
+        ${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}
+      </div>`;
+    return dashCardWrap(card, body);
+  }
+
+  function renderIncomeExpenseBarCard(card, d) {
+    const buckets = d.buckets || [];
+    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No data.</p>');
+    const points = buckets.map(b => ({ label:b.label, income:b.income||0, expense:b.expense||0 }));
+    const gran = d.granularity ? ` (${d.granularity.toLowerCase()})` : '';
+    const body = `${svgBars(points,560,140)}
+      <div class="chart-legend" style="margin-top:8px;align-items:center">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
+        ${d.baseCurrency?`<span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">in ${esc(d.baseCurrency)}${esc(gran)}</span>`:''}
+      </div>`;
+    return dashCardWrap(card, body);
+  }
+
+  function renderCategorySpendingTrendCard(card, d) {
+    const buckets = d.buckets || [];
+    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No spending trend data.</p>');
+    const allCats = [...new Set(buckets.flatMap(b=>(b.categories||[]).map(c=>c.categoryName)))];
+    const colorMap = {};
+    allCats.forEach((name,i) => { colorMap[name] = CHART_COLORS[i%CHART_COLORS.length]; });
+    const catTotals = {};
+    buckets.forEach(b => (b.categories||[]).forEach(c => { catTotals[c.categoryName] = (catTotals[c.categoryName]||0) + Math.abs(c.amount||0); }));
+    const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    let legend = '<div class="chart-legend" style="margin-top:12px">';
+    topCats.forEach(([name, total]) => {
+      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;
+    });
+    legend += '</div>';
+    return dashCardWrap(card, `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`);
+  }
+
+  function renderTagUpSetPlotCard(card, d) {
+    const sets  = d.sets  || [];
+    const inters = d.intersections || [];
+    if (!sets.length) return dashCardWrap(card, '<p class="empty-state">No tag data.</p>');
+    const maxAmt = Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)), 1);
+    let body = '<div style="margin-bottom:16px">';
+    sets.forEach(s => {
+      const pct = Math.min(100, Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));
+      const isInc = (s.totalAmount||0) >= 0;
+      body += `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px">
+          <span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span>
+          <span class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(s.totalAmount||0))}</span>
+          <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    body += '</div>';
+    if (inters.length) {
+      const topInters = inters.slice(0, 10);
+      body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th>Txns</th></tr></thead><tbody>`;
+      topInters.forEach(inter => {
+        const isInc = (inter.amount||0) >= 0;
+        const badges = (inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
+        body += `<tr>
+          <td>${badges}</td>
+          <td style="text-align:right" class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(inter.amount||0))}</td>
+          <td>${inter.transactionCount||0}</td>
+        </tr>`;
+      });
+      body += '</tbody></table></div>';
+    }
+    return dashCardWrap(card, body);
   }
 
   /* ══════════════════════════════════════════════════════
@@ -1670,6 +2022,92 @@
       setContent(html);
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading settings.'); }
   }
+
+  /* ══════════════════════════════════════════════════════
+     DASHBOARD: Card management (add / remove / reorder)
+  ══════════════════════════════════════════════════════ */
+  const ALL_CARD_TYPES = [
+    { type:'NET_WORTH',               label:'Net Worth' },
+    { type:'CASH_FLOW',               label:'Cash Flow' },
+    { type:'CURRENCY_BALANCES',       label:'Currency Balances' },
+    { type:'ACCOUNTS',                label:'Accounts' },
+    { type:'BUDGETS',                 label:'Budgets' },
+    { type:'PLANNED_PAYMENTS',        label:'Planned Payments' },
+    { type:'LOANS',                   label:'Loans' },
+    { type:'RECENT_ACTIVITIES',       label:'Recent Activities' },
+    { type:'CATEGORY_PIE_CHART',      label:'Category Pie Chart' },
+    { type:'CATEGORY_TREEMAP',        label:'Category Treemap' },
+    { type:'CASH_FLOW_COMPARISON',    label:'Cash Flow Comparison' },
+    { type:'INCOME_EXPENSE_BAR',      label:'Income & Expense Bar' },
+    { type:'CATEGORY_SPENDING_TREND', label:'Category Spending Trend' },
+    { type:'TAG_UPSET_PLOT',          label:'Tag Analysis' },
+  ];
+
+  window.openManageCards = async function () {
+    let cards = [];
+    try {
+      const res = await apiFetch('/api/dashboard');
+      if (res.success) cards = (Array.isArray(res.data) ? res.data : []).sort((a,b)=>(a.order||0)-(b.order||0));
+    } catch { /* show empty */ }
+    const activeTypes = new Set(cards.map(c => c.cardType));
+    const cardIds = cards.map(c => c.cardId);
+
+    let body = '';
+    if (cards.length) {
+      body += '<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Active Cards</div>';
+      cards.forEach((c, idx) => {
+        body += `<div class="manage-card-row">
+          <div style="display:flex;gap:3px">
+            <button class="btn btn-ghost btn-sm" onclick="reorderDashboardCard(${JSON.stringify(cardIds)},${idx},-1)" ${idx===0?'disabled':''}>↑</button>
+            <button class="btn btn-ghost btn-sm" onclick="reorderDashboardCard(${JSON.stringify(cardIds)},${idx},1)" ${idx===cards.length-1?'disabled':''}>↓</button>
+          </div>
+          <div class="manage-card-name">${esc(c.title||c.cardType)}</div>
+          <button class="btn btn-sm" style="background:var(--danger);color:#fff;flex-shrink:0" onclick="removeDashboardCard('${esc(c.cardId)}')">Remove</button>
+        </div>`;
+      });
+    }
+    const available = ALL_CARD_TYPES.filter(t => !activeTypes.has(t.type));
+    if (available.length) {
+      body += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:${cards.length?'20px':'0'} 0 8px">Add Card</div>
+        <div class="add-card-grid">`;
+      available.forEach(t => {
+        body += `<div class="add-card-btn" onclick="addDashboardCard('${esc(t.type)}')">+ ${esc(t.label)}</div>`;
+      });
+      body += '</div>';
+    }
+    if (!cards.length && !available.length) body = '<p class="empty-state">No cards available.</p>';
+
+    openModal('Manage Dashboard Cards', body, null, 'Done');
+    modalConfBtn.onclick = closeModal;
+  };
+
+  window.addDashboardCard = async function (cardType) {
+    try {
+      const res = await apiWrite('POST', '/api/dashboard/cards', { cardType });
+      if (res.success) { closeModal(); renderDashboard(); }
+      else alert('Failed to add card: ' + (res.error || ''));
+    } catch (e) { if (e.message !== 'Session expired') alert('Error adding card.'); }
+  };
+
+  window.removeDashboardCard = async function (cardId) {
+    try {
+      const res = await apiWrite('DELETE', `/api/dashboard/cards/${encodeURIComponent(cardId)}`);
+      if (res.success) { closeModal(); renderDashboard(); }
+      else alert('Failed to remove card: ' + (res.error || ''));
+    } catch (e) { if (e.message !== 'Session expired') alert('Error removing card.'); }
+  };
+
+  window.reorderDashboardCard = async function (cardIds, idx, dir) {
+    const newIds = [...cardIds];
+    const swap = idx + dir;
+    if (swap < 0 || swap >= newIds.length) return;
+    [newIds[idx], newIds[swap]] = [newIds[swap], newIds[idx]];
+    try {
+      const res = await apiWrite('PUT', '/api/dashboard/cards/reorder', { cardIds: newIds });
+      if (res.success) { closeModal(); renderDashboard(); }
+      else alert('Failed to reorder: ' + (res.error || ''));
+    } catch (e) { if (e.message !== 'Session expired') alert('Error reordering.'); }
+  };
 
   /* make doLogout callable from settings page button */
   window.doLogout = doLogout;

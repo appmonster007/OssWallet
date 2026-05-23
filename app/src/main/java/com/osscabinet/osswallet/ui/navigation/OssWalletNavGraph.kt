@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
@@ -150,12 +150,12 @@ fun OssWalletNavGraph(
                     },
                     onManageAccountsClick = { navController.navigate(Screen.AccountList.route) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                    onPlannedPaymentsClick = { navController.navigate(Screen.PlannedPaymentList.route) },
-                    onBudgetsClick = { navController.navigate(Screen.BudgetList.route) },
-                    onLoansClick = { navController.navigate(Screen.LoanList.route) },
-                    onPlannedPaymentClick = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
-                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
+                    onNavigateToPlannedPaymentList = { navController.navigate(Screen.PlannedPaymentList.route) },
+                    onNavigateToBudgetList = { navController.navigate(Screen.BudgetList.route) },
+                    onNavigateToLoanList = { navController.navigate(Screen.LoanList.route) },
+                    onNavigateToPlannedPaymentDetail = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
+                    onNavigateToBudgetDetail = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onNavigateToLoanDetail = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
                     onSaveFilterClick = { filter ->
@@ -334,6 +334,12 @@ fun OssWalletNavGraph(
                     settingsViewModel = settingsViewModel,
                     onRecordsClick = { filter -> navController.navigateToRecords(filter) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onNavigateToPlannedPaymentList = { navController.navigate(Screen.PlannedPaymentList.route) },
+                    onNavigateToBudgetList = { navController.navigate(Screen.BudgetList.route) },
+                    onNavigateToLoanList = { navController.navigate(Screen.LoanList.route) },
+                    onNavigateToPlannedPaymentDetail = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
+                    onNavigateToBudgetDetail = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onNavigateToLoanDetail = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)
@@ -500,6 +506,12 @@ fun OssWalletNavGraph(
                     onBackClick = { navController.popBackStack() },
                     onEditAccountClick = { id -> navController.navigate(Screen.AccountEntry.createRoute(id)) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onNavigateToPlannedPaymentList = { navController.navigate(Screen.PlannedPaymentList.route) },
+                    onNavigateToBudgetList = { navController.navigate(Screen.BudgetList.route) },
+                    onNavigateToLoanList = { navController.navigate(Screen.LoanList.route) },
+                    onNavigateToPlannedPaymentDetail = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
+                    onNavigateToBudgetDetail = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onNavigateToLoanDetail = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)

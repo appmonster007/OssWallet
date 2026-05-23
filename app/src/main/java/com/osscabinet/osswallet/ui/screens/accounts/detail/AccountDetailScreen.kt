@@ -58,6 +58,8 @@ import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
+import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -95,6 +97,12 @@ fun AccountDetailScreen(
     onEditAccountClick: (String) -> Unit,
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onNavigateToPlannedPaymentList: () -> Unit = {},
+    onNavigateToBudgetList: () -> Unit = {},
+    onNavigateToLoanList: () -> Unit = {},
+    onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
+    onNavigateToBudgetDetail: (Long) -> Unit = {},
+    onNavigateToLoanDetail: (Long) -> Unit = {},
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
@@ -330,6 +338,12 @@ fun AccountDetailScreen(
                                 onEditTransactionClick = onEditTransactionClick,
                                 onSplitTransactionClick = onSplitTransactionClick,
                                 onAccountClick = onAccountClick,
+                                onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
+                                onNavigateToBudgetList = onNavigateToBudgetList,
+                                onNavigateToLoanList = onNavigateToLoanList,
+                                onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
+                                onNavigateToBudgetDetail = onNavigateToBudgetDetail,
+                                onNavigateToLoanDetail = onNavigateToLoanDetail,
                                 navigate = navigate,
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -443,6 +457,12 @@ fun DynamicAccountDetailCards(
     transactionViewModel: TransactionViewModel,
     onCloneTransactionClick: (Long) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onNavigateToPlannedPaymentList: () -> Unit,
+    onNavigateToBudgetList: () -> Unit,
+    onNavigateToLoanList: () -> Unit,
+    onNavigateToPlannedPaymentDetail: (Long) -> Unit,
+    onNavigateToBudgetDetail: (Long) -> Unit,
+    onNavigateToLoanDetail: (Long) -> Unit,
     onSplitTransactionClick: (Long) -> Unit = {},
     onAccountClick: (String) -> Unit,
     navigate: (() -> Unit) -> Unit,
@@ -540,7 +560,16 @@ fun DynamicAccountDetailCards(
             ),
             callbacks = AeonInteractionCallbacks(
                 accountActions = AccountActions(
-                    onClick = { id -> navigate { onAccountClick(id) } }
+                    onClick = { id -> navigate { onAccountClick(id) } },
+                    onSeeAll = { navigate { onRecordsClick(state.currentFilter) } }
+                ),
+                budgetActions = BudgetActions(
+                    onClick = { id -> navigate { onNavigateToBudgetDetail(id) } },
+                    onSeeAll = { navigate { onNavigateToBudgetList() } }
+                ),
+                loanActions = LoanActions(
+                    onClick = { id -> navigate { onNavigateToLoanDetail(id) } },
+                    onSeeAll = { navigate { onNavigateToLoanList() } }
                 ),
                 transactionActions = TransactionActions(
                     onClick = onEditTransactionClick,
@@ -551,6 +580,10 @@ fun DynamicAccountDetailCards(
                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                     onSplit = { onSplitTransactionClick(it) },
                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                ),
+                paymentActions = PaymentActions(
+                    onClick = { id -> navigate { onNavigateToPlannedPaymentDetail(id) } },
+                    onSeeAll = { navigate { onNavigateToPlannedPaymentList() } }
                 ),
                 tagActions = TagActions(
                     onAdd = accountDetailViewModel::addTag

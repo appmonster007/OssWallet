@@ -19,6 +19,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -151,13 +155,30 @@ fun OnboardingScreen(
             }
         }
     ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            userScrollEnabled = false
-        ) { page ->
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+            var userScrollEnabled by remember { mutableStateOf(true) }
+
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = userScrollEnabled,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .pointerInput(widthPx) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val down = event.changes.firstOrNull { it.changedToDown() }
+                                if (down != null) {
+                                    val x = down.position.x
+                                    userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
+                                }
+                            }
+                        }
+                    }
+            ) { page ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -194,6 +215,7 @@ fun OnboardingScreen(
             }
         }
     }
+}
 }
 
 @Composable

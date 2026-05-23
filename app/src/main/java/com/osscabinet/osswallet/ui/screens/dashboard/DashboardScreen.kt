@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -55,6 +56,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -373,13 +379,34 @@ fun DashboardContent(
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
 ) {
-    HorizontalPager(
-        state = pagerState,
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding),
-        verticalAlignment = Alignment.Top
-    ) { page ->
+            .padding(innerPadding)
+    ) {
+        val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+        val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+        var userScrollEnabled by remember { mutableStateOf(true) }
+
+        HorizontalPager(
+            state = pagerState,
+            userScrollEnabled = userScrollEnabled,
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(widthPx) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val down = event.changes.firstOrNull { it.changedToDown() }
+                            if (down != null) {
+                                val x = down.position.x
+                                userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
+                            }
+                        }
+                    }
+                },
+            verticalAlignment = Alignment.Top
+        ) { page ->
         when (page) {
             0 -> {
                 val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
@@ -460,6 +487,7 @@ fun DashboardContent(
             }
         )
     }
+}
 }
 
 @Composable

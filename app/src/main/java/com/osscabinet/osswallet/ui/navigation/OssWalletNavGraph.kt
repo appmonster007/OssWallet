@@ -41,8 +41,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryVi
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencyViewModel
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
-import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
+import com.osscabinet.ossWallet.ui.screens.settings.*
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
@@ -152,13 +151,68 @@ fun OssWalletNavGraph(
             ) {
                 SettingsScreen(
                     viewModel = settingsViewModel,
+                    onDisplayClick = { navController.navigate(Screen.SettingsDisplay.route) },
+                    onCurrencyClick = { navController.navigate(Screen.SettingsCurrency.route) },
+                    onDataClick = { navController.navigate(Screen.SettingsData.route) },
+                    onSecurityClick = { navController.navigate(Screen.SettingsSecurity.route) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.SettingsDisplay.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                DisplaySettingsScreen(
+                    viewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.SettingsCurrency.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                CurrencySettingsScreen(
+                    viewModel = settingsViewModel,
+                    onShortlistedCurrenciesClick = { navController.navigate(Screen.ShortlistedCurrencies.route) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.SettingsData.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                DataSettingsScreen(
                     onManageAccountsClick = { navController.navigate(Screen.AccountList.route) },
                     onManageTagsClick = { navController.navigate(Screen.TagList.route) },
                     onManageCategoriesClick = { navController.navigate(Screen.CategoryList.route) },
                     onTemplatesClick = { navController.navigate(Screen.TemplateList.route) },
                     onManageFiltersClick = { navController.navigate(Screen.FilterList.route) },
                     onSmartSuggestionsClick = { navController.navigate(Screen.SmartSuggestions.route) },
-                    onShortlistedCurrenciesClick = { navController.navigate(Screen.ShortlistedCurrencies.route) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.SettingsSecurity.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                SecuritySettingsScreen(
+                    viewModel = settingsViewModel,
                     onOpenInWebClick = { navController.navigate(Screen.OpenInWeb.route) },
                     onBackClick = { navController.popBackStack() }
                 )

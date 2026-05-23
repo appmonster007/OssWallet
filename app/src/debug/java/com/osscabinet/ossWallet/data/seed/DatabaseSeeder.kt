@@ -520,7 +520,7 @@ class DatabaseSeeder @Inject constructor(
         val transactionType: TransactionType, val accountId: String,
         val paymentMethod: PaymentMethod, val payee: String, val note: String,
         val tags: String, val sourcePlannedPaymentId: Long? = null,
-        val profileId: Int, val latitude: Double? = null, val longitude: Double? = null,
+        val profileId: Int, val gpsLocation: String? = null,
         val warrantyExpiration: Long? = null,
         val status: TransactionStatus = TransactionStatus.CLEARED
     ) {
@@ -532,7 +532,7 @@ class DatabaseSeeder @Inject constructor(
             paymentMethod = paymentMethod, payee = payee, note = note,
             tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
             sourcePlannedPaymentId = sourcePlannedPaymentId,
-            profileId = profileId, latitude = latitude, longitude = longitude,
+            profileId = profileId, gpsLocation = gpsLocation,
             warrantyExpiration = warrantyExpiration, status = status
         )
 
@@ -549,7 +549,11 @@ class DatabaseSeeder @Inject constructor(
                     payee = p.getOrNull(9) ?: "", note = p.getOrNull(10) ?: "",
                     tags = p.getOrNull(11) ?: "", sourcePlannedPaymentId = p.getOrNull(12)?.toLongOrNull(),
                     profileId = p.getOrNull(13)?.toIntOrNull() ?: 1,
-                    latitude = p.getOrNull(14)?.toDoubleOrNull(), longitude = p.getOrNull(15)?.toDoubleOrNull(),
+                    gpsLocation = run {
+                        val lat = p.getOrNull(14)?.toDoubleOrNull()
+                        val lon = p.getOrNull(15)?.toDoubleOrNull()
+                        if (lat != null && lon != null) "$lat,$lon" else null
+                    },
                     warrantyExpiration = p.getOrNull(16)?.toLongOrNull(),
                     status = TransactionStatus.fromString(p.getOrNull(17) ?: "cleared")
                 )

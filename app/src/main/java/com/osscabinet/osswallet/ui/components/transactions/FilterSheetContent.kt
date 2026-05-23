@@ -61,7 +61,6 @@ fun FilterSheetContent(
     savedFilters: List<Filter> = emptyList(),
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     backgroundColor: Color = AppColors.transparent,
-    showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
@@ -315,7 +314,6 @@ fun FilterSheetContent(
             allCategories = allCategories,
             allTags = allTags,
             onSearchTransactions = onSearchTransactions,
-            showAccountFilter = showAccountFilter && filterRules.allowAccountSelection,
             allAvailableCurrencies = allAvailableCurrencies,
             onImmediateApply = { newFilter, debounceMs ->
                 applyFilterWithDebounce(newFilter, debounceMs)

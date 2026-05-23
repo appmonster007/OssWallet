@@ -87,8 +87,53 @@ data class CardFilterRules(
      * Whether the "Include future transactions" toggle is shown.
      * Set to false for cards whose computer enforces excludeFuture=true regardless of config.
      */
-    val allowFutureTransactionsToggle: Boolean = true
+    val allowFutureTransactionsToggle: Boolean = true,
+
+    /**
+     * Whether warranty protection status and dates can be filtered.
+     */
+    val allowWarrantySelection: Boolean = true,
+
+    /**
+     * Whether linked records (e.g. attachments, linked payments) can be filtered.
+     */
+    val allowLinkedRecords: Boolean = true
 ) {
+    /**
+     * Creates a new rule set by layering this set with external [constraints].
+     * The "Most restrictive rule wins" principle is applied.
+     */
+    fun layeredWith(constraints: CardFilterRules): CardFilterRules {
+        return this.copy(
+            // Permissions: logical AND (both must allow for it to be enabled)
+            allowAccountSelection = this.allowAccountSelection && constraints.allowAccountSelection,
+            allowCategorySelection = this.allowCategorySelection && constraints.allowCategorySelection,
+            allowStatusSelection = this.allowStatusSelection && constraints.allowStatusSelection,
+            allowSearch = this.allowSearch && constraints.allowSearch,
+            allowAmountRange = this.allowAmountRange && constraints.allowAmountRange,
+            allowCurrencySelection = this.allowCurrencySelection && constraints.allowCurrencySelection,
+            allowPaymentMethodSelection = this.allowPaymentMethodSelection && constraints.allowPaymentMethodSelection,
+            allowTimelineSelection = this.allowTimelineSelection && constraints.allowTimelineSelection,
+            allowTimelineCustomRange = this.allowTimelineCustomRange && constraints.allowTimelineCustomRange,
+            allowTagSelection = this.allowTagSelection && constraints.allowTagSelection,
+            allowTagCreation = this.allowTagCreation && constraints.allowTagCreation,
+            allowFutureTransactionsToggle = this.allowFutureTransactionsToggle && constraints.allowFutureTransactionsToggle,
+            allowWarrantySelection = this.allowWarrantySelection && constraints.allowWarrantySelection,
+            allowLinkedRecords = this.allowLinkedRecords && constraints.allowLinkedRecords,
+
+            // Forced values: External constraints take precedence if set
+            forcedTransactionType = constraints.forcedTransactionType ?: this.forcedTransactionType,
+            forcedTransactionTypes = constraints.forcedTransactionTypes ?: this.forcedTransactionTypes,
+
+            // Allowed types: Intersection of both sets (most restrictive)
+            allowedTransactionTypes = when {
+                this.allowedTransactionTypes != null && constraints.allowedTransactionTypes != null ->
+                    this.allowedTransactionTypes.intersect(constraints.allowedTransactionTypes.toSet()).toList()
+                else -> constraints.allowedTransactionTypes ?: this.allowedTransactionTypes
+            }
+        )
+    }
+
     /**
      * Normalizes a candidate filter against these rules.
      * - If [forcedTransactionTypes] is set, replaces candidate's transactionTypes unconditionally.
@@ -139,6 +184,14 @@ data class CardFilterRules(
         val SPENDING_LOCKED_CATEGORIES = CardFilterRules(
             allowedTransactionTypes = listOf("income", "expense"),
             allowCategorySelection = false
+        )
+
+        /**
+         * Constraint profile for Account-scoped screens.
+         * Disables account switching but keeps everything else per-card.
+         */
+        val ACCOUNT_LOCKED = CardFilterRules(
+            allowAccountSelection = false
         )
     }
 }

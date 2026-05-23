@@ -16,8 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +40,8 @@ fun BudgetsCard(
     items: List<BudgetProgress>,
     config: BudgetsCardConfig,
     callbacks: CardCallbacks.Budgets = CardCallbacks.Budgets(),
+    filterRules: CardFilterRules? = null,
+    baseFilter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -48,6 +52,9 @@ fun BudgetsCard(
         headerModifier = headerModifier,
         onClick = callbacks.onSeeAll,
         filterEnabled = false,
+        filter = config.filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules ?: config.filterRules,
         displaySettings = { onDismiss ->
             BudgetsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }

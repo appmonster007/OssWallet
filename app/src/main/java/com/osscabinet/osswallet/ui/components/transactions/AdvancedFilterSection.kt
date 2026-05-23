@@ -283,7 +283,6 @@ fun AdvancedFilterSection(
                     allCategories = allCategories,
                     allTags = allTags,
                     onSearchTransactions = onSearchTransactions,
-                    showAccountFilter = filterRules.allowAccountSelection,
                     onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) },
                     onAddTag = onAddTag,
                     filterRules = filterRules

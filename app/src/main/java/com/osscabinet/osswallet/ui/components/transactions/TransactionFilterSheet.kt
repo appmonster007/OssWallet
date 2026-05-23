@@ -41,7 +41,6 @@ fun TransactionFilterSheet(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     onClose: () -> Unit,
     backgroundColor: Color = AppColors.sheetSurface,
-    showAccountFilter: Boolean = true,
     accountNames: Map<String, String> = emptyMap(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -70,7 +69,6 @@ fun TransactionFilterSheet(
                 savedFilters = savedFilters,
                 onSaveFilterClick = onSaveFilterClick,
                 backgroundColor = Color.Transparent,
-                showAccountFilter = showAccountFilter,
                 accountNames = accountNames,
                 onAddTag = onAddTag,
                 modifier = Modifier.weight(1f)

@@ -42,8 +42,8 @@ fun AeonCardList(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
-    forceDisableAccountSelection: Boolean = false,
-    disableCardFilterSheet: Boolean = false,
+    screenRules: CardFilterRules = CardFilterRules.DEFAULT,
+    disableFilterSheet: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
     cardDataMap: Map<String, CardRenderData> = emptyMap()
 ) {
@@ -72,20 +72,18 @@ fun AeonCardList(
             callbacks = callbacks,
             currentTheme = currentTheme,
             preComputedData = preComputedData,
-            filterSheetEnabled = !disableCardFilterSheet
+            filterSheetEnabled = !disableFilterSheet
         )
 
         when (val card = cardWithCallbacks) {
             is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
             null -> Box(modifier = Modifier.size(0.dp))
             else -> {
-                val effectiveCard = if (forceDisableAccountSelection || disableCardFilterSheet) {
-                    card.copyWithRules(
-                        rules = card.filterRules.copy(allowAccountSelection = if (forceDisableAccountSelection) false else card.filterRules.allowAccountSelection),
-                        baseFilter = baseFilter,
-                        filterSheetEnabled = !disableCardFilterSheet
-                    )
-                } else card
+                val effectiveCard = card.copyWithRules(
+                    rules = card.filterRules.layeredWith(screenRules),
+                    baseFilter = baseFilter,
+                    filterSheetEnabled = !disableFilterSheet
+                )
 
                 UnifiedCardRenderer(
                     cardWithCallbacks = effectiveCard,

@@ -59,7 +59,6 @@ fun FilterFields(
     allCategories: List<Category>,
     allTags: List<Tag> = emptyList(),
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
-    showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
     // Callback for immediate apply with custom debounce time
@@ -285,7 +284,7 @@ fun FilterFields(
                 )
 
                 // Accounts Card
-                val isAccountLocked = !showAccountFilter && filter.accountIds.isNotEmpty()
+                val isAccountLocked = !filterRules.allowAccountSelection && filter.accountIds.isNotEmpty()
                 if (filterRules.allowAccountSelection || isAccountLocked) {
                     EntryActionCard(
                         icon = if (isAccountLocked) Icons.Default.Lock else Icons.Default.AccountBalance,
@@ -306,152 +305,244 @@ fun FilterFields(
 
             EntryActionRow {
                 // Categories Card
-                if (filterRules.allowCategorySelection) {
+                val isCategoryLocked = !filterRules.allowCategorySelection && filter.categoryIds.isNotEmpty()
+                if (filterRules.allowCategorySelection || isCategoryLocked) {
                     EntryActionCard(
-                        icon = Icons.Default.Category,
+                        icon = if (isCategoryLocked) Icons.Default.Lock else Icons.Default.Category,
                         label = "CATEGORIES",
-                        value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
+                        value = if (isCategoryLocked) {
+                            val categoryNames = filter.categoryIds.mapNotNull { id -> allCategories.find { it.id == id }?.name }
+                            if (categoryNames.size > 2) "${categoryNames.size} Categories" else categoryNames.joinToString(", ")
+                        } else if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
                         isSelected = filter.categoryIds.isNotEmpty(),
+                        enabled = !isCategoryLocked,
                         modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Categories" },
-                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                        iconTint = AppColors.tertiary
+                        onClick = { if (!isCategoryLocked) activeSheet = "Categories" },
+                        iconContainerColor = if (isCategoryLocked) AppColors.formIconContainerTertiary.copy(alpha = 0.05f)
+                                             else AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconTint = if (isCategoryLocked) AppColors.tertiary.copy(alpha = 0.4f) else AppColors.tertiary
                     )
                 }
 
                 // Currency Card
-                if (filterRules.allowCurrencySelection) {
+                val isCurrencyLocked = !filterRules.allowCurrencySelection && filter.currencies.isNotEmpty()
+                if (filterRules.allowCurrencySelection || isCurrencyLocked) {
                     EntryActionCard(
-                        icon = Icons.Default.MonetizationOn,
+                        icon = if (isCurrencyLocked) Icons.Default.Lock else Icons.Default.MonetizationOn,
                         label = "CURRENCIES",
-                        value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
+                        value = if (isCurrencyLocked) {
+                            filter.currencies.joinToString(", ")
+                        } else if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
                         isSelected = filter.currencies.isNotEmpty(),
+                        enabled = !isCurrencyLocked,
                         modifier = Modifier.weight(1f),
-                        onClick = { activeSheet = "Currencies" },
-                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                        iconTint = AppColors.primary
+                        onClick = { if (!isCurrencyLocked) activeSheet = "Currencies" },
+                        iconContainerColor = if (isCurrencyLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
+                                             else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = if (isCurrencyLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                     )
                 }
             }
 
-            // Status & Methods (Moved from separate section)
-            if (filterRules.allowStatusSelection || filterRules.allowPaymentMethodSelection) {
+            // Status & Methods
+            val isStatusLocked = !filterRules.allowStatusSelection && filter.statuses.isNotEmpty()
+            val isMethodLocked = !filterRules.allowPaymentMethodSelection && filter.paymentMethods.isNotEmpty()
+            
+            if (filterRules.allowStatusSelection || isStatusLocked || filterRules.allowPaymentMethodSelection || isMethodLocked) {
                 EntryActionRow {
-                    if (filterRules.allowStatusSelection) {
+                    if (filterRules.allowStatusSelection || isStatusLocked) {
                         EntryActionCard(
-                            icon = Icons.AutoMirrored.Rounded.FactCheck,
+                            icon = if (isStatusLocked) Icons.Default.Lock else Icons.AutoMirrored.Rounded.FactCheck,
                             label = "STATUS",
-                            value = if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
+                            value = if (isStatusLocked) {
+                                filter.statuses.joinToString(", ") { it.displayName }
+                            } else if (filter.statuses.isEmpty()) "All Statuses" else "${filter.statuses.size} Selected",
                             isSelected = filter.statuses.isNotEmpty(),
+                            enabled = !isStatusLocked,
                             modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "Statuses" },
-                            iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
-                            iconTint = AppColors.secondary
+                            onClick = { if (!isStatusLocked) activeSheet = "Statuses" },
+                            iconContainerColor = if (isStatusLocked) AppColors.secondary.copy(alpha = 0.05f)
+                                                 else AppColors.secondary.copy(alpha = 0.1f),
+                            iconTint = if (isStatusLocked) AppColors.secondary.copy(alpha = 0.4f) else AppColors.secondary
                         )
                     }
 
-                    if (filterRules.allowPaymentMethodSelection) {
+                    if (filterRules.allowPaymentMethodSelection || isMethodLocked) {
                         EntryActionCard(
-                            icon = Icons.Default.Payments,
+                            icon = if (isMethodLocked) Icons.Default.Lock else Icons.Default.Payments,
                             label = "METHODS",
-                            value = if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
+                            value = if (isMethodLocked) {
+                                filter.paymentMethods.joinToString(", ") { it.name }
+                            } else if (filter.paymentMethods.isEmpty()) "Any Method" else "${filter.paymentMethods.size} Selected",
                             isSelected = filter.paymentMethods.isNotEmpty(),
+                            enabled = !isMethodLocked,
                             modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "PaymentMethods" },
-                            iconContainerColor = AppColors.primary.copy(alpha = 0.1f),
-                            iconTint = AppColors.primary
+                            onClick = { if (!isMethodLocked) activeSheet = "PaymentMethods" },
+                            iconContainerColor = if (isMethodLocked) AppColors.primary.copy(alpha = 0.05f)
+                                                 else AppColors.primary.copy(alpha = 0.1f),
+                            iconTint = if (isMethodLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                         )
                     }
+                }
+            }
+        }
+
+        // Search & Tags
+        val isSearchLocked = !filterRules.allowSearch && (filter.queryNote != null || filter.queryPayee != null)
+        val isTagLocked = !filterRules.allowTagSelection && filter.tags.isNotEmpty()
+
+        if (filterRules.allowSearch || isSearchLocked || filterRules.allowTagSelection || isTagLocked) {
+            EntrySection(
+                title = "SEARCH & TAGS",
+                icon = Icons.Rounded.Search
+            ) {
+                if (filterRules.allowSearch || isSearchLocked) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                        CompactTextField(
+                            value = filter.queryNote ?: "",
+                            onValueChange = { onFilterChange(filter.copy(queryNote = it.ifBlank { null })) },
+                            placeholder = "Search note...",
+                            leadingIcon = Icons.Default.Subtitles,
+                            enabled = !isSearchLocked
+                        )
+                        CompactTextField(
+                            value = filter.queryPayee ?: "",
+                            onValueChange = { onFilterChange(filter.copy(queryPayee = it.ifBlank { null })) },
+                            placeholder = "Search payee...",
+                            leadingIcon = Icons.Default.Person,
+                            enabled = !isSearchLocked
+                        )
+                    }
+                }
+
+                if (filterRules.allowTagSelection || isTagLocked) {
+                    EntryActionCard(
+                        icon = if (isTagLocked) Icons.Default.Lock else Icons.Default.LocalOffer,
+                        label = "TAGS",
+                        value = if (isTagLocked) {
+                            filter.tags.joinToString(", ")
+                        } else if (filter.tags.isEmpty()) "No Tags" else "${filter.tags.size} Tags",
+                        isSelected = filter.tags.isNotEmpty(),
+                        enabled = !isTagLocked,
+                        onClick = { if (!isTagLocked) activeSheet = "Tags" },
+                        iconContainerColor = if (isTagLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
+                                             else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = if (isTagLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
+                    )
                 }
             }
         }
 
         // Amount & Records
-        EntrySection(
-            title = "AMOUNT & RECORDS",
-            icon = Icons.Rounded.AttachMoney
-        ) {
-            if (filterRules.allowAmountRange) {
-                AeonContextGrid {
-                    EntryActionRow {
-                        EntryActionCard(
-                            icon = Icons.Rounded.Remove,
-                            label = "MIN AMOUNT",
-                            value = filter.minAmount?.toString() ?: "No Min",
-                            isSelected = filter.minAmount != null,
-                            modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "MinAmount" }
-                        )
-                        EntryActionCard(
-                            icon = Icons.Rounded.Add,
-                            label = "MAX AMOUNT",
-                            value = filter.maxAmount?.toString() ?: "No Max",
-                            isSelected = filter.maxAmount != null,
-                            modifier = Modifier.weight(1f),
-                            onClick = { activeSheet = "MaxAmount" }
-                        )
+        val isAmountLocked = !filterRules.allowAmountRange && (filter.minAmount != null || filter.maxAmount != null)
+        val isLinkedLocked = !filterRules.allowLinkedRecords && filter.linkedTransactionIds.isNotEmpty()
+
+        if (filterRules.allowAmountRange || isAmountLocked || filterRules.allowLinkedRecords || isLinkedLocked) {
+            EntrySection(
+                title = "AMOUNT & RECORDS",
+                icon = Icons.Rounded.AttachMoney
+            ) {
+                if (filterRules.allowAmountRange || isAmountLocked) {
+                    AeonContextGrid {
+                        EntryActionRow {
+                            EntryActionCard(
+                                icon = if (isAmountLocked) Icons.Default.Lock else Icons.Rounded.Remove,
+                                label = "MIN AMOUNT",
+                                value = filter.minAmount?.toString() ?: "No Min",
+                                isSelected = filter.minAmount != null,
+                                enabled = !isAmountLocked,
+                                modifier = Modifier.weight(1f),
+                                onClick = { if (!isAmountLocked) activeSheet = "MinAmount" }
+                            )
+                            EntryActionCard(
+                                icon = if (isAmountLocked) Icons.Default.Lock else Icons.Rounded.Add,
+                                label = "MAX AMOUNT",
+                                value = filter.maxAmount?.toString() ?: "No Max",
+                                isSelected = filter.maxAmount != null,
+                                enabled = !isAmountLocked,
+                                modifier = Modifier.weight(1f),
+                                onClick = { if (!isAmountLocked) activeSheet = "MaxAmount" }
+                            )
+                        }
                     }
                 }
-            }
 
-            EntryActionCard(
-                icon = Icons.Rounded.Link,
-                label = "LINKED RECORDS",
-                value = if (filter.linkedTransactionIds.isEmpty()) "None Linked" else "${filter.linkedTransactionIds.size} Linked",
-                isSelected = filter.linkedTransactionIds.isNotEmpty(),
-                onClick = { activeSheet = "LinkedTransactions" },
-                iconContainerColor = AppColors.tertiary.copy(alpha = 0.1f),
-                iconTint = AppColors.tertiary
-            )
+                if (filterRules.allowLinkedRecords || isLinkedLocked) {
+                    EntryActionCard(
+                        icon = if (isLinkedLocked) Icons.Default.Lock else Icons.Rounded.Link,
+                        label = "LINKED RECORDS",
+                        value = if (isLinkedLocked) {
+                            "${filter.linkedTransactionIds.size} Linked"
+                        } else if (filter.linkedTransactionIds.isEmpty()) "None Linked" else "${filter.linkedTransactionIds.size} Linked",
+                        isSelected = filter.linkedTransactionIds.isNotEmpty(),
+                        enabled = !isLinkedLocked,
+                        onClick = { if (!isLinkedLocked) activeSheet = "LinkedTransactions" },
+                        iconContainerColor = if (isLinkedLocked) AppColors.tertiary.copy(alpha = 0.05f)
+                                             else AppColors.tertiary.copy(alpha = 0.1f),
+                        iconTint = if (isLinkedLocked) AppColors.tertiary.copy(alpha = 0.4f) else AppColors.tertiary
+                    )
+                }
+            }
         }
 
         // Warranty Section
-        EntrySection(
-            title = "WARRANTY",
-            icon = Icons.Rounded.VerifiedUser
-        ) {
-            AeonContextGrid {
-                EntryActionCard(
-                    icon = Icons.Rounded.Verified,
-                    label = "PROTECTION STATUS",
-                    value = when (filter.hasWarranty) {
-                        null -> "Any Status"
-                        true -> "Has Warranty"
-                        false -> "No Warranty"
-                    },
-                    isSelected = filter.hasWarranty != null,
-                    onClick = {
-                        val next = when (filter.hasWarranty) {
-                            null -> true
-                            true -> false
-                            false -> null
-                        }
-                        onFilterChange(filter.copy(hasWarranty = next))
-                    },
-                    iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
-                    iconTint = AppColors.secondary
-                )
+        val isWarrantyLocked = !filterRules.allowWarrantySelection && filter.hasWarranty != null
+        
+        if (filterRules.allowWarrantySelection || isWarrantyLocked) {
+            EntrySection(
+                title = "WARRANTY",
+                icon = Icons.Rounded.VerifiedUser
+            ) {
+                AeonContextGrid {
+                    EntryActionCard(
+                        icon = if (isWarrantyLocked) Icons.Default.Lock else Icons.Rounded.Verified,
+                        label = "PROTECTION STATUS",
+                        value = when (filter.hasWarranty) {
+                            null -> "Any Status"
+                            true -> "Has Warranty"
+                            false -> "No Warranty"
+                        },
+                        isSelected = filter.hasWarranty != null,
+                        enabled = !isWarrantyLocked,
+                        onClick = {
+                            if (!isWarrantyLocked) {
+                                val next = when (filter.hasWarranty) {
+                                    null -> true
+                                    true -> false
+                                    false -> null
+                                }
+                                onFilterChange(filter.copy(hasWarranty = next))
+                            }
+                        },
+                        iconContainerColor = if (isWarrantyLocked) AppColors.secondary.copy(alpha = 0.05f)
+                                             else AppColors.secondary.copy(alpha = 0.1f),
+                        iconTint = if (isWarrantyLocked) AppColors.secondary.copy(alpha = 0.4f) else AppColors.secondary
+                    )
 
-                if (filter.hasWarranty == true) {
-                    EntryActionRow {
-                        EntryActionCard(
-                            icon = Icons.Rounded.CalendarToday,
-                            label = "WARRANTY START",
-                            value = filter.warrantyExpirationStart?.let { 
-                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                            } ?: "Select",
-                            onClick = { activeSheet = "WarrantyStart" },
-                            modifier = Modifier.weight(1f)
-                        )
-                        EntryActionCard(
-                            icon = Icons.Rounded.CalendarToday,
-                            label = "WARRANTY END",
-                            value = filter.warrantyExpirationEnd?.let { 
-                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                            } ?: "Select",
-                            onClick = { activeSheet = "WarrantyEnd" },
-                            modifier = Modifier.weight(1f)
-                        )
+                    if (filter.hasWarranty == true) {
+                        val isWarrantyDatesLocked = !filterRules.allowWarrantySelection && (filter.warrantyExpirationStart != null || filter.warrantyExpirationEnd != null)
+                        EntryActionRow {
+                            EntryActionCard(
+                                icon = if (isWarrantyDatesLocked) Icons.Default.Lock else Icons.Rounded.CalendarToday,
+                                label = "WARRANTY START",
+                                value = filter.warrantyExpirationStart?.let { 
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                                } ?: "Select",
+                                enabled = !isWarrantyDatesLocked,
+                                onClick = { if (!isWarrantyDatesLocked) activeSheet = "WarrantyStart" },
+                                modifier = Modifier.weight(1f)
+                            )
+                            EntryActionCard(
+                                icon = if (isWarrantyDatesLocked) Icons.Default.Lock else Icons.Rounded.CalendarToday,
+                                label = "WARRANTY END",
+                                value = filter.warrantyExpirationEnd?.let { 
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                                } ?: "Select",
+                                enabled = !isWarrantyDatesLocked,
+                                onClick = { if (!isWarrantyDatesLocked) activeSheet = "WarrantyEnd" },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }

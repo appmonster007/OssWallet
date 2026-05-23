@@ -1,8 +1,13 @@
 package com.osscabinet.ossWallet.ui.screens.main
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
@@ -40,6 +45,10 @@ fun MainDrawerShell(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var isDrawerNavigating by remember { mutableStateOf(false) }
+    val edgeZonePx = with(LocalDensity.current) { 20.dp.toPx() }
+    val openThresholdPx = with(LocalDensity.current) { 60.dp.toPx() }
+    var edgeDragStarted by remember { mutableStateOf(false) }
+    var edgeDragTotal by remember { mutableFloatStateOf(0f) }
 
     val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
     val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
@@ -76,7 +85,7 @@ fun MainDrawerShell(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = !isDrawerNavigating,
+        gesturesEnabled = false, // edge-only swipe handled by pointerInput below
         drawerContent = {
             AppDrawerContent(
                 currentProfile = currentProfile,
@@ -158,7 +167,35 @@ fun MainDrawerShell(
     ) {
         NavHost(
             navController = nestedNavController,
-            startDestination = Screen.Dashboard.route
+            startDestination = Screen.Dashboard.route,
+            modifier = Modifier.pointerInput(drawerState) {
+                detectHorizontalDragGestures(
+                    onDragStart = { offset ->
+                        edgeDragStarted = offset.x <= edgeZonePx
+                        edgeDragTotal = 0f
+                    },
+                    onDragEnd = {
+                        if (edgeDragStarted && !isDrawerNavigating) {
+                            scope.launch {
+                                if (edgeDragTotal > openThresholdPx) drawerState.open()
+                                else drawerState.close()
+                            }
+                        }
+                        edgeDragStarted = false
+                        edgeDragTotal = 0f
+                    },
+                    onDragCancel = {
+                        edgeDragStarted = false
+                        edgeDragTotal = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        if (edgeDragStarted && !isDrawerNavigating) {
+                            change.consume()
+                            edgeDragTotal += dragAmount
+                        }
+                    }
+                )
+            }
         ) {
             composable(
                 route = Screen.Dashboard.route,

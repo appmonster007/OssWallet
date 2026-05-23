@@ -73,16 +73,6 @@ class AccountDetailViewModel @Inject constructor(
         filterManager.setFilter("manual", lockedFilter)
     }
 
-    fun updateTimelineRange(range: TimelineRange) {
-        filterManager.setFilter("date", TransactionFilter(timelineRange = range))
-    }
-
-    fun clearFilters() {
-        filterManager.clear()
-        // Re-apply scope lock after clear
-        filterManager.setFilter("account_scope", TransactionFilter(accountIds = setOf(accountId)))
-    }
-
     fun addTag(name: String, color: Int) {
         viewModelScope.launch {
             tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))

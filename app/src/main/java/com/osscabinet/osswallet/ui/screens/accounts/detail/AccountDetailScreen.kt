@@ -173,41 +173,14 @@ fun AccountDetailScreen(
 
     var showSettingsDialog by rememberSaveable { mutableStateOf(false) }
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
-    var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
-    BackHandler(enabled = showFilterSheet) { showFilterSheet = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-
-    if (showFilterSheet && uiState is AccountDetailUiState.Success) {
-        val state = uiState as AccountDetailUiState.Success
-        TransactionFilterSheet(
-            filter = state.currentFilter,
-            accounts = accounts,
-            categories = categories,
-            allTags = state.allTags,
-            onSearchTransactions = { transactionViewModel.searchTransactions(it) },
-            savedFilters = savedFilters,
-            onFilterEvent = { event ->
-                when (event) {
-                    is FilterEvent.Apply -> accountDetailViewModel.updateFilter(event.filter)
-                    is FilterEvent.UpdateTimeline -> accountDetailViewModel.updateTimelineRange(event.range)
-                    is FilterEvent.Reset -> accountDetailViewModel.clearFilters()
-                    is FilterEvent.UpdateSettings -> {}
-                }
-            },
-            onSaveFilterClick = onSaveFilterClick,
-            onAddTag = accountDetailViewModel::addTag,
-            onClose = { showFilterSheet = false },
-            showAccountFilter = false,
-            accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
-        )
-    }
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -267,9 +240,6 @@ fun AccountDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showFilterSheet = true }) {
-                        Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
-                    }
                     IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
                         Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.action_edit))
                     }

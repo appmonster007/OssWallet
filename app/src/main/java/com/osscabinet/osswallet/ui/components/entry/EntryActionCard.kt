@@ -44,6 +44,7 @@ fun EntryActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
+    enabled: Boolean = true,
     iconContainerColor: Color = AppColors.primary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.primary,
     selectedColor: Color = AppColors.primary,
@@ -53,7 +54,7 @@ fun EntryActionCard(
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
+    val scale by animateFloatAsState(if (isPressed && enabled) 0.98f else 1f, label = "cardScale")
 
     val backgroundColor by animateColorAsState(
         if (isSelected) selectedColor.copy(alpha = 0.08f)
@@ -69,10 +70,13 @@ fun EntryActionCard(
 
     Surface(
         onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
+            if (enabled) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            }
         },
         interactionSource = interactionSource,
+        enabled = enabled,
         shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         color = backgroundColor,
         border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),

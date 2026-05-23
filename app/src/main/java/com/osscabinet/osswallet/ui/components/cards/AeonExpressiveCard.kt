@@ -67,6 +67,10 @@ fun AeonExpressiveCard(
     isWarning: Boolean = false,
     onClick: (() -> Unit)? = null,
 
+    containerColor: Color = AppColors.cardSurface,
+    contentColor: Color = AppColors.contentPrimary,
+    backgroundIcon: ImageVector? = null,
+
     // Filter — button and pill overlay appear automatically when both are non-null
     filterEnabled: Boolean = true,
     filter: TransactionFilter? = null,
@@ -115,7 +119,7 @@ fun AeonExpressiveCard(
                 ) else Modifier,
             ),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = AppColors.cardSurface),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         border = BorderStroke(
             width = if (accentColor != null) 1.dp else 0.5.dp,
             color = when {
@@ -126,11 +130,25 @@ fun AeonExpressiveCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AeonTheme.dimensions.cardPadding),
-        ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (backgroundIcon != null) {
+                Icon(
+                    imageVector = backgroundIcon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 24.dp, y = 24.dp)
+                        .size(180.dp)
+                        .graphicsLayer { alpha = 0.12f },
+                    tint = contentColor,
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AeonTheme.dimensions.cardPadding),
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,27 +173,27 @@ fun AeonExpressiveCard(
                     }
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = AppTextStyles.screenSubTitle.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.sp,
-                        ),
-                        color = AppColors.contentPrimary,
-                    )
-                    if (effectiveSubtitle != null) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = effectiveSubtitle,
-                            style = AppTextStyles.drawerItemLabel.copy(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp,
+                            text = title,
+                            style = AppTextStyles.screenSubTitle.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                letterSpacing = 0.sp,
                             ),
-                            color = AppColors.contentSecondary,
+                            color = contentColor,
                         )
+                        if (effectiveSubtitle != null) {
+                            Text(
+                                text = effectiveSubtitle,
+                                style = AppTextStyles.drawerItemLabel.copy(
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 10.sp,
+                                ),
+                                color = contentColor.copy(alpha = 0.6f),
+                            )
+                        }
                     }
-                }
 
                 if (showFilterButton || showSettingsButton) {
                     Row(
@@ -186,6 +204,7 @@ fun AeonExpressiveCard(
                             AeonCardFilterButton(
                                 onClick = { showFilterSheet = true },
                                 activeFilterCount = activeFilterCount,
+                                color = if (activeFilterCount > 0) contentColor else contentColor.copy(alpha = 0.6f)
                             )
                         }
                         if (showSettingsButton) {
@@ -196,7 +215,7 @@ fun AeonExpressiveCard(
                                 Icon(
                                     Icons.Rounded.Tune,
                                     contentDescription = "Display Settings",
-                                    tint = AppColors.primary,
+                                    tint = contentColor.copy(alpha = 0.8f),
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -219,6 +238,7 @@ fun AeonExpressiveCard(
             content()
         }
     }
+}
 
     // ── Filter pill overlay ────────────────────────────────────────────────────
     // Rendered outside the Card tree so it doesn't affect Card sizing.
@@ -322,6 +342,7 @@ fun AeonCardFilterButton(
     onClick: () -> Unit,
     activeFilterCount: Int,
     modifier: Modifier = Modifier,
+    color: Color = AppColors.primary,
     icon: ImageVector = Icons.Rounded.FilterList,
     activeIcon: ImageVector = Icons.Rounded.FilterAlt,
 ) {
@@ -331,14 +352,14 @@ fun AeonCardFilterButton(
         onClick = onClick,
         modifier = modifier.size(28.dp),
         shape = CircleShape,
-        color = if (isActive) AppColors.primary.copy(alpha = 0.15f) else AppColors.transparent,
-        border = if (isActive) BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.5f)) else null,
+        color = if (isActive) color.copy(alpha = 0.15f) else AppColors.transparent,
+        border = if (isActive) BorderStroke(1.dp, color.copy(alpha = 0.5f)) else null,
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = if (isActive) activeIcon else icon,
                 contentDescription = "Filter",
-                tint = if (isActive) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.6f),
+                tint = color,
                 modifier = Modifier.size(16.dp),
             )
         }

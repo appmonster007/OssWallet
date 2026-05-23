@@ -4,17 +4,38 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.PieChart
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,10 +45,11 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -99,7 +121,7 @@ fun CategoryPieChartCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategoryPieChartDisplaySettingsDialog(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            CategoryPieChartSettingsSheet(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }
     ) {
         if (navigationStack.size > 1) {
@@ -268,86 +290,48 @@ fun CategoryPieChartCard(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryPieChartDisplaySettingsDialog(
+private fun CategoryPieChartSettingsSheet(
     config: CategoryPieChartCardConfig,
     onUpdate: (CategoryPieChartCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = AppColors.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
+    CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
+        CardSettingsSection("Visuals") {
+            SettingsSwitchRow("Show Labels", config.showLabels) { onUpdate(config.copy(showLabels = it)) }
+            SettingsSwitchRow("Show Legend", config.showLegend) { onUpdate(config.copy(showLegend = it)) }
+            SettingsSwitchRow("Rounded Visuals", config.rounded, subtitle = "Apply spacing and modern segment styles") { onUpdate(config.copy(rounded = it)) }
+        }
+        CardSettingsSection("Data") {
+            SettingsSwitchRow("Full Breakdown", config.showFullBreakdown, subtitle = "Show all categories instead of top 5") { onUpdate(config.copy(showFullBreakdown = it)) }
+            SettingsSwitchRow("Active Only", config.showOnlyActiveCategories, subtitle = "Only show categories with non-zero values") { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            SettingsSwitchRow("Show Comparison", config.showComparison, subtitle = "Compare to previous period in chart center") { onUpdate(config.copy(showComparison = it)) }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    label: String,
+    checked: Boolean,
+    subtitle: String? = null,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = AppTextStyles.transactionTitle)
+            if (subtitle != null) {
+                Text(subtitle, style = AppTextStyles.caption, color = AppColors.contentSecondary)
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                "Breakdown Display",
-                style = AppTextStyles.cardTitle
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AeonSettingsToggle(
-                    label = "SHOW LABELS",
-                    checked = config.showLabels,
-                    onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "SHOW LEGEND",
-                    checked = config.showLegend,
-                    onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "ROUNDED VISUALS",
-                    description = "Apply spacing and modern visuals to segments",
-                    checked = config.rounded,
-                    onCheckedChange = { onUpdate(config.copy(rounded = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "FULL BREAKDOWN",
-                    description = "Show all categories in the legend instead of top 5",
-                    checked = config.showFullBreakdown,
-                    onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "ACTIVE ONLY",
-                    description = "Only show categories with non-zero values",
-                    checked = config.showOnlyActiveCategories,
-                    onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "SHOW COMPARISON",
-                    description = "Display comparison to previous period in chart center",
-                    checked = config.showComparison,
-                    onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
-                )
-            }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 @Composable

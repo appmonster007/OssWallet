@@ -1,25 +1,33 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized bottom sheet for configuring card filters.
- * Uses Modifier.statusBarsPadding() on the sheet to stop at the status bar.
+ *
+ * Uses [Modifier.statusBarsPadding] on the ModalBottomSheet modifier so the sheet stops at
+ * the status bar when fully expanded. [contentWindowInsets] is set to [WindowInsets.navigationBars]
+ * so M3 natively applies nav bar bottom padding to the content.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,21 +48,14 @@ fun AeonCardSettingsSheet(
         sheetState = sheetState,
         containerColor = AppColors.sheetSurface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        modifier = Modifier.statusBarsPadding(),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        contentWindowInsets = { WindowInsets.navigationBars },
+        modifier = Modifier.statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Text(
-                text = title,
-                style = AppTextStyles.heroAmount,
-                modifier = Modifier
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                    .align(Alignment.CenterHorizontally)
-            )
-
             FilterSheetContent(
                 filter = filter,
                 accounts = filterContext.accounts,

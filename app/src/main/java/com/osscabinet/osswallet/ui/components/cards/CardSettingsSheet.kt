@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.BottomSheetDefaults
@@ -39,7 +40,8 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
  * Shared scaffold for all card settings bottom sheets.
  *
  * Provides the ModalBottomSheet wrapper, drag handle, header row (title + delete button),
- * a content slot, and a Done button with correct edge-to-edge bottom padding.
+ * a scrollable content slot, and a Done button with correct edge-to-edge bottom padding.
+ * The sheet expands up to the status bar via [Modifier.statusBarsPadding] on the sheet modifier.
  *
  * Usage:
  * ```
@@ -58,30 +60,34 @@ fun CardSettingsSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppColors.cardSurfaceProminent,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        modifier = modifier
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        contentWindowInsets = { WindowInsets.navigationBars },
+        modifier = modifier.statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(bottom = (navBarPadding + 16.dp).coerceAtLeast(32.dp)),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(title, style = AppTextStyles.heroAmount)
+                Text(
+                    text = title,
+                    style = AppTextStyles.heroAmount,
+                    modifier = Modifier.weight(1f)
+                )
                 IconButton(
                     onClick = { onDelete(); onDismiss() },
                     colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
@@ -95,7 +101,7 @@ fun CardSettingsSheet(
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             ) { Text("Done") }
         }
     }
@@ -119,19 +125,19 @@ fun CardSettingsSection(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
-        color = AppColors.insetSurface.copy(alpha = 0.3f),
+        color = AppColors.insetSurface.copy(alpha = 0.4f),
         shape = RoundedCornerShape(20.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
                 text = title.uppercase(),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
+                    letterSpacing = 1.2.sp,
                     fontSize = 11.sp
                 ),
                 color = AppColors.contentSecondary.copy(alpha = 0.6f)

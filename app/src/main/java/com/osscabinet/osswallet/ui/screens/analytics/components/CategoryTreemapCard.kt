@@ -20,15 +20,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,9 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
@@ -142,7 +141,7 @@ fun CategoryTreemapCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategoryTreemapDisplaySettingsDialog(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            CategoryTreemapSettingsSheet(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }
     ) {
         if (navigationStack.size > 1) {
@@ -271,82 +270,47 @@ fun CategoryTreemapCard(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryTreemapDisplaySettingsDialog(
+private fun CategoryTreemapSettingsSheet(
     config: CategoryTreemapCardConfig,
     onUpdate: (CategoryTreemapCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = AppColors.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
+    CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
+        CardSettingsSection("Visuals") {
+            SettingsSwitchRow("Show Labels", config.showLabels, subtitle = "Display category names on segments") { onUpdate(config.copy(showLabels = it)) }
+            SettingsSwitchRow("Show Legend", config.showLegend, subtitle = "Display list of categories beneath the map") { onUpdate(config.copy(showLegend = it)) }
+            SettingsSwitchRow("Rounded Visuals", config.rounded, subtitle = "Apply rounded corners and spacing to segments") { onUpdate(config.copy(rounded = it)) }
+        }
+        CardSettingsSection("Data") {
+            SettingsSwitchRow("Full Breakdown", config.showFullBreakdown, subtitle = "Show all categories instead of top 5") { onUpdate(config.copy(showFullBreakdown = it)) }
+            SettingsSwitchRow("Active Only", config.showOnlyActiveCategories, subtitle = "Only show categories with non-zero values") { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    label: String,
+    checked: Boolean,
+    subtitle: String? = null,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = AppTextStyles.transactionTitle)
+            if (subtitle != null) {
+                Text(subtitle, style = AppTextStyles.caption, color = AppColors.contentSecondary)
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                "Treemap Display",
-                style = AppTextStyles.cardTitle
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AeonSettingsToggle(
-                    label = "SHOW LABELS",
-                    description = "Display category names on treemap",
-                    checked = config.showLabels,
-                    onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "SHOW LEGEND",
-                    description = "Display list of categories beneath the map",
-                    checked = config.showLegend,
-                    onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "ROUNDED VISUALS",
-                    description = "Apply rounded corners and spacing to segments",
-                    checked = config.rounded,
-                    onCheckedChange = { onUpdate(config.copy(rounded = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "FULL BREAKDOWN",
-                    description = "Show all categories in the legend instead of top 5",
-                    checked = config.showFullBreakdown,
-                    onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
-                )
-                AeonSettingsToggle(
-                    label = "ACTIVE ONLY",
-                    description = "Only show categories with non-zero values",
-                    checked = config.showOnlyActiveCategories,
-                    onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-                )
-            }
-        },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = AppColors.sheetSurface
-    )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 @Composable

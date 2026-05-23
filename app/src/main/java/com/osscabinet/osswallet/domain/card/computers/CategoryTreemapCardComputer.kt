@@ -45,9 +45,9 @@ class CategoryTreemapCardComputer :
             transactions = filteredTx,
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
+            baseCurrency = input.displayCurrency
         )
 
-        return CardRenderData.CategoryTreemap(config, tree)
+        return CardRenderData.CategoryTreemap(config, tree, input.displayCurrency)
     }
 }

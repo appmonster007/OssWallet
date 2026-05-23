@@ -453,6 +453,7 @@ fun DynamicAccountDetailCards(
             categories = state.allCategories,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
+            displayCurrency = state.account.currencyCode,
             filter = accountScopeFilter
         )
     }
@@ -466,6 +467,7 @@ fun DynamicAccountDetailCards(
             categories = state.allCategories,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
+            displayCurrency = state.account.currencyCode,
             filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime)
         )
     }

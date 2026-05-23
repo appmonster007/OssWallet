@@ -49,6 +49,7 @@ fun UnifiedCardRenderer(
             NetWorthCard(
                 currentMetrics = renderData.currentMetrics,
                 baseCurrency = renderData.baseCurrency,
+                displayCurrency = renderData.displayCurrency,
                 config = renderData.config,
                 previousMetrics = renderData.previousMetrics,
                 callbacks = cb,

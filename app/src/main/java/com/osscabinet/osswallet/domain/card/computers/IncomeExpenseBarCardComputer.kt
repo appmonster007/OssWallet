@@ -55,7 +55,7 @@ class IncomeExpenseBarCardComputer(
             buckets = buckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.baseCurrency,
+            baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
             granularity = granularity
         )
@@ -64,7 +64,7 @@ class IncomeExpenseBarCardComputer(
             config = config,
             buckets = series.points,
             granularity = granularity,
-            baseCurrency = input.baseCurrency,
+            baseCurrency = input.displayCurrency,
             todayBucketIndex = todayBucketIndex
         )
     }

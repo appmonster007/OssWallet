@@ -41,7 +41,7 @@ class TagUpSetPlotCardComputer(
     ): CardRenderData.TagUpSetPlot {
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val profileId = input.profileId
-        val baseCurrency = input.baseCurrency
+        val baseCurrency = input.displayCurrency
         val exchangeRates = input.exchangeRates
 
         // 1. Compute Individual Tag Totals

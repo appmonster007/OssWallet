@@ -31,7 +31,8 @@ data class CashFlowComparisonSeries(val points: List<CashFlowTimePoint>)
  */
 data class NetWorthMetrics(
     val netWorth: BigDecimal,
-    val cashFlow: CashFlowResult
+    val cashFlow: CashFlowResult,
+    val netWorthInBase: BigDecimal? = null
 ) {
     companion object {
         fun empty() = NetWorthMetrics(
@@ -51,6 +52,7 @@ sealed class CardRenderData {
         val config: NetWorthCardConfig,
         val currentMetrics: NetWorthMetrics,
         val baseCurrency: String,
+        val displayCurrency: String = baseCurrency,
         val previousMetrics: NetWorthMetrics? = null
     ) : CardRenderData()
 
@@ -77,12 +79,14 @@ sealed class CardRenderData {
     data class CategoryPieChart(
         val config: CategoryPieChartCardConfig,
         val items: List<CategoryTreeMetrics>,
+        val displayCurrency: String,
         val previousTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
-        val items: List<CategoryTreeMetrics>
+        val items: List<CategoryTreeMetrics>,
+        val displayCurrency: String
     ) : CardRenderData()
 
     data class PlannedPayments(
@@ -93,7 +97,8 @@ sealed class CardRenderData {
 
     data class Budgets(
         val config: BudgetsCardConfig,
-        val items: List<BudgetProgress>
+        val items: List<BudgetProgress>,
+        val displayCurrency: String
     ) : CardRenderData()
 
     data class Loans(

@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
+import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
+import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.ui.screens.accounts.*
 import com.osscabinet.ossWallet.ui.screens.transactions.*
 import com.osscabinet.ossWallet.ui.screens.templates.*
@@ -138,6 +140,12 @@ fun DashboardScreen(
     onAddClick: (TransactionType?, Long?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {},
+    onPlannedPaymentClick: (Long) -> Unit = {},
+    onBudgetClick: (Long) -> Unit = {},
+    onLoanClick: (Long) -> Unit = {},
     onSettingsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
@@ -301,6 +309,12 @@ fun DashboardScreen(
                         currentTheme = currentTheme,
                         onManageAccountsClick = { navigate(onManageAccountsClick) },
                         onAccountClick = { id -> navigate { onAccountClick(id) } },
+                        onPlannedPaymentsClick = { navigate(onPlannedPaymentsClick) },
+                        onBudgetsClick = { navigate(onBudgetsClick) },
+                        onLoansClick = { navigate(onLoansClick) },
+                        onPlannedPaymentClick = { id -> navigate { onPlannedPaymentClick(id) } },
+                        onBudgetClick = { id -> navigate { onBudgetClick(id) } },
+                        onLoanClick = { id -> navigate { onLoanClick(id) } },
                         onRecordsClick = { context -> navigate { onRecordsClick(context) } },
                         onSaveFilterClick = onSaveFilterClick,
                         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
@@ -366,6 +380,12 @@ fun DashboardContent(
     currentTheme: String,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {},
+    onPlannedPaymentClick: (Long) -> Unit = {},
+    onBudgetClick: (Long) -> Unit = {},
+    onLoanClick: (Long) -> Unit = {},
     onRecordsClick: (TransactionFilter) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onEditTransactionClick: (Long) -> Unit,
@@ -418,10 +438,16 @@ fun DashboardContent(
                     savedFilters = savedFilters,
                     currentTheme = currentTheme,
                     cardAnimationEnabled = cardAnimationEnabled,
-                    onShowAddCardDialogChange = onShowAddCardDialogChange,
+                    onShowAddCardDialogChange = { onShowAddCardDialogChange(it) },
                     onRecordsClick = onRecordsClick,
                     onManageAccountsClick = onManageAccountsClick,
                     onAccountClick = onAccountClick,
+                    onPlannedPaymentsClick = onPlannedPaymentsClick,
+                    onBudgetsClick = onBudgetsClick,
+                    onLoansClick = onLoansClick,
+                    onPlannedPaymentClick = onPlannedPaymentClick,
+                    onBudgetClick = onBudgetClick,
+                    onLoanClick = onLoanClick,
                     onSaveFilterClick = onSaveFilterClick,
                     onEditTransactionClick = onEditTransactionClick,
                     onCloneTransactionClick = onCloneTransactionClick,
@@ -503,6 +529,12 @@ fun DashboardGlanceTab(
     onRecordsClick: (TransactionFilter) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {},
+    onPlannedPaymentClick: (Long) -> Unit = {},
+    onBudgetClick: (Long) -> Unit = {},
+    onLoanClick: (Long) -> Unit = {},
     onSaveFilterClick: (TransactionFilter) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit,
@@ -591,7 +623,16 @@ fun DashboardGlanceTab(
             callbacks = AeonInteractionCallbacks(
                 accountActions = AccountActions(
                     onManageClick = onManageAccountsClick,
-                    onClick = onAccountClick
+                    onClick = onAccountClick,
+                    onSeeAll = onManageAccountsClick
+                ),
+                budgetActions = BudgetActions(
+                    onClick = onBudgetClick,
+                    onSeeAll = onBudgetsClick
+                ),
+                loanActions = LoanActions(
+                    onClick = onLoanClick,
+                    onSeeAll = onLoansClick
                 ),
                 transactionActions = TransactionActions(
                     onClick = onEditTransactionClick,
@@ -604,8 +645,10 @@ fun DashboardGlanceTab(
                     onFullSwipeRight = onFullSwipeRight
                 ),
                 paymentActions = PaymentActions(
+                    onClick = onPlannedPaymentClick,
                     onConfirm = onQuickConfirm,
-                    onSkip = onQuickSkip
+                    onSkip = onQuickSkip,
+                    onSeeAll = onPlannedPaymentsClick
                 ),
                 filterActions = FilterActions(
                     onSaveClick = onSaveFilterClick

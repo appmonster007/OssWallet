@@ -10,6 +10,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 data class AeonInteractionCallbacks(
     val transactionActions: TransactionActions = TransactionActions(),
     val accountActions: AccountActions = AccountActions(),
+    val budgetActions: BudgetActions = BudgetActions(),
+    val loanActions: LoanActions = LoanActions(),
     val paymentActions: PaymentActions = PaymentActions(),
     val filterActions: FilterActions = FilterActions(),
     val tagActions: TagActions = TagActions()
@@ -28,12 +30,25 @@ data class TransactionActions(
 
 data class AccountActions(
     val onManageClick: () -> Unit = {},
-    val onClick: (String) -> Unit = {}
+    val onClick: (String) -> Unit = {},
+    val onSeeAll: () -> Unit = {}
+)
+
+data class BudgetActions(
+    val onClick: (Long) -> Unit = {},
+    val onSeeAll: () -> Unit = {}
+)
+
+data class LoanActions(
+    val onClick: (Long) -> Unit = {},
+    val onSeeAll: () -> Unit = {}
 )
 
 data class PaymentActions(
+    val onClick: (Long) -> Unit = {},
     val onConfirm: (Long) -> Unit = {},
-    val onSkip: (Long) -> Unit = {}
+    val onSkip: (Long) -> Unit = {},
+    val onSeeAll: () -> Unit = {}
 )
 
 data class FilterActions(

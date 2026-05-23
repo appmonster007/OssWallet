@@ -45,6 +45,7 @@ fun LoansCard(
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = false,
         displaySettings = { onDismiss ->
             LoansSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)

@@ -150,6 +150,12 @@ fun OssWalletNavGraph(
                     },
                     onManageAccountsClick = { navController.navigate(Screen.AccountList.route) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onPlannedPaymentsClick = { navController.navigate(Screen.PlannedPaymentList.route) },
+                    onBudgetsClick = { navController.navigate(Screen.BudgetList.route) },
+                    onLoansClick = { navController.navigate(Screen.LoanList.route) },
+                    onPlannedPaymentClick = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
+                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
                     onSaveFilterClick = { filter ->

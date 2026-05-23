@@ -77,6 +77,7 @@ fun NetWorthCard(
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,

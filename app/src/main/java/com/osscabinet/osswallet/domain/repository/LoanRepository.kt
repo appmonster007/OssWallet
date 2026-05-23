@@ -11,6 +11,7 @@ interface LoanRepository {
     suspend fun getLoanById(id: Long): Loan?
     fun getPaymentsForLoan(loanId: Long): Flow<List<LoanPayment>>
     suspend fun getPaymentsForLoanSync(loanId: Long): List<LoanPayment>
+    fun getAllPayments(): Flow<List<LoanPayment>>
     suspend fun insertLoan(loan: Loan): Long
     suspend fun updateLoan(loan: Loan)
     suspend fun deleteLoan(loanId: Long)

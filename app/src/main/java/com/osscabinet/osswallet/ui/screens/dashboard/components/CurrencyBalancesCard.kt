@@ -54,6 +54,7 @@ fun CurrencyBalancesCard(
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,

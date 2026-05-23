@@ -111,6 +111,9 @@ fun rememberCardWithCallbacks(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
+                        },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -151,6 +154,9 @@ fun rememberCardWithCallbacks(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
+                        },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -185,6 +191,9 @@ fun rememberCardWithCallbacks(
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
+                        },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -229,6 +238,9 @@ fun rememberCardWithCallbacks(
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
+                        },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -311,6 +323,9 @@ fun rememberCardWithCallbacks(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
                         },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
+                        },
                         onClick = { callbacks.accountActions.onClick(renderData.account.id) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -330,9 +345,10 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
-                        onItemClick = {},
+                        onItemClick = callbacks.paymentActions.onClick,
                         onConfirm = callbacks.paymentActions.onConfirm,
                         onSkip = callbacks.paymentActions.onSkip,
+                        onSeeAll = callbacks.paymentActions.onSeeAll,
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -352,7 +368,8 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
-                        onBudgetClick = {},
+                        onBudgetClick = callbacks.budgetActions.onClick,
+                        onSeeAll = callbacks.budgetActions.onSeeAll,
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -372,7 +389,8 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
-                        onLoanClick = {},
+                        onLoanClick = callbacks.loanActions.onClick,
+                        onSeeAll = callbacks.loanActions.onSeeAll,
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
@@ -397,6 +415,9 @@ fun rememberCardWithCallbacks(
                             onRecordsClick(
                                 input.filter.merge(config.filter).merge(drillDown)
                             )
+                        },
+                        onSeeAll = {
+                            onRecordsClick(input.filter.merge(config.filter))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onItemExpanded = callbacks.transactionActions.onItemExpanded,

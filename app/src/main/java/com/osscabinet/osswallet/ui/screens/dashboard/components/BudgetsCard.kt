@@ -46,6 +46,7 @@ fun BudgetsCard(
         icon = Icons.Rounded.DonutLarge,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = false,
         displaySettings = { onDismiss ->
             BudgetsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)

@@ -74,6 +74,7 @@ fun PlannedPaymentsCard(
         icon = Icons.Rounded.EventRepeat,
         modifier = modifier,
         headerModifier = headerModifier,
+        onClick = callbacks.onSeeAll,
         filterEnabled = false,
         displaySettings = { onDismiss ->
             PlannedPaymentsSettingsSheet(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)

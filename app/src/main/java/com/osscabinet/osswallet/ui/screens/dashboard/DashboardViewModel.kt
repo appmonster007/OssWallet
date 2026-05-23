@@ -133,6 +133,8 @@ class DashboardViewModel @Inject constructor(
                 budgetRepository.getActiveBudgets(profileId)
             val loansFlow: Flow<List<Loan>> =
                 loanRepository.getActiveLoans(profileId)
+            val loanPaymentsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.LoanPayment>> =
+                loanRepository.getAllPayments()
             val tagsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.Tag>> =
                 tagRepository.getAllTags()
             combine(
@@ -146,7 +148,8 @@ class DashboardViewModel @Inject constructor(
                 plannedPaymentsFlow,
                 budgetsFlow,
                 loansFlow,
-                tagsFlow
+                tagsFlow,
+                loanPaymentsFlow
             ) { args: Array<Any> -> args }
             .flatMapLatest { args ->
                 @Suppress("UNCHECKED_CAST")
@@ -168,6 +171,8 @@ class DashboardViewModel @Inject constructor(
                 val loans = args[9] as List<Loan>
                 @Suppress("UNCHECKED_CAST")
                 val tags = args[10] as List<com.osscabinet.ossWallet.domain.model.Tag>
+                @Suppress("UNCHECKED_CAST")
+                val loanPayments = args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
 
                 if (!hasLoadedExchangeRates) {
                     return@flatMapLatest flowOf(DashboardUiState.Loading)
@@ -184,6 +189,7 @@ class DashboardViewModel @Inject constructor(
                     plannedPayments = plannedPayments,
                     budgets = budgets,
                     loans = loans,
+                    loanPayments = loanPayments.groupBy { it.loanId },
                     filter = TransactionFilter(excludeFuture = false)
                 )
 

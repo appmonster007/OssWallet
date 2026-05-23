@@ -98,8 +98,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         payee = template.payee ?: "",
                         noteUserPart = template.note ?: "",
                         location = template.location ?: "",
-                        latitude = template.latitude,
-                        longitude = template.longitude,
+                        gpsLocation = template.gpsLocation,
                         warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
@@ -155,8 +154,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         payee = existing.payee ?: "",
                         noteUserPart = existing.note ?: "",
                         location = existing.location ?: "",
-                        latitude = existing.latitude,
-                        longitude = existing.longitude,
+                        gpsLocation = existing.gpsLocation,
                         warrantyExpirationMillis = existing.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = existing.warrantyExpiration != null,
                         transactionStatus = existing.transactionStatus,
@@ -239,13 +237,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetCategoryId -> _state.update { it.copy(selectedCategoryId = event.id) }
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }
-            is PlannedPaymentEntryEvent.SetLocation -> _state.update { 
-                it.copy(
-                    location = event.location,
-                    latitude = event.lat,
-                    longitude = event.lng
-                ) 
-            }
+            is PlannedPaymentEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation) }
             is PlannedPaymentEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
             is PlannedPaymentEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
             is PlannedPaymentEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
@@ -345,8 +337,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 payee = s.payee,
                 note = s.noteUserPart,
                 location = s.location.ifBlank { null },
-                latitude = s.latitude,
-                longitude = s.longitude,
+                gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
@@ -376,8 +367,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 payee = s.payee,
                 note = s.noteUserPart,
                 location = s.location.ifBlank { null },
-                latitude = s.latitude,
-                longitude = s.longitude,
+                gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,

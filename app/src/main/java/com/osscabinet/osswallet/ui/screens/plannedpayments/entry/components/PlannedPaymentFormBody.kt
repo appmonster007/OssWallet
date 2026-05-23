@@ -134,7 +134,7 @@ fun PlannedPaymentFormBody(
                             status = state.transactionStatus,
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
-                            location = if (state.latitude != null && state.longitude != null) state.latitude to state.longitude else null,
+                            gpsLocation = state.gpsLocation,
                             linkedTransactions = state.displayLinkedTxs
                         ),
                         accounts = state.accounts,

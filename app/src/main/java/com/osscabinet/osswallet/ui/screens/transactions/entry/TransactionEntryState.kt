@@ -26,7 +26,7 @@ data class TransactionEntryState(
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L, // +1 year
 
     // Location
-    val locationCoords: Pair<Double, Double>? = null,
+    val gpsLocation: String? = null,
 
     // Linked transactions
     val linkedTransactionIds: List<Long> = emptyList(),

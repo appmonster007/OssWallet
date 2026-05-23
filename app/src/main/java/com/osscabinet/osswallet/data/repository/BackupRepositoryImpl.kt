@@ -71,8 +71,8 @@ class BackupRepositoryImpl @Inject constructor(
         writeCsvToZip(zos, "categories.csv", listOf("id", "name", "iconName", "colorHex", "isDefault", "parentId"), 
             categoryDao.getAllCategoriesSync().map { listOf(it.id, it.name, it.iconName, it.colorHex, it.isDefault, it.parentId) })
         
-        writeCsvToZip(zos, "transactions.csv", listOf("id", "name", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "sourcePlannedPaymentId", "profileId", "latitude", "longitude", "warrantyExpiration", "status"),
-            transactionDao.getAllTransactionsSync().map { listOf(it.id, it.name, it.amount, it.timestamp, it.currency, it.transactionType, it.accountId, it.categoryId, it.tags, it.paymentMethod.name, it.payee, it.note, it.sourcePlannedPaymentId, it.profileId, it.latitude, it.longitude, it.warrantyExpiration, it.status.name) })
+        writeCsvToZip(zos, "transactions.csv", listOf("id", "name", "amount", "timestamp", "currency", "transactionType", "accountId", "categoryId", "tags", "paymentMethod", "payee", "note", "sourcePlannedPaymentId", "profileId", "gpsLocation", "warrantyExpiration", "status"),
+            transactionDao.getAllTransactionsSync().map { listOf(it.id, it.name, it.amount, it.timestamp, it.currency, it.transactionType, it.accountId, it.categoryId, it.tags, it.paymentMethod.name, it.payee, it.note, it.sourcePlannedPaymentId, it.profileId, it.gpsLocation, it.warrantyExpiration, it.status.name) })
         
         writeCsvToZip(zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"),
             transactionLinkDao.getAllLinksSync().map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
@@ -269,8 +269,7 @@ class BackupRepositoryImpl @Inject constructor(
                 note = p["note"] ?: "", 
                 sourcePlannedPaymentId = p["sourcePlannedPaymentId"]?.toLongOrNull(), 
                 profileId = p["profileId"]?.toIntOrNull() ?: 1,
-                latitude = p["latitude"]?.toDoubleOrNull(), 
-                longitude = p["longitude"]?.toDoubleOrNull(), 
+                gpsLocation = p["gpsLocation"],
                 warrantyExpiration = p["warrantyExpiration"]?.toLongOrNull(), 
                 status = p["status"]?.let { TransactionStatus.fromString(it) } ?: TransactionStatus.CLEARED
             ))

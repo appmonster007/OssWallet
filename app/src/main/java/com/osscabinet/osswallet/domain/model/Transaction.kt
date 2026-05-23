@@ -20,8 +20,7 @@ data class Transaction(
     val payee: String = "",
     val note: String = "",
     val sourcePlannedPaymentId: Long? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
+    val gpsLocation: String? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED
 ) : Timestamped

@@ -20,7 +20,7 @@ import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun EntryLocationRow(
-    coords: Pair<Double, Double>?,
+    gpsLocation: String?,
     onShowLocationSheet: () -> Unit,
     label: String = "Location"
 ) {
@@ -58,8 +58,10 @@ fun EntryLocationRow(
                     )
                 )
                 Text(
-                    text = coords?.let { "Coordinates: ${it.first.toString().take(6)}, ${it.second.toString().take(6)}" }
-                        ?: "Add Location",
+                    text = gpsLocation?.let {
+                        val parts = it.split(",")
+                        if (parts.size == 2) "${parts[0].take(8)}, ${parts[1].take(8)}" else it
+                    } ?: "Add Location",
                     style = AppTextStyles.transactionAmount
                 )
             }
@@ -82,11 +84,11 @@ fun EntryLocationRowPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             EntryLocationRow(
-                coords = null,
+                gpsLocation = null,
                 onShowLocationSheet = {}
             )
             EntryLocationRow(
-                coords = 1.23456 to 7.89012,
+                gpsLocation = "1.23456,7.89012",
                 onShowLocationSheet = {}
             )
         }

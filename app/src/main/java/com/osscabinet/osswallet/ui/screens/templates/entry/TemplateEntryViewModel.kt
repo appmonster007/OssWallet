@@ -79,8 +79,7 @@ class TemplateEntryViewModel @Inject constructor(
                         note = prefill.note ?: "",
                         payee = prefill.payee ?: "",
                         location = prefill.location ?: "",
-                        latitude = prefill.latitude,
-                        longitude = prefill.longitude,
+                        gpsLocation = prefill.gpsLocation,
                         warrantyExpirationMillis = prefill.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = prefill.warrantyExpiration != null,
                         transactionStatus = prefill.status,
@@ -115,8 +114,7 @@ class TemplateEntryViewModel @Inject constructor(
                         note = template.note ?: "",
                         payee = template.payee ?: "",
                         location = template.location ?: "",
-                        latitude = template.latitude,
-                        longitude = template.longitude,
+                        gpsLocation = template.gpsLocation,
                         warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
@@ -178,13 +176,7 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
-            is TemplateEntryEvent.SetLocation -> _state.update { 
-                it.copy(
-                    location = event.location,
-                    latitude = event.lat,
-                    longitude = event.lng
-                ) 
-            }
+            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation) }
             is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
             is TemplateEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
@@ -301,8 +293,7 @@ class TemplateEntryViewModel @Inject constructor(
                 note = s.note.ifBlank { null },
                 payee = s.payee.ifBlank { null },
                 location = s.location.ifBlank { null },
-                latitude = s.latitude,
-                longitude = s.longitude,
+                gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,

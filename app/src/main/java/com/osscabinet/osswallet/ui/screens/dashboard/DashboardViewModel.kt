@@ -290,8 +290,7 @@ class DashboardViewModel @Inject constructor(
                 transferRate = payment.transferRate,
                 sourcePlannedPaymentId = payment.id,
                 warrantyExpiration = payment.warrantyExpiration,
-                latitude = payment.latitude,
-                longitude = payment.longitude
+                gpsLocation = payment.gpsLocation
             )
             transactionManager.handleSaveTransaction(
                 existingTransaction = null,

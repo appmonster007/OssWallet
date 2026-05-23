@@ -49,8 +49,7 @@ data class TransactionEntity(
     val note: String = "",
     val sourcePlannedPaymentId: Long? = null,
     val profileId: Int = 1,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
+    val gpsLocation: String? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED
 )

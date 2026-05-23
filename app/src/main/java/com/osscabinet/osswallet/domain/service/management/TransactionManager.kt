@@ -134,8 +134,7 @@ class TransactionManager(
             timestamp = request.timestamp,
             payee = request.payee,
             note = request.note,
-            latitude = request.latitude,
-            longitude = request.longitude,
+            gpsLocation = request.gpsLocation,
             warrantyExpiration = request.warrantyExpiration,
             status = request.status,
             sourcePlannedPaymentId = request.sourcePlannedPaymentId
@@ -278,8 +277,7 @@ class TransactionManager(
             timestamp = timestamp,
             payee = payee,
             note = note,
-            latitude = latitude,
-            longitude = longitude,
+            gpsLocation = gpsLocation,
             warrantyExpiration = warrantyExpiration,
             status = status,
             sourcePlannedPaymentId = sourcePlannedPaymentId

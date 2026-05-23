@@ -89,7 +89,7 @@ fun TransactionEntryScreen(
             }
         } else null
     ) { innerPadding ->
-        if (!state.isEditMode && state.mapsAccessEnabled && state.locationCoords == null) {
+        if (!state.isEditMode && state.mapsAccessEnabled && state.gpsLocation == null) {
             LocationAutoFiller { coords ->
                 viewModel.onEvent(TransactionEntryEvent.SetLocation(coords))
             }
@@ -107,7 +107,7 @@ fun TransactionEntryScreen(
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun LocationAutoFiller(
-    onLocationDetected: (Pair<Double, Double>) -> Unit
+    onLocationDetected: (String) -> Unit
 ) {
     val context = LocalContext.current
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -121,7 +121,7 @@ private fun LocationAutoFiller(
                 try {
                     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                         location?.let {
-                            onLocationDetected(it.latitude to it.longitude)
+                            onLocationDetected("${it.latitude},${it.longitude}")
                         }
                     }
                 } catch (_: SecurityException) {

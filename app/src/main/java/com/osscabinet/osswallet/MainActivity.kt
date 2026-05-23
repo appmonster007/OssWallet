@@ -85,6 +85,15 @@ class MainActivity : FragmentActivity() {
                     val scope = rememberCoroutineScope()
                     var isDrawerNavigating by remember { mutableStateOf(false) }
 
+                    val topLevelRoutes = remember {
+                        setOf(
+                            Screen.Dashboard.route.substringBefore("?"),
+                            Screen.TransactionList.route.substringBefore("?"),
+                            Screen.Analytics.route.substringBefore("?"),
+                            Screen.ExchangeRates.route.substringBefore("?")
+                        )
+                    }
+
                     BackHandler(enabled = drawerState.isOpen) {
                         scope.launch { drawerState.close() }
                     }
@@ -110,7 +119,9 @@ class MainActivity : FragmentActivity() {
                     val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
                         ?: Screen.Dashboard.route.substringBefore("?")
 
-                    val isGesturesEnabled = !isDrawerNavigating && currentDestination != Screen.Onboarding.route
+                    val isGesturesEnabled = !isDrawerNavigating && 
+                            currentDestination != Screen.Onboarding.route &&
+                            currentDestination in topLevelRoutes
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,

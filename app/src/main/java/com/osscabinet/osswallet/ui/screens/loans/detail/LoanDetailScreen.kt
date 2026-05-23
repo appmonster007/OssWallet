@@ -191,29 +191,10 @@ fun LoanDetailScreen(
             )
         }
     ) { paddingValues ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
-            var userScrollEnabled by remember { mutableStateOf(true) }
-
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             HorizontalPager(
                 state = pagerState,
-                userScrollEnabled = userScrollEnabled,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .pointerInput(widthPx) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                val down = event.changes.firstOrNull { it.changedToDown() }
-                                if (down != null) {
-                                    val x = down.position.x
-                                    userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
-                                }
-                            }
-                        }
-                    },
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.Top
             ) { page ->
                 when (page) {

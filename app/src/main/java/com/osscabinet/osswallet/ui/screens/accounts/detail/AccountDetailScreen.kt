@@ -253,11 +253,6 @@ fun AccountDetailScreen(
             )
         }
     ) { screenPadding ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
-            var userScrollEnabled by remember { mutableStateOf(true) }
-
         when (val state = uiState) {
             is AccountDetailUiState.Loading -> {
                 AeonShimmer(
@@ -272,145 +267,132 @@ fun AccountDetailScreen(
                 }
             }
             is AccountDetailUiState.Success -> {
-                HorizontalPager(
-                    state = pagerState,
-                    userScrollEnabled = userScrollEnabled,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(screenPadding)
-                        .pointerInput(widthPx) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent(PointerEventPass.Initial)
-                                    val down = event.changes.firstOrNull { it.changedToDown() }
-                                    if (down != null) {
-                                        val x = down.position.x
-                                        userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
-                                    }
-                                }
-                            }
-                        },
-                    verticalAlignment = Alignment.Top
-                ) { page ->
-                    when (page) {
-                        0 -> {
-                            DynamicAccountDetailCards(
-                                state = state,
-                                cardsConfig = accountDetailCardsConfig,
-                                accountDetailViewModel = accountDetailViewModel,
-                                cardComputerRegistry = cardComputerRegistry,
-                                onRecordsClick = onRecordsClick,
-                                accountId = accountId,
-                                currentTheme = currentTheme,
-                                savedFilters = savedFilters,
-                                transactionViewModel = transactionViewModel,
-                                onCloneTransactionClick = onCloneTransactionClick,
-                                onEditTransactionClick = onEditTransactionClick,
-                                onSplitTransactionClick = onSplitTransactionClick,
-                                onAccountClick = onAccountClick,
-                                onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
-                                onNavigateToBudgetList = onNavigateToBudgetList,
-                                onNavigateToLoanList = onNavigateToLoanList,
-                                onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
-                                onNavigateToBudgetDetail = onNavigateToBudgetDetail,
-                                onNavigateToLoanDetail = onNavigateToLoanDetail,
-                                navigate = navigate,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = AeonTheme.dimensions.screenPadding),
-                                screenPadding = PaddingValues(),
-                                showAddCardDialog = showAddCardDialog,
-                                onShowAddCardDialogChange = { showAddCardDialog = it },
-                                cardAnimationEnabled = cardAnimationEnabled
-                            )
-                        }
-                        1 -> {
-                            // Transactions tab content using RecentActivitiesCard
-                            val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-                            val recentActivitiesBreakdown by accountDetailViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
-
-                            if (state.listState.isEmpty) {
-                                Box(
+                Box(modifier = Modifier.fillMaxSize()) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(screenPadding),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        when (page) {
+                            0 -> {
+                                DynamicAccountDetailCards(
+                                    state = state,
+                                    cardsConfig = accountDetailCardsConfig,
+                                    accountDetailViewModel = accountDetailViewModel,
+                                    cardComputerRegistry = cardComputerRegistry,
+                                    onRecordsClick = onRecordsClick,
+                                    accountId = accountId,
+                                    currentTheme = currentTheme,
+                                    savedFilters = savedFilters,
+                                    transactionViewModel = transactionViewModel,
+                                    onCloneTransactionClick = onCloneTransactionClick,
+                                    onEditTransactionClick = onEditTransactionClick,
+                                    onSplitTransactionClick = onSplitTransactionClick,
+                                    onAccountClick = onAccountClick,
+                                    onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
+                                    onNavigateToBudgetList = onNavigateToBudgetList,
+                                    onNavigateToLoanList = onNavigateToLoanList,
+                                    onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
+                                    onNavigateToBudgetDetail = onNavigateToBudgetDetail,
+                                    onNavigateToLoanDetail = onNavigateToLoanDetail,
+                                    navigate = navigate,
                                     modifier = Modifier
-                                        .fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(
-                                            Icons.Rounded.History,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                                            tint = AppColors.contentSecondary.copy(alpha = 0.2f)
-                                        )
-                                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
-                                        Text(
-                                            stringResource(R.string.no_transactions_yet),
-                                            style = AppTextStyles.listItemTitle,
-                                            color = AppColors.border
-                                        )
-                                    }
-                                }
-                            } else {
-                                RecentActivitiesScreen(
-                                    listState = state.listState,
-                                    onRecordsClick = { drillDown ->
-                                        onRecordsClick(state.currentFilter.merge(drillDown))
-                                    },
-                                    baseCurrency = state.baseCurrency,
-                                    contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                                    modifier = Modifier.fillMaxSize(),
-                                    revealedCardIds = revealedCardIds,
-                                    showCurrencyBreakdown = recentActivitiesBreakdown,
-                                    onTransactionEvent = { event ->
-                                        when (event) {
-                                            is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
-                                            is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
-                                            is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                                            is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
-                                            is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                                            is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                                            is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                                            is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
-                                        }
-                                    },
-                                    filter = state.currentFilter
+                                        .fillMaxSize()
+                                        .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                    screenPadding = PaddingValues(),
+                                    showAddCardDialog = showAddCardDialog,
+                                    onShowAddCardDialogChange = { showAddCardDialog = it },
+                                    cardAnimationEnabled = cardAnimationEnabled
                                 )
+                            }
+                            1 -> {
+                                // Transactions tab content using RecentActivitiesCard
+                                val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+                                val recentActivitiesBreakdown by accountDetailViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
+
+                                if (state.listState.isEmpty) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(
+                                                Icons.Rounded.History,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
+                                                tint = AppColors.contentSecondary.copy(alpha = 0.2f)
+                                            )
+                                            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+                                            Text(
+                                                stringResource(R.string.no_transactions_yet),
+                                                style = AppTextStyles.listItemTitle,
+                                                color = AppColors.border
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    RecentActivitiesScreen(
+                                        listState = state.listState,
+                                        onRecordsClick = { drillDown ->
+                                            onRecordsClick(state.currentFilter.merge(drillDown))
+                                        },
+                                        baseCurrency = state.baseCurrency,
+                                        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+                                        modifier = Modifier.fillMaxSize(),
+                                        revealedCardIds = revealedCardIds,
+                                        showCurrencyBreakdown = recentActivitiesBreakdown,
+                                        onTransactionEvent = { event ->
+                                            when (event) {
+                                                is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
+                                                is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                                                is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                                                is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
+                                                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                                is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                                                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                                is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                            }
+                                        },
+                                        filter = state.currentFilter
+                                    )
+                                }
                             }
                         }
                     }
+
+                    UnifiedPillNavigation(
+                        selectedTab = pagerState.currentPage,
+                        onTabSelected = { index ->
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        tabs = tabs,
+                        fabPaddingBottom = 16.dp + navigationBarHeight,
+                        isFabExpanded = isFabExpanded,
+                        onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                        onFabClick = {
+                            if (!expandableFabEnabled) {
+                                navigate { onAddTransactionClick(accountId, TransactionType.EXPENSE, null) }
+                            }
+                        },
+                        fabMenu = if (expandableFabEnabled) {
+                            {
+                                TransactionFabMenu(
+                                    isExpanded = isFabExpanded,
+                                    templates = allTemplates,
+                                    onAddClick = { type, templateId ->
+                                        isFabExpanded = false
+                                        navigate { onAddTransactionClick(accountId, type, templateId) }
+                                    }
+                                )
+                            }
+                        } else null
+                    )
                 }
             }
         }
-
-        UnifiedPillNavigation(
-            selectedTab = pagerState.currentPage,
-            onTabSelected = { index ->
-                scope.launch { pagerState.animateScrollToPage(index) }
-            },
-            tabs = tabs,
-            fabPaddingBottom = 16.dp + navigationBarHeight,
-            isFabExpanded = isFabExpanded,
-            onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-            onFabClick = {
-                if (!expandableFabEnabled) {
-                    navigate { onAddTransactionClick(accountId, TransactionType.EXPENSE, null) }
-                }
-            },
-            fabMenu = if (expandableFabEnabled) {
-                {
-                    TransactionFabMenu(
-                        isExpanded = isFabExpanded,
-                        templates = allTemplates,
-                        onAddClick = { type, templateId ->
-                            isFabExpanded = false
-                            navigate { onAddTransactionClick(accountId, type, templateId) }
-                        }
-                    )
-                }
-            } else null
-        )
-        }
-
     }
 }
 

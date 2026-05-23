@@ -375,7 +375,7 @@ fun AeonSlider(
 
             // Thumb radius scales with track thickness: protrudes ~75% beyond half-track
             val trackHalf = if (isHorizontal) size.height / 2f else size.width / 2f
-            val radius = trackHalf * 1.75f * thumbScale
+            val radius = trackHalf * 1.25f * thumbScale
 
             // Shadow
             drawCircle(
@@ -765,7 +765,7 @@ fun AdvancedColorPickerContent(
                                 listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
                             ),
                             modifier = Modifier.fillMaxWidth(),
-                            height = 12.dp
+                            height = 24.dp
                         )
                     }
 
@@ -800,7 +800,7 @@ fun AdvancedColorPickerContent(
                             range = 0f..1f,
                             brush = Brush.horizontalGradient(listOf(greyAtL, vividAtL)),
                             modifier = Modifier.fillMaxWidth(),
-                            height = 12.dp
+                            height = 24.dp
                         )
                     }
 
@@ -834,7 +834,7 @@ fun AdvancedColorPickerContent(
                             range = 0f..1f,
                             brush = Brush.horizontalGradient(listOf(Color.Black, midHue, Color.White)),
                             modifier = Modifier.fillMaxWidth(),
-                            height = 12.dp
+                            height = 24.dp
                         )
                     }
                 }

@@ -130,9 +130,9 @@ class DashboardViewModel @Inject constructor(
             val plannedPaymentsFlow: Flow<List<PlannedPayment>> =
                 plannedPaymentRepository.getActivePlannedPayments(profileId)
             val budgetsFlow: Flow<List<Budget>> =
-                budgetRepository.getActiveBudgets(profileId)
+                budgetRepository.getAllBudgets(profileId)
             val loansFlow: Flow<List<Loan>> =
-                loanRepository.getActiveLoans(profileId)
+                loanRepository.getAllLoans(profileId)
             val loanPaymentsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.LoanPayment>> =
                 loanRepository.getAllPayments()
             val tagsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.Tag>> =

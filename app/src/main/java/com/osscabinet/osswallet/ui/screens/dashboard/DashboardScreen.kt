@@ -399,32 +399,14 @@ fun DashboardContent(
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
 ) {
-    BoxWithConstraints(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
     ) {
-        val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-        val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
-        var userScrollEnabled by remember { mutableStateOf(true) }
-
         HorizontalPager(
             state = pagerState,
-            userScrollEnabled = userScrollEnabled,
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(widthPx) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            val down = event.changes.firstOrNull { it.changedToDown() }
-                            if (down != null) {
-                                val x = down.position.x
-                                userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
-                            }
-                        }
-                    }
-                },
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Top
         ) { page ->
         when (page) {

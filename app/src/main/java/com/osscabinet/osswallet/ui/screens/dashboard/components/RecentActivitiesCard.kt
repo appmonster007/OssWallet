@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -48,6 +49,7 @@ fun RecentActivitiesCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
 ) {
@@ -63,7 +65,7 @@ fun RecentActivitiesCard(
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,
-        filterRules = config.filterRules,
+        filterRules = filterRules ?: config.filterRules,
         filterContext = filterContext,
         onClick = { callbacks.onRecordsClick(config.filter) },
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },

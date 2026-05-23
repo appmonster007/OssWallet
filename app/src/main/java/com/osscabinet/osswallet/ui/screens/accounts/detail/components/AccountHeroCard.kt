@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -63,6 +64,8 @@ fun AccountHeroCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
+    filterRules: CardFilterRules? = null,
+    baseFilter: TransactionFilter = TransactionFilter(),
     callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero()
 ) {
     val accountColor = try {
@@ -101,6 +104,8 @@ fun AccountHeroCard(
         headerModifier = headerModifier,
         filterEnabled = false,
         filter = config.filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules ?: config.filterRules,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

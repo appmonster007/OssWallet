@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -71,6 +72,7 @@ fun CategoryTreemapCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     currentTheme: String = "System",
     showFilterButton: Boolean = true
@@ -136,7 +138,7 @@ fun CategoryTreemapCard(
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,
-        filterRules = config.filterRules,
+        filterRules = filterRules ?: config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,

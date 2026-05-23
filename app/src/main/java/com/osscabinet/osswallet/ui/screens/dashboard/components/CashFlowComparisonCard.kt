@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -50,6 +51,7 @@ fun CashFlowComparisonCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
     headerModifier: Modifier = Modifier,
@@ -70,7 +72,7 @@ fun CashFlowComparisonCard(
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,
-        filterRules = config.filterRules,
+        filterRules = filterRules ?: config.filterRules,
         filterContext = filterContext,
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))

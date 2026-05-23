@@ -42,9 +42,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
@@ -66,6 +68,8 @@ fun PlannedPaymentsCard(
     overdue: List<PlannedPayment>,
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
+    filterRules: CardFilterRules? = null,
+    baseFilter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -76,6 +80,9 @@ fun PlannedPaymentsCard(
         headerModifier = headerModifier,
         onClick = callbacks.onSeeAll,
         filterEnabled = false,
+        filter = config.filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules ?: config.filterRules,
         displaySettings = { onDismiss ->
             PlannedPaymentsSettingsSheet(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
         }

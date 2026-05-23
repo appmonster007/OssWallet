@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
@@ -74,6 +75,7 @@ fun CategoryPieChartCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     currentTheme: String = "System",
     previousTotal: BigDecimal? = null,
@@ -116,7 +118,7 @@ fun CategoryPieChartCard(
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,
-        filterRules = config.filterRules,
+        filterRules = filterRules ?: config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,

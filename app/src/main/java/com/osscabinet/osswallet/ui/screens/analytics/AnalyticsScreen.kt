@@ -187,7 +187,7 @@ fun AnalyticsScreen(
                                     onAdd = transactionViewModel::addTag
                                 )
                             ),
-                            disableCardFilterSheet = true,
+                            disableFilterSheet = true,
                         )
                     }
                 }

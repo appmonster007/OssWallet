@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -63,6 +64,7 @@ fun AccountsCard(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
@@ -81,7 +83,7 @@ fun AccountsCard(
         filterEnabled = showFilterButton,
         filter = displayFilter,
         baseFilter = baseFilter,
-        filterRules = config.filterRules,
+        filterRules = filterRules ?: config.filterRules,
         filterContext = filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,

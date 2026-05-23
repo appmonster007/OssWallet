@@ -562,7 +562,7 @@ fun DynamicAccountDetailCards(
                 )
             ),
             baseFilter = accountScopeFilter,
-            forceDisableAccountSelection = true,
+            screenRules = CardFilterRules.ACCOUNT_LOCKED,
             header = {
                 if (heroCard != null && heroCard !is CardWithCallbacks.ComputeError) {
                     UnifiedCardRenderer(

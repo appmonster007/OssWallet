@@ -60,6 +60,8 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
+import com.osscabinet.ossWallet.ui.screens.main.MainViewModel
+import com.osscabinet.ossWallet.ui.screens.main.MainDrawerShell
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -70,8 +72,7 @@ import kotlinx.serialization.encodeToString
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
-    onSplashConditionChanged: (Boolean) -> Unit = {},
-    onOpenDrawer: () -> Unit = {}
+    onSplashConditionChanged: (Boolean) -> Unit = {}
 ) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val analyticsViewModel: AnalyticsViewModel = hiltViewModel()
@@ -83,6 +84,7 @@ fun OssWalletNavGraph(
     val currencyViewModel: CurrencyViewModel = hiltViewModel()
     val dashboardViewModel: DashboardViewModel = hiltViewModel()
     val tagViewModel: TagViewModel = hiltViewModel()
+    val mainViewModel: MainViewModel = hiltViewModel()
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
@@ -95,7 +97,7 @@ fun OssWalletNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = if (isOnboardingCompleted == true) Screen.Dashboard.createRoute(topLevel = true) else Screen.Onboarding.route
+        startDestination = if (isOnboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
     ) {
             composable(
                 route = Screen.Onboarding.route,
@@ -108,7 +110,7 @@ fun OssWalletNavGraph(
                 OnboardingScreen(
                     viewModel = onboardingViewModel,
                     onComplete = {
-                        navController.navigate(Screen.Dashboard.createRoute(topLevel = true)) {
+                        navController.navigate(Screen.Main.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     }
@@ -116,70 +118,31 @@ fun OssWalletNavGraph(
             }
 
             composable(
-                route = Screen.Dashboard.route,
+                route = Screen.Main.route,
                 arguments = listOf(
-                    navArgument("viewContext") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("topLevel") {
-                        type = NavType.BoolType
-                        defaultValue = true
-                    }
+                    navArgument("tab") { type = NavType.StringType; nullable = true; defaultValue = null }
                 ),
                 enterTransition = { FadeEnterTransitionSpec },
                 exitTransition = { FadeExitTransitionSpec },
                 popEnterTransition = { FadeEnterTransitionSpec },
                 popExitTransition = { FadeExitTransitionSpec }
             ) { backStackEntry ->
-                val viewContext = backStackEntry.arguments?.getString("viewContext")
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
-                DashboardScreen(
-                    onMenuClick = onOpenDrawer,
-                    onBackClick = { navController.popBackStack() },
-                    isTopLevelParam = topLevel,
-                    onRecordsClick = { filter -> navController.navigateToRecords(filter) },
-                    onAddClick = { type, templateId ->
-                        if (templateId != null) {
-                            transactionViewModel.setTemplatePrefill(templateId)
-                            navController.navigate(Screen.TransactionEntry.createRoute())
-                        } else {
-                            navController.navigate(Screen.TransactionEntry.createRoute(type = type))
-                        }
-                    },
-                    onManageAccountsClick = { navController.navigate(Screen.AccountList.route) },
-                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                    onNavigateToPlannedPaymentList = { navController.navigate(Screen.PlannedPaymentList.route) },
-                    onNavigateToBudgetList = { navController.navigate(Screen.BudgetList.route) },
-                    onNavigateToLoanList = { navController.navigate(Screen.LoanList.route) },
-                    onNavigateToPlannedPaymentDetail = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
-                    onNavigateToBudgetDetail = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onNavigateToLoanDetail = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
-                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                    onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
-                    onSaveFilterClick = { filter ->
-                        val filterJson = java.net.URLEncoder.encode(Json.encodeToString(filter), "UTF-8")
-                        navController.navigate(Screen.FilterEntry.createRoute(initialFilter = filterJson))
-                    },
-                    onCloneTransactionClick = { id ->
-                        transactionViewModel.setCloneTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    onSplitTransactionClick = { id ->
-                        transactionViewModel.setSplitTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    accountViewModel = accountViewModel,
-                    transactionViewModel = transactionViewModel,
-                    settingsViewModel = settingsViewModel,
-                    analyticsViewModel = analyticsViewModel,
-                    templateViewModel = templateViewModel,
+                val tab = backStackEntry.arguments?.getString("tab")
+                MainDrawerShell(
+                    rootNavController = navController,
+                    mainViewModel = mainViewModel,
+                    initialTab = tab,
                     dashboardViewModel = dashboardViewModel,
-                    cardComputerRegistry = dashboardViewModel.cardComputerRegistry,
-                    viewContext = viewContext
+                    transactionViewModel = transactionViewModel,
+                    accountViewModel = accountViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    currencyViewModel = currencyViewModel,
+                    templateViewModel = templateViewModel,
+                    settingsViewModel = settingsViewModel
                 )
             }
+
+            // Removed Dashboard from root host - now in MainDrawerShell
 
             composable(
                 route = Screen.Settings.route,
@@ -249,9 +212,9 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterJson = backStackEntry.arguments?.getString("filter")
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
                 TransactionListScreen(
-                    onMenuClick = onOpenDrawer,
+                    onMenuClick = {},
                     isTopLevelParam = topLevel,
                     viewModel = transactionViewModel,
                     accountViewModel = accountViewModel,
@@ -309,49 +272,7 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(
-                route = Screen.Analytics.route,
-                arguments = listOf(
-                    navArgument("topLevel") {
-                        type = NavType.BoolType
-                        defaultValue = true
-                    }
-                ),
-                enterTransition = { EnterTransitionSpec },
-                exitTransition = { ExitTransitionSpec },
-                popEnterTransition = { PopEnterTransitionSpec },
-                popExitTransition = { PopExitTransitionSpec }
-            ) { backStackEntry ->
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
-                AnalyticsScreen(
-                    onMenuClick = onOpenDrawer,
-                    onBackClick = { navController.popBackStack() },
-                    isTopLevel = topLevel,
-                    viewModel = analyticsViewModel,
-                    accountViewModel = accountViewModel,
-                    transactionViewModel = transactionViewModel,
-                    templateViewModel = templateViewModel,
-                    settingsViewModel = settingsViewModel,
-                    onRecordsClick = { filter -> navController.navigateToRecords(filter) },
-                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                    onNavigateToPlannedPaymentList = { navController.navigate(Screen.PlannedPaymentList.route) },
-                    onNavigateToBudgetList = { navController.navigate(Screen.BudgetList.route) },
-                    onNavigateToLoanList = { navController.navigate(Screen.LoanList.route) },
-                    onNavigateToPlannedPaymentDetail = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
-                    onNavigateToBudgetDetail = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onNavigateToLoanDetail = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
-                    onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
-                    onCloneTransactionClick = { id ->
-                        transactionViewModel.setCloneTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    onSplitTransactionClick = { id ->
-                        transactionViewModel.setSplitTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    cardComputerRegistry = dashboardViewModel.cardComputerRegistry
-                )
-            }
+            // Analytics is now in MainDrawerShell
 
             composable(
                 route = Screen.SharedWallet.route,
@@ -403,27 +324,7 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(
-                route = Screen.ExchangeRates.route,
-                arguments = listOf(
-                    navArgument("topLevel") {
-                        type = NavType.BoolType
-                        defaultValue = true
-                    }
-                ),
-                enterTransition = { EnterTransitionSpec },
-                exitTransition = { ExitTransitionSpec },
-                popEnterTransition = { PopEnterTransitionSpec },
-                popExitTransition = { PopExitTransitionSpec }
-            ) { backStackEntry ->
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
-                ExchangeRatesScreen(
-                    onMenuClick = onOpenDrawer,
-                    onBackClick = { navController.popBackStack() },
-                    isTopLevel = topLevel,
-                    viewModel = currencyViewModel
-                )
-            }
+            // ExchangeRates is now in MainDrawerShell
 
             composable(
                 route = Screen.TemplateList.route,

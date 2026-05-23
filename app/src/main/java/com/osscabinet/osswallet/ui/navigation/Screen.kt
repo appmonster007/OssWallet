@@ -95,4 +95,7 @@ sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
     object ShortlistedCurrencies : Screen("shortlisted_currencies")
     object OpenInWeb : Screen("open_in_web")
+    object Main : Screen("main?tab={tab}") {
+        fun createRoute(tab: String? = null) = if (tab != null) "main?tab=$tab" else "main"
+    }
 }

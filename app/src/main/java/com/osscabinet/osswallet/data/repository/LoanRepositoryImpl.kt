@@ -48,7 +48,9 @@ class LoanRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteLoan(loanId: Long) {
+        val filterId = loanDao.getLoanById(loanId)?.loan?.filterId
         loanDao.deleteById(loanId)
+        filterId?.let { filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) } }
     }
 
     override suspend fun insertPayment(payment: LoanPayment): Long =

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.web
 
 import android.content.Context
+import android.graphics.Bitmap
 import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -9,6 +10,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
@@ -41,11 +43,13 @@ class WebServerManager @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val webServerPreferences: WebServerPreferences
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
     override val serverState: StateFlow<WebServerState> = _serverState.asStateFlow()
+    override val isEnabled: Flow<Boolean> = webServerPreferences.isEnabled
 
     private var engine: EmbeddedServer<*, *>? = null
     private var serverScope: CoroutineScope? = null
@@ -58,6 +62,13 @@ class WebServerManager @Inject constructor(
 
     override fun getAccessCode(): String? =
         (_serverState.value as? WebServerState.Running)?.accessCode
+
+    override suspend fun setEnabled(enabled: Boolean) = webServerPreferences.setEnabled(enabled)
+
+    override fun generateQrCode(url: String): Bitmap? =
+        runCatching { QRCodeGenerator.generate(url) }.getOrNull()
+
+    override fun isConnectedToWifi(): Boolean = NetworkUtils.isConnectedToWifi(context)
 
     override suspend fun start() {
         if (isRunning()) return

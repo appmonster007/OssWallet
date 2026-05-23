@@ -15,7 +15,7 @@ interface TransactionRepository {
     suspend fun saveTransfer(sourceTransaction: Transaction, targetTransaction: Transaction, profileId: Int): Pair<Long, Long>
     suspend fun deleteTransaction(id: Long)
     suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int)
-    suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>>
+    fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<Transaction>>
     suspend fun getTransactionById(id: Long): Transaction?
 
     // Link management methods

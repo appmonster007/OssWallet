@@ -44,8 +44,8 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     abstract suspend fun getTransactionById(id: Long): TransactionEntity?
 
-    @Query("SELECT * FROM transactions WHERE accountId = :accountId ORDER BY timestamp DESC")
-    abstract fun getTransactionsByAccount(accountId: String): Flow<List<TransactionEntity>>
+    @Query("SELECT * FROM transactions WHERE accountId = :accountId AND profileId = :profileId ORDER BY timestamp DESC")
+    abstract fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<TransactionEntity>>
 
     @Delete
     abstract suspend fun _deleteTransaction(transaction: TransactionEntity)

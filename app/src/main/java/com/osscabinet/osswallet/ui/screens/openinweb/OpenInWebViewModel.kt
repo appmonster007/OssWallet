@@ -5,9 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.web.NetworkUtils
-import com.osscabinet.ossWallet.data.web.QRCodeGenerator
-import com.osscabinet.ossWallet.data.web.WebServerPreferences
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.service.WebServerService
@@ -30,21 +27,20 @@ data class OpenInWebUiState(
 @HiltViewModel
 class OpenInWebViewModel @Inject constructor(
     private val webServerRepository: WebServerRepository,
-    private val webServerPreferences: WebServerPreferences,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OpenInWebUiState())
     val uiState: StateFlow<OpenInWebUiState> = _uiState.asStateFlow()
 
-    val isEnabled: StateFlow<Boolean> = webServerPreferences.isEnabled
+    val isEnabled: StateFlow<Boolean> = webServerRepository.isEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
         viewModelScope.launch {
             webServerRepository.serverState.collect { state ->
                 val qr = if (state is WebServerState.Running) {
-                    runCatching { QRCodeGenerator.generate(state.accessUrl) }.getOrNull()
+                    webServerRepository.generateQrCode(state.accessUrl)
                 } else null
                 _uiState.value = _uiState.value.copy(serverState = state, qrBitmap = qr)
             }
@@ -54,7 +50,7 @@ class OpenInWebViewModel @Inject constructor(
 
     fun toggleServer(enabled: Boolean) {
         viewModelScope.launch {
-            webServerPreferences.setEnabled(enabled)
+            webServerRepository.setEnabled(enabled)
             val intent = Intent(context, WebServerService::class.java).apply {
                 action = if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
             }
@@ -64,7 +60,7 @@ class OpenInWebViewModel @Inject constructor(
 
     fun refreshWifiStatus() {
         _uiState.value = _uiState.value.copy(
-            isWifiConnected = NetworkUtils.isConnectedToWifi(context)
+            isWifiConnected = webServerRepository.isConnectedToWifi()
         )
     }
 }

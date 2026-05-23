@@ -108,6 +108,7 @@ class BudgetEntryViewModel @Inject constructor(
             budgetRepository.getById(budgetId)?.let { budget ->
                 val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val tf = filter?.filter ?: TransactionFilter()
+                val usageCount = budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
@@ -129,6 +130,7 @@ class BudgetEntryViewModel @Inject constructor(
                         selectedStatuses = budget.statuses.toSet(),
                         linkedTransactionIds = budget.linkedTransactionIds.toSet(),
                         filterId = budget.filterId,
+                        filterUsageCount = usageCount,
                         queryNote = tf.queryNote ?: "",
                         isNoteRegex = tf.isNoteRegex,
                         queryPayee = tf.queryPayee ?: "",

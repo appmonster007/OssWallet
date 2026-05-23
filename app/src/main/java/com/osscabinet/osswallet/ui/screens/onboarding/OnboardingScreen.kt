@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,19 +20,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
@@ -40,18 +37,16 @@ import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
     onComplete: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState { 6 }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.onboardingCompleted.collect {
@@ -59,13 +54,29 @@ fun OnboardingScreen(
         }
     }
 
+    OnboardingContent(
+        uiState = uiState,
+        onEvent = viewModel::onEvent
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnboardingContent(
+    uiState: OnboardingState,
+    onEvent: (OnboardingEvent) -> Unit,
+) {
+    val totalSteps = 5
+    val pagerState = rememberPagerState { totalSteps }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         containerColor = AppColors.screenBackground,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Step ${pagerState.currentPage + 1} of 6",
+                        text = "Step ${pagerState.currentPage + 1} of $totalSteps",
                         style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -97,7 +108,7 @@ fun OnboardingScreen(
             ) {
                 Column {
                     LinearProgressIndicator(
-                        progress = { (pagerState.currentPage + 1).toFloat() / 6 },
+                        progress = { (pagerState.currentPage + 1).toFloat() / totalSteps },
                         modifier = Modifier.fillMaxWidth().height(4.dp),
                         color = AppColors.primary,
                         trackColor = AppColors.divider.copy(alpha = 0.1f)
@@ -113,16 +124,15 @@ fun OnboardingScreen(
                     ) {
                         Button(
                             onClick = {
-                                if (pagerState.currentPage < 5) {
+                                if (pagerState.currentPage < totalSteps - 1) {
                                     scope.launch {
                                         pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                     }
                                 } else {
-                                    viewModel.onEvent(OnboardingEvent.CompleteOnboarding)
+                                    onEvent(OnboardingEvent.CompleteOnboarding)
                                 }
                             },
-                            enabled = !uiState.isCompleting &&
-                                (pagerState.currentPage != 4 || uiState.shortlistedCurrencies.isNotEmpty()),
+                            enabled = !uiState.isCompleting,
                             modifier = Modifier.height(56.dp),
                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                             colors = ButtonDefaults.buttonColors(
@@ -139,12 +149,12 @@ fun OnboardingScreen(
                                 )
                             } else {
                                 Text(
-                                    if (pagerState.currentPage < 5) "NEXT" else "GET STARTED",
+                                    if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
                                     style = AppTextStyles.listSectionHeader
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
-                                    if (pagerState.currentPage < 5) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
+                                    if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -155,30 +165,13 @@ fun OnboardingScreen(
             }
         }
     ) { paddingValues ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-            val edgeThreshold = with(LocalDensity.current) { 40.dp.toPx() }
-            var userScrollEnabled by remember { mutableStateOf(true) }
-
-            HorizontalPager(
-                state = pagerState,
-                userScrollEnabled = userScrollEnabled,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .pointerInput(widthPx) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                val down = event.changes.firstOrNull { it.changedToDown() }
-                                if (down != null) {
-                                    val x = down.position.x
-                                    userScrollEnabled = x < edgeThreshold || x > widthPx - edgeThreshold
-                                }
-                            }
-                        }
-                    }
-            ) { page ->
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            beyondViewportPageCount = 1
+        ) { page ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -188,34 +181,30 @@ fun OnboardingScreen(
                     0 -> WelcomeStep()
                     1 -> ProfileStep(
                         userName = uiState.userName,
-                        onNameChanged = { viewModel.onEvent(OnboardingEvent.UserNameChanged(it)) }
+                        onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
                     )
                     2 -> ProviderStep(
                         selectedProviderId = uiState.selectedProviderId,
                         availableProviders = uiState.availableProviders,
-                        onProviderSelected = { viewModel.onEvent(OnboardingEvent.ProviderSelected(it)) }
+                        onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
                     )
-                    3 -> CurrencyStep(
+                    3 -> CurrenciesStep(
                         selectedCurrency = uiState.selectedCurrency,
+                        shortlistedCurrencies = uiState.shortlistedCurrencies,
                         availableCurrencies = uiState.availableCurrencies,
-                        onCurrencySelected = { viewModel.onEvent(OnboardingEvent.CurrencySelected(it)) }
+                        onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
+                        onShortlistChanged = { onEvent(OnboardingEvent.ShortlistedCurrenciesChanged(it)) }
                     )
-                    4 -> ShortlistStep(
-                        availableCurrencies = uiState.availableCurrencies,
-                        selectedCurrencies = uiState.shortlistedCurrencies,
-                        onSelectionChange = { viewModel.onEvent(OnboardingEvent.ShortlistedCurrenciesChanged(it)) }
-                    )
-                    5 -> AppearanceStep(
+                    4 -> AppearanceStep(
                         selectedTheme = uiState.selectedTheme,
-                        onThemeSelected = { viewModel.onEvent(OnboardingEvent.ThemeSelected(it)) },
+                        onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
                         selectedPrecision = uiState.decimalPrecision,
-                        onPrecisionSelected = { viewModel.onEvent(OnboardingEvent.PrecisionSelected(it)) }
+                        onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
                     )
                 }
             }
         }
     }
-}
 }
 
 @Composable
@@ -258,10 +247,13 @@ private fun StepHeader(icon: ImageVector, title: String, description: String) {
 @Composable
 private fun WelcomeStep() {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(32.dp))
         Surface(
             modifier = Modifier.size(120.dp),
             shape = CircleShape,
@@ -291,6 +283,7 @@ private fun WelcomeStep() {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
+        Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
 }
 
@@ -299,7 +292,10 @@ private fun ProfileStep(
     userName: String,
     onNameChanged: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+    ) {
         StepHeader(
             icon = Icons.Rounded.Person,
             title = "Personalize",
@@ -314,6 +310,7 @@ private fun ProfileStep(
             placeholder = "Enter your name",
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
 }
 
@@ -324,16 +321,18 @@ private fun ProviderStep(
     onProviderSelected: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        StepHeader(
-            icon = Icons.Rounded.Public,
-            title = "Rate Provider",
-            description = "Select a source for your currency exchange rates. Each provider supports a different set of currencies."
-        )
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        val scrollState = rememberScrollState()
+        Column(modifier = Modifier
+            .weight(1f)
+            .verticalScroll(scrollState)
         ) {
-            items(availableProviders) { provider ->
+            StepHeader(
+                icon = Icons.Rounded.Public,
+                title = "Rate Provider",
+                description = "Select a source for your currency exchange rates. Each provider supports a different set of currencies."
+            )
+
+            availableProviders.forEach { provider ->
                 val isSelected = provider.id == selectedProviderId
                 Surface(
                     onClick = { onProviderSelected(provider.id) },
@@ -343,7 +342,9 @@ private fun ProviderStep(
                         width = if (isSelected) 1.5.dp else 0.5.dp,
                         color = if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
@@ -381,37 +382,51 @@ private fun ProviderStep(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(scrollBottomPadding()))
         }
     }
 }
 
 @Composable
-private fun CurrencyStep(
+private fun CurrenciesStep(
     selectedCurrency: String,
+    shortlistedCurrencies: Set<String>,
     availableCurrencies: List<CurrencyMetadata>,
-    onCurrencySelected: (String) -> Unit
+    onCurrencySelected: (String) -> Unit,
+    onShortlistChanged: (Set<String>) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val filteredCurrencies = remember(searchQuery, availableCurrencies) {
         availableCurrencies.filter {
             it.code.contains(searchQuery, ignoreCase = true) ||
-            it.name.contains(searchQuery, ignoreCase = true)
+                    it.name.contains(searchQuery, ignoreCase = true)
         }
     }
+    val filteredCodes = remember(filteredCurrencies) { filteredCurrencies.map { it.code }.toSet() }
+    val haptic = LocalHapticFeedback.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         StepHeader(
             icon = Icons.Rounded.Payments,
-            title = "Base Currency",
-            description = "Choose your primary currency for reporting. All balances will be converted to this currency."
+            title = "Currencies",
+            description = "Set your base currency and select others you use regularly."
         )
 
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             placeholder = { Text("Search currencies...") },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Rounded.Clear, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                    }
+                }
+            },
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -422,147 +437,59 @@ private fun CurrencyStep(
             )
         )
 
-        Surface(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.cardSurface,
-            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filteredCurrencies) { metadata ->
-                    val isSelected = selectedCurrency == metadata.code
-                    Surface(
-                        onClick = { onCurrencySelected(metadata.code) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
-                        border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = CircleShape,
-                                color = if (isSelected) AppColors.primary.copy(alpha = 0.2f) else AppColors.recessedSurface
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        getCurrencySymbol(metadata.code),
-                                        style = AppTextStyles.cardSectionTitle,
-                                        color = if (isSelected) AppColors.primary else AppColors.contentSecondary
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    metadata.name,
-                                    style = AppTextStyles.listItemTitle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
-                                )
-                                Text(
-                                    "${metadata.code} • ${metadata.country}",
-                                    style = AppTextStyles.transactionSwipeAction,
-                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                                )
-                            }
-                            if (isSelected) {
-                                Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = AppColors.primary, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-private fun ShortlistStep(
-    availableCurrencies: List<CurrencyMetadata>,
-    selectedCurrencies: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit
-) {
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredCurrencies = remember(searchQuery, availableCurrencies) {
-        availableCurrencies.filter {
-            it.code.contains(searchQuery, ignoreCase = true) ||
-            it.name.contains(searchQuery, ignoreCase = true)
-        }
-    }
-    val filteredCodes = remember(filteredCurrencies) { filteredCurrencies.map { it.code }.toSet() }
-    val haptic = LocalHapticFeedback.current
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        StepHeader(
-            icon = Icons.Rounded.Bookmarks,
-            title = "Active Currencies",
-            description = "Select the currencies you work with — they'll appear across all forms."
-        )
-
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Search currencies...") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Rounded.Clear, contentDescription = "Clear", modifier = Modifier.size(18.dp))
-                        }
-                    }
+            Button(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onShortlistChanged(shortlistedCurrencies + filteredCodes)
                 },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = AppColors.cardSurface,
-                    focusedContainerColor = AppColors.cardSurface,
-                    unfocusedIndicatorColor = AppColors.divider.copy(alpha = 0.1f),
-                    focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f)
-                )
-            )
-            if (filteredCodes.isNotEmpty()) {
-                IconButton(onClick = {
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.cardSurface, contentColor = AppColors.primary)
+            ) {
+                Icon(Icons.Rounded.SelectAll, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("All", style = AppTextStyles.caption)
+            }
+            Button(
+                onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onSelectionChange(selectedCurrencies + filteredCodes)
-                }) {
-                    Icon(Icons.Rounded.SelectAll, contentDescription = "Select All", tint = AppColors.primary)
-                }
-                IconButton(onClick = {
+                    onShortlistChanged(shortlistedCurrencies - filteredCodes)
+                },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.cardSurface, contentColor = AppColors.contentSecondary)
+            ) {
+                Icon(Icons.Rounded.Deselect, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("None", style = AppTextStyles.caption)
+            }
+            Button(
+                onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onSelectionChange(selectedCurrencies - filteredCodes)
-                }) {
-                    Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All", tint = AppColors.contentSecondary)
-                }
-                IconButton(onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    val toggled = selectedCurrencies.toMutableSet()
+                    val toggled = shortlistedCurrencies.toMutableSet()
                     filteredCodes.forEach { code ->
                         if (code in toggled) toggled.remove(code) else toggled.add(code)
                     }
-                    onSelectionChange(toggled)
-                }) {
-                    Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection", tint = AppColors.contentSecondary)
-                }
+                    onShortlistChanged(toggled)
+                },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.cardSurface, contentColor = AppColors.contentSecondary)
+            ) {
+                Icon(Icons.Rounded.Flip, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Invert", style = AppTextStyles.caption)
             }
-        }
-        if (selectedCurrencies.isNotEmpty()) {
-            Text(
-                "${selectedCurrencies.size} selected",
-                style = AppTextStyles.transactionSwipeAction,
-                color = AppColors.contentSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
         }
 
         Surface(
@@ -573,54 +500,86 @@ private fun ShortlistStep(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(filteredCurrencies, key = { it.code }) { metadata ->
-                    val isSelected = metadata.code in selectedCurrencies
+                    val isBase = metadata.code == selectedCurrency
+                    val isShortlisted = metadata.code in shortlistedCurrencies
+
                     Surface(
                         onClick = {
-                            onSelectionChange(
-                                if (isSelected) selectedCurrencies - metadata.code
-                                else selectedCurrencies + metadata.code
-                            )
+                            if (isBase) {
+                                // Already base, maybe show a hint?
+                            } else {
+                                onCurrencySelected(metadata.code)
+                            }
                         },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) AppColors.primary.copy(alpha = 0.1f) else AppColors.transparent,
-                        border = if (isSelected) BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.3f)) else null
+                        color = if (isBase) AppColors.primary.copy(alpha = 0.08f) else AppColors.transparent,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = CircleShape,
-                                color = if (isSelected) AppColors.primary.copy(alpha = 0.2f) else AppColors.recessedSurface
+                                color = if (isBase) AppColors.primary.copy(alpha = 0.2f) else AppColors.recessedSurface
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         getCurrencySymbol(metadata.code),
                                         style = AppTextStyles.cardSectionTitle,
-                                        color = if (isSelected) AppColors.primary else AppColors.contentSecondary
+                                        color = if (isBase) AppColors.primary else AppColors.contentSecondary
                                     )
                                 }
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    metadata.name,
-                                    style = AppTextStyles.listItemTitle.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        metadata.name,
+                                        style = AppTextStyles.listItemTitle.copy(fontWeight = if (isBase) FontWeight.Bold else FontWeight.SemiBold)
+                                    )
+                                    if (isBase) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Surface(
+                                            color = AppColors.primary.copy(alpha = 0.1f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                "BASE",
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                                style = AppTextStyles.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                                color = AppColors.primary
+                                            )
+                                        }
+                                    }
+                                }
                                 Text(
                                     "${metadata.code} • ${metadata.country}",
                                     style = AppTextStyles.transactionSwipeAction,
                                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                             }
-                            if (isSelected) {
-                                Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = AppColors.primary, modifier = Modifier.size(20.dp))
-                            }
+                            Checkbox(
+                                checked = isShortlisted,
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        onShortlistChanged(shortlistedCurrencies + metadata.code)
+                                    } else if (!isBase) {
+                                        onShortlistChanged(shortlistedCurrencies - metadata.code)
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = AppColors.primary,
+                                    uncheckedColor = AppColors.divider
+                                )
+                            )
                         }
                     }
                 }
@@ -650,7 +609,7 @@ private fun AppearanceStep(
 
         Text("APP THEME", style = AppTextStyles.formSectionLabel, color = AppColors.primary)
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         val themes = listOf(
             Triple("System", "Matches device", Icons.Rounded.SettingsSuggest),
             Triple("Light", "Clean & bright", Icons.Rounded.LightMode),
@@ -658,31 +617,36 @@ private fun AppearanceStep(
             Triple("Amoled", "Pure black", Icons.Rounded.Contrast)
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            themes.forEach { (name, _, icon) ->
-                val isSelected = selectedTheme == name
-                Surface(
-                    onClick = { onThemeSelected(name) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
-                    border = BorderStroke(
-                        width = if (isSelected) 1.5.dp else 0.5.dp,
-                        color = if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            tint = if (isSelected) AppColors.primary else AppColors.contentSecondary,
-                            modifier = Modifier.size(24.dp)
+        themes.chunked(2).forEach { chunk ->
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                chunk.forEach { (name, _, icon) ->
+                    val isSelected = selectedTheme == name
+                    Surface(
+                        onClick = { onThemeSelected(name) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
+                        border = BorderStroke(
+                            width = if (isSelected) 1.5.dp else 0.5.dp,
+                            color = if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.divider.copy(alpha = 0.15f)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(name, style = AppTextStyles.chipLabelBold, color = if (isSelected) AppColors.primary else AppColors.contentPrimary)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = if (isSelected) AppColors.primary else AppColors.contentSecondary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(name, style = AppTextStyles.chipLabelBold, color = if (isSelected) AppColors.primary else AppColors.contentPrimary)
+                        }
                     }
                 }
             }
@@ -698,7 +662,9 @@ private fun AppearanceStep(
                 val isSelected = selectedPrecision == p
                 Surface(
                     onClick = { onPrecisionSelected(p) },
-                    modifier = Modifier.weight(1f).height(80.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
                     border = BorderStroke(
@@ -749,5 +715,87 @@ private fun AppearanceStep(
         }
 
         Spacer(modifier = Modifier.height(scrollBottomPadding()))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WelcomeStepPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            WelcomeStep()
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProfileStepPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            ProfileStep(userName = "John Doe", onNameChanged = {})
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProviderStepPreview() {
+    val providers = listOf(
+        object : ExchangeRateProvider {
+            override val id = "exchangerate-api"
+            override val name = "ExchangeRate-API"
+            override val attribution = "Data from ExchangeRate-API"
+            override suspend fun fetchSupportedCurrencies() = emptyList<CurrencyMetadata>()
+            override suspend fun fetchRate(base: String, target: String): Result<Double> = Result.success(1.0)
+            override suspend fun fetchAllRates(base: String): Result<Map<String, Double>> = Result.success(emptyMap())
+            override suspend fun convertCurrencyAmount(amount: Double, from: String, to: String): Result<Double> = Result.success(amount)
+        }
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            ProviderStep(
+                selectedProviderId = "exchangerate-api",
+                availableProviders = providers,
+                onProviderSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CurrenciesStepPreview() {
+    val currencies = listOf(
+        CurrencyMetadata("USD", "United States Dollar", "United States"),
+        CurrencyMetadata("EUR", "Euro", "European Union"),
+        CurrencyMetadata("GBP", "British Pound", "United Kingdom"),
+        CurrencyMetadata("JPY", "Japanese Yen", "Japan")
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            CurrenciesStep(
+                selectedCurrency = "USD",
+                shortlistedCurrencies = setOf("USD", "EUR"),
+                availableCurrencies = currencies,
+                onCurrencySelected = {},
+                onShortlistChanged = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AppearanceStepPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            AppearanceStep(
+                selectedTheme = "System",
+                onThemeSelected = {},
+                selectedPrecision = 2,
+                onPrecisionSelected = {}
+            )
+        }
     }
 }

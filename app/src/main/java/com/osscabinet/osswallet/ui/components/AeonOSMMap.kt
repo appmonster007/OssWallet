@@ -275,8 +275,18 @@ fun AeonOSMMap(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(color = tileColor)
                 val tile = 60.dp.toPx()
-                var x = 0f; while (x < size.width)  { drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), 1f); x += tile }
-                var y = 0f; while (y < size.height) { drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1f); y += tile }
+                if (tile > 0f) {
+                    var x = 0f
+                    while (x < size.width) {
+                        drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), 1f)
+                        x += tile
+                    }
+                    var y = 0f
+                    while (y < size.height) {
+                        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1f)
+                        y += tile
+                    }
+                }
                 if (selectedPoint != null) {
                     val cx = size.width / 2f; val cy = size.height / 2f
                     drawCircle(Color.Black.copy(alpha = 0.18f), 13f, Offset(cx, cy + 24f))

@@ -19,6 +19,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,6 +56,7 @@ import androidx.compose.material.icons.rounded.GpsFixed
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -63,7 +65,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,6 +90,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -224,8 +226,11 @@ fun AeonLocationSelection(
     var isSearchFocused    by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
 
+    val isInspectionMode = LocalInspectionMode.current
+
     // ── Initial reverse-geocode ───────────────────────────────────────────────
     LaunchedEffect(Unit) {
+        if (isInspectionMode) return@LaunchedEffect
         if (parsedCoords != null) {
             val result = withContext(Dispatchers.IO) {
                 nominatimReverse(parsedCoords.first, parsedCoords.second)
@@ -237,6 +242,7 @@ fun AeonLocationSelection(
 
     // ── Debounced forward-search ──────────────────────────────────────────────
     LaunchedEffect(searchQuery) {
+        if (isInspectionMode) return@LaunchedEffect
         if (searchQuery.isBlank()) { searchResults = emptyList(); return@LaunchedEffect }
         delay(400)
         searchResults = withContext(Dispatchers.IO) {
@@ -256,6 +262,10 @@ fun AeonLocationSelection(
         isGeocoding = true
         showPanel   = true
         coroutineScope.launch {
+            if (isInspectionMode) {
+                isGeocoding = false
+                return@launch
+            }
             val result = withContext(Dispatchers.IO) {
                 nominatimReverse(geoPoint.latitude, geoPoint.longitude)
             }
@@ -397,11 +407,13 @@ private fun AeonLocationSelectionContent(
     val accentColor          = AppColors.accent
     val accentArgb           = accentColor.toArgb()
     val cardSurface          = AppColors.cardSurface
+    val panelSurface         = AppColors.panelSurface
     val contentPrimary       = AppColors.contentPrimary
     val contentSecondary     = AppColors.contentSecondary
     val accentContainer      = AppColors.accentContainer
     val onAccentContainer    = AppColors.onAccentContainer
     val dividerColor         = AppColors.divider
+    val borderColor          = AppColors.border
     val dims                 = AeonTheme.dimensions
 
     val statusBarTop  = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -409,11 +421,11 @@ private fun AeonLocationSelectionContent(
 
     // ── Animated state for search bar elevation + GPS button position ─────────
     val searchElevation by animateDpAsState(
-        targetValue = if (isSearchFocused) 12.dp else 6.dp,
+        targetValue = if (isSearchFocused) 8.dp else 4.dp,
         label       = "searchElevation"
     )
     val gpsPaddingBottom by animateDpAsState(
-        targetValue = if (showPanel) 240.dp + navBarBottom else dims.spacingXl + navBarBottom,
+        targetValue = if (showPanel) 240.dp + navBarBottom + dims.spacingMd else dims.spacingXl + navBarBottom,
         label       = "gpsPaddingBottom"
     )
 
@@ -478,9 +490,10 @@ private fun AeonLocationSelectionContent(
             // Search pill — elevation and background animate on focus
             Surface(
                 modifier        = Modifier.weight(1f).height(52.dp),
-                shape           = RoundedCornerShape(dims.chipCornerRadius),
-                color           = if (isSearchFocused) AppColors.panelSurface else cardSurface,
-                shadowElevation = searchElevation
+                shape           = RoundedCornerShape(24.dp), // Match AeonSearchField
+                color           = if (isSearchFocused) panelSurface else cardSurface.copy(alpha = 0.9f),
+                shadowElevation = searchElevation,
+                border          = if (isSearchFocused) BorderStroke(1.dp, accentColor.copy(alpha = 0.5f)) else BorderStroke(0.5.dp, borderColor.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier
@@ -491,7 +504,7 @@ private fun AeonLocationSelectionContent(
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = null,
-                        tint        = contentSecondary,
+                        tint        = if (isSearchFocused) accentColor else contentSecondary,
                         modifier    = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(dims.spacingSm))
@@ -509,8 +522,8 @@ private fun AeonLocationSelectionContent(
                                 if (searchQuery.isEmpty()) {
                                     Text(
                                         "Search for a place…",
-                                        style = AppTextStyles.transactionTitle.copy(
-                                            color = contentSecondary.copy(alpha = 0.55f)
+                                        style = AppTextStyles.formFieldHint.copy(
+                                            color = contentSecondary.copy(alpha = 0.6f)
                                         )
                                     )
                                 }
@@ -546,7 +559,7 @@ private fun AeonLocationSelectionContent(
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .padding(
-                    top   = statusBarTop + dims.spacingMd + 52.dp + dims.spacingXs,
+                    top   = statusBarTop + dims.spacingMd + 52.dp + dims.spacingSm,
                     start = dims.screenPadding + 44.dp + dims.spacingSm,
                     end   = dims.screenPadding
                 ),
@@ -557,14 +570,15 @@ private fun AeonLocationSelectionContent(
                 shape           = RoundedCornerShape(dims.containerCornerRadius),
                 color           = cardSurface,
                 shadowElevation = 12.dp,
-                modifier        = Modifier.heightIn(max = 300.dp)
+                border          = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
+                modifier        = Modifier.heightIn(max = 320.dp)
             ) {
-                LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingXs)) {
+                LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingSm)) {
                     if (searchQuery.isBlank() && recentLocations.isNotEmpty()) {
                         item {
                             Text(
-                                "RECENT",
-                                style    = AppTextStyles.sectionOverline,
+                                "RECENT PLACES",
+                                style    = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
                                 color    = contentSecondary,
                                 modifier = Modifier.padding(
                                     horizontal = dims.spacingLg,
@@ -621,9 +635,10 @@ private fun AeonLocationSelectionContent(
             }
             Surface(
                 modifier        = Modifier.size(48.dp),
-                shape           = CircleShape,
+                shape           = RoundedCornerShape(16.dp), // Match AeonFloatingActionButton
                 color           = cardSurface,
                 shadowElevation = 6.dp,
+                border          = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
                 onClick         = onGpsClick
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -657,9 +672,10 @@ private fun AeonLocationSelectionContent(
             Surface(
                 modifier        = Modifier.fillMaxWidth(),
                 shape           = RoundedCornerShape(topStart = dims.dialogCornerRadius, topEnd = dims.dialogCornerRadius),
-                color           = cardSurface,
-                shadowElevation = 20.dp,
-                tonalElevation  = 2.dp
+                color           = cardSurface.copy(alpha = 0.98f),
+                shadowElevation = 24.dp,
+                tonalElevation  = 4.dp,
+                border          = BorderStroke(1.dp, borderColor.copy(alpha = 0.05f))
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -749,13 +765,21 @@ private fun AeonLocationSelectionContent(
                         enabled  = selectedLocation != null && !isGeocoding,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
-                        shape    = RoundedCornerShape(dims.buttonCornerRadius)
+                            .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg)
+                            .height(56.dp),
+                        shape    = RoundedCornerShape(dims.buttonCornerRadius),
+                        colors   = ButtonDefaults.buttonColors(
+                            containerColor = accentColor,
+                            contentColor   = AppColors.onAccent
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                     ) {
                         Text(
                             "Confirm Location",
-                            style    = AppTextStyles.cardSectionTitle.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(vertical = dims.spacingXs)
+                            style    = AppTextStyles.cardSectionTitle.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp
+                            )
                         )
                     }
 
@@ -785,13 +809,13 @@ private fun LocationPanelBody(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = dims.screenPadding)
-            .padding(top = dims.spacingMd, bottom = dims.spacingLg)
+            .padding(top = dims.spacingLg, bottom = dims.spacingLg)
     ) {
         // Place name — visually dominant anchor
         if (location.shortName.isNotBlank()) {
             Text(
                 text     = location.shortName,
-                style    = AppTextStyles.heroAmount.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                style    = AppTextStyles.heroAmount.copy(fontSize = 20.sp),
                 color    = contentPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -802,36 +826,42 @@ private fun LocationPanelBody(
         // Full address — caption style, muted
         Text(
             text     = location.displayName,
-            style    = AppTextStyles.caption.copy(fontSize = 12.sp),
+            style    = AppTextStyles.caption,
             color    = contentSecondary,
             maxLines = 2,
+            lineHeight = 16.sp,
             overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(Modifier.height(dims.spacingLg))
+        Spacer(Modifier.height(dims.spacingXl))
 
         // Coord chips + copy button on one row
         Row(
             modifier              = Modifier.fillMaxWidth(),
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
-            CoordChip("Lat", location.lat, accentContainer, onAccentContainer)
-            CoordChip("Lon", location.lon, accentContainer, onAccentContainer)
+            CoordChip("Latitude", location.lat, accentContainer, onAccentContainer)
+            CoordChip("Longitude", location.lon, accentContainer, onAccentContainer)
 
             Spacer(Modifier.weight(1f))
 
-            TextButton(
-                onClick      = onCopy,
-                contentPadding = PaddingValues(horizontal = dims.spacingMd, vertical = 0.dp)
+            Surface(
+                onClick = onCopy,
+                shape = CircleShape,
+                color = AppColors.insetSurface.copy(alpha = 0.4f)
             ) {
-                Icon(
-                    Icons.Rounded.ContentCopy,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(dims.spacingXs))
-                Text("Copy", style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.SemiBold))
+                Box(
+                    modifier = Modifier.size(36.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.ContentCopy,
+                        contentDescription = "Copy coordinates",
+                        modifier = Modifier.size(16.dp),
+                        tint = contentSecondary
+                    )
+                }
             }
         }
     }
@@ -850,19 +880,19 @@ private fun CoordChip(
         color = containerColor
     ) {
         Row(
-            modifier  = Modifier.padding(horizontal = dims.spacingMd, vertical = dims.spacingXs),
+            modifier  = Modifier.padding(horizontal = dims.spacingLg, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             Icon(
                 Icons.Rounded.Explore,
                 contentDescription = null,
                 tint     = contentColor,
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
+                modifier = Modifier.size(14.dp)
             )
             Text(
                 "$label: ${"%.5f".format(value)}",
-                style = AppTextStyles.metaLabel,
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Bold),
                 color = contentColor
             )
         }
@@ -883,13 +913,38 @@ private fun LocationRow(
 ) {
     ListItem(
         headlineContent = {
-            Text(location.shortName, style = AppTextStyles.transactionTitle, color = contentPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = location.shortName,
+                style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold),
+                color = contentPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         supportingContent = {
-            Text(location.displayName, style = AppTextStyles.transactionSubtitle, color = contentSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = location.displayName,
+                style = AppTextStyles.transactionSubtitle,
+                color = contentSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         leadingContent = {
-            Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = contentSecondary, modifier = Modifier.size(20.dp))
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = AppColors.insetSurface.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Rounded.LocationOn,
+                        contentDescription = null,
+                        tint = contentSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         },
         modifier = Modifier.clickable(onClick = onClick),
         colors   = ListItemDefaults.colors(containerColor = containerColor)

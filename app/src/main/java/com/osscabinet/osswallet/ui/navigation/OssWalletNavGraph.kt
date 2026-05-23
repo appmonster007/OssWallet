@@ -38,7 +38,6 @@ import com.osscabinet.ossWallet.ui.screens.templates.list.TemplateListScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
-import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencyViewModel
@@ -97,7 +96,7 @@ fun OssWalletNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = if (isOnboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
+        startDestination = if (isOnboardingCompleted == true) Screen.Main.createRoute() else Screen.Onboarding.route
     ) {
             composable(
                 route = Screen.Onboarding.route,
@@ -110,7 +109,7 @@ fun OssWalletNavGraph(
                 OnboardingScreen(
                     viewModel = onboardingViewModel,
                     onComplete = {
-                        navController.navigate(Screen.Main.route) {
+                        navController.navigate(Screen.Main.createRoute()) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     }
@@ -190,52 +189,6 @@ fun OssWalletNavGraph(
                     onAcceptAsTemplate = { navController.navigate(Screen.TemplateEntry.createRoute()) },
                     onAcceptAsPlannedPayment = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
                     onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.TransactionList.route,
-                arguments = listOf(
-                    navArgument("filter") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("topLevel") {
-                        type = NavType.BoolType
-                        defaultValue = true
-                    }
-                ),
-                enterTransition = { EnterTransitionSpec },
-                exitTransition = { ExitTransitionSpec },
-                popEnterTransition = { PopEnterTransitionSpec },
-                popExitTransition = { PopExitTransitionSpec }
-            ) { backStackEntry ->
-                val filterJson = backStackEntry.arguments?.getString("filter")
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
-                TransactionListScreen(
-                    onMenuClick = {},
-                    isTopLevelParam = topLevel,
-                    viewModel = transactionViewModel,
-                    accountViewModel = accountViewModel,
-                    analyticsViewModel = analyticsViewModel,
-                    settingsViewModel = settingsViewModel,
-                    onEditTransactionClick = { id -> navController.navigate(Screen.TransactionEntry.createRoute(transactionId = id)) },
-                    onCloneTransactionClick = { id ->
-                        transactionViewModel.setCloneTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    onSplitTransactionClick = { id ->
-                        transactionViewModel.setSplitTransactionId(id)
-                        navController.navigate(Screen.TransactionEntry.createRoute())
-                    },
-                    onBackClick = { navController.popBackStack() },
-                    onSaveFilterClick = { filter ->
-                        val filterJson = java.net.URLEncoder.encode(Json.encodeToString(filter), "UTF-8")
-                        navController.navigate(Screen.FilterEntry.createRoute(initialFilter = filterJson))
-                    },
-                    templateViewModel = templateViewModel,
-                    filterJson = filterJson
                 )
             }
 

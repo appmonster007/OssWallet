@@ -304,6 +304,8 @@
   let cachedCategories = [];
   let cachedAccounts   = [];
   let cachedSettings   = { baseCurrency: 'USD', decimalPrecision: 2 };
+  /* per-card filter overrides: { [cardId]: { timelineType, dateFrom, dateTo, transactionTypes, currencies, accountIds, categoryIds, minAmount, maxAmount } } */
+  let cardOverrides = {};
 
   /* ── DOM refs ─────────────────────────────────────────── */
   const loginPage  = document.getElementById('login-page');
@@ -635,32 +637,73 @@
     return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="display:block;border-radius:6px;overflow:hidden" preserveAspectRatio="none">${rects}${texts}</svg>`;
   }
 
-  /* Filter badge showing applied card filter */
+  /* Filter badge — accepts either a FilterSummaryDto (from server) or a cardOverrides entry */
   function filterBadge(fs) {
     if (!fs) return '';
     const parts = [];
-    if (fs.timelineType && fs.timelineType !== 'ALL_TIME') {
+    const tl = fs.timelineType;
+    if (tl && tl !== 'ALL_TIME') {
       const map = { THIS_MONTH:'This Month', LAST_MONTH:'Last Month', THIS_YEAR:'This Year', LAST_YEAR:'Last Year', TODAY:'Today', THIS_WEEK:'This Week', THIS_QUARTER:'This Quarter', CUSTOM:'Custom' };
-      parts.push(map[fs.timelineType] || fs.timelineType);
+      parts.push(map[tl] || tl);
     }
+    /* server FilterSummaryDto uses transactionTypes[], override uses txType string */
     if (fs.transactionTypes && fs.transactionTypes.length) parts.push(fs.transactionTypes.join('/'));
+    else if (fs.txType) parts.push(fs.txType);
     if (fs.currencies && fs.currencies.length) parts.push(fs.currencies.join(', '));
     if (fs.accountIds && fs.accountIds.length) parts.push(`${fs.accountIds.length} acct`);
-    return parts.length ? `<span class="filter-badge">${esc(parts.join(' · '))}</span>` : '';
+    if (fs.accountId) {
+      const acc = cachedAccounts.find(a=>a.id===fs.accountId);
+      parts.push(acc ? acc.name : 'Account');
+    }
+    if (fs.categoryId) {
+      const cat = cachedCategories.find(c=>String(c.id)===String(fs.categoryId));
+      parts.push(cat ? cat.name : 'Category');
+    }
+    if (fs.minAmount || fs.maxAmount) parts.push(`${fs.minAmount||0}–${fs.maxAmount||'∞'}`);
+    return parts.length ? `<span class="filter-badge" title="Active filter">⚙️ ${esc(parts.join(' · '))}</span>` : '';
   }
 
   /* Wraps a rendered dashboard card in the standard header+body shell */
-  function dashCardWrap(card, bodyHtml) {
+  function dashCardWrap(card, bodyHtml, payloadType) {
+    const override = cardOverrides[card.cardId];
+    const activeBadge = override ? filterBadge(override) : filterBadge(card.filterSummary);
     return `<div class="dash-card" data-card-id="${esc(card.cardId)}">
       <div class="dash-card-header">
         <span class="dash-card-title">${esc(card.title||'')}</span>
-        ${filterBadge(card.filterSummary)}
+        ${activeBadge}
         <div class="dash-card-actions">
+          <button class="btn-icon" title="Filter" onclick="openCardFilterSheet('${esc(card.cardId)}','${esc(payloadType||'')}','${esc(card.cardType||'')}')">⚙️</button>
           <button class="btn-icon" title="Remove card" onclick="removeDashboardCard('${esc(card.cardId)}')">✕</button>
         </div>
       </div>
-      <div class="dash-card-body">${bodyHtml}</div>
+      <div class="dash-card-body" id="card-body-${esc(card.cardId)}">${bodyHtml}</div>
     </div>`;
+  }
+
+  /* Dispatch card by payload type */
+  function dispatchCardRender(card, d, payloadType) {
+    switch (payloadType) {
+      case 'NetWorth':          return renderNetWorthCard(card, d);
+      case 'CashFlow':          return renderCashFlowCard(card, d);
+      case 'CurrencyBalances':  return renderCurrencyBalancesCard(card, d);
+      case 'Accounts':          return renderAccountsDashCard(card, d);
+      case 'Budgets':           return renderBudgetsDashCard(card, d);
+      case 'PlannedPayments':   return renderPlannedPaymentsDashCard(card, d);
+      case 'Loans':             return renderLoansDashCard(card, d);
+      case 'RecentActivities':  return renderRecentActivitiesCard(card, d, payloadType);
+      case 'CategoryBreakdown':
+        return card.cardType === 'CATEGORY_TREEMAP'
+          ? renderCategoryTreemapCard(card, d, payloadType)
+          : renderCategoryPieChartCard(card, d, payloadType);
+      case 'CashFlowComparison':    return renderCashFlowComparisonCard(card, d, payloadType);
+      case 'IncomeExpenseBar':       return renderIncomeExpenseBarCard(card, d, payloadType);
+      case 'CategorySpendingTrend':  return renderCategorySpendingTrendCard(card, d, payloadType);
+      case 'TagUpSetPlot':           return renderTagUpSetPlotCard(card, d);
+      case 'Error':
+        return dashCardWrap(card, `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`, payloadType);
+      default:
+        return dashCardWrap(card, `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`, payloadType);
+    }
   }
 
   /* ── Category + account select options ───────────────── */
@@ -704,29 +747,9 @@
       } else {
         cards.forEach(card => {
           const d = card.data || {};
-          switch (d.type) {
-            case 'NetWorth':          html += renderNetWorthCard(card, d); break;
-            case 'CashFlow':          html += renderCashFlowCard(card, d); break;
-            case 'CurrencyBalances':  html += renderCurrencyBalancesCard(card, d); break;
-            case 'Accounts':          html += renderAccountsDashCard(card, d); break;
-            case 'Budgets':           html += renderBudgetsDashCard(card, d); break;
-            case 'PlannedPayments':   html += renderPlannedPaymentsDashCard(card, d); break;
-            case 'Loans':             html += renderLoansDashCard(card, d); break;
-            case 'RecentActivities':  html += renderRecentActivitiesCard(card, d); break;
-            case 'CategoryBreakdown':
-              if (card.cardType === 'CATEGORY_TREEMAP') html += renderCategoryTreemapCard(card, d);
-              else                                      html += renderCategoryPieChartCard(card, d);
-              break;
-            case 'CashFlowComparison':     html += renderCashFlowComparisonCard(card, d); break;
-            case 'IncomeExpenseBar':        html += renderIncomeExpenseBarCard(card, d); break;
-            case 'CategorySpendingTrend':   html += renderCategorySpendingTrendCard(card, d); break;
-            case 'TagUpSetPlot':            html += renderTagUpSetPlotCard(card, d); break;
-            case 'Error':
-              html += dashCardWrap(card, `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`);
-              break;
-            default:
-              html += dashCardWrap(card, `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`);
-          }
+          /* kotlinx.serialization uses fully-qualified class name as discriminator when no @SerialName is set */
+          const payloadType = d.type ? d.type.split('.').pop() : '';
+          html += dispatchCardRender(card, d, payloadType);
         });
       }
       setContent(html);
@@ -735,31 +758,165 @@
 
   /* ── Individual dashboard card renderers ─────────────── */
 
+  /* ── Timeline → {dateFrom, dateTo} in epoch ms ───────────── */
+  function timelineToRange(tl, customFrom, customTo) {
+    const now = new Date();
+    const d0  = (y,m,day) => new Date(y,m,day).getTime();
+    const y = now.getFullYear(), mo = now.getMonth();
+    switch (tl) {
+      case 'TODAY':         return { dateFrom: d0(y,mo,now.getDate()), dateTo: d0(y,mo,now.getDate())+86399999 };
+      case 'THIS_WEEK': {   const dow = (now.getDay()+6)%7; const mon = new Date(now); mon.setDate(now.getDate()-dow);
+                            return { dateFrom: d0(mon.getFullYear(),mon.getMonth(),mon.getDate()), dateTo: d0(mon.getFullYear(),mon.getMonth(),mon.getDate()+6)+86399999 }; }
+      case 'THIS_MONTH':    return { dateFrom: d0(y,mo,1), dateTo: d0(y,mo+1,0)+86399999 };
+      case 'LAST_MONTH':    return { dateFrom: d0(y,mo-1,1), dateTo: d0(y,mo,0)+86399999 };
+      case 'THIS_QUARTER':{ const q=Math.floor(mo/3); return { dateFrom: d0(y,q*3,1), dateTo: d0(y,q*3+3,0)+86399999 }; }
+      case 'THIS_YEAR':     return { dateFrom: d0(y,0,1), dateTo: d0(y,11,31)+86399999 };
+      case 'LAST_YEAR':     return { dateFrom: d0(y-1,0,1), dateTo: d0(y-1,11,31)+86399999 };
+      case 'CUSTOM':        return { dateFrom: customFrom ? new Date(customFrom).getTime() : null,
+                                     dateTo:   customTo   ? new Date(customTo+'T23:59:59').getTime() : null };
+      default:              return { dateFrom: null, dateTo: null };
+    }
+  }
+
+  /* ── Convert ISO date string param to epoch ms for API ───── */
+  function isoToEpoch(iso) { return iso ? new Date(iso).getTime() : null; }
+
+  /* ── Build category-breakdown URL from override ───────────── */
+  function buildBreakdownUrl(ov) {
+    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
+    let url = '/api/analytics/category-breakdown';
+    const p = new URLSearchParams();
+    if (dateFrom) p.set('dateFrom', dateFrom);
+    if (dateTo)   p.set('dateTo',   dateTo);
+    p.set('type', ov.txType || 'EXPENSE');
+    return url + '?' + p.toString();
+  }
+
+  /* ── Build cash-flow URL from override ───────────────────── */
+  function buildCashFlowUrl(ov, gran) {
+    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
+    const p = new URLSearchParams();
+    if (dateFrom) p.set('dateFrom', dateFrom);
+    if (dateTo)   p.set('dateTo',   dateTo);
+    p.set('granularity', gran || ov.granularity || 'MONTH');
+    return '/api/analytics/cash-flow?' + p.toString();
+  }
+
+  /* ── Build transactions URL from override ────────────────── */
+  function buildTxUrl(ov) {
+    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
+    const p = new URLSearchParams();
+    p.set('page', '0'); p.set('limit', '30');
+    if (dateFrom) p.set('dateFrom', dateFrom);
+    if (dateTo)   p.set('dateTo',   dateTo);
+    if (ov.txType)      p.set('type',       ov.txType);
+    if (ov.accountId)   p.set('accountId',  ov.accountId);
+    if (ov.categoryId)  p.set('categoryId', ov.categoryId);
+    if (ov.minAmount)   p.set('minAmount',  ov.minAmount);
+    if (ov.maxAmount)   p.set('maxAmount',  ov.maxAmount);
+    if (ov.status)      p.set('status',     ov.status);
+    if (ov.payee)       p.set('payee',      ov.payee);
+    return '/api/transactions?' + p.toString();
+  }
+
+  /* ── Refresh a single card's body after filter change ────── */
+  async function refreshCardContent(cardId, payloadType, cardType) {
+    const el = document.getElementById('card-body-' + cardId);
+    if (!el) return;
+    el.innerHTML = '<div class="loading-wrap"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:20px auto"></div></div>';
+    const ov = cardOverrides[cardId];
+    try {
+      let body = '';
+      if (payloadType === 'CategoryBreakdown' && ov) {
+        const res = await apiFetch(buildBreakdownUrl(ov));
+        const items = res.success ? (res.data || []) : [];
+        /* re-use existing render logic via a fake card object */
+        const fakeCard = { cardId, cardType, title:'', filterSummary:null, data:{ type:payloadType, items } };
+        body = cardType === 'CATEGORY_TREEMAP' ? renderCategoryTreemapBody(items) : renderCategoryPieBody(items);
+      } else if (payloadType === 'IncomeExpenseBar' && ov) {
+        const res = await apiFetch(buildCashFlowUrl(ov));
+        const pts = res.success ? (res.data || []) : [];
+        body = renderIncomeExpenseBody(pts, ov.granularity || 'MONTH');
+      } else if (payloadType === 'RecentActivities' && ov) {
+        const res = await apiFetch(buildTxUrl(ov));
+        const txs = res.success ? (res.data?.items || []) : [];
+        const total = res.success ? (res.data?.total || 0) : 0;
+        body = renderRecentActivitiesBody(txs, total);
+      } else {
+        body = '<div class="alert alert-warn" style="font-size:0.85rem">Filter applied. Re-fetch not supported for this card type — changes are reflected on next dashboard reload.</div>';
+      }
+      el.innerHTML = body;
+    } catch (e) {
+      if (e.message !== 'Session expired') el.innerHTML = '<div class="alert alert-error">Error refreshing card.</div>';
+    }
+  }
+
+  /* ── Pure body renderers (no dashCardWrap, used for refresh) */
+  function renderCategoryPieBody(items) {
+    if (!items.length) return '<p class="empty-state">No category data.</p>';
+    const top8 = items.slice(0,8); const rest = items.slice(8);
+    const slices = [...top8];
+    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0) });
+    const cs = slices.map((c,i)=>({ label:c.categoryName, value:c.amount, color:CHART_COLORS[i%CHART_COLORS.length] }));
+    let leg = '<div class="chart-legend" style="flex:1">';
+    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span></div>`; });
+    return `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(cs,160)}${leg}</div></div>`;
+  }
+
+  function renderCategoryTreemapBody(items) {
+    if (!items.length) return '<p class="empty-state">No category data.</p>';
+    const tm = items.map((c,i)=>({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:CHART_COLORS[i%CHART_COLORS.length] }));
+    let leg = '<div class="chart-legend" style="margin-top:12px">';
+    items.slice(0,8).forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`; });
+    return `<div class="treemap-wrap">${svgTreemapChart(tm,560,180)}</div>${leg}</div>`;
+  }
+
+  function renderIncomeExpenseBody(pts, gran) {
+    if (!pts.length) return '<p class="empty-state">No data.</p>';
+    const points = pts.map(b=>({ label:b.label, income:b.income||0, expense:b.expense||0 }));
+    return `${svgBars(points,560,140)}<div class="chart-legend" style="margin-top:8px"><div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div><div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div><span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">${esc(String(gran||'').toLowerCase())}</span></div>`;
+  }
+
+  function renderRecentActivitiesBody(txs, total) {
+    if (!txs.length) return '<p class="empty-state">No transactions found.</p>';
+    let body = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Tags</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+    txs.forEach(tx => {
+      const amtCls=tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
+      const sign=tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
+      const bdg=tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
+      const tags=tx.tags&&tx.tags.length?tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' '):'—';
+      body+=`<tr><td style="white-space:nowrap">${fmtDate(tx.date)}</td><td><span class="badge ${bdg}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td><td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td><td>${esc(tx.accountName||'—')}</td><td>${tags}</td><td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0),tx.currency)}</td></tr>`;
+    });
+    body += '</tbody></table></div>';
+    if (total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${total} total</div>`;
+    return body;
+  }
+
   function renderNetWorthCard(card, d) {
     const cur = d.currency || cachedSettings.baseCurrency || 'USD';
     const nwCls = (d.netWorth||0) >= 0 ? 'positive' : 'negative';
     const cfCls = (d.cashFlow||0) >= 0 ? 'positive' : 'negative';
     return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
-      <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0, cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0, cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0, cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':''}${fmt(d.cashFlow||0, cur)}</div></div>
-    </div>`);
+      <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0,cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':''}${fmt(d.cashFlow||0,cur)}</div></div>
+    </div>`, 'NetWorth');
   }
 
   function renderCashFlowCard(card, d) {
     const cur = d.currency || cachedSettings.baseCurrency || 'USD';
     const netCls = (d.net||0) >= 0 ? 'positive' : 'negative';
     return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
-      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0, cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Expense</div><div class="stat-value negative">−${fmt(d.expense||0, cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':''}${fmt(d.net||0, cur)}</div></div>
-    </div>`);
+      <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Expense</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':''}${fmt(d.net||0,cur)}</div></div>
+    </div>`, 'CashFlow');
   }
 
   function renderCurrencyBalancesCard(card, d) {
     const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No currency balances.</p>');
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No currency balances.</p>', 'CurrencyBalances');
     let body = '<div class="currency-grid">';
     items.forEach(item => {
       const cls = (item.balance||0) >= 0 ? 'amount-income' : 'amount-expense';
@@ -770,37 +927,32 @@
           ? `<div class="currency-base">≈ ${fmt(item.balanceInBase, d.baseCurrency)}</div>` : ''}
       </div>`;
     });
-    return dashCardWrap(card, body + '</div>');
+    return dashCardWrap(card, body + '</div>', 'CurrencyBalances');
   }
 
   function renderAccountsDashCard(card, d) {
     const accounts = d.accounts || [];
-    if (!accounts.length) return dashCardWrap(card, '<p class="empty-state">No accounts.</p>');
+    if (!accounts.length) return dashCardWrap(card, '<p class="empty-state">No accounts.</p>', 'Accounts');
     let body = '<div class="card-grid" style="margin-bottom:0">';
     accounts.forEach(acc => {
       const cls = (acc.balance||0) >= 0 ? 'positive' : 'negative';
       body += `<div class="stat-card">
         <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
-        <div class="stat-value ${cls}" style="font-size:1.1rem">${fmt(acc.balance||0, acc.currency)}</div>
-        ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px">
-          <span class="amount-income">+${fmtRaw(acc.income||0)}</span>
-          <span class="amount-expense">−${fmtRaw(acc.expense||0)}</span>
-        </div>` : ''}
-        <div style="margin-top:8px">
-          <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
-        </div>
+        <div class="stat-value ${cls}" style="font-size:1.1rem">${fmt(acc.balance||0,acc.currency)}</div>
+        ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px"><span class="amount-income">+${fmtRaw(acc.income||0)}</span><span class="amount-expense">−${fmtRaw(acc.expense||0)}</span></div>` : ''}
+        <div style="margin-top:8px"><a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a></div>
       </div>`;
     });
-    return dashCardWrap(card, body + '</div>');
+    return dashCardWrap(card, body + '</div>', 'Accounts');
   }
 
   function renderBudgetsDashCard(card, d) {
     const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No budgets.</p>');
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No budgets.</p>', 'Budgets');
     let body = '';
     items.forEach(b => {
-      const pct = Math.round(b.percentage || 0);
-      const alertCls = b.alertLevel === 'EXCEEDED' ? 'progress-red' : b.alertLevel === 'WARNING' ? 'progress-orange' : 'progress-green';
+      const pct = Math.round(b.percentage||0);
+      const alertCls = b.alertLevel==='EXCEEDED'?'progress-red':b.alertLevel==='WARNING'?'progress-orange':'progress-green';
       const archived = b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted);font-size:0.68rem">Archived</span>' : '';
       body += `<div style="margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
@@ -808,36 +960,26 @@
           <span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${esc(b.period||'')}</span>
           <span style="font-weight:700;white-space:nowrap;color:${b.alertLevel==='EXCEEDED'?'var(--danger)':b.alertLevel==='WARNING'?'var(--warning)':'var(--success)'}">${pct}%</span>
         </div>
-        ${progressBar(pct, alertCls)}
+        ${progressBar(pct,alertCls)}
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px;flex-wrap:wrap;gap:4px">
-          <span>Spent: ${fmt(b.spent||0, b.currency)}</span>
-          <span>Remaining: ${fmt(b.remaining||0, b.currency)}</span>
-          <span>Limit: ${fmt(b.limitAmount||0, b.currency)}</span>
+          <span>Spent: ${fmt(b.spent||0,b.currency)}</span>
+          <span>Remaining: ${fmt(b.remaining||0,b.currency)}</span>
+          <span>Limit: ${fmt(b.limitAmount||0,b.currency)}</span>
         </div>
       </div>`;
     });
-    return dashCardWrap(card, body);
+    return dashCardWrap(card, body, 'Budgets');
   }
 
   function renderPlannedPaymentsDashCard(card, d) {
-    const upcoming = d.upcoming || [];
-    const overdue  = d.overdue  || [];
-    if (!upcoming.length && !overdue.length) return dashCardWrap(card, '<p class="empty-state">No upcoming or overdue payments.</p>');
+    const upcoming = d.upcoming||[], overdue = d.overdue||[];
+    if (!upcoming.length && !overdue.length) return dashCardWrap(card, '<p class="empty-state">No upcoming or overdue payments.</p>', 'PlannedPayments');
     let body = '';
     if (overdue.length) {
       body += `<div style="margin-bottom:12px"><div class="overdue-header" style="font-size:0.9rem">⚠️ Overdue (${overdue.length})</div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Amount</th><th>Due</th><th>Account</th><th>Actions</th></tr></thead><tbody>`;
       overdue.forEach(p => {
-        body += `<tr>
-          <td>${esc(p.name)}<br><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'')}</small></td>
-          <td>${fmt(p.amount||0, p.currency)}</td>
-          <td style="color:var(--danger);white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
-          <td>${esc(p.accountName||'—')}</td>
-          <td style="white-space:nowrap">
-            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓</button>
-            <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
-          </td>
-        </tr>`;
+        body += `<tr><td>${esc(p.name)}<br><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'')}</small></td><td>${fmt(p.amount||0,p.currency)}</td><td style="color:var(--danger);white-space:nowrap">${fmtDate(p.nextDueDate)}</td><td>${esc(p.accountName||'—')}</td><td style="white-space:nowrap"><button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓</button> <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button></td></tr>`;
       });
       body += '</tbody></table></div></div>';
     }
@@ -845,186 +987,94 @@
       body += `<div><div class="upcoming-header" style="font-size:0.9rem">📅 Upcoming (${upcoming.length})</div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Amount</th><th>Due</th><th>Recurrence</th><th>Category</th></tr></thead><tbody>`;
       upcoming.forEach(p => {
-        body += `<tr>
-          <td>${esc(p.name)}</td>
-          <td>${fmt(p.amount||0, p.currency)}</td>
-          <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
-          <td><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'—')}</small></td>
-          <td>${esc(p.categoryName||'—')}</td>
-        </tr>`;
+        body += `<tr><td>${esc(p.name)}</td><td>${fmt(p.amount||0,p.currency)}</td><td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td><td><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'—')}</small></td><td>${esc(p.categoryName||'—')}</td></tr>`;
       });
       body += '</tbody></table></div></div>';
     }
-    return dashCardWrap(card, body);
+    return dashCardWrap(card, body, 'PlannedPayments');
   }
 
   function renderLoansDashCard(card, d) {
-    const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No loans.</p>');
+    const items = d.items||[];
+    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No loans.</p>', 'Loans');
     let body = '<div class="card-grid" style="margin-bottom:0">';
     items.forEach(loan => {
-      const repaidPct = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
-      const typeBadge   = loan.loanType==='LENT'    ? 'badge-lent'    : 'badge-borrowed';
-      const statusBadge = loan.status==='SETTLED'   ? 'badge-settled' : 'badge-active';
-      body += `<div class="stat-card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div><div style="font-weight:700">${esc(loan.name)}</div><div style="font-size:0.78rem;color:var(--text-muted)">${esc(loan.lenderOrBorrowerName||'')}</div></div>
-          <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
-            <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
-            <span class="badge ${statusBadge}">${esc(loan.status)}</span>
-          </div>
-        </div>
-        <div style="font-weight:700;margin-bottom:6px">${fmt(loan.principalAmount||0, loan.currency)}</div>
-        ${progressBar(repaidPct, repaidPct>=100?'progress-green':'progress-orange')}
-        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px">
-          <span>Paid: ${fmt(loan.totalPaid||0, loan.currency)}</span>
-          <span>Left: ${fmt(loan.remainingBalance||0, loan.currency)}</span>
-        </div>
-        ${loan.interestAccrued ? `<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued, loan.currency)}</div>` : ''}
-      </div>`;
+      const rp = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
+      const tb = loan.loanType==='LENT'?'badge-lent':'badge-borrowed';
+      const sb = loan.status==='SETTLED'?'badge-settled':'badge-active';
+      body += `<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-weight:700">${esc(loan.name)}</div><div style="font-size:0.78rem;color:var(--text-muted)">${esc(loan.lenderOrBorrowerName||'')}</div></div><div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="badge ${tb}">${esc(loan.loanType)}</span><span class="badge ${sb}">${esc(loan.status)}</span></div></div><div style="font-weight:700;margin-bottom:6px">${fmt(loan.principalAmount||0,loan.currency)}</div>${progressBar(rp,rp>=100?'progress-green':'progress-orange')}<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px"><span>Paid: ${fmt(loan.totalPaid||0,loan.currency)}</span><span>Left: ${fmt(loan.remainingBalance||0,loan.currency)}</span></div>${loan.interestAccrued?`<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued,loan.currency)}</div>`:''}</div>`;
     });
-    return dashCardWrap(card, body + '</div>');
+    return dashCardWrap(card, body + '</div>', 'Loans');
   }
 
-  function renderRecentActivitiesCard(card, d) {
-    const txs = d.transactions || [];
-    if (!txs.length) return dashCardWrap(card, '<p class="empty-state">No recent activity.</p>');
-    let body = `<div class="table-wrap"><table>
-      <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Tags</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
-    txs.forEach(tx => {
-      const amtCls = tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
-      const sign   = tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
-      const bdgCls = tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
-      const tags   = tx.tags && tx.tags.length
-        ? tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' ')
-        : '—';
-      body += `<tr>
-        <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-        <td><span class="badge ${bdgCls}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td>
-        <td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td>
-        <td>${esc(tx.accountName||'—')}</td>
-        <td>${tags}</td>
-        <td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
-      </tr>`;
-    });
-    body += '</tbody></table></div>';
-    if (d.total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${d.total} total transactions</div>`;
-    return dashCardWrap(card, body);
+  function renderRecentActivitiesCard(card, d, payloadType) {
+    const body = renderRecentActivitiesBody(d.transactions||[], d.total||0);
+    return dashCardWrap(card, body, payloadType||'RecentActivities');
   }
 
-  function renderCategoryPieChartCard(card, d) {
-    const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No category data.</p>');
-    const top8 = items.slice(0, 8);
-    const rest = items.slice(8);
-    const slices = [...top8];
-    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0) });
-    const chartSlices = slices.map((c, i) => ({ label:c.categoryName, value:c.amount, color:CHART_COLORS[i%CHART_COLORS.length] }));
-    let legend = '<div class="chart-legend" style="flex:1">';
-    slices.forEach((c, i) => {
-      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span></div>`;
-    });
-    legend += '</div>';
-    return dashCardWrap(card, `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(chartSlices,160)}${legend}</div>`);
+  function renderCategoryPieChartCard(card, d, payloadType) {
+    return dashCardWrap(card, renderCategoryPieBody(d.items||[]), payloadType||'CategoryBreakdown');
   }
 
-  function renderCategoryTreemapCard(card, d) {
-    const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No category data.</p>');
-    const treemapItems = items.map((c, i) => ({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:CHART_COLORS[i%CHART_COLORS.length] }));
-    let legend = '<div class="chart-legend" style="margin-top:12px">';
-    items.slice(0,8).forEach((c,i) => {
-      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`;
-    });
-    legend += '</div>';
-    return dashCardWrap(card, `<div class="treemap-wrap">${svgTreemapChart(treemapItems,560,180)}</div>${legend}`);
+  function renderCategoryTreemapCard(card, d, payloadType) {
+    return dashCardWrap(card, renderCategoryTreemapBody(d.items||[]), payloadType||'CategoryBreakdown');
   }
 
-  function renderCashFlowComparisonCard(card, d) {
-    const current  = d.current  || [];
-    const previous = d.previous || [];
-    const lastYear = d.lastYear || [];
-    if (!current.length) return dashCardWrap(card, '<p class="empty-state">No comparison data.</p>');
-    const labels = current.map(p => p.label||'');
+  function renderCashFlowComparisonCard(card, d, payloadType) {
+    const current=d.current||[], previous=d.previous||[], lastYear=d.lastYear||[];
+    if (!current.length) return dashCardWrap(card, '<p class="empty-state">No comparison data.</p>', payloadType);
+    const labels = current.map(p=>p.label||'');
     const series = [
-      { name:'Current',   color:'#1976D2', opacity:1,   labels, points:current.map(p=>p.net||0) },
-      { name:'Previous',  color:'#9e9e9e', opacity:0.7, labels, points:previous.map(p=>p.net||0) },
-      { name:'Last Year', color:'#bdbdbd', opacity:0.55,labels, points:lastYear.map(p=>p.net||0) },
-    ].filter(s => s.points.length && s.points.some(v=>v!==0));
-    const body = `${svgLineChart(series,560,160)}
-      <div class="chart-legend" style="margin-top:10px">
-        ${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}
-      </div>`;
-    return dashCardWrap(card, body);
+      { name:'Current',   color:'#1976D2', opacity:1,    labels, points:current.map(p=>p.net||0) },
+      { name:'Previous',  color:'#9e9e9e', opacity:0.7,  labels, points:previous.map(p=>p.net||0) },
+      { name:'Last Year', color:'#bdbdbd', opacity:0.55, labels, points:lastYear.map(p=>p.net||0) },
+    ].filter(s=>s.points.length && s.points.some(v=>v!==0));
+    const body = `${svgLineChart(series,560,160)}<div class="chart-legend" style="margin-top:10px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}</div>`;
+    return dashCardWrap(card, body, payloadType);
   }
 
-  function renderIncomeExpenseBarCard(card, d) {
-    const buckets = d.buckets || [];
-    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No data.</p>');
-    const points = buckets.map(b => ({ label:b.label, income:b.income||0, expense:b.expense||0 }));
-    const gran = d.granularity ? ` (${d.granularity.toLowerCase()})` : '';
-    const body = `${svgBars(points,560,140)}
-      <div class="chart-legend" style="margin-top:8px;align-items:center">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
-        ${d.baseCurrency?`<span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">in ${esc(d.baseCurrency)}${esc(gran)}</span>`:''}
-      </div>`;
-    return dashCardWrap(card, body);
+  function renderIncomeExpenseBarCard(card, d, payloadType) {
+    const buckets = d.buckets||[];
+    const body = renderIncomeExpenseBody(buckets, d.granularity) +
+      (d.baseCurrency?`<span style="font-size:0.78rem;color:var(--text-muted)">in ${esc(d.baseCurrency)}</span>`:'');
+    return dashCardWrap(card, buckets.length ? body : '<p class="empty-state">No data.</p>', payloadType||'IncomeExpenseBar');
   }
 
-  function renderCategorySpendingTrendCard(card, d) {
-    const buckets = d.buckets || [];
-    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No spending trend data.</p>');
+  function renderCategorySpendingTrendCard(card, d, payloadType) {
+    const buckets = d.buckets||[];
+    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No spending trend data.</p>', payloadType);
     const allCats = [...new Set(buckets.flatMap(b=>(b.categories||[]).map(c=>c.categoryName)))];
-    const colorMap = {};
-    allCats.forEach((name,i) => { colorMap[name] = CHART_COLORS[i%CHART_COLORS.length]; });
+    const colorMap = {}; allCats.forEach((name,i)=>{ colorMap[name]=CHART_COLORS[i%CHART_COLORS.length]; });
     const catTotals = {};
-    buckets.forEach(b => (b.categories||[]).forEach(c => { catTotals[c.categoryName] = (catTotals[c.categoryName]||0) + Math.abs(c.amount||0); }));
+    buckets.forEach(b=>(b.categories||[]).forEach(c=>{ catTotals[c.categoryName]=(catTotals[c.categoryName]||0)+Math.abs(c.amount||0); }));
     const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8);
     let legend = '<div class="chart-legend" style="margin-top:12px">';
-    topCats.forEach(([name, total]) => {
-      legend += `<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;
-    });
+    topCats.forEach(([name,total])=>{ legend+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`; });
     legend += '</div>';
-    return dashCardWrap(card, `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`);
+    return dashCardWrap(card, `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`, payloadType);
   }
 
   function renderTagUpSetPlotCard(card, d) {
-    const sets  = d.sets  || [];
-    const inters = d.intersections || [];
-    if (!sets.length) return dashCardWrap(card, '<p class="empty-state">No tag data.</p>');
-    const maxAmt = Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)), 1);
+    const sets=d.sets||[], inters=d.intersections||[];
+    if (!sets.length) return dashCardWrap(card, '<p class="empty-state">No tag data.</p>', 'TagUpSetPlot');
+    const maxAmt = Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)),1);
     let body = '<div style="margin-bottom:16px">';
     sets.forEach(s => {
       const pct = Math.min(100, Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));
       const isInc = (s.totalAmount||0) >= 0;
-      body += `<div style="margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px">
-          <span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span>
-          <span class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(s.totalAmount||0))}</span>
-          <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div>
-      </div>`;
+      body += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(s.totalAmount||0))}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;
     });
     body += '</div>';
     if (inters.length) {
-      const topInters = inters.slice(0, 10);
-      body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th>Txns</th></tr></thead><tbody>`;
-      topInters.forEach(inter => {
-        const isInc = (inter.amount||0) >= 0;
-        const badges = (inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
-        body += `<tr>
-          <td>${badges}</td>
-          <td style="text-align:right" class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(inter.amount||0))}</td>
-          <td>${inter.transactionCount||0}</td>
-        </tr>`;
+      body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th>Txns</th></tr></thead><tbody>`;
+      inters.slice(0,10).forEach(inter => {
+        const isInc=(inter.amount||0)>=0;
+        const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
+        body+=`<tr><td>${bdgs}</td><td style="text-align:right" class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(inter.amount||0))}</td><td>${inter.transactionCount||0}</td></tr>`;
       });
       body += '</tbody></table></div>';
     }
-    return dashCardWrap(card, body);
+    return dashCardWrap(card, body, 'TagUpSetPlot');
   }
 
   /* ══════════════════════════════════════════════════════
@@ -2024,23 +2074,199 @@
   }
 
   /* ══════════════════════════════════════════════════════
+     DASHBOARD: Per-card filter sheet
+  ══════════════════════════════════════════════════════ */
+
+  /* Which filter controls each payload type supports */
+  const CARD_FILTER_CAPS = {
+    NetWorth:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    CashFlow:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    CurrencyBalances:      { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    Accounts:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    Budgets:               { timeline:false, txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    PlannedPayments:       { timeline:false, txType:true,  account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    Loans:                 { timeline:false, txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    RecentActivities:      { timeline:true,  txType:true,  account:true,  category:true,  amount:true,  status:true,  payee:true,  granularity:false, refetch:true  },
+    CategoryBreakdown:     { timeline:true,  txType:true,  account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:true  },
+    CashFlowComparison:    { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:false },
+    IncomeExpenseBar:      { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:true  },
+    CategorySpendingTrend: { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:false },
+    TagUpSetPlot:          { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+  };
+
+  window.openCardFilterSheet = function (cardId, payloadType, cardType) {
+    const caps = CARD_FILTER_CAPS[payloadType] || {};
+    const ov   = cardOverrides[cardId] || {};
+
+    let body = '';
+
+    if (caps.timeline) {
+      const tl = ov.timelineType || 'ALL_TIME';
+      body += `<div class="form-field"><label>Period</label>
+        <select id="cf-timeline" onchange="toggleCustomDates()">
+          ${['ALL_TIME','TODAY','THIS_WEEK','THIS_MONTH','LAST_MONTH','THIS_QUARTER','THIS_YEAR','LAST_YEAR','CUSTOM'].map(v=>
+            `<option value="${v}" ${tl===v?'selected':''}>${{ALL_TIME:'All Time',TODAY:'Today',THIS_WEEK:'This Week',THIS_MONTH:'This Month',LAST_MONTH:'Last Month',THIS_QUARTER:'This Quarter',THIS_YEAR:'This Year',LAST_YEAR:'Last Year',CUSTOM:'Custom Range'}[v]}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div id="cf-custom-dates" style="${tl==='CUSTOM'?'':'display:none'}">
+        ${formRow(
+          formField('From', `<input type="date" id="cf-from" value="${esc(ov.customFrom||'')}">`),
+          formField('To',   `<input type="date" id="cf-to"   value="${esc(ov.customTo||'')}">`)
+        )}
+      </div>`;
+    }
+
+    if (caps.txType) {
+      const cur = ov.txType || '';
+      const opts = payloadType === 'RecentActivities'
+        ? [['','All'],['INCOME','Income'],['EXPENSE','Expense'],['TRANSFER','Transfer']]
+        : [['EXPENSE','Expense'],['INCOME','Income']];
+      body += `<div class="form-field"><label>Type</label>
+        <select id="cf-txtype">
+          ${opts.map(([v,l])=>`<option value="${v}" ${cur===v?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+
+    if (caps.account) {
+      body += `<div class="form-field"><label>Account</label>
+        <select id="cf-account">
+          <option value="">All Accounts</option>
+          ${cachedAccounts.map(a=>`<option value="${esc(a.id)}" ${ov.accountId===a.id?'selected':''}>${esc(a.name)} (${esc(a.currency)})</option>`).join('')}
+        </select>
+      </div>`;
+    }
+
+    if (caps.category) {
+      body += `<div class="form-field"><label>Category</label>
+        <select id="cf-category">
+          <option value="">All Categories</option>
+          ${cachedCategories.map(c=>`<option value="${esc(c.id)}" ${String(ov.categoryId)===String(c.id)?'selected':''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+
+    if (caps.amount) {
+      body += formRow(
+        formField('Min Amount', `<input type="number" id="cf-min" value="${esc(ov.minAmount||'')}" placeholder="0.00" min="0" step="0.01">`),
+        formField('Max Amount', `<input type="number" id="cf-max" value="${esc(ov.maxAmount||'')}" placeholder="any" min="0" step="0.01">`)
+      );
+    }
+
+    if (caps.status) {
+      body += `<div class="form-field"><label>Status</label>
+        <select id="cf-status">
+          <option value="" ${!ov.status?'selected':''}>All</option>
+          <option value="CLEARED"   ${ov.status==='CLEARED'?'selected':''}>Cleared</option>
+          <option value="UNCLEARED" ${ov.status==='UNCLEARED'?'selected':''}>Uncleared</option>
+          <option value="RECONCILE" ${ov.status==='RECONCILE'?'selected':''}>Reconcile</option>
+        </select>
+      </div>`;
+    }
+
+    if (caps.payee) {
+      body += formField('Payee', `<input type="text" id="cf-payee" value="${esc(ov.payee||'')}" placeholder="Search payee…">`);
+    }
+
+    if (caps.granularity) {
+      const g = ov.granularity || 'MONTH';
+      body += `<div class="form-field"><label>Granularity</label>
+        <select id="cf-gran">
+          <option value="DAY"   ${g==='DAY'?'selected':''}>Day</option>
+          <option value="WEEK"  ${g==='WEEK'?'selected':''}>Week</option>
+          <option value="MONTH" ${g==='MONTH'?'selected':''}>Month</option>
+        </select>
+      </div>`;
+    }
+
+    if (!Object.values(caps).some(Boolean)) {
+      body = '<div class="alert alert-warn" style="font-size:0.85rem">This card\'s filters are managed by the Android app. No web-editable filters are available.</div>';
+    }
+
+    const hasReset = Object.keys(ov).length > 0;
+    if (hasReset) {
+      body += `<div style="margin-top:4px"><button class="btn btn-ghost btn-sm" onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
+    }
+
+    if (!caps.refetch && Object.values(caps).some(Boolean)) {
+      body += '<div class="alert alert-warn" style="font-size:0.85rem;margin-top:12px">Filters for this card are stored in the Android app config. The override you set here is session-only and will be reflected on next dashboard reload.</div>';
+    }
+
+    openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`, body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.toggleCustomDates = function () {
+    const tl = document.getElementById('cf-timeline')?.value;
+    const el = document.getElementById('cf-custom-dates');
+    if (el) el.style.display = tl === 'CUSTOM' ? '' : 'none';
+  };
+
+  window.applyCardFilter = function (cardId, payloadType, cardType, caps) {
+    const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const ov = {};
+    if (caps.timeline)    { ov.timelineType = get('cf-timeline'); ov.customFrom = get('cf-from'); ov.customTo = get('cf-to'); }
+    if (caps.txType)      ov.txType     = get('cf-txtype');
+    if (caps.account)     ov.accountId  = get('cf-account');
+    if (caps.category)    ov.categoryId = get('cf-category');
+    if (caps.amount)      { ov.minAmount = get('cf-min'); ov.maxAmount = get('cf-max'); }
+    if (caps.status)      ov.status     = get('cf-status');
+    if (caps.payee)       ov.payee      = get('cf-payee');
+    if (caps.granularity) ov.granularity= get('cf-gran');
+
+    /* Only store if something meaningful was set */
+    const isEmpty = !Object.values(ov).some(v=>v && v!=='ALL_TIME');
+    if (isEmpty) { delete cardOverrides[cardId]; }
+    else         { cardOverrides[cardId] = ov; }
+
+    closeModal();
+
+    /* Update filter badge in header immediately */
+    const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
+    const newBadge = filterBadge(isEmpty ? null : ov);
+    if (badgeEl) { badgeEl.outerHTML = newBadge || ''; }
+    else if (newBadge) {
+      const titleEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`);
+      if (titleEl) titleEl.insertAdjacentHTML('afterend', newBadge);
+    }
+
+    /* Refresh card content if this type supports live re-fetch */
+    if (caps.refetch && !isEmpty) {
+      refreshCardContent(cardId, payloadType, cardType);
+    }
+  };
+
+  window.resetCardFilter = function (cardId, payloadType, cardType) {
+    delete cardOverrides[cardId];
+    closeModal();
+    /* Remove badge */
+    const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
+    if (badgeEl) badgeEl.remove();
+    /* Reload dashboard to get server-computed data */
+    renderDashboard();
+  };
+
+  /* ══════════════════════════════════════════════════════
      DASHBOARD: Card management (add / remove / reorder)
   ══════════════════════════════════════════════════════ */
+  /* type = CardType.name (used to match card.cardType from response)
+     serialName = CardType.serialName (sent to POST /api/dashboard/cards) */
   const ALL_CARD_TYPES = [
-    { type:'NET_WORTH',               label:'Net Worth' },
-    { type:'CASH_FLOW',               label:'Cash Flow' },
-    { type:'CURRENCY_BALANCES',       label:'Currency Balances' },
-    { type:'ACCOUNTS',                label:'Accounts' },
-    { type:'BUDGETS',                 label:'Budgets' },
-    { type:'PLANNED_PAYMENTS',        label:'Planned Payments' },
-    { type:'LOANS',                   label:'Loans' },
-    { type:'RECENT_ACTIVITIES',       label:'Recent Activities' },
-    { type:'CATEGORY_PIE_CHART',      label:'Category Pie Chart' },
-    { type:'CATEGORY_TREEMAP',        label:'Category Treemap' },
-    { type:'CASH_FLOW_COMPARISON',    label:'Cash Flow Comparison' },
-    { type:'INCOME_EXPENSE_BAR',      label:'Income & Expense Bar' },
-    { type:'CATEGORY_SPENDING_TREND', label:'Category Spending Trend' },
-    { type:'TAG_UPSET_PLOT',          label:'Tag Analysis' },
+    { type:'NET_WORTH',               serialName:'net_worth',                label:'Net Worth' },
+    { type:'CASH_FLOW',               serialName:'cash_flow',                label:'Cash Flow' },
+    { type:'CURRENCY_BALANCES',       serialName:'currency_balances',        label:'Currency Balances' },
+    { type:'ACCOUNTS',                serialName:'accounts',                 label:'Accounts' },
+    { type:'BUDGETS',                 serialName:'budgets',                  label:'Budgets' },
+    { type:'PLANNED_PAYMENTS',        serialName:'planned_payments',         label:'Planned Payments' },
+    { type:'LOANS',                   serialName:'loans',                    label:'Loans' },
+    { type:'RECENT_ACTIVITIES',       serialName:'recent_activities',        label:'Recent Activities' },
+    { type:'CATEGORY_PIE_CHART',      serialName:'category_breakdown',       label:'Category Pie Chart' },
+    { type:'CATEGORY_TREEMAP',        serialName:'category_expense_treemap', label:'Category Treemap' },
+    { type:'CASHFLOW_COMPARISON',     serialName:'cashflow_comparison',      label:'Cash Flow Comparison' },
+    { type:'INCOME_EXPENSE_BAR',      serialName:'income_expense_bar',       label:'Income & Expense Bar' },
+    { type:'CATEGORY_SPENDING_TREND', serialName:'category_spending_trend',  label:'Category Spending Trend' },
+    { type:'TAG_UPSET_PLOT',          serialName:'tag_upset_plot',           label:'Tag Analysis' },
   ];
 
   window.openManageCards = async function () {
@@ -2066,12 +2292,14 @@
         </div>`;
       });
     }
+    /* show card types not already active */
     const available = ALL_CARD_TYPES.filter(t => !activeTypes.has(t.type));
     if (available.length) {
       body += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:${cards.length?'20px':'0'} 0 8px">Add Card</div>
         <div class="add-card-grid">`;
       available.forEach(t => {
-        body += `<div class="add-card-btn" onclick="addDashboardCard('${esc(t.type)}')">+ ${esc(t.label)}</div>`;
+        /* server accepts either enum name or serialName; we send serialName which is always accepted */
+        body += `<div class="add-card-btn" onclick="addDashboardCard('${esc(t.serialName)}')">+ ${esc(t.label)}</div>`;
       });
       body += '</div>';
     }
@@ -2081,9 +2309,9 @@
     modalConfBtn.onclick = closeModal;
   };
 
-  window.addDashboardCard = async function (cardType) {
+  window.addDashboardCard = async function (serialName) {
     try {
-      const res = await apiWrite('POST', '/api/dashboard/cards', { cardType });
+      const res = await apiWrite('POST', '/api/dashboard/cards', { cardType: serialName });
       if (res.success) { closeModal(); renderDashboard(); }
       else alert('Failed to add card: ' + (res.error || ''));
     } catch (e) { if (e.message !== 'Session expired') alert('Error adding card.'); }

@@ -47,17 +47,26 @@ fun rememberCardWithCallbacks(
     preComputedData: CardRenderData? = null,
     filterSheetEnabled: Boolean = true
 ): CardWithCallbacks? {
-    // If preComputedData provided (dashboard path), use it immediately.
-    // Otherwise trigger async computation via LaunchedEffect using the registry
-    // (which has queryService injected in the computers).
-    var renderDataState by remember(config, input, preComputedData) {
+    // ⚠️ STABILITY: We key by cardId rather than the entire config/input object.
+    // This ensures that the card's ephemeral UI state (like "pill is open") is preserved
+    // while the data for the new filter/config is being computed in the background.
+    var renderDataState by remember(config.cardId) {
         mutableStateOf(preComputedData)
     }
 
-    if (preComputedData == null) {
+    // Sync path: Dashboard provides preComputedData.
+    if (preComputedData != null) {
+        LaunchedEffect(preComputedData) {
+            renderDataState = preComputedData
+        }
+    } else {
+        // Async path: Analytics/Detail screens compute data on the fly.
+        // We keep the old renderDataState (stale-while-recompute) to prevent the card
+        // from unmounting and losing its "pill open" state.
         LaunchedEffect(config, input) {
             try {
-                renderDataState = registry.compute(config.cardType, input, config)
+                val newData = registry.compute(config.cardType, input, config)
+                renderDataState = newData
             } catch (e: Exception) {
                 android.util.Log.e("CardUiBridge", "Card compute failed [${config.cardId}]", e)
             }

@@ -11,5 +11,8 @@ data class UpdateBudgetRequest(
     val categoryIds: List<Long>? = null,
     val alertThreshold: Double? = null,
     val rollover: Boolean? = null,
-    val isArchived: Boolean? = null
+    val isArchived: Boolean? = null,
+    val accountIds: List<String>? = null,
+    val trackTypes: List<String>? = null,
+    val filterId: Long? = null
 )

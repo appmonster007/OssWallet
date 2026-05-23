@@ -15,5 +15,8 @@ data class UpdateTransactionRequest(
     val paymentMethod: String? = null,
     val payee: String? = null,
     val note: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val gpsLocation: String? = null,
+    val location: String? = null,
+    val warrantyExpiration: Long? = null
 )

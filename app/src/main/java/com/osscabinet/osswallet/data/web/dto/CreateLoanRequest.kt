@@ -12,5 +12,6 @@ data class CreateLoanRequest(
     val startDate: Long,
     val expectedSettlementDate: Long? = null,
     val interestRate: Double? = null,
-    val note: String = ""
+    val note: String = "",
+    val linkedAccountId: String = ""
 )

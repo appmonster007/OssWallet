@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -60,7 +61,8 @@ class WebServerManager @Inject constructor(
     private val currencyRepository: CurrencyRepository,
     private val filterRepository: FilterRepository,
     private val cardRepository: CardRepository,
-    private val cardComputerRegistry: CardComputerRegistry
+    private val cardComputerRegistry: CardComputerRegistry,
+    private val templateRepository: TemplateRepository
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -111,7 +113,8 @@ class WebServerManager @Inject constructor(
             currencyRepository = currencyRepository,
             filterRepository = filterRepository,
             cardRepository = cardRepository,
-            cardComputerRegistry = cardComputerRegistry
+            cardComputerRegistry = cardComputerRegistry,
+            templateRepository = templateRepository
         )
 
         try {

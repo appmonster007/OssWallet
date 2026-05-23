@@ -58,6 +58,8 @@ import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryScreen
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
+import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
+import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -189,6 +191,7 @@ fun OssWalletNavGraph(
                     onManageFiltersClick = { navController.navigate(Screen.FilterList.route) },
                     onSmartSuggestionsClick = { navController.navigate(Screen.SmartSuggestions.route) },
                     onShortlistedCurrenciesClick = { navController.navigate(Screen.ShortlistedCurrencies.route) },
+                    onOpenInWebClick = { navController.navigate(Screen.OpenInWeb.route) },
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -792,6 +795,20 @@ fun OssWalletNavGraph(
                         navController.navigate(Screen.TransactionEntry.createRoute())
                     },
                     onRecordsClick = { filter -> navController.navigateToRecords(filter) }
+                )
+            }
+
+            composable(
+                route = Screen.OpenInWeb.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                val vm: OpenInWebViewModel = hiltViewModel()
+                OpenInWebScreen(
+                    viewModel = vm,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

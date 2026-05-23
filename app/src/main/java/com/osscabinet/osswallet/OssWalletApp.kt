@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.os.Build
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.data.local.WidgetInvalidationObserver
@@ -10,9 +11,16 @@ import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
+import com.osscabinet.ossWallet.data.web.WebServerPreferences
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
+import com.osscabinet.ossWallet.service.WebServerService
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -30,6 +38,10 @@ class OssWalletApp : Application() {
     @Inject
     lateinit var widgetRefreshTrigger: WidgetRefreshTrigger
 
+    @Inject
+    lateinit var webServerPreferences: WebServerPreferences
+
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var widgetInvalidationObserver: WidgetInvalidationObserver? = null
 
     override fun onCreate() {
@@ -50,6 +62,19 @@ class OssWalletApp : Application() {
 
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
+
+        appScope.launch {
+            if (webServerPreferences.isEnabled.first()) {
+                val intent = Intent(this@OssWalletApp, WebServerService::class.java).apply {
+                    action = WebServerService.ACTION_START
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+            }
+        }
     }
 
     private fun createNotificationChannels() {

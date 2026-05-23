@@ -40,6 +40,8 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun delete(id: Long) {
+        val filterId = dao.getById(id)?.budget?.filterId
         dao.deleteById(id)
+        filterId?.let { filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) } }
     }
 }

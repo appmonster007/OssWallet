@@ -239,8 +239,8 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByAccount(accountId).mapToDomain { it.toDomain() }
+    override fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByAccount(accountId, profileId).mapToDomain { it.toDomain() }
     }
 
     override suspend fun getTransactionById(id: Long): Transaction? {

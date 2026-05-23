@@ -100,6 +100,7 @@ class LoanEntryViewModel @Inject constructor(
             loanRepository.getLoanById(loanId)?.let { loan: Loan ->
                 val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val tf = filter?.filter ?: TransactionFilter()
+                val usageCount = loan.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 _state.update {
                     it.copy(
                         loanId = loanId,
@@ -124,6 +125,7 @@ class LoanEntryViewModel @Inject constructor(
                         selectedStatuses = loan.statuses.toSet(),
                         linkedTransactionIds = loan.linkedTransactionIds.toSet(),
                         filterId = loan.filterId,
+                        filterUsageCount = usageCount,
                         queryNote = tf.queryNote ?: "",
                         isNoteRegex = tf.isNoteRegex,
                         queryPayee = tf.queryPayee ?: "",

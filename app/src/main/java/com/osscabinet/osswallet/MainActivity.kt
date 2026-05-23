@@ -110,9 +110,11 @@ class MainActivity : FragmentActivity() {
                     val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
                         ?: Screen.Dashboard.route.substringBefore("?")
 
+                    val isGesturesEnabled = !isDrawerNavigating && currentDestination != Screen.Onboarding.route
+
                     ModalNavigationDrawer(
                         drawerState = drawerState,
-                        gesturesEnabled = !isDrawerNavigating,
+                        gesturesEnabled = isGesturesEnabled,
                         drawerContent = {
                             AppDrawerContent(
                                 currentProfile = currentProfile,

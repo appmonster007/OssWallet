@@ -410,12 +410,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         val deleteTemplate = _state.value.deleteTemplateWithPayment
         
         viewModelScope.launch {
+            plannedPaymentRepository.delete(id)
             if (deleteTemplate && templateId != null) {
                 templateRepository.getTemplateById(templateId)?.let { template ->
                     templateRepository.deleteTemplate(template)
                 }
-            } else {
-                plannedPaymentRepository.delete(id)
             }
             _state.update { it.copy(navTriggered = true) }
         }

@@ -99,12 +99,12 @@ class TransactionViewModel @Inject constructor(
     val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val recordsSettings: StateFlow<com.osscabinet.ossWallet.data.local.TransactionSectionSettings> =
+    val recordsSettings: StateFlow<com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings> =
         settingsRepository.recordsSettings
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
-                com.osscabinet.ossWallet.data.local.TransactionSectionSettings()
+                com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings()
             )
 
     val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> = settingsRepository.currentProfileId
@@ -205,7 +205,7 @@ class TransactionViewModel @Inject constructor(
             val base = args[5] as String
             @Suppress("UNCHECKED_CAST")
             val rates = args[6] as Map<String, BigDecimal>
-            val settings = args[7] as com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+            val settings = args[7] as com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 
             if (filtered.isEmpty()) return@combine TransactionListState()
 
@@ -340,7 +340,7 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun updateRecordsSettings(update: (com.osscabinet.ossWallet.data.local.TransactionSectionSettings) -> com.osscabinet.ossWallet.data.local.TransactionSectionSettings) {
+    fun updateRecordsSettings(update: (com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) -> com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) {
         viewModelScope.launch {
             settingsRepository.updateRecordsSettings(update)
         }

@@ -82,22 +82,26 @@ class OnboardingViewModel @Inject constructor(
                 _uiState.update { it.copy(userName = event.name) }
             }
             is OnboardingEvent.CurrencySelected -> {
-                _uiState.update { it.copy(selectedCurrency = event.currency) }
+                _uiState.update { it.copy(
+                    selectedCurrency = event.currency,
+                    shortlistedCurrencies = it.shortlistedCurrencies + event.currency
+                ) }
             }
             is OnboardingEvent.ProviderSelected -> {
                 _uiState.update { state ->
                     val currencies = state.currenciesPerProvider[event.providerId]
                         ?: emptyList()
+                    val newBase = if (currencies.any { c -> c.code == state.selectedCurrency }) state.selectedCurrency else (currencies.firstOrNull()?.code ?: "USD")
                     state.copy(
                         selectedProviderId = event.providerId,
                         availableCurrencies = currencies,
-                        selectedCurrency = if (currencies.any { c -> c.code == state.selectedCurrency }) state.selectedCurrency else (currencies.firstOrNull()?.code ?: "USD"),
-                        shortlistedCurrencies = emptySet()
+                        selectedCurrency = newBase,
+                        shortlistedCurrencies = setOf(newBase)
                     )
                 }
             }
             is OnboardingEvent.ShortlistedCurrenciesChanged -> {
-                _uiState.update { it.copy(shortlistedCurrencies = event.currencies) }
+                _uiState.update { it.copy(shortlistedCurrencies = event.currencies + it.selectedCurrency) }
             }
             is OnboardingEvent.ThemeSelected -> {
                 _uiState.update { it.copy(selectedTheme = event.theme) }

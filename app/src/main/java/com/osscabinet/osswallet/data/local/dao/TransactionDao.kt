@@ -1,6 +1,14 @@
 package com.osscabinet.ossWallet.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.room.Transaction
+import androidx.room.Update
+import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.query.RawAggregateResult
@@ -37,7 +45,10 @@ abstract class TransactionDao {
     abstract suspend fun _insertTransaction(transaction: TransactionEntity): Long
 
     @Transaction
-    open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
+    open suspend fun insertTransactionWithBalanceUpdate(
+        transaction: TransactionEntity,
+        accountDao: AccountDao
+    ): Long {
         return _insertTransaction(transaction)
     }
 
@@ -45,18 +56,28 @@ abstract class TransactionDao {
     abstract suspend fun getTransactionById(id: Long): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE accountId = :accountId AND profileId = :profileId ORDER BY timestamp DESC")
-    abstract fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<TransactionEntity>>
+    abstract fun getTransactionsByAccount(
+        accountId: String,
+        profileId: Int
+    ): Flow<List<TransactionEntity>>
 
     @Delete
     abstract suspend fun _deleteTransaction(transaction: TransactionEntity)
 
     @Transaction
-    open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
+    open suspend fun deleteTransactionWithBalanceUpdate(
+        transaction: TransactionEntity,
+        accountDao: AccountDao
+    ) {
         _deleteTransaction(transaction)
     }
 
     @Transaction
-    open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
+    open suspend fun updateTransactionWithBalanceUpdate(
+        oldTransaction: TransactionEntity,
+        newTransaction: TransactionEntity,
+        accountDao: AccountDao
+    ) {
         // Perform the database update
         insertTransaction(newTransaction)
     }
@@ -68,7 +89,11 @@ abstract class TransactionDao {
     abstract suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
 
     @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
-    abstract suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
+    abstract suspend fun getCurrencySummariesInRange(
+        profileId: Int,
+        start: Long,
+        end: Long
+    ): List<CurrencySummary>
 
     @Query("SELECT * FROM transactions")
     abstract suspend fun getAllTransactionsSync(): List<TransactionEntity>
@@ -79,21 +104,28 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
     abstract suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT transactions.* FROM transactions 
         JOIN transactions_fts ON transactions.id = transactions_fts.rowid 
         WHERE transactions_fts MATCH :query AND profileId = :profileId
         ORDER BY timestamp DESC
-    """)
+    """
+    )
     abstract fun searchTransactions(profileId: Int, query: String): Flow<List<TransactionEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT transactions.* FROM transactions
         JOIN categories ON transactions.categoryId = categories.id
         WHERE categories.name LIKE '%' || :query || '%' AND transactions.profileId = :profileId
         ORDER BY transactions.timestamp DESC
-    """)
-    abstract fun searchTransactionsByCategoryName(profileId: Int, query: String): Flow<List<TransactionEntity>>
+    """
+    )
+    abstract fun searchTransactionsByCategoryName(
+        profileId: Int,
+        query: String
+    ): Flow<List<TransactionEntity>>
 
     @Query("SELECT DISTINCT payee FROM transactions WHERE profileId = :profileId AND payee IS NOT NULL AND payee != '' ORDER BY payee ASC")
     abstract suspend fun getUniquePayees(profileId: Int): List<String>

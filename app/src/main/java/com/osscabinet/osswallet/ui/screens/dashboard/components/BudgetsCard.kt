@@ -1,39 +1,47 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Savings
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import androidx.compose.ui.unit.sp
-
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @Composable
 fun BudgetsCard(
@@ -153,19 +161,21 @@ private fun BudgetProgressRow(
                     color = trackColor
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             LinearProgressIndicator(
                 progress = { progress.percentage.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp),
                 color = trackColor,
                 trackColor = AppColors.componentOnCard,
                 strokeCap = StrokeCap.Round
             )
-            
+
             Spacer(modifier = Modifier.height(14.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -183,9 +193,17 @@ private fun BudgetProgressRow(
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, shorten = true)
+                            formatCurrencyRight(
+                                progress.spent.subtract(progress.limit),
+                                progress.budget.currency,
+                                shorten = true
+                            )
                         } else {
-                            formatCurrencyRight(progress.remaining, progress.budget.currency, shorten = true)
+                            formatCurrencyRight(
+                                progress.remaining,
+                                progress.budget.currency,
+                                shorten = true
+                            )
                         },
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold,
@@ -193,7 +211,7 @@ private fun BudgetProgressRow(
                         )
                     )
                 }
-                
+
                 Surface(
                     color = AppColors.insetSurface, // Level 3: Deepest unit
                     shape = RoundedCornerShape(8.dp),
@@ -219,14 +237,22 @@ private fun BudgetProgressRow(
 @Composable
 fun BudgetsCardPreview() {
     val budget1 = com.osscabinet.ossWallet.domain.model.Budget(
-        id = 1L, name = "Food", currency = "USD", limitAmount = java.math.BigDecimal("1000.00"),
-        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH), profileId = 1
+        id = 1L,
+        name = "Food",
+        currency = "USD",
+        limitAmount = java.math.BigDecimal("1000.00"),
+        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
+        profileId = 1
     )
     val budget2 = com.osscabinet.ossWallet.domain.model.Budget(
-        id = 2L, name = "Rent", currency = "USD", limitAmount = java.math.BigDecimal("1200.00"),
-        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH), profileId = 1
+        id = 2L,
+        name = "Rent",
+        currency = "USD",
+        limitAmount = java.math.BigDecimal("1200.00"),
+        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
+        profileId = 1
     )
-    
+
     val budgets = listOf(
         BudgetProgress(
             budget = budget1,

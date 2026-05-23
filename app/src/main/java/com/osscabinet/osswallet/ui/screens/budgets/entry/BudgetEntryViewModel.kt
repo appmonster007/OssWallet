@@ -3,20 +3,33 @@ package com.osscabinet.ossWallet.ui.screens.budgets.entry
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -66,7 +79,10 @@ class BudgetEntryViewModel @Inject constructor(
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else emptySet(),
-                            selectedTrackTypes = if (it.isEditMode) it.selectedTrackTypes else setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                            selectedTrackTypes = if (it.isEditMode) it.selectedTrackTypes else setOf(
+                                TransactionType.EXPENSE,
+                                TransactionType.INCOME
+                            ),
                             selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else emptySet(),
                             selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
                         )
@@ -78,9 +94,9 @@ class BudgetEntryViewModel @Inject constructor(
 
     fun initialize(budgetId: Long? = null) {
         if (budgetId == null) {
-            _state.update { 
+            _state.update {
                 it.copy(
-                    isEditMode = false, 
+                    isEditMode = false,
                     budgetId = null,
                     selectedAccountIds = emptySet(),
                     selectedCategoryIds = emptySet(),
@@ -99,7 +115,7 @@ class BudgetEntryViewModel @Inject constructor(
                     warrantyExpirationStart = null,
                     warrantyExpirationEnd = null,
                     excludeFuture = true
-                ) 
+                )
             }
             return
         }
@@ -108,7 +124,8 @@ class BudgetEntryViewModel @Inject constructor(
             budgetRepository.getById(budgetId)?.let { budget ->
                 val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val tf = filter?.filter ?: TransactionFilter()
-                val usageCount = budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
+                val usageCount =
+                    budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
@@ -168,8 +185,18 @@ class BudgetEntryViewModel @Inject constructor(
             is BudgetEntryEvent.SetMinAmount -> _state.update { it.copy(minAmount = event.amount) }
             is BudgetEntryEvent.SetMaxAmount -> _state.update { it.copy(maxAmount = event.amount) }
             is BudgetEntryEvent.SetHasWarranty -> _state.update { it.copy(hasWarranty = event.hasWarranty) }
-            is BudgetEntryEvent.SetWarrantyExpirationStart -> _state.update { it.copy(warrantyExpirationStart = event.date) }
-            is BudgetEntryEvent.SetWarrantyExpirationEnd -> _state.update { it.copy(warrantyExpirationEnd = event.date) }
+            is BudgetEntryEvent.SetWarrantyExpirationStart -> _state.update {
+                it.copy(
+                    warrantyExpirationStart = event.date
+                )
+            }
+
+            is BudgetEntryEvent.SetWarrantyExpirationEnd -> _state.update {
+                it.copy(
+                    warrantyExpirationEnd = event.date
+                )
+            }
+
             is BudgetEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
             is BudgetEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
             is BudgetEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
@@ -177,18 +204,43 @@ class BudgetEntryViewModel @Inject constructor(
             is BudgetEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
             is BudgetEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is BudgetEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
-            is BudgetEntryEvent.ShowCurrencyFilterSheet -> _state.update { it.copy(showCurrencyFilterSheet = event.show) }
-            is BudgetEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is BudgetEntryEvent.ShowCurrencyFilterSheet -> _state.update {
+                it.copy(
+                    showCurrencyFilterSheet = event.show
+                )
+            }
+
+            is BudgetEntryEvent.ShowPaymentMethodSheet -> _state.update {
+                it.copy(
+                    showPaymentMethodSheet = event.show
+                )
+            }
+
             is BudgetEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is BudgetEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
             is BudgetEntryEvent.ShowFilterSheet -> _state.update { it.copy(showFilterSheet = event.show) }
             is BudgetEntryEvent.ShowMinAmountSheet -> _state.update { it.copy(showMinAmountSheet = event.show) }
             is BudgetEntryEvent.ShowMaxAmountSheet -> _state.update { it.copy(showMaxAmountSheet = event.show) }
-            is BudgetEntryEvent.ShowWarrantyStartPicker -> _state.update { it.copy(showWarrantyStartPicker = event.show) }
-            is BudgetEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
+            is BudgetEntryEvent.ShowWarrantyStartPicker -> _state.update {
+                it.copy(
+                    showWarrantyStartPicker = event.show
+                )
+            }
+
+            is BudgetEntryEvent.ShowWarrantyEndPicker -> _state.update {
+                it.copy(
+                    showWarrantyEndPicker = event.show
+                )
+            }
+
             is BudgetEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is BudgetEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
-            is BudgetEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
+            is BudgetEntryEvent.SetLinkedTransactions -> _state.update {
+                it.copy(
+                    linkedTransactionIds = event.ids
+                )
+            }
+
             is BudgetEntryEvent.SetFilterId -> {
                 val filter = _state.value.availableFilters.find { it.id == event.filterId }
                 if (filter != null) {
@@ -221,12 +273,18 @@ class BudgetEntryViewModel @Inject constructor(
                     }
                 }
             }
+
             BudgetEntryEvent.MakeFilterUnique -> {}
             is BudgetEntryEvent.SetDeleteFilterWithBudget -> {}
             is BudgetEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is BudgetEntryEvent.SetAccountQuery -> _state.update { it.copy(accountQuery = event.query) }
             is BudgetEntryEvent.SetCategoryQuery -> _state.update { it.copy(categoryQuery = event.query) }
-            is BudgetEntryEvent.ShowSharedFilterDialog -> _state.update { it.copy(showSharedFilterDialog = event.show) }
+            is BudgetEntryEvent.ShowSharedFilterDialog -> _state.update {
+                it.copy(
+                    showSharedFilterDialog = event.show
+                )
+            }
+
             is BudgetEntryEvent.ConfirmSaveWithSharedFilter -> {
                 _state.update { it.copy(showSharedFilterDialog = false) }
                 saveBudget(
@@ -234,6 +292,7 @@ class BudgetEntryViewModel @Inject constructor(
                     forceNewFilter = !event.updateShared
                 )
             }
+
             is BudgetEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }
@@ -257,7 +316,7 @@ class BudgetEntryViewModel @Inject constructor(
             }
 
             val amount = s.limitAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            
+
             // 1. Create or Update the Filter for this budget
             val filter = Filter(
                 id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
@@ -356,7 +415,7 @@ class BudgetEntryViewModel @Inject constructor(
     fun deleteBudget() {
         val id = _state.value.budgetId ?: return
         val filterId = _state.value.filterId
-        
+
         viewModelScope.launch {
             // Always delete the private filter when deleting a budget
             if (filterId != null) {

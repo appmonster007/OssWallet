@@ -3,11 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -20,7 +16,6 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -101,7 +96,7 @@ class TransactionEntryViewModel @Inject constructor(
             // Set default account if provided
             val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
                 ?: accounts.firstOrNull()
-            
+
             val defaultCategory = categories.find { it.id == 1002L } ?: categories.firstOrNull()
 
             _state.value = TransactionEntryState(
@@ -193,9 +188,10 @@ class TransactionEntryViewModel @Inject constructor(
     private fun applyPrefill(prefill: TransactionPrefillDTO) {
         val currentState = _state.value
         val accounts = currentState.accounts
-        
-        val prefillAcc = accounts.find { it.id == prefill.accountId } ?: currentState.selectedAccount
-        
+
+        val prefillAcc =
+            accounts.find { it.id == prefill.accountId } ?: currentState.selectedAccount
+
         val txType = prefill.transactionType
 
         var targetAcc: Account? = null
@@ -205,7 +201,8 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         _state.value = currentState.copy(
-            amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString()
+            amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()
+                ?.toPlainString()
                 ?: prefill.amount,
             selectedCategoryId = prefill.categoryId,
             selectedTags = prefill.tags,
@@ -233,7 +230,11 @@ class TransactionEntryViewModel @Inject constructor(
             showSplitSheet = prefill.isSplitMode,
             splits = if (prefill.isSplitMode) {
                 listOf(
-                    TransactionSplit(categoryId = prefill.categoryId, amount = prefill.amount, note = prefill.note),
+                    TransactionSplit(
+                        categoryId = prefill.categoryId,
+                        amount = prefill.amount,
+                        note = prefill.note
+                    ),
                     TransactionSplit(categoryId = null, amount = "", note = "")
                 )
             } else emptyList()
@@ -308,22 +309,30 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(warrantyExpirationMillis = event.millis)
             }
 
-            is TransactionEntryEvent.SetLocation -> update { it.copy(gpsLocation = event.gpsLocation, location = event.location) }
+            is TransactionEntryEvent.SetLocation -> update {
+                it.copy(
+                    gpsLocation = event.gpsLocation,
+                    location = event.location
+                )
+            }
+
             is TransactionEntryEvent.AddLinkedTransaction -> {
                 viewModelScope.launch {
                     val tx = transactionUseCases.getTransactionById(event.id)
                     tx?.let { newTx ->
-                        update { it.copy(
-                            linkedTransactionIds = it.linkedTransactionIds + event.id,
-                            linkedTxs = (it.linkedTxs + newTx).distinctBy { t -> t.id }
-                        ) }
+                        update {
+                            it.copy(
+                                linkedTransactionIds = it.linkedTransactionIds + event.id,
+                                linkedTxs = (it.linkedTxs + newTx).distinctBy { t -> t.id }
+                            )
+                        }
                     }
                 }
             }
 
             is TransactionEntryEvent.RemoveLinkedTransaction -> {
                 // Remove from local state. Database update happens on Save.
-                update { 
+                update {
                     it.copy(
                         linkedTransactionIds = it.linkedTransactionIds.filter { id -> id != event.linkedTransactionId },
                         linkedTxs = it.linkedTxs.filter { tx -> tx.id != event.linkedTransactionId }
@@ -376,7 +385,12 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(selectedTemplateName = event.templateName)
             }
 
-            is TransactionEntryEvent.ApplyTemplate -> applyPrefill(TransactionPrefillDTO.fromTemplate(event.template))
+            is TransactionEntryEvent.ApplyTemplate -> applyPrefill(
+                TransactionPrefillDTO.fromTemplate(
+                    event.template
+                )
+            )
+
             is TransactionEntryEvent.ApplyPrefill -> applyPrefill(event.prefill)
 
             // Splitting
@@ -384,15 +398,23 @@ class TransactionEntryViewModel @Inject constructor(
                 val newState = it.copy(isSplitMode = event.enabled)
                 if (event.enabled && newState.splits.isEmpty()) {
                     // Initialize with 2 splits: 1st with current amount/category, 2nd empty
-                    newState.copy(splits = listOf(
-                        TransactionSplit(categoryId = it.selectedCategoryId, amount = it.amount, note = it.note),
-                        TransactionSplit(categoryId = null, amount = "", note = "")
-                    ))
+                    newState.copy(
+                        splits = listOf(
+                            TransactionSplit(
+                                categoryId = it.selectedCategoryId,
+                                amount = it.amount,
+                                note = it.note
+                            ),
+                            TransactionSplit(categoryId = null, amount = "", note = "")
+                        )
+                    )
                 } else newState
             }
+
             is TransactionEntryEvent.AddSplit -> update {
                 it.copy(splits = it.splits + TransactionSplit(categoryId = it.selectedCategoryId))
             }
+
             is TransactionEntryEvent.RemoveSplit -> update {
                 val newSplits = it.splits.filterIndexed { index, _ -> index != event.index }
                 if (newSplits.size <= 1) {
@@ -405,6 +427,7 @@ class TransactionEntryViewModel @Inject constructor(
                     it.copy(splits = newSplits)
                 }
             }
+
             is TransactionEntryEvent.UpdateSplit -> update {
                 val newSplits = it.splits.toMutableList()
                 if (event.index in newSplits.indices) {
@@ -447,10 +470,19 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.ShowLocationSheet -> update { it.copy(showLocationSheet = event.show) }
             is TransactionEntryEvent.ShowSplitSheet -> update { it.copy(showSplitSheet = event.show) }
-            is TransactionEntryEvent.ShowSplitCategorySheet -> update { it.copy(showSplitCategorySheet = event.splitIndex) }
+            is TransactionEntryEvent.ShowSplitCategorySheet -> update {
+                it.copy(
+                    showSplitCategorySheet = event.splitIndex
+                )
+            }
+
             is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show) }
             is TransactionEntryEvent.ShowCurrencySheet -> update { it.copy(showCurrencySheet = event.show) }
-            is TransactionEntryEvent.ShowTargetCurrencySheet -> update { it.copy(showTargetCurrencySheet = event.show) }
+            is TransactionEntryEvent.ShowTargetCurrencySheet -> update {
+                it.copy(
+                    showTargetCurrencySheet = event.show
+                )
+            }
 
             // Navigation
             is TransactionEntryEvent.TriggerNavigation -> update { it.copy(navTriggered = true) }
@@ -520,7 +552,8 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionRequest(
-            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
+            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
+                ?: "Transaction",
             amount = if (currentState.isIncome || currentState.isTransfer) {
                 currentState.amountValue
             } else {
@@ -578,8 +611,8 @@ class TransactionEntryViewModel @Inject constructor(
                     splits = currentState.splits,
                     baseRequest = baseRequest,
                     profileId = profileId,
-                    categoryNameLookup = { catId -> 
-                        currentState.categories.find { it.id == catId }?.name ?: "Transaction" 
+                    categoryNameLookup = { catId ->
+                        currentState.categories.find { it.id == catId }?.name ?: "Transaction"
                     }
                 )
                 onSuccess(id)
@@ -592,7 +625,8 @@ class TransactionEntryViewModel @Inject constructor(
                     linkedTransactionIds = currentState.linkedTransactionIds,
                     clonedFromId = if (currentState.isEditMode) null else currentState.prefillDto?.clonedFromTransactionId,
                     sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-                    scheduledDate = currentState.prefillDto?.timestamp ?: currentState.selectedDateMillis
+                    scheduledDate = currentState.prefillDto?.timestamp
+                        ?: currentState.selectedDateMillis
                 )
                 onSuccess(id)
             }
@@ -610,7 +644,8 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionRequest(
-            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
+            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
+                ?: "Transaction",
             amount = BigDecimal.ZERO, // To be set by caller
             transactionType = when {
                 currentState.isIncome -> TransactionType.INCOME

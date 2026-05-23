@@ -1,49 +1,58 @@
 package com.osscabinet.ossWallet.ui.components.visualization.charts
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.generateShade
-import java.math.BigDecimal
-import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
+import com.osscabinet.ossWallet.ui.theme.ChartGlossGradEnd
+import com.osscabinet.ossWallet.ui.theme.ChartGlossHighlight
+import com.osscabinet.ossWallet.ui.theme.ChartOverlayDark
+import com.osscabinet.ossWallet.ui.theme.ChartRimHighlight
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
+import com.osscabinet.ossWallet.ui.theme.ColorTransparent
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.TagPresetColors
+import java.math.BigDecimal
 
 /**
  * High-fidelity treemap visualization for categorical distribution.
@@ -79,7 +88,7 @@ fun AeonTreemap(
     BoxWithConstraints(modifier = modifier) {
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
-        
+
         val layouts = remember(nodes, widthPx, heightPx) {
             computeTreemapLayout(nodes, Rect(0f, 0f, widthPx, heightPx), totalValue)
         }
@@ -93,7 +102,8 @@ fun AeonTreemap(
                 modifier = Modifier
                     .fillMaxSize()
                     .semantics {
-                        contentDescription = "Treemap showing distribution. Drag or tap boxes for details."
+                        contentDescription =
+                            "Treemap showing distribution. Drag or tap boxes for details."
                     }
                     .pointerInput(nodes) {
                         detectDragGestures(
@@ -147,7 +157,7 @@ fun AeonTreemap(
                     val isSelected = selectedNode == node
                     val radius = if (rounded) (dims.spacingXs * 1.5f).toPx() else 0f
                     val cornerRadius = CornerRadius(radius, radius)
-                    
+
                     // Modern Look: Precise radial gaps (spacing between rectangles)
                     val gap = if (rounded) (dims.spacingXs / 2).toPx() else 0f
                     val drawRect = Rect(
@@ -156,7 +166,7 @@ fun AeonTreemap(
                         rect.right - gap / 2,
                         rect.bottom - gap / 2
                     )
-                    
+
                     if (drawRect.width <= 0 || drawRect.height <= 0) return@forEach
 
                     // 2. Base Segment Color
@@ -166,18 +176,24 @@ fun AeonTreemap(
                         size = Size(drawRect.width, drawRect.height),
                         cornerRadius = cornerRadius
                     )
-                    
+
                     // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
                     if (drawRect.width > dims.containerCornerRadius.toPx() && drawRect.height > dims.containerCornerRadius.toPx()) {
                         val innerRadius = if (rounded) (dims.spacingXs * 1.25f).toPx() else 0f
                         drawRoundRect(
                             color = ChartGlossHighlight,
-                            topLeft = Offset(drawRect.left + (dims.spacingXs / 4).toPx(), drawRect.top + (dims.spacingXs / 4).toPx()),
-                            size = Size(drawRect.width - (dims.spacingXs / 2).toPx(), drawRect.height - (dims.spacingXs / 2).toPx()),
+                            topLeft = Offset(
+                                drawRect.left + (dims.spacingXs / 4).toPx(),
+                                drawRect.top + (dims.spacingXs / 4).toPx()
+                            ),
+                            size = Size(
+                                drawRect.width - (dims.spacingXs / 2).toPx(),
+                                drawRect.height - (dims.spacingXs / 2).toPx()
+                            ),
                             cornerRadius = CornerRadius(innerRadius, innerRadius),
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = (dims.spacingXs / 4).toPx())
                         )
-                        
+
                         // Subtle Top Glow
                         drawRoundRect(
                             brush = Brush.verticalGradient(
@@ -190,7 +206,7 @@ fun AeonTreemap(
                             cornerRadius = cornerRadius
                         )
                     }
-                    
+
                     // 4. Selection Highlight
                     if (isSelected) {
                         drawRoundRect(
@@ -222,22 +238,35 @@ fun AeonTreemap(
             if (showLabels) {
                 layouts.forEach { (node, rect) ->
                     val gap = with(density) { if (rounded) (dims.spacingXs / 2).toPx() else 0f }
-                    val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
+                    val drawRect = Rect(
+                        rect.left + gap / 2,
+                        rect.top + gap / 2,
+                        rect.right - gap / 2,
+                        rect.bottom - gap / 2
+                    )
                     val rectWidthDp = with(density) { drawRect.width.toDp() }
                     val rectHeightDp = with(density) { drawRect.height.toDp() }
-                    
+
                     // Show labels if box is reasonably large
-                    val showText = rectWidthDp > dims.spacing3xl && rectHeightDp > dims.buttonCornerRadius
+                    val showText =
+                        rectWidthDp > dims.spacing3xl && rectHeightDp > dims.buttonCornerRadius
                     // Show only subcategory indicator if box is too small for text but large enough for icon
-                    val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > dims.spacingLg && rectHeightDp > dims.spacingLg
+                    val showOnlyIcon =
+                        !showText && node.hasSubcategories && rectWidthDp > dims.spacingLg && rectHeightDp > dims.spacingLg
 
                     if (showText || showOnlyIcon) {
-                        val iconTint = if (node.color.luminance() > 0.5f) ColorOnLight.copy(alpha = 0.6f) else ColorOnDark.copy(alpha = 0.7f)
-                        val labelColor = if (node.color.luminance() > 0.5f) ColorOnLight else ColorOnDark
+                        val iconTint =
+                            if (node.color.luminance() > 0.5f) ColorOnLight.copy(alpha = 0.6f) else ColorOnDark.copy(
+                                alpha = 0.7f
+                            )
+                        val labelColor =
+                            if (node.color.luminance() > 0.5f) ColorOnLight else ColorOnDark
 
                         Box(
                             modifier = Modifier
-                                .offset(x = with(density) { drawRect.left.toDp() }, y = with(density) { drawRect.top.toDp() })
+                                .offset(
+                                    x = with(density) { drawRect.left.toDp() },
+                                    y = with(density) { drawRect.top.toDp() })
                                 .size(rectWidthDp, rectHeightDp)
                                 .padding(horizontal = dims.spacingSm, vertical = dims.spacingXs)
                                 .clipToBounds(),
@@ -258,7 +287,9 @@ fun AeonTreemap(
                                             Image(
                                                 painter = disclosurePainter,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(dims.iconSizeXs).padding(start = (dims.spacingXs / 2)),
+                                                modifier = Modifier
+                                                    .size(dims.iconSizeXs)
+                                                    .padding(start = (dims.spacingXs / 2)),
                                                 colorFilter = ColorFilter.tint(iconTint)
                                             )
                                         }
@@ -300,13 +331,13 @@ fun AeonTreemap(
                         density = density.density,
                         currency = currency,
                         precision = precision,
-                        onDrillInClick = { 
+                        onDrillInClick = {
                             selectedNode = null
-                            onDrillInClick(node) 
+                            onDrillInClick(node)
                         },
-                        onNavigateToRecords = { 
+                        onNavigateToRecords = {
                             selectedNode = null
-                            onNavigateToRecords(node) 
+                            onNavigateToRecords(node)
                         }
                     )
                 }
@@ -325,12 +356,12 @@ private fun computeTreemapLayout(
     totalValue: BigDecimal
 ): List<Pair<AeonTreemapNode, Rect>> {
     if (nodes.isEmpty() || totalValue.signum() == 0) return emptyList()
-    
+
     val result = mutableListOf<Pair<AeonTreemapNode, Rect>>()
     val sortedNodes = nodes.sortedByDescending { it.value.abs() }
-    
+
     squarify(sortedNodes, emptyList(), bounds, totalValue, result)
-    
+
     return result
 }
 
@@ -350,8 +381,13 @@ private fun squarify(
 
     val nextNode = remaining.first()
     val newRow = currentRow + nextNode
-    
-    if (currentRow.isEmpty() || worstAspectRatio(currentRow, bounds, total) >= worstAspectRatio(newRow, bounds, total)) {
+
+    if (currentRow.isEmpty() || worstAspectRatio(currentRow, bounds, total) >= worstAspectRatio(
+            newRow,
+            bounds,
+            total
+        )
+    ) {
         squarify(remaining.drop(1), newRow, bounds, total, result)
     } else {
         val newBounds = layoutRow(currentRow, bounds, total, result)
@@ -362,17 +398,17 @@ private fun squarify(
 
 private fun worstAspectRatio(row: List<AeonTreemapNode>, bounds: Rect, total: BigDecimal): Float {
     if (row.isEmpty()) return Float.MAX_VALUE
-    
+
     val rowSum = row.sumOf { it.value.abs() }.toFloat()
     val totalFloat = total.abs().toFloat()
     val width = bounds.width
     val height = bounds.height
     val side = if (width > height) height else width
-    
+
     val s = rowSum / totalFloat * (width * height)
     val minV = row.minOf { it.value.abs() }.toFloat() / totalFloat * (width * height)
     val maxV = row.maxOf { it.value.abs() }.toFloat() / totalFloat * (width * height)
-    
+
     return maxOf(
         (side * side * maxV) / (s * s),
         (s * s) / (side * side * minV)
@@ -388,18 +424,25 @@ private fun layoutRow(
     val rowSum = row.sumOf { it.value.abs() }.toFloat()
     val totalFloat = total.abs().toFloat()
     val rowAreaRatio = rowSum / totalFloat
-    
+
     if (bounds.width >= bounds.height) {
         // Vertical strip
         val rowWidth = bounds.width * rowAreaRatio
         // IMPORTANT: Clip last row to fill bounds exactly
         val actualRowWidth = if (rowSum >= totalFloat * 0.99f) bounds.width else rowWidth
-        
+
         var currentY = bounds.top
         row.forEachIndexed { index, node ->
             val nodeHeight = (node.value.abs().toFloat() / rowSum) * bounds.height
             val finalHeight = if (index == row.size - 1) bounds.bottom - currentY else nodeHeight
-            result.add(node to Rect(bounds.left, currentY, bounds.left + actualRowWidth, currentY + finalHeight))
+            result.add(
+                node to Rect(
+                    bounds.left,
+                    currentY,
+                    bounds.left + actualRowWidth,
+                    currentY + finalHeight
+                )
+            )
             currentY += finalHeight
         }
         return Rect(bounds.left + actualRowWidth, bounds.top, bounds.right, bounds.bottom)
@@ -408,12 +451,19 @@ private fun layoutRow(
         val rowHeight = bounds.height * rowAreaRatio
         // IMPORTANT: Clip last row to fill bounds exactly
         val actualRowHeight = if (rowSum >= totalFloat * 0.99f) bounds.height else rowHeight
-        
+
         var currentX = bounds.left
         row.forEachIndexed { index, node ->
             val nodeWidth = (node.value.abs().toFloat() / rowSum) * bounds.width
             val finalWidth = if (index == row.size - 1) bounds.right - currentX else nodeWidth
-            result.add(node to Rect(currentX, bounds.top, currentX + finalWidth, bounds.top + actualRowHeight))
+            result.add(
+                node to Rect(
+                    currentX,
+                    bounds.top,
+                    currentX + finalWidth,
+                    bounds.top + actualRowHeight
+                )
+            )
             currentX += finalWidth
         }
         return Rect(bounds.left, bounds.top + actualRowHeight, bounds.right, bounds.bottom)
@@ -424,15 +474,77 @@ private fun layoutRow(
 @Composable
 fun AeonTreemapPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.size(400.dp, 300.dp).padding(AeonTheme.dimensions.screenPadding)) {
+        Box(modifier = Modifier
+            .size(400.dp, 300.dp)
+            .padding(AeonTheme.dimensions.screenPadding)) {
             AeonTreemap(
                 nodes = listOf(
-                    AeonTreemapNode("Food", BigDecimal("500.00"), ChartColorOrange, emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Rent", BigDecimal("1200.00"), TagPresetColors[5], emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Transport", BigDecimal("300.00"), TagPresetColors[10], emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Entertainment", BigDecimal("200.00"), TagPresetColors[2], emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Utilities", BigDecimal("150.00"), TagPresetColors[13], emptyList(), emptyMap(), false, 0, 0f, null),
-                    AeonTreemapNode("Health", BigDecimal("100.00"), TagPresetColors[1], emptyList(), emptyMap(), false, 0, 0f, null)
+                    AeonTreemapNode(
+                        "Food",
+                        BigDecimal("500.00"),
+                        ChartColorOrange,
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    ),
+                    AeonTreemapNode(
+                        "Rent",
+                        BigDecimal("1200.00"),
+                        TagPresetColors[5],
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    ),
+                    AeonTreemapNode(
+                        "Transport",
+                        BigDecimal("300.00"),
+                        TagPresetColors[10],
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    ),
+                    AeonTreemapNode(
+                        "Entertainment",
+                        BigDecimal("200.00"),
+                        TagPresetColors[2],
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    ),
+                    AeonTreemapNode(
+                        "Utilities",
+                        BigDecimal("150.00"),
+                        TagPresetColors[13],
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    ),
+                    AeonTreemapNode(
+                        "Health",
+                        BigDecimal("100.00"),
+                        TagPresetColors[1],
+                        emptyList(),
+                        emptyMap(),
+                        false,
+                        0,
+                        0f,
+                        null
+                    )
                 )
             )
         }

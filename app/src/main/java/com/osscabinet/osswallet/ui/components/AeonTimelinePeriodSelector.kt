@@ -1,41 +1,77 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * Optimized Timeline Period Selector.
@@ -68,12 +104,19 @@ fun AeonTimelinePeriodSelector(
     LaunchedEffect(pagerState.settledPage) {
         val newRange = when (pagerState.settledPage) {
             0 -> TimelineRange.AllTime
-            1 -> if (currentRange is TimelineRange.ThisPeriod) currentRange else TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-            2 -> if (currentRange is TimelineRange.LastPeriod) currentRange else TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+            1 -> if (currentRange is TimelineRange.ThisPeriod) currentRange else TimelineRange.ThisPeriod(
+                ThisPeriodType.MONTH
+            )
+
+            2 -> if (currentRange is TimelineRange.LastPeriod) currentRange else TimelineRange.LastPeriod(
+                LastPeriodType.LAST_30_DAYS
+            )
+
             3 -> if (currentRange is TimelineRange.CustomRange) currentRange else {
                 val now = System.currentTimeMillis()
                 TimelineRange.CustomRange(now - 86400000L * 7, now)
             }
+
             else -> TimelineRange.AllTime
         }
         if (newRange != currentRange) {
@@ -136,7 +179,9 @@ fun AeonTimelinePeriodSelector(
                 centerContent = {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxWidth().height(22.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(22.dp)
                     ) { page ->
                         DateDisplayArea(
                             page = page,
@@ -204,8 +249,8 @@ private fun TimelineSelectorLayout(
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
-                Icons.Default.ChevronLeft, 
-                null, 
+                Icons.Default.ChevronLeft,
+                null,
                 modifier = Modifier.size(18.dp),
                 tint = if (currentRange !is TimelineRange.AllTime) contentColor else inactiveContentColor
             )
@@ -217,7 +262,7 @@ private fun TimelineSelectorLayout(
             verticalArrangement = Arrangement.Center
         ) {
             IconIndicators(
-                activePage = activePage, 
+                activePage = activePage,
                 onIconClick = onIconClick,
                 contentColor = contentColor,
                 inactiveContentColor = inactiveContentColor
@@ -231,8 +276,8 @@ private fun TimelineSelectorLayout(
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
-                Icons.Default.ChevronRight, 
-                null, 
+                Icons.Default.ChevronRight,
+                null,
                 modifier = Modifier.size(18.dp),
                 tint = if (currentRange !is TimelineRange.AllTime) contentColor else inactiveContentColor
             )
@@ -247,7 +292,12 @@ private fun IconIndicators(
     contentColor: Color = AppColors.primary,
     inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
 ) {
-    val icons = listOf(Icons.Default.History, Icons.Default.CalendarToday, Icons.Default.Schedule, Icons.Default.DateRange)
+    val icons = listOf(
+        Icons.Default.History,
+        Icons.Default.CalendarToday,
+        Icons.Default.Schedule,
+        Icons.Default.DateRange
+    )
     val labels = listOf("ALL", "THIS", "LAST", "CUSTOM")
 
     Row(
@@ -329,7 +379,9 @@ private fun DateDisplayArea(
                 Icon(
                     Icons.Default.KeyboardArrowDown,
                     null,
-                    modifier = Modifier.size(14.dp).padding(start = 2.dp),
+                    modifier = Modifier
+                        .size(14.dp)
+                        .padding(start = 2.dp),
                     tint = inactiveContentColor
                 )
             }
@@ -419,11 +471,11 @@ private fun getRangeSubtitleText(range: TimelineRange): String {
 
     val startCal = Calendar.getInstance().apply { timeInMillis = start }
     val endCal = Calendar.getInstance().apply { timeInMillis = end }
-    
+
     val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
     val yearFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    
+
     if (startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
         endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH) &&
         startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
@@ -432,7 +484,8 @@ private fun getRangeSubtitleText(range: TimelineRange): String {
         return SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(start))
     }
 
-    val displayFormat = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) dateFormat else yearFormat
+    val displayFormat =
+        if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) dateFormat else yearFormat
     return "${displayFormat.format(Date(start))} - ${displayFormat.format(Date(end))}"
 }
 

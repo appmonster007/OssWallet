@@ -1,22 +1,42 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -26,10 +46,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.calculator.*
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.calculator.CalculationHistoryItem
+import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
+import com.osscabinet.ossWallet.ui.calculator.CalculatorState
+import com.osscabinet.ossWallet.ui.calculator.Token
+import com.osscabinet.ossWallet.ui.calculator.calculatorReducer
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
 /**
  * Enhanced Financial Expression Engine UI.
@@ -45,31 +71,32 @@ fun CalculatorNumpad(
 ) {
     var state by remember { mutableStateOf(CalculatorState(transactionType = transactionType)) }
     var showHistory by remember { mutableStateOf(false) }
-    
+
     val evaluator = remember { ExpressionEvaluator() }
-    
+
     LaunchedEffect(transactionType, amount) {
         if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
             val initialTokens = mutableListOf<Token>()
             if (transactionType == TransactionType.EXPENSE) initialTokens.add(Token.UnaryMinus)
-            
+
             val amountNum = amount.toBigDecimalOrNull()?.abs()
             if (amountNum != null && amountNum != BigDecimal.ZERO) {
                 initialTokens.add(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
             }
-            
+
             state = state.copy(
                 transactionType = transactionType,
                 tokens = initialTokens,
-                display = if (amountNum != null && amountNum != BigDecimal.ZERO) amountNum.stripTrailingZeros().toPlainString() else state.display
+                display = if (amountNum != null && amountNum != BigDecimal.ZERO) amountNum.stripTrailingZeros()
+                    .toPlainString() else state.display
             )
         }
     }
-    
+
     fun handleAction(action: CalculatorAction) {
         state = calculatorReducer(state, action, evaluator)
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -94,7 +121,7 @@ fun CalculatorNumpad(
                         val finalState = if (!state.isCalculated) {
                             calculatorReducer(state, CalculatorAction.Equals, evaluator)
                         } else state
-                        
+
                         state = finalState
                         if (!finalState.isError) {
                             onAmountChange(finalState.display, finalState.transactionType)
@@ -102,10 +129,12 @@ fun CalculatorNumpad(
                         }
                     }
                 )
-                
+
                 IconButton(
                     onClick = { showHistory = true },
-                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
                 ) {
                     Icon(
                         Icons.Rounded.History,
@@ -116,7 +145,7 @@ fun CalculatorNumpad(
                 }
             }
         }
-        
+
         // Keys
         CalculatorKeys(
             onNumberPress = { handleAction(CalculatorAction.AppendNumber(it)) },
@@ -124,7 +153,7 @@ fun CalculatorNumpad(
             onParenthesisToggle = { handleAction(CalculatorAction.AppendParenthesis(' ')) },
             onClearPress = { handleAction(CalculatorAction.Clear) },
             onBackspacePress = { handleAction(CalculatorAction.Backspace) },
-            onEqualsPress = { 
+            onEqualsPress = {
                 handleAction(CalculatorAction.Equals)
                 if (!state.isError) {
                     onAmountChange(state.display, state.transactionType)
@@ -156,14 +185,17 @@ private fun CalculatorDisplay(
     isError: Boolean,
     onSave: () -> Unit
 ) {
-    val displayResult = if (transactionType == TransactionType.EXPENSE && result != "0" && !result.startsWith("-")) {
-        "−$result"
-    } else {
-        result.replace("-", "−")
-    }
-    
+    val displayResult =
+        if (transactionType == TransactionType.EXPENSE && result != "0" && !result.startsWith("-")) {
+            "−$result"
+        } else {
+            result.replace("-", "−")
+        }
+
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -183,7 +215,7 @@ private fun CalculatorDisplay(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            
+
             // Result line
             Text(
                 text = displayResult,
@@ -196,7 +228,7 @@ private fun CalculatorDisplay(
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Ghost Result
             if (ghostResult.isNotEmpty() && ghostResult != result) {
                 Text(
@@ -208,9 +240,9 @@ private fun CalculatorDisplay(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.width(16.dp))
-        
+
         Surface(
             onClick = onSave,
             shape = CircleShape,
@@ -240,35 +272,50 @@ private fun CalculatorKeys(
     onPercentPress: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true)
             CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true)
             CalculatorKey("%", onPercentPress, Modifier.weight(1f), isSpecial = true)
             CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f), isOperator = true)
         }
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f))
             CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f))
             CalculatorKey("9", { onNumberPress("9") }, Modifier.weight(1f))
             CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f), isOperator = true)
         }
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f))
             CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f))
             CalculatorKey("6", { onNumberPress("6") }, Modifier.weight(1f))
             CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f), isOperator = true)
         }
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f))
             CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f))
             CalculatorKey("3", { onNumberPress("3") }, Modifier.weight(1f))
             CalculatorKey("+", { onOperatorPress('+') }, Modifier.weight(1f), isOperator = true)
         }
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f))
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f))
             CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true)
@@ -292,20 +339,23 @@ private fun CalculatorKey(
         isSpecial -> AppColors.error.copy(alpha = 0.08f)
         else -> AppColors.recessedSurface
     }
-    
+
     val textColor = when {
         isAccent -> ColorOnDark
         isOperator -> AppColors.primary
         isSpecial -> if (label == "C" || label == "⌫") AppColors.error else AppColors.contentSecondary
         else -> AppColors.contentPrimary
     }
-    
+
     Surface(
         onClick = onClick,
         modifier = modifier.height(68.dp),
         shape = RoundedCornerShape(20.dp),
         color = backgroundColor,
-        border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)) else null,
+        border = if (!isAccent) BorderStroke(
+            0.5.dp,
+            AppColors.divider.copy(alpha = 0.15f)
+        ) else null,
         shadowElevation = 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -362,16 +412,24 @@ private fun CalculatorHistorySheet(
                 )
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
-                        Text("Clear All", style = AppTextStyles.formSwitchLabel.copy(fontWeight = FontWeight.Bold, color = AppColors.error))
+                        Text(
+                            "Clear All",
+                            style = AppTextStyles.formSwitchLabel.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.error
+                            )
+                        )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             if (history.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -394,7 +452,9 @@ private fun CalculatorHistorySheet(
                             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
                         ) {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text(
@@ -434,7 +494,11 @@ fun CalculatorNumpadPreview() {
 @Composable
 fun CalculatorDisplayPreview() {
     OssWalletTheme {
-        Surface(modifier = Modifier.padding(16.dp), color = AppColors.recessedSurface, shape = RoundedCornerShape(24.dp)) {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            color = AppColors.recessedSurface,
+            shape = RoundedCornerShape(24.dp)
+        ) {
             CalculatorDisplay(
                 expression = "50 + 75.50",
                 result = "125.50",

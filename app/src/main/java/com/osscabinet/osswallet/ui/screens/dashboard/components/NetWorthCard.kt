@@ -2,14 +2,11 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -17,7 +14,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -32,27 +28,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
-import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
-import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun NetWorthCard(
@@ -71,9 +66,10 @@ fun NetWorthCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -105,7 +101,11 @@ fun NetWorthCard(
 
             Column {
                 Text(
-                    text = formatCurrencyRight(currentMetrics.netWorth, displayCurrency, shorten = true),
+                    text = formatCurrencyRight(
+                        currentMetrics.netWorth,
+                        displayCurrency,
+                        shorten = true
+                    ),
                     style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = baseFontSize,
@@ -161,7 +161,15 @@ fun NetWorthCard(
                     currency = displayCurrency,
                     color = PositiveAmountColor,
                     modifier = Modifier.weight(1f),
-                    onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) },
+                    onClick = {
+                        callbacks.onClickIncome?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(
+                                    TransactionType.INCOME
+                                )
+                            )
+                        )
+                    },
                     previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
                 FlowBadge(
@@ -170,7 +178,15 @@ fun NetWorthCard(
                     currency = displayCurrency,
                     color = AppColors.error,
                     modifier = Modifier.weight(1f),
-                    onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) },
+                    onClick = {
+                        callbacks.onClickExpense?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(
+                                    TransactionType.EXPENSE
+                                )
+                            )
+                        )
+                    },
                     previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }
@@ -194,7 +210,10 @@ private fun FlowBadge(
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = AeonTheme.dimensions.spacingMd),
+            modifier = Modifier.padding(
+                horizontal = AeonTheme.dimensions.cardPadding,
+                vertical = AeonTheme.dimensions.spacingMd
+            ),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
         ) {
             Row(
@@ -272,12 +291,14 @@ private fun NetWorthSettingsSheet(
                         onClick = { callbacks.onFontSizeChange(config.cardId, size) },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
                         label = {
-                            Text(when (size) {
-                                "Small" -> "S"
-                                "Medium" -> "M"
-                                "Large" -> "L"
-                                else -> "XL"
-                            })
+                            Text(
+                                when (size) {
+                                    "Small" -> "S"
+                                    "Medium" -> "M"
+                                    "Large" -> "L"
+                                    else -> "XL"
+                                }
+                            )
                         }
                     )
                 }

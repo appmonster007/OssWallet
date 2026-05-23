@@ -80,13 +80,15 @@ fun SwipeableTransactionItem(
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     var swipeDirection by remember { mutableStateOf(SwipeDirection.NONE) }
-    
+
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    
+
     // Expressive motion configuration
-    val leftSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() } // Revealing right actions
-    val rightSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
+    val leftSwipeThresholdPx =
+        with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() } // Revealing right actions
+    val rightSwipeThresholdPx =
+        with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
     val fullSwipeThresholdPx = with(density) { 220.dp.toPx() }
 
     // External state synchronization
@@ -132,7 +134,14 @@ fun SwipeableTransactionItem(
             if (animatedOffset > 0) {
                 StatusActionsRow(
                     currentStatus = transaction.status,
-                    onStatusChange = { status -> onEvent(TransactionItemEvent.StatusChange(transaction.id, status)) },
+                    onStatusChange = { status ->
+                        onEvent(
+                            TransactionItemEvent.StatusChange(
+                                transaction.id,
+                                status
+                            )
+                        )
+                    },
                     progress = progress,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
@@ -160,10 +169,11 @@ fun SwipeableTransactionItem(
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, dragAmount ->
                             val newOffset = offsetX + dragAmount
-                            
+
                             // Initialize direction
                             if (swipeDirection == SwipeDirection.NONE && abs(dragAmount) > 0.5f) {
-                                swipeDirection = if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                                swipeDirection =
+                                    if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
                             }
 
                             // Constrain and apply offset with resistance
@@ -173,11 +183,13 @@ fun SwipeableTransactionItem(
                                         fullSwipeThresholdPx + (newOffset - fullSwipeThresholdPx) * 0.3f
                                     } else newOffset.coerceAtLeast(0f)
                                 }
+
                                 SwipeDirection.LEFT -> {
                                     if (newOffset < -leftSwipeThresholdPx) {
                                         -leftSwipeThresholdPx + (newOffset + leftSwipeThresholdPx) * 0.3f
                                     } else newOffset.coerceAtMost(0f)
                                 }
+
                                 else -> newOffset
                             }
                         },
@@ -198,6 +210,7 @@ fun SwipeableTransactionItem(
                                         onEvent(TransactionItemEvent.Collapse(transaction.id))
                                     }
                                 }
+
                                 SwipeDirection.LEFT -> {
                                     if (abs(offsetX) > leftSwipeThresholdPx / 2) {
                                         offsetX = -leftSwipeThresholdPx
@@ -208,6 +221,7 @@ fun SwipeableTransactionItem(
                                         onEvent(TransactionItemEvent.Collapse(transaction.id))
                                     }
                                 }
+
                                 else -> {
                                     offsetX = 0f
                                     onEvent(TransactionItemEvent.Collapse(transaction.id))
@@ -328,7 +342,11 @@ fun ExpressiveActionButton(
             contentColor = contentColor
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm))
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                )
             }
         }
         Text(

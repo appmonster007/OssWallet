@@ -30,18 +30,22 @@ class BudgetRepositoryImpl @Inject constructor(
         dao.getById(id)?.toDomain()
 
     override suspend fun insert(budget: Budget): Long {
-        val filterId = budget.filterId ?: throw IllegalArgumentException("FilterId must be provided")
+        val filterId =
+            budget.filterId ?: throw IllegalArgumentException("FilterId must be provided")
         return dao.insert(budget.toEntity(filterId))
     }
 
     override suspend fun update(budget: Budget) {
-        val filterId = budget.filterId ?: throw IllegalArgumentException("FilterId must be provided")
+        val filterId =
+            budget.filterId ?: throw IllegalArgumentException("FilterId must be provided")
         dao.update(budget.toEntity(filterId))
     }
 
     override suspend fun delete(id: Long) {
         val filterId = dao.getById(id)?.budget?.filterId
         dao.deleteById(id)
-        filterId?.let { filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) } }
+        filterId?.let {
+            filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) }
+        }
     }
 }

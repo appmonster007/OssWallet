@@ -2,12 +2,10 @@ package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
-import kotlinx.serialization.encodeToString
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
 /**
  * Extension functions for context-aware navigation

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -21,10 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -32,7 +32,6 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
@@ -53,9 +52,10 @@ fun RecentActivitiesCard(
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -71,7 +71,12 @@ fun RecentActivitiesCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            RecentActivitiesSettingsSheet(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            RecentActivitiesSettingsSheet(
+                config = config,
+                onUpdate = callbacks.onUpdate,
+                onDelete = callbacks.onDelete,
+                onDismiss = onDismiss
+            )
         }
     ) {
         RecentActivitiesScreen(
@@ -96,7 +101,11 @@ fun RecentActivitiesCard(
                     is TransactionItemEvent.Click -> callbacks.onTransactionClick(event.id)
                     is TransactionItemEvent.Expand -> callbacks.onItemExpanded(event.id)
                     is TransactionItemEvent.Collapse -> callbacks.onItemCollapsed(event.id)
-                    is TransactionItemEvent.StatusChange -> callbacks.onStatusChange(event.id, event.status)
+                    is TransactionItemEvent.StatusChange -> callbacks.onStatusChange(
+                        event.id,
+                        event.status
+                    )
+
                     is TransactionItemEvent.Clone -> callbacks.onClone(event.id)
                     is TransactionItemEvent.Delete -> callbacks.onDeleteTransaction(event.id)
                     is TransactionItemEvent.Split -> callbacks.onSplit(event.id)
@@ -121,7 +130,7 @@ fun RecentActivitiesCardPreview() {
         categoryId = 1001L
     )
     val mockUiModel = com.osscabinet.ossWallet.domain.model.TransactionUiModel(
-        item = com.osscabinet.ossWallet.domain.model.TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
+        item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
         accountName = "Cash",
         accountCurrency = "USD",
         categoryName = "Food",
@@ -150,12 +159,14 @@ fun RecentActivitiesCardPreview() {
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             RecentActivitiesCard(
-                listState = com.osscabinet.ossWallet.domain.model.TransactionListState(
+                listState = TransactionListState(
                     groups = listOf(mockGroup),
                     isEmpty = false
                 ),
                 config = RecentActivitiesCardConfig(cardId = "preview"),
-                callbacks = CardCallbacks.RecentActivities(onRecordsClick = {}, onTransactionClick = {})
+                callbacks = CardCallbacks.RecentActivities(
+                    onRecordsClick = {},
+                    onTransactionClick = {})
             )
         }
     }

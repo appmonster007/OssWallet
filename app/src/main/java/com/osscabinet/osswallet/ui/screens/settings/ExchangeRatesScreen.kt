@@ -2,44 +2,81 @@ package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Backspace
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.currency.CurrencyRate
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,14 +105,20 @@ fun ExchangeRatesScreen(
                     {
                       "base_currency": "${rates?.baseCurrency}",
                       "rates": {
-                        ${rates?.rates?.entries?.take(5)?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }}
+                        ${
+                        rates?.rates?.entries?.take(5)
+                            ?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }
+                    }
                         ... (+${(rates?.rates?.size ?: 5) - 5} more)
                       }
                     }
                     """.trimIndent()
                 }
                 Column {
-                    Text("New rates fetched. Do you want to save them?", style = AppTextStyles.transactionTitle)
+                    Text(
+                        "New rates fetched. Do you want to save them?",
+                        style = AppTextStyles.transactionTitle
+                    )
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                     Surface(
                         color = AppColors.insetSurface,
@@ -108,14 +151,19 @@ fun ExchangeRatesScreen(
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
             title = { Text("Exchange Rate Error") },
-            text = { Text(uiState.syncError ?: "An unexpected error occurred while fetching exchange rates.") },
+            text = {
+                Text(
+                    uiState.syncError
+                        ?: "An unexpected error occurred while fetching exchange rates."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
                     Text("OK")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { 
+                TextButton(onClick = {
                     viewModel.clearError()
                     viewModel.refreshRates()
                 }) {
@@ -137,14 +185,20 @@ fun ExchangeRatesScreen(
                             }
                         } else {
                             IconButton(onClick = onBackClick) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
                             }
                         }
                     },
                     actions = {
                         if (pagerState.currentPage == 0) {
-                            val lastUpdatedStr = if (uiState.lastUpdated > 0) com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(uiState.lastUpdated) else "Never"
-                            
+                            val lastUpdatedStr =
+                                if (uiState.lastUpdated > 0) com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(
+                                    uiState.lastUpdated
+                                ) else "Never"
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
@@ -155,7 +209,10 @@ fun ExchangeRatesScreen(
                                 }
                                 IconButton(onClick = { viewModel.refreshRates() }) {
                                     if (uiState.isLoading) {
-                                        CircularProgressIndicator(modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm), strokeWidth = 2.dp)
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                            strokeWidth = 2.dp
+                                        )
                                     } else {
                                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                                     }
@@ -209,10 +266,10 @@ fun ExchangeRatesScreen(
 @Composable
 fun RatesTab(uiState: CurrencyUiState) {
     var searchQuery by remember { mutableStateOf("") }
-    
+
     val filteredRates = remember(uiState.rates, searchQuery) {
-        uiState.rates.filter { 
-            it.currencyCode.contains(searchQuery, ignoreCase = true) 
+        uiState.rates.filter {
+            it.currencyCode.contains(searchQuery, ignoreCase = true)
         }.sortedBy { it.currencyCode }
     }
 
@@ -226,7 +283,13 @@ fun RatesTab(uiState: CurrencyUiState) {
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search currencies...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppColors.primary) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = AppColors.primary
+                    )
+                },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -254,12 +317,12 @@ fun RatesTab(uiState: CurrencyUiState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "CURRENCY", 
+                "CURRENCY",
                 style = AppTextStyles.tableColumnHeader,
                 color = AppColors.contentSecondary.copy(alpha = 0.8f)
             )
             Text(
-                "VALUE (1 ${uiState.baseCurrency})", 
+                "VALUE (1 ${uiState.baseCurrency})",
                 style = AppTextStyles.tableColumnHeader,
                 color = AppColors.contentSecondary.copy(alpha = 0.8f)
             )
@@ -281,7 +344,10 @@ fun RatesTab(uiState: CurrencyUiState) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingMd),
+                            .padding(
+                                horizontal = AeonTheme.dimensions.screenPadding,
+                                vertical = AeonTheme.dimensions.spacingMd
+                            ),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -290,7 +356,10 @@ fun RatesTab(uiState: CurrencyUiState) {
                                 shape = RoundedCornerShape(50),
                                 color = if (isBase) AppColors.primary else AppColors.inputSurface,
                                 modifier = Modifier.size(40.dp),
-                                border = if (!isBase) BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)) else null,
+                                border = if (!isBase) BorderStroke(
+                                    1.dp,
+                                    AppColors.divider.copy(alpha = 0.4f)
+                                ) else null,
                                 tonalElevation = if (isBase) 2.dp else 1.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -319,13 +388,22 @@ fun RatesTab(uiState: CurrencyUiState) {
                                                 "BASE",
                                                 style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Black),
                                                 color = AppColors.onPrimary,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                modifier = Modifier.padding(
+                                                    horizontal = 4.dp,
+                                                    vertical = 1.dp
+                                                )
                                             )
                                         }
                                     }
                                 }
                                 Text(
-                                    "1 ${uiState.baseCurrency} = ${String.format(Locale.US, "%.4f", rate.rate)}",
+                                    "1 ${uiState.baseCurrency} = ${
+                                        String.format(
+                                            Locale.US,
+                                            "%.4f",
+                                            rate.rate
+                                        )
+                                    }",
                                     style = AppTextStyles.formFieldHint,
                                     color = AppColors.contentSecondary,
                                     modifier = Modifier.padding(top = 1.dp)
@@ -342,15 +420,16 @@ fun RatesTab(uiState: CurrencyUiState) {
                     }
                 }
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), 
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                     color = AppColors.divider.copy(alpha = 0.2f)
                 )
             }
-            
+
             item {
                 if (uiState.lastUpdated > 0) {
-                    val lastUpdatedStr = com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(uiState.lastUpdated)
-                    
+                    val lastUpdatedStr =
+                        com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(uiState.lastUpdated)
+
                     Text(
                         text = "Last updated: $lastUpdatedStr",
                         style = AppTextStyles.formFieldHint,
@@ -396,7 +475,10 @@ fun ConverterTab(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingSm),
+            .padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = AeonTheme.dimensions.spacingSm
+            ),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         // ── Display Card (38% of available height) ──────────────────────────
@@ -424,9 +506,18 @@ fun ConverterTab(
                     isSource = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(AppColors.inputSurface, RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
-                        .border(BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
-                        .padding(horizontal = AeonTheme.dimensions.spacingLg, vertical = AeonTheme.dimensions.spacingMd)
+                        .background(
+                            AppColors.inputSurface,
+                            RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+                        )
+                        .border(
+                            BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f)),
+                            RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+                        )
+                        .padding(
+                            horizontal = AeonTheme.dimensions.spacingLg,
+                            vertical = AeonTheme.dimensions.spacingMd
+                        )
                 )
 
                 // Swap + rate divider row
@@ -435,7 +526,10 @@ fun ConverterTab(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = AppColors.divider.copy(alpha = 0.3f)
+                    )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Surface(
                             color = AppColors.primaryContainer.copy(alpha = 0.15f),
@@ -443,7 +537,13 @@ fun ConverterTab(
                             border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.1f))
                         ) {
                             Text(
-                                text = "1 $fromCurrency = ${String.format(Locale.US, "%.4f", currentRate)} $toCurrency",
+                                text = "1 $fromCurrency = ${
+                                    String.format(
+                                        Locale.US,
+                                        "%.4f",
+                                        currentRate
+                                    )
+                                } $toCurrency",
                                 style = AppTextStyles.formFieldHint.copy(fontWeight = FontWeight.Black),
                                 color = AppColors.primary,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
@@ -472,7 +572,10 @@ fun ConverterTab(
                             }
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = AppColors.divider.copy(alpha = 0.3f)
+                    )
                 }
 
                 // TO row
@@ -485,13 +588,30 @@ fun ConverterTab(
                     isSource = false,
                     onCopy = {
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(String.format(Locale.US, "%,.2f", conversionResult)))
+                        clipboardManager.setText(
+                            androidx.compose.ui.text.AnnotatedString(
+                                String.format(
+                                    Locale.US,
+                                    "%,.2f",
+                                    conversionResult
+                                )
+                            )
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(AppColors.primaryContainer.copy(alpha = 0.08f), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
-                        .border(BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.15f)), RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
-                        .padding(horizontal = AeonTheme.dimensions.spacingLg, vertical = AeonTheme.dimensions.spacingMd)
+                        .background(
+                            AppColors.primaryContainer.copy(alpha = 0.08f),
+                            RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+                        )
+                        .border(
+                            BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.15f)),
+                            RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+                        )
+                        .padding(
+                            horizontal = AeonTheme.dimensions.spacingLg,
+                            vertical = AeonTheme.dimensions.spacingMd
+                        )
                 )
             }
         }
@@ -530,10 +650,13 @@ fun ConverterTab(
                                 onClick = {
                                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                                     when (key) {
-                                        "C" -> if (amountText.isNotEmpty()) amountText = amountText.dropLast(1)
+                                        "C" -> if (amountText.isNotEmpty()) amountText =
+                                            amountText.dropLast(1)
+
                                         "." -> if (!amountText.contains(".")) amountText += "."
-                                        else -> if (amountText == "0" && key != ".") amountText = key
-                                                else if (amountText.length < 10) amountText += key
+                                        else -> if (amountText == "0" && key != ".") amountText =
+                                            key
+                                        else if (amountText.length < 10) amountText += key
                                     }
                                 },
                                 modifier = Modifier
@@ -587,7 +710,9 @@ private fun ConverterRow(
                     shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
                     border = BorderStroke(
                         1.5.dp,
-                        if (isSource) AppColors.divider.copy(alpha = 0.6f) else AppColors.primary.copy(alpha = 0.4f)
+                        if (isSource) AppColors.divider.copy(alpha = 0.6f) else AppColors.primary.copy(
+                            alpha = 0.4f
+                        )
                     ),
                     tonalElevation = 2.dp
                 ) {
@@ -656,8 +781,8 @@ private fun ConverterRow(
                     text = targetAmount,
                     style = when {
                         targetAmount.length > 10 -> AppTextStyles.heroAmountDisplay
-                        targetAmount.length > 7  -> AppTextStyles.heroAmountMedium
-                        else                     -> AppTextStyles.heroAmountLarge
+                        targetAmount.length > 7 -> AppTextStyles.heroAmountMedium
+                        else -> AppTextStyles.heroAmountLarge
                     }.copy(letterSpacing = (-1.5).sp),
                     color = if (isSource) AppColors.contentPrimary else AppColors.primary,
                     textAlign = TextAlign.End,
@@ -689,9 +814,10 @@ private fun ConverterRow(
 
 @Composable
 fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val interactionSource =
+        remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    
+
     Surface(
         onClick = onClick,
         modifier = modifier,
@@ -705,14 +831,14 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (text == "C") {
                 Icon(
-                    Icons.AutoMirrored.Rounded.Backspace, 
+                    Icons.AutoMirrored.Rounded.Backspace,
                     contentDescription = "Clear",
                     modifier = Modifier.size(26.dp),
                     tint = AppColors.error.copy(alpha = 0.7f)
                 )
             } else {
                 Text(
-                    text = text, 
+                    text = text,
                     style = AppTextStyles.keyButtonLabel,
                     color = if (text == ".") AppColors.primary else AppColors.contentPrimary
                 )

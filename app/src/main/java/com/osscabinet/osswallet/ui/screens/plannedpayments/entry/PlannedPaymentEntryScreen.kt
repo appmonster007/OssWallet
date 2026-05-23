@@ -1,11 +1,21 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,11 +88,17 @@ fun PlannedPaymentEntryScreen(
                     ) {
                         Checkbox(
                             checked = state.deleteTemplateWithPayment,
-                            onCheckedChange = { viewModel.onEvent(PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(it)) }
+                            onCheckedChange = {
+                                viewModel.onEvent(
+                                    PlannedPaymentEntryEvent.SetDeleteTemplateWithPayment(
+                                        it
+                                    )
+                                )
+                            }
                         )
                         Text("Also delete linked template", style = AppTextStyles.transactionTitle)
                     }
-                    
+
                     if (state.deleteTemplateWithPayment && state.templateUsageCount > 1) {
                         Surface(
                             color = AppColors.errorContainer.copy(alpha = 0.5f),

@@ -1,27 +1,26 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
-import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CurrencyBalancesCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapData
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowComparisonCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CategorySpendingTrendCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.IncomeExpenseBarCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.LoansCard
+import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.PlannedPaymentsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivitiesCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowComparisonCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.IncomeExpenseBarCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CategorySpendingTrendCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.TagUpSetPlotCard
 
 /**
@@ -108,16 +107,17 @@ fun UnifiedCardRenderer(
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
 
-            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData = CategoryPieChartData(
-                category = metric.category,
-                categoryId = metric.categoryId,
-                amount = metric.netBalance,
-                colorHex = metric.colorHex,
-                percentage = metric.percentage,
-                hasSubcategories = metric.hasSubcategories,
-                subcategoryCount = metric.subcategoryData.size,
-                subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
-            )
+            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData =
+                CategoryPieChartData(
+                    category = metric.category,
+                    categoryId = metric.categoryId,
+                    amount = metric.netBalance,
+                    colorHex = metric.colorHex,
+                    percentage = metric.percentage,
+                    hasSubcategories = metric.hasSubcategories,
+                    subcategoryCount = metric.subcategoryData.size,
+                    subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
+                )
 
             val uiData = renderData.items.map { mapMetrics(it) }
 

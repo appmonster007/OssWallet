@@ -44,15 +44,16 @@ class TransactionQueryBuilder {
             // 1. Dimensions (d1 - d4)
             plan.sqlDimensions.forEachIndexed { index, dim ->
                 val alias = "d${index + 1}"
-                val expression = if (dim == AggregationDimension.TIME && plan.timeGranularity != null) {
-                    "strftime('${plan.timeGranularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
-                } else {
-                    dim.column
-                }
+                val expression =
+                    if (dim == AggregationDimension.TIME && plan.timeGranularity != null) {
+                        "strftime('${plan.timeGranularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
+                    } else {
+                        dim.column
+                    }
                 select.append("$expression AS $alias, ")
                 group.append("$alias, ")
             }
-            
+
             // Pad dimensions
             for (i in (plan.sqlDimensions.size + 1)..4) {
                 select.append("NULL AS d$i, ")
@@ -197,7 +198,7 @@ class TransactionQueryBuilder {
 
         // 4. Combine
         var finalQuery = select.toString() + where.toString()
-        
+
         if (plan != null && plan.sqlDimensions.isNotEmpty()) {
             finalQuery += " " + group.removeSuffix(", ")
         } else if (plan == null) {
@@ -206,7 +207,7 @@ class TransactionQueryBuilder {
                 finalQuery += " LIMIT $limit"
             }
         }
-        
+
         return SimpleSQLiteQuery(finalQuery, args.toTypedArray())
     }
 }

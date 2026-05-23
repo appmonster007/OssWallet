@@ -1,15 +1,20 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.screens.accounts.*
-import com.osscabinet.ossWallet.ui.screens.transactions.*
-import com.osscabinet.ossWallet.ui.screens.templates.*
-import com.osscabinet.ossWallet.ui.screens.settings.*
-import com.osscabinet.ossWallet.ui.screens.analytics.*
+import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import kotlinx.serialization.json.Json
 
 @Composable
@@ -87,11 +92,17 @@ fun TransactionListScreen(
                 is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
                 is TransactionItemEvent.Expand -> viewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> viewModel.onItemCollapsed(event.id)
-                is TransactionItemEvent.StatusChange -> viewModel.quickUpdateStatus(event.id, event.status)
+                is TransactionItemEvent.StatusChange -> viewModel.quickUpdateStatus(
+                    event.id,
+                    event.status
+                )
+
                 is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> viewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(event.id)
+                is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(
+                    event.id
+                )
             }
         },
         onBackClick = {

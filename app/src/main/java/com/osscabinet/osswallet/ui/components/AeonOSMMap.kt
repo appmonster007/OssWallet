@@ -72,14 +72,14 @@ import kotlin.math.abs
 
 private fun buildPinBitmap(accentArgb: Int): Bitmap {
     val size = 88
-    val bmp  = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val cv   = Canvas(bmp)
+    val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val cv = Canvas(bmp)
 
     // Soft shadow below tail tip
     cv.drawCircle(
         size / 2f, size - 8f, 14f,
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color      = android.graphics.Color.argb(60, 0, 0, 0)
+            color = android.graphics.Color.argb(60, 0, 0, 0)
             maskFilter = BlurMaskFilter(14f, BlurMaskFilter.Blur.NORMAL)
         }
     )
@@ -92,7 +92,7 @@ private fun buildPinBitmap(accentArgb: Int): Bitmap {
     // Pin head circle
     val hCx = size / 2f
     val hCy = 28f
-    val hR  = 22f
+    val hR = 22f
     cv.drawCircle(hCx, hCy, hR, fillPaint)
 
     // Inner white ring for depth
@@ -141,15 +141,15 @@ fun AeonOSMMap(
     accentArgb: Int = android.graphics.Color.parseColor("#004D5F"),
     onMapTap: (GeoPoint) -> Unit = {}
 ) {
-    val isPreview           = LocalInspectionMode.current
-    val context             = LocalContext.current
-    val screenBgColor       = AppColors.screenBackground
-    val cardSurfaceColor    = AppColors.cardSurface
+    val isPreview = LocalInspectionMode.current
+    val context = LocalContext.current
+    val screenBgColor = AppColors.screenBackground
+    val cardSurfaceColor = AppColors.cardSurface
     val contentPrimaryColor = AppColors.contentPrimary
-    val dividerColor        = AppColors.divider
+    val dividerColor = AppColors.divider
 
-    val screenBgArgb       = screenBgColor.toArgb()
-    val cardSurfaceArgb    = cardSurfaceColor.toArgb()
+    val screenBgArgb = screenBgColor.toArgb()
+    val cardSurfaceArgb = cardSurfaceColor.toArgb()
     val contentPrimaryArgb = contentPrimaryColor.toArgb()
 
     // ── Stable MapView ────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ fun AeonOSMMap(
     // value. animateFloatAsState then bounces from 0 → 1 using a spring, giving
     // the pin its characteristic drop-and-settle feel.
     var pinDropVersion by remember { mutableStateOf(0) }
-    var pinVisible     by remember { mutableStateOf(selectedPoint != null) }
+    var pinVisible by remember { mutableStateOf(selectedPoint != null) }
 
     LaunchedEffect(selectedPoint) {
         if (selectedPoint != null) {
@@ -194,7 +194,7 @@ fun AeonOSMMap(
         targetValue = if (pinVisible) 1f else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness    = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessMedium
         ),
         label = "pinScale"
     )
@@ -221,6 +221,7 @@ fun AeonOSMMap(
                 p?.let { currentOnMapTap(it) }
                 return true
             }
+
             override fun longPressHelper(p: GeoPoint?) = false
         }
         mapView.overlays.add(1, MapEventsOverlay(tapReceiver))
@@ -243,11 +244,11 @@ fun AeonOSMMap(
         val existing = markerRef.value
         if (existing != null) {
             existing.position = selectedPoint
-            existing.icon     = drawable
+            existing.icon = drawable
         } else {
             val marker = Marker(mapView).apply {
                 position = selectedPoint
-                icon     = drawable
+                icon = drawable
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 setInfoWindow(null)
             }
@@ -271,7 +272,7 @@ fun AeonOSMMap(
             // ── Preview placeholder (tile grid + pin) ─────────────────────────
             val tileColor = AppColors.insetSurface
             val gridColor = AppColors.divider
-            val accentC   = Color(accentArgb)
+            val accentC = Color(accentArgb)
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(color = tileColor)
                 val tile = 60.dp.toPx()
@@ -288,11 +289,15 @@ fun AeonOSMMap(
                     }
                 }
                 if (selectedPoint != null) {
-                    val cx = size.width / 2f; val cy = size.height / 2f
+                    val cx = size.width / 2f;
+                    val cy = size.height / 2f
                     drawCircle(Color.Black.copy(alpha = 0.18f), 13f, Offset(cx, cy + 24f))
                     drawCircle(accentC, 22f, Offset(cx, cy - 22f))
                     drawPath(androidx.compose.ui.graphics.Path().apply {
-                        moveTo(cx - 11f, cy - 2f); lineTo(cx + 11f, cy - 2f); lineTo(cx, cy + 20f); close()
+                        moveTo(cx - 11f, cy - 2f); lineTo(cx + 11f, cy - 2f); lineTo(
+                        cx,
+                        cy + 20f
+                    ); close()
                     }, accentC)
                     drawCircle(Color.White, 7f, Offset(cx, cy - 22f))
                 }
@@ -300,9 +305,9 @@ fun AeonOSMMap(
         } else {
             // ── Live osmdroid map ─────────────────────────────────────────────
             AndroidView(
-                factory  = { mapView!! },
+                factory = { mapView!! },
                 modifier = Modifier.fillMaxSize(),
-                update   = { /* all state sync via LaunchedEffect above */ }
+                update = { /* all state sync via LaunchedEffect above */ }
             )
         }
 
@@ -344,27 +349,33 @@ fun AeonOSMMap(
 
         // ── Top scrim (behind search / back bar) ──────────────────────────────
         Spacer(
-            modifier = Modifier.fillMaxSize().align(Alignment.TopCenter).drawBehind {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        listOf(Color(screenBgArgb).copy(alpha = 0.72f), Color.Transparent),
-                        startY = 0f, endY = 130.dp.toPx()
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.TopCenter)
+                .drawBehind {
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(Color(screenBgArgb).copy(alpha = 0.72f), Color.Transparent),
+                            startY = 0f, endY = 130.dp.toPx()
+                        )
                     )
-                )
-            }
+                }
         )
 
         // ── Bottom scrim (behind panel) ───────────────────────────────────────
         Spacer(
-            modifier = Modifier.fillMaxSize().align(Alignment.BottomCenter).drawBehind {
-                val h = 140.dp.toPx()
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        listOf(Color.Transparent, Color(screenBgArgb).copy(alpha = 0.72f)),
-                        startY = size.height - h, endY = size.height
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.BottomCenter)
+                .drawBehind {
+                    val h = 140.dp.toPx()
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(Color.Transparent, Color(screenBgArgb).copy(alpha = 0.72f)),
+                            startY = size.height - h, endY = size.height
+                        )
                     )
-                )
-            }
+                }
         )
 
         // ── Compass — top-right, below the search bar — only when map is rotated
@@ -372,27 +383,32 @@ fun AeonOSMMap(
         // the map is tilted off north and disappears when it's reset, avoiding
         // visual clutter on the default north-up view.
         AnimatedVisibility(
-            visible  = abs(mapRotation) > 2f,
+            visible = abs(mapRotation) > 2f,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = AeonTheme.dimensions.spacingXl + 60.dp, end = AeonTheme.dimensions.spacingLg),
+                .padding(
+                    top = AeonTheme.dimensions.spacingXl + 60.dp,
+                    end = AeonTheme.dimensions.spacingLg
+                ),
             enter = fadeIn(),
-            exit  = fadeOut()
+            exit = fadeOut()
         ) {
             Surface(
-                modifier        = Modifier.size(40.dp),
-                shape           = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                color           = Color(cardSurfaceArgb),
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                color = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
-                border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView?.mapOrientation = 0f }
+                border = BorderStroke(0.5.dp, dividerColor),
+                onClick = { mapView?.mapOrientation = 0f }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector        = Icons.Rounded.Explore,
+                        imageVector = Icons.Rounded.Explore,
                         contentDescription = "Compass — tap to reset north",
-                        tint               = Color(contentPrimaryArgb),
-                        modifier           = Modifier.size(22.dp).graphicsLayer { rotationZ = -mapRotation }
+                        tint = Color(contentPrimaryArgb),
+                        modifier = Modifier
+                            .size(22.dp)
+                            .graphicsLayer { rotationZ = -mapRotation }
                     )
                 }
             }
@@ -405,28 +421,38 @@ fun AeonOSMMap(
                 .padding(end = AeonTheme.dimensions.spacingLg)
         ) {
             Surface(
-                modifier        = Modifier.size(44.dp),
-                shape           = CircleShape,
-                color           = Color(cardSurfaceArgb),
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
-                border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView?.controller?.zoomIn() }
+                border = BorderStroke(0.5.dp, dividerColor),
+                onClick = { mapView?.controller?.zoomIn() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Zoom in", tint = Color(contentPrimaryArgb), modifier = Modifier.size(22.dp))
+                    Icon(
+                        Icons.Rounded.Add,
+                        contentDescription = "Zoom in",
+                        tint = Color(contentPrimaryArgb),
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
             Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
             Surface(
-                modifier        = Modifier.size(44.dp),
-                shape           = CircleShape,
-                color           = Color(cardSurfaceArgb),
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = Color(cardSurfaceArgb),
                 shadowElevation = 4.dp,
-                border          = BorderStroke(0.5.dp, dividerColor),
-                onClick         = { mapView?.controller?.zoomOut() }
+                border = BorderStroke(0.5.dp, dividerColor),
+                onClick = { mapView?.controller?.zoomOut() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Remove, contentDescription = "Zoom out", tint = Color(contentPrimaryArgb), modifier = Modifier.size(22.dp))
+                    Icon(
+                        Icons.Rounded.Remove,
+                        contentDescription = "Zoom out",
+                        tint = Color(contentPrimaryArgb),
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
         }
@@ -441,11 +467,13 @@ fun AeonOSMMap(
 @Composable
 fun AeonOSMMapPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier.width(360.dp).height(500.dp)) {
+        Box(modifier = Modifier
+            .width(360.dp)
+            .height(500.dp)) {
             AeonOSMMap(
-                modifier      = Modifier.fillMaxSize(),
-                center        = GeoPoint(37.7749, -122.4194),
-                zoom          = 14.0,
+                modifier = Modifier.fillMaxSize(),
+                center = GeoPoint(37.7749, -122.4194),
+                zoom = 14.0,
                 selectedPoint = GeoPoint(37.7749, -122.4194)
             )
         }

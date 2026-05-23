@@ -1,16 +1,49 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.list
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Checklist
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -21,15 +54,22 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.theme.*
-import com.osscabinet.ossWallet.ui.util.isDark
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.ReorderableList
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
+import com.osscabinet.ossWallet.ui.util.isDark
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,14 +91,15 @@ fun AccountListScreen(
     }
 
     LaunchedEffect(accounts) {
-        if (editList.isEmpty() || editList.size != accounts.size || editList.map { it.id }.toSet() != accounts.map { it.id }.toSet()) {
+        if (editList.isEmpty() || editList.size != accounts.size || editList.map { it.id }
+                .toSet() != accounts.map { it.id }.toSet()) {
             editList = accounts
         } else {
             val orderMap = editList.withIndex().associate { it.value.id to it.index }
             editList = accounts.sortedBy { orderMap[it.id] ?: Int.MAX_VALUE }
         }
     }
-    
+
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedAccountIds by remember { mutableStateOf(setOf<String>()) }
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -66,7 +107,9 @@ fun AccountListScreen(
 
     BackHandler(enabled = showMoreMenu) { showMoreMenu = false }
     BackHandler(enabled = showMultiDeleteDialog) { showMultiDeleteDialog = false }
-    BackHandler(enabled = isSelectionMode) { isSelectionMode = false; selectedAccountIds = emptySet() }
+    BackHandler(enabled = isSelectionMode) {
+        isSelectionMode = false; selectedAccountIds = emptySet()
+    }
 
     val selectedAccounts = remember(selectedAccountIds, accounts) {
         accounts.filter { it.id in selectedAccountIds }
@@ -90,8 +133,14 @@ fun AccountListScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(account.name, style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold))
-                        Text(formatCurrencyRight(BigDecimal.ZERO, account.currencyCode), style = AppTextStyles.caption)
+                        Text(
+                            account.name,
+                            style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            formatCurrencyRight(BigDecimal.ZERO, account.currencyCode),
+                            style = AppTextStyles.caption
+                        )
                     }
                 }
             }
@@ -101,16 +150,21 @@ fun AccountListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts", 
+                        if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts",
                         style = AppTextStyles.cardSectionTitle
-                    ) 
+                    )
                 },
                 navigationIcon = {
-                    IconButton(onClick = if (isSelectionMode) { { isSelectionMode = false; selectedAccountIds = emptySet() } } else { { navigate(onBackClick) } }) {
+                    IconButton(
+                        onClick = if (isSelectionMode) {
+                            { isSelectionMode = false; selectedAccountIds = emptySet() }
+                        } else {
+                            { navigate(onBackClick) }
+                        }) {
                         Icon(
-                            if (isSelectionMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack, 
+                            if (isSelectionMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = if (isSelectionMode) "Exit Selection" else "Back"
                         )
                     }
@@ -131,7 +185,12 @@ fun AccountListScreen(
                                         isSelectionMode = true
                                         showMoreMenu = false
                                     },
-                                    leadingIcon = { Icon(Icons.Rounded.Checklist, contentDescription = null) }
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.Checklist,
+                                            contentDescription = null
+                                        )
+                                    }
                                 )
                             }
                         }
@@ -210,7 +269,11 @@ fun AccountManagementListItem(
     onToggleArchive: () -> Unit,
     onAccountClick: () -> Unit
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { AppColors.primary }
+    val accountColor = try {
+        Color(android.graphics.Color.parseColor(account.colorHex))
+    } catch (_: Exception) {
+        AppColors.primary
+    }
     val contentColor = if (accountColor.isDark()) ColorOnDark else ColorOnLight
 
     Surface(
@@ -225,7 +288,7 @@ fun AccountManagementListItem(
             else -> AppColors.insetSurface.copy(alpha = 0.5f)
         },
         border = BorderStroke(
-            1.dp, 
+            1.dp,
             if (isSelected || isDragging) AppColors.primary else AppColors.insetSurface
         ),
         shadowElevation = if (isDragging) AeonTheme.dimensions.spacingSm else 0.dp

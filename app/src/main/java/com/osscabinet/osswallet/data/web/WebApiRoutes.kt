@@ -2,13 +2,13 @@ package com.osscabinet.ossWallet.data.web
 
 import android.content.Context
 import com.osscabinet.ossWallet.data.web.dto.AccountDto
+import com.osscabinet.ossWallet.data.web.dto.AddCardRequest
 import com.osscabinet.ossWallet.data.web.dto.ApiResponse
-import com.osscabinet.ossWallet.data.web.dto.CardDataDto
-import com.osscabinet.ossWallet.data.web.dto.CardPayloadDto
-import com.osscabinet.ossWallet.data.web.dto.FilterSummaryDto
 import com.osscabinet.ossWallet.data.web.dto.AuthRequest
 import com.osscabinet.ossWallet.data.web.dto.AuthResponse
 import com.osscabinet.ossWallet.data.web.dto.BudgetDto
+import com.osscabinet.ossWallet.data.web.dto.CardDataDto
+import com.osscabinet.ossWallet.data.web.dto.CardPayloadDto
 import com.osscabinet.ossWallet.data.web.dto.CashFlowPointDto
 import com.osscabinet.ossWallet.data.web.dto.CategoryBreakdownDto
 import com.osscabinet.ossWallet.data.web.dto.CategoryDto
@@ -19,9 +19,10 @@ import com.osscabinet.ossWallet.data.web.dto.CreateFilterRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateLoanRequest
 import com.osscabinet.ossWallet.data.web.dto.CreatePlannedPaymentRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateTagRequest
+import com.osscabinet.ossWallet.data.web.dto.CreateTemplateRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateTransactionRequest
-import com.osscabinet.ossWallet.data.web.dto.DashboardDto
 import com.osscabinet.ossWallet.data.web.dto.FilterDto
+import com.osscabinet.ossWallet.data.web.dto.FilterSummaryDto
 import com.osscabinet.ossWallet.data.web.dto.LoanDto
 import com.osscabinet.ossWallet.data.web.dto.LoanPaymentDto
 import com.osscabinet.ossWallet.data.web.dto.LoanPaymentRequest
@@ -29,8 +30,12 @@ import com.osscabinet.ossWallet.data.web.dto.MonthlySummaryDto
 import com.osscabinet.ossWallet.data.web.dto.PagedResponse
 import com.osscabinet.ossWallet.data.web.dto.PlannedPaymentDto
 import com.osscabinet.ossWallet.data.web.dto.RenameTagRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderAccountsRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderCardsRequest
+import com.osscabinet.ossWallet.data.web.dto.ReorderCategoriesRequest
 import com.osscabinet.ossWallet.data.web.dto.SettingsDto
 import com.osscabinet.ossWallet.data.web.dto.TagDto
+import com.osscabinet.ossWallet.data.web.dto.TemplateDto
 import com.osscabinet.ossWallet.data.web.dto.TransactionDto
 import com.osscabinet.ossWallet.data.web.dto.UpdateAccountRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateBudgetRequest
@@ -38,14 +43,12 @@ import com.osscabinet.ossWallet.data.web.dto.UpdateCategoryRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateLoanRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdatePlannedPaymentRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateSettingsRequest
-import com.osscabinet.ossWallet.data.web.dto.UpdateTransactionRequest
-import com.osscabinet.ossWallet.data.web.dto.TemplateDto
-import com.osscabinet.ossWallet.data.web.dto.CreateTemplateRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateTemplateRequest
-import com.osscabinet.ossWallet.data.web.dto.AddCardRequest
-import com.osscabinet.ossWallet.data.web.dto.ReorderCardsRequest
-import com.osscabinet.ossWallet.data.web.dto.ReorderAccountsRequest
-import com.osscabinet.ossWallet.data.web.dto.ReorderCategoriesRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateTransactionRequest
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -55,26 +58,22 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
@@ -152,7 +151,12 @@ class WebApiRoutes(
                 try {
                     val token = authSessionManager.authenticate(request.accessCode, remoteIp)
                     if (token != null) {
-                        call.respond(ApiResponse(success = true, data = AuthResponse(token = token)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = AuthResponse(token = token)
+                            )
+                        )
                     } else {
                         call.respond(
                             HttpStatusCode.Unauthorized,
@@ -178,7 +182,8 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val accounts = accountRepository.getAllAccountsSync(profileId)
 
                         val dtos = accounts.map { account ->
@@ -203,7 +208,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -213,23 +221,33 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
-                        val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0
-                        val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 25
+                        val page =
+                            call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(0)
+                                ?: 0
+                        val limit =
+                            call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100)
+                                ?: 25
                         val accountFilter = call.request.queryParameters["accountId"]
                         val typeParam = call.request.queryParameters["type"]
                         val dateFrom = call.request.queryParameters["dateFrom"]?.toLongOrNull()
                         val dateTo = call.request.queryParameters["dateTo"]?.toLongOrNull()
-                        val categoryIdParam = call.request.queryParameters["categoryId"]?.toLongOrNull()
+                        val categoryIdParam =
+                            call.request.queryParameters["categoryId"]?.toLongOrNull()
                         val tagNamesParam = call.request.queryParameters["tagNames"]
-                        val minAmountParam = call.request.queryParameters["minAmount"]?.toDoubleOrNull()
-                        val maxAmountParam = call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
+                        val minAmountParam =
+                            call.request.queryParameters["minAmount"]?.toDoubleOrNull()
+                        val maxAmountParam =
+                            call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
                         val currencyParam = call.request.queryParameters["currency"]
                         val statusParam = call.request.queryParameters["status"]
                         val payeeParam = call.request.queryParameters["payee"]
 
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
                         // Build filter from query params
                         val timelineRange = if (dateFrom != null || dateTo != null) {
@@ -242,21 +260,37 @@ class WebApiRoutes(
                             timelineRange = timelineRange,
                             accountIds = if (accountFilter != null) setOf(accountFilter) else emptySet(),
                             transactionTypes = if (typeParam != null) {
-                                setOf(TransactionType.entries.find { it.name.equals(typeParam, ignoreCase = true) } ?: TransactionType.EXPENSE)
+                                setOf(TransactionType.entries.find {
+                                    it.name.equals(
+                                        typeParam,
+                                        ignoreCase = true
+                                    )
+                                } ?: TransactionType.EXPENSE)
                             } else emptySet(),
                             categoryIds = if (categoryIdParam != null) setOf(categoryIdParam) else emptySet(),
-                            tags = if (!tagNamesParam.isNullOrBlank()) tagNamesParam.split(",").map { it.trim() }.toSet() else emptySet(),
-                            minAmount = if (minAmountParam != null) BigDecimal.valueOf(minAmountParam) else null,
-                            maxAmount = if (maxAmountParam != null) BigDecimal.valueOf(maxAmountParam) else null,
+                            tags = if (!tagNamesParam.isNullOrBlank()) tagNamesParam.split(",")
+                                .map { it.trim() }.toSet() else emptySet(),
+                            minAmount = if (minAmountParam != null) BigDecimal.valueOf(
+                                minAmountParam
+                            ) else null,
+                            maxAmount = if (maxAmountParam != null) BigDecimal.valueOf(
+                                maxAmountParam
+                            ) else null,
                             currencies = if (!currencyParam.isNullOrBlank()) setOf(currencyParam) else emptySet(),
                             statuses = if (statusParam != null) {
-                                setOf(TransactionStatus.entries.find { it.name.equals(statusParam, ignoreCase = true) } ?: TransactionStatus.CLEARED)
+                                setOf(TransactionStatus.entries.find {
+                                    it.name.equals(
+                                        statusParam,
+                                        ignoreCase = true
+                                    )
+                                } ?: TransactionStatus.CLEARED)
                             } else emptySet(),
                             queryPayee = payeeParam,
                             excludeFuture = false
                         )
 
-                        val filtered = TransactionFilterService.filterTransactions(allTransactions, filter)
+                        val filtered =
+                            TransactionFilterService.filterTransactions(allTransactions, filter)
                         val sorted = filtered.sortedByDescending { it.timestamp }
                         val paged = sorted.drop(page * limit).take(limit)
 
@@ -288,7 +322,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -303,24 +340,41 @@ class WebApiRoutes(
                             amount = BigDecimal.valueOf(req.amount),
                             timestamp = req.timestamp,
                             currency = req.currency,
-                            transactionType = TransactionType.entries.find { it.name.equals(req.transactionType, ignoreCase = true) }
+                            transactionType = TransactionType.entries.find {
+                                it.name.equals(
+                                    req.transactionType,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionType.EXPENSE,
                             accountId = req.accountId,
                             categoryId = req.categoryId,
                             tags = req.tags.toSet(),
-                            paymentMethod = PaymentMethod.entries.find { it.name.equals(req.paymentMethod, ignoreCase = true) }
+                            paymentMethod = PaymentMethod.entries.find {
+                                it.name.equals(
+                                    req.paymentMethod,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: PaymentMethod.CASH,
                             payee = req.payee,
                             note = req.note,
-                            status = TransactionStatus.entries.find { it.name.equals(req.status, ignoreCase = true) }
+                            status = TransactionStatus.entries.find {
+                                it.name.equals(
+                                    req.status,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionStatus.CLEARED,
                             gpsLocation = req.gpsLocation,
                             location = req.location,
                             warrantyExpiration = req.warrantyExpiration
                         )
                         val newId = transactionRepository.insertTransaction(tx, profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
                         val created = tx.copy(id = newId)
                         val dto = TransactionDto(
                             id = created.id,
@@ -333,11 +387,17 @@ class WebApiRoutes(
                             date = created.timestamp,
                             note = created.note.takeIf { it.isNotBlank() }
                         )
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = dto))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = dto)
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -346,13 +406,19 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         transactionRepository.deleteTransaction(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -362,7 +428,8 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val accounts = accountRepository.getAllAccountsSync(profileId)
 
                         val cal = Calendar.getInstance()
@@ -370,7 +437,8 @@ class WebApiRoutes(
                         val month = cal.get(Calendar.MONTH) + 1
 
                         val monthlyTx = allTransactions.filter { tx ->
-                            val txCal = Calendar.getInstance().also { it.timeInMillis = tx.timestamp }
+                            val txCal =
+                                Calendar.getInstance().also { it.timeInMillis = tx.timestamp }
                             txCal.get(Calendar.YEAR) == year && txCal.get(Calendar.MONTH) + 1 == month
                         }
 
@@ -407,7 +475,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -420,7 +491,8 @@ class WebApiRoutes(
                         val baseCurrency = settingsRepository.currency.first()
                         val precision = settingsRepository.decimalPrecision.first()
                         val now = System.currentTimeMillis()
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val budgets = budgetRepository.getActiveBudgetsSync(profileId)
                         val categories = categoryRepository.getAllCategoriesSync()
                         val exchangeRates = runCatching {
@@ -429,10 +501,20 @@ class WebApiRoutes(
                         }.getOrDefault(emptyMap())
 
                         val cal = Calendar.getInstance()
-                        val periodLabel = "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}"
+                        val periodLabel = "${cal.get(Calendar.YEAR)}-${
+                            (cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+                        }"
 
                         val dtos = budgets.map { budget ->
-                            val spent = BudgetService.calculateSpent(budget, allTransactions, exchangeRates, baseCurrency, now, categories, precision)
+                            val spent = BudgetService.calculateSpent(
+                                budget,
+                                allTransactions,
+                                exchangeRates,
+                                baseCurrency,
+                                now,
+                                categories,
+                                precision
+                            )
                             val progress = BudgetService.buildProgress(budget, spent)
                             BudgetDto(
                                 id = budget.id,
@@ -451,7 +533,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -480,16 +565,27 @@ class WebApiRoutes(
                             profileId = profileId,
                             accountIds = req.accountIds.toSet(),
                             trackTypes = req.trackTypes.mapNotNull { t ->
-                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+                                TransactionType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                }
                             }.toSet(),
                             filterId = req.filterId
                         )
                         val newId = budgetRepository.insert(budget)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -498,13 +594,19 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         budgetRepository.delete(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -540,7 +642,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -554,7 +659,12 @@ class WebApiRoutes(
                             name = req.name,
                             principalAmount = BigDecimal.valueOf(req.principalAmount),
                             currency = req.currency,
-                            loanType = LoanType.entries.find { it.name.equals(req.loanType, ignoreCase = true) }
+                            loanType = LoanType.entries.find {
+                                it.name.equals(
+                                    req.loanType,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: LoanType.BORROWED,
                             lenderOrBorrowerName = req.lenderOrBorrowerName,
                             startDate = req.startDate,
@@ -565,11 +675,17 @@ class WebApiRoutes(
                             profileId = profileId
                         )
                         val newId = loanRepository.insertLoan(loan)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -578,13 +694,19 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         loanRepository.deleteLoan(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -596,8 +718,10 @@ class WebApiRoutes(
                         val profileId = settingsRepository.currentProfileId.first()
                         val now = System.currentTimeMillis()
                         val payments = plannedPaymentRepository.getAllSync(profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
                         val dtos = payments.map { payment ->
                             payment.toDto(now, categoryMap, accountMap)
@@ -606,7 +730,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -618,10 +745,13 @@ class WebApiRoutes(
                         val now = System.currentTimeMillis()
                         val days = call.request.queryParameters["days"]?.toIntOrNull() ?: 30
                         val allPayments = plannedPaymentRepository.getAllSync(profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
-                        val upcoming = PlannedPaymentService.generateUpcoming(allPayments, now, days)
+                        val upcoming =
+                            PlannedPaymentService.generateUpcoming(allPayments, now, days)
                         val dtos = upcoming.map { item ->
                             item.plannedPayment.toDto(now, categoryMap, accountMap)
                         }
@@ -629,7 +759,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -640,8 +773,10 @@ class WebApiRoutes(
                         val profileId = settingsRepository.currentProfileId.first()
                         val now = System.currentTimeMillis()
                         val allPayments = plannedPaymentRepository.getAllSync(profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
                         val overdue = PlannedPaymentService.getOverdue(allPayments, now)
                         val dtos = overdue.map { payment ->
@@ -651,7 +786,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -661,7 +799,12 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val req = call.receive<CreatePlannedPaymentRequest>()
-                        val recurrenceType = RecurrenceType.entries.find { it.name.equals(req.recurrenceType, ignoreCase = true) }
+                        val recurrenceType = RecurrenceType.entries.find {
+                            it.name.equals(
+                                req.recurrenceType,
+                                ignoreCase = true
+                            )
+                        }
                             ?: RecurrenceType.MONTHLY
                         val rule = RecurrenceRule(
                             type = recurrenceType,
@@ -679,7 +822,12 @@ class WebApiRoutes(
                             name = req.name,
                             amount = BigDecimal.valueOf(req.amount),
                             currency = req.currency,
-                            transactionType = TransactionType.entries.find { it.name.equals(req.transactionType, ignoreCase = true) }
+                            transactionType = TransactionType.entries.find {
+                                it.name.equals(
+                                    req.transactionType,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionType.EXPENSE,
                             categoryId = req.categoryId,
                             accountId = req.accountId,
@@ -691,7 +839,12 @@ class WebApiRoutes(
                             location = req.location,
                             gpsLocation = req.gpsLocation,
                             warrantyExpiration = req.warrantyExpiration,
-                            transactionStatus = TransactionStatus.entries.find { it.name.equals(req.transactionStatus, ignoreCase = true) }
+                            transactionStatus = TransactionStatus.entries.find {
+                                it.name.equals(
+                                    req.transactionStatus,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionStatus.CLEARED,
                             paymentMethod = req.paymentMethod?.let { m ->
                                 PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
@@ -702,11 +855,17 @@ class WebApiRoutes(
                             profileId = profileId
                         )
                         val newId = plannedPaymentRepository.insert(payment)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -715,13 +874,19 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         plannedPaymentRepository.delete(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -731,9 +896,15 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val payment = plannedPaymentRepository.getById(id)
-                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Payment not found")
+                            )
                         val now = System.currentTimeMillis()
 
                         // Create transaction from the planned payment
@@ -766,7 +937,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -775,9 +949,15 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@post
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val payment = plannedPaymentRepository.getById(id)
-                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Payment not found")
+                            )
                         val now = System.currentTimeMillis()
                         val nextDue = PlannedPaymentService.calculateNextDueDate(payment, now)
                         val updatedPayment = if (nextDue != null) {
@@ -790,7 +970,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -805,7 +988,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -814,7 +1000,12 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@post
                     try {
                         val req = call.receive<CreateCategoryRequest>()
-                        val nature = CategoryNature.entries.find { it.name.equals(req.nature, ignoreCase = true) }
+                        val nature = CategoryNature.entries.find {
+                            it.name.equals(
+                                req.nature,
+                                ignoreCase = true
+                            )
+                        }
                             ?: CategoryNature.NEED
                         val category = Category(
                             id = 0,
@@ -826,11 +1017,17 @@ class WebApiRoutes(
                             nature = nature
                         )
                         categoryRepository.upsertCategory(category)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = category.toDto()))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = category.toDto())
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -839,15 +1036,25 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
-                        val category = categoryRepository.getAllCategoriesSync().find { it.id == id }
-                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Category not found"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
+                        val category =
+                            categoryRepository.getAllCategoriesSync().find { it.id == id }
+                                ?: return@delete call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse<Unit>(success = false, error = "Category not found")
+                                )
                         categoryRepository.deleteCategory(category)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -858,7 +1065,8 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val allTags = tagRepository.getAllTags().first()
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
 
                         val dtos = allTags.map { tag ->
                             val count = allTransactions.count { tx -> tag.name in tx.tags }
@@ -872,7 +1080,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -881,16 +1092,25 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val name = call.parameters["name"]
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid name"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid name")
+                            )
                         val allTags = tagRepository.getAllTags().first()
                         val tag = allTags.find { it.name == name }
-                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Tag not found"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Tag not found")
+                            )
                         tagRepository.deleteTagAndRemoveFromTransactions(tag)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to name)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -904,16 +1124,23 @@ class WebApiRoutes(
                         val dateTo = call.request.queryParameters["dateTo"]?.toLongOrNull()
                         val typeParam = call.request.queryParameters["type"] ?: "EXPENSE"
 
-                        val txType = TransactionType.entries.find { it.name.equals(typeParam, ignoreCase = true) }
+                        val txType = TransactionType.entries.find {
+                            it.name.equals(
+                                typeParam,
+                                ignoreCase = true
+                            )
+                        }
                             ?: TransactionType.EXPENSE
 
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
 
                         val filtered = allTransactions.filter { tx ->
                             tx.transactionType == txType &&
-                                (dateFrom == null || tx.timestamp >= dateFrom) &&
-                                (dateTo == null || tx.timestamp <= dateTo)
+                                    (dateFrom == null || tx.timestamp >= dateFrom) &&
+                                    (dateTo == null || tx.timestamp <= dateTo)
                         }
 
                         val grouped = filtered.groupBy { it.categoryId }
@@ -926,7 +1153,8 @@ class WebApiRoutes(
                                 categoryId = catId,
                                 categoryName = categoryMap[catId]?.name ?: "Unknown",
                                 amount = amount,
-                                percentage = pct.toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble(),
+                                percentage = pct.toBigDecimal().setScale(2, RoundingMode.HALF_UP)
+                                    .toDouble(),
                                 transactionCount = txs.size
                             )
                         }.sortedByDescending { it.amount }
@@ -935,7 +1163,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -946,13 +1177,15 @@ class WebApiRoutes(
                         val profileId = settingsRepository.currentProfileId.first()
                         val dateFrom = call.request.queryParameters["dateFrom"]?.toLongOrNull()
                         val dateTo = call.request.queryParameters["dateTo"]?.toLongOrNull()
-                        val granularity = call.request.queryParameters["granularity"]?.uppercase() ?: "MONTH"
+                        val granularity =
+                            call.request.queryParameters["granularity"]?.uppercase() ?: "MONTH"
 
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
 
                         val filtered = allTransactions.filter { tx ->
                             (dateFrom == null || tx.timestamp >= dateFrom) &&
-                                (dateTo == null || tx.timestamp <= dateTo)
+                                    (dateTo == null || tx.timestamp <= dateTo)
                         }
 
                         // Group by granularity bucket
@@ -965,24 +1198,36 @@ class WebApiRoutes(
                                     val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                                     Bucket(fmt.format(cal.time), cal.timeInMillis)
                                 }
+
                                 "WEEK" -> {
                                     val week = cal.get(Calendar.WEEK_OF_YEAR)
                                     val year = cal.get(Calendar.YEAR)
-                                    Bucket("$year-W${week.toString().padStart(2, '0')}", cal.timeInMillis)
+                                    Bucket(
+                                        "$year-W${week.toString().padStart(2, '0')}",
+                                        cal.timeInMillis
+                                    )
                                 }
+
                                 else -> { // MONTH
                                     val month = cal.get(Calendar.MONTH) + 1
                                     val year = cal.get(Calendar.YEAR)
-                                    Bucket("$year-${month.toString().padStart(2, '0')}", cal.timeInMillis)
+                                    Bucket(
+                                        "$year-${month.toString().padStart(2, '0')}",
+                                        cal.timeInMillis
+                                    )
                                 }
                             }
                         }
 
                         // Accumulate per bucket
-                        val bucketMap = linkedMapOf<String, Triple<Long, Double, Double>>() // label -> (epoch, income, expense)
+                        val bucketMap =
+                            linkedMapOf<String, Triple<Long, Double, Double>>() // label -> (epoch, income, expense)
                         filtered.sortedBy { it.timestamp }.forEach { tx ->
                             val bucket = getBucket(tx.timestamp)
-                            val current = bucketMap.getOrDefault(bucket.label, Triple(bucket.epochMillis, 0.0, 0.0))
+                            val current = bucketMap.getOrDefault(
+                                bucket.label,
+                                Triple(bucket.epochMillis, 0.0, 0.0)
+                            )
                             bucketMap[bucket.label] = when (tx.transactionType) {
                                 TransactionType.INCOME -> current.copy(second = current.second + tx.amount.toDouble())
                                 TransactionType.EXPENSE -> current.copy(third = current.third + tx.amount.toDouble())
@@ -1005,7 +1250,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -1020,7 +1268,8 @@ class WebApiRoutes(
                         val now = System.currentTimeMillis()
 
                         // Load all raw data once — shared across all card computers
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val accounts = accountRepository.getAllAccountsSync(profileId)
                         val categories = categoryRepository.getAllCategoriesSync()
                         val categoryMap = categories.associateBy { it.id }
@@ -1066,7 +1315,13 @@ class WebApiRoutes(
                                     input = baseInput,
                                     config = cardConfig
                                 )
-                                renderData.toPayloadDto(now, categoryMap, accountMap, precision, baseCurrency)
+                                renderData.toPayloadDto(
+                                    now,
+                                    categoryMap,
+                                    accountMap,
+                                    precision,
+                                    baseCurrency
+                                )
                             }.getOrElse { e ->
                                 CardPayloadDto.Error(e.message ?: "Computation failed")
                             }
@@ -1085,7 +1340,10 @@ class WebApiRoutes(
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -1100,14 +1358,20 @@ class WebApiRoutes(
                             id = java.util.UUID.randomUUID().toString(),
                             name = req.name,
                             currencyCode = req.currencyCode,
-                            structureType = AccountStructureType.entries.find { it.name.equals(req.structureType, ignoreCase = true) }
+                            structureType = AccountStructureType.entries.find {
+                                it.name.equals(
+                                    req.structureType,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: AccountStructureType.SAVINGS,
                             colorHex = req.colorHex,
                             icon = req.icon,
                             allowedCurrencies = req.allowedCurrencies
                         )
                         accountRepository.insertAccount(account, profileId)
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val balance = allTransactions.filter { it.accountId == account.id }
                             .fold(BigDecimal.ZERO) { acc, tx ->
                                 when (tx.transactionType) {
@@ -1116,12 +1380,25 @@ class WebApiRoutes(
                                     TransactionType.TRANSFER -> acc - tx.amount
                                 }
                             }
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = AccountDto(
-                            id = account.id, name = account.name, currency = account.currencyCode,
-                            balance = balance.toDouble(), type = account.structureType.name
-                        )))
+                        call.respond(
+                            HttpStatusCode.Created, ApiResponse(
+                                success = true, data = AccountDto(
+                                    id = account.id,
+                                    name = account.name,
+                                    currency = account.currencyCode,
+                                    balance = balance.toDouble(),
+                                    type = account.structureType.name
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1130,15 +1407,27 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val id = call.parameters["id"]
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
-                        val existing = accountRepository.getAllAccountsSync(profileId).find { it.id == id }
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Account not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
+                        val existing =
+                            accountRepository.getAllAccountsSync(profileId).find { it.id == id }
+                                ?: return@put call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse<Unit>(success = false, error = "Account not found")
+                                )
                         val req = call.receive<UpdateAccountRequest>()
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
                             currencyCode = req.currencyCode ?: existing.currencyCode,
                             structureType = req.structureType?.let { t ->
-                                AccountStructureType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.structureType
+                                AccountStructureType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                } ?: existing.structureType
                             } ?: existing.structureType,
                             colorHex = req.colorHex ?: existing.colorHex,
                             icon = req.icon ?: existing.icon,
@@ -1146,7 +1435,8 @@ class WebApiRoutes(
                             allowedCurrencies = req.allowedCurrencies ?: existing.allowedCurrencies
                         )
                         accountRepository.updateAccount(updated, profileId)
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val balance = allTransactions.filter { it.accountId == updated.id }
                             .fold(BigDecimal.ZERO) { acc, tx ->
                                 when (tx.transactionType) {
@@ -1155,12 +1445,25 @@ class WebApiRoutes(
                                     TransactionType.TRANSFER -> acc - tx.amount
                                 }
                             }
-                        call.respond(ApiResponse(success = true, data = AccountDto(
-                            id = updated.id, name = updated.name, currency = updated.currencyCode,
-                            balance = balance.toDouble(), type = updated.structureType.name
-                        )))
+                        call.respond(
+                            ApiResponse(
+                                success = true, data = AccountDto(
+                                    id = updated.id,
+                                    name = updated.name,
+                                    currency = updated.currencyCode,
+                                    balance = balance.toDouble(),
+                                    type = updated.structureType.name
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1168,11 +1471,20 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         accountRepository.deleteAccount(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1182,12 +1494,22 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val tx = transactionRepository.getTransactionById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(ApiResponse(success = true, data = TransactionDto(
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Transaction not found")
+                            )
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(
+                            ApiResponse(
+                            success = true, data = TransactionDto(
                             id = tx.id, title = tx.name, amount = tx.amount.toDouble(),
                             currency = tx.currency, type = tx.transactionType.name,
                             categoryName = categoryMap[tx.categoryId]?.name,
@@ -1195,7 +1517,13 @@ class WebApiRoutes(
                             date = tx.timestamp, note = tx.note.takeIf { it.isNotBlank() }
                         )))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1204,9 +1532,15 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val old = transactionRepository.getTransactionById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Transaction not found")
+                            )
                         val req = call.receive<UpdateTransactionRequest>()
                         val updated = old.copy(
                             name = req.name ?: old.name,
@@ -1214,35 +1548,60 @@ class WebApiRoutes(
                             timestamp = req.timestamp ?: old.timestamp,
                             currency = req.currency ?: old.currency,
                             transactionType = req.transactionType?.let { t ->
-                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: old.transactionType
+                                TransactionType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                } ?: old.transactionType
                             } ?: old.transactionType,
                             accountId = req.accountId ?: old.accountId,
                             categoryId = req.categoryId ?: old.categoryId,
                             tags = req.tags?.toSet() ?: old.tags,
                             paymentMethod = req.paymentMethod?.let { m ->
-                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) } ?: old.paymentMethod
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                                    ?: old.paymentMethod
                             } ?: old.paymentMethod,
                             payee = req.payee ?: old.payee,
                             note = req.note ?: old.note,
                             status = req.status?.let { s ->
-                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: old.status
+                                TransactionStatus.entries.find {
+                                    it.name.equals(
+                                        s,
+                                        ignoreCase = true
+                                    )
+                                } ?: old.status
                             } ?: old.status,
                             gpsLocation = req.gpsLocation ?: old.gpsLocation,
                             location = req.location ?: old.location,
                             warrantyExpiration = req.warrantyExpiration ?: old.warrantyExpiration
                         )
                         transactionRepository.updateTransaction(old, updated, profileId)
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(ApiResponse(success = true, data = TransactionDto(
-                            id = updated.id, title = updated.name, amount = updated.amount.toDouble(),
-                            currency = updated.currency, type = updated.transactionType.name,
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(
+                            ApiResponse(
+                            success = true, data = TransactionDto(
+                            id = updated.id,
+                            title = updated.name,
+                            amount = updated.amount.toDouble(),
+                            currency = updated.currency,
+                            type = updated.transactionType.name,
                             categoryName = categoryMap[updated.categoryId]?.name,
                             accountName = accountMap[updated.accountId]?.name ?: "",
-                            date = updated.timestamp, note = updated.note.takeIf { it.isNotBlank() }
+                            date = updated.timestamp,
+                            note = updated.note.takeIf { it.isNotBlank() }
                         )))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1255,26 +1614,60 @@ class WebApiRoutes(
                         val precision = settingsRepository.decimalPrecision.first()
                         val now = System.currentTimeMillis()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val budget = budgetRepository.getById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Budget not found"))
-                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Budget not found")
+                            )
+                        val allTransactions =
+                            transactionRepository.getAllTransactionsSync(profileId)
                         val categories = categoryRepository.getAllCategoriesSync()
                         val exchangeRates = runCatching {
-                            currencyRepository.getExchangeRates(baseCurrency).mapValues { BigDecimal.valueOf(it.value) }
+                            currencyRepository.getExchangeRates(baseCurrency)
+                                .mapValues { BigDecimal.valueOf(it.value) }
                         }.getOrDefault(emptyMap())
                         val cal = Calendar.getInstance()
-                        val periodLabel = "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}"
-                        val spent = BudgetService.calculateSpent(budget, allTransactions, exchangeRates, baseCurrency, now, categories, precision)
+                        val periodLabel = "${cal.get(Calendar.YEAR)}-${
+                            (cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+                        }"
+                        val spent = BudgetService.calculateSpent(
+                            budget,
+                            allTransactions,
+                            exchangeRates,
+                            baseCurrency,
+                            now,
+                            categories,
+                            precision
+                        )
                         val progress = BudgetService.buildProgress(budget, spent)
-                        call.respond(ApiResponse(success = true, data = BudgetDto(
-                            id = budget.id, name = budget.name, currency = budget.currency,
-                            limitAmount = budget.limitAmount.toDouble(), spent = progress.spent.toDouble(),
-                            remaining = progress.remaining.toDouble(), percentage = progress.percentage.toDouble(),
-                            alertLevel = progress.alertLevel.name, period = periodLabel, isArchived = budget.isArchived
-                        )))
+                        call.respond(
+                            ApiResponse(
+                                success = true, data = BudgetDto(
+                                    id = budget.id,
+                                    name = budget.name,
+                                    currency = budget.currency,
+                                    limitAmount = budget.limitAmount.toDouble(),
+                                    spent = progress.spent.toDouble(),
+                                    remaining = progress.remaining.toDouble(),
+                                    percentage = progress.percentage.toDouble(),
+                                    alertLevel = progress.alertLevel.name,
+                                    period = periodLabel,
+                                    isArchived = budget.isArchived
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1282,9 +1675,15 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val existing = budgetRepository.getById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Budget not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Budget not found")
+                            )
                         val req = call.receive<UpdateBudgetRequest>()
                         val timelineRange = req.timelineType?.let { t ->
                             when (t.uppercase()) {
@@ -1299,22 +1698,35 @@ class WebApiRoutes(
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
                             currency = req.currency ?: existing.currency,
-                            limitAmount = req.limitAmount?.let { BigDecimal.valueOf(it) } ?: existing.limitAmount,
+                            limitAmount = req.limitAmount?.let { BigDecimal.valueOf(it) }
+                                ?: existing.limitAmount,
                             timelineRange = timelineRange,
                             categoryIds = req.categoryIds?.toSet() ?: existing.categoryIds,
-                            alertThreshold = req.alertThreshold?.toFloat() ?: existing.alertThreshold,
+                            alertThreshold = req.alertThreshold?.toFloat()
+                                ?: existing.alertThreshold,
                             rollover = req.rollover ?: existing.rollover,
                             isArchived = req.isArchived ?: existing.isArchived,
                             accountIds = req.accountIds?.toSet() ?: existing.accountIds,
                             trackTypes = req.trackTypes?.mapNotNull { t ->
-                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+                                TransactionType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                }
                             }?.toSet() ?: existing.trackTypes,
                             filterId = req.filterId ?: existing.filterId
                         )
                         budgetRepository.update(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1325,21 +1737,43 @@ class WebApiRoutes(
                         val now = System.currentTimeMillis()
                         val precision = settingsRepository.decimalPrecision.first()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val loan = loanRepository.getLoanById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Loan not found")
+                            )
                         val payments = loanRepository.getPaymentsForLoanSync(loan.id)
                         val summary = LoanService.buildSummary(loan, payments, now, precision)
-                        call.respond(ApiResponse(success = true, data = LoanDto(
-                            id = loan.id, name = loan.name, loanType = loan.loanType.name,
-                            currency = loan.currency, principalAmount = loan.principalAmount.toDouble(),
-                            totalPaid = summary.totalPaid.toDouble(), remainingBalance = summary.remainingBalance.toDouble(),
-                            interestAccrued = summary.interestAccrued.toDouble(), status = loan.status.name,
-                            lenderOrBorrowerName = loan.lenderOrBorrowerName,
-                            startDate = loan.startDate, expectedSettlementDate = loan.expectedSettlementDate
-                        )))
+                        call.respond(
+                            ApiResponse(
+                                success = true, data = LoanDto(
+                                    id = loan.id,
+                                    name = loan.name,
+                                    loanType = loan.loanType.name,
+                                    currency = loan.currency,
+                                    principalAmount = loan.principalAmount.toDouble(),
+                                    totalPaid = summary.totalPaid.toDouble(),
+                                    remainingBalance = summary.remainingBalance.toDouble(),
+                                    interestAccrued = summary.interestAccrued.toDouble(),
+                                    status = loan.status.name,
+                                    lenderOrBorrowerName = loan.lenderOrBorrowerName,
+                                    startDate = loan.startDate,
+                                    expectedSettlementDate = loan.expectedSettlementDate
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1347,20 +1781,30 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val existing = loanRepository.getLoanById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Loan not found")
+                            )
                         val req = call.receive<UpdateLoanRequest>()
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
-                            principalAmount = req.principalAmount?.let { BigDecimal.valueOf(it) } ?: existing.principalAmount,
+                            principalAmount = req.principalAmount?.let { BigDecimal.valueOf(it) }
+                                ?: existing.principalAmount,
                             currency = req.currency ?: existing.currency,
                             loanType = req.loanType?.let { t ->
-                                LoanType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.loanType
+                                LoanType.entries.find { it.name.equals(t, ignoreCase = true) }
+                                    ?: existing.loanType
                             } ?: existing.loanType,
-                            lenderOrBorrowerName = req.lenderOrBorrowerName ?: existing.lenderOrBorrowerName,
+                            lenderOrBorrowerName = req.lenderOrBorrowerName
+                                ?: existing.lenderOrBorrowerName,
                             startDate = req.startDate ?: existing.startDate,
-                            expectedSettlementDate = req.expectedSettlementDate ?: existing.expectedSettlementDate,
+                            expectedSettlementDate = req.expectedSettlementDate
+                                ?: existing.expectedSettlementDate,
                             interestRate = req.interestRate?.toFloat() ?: existing.interestRate,
                             note = req.note ?: existing.note,
                             linkedAccountId = req.linkedAccountId ?: existing.linkedAccountId
@@ -1368,7 +1812,13 @@ class WebApiRoutes(
                         loanRepository.updateLoan(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1376,15 +1826,26 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val payments = loanRepository.getPaymentsForLoanSync(id)
                         val dtos = payments.map { p ->
-                            LoanPaymentDto(id = p.id, loanId = p.loanId, amount = p.amount.toDouble(),
-                                date = p.date, note = p.note)
+                            LoanPaymentDto(
+                                id = p.id, loanId = p.loanId, amount = p.amount.toDouble(),
+                                date = p.date, note = p.note
+                            )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1392,9 +1853,15 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@post
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         loanRepository.getLoanById(id)
-                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Loan not found")
+                            )
                         val req = call.receive<LoanPaymentRequest>()
                         val payment = LoanPayment(
                             loanId = id,
@@ -1403,9 +1870,18 @@ class WebApiRoutes(
                             note = req.note
                         )
                         val newId = loanRepository.insertPayment(payment)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1416,14 +1892,33 @@ class WebApiRoutes(
                         val profileId = settingsRepository.currentProfileId.first()
                         val now = System.currentTimeMillis()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val payment = plannedPaymentRepository.getById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
-                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(ApiResponse(success = true, data = payment.toDto(now, categoryMap, accountMap)))
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Payment not found")
+                            )
+                        val categoryMap =
+                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap =
+                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = payment.toDto(now, categoryMap, accountMap)
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1431,21 +1926,36 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
-                        val existing = plannedPaymentRepository.getById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
-                        val req = call.receive<UpdatePlannedPaymentRequest>()
-                        val recurrenceRule = if (req.recurrenceType != null || req.recurrenceInterval != null || req.dayOfWeek != null || req.dayOfMonth != null) {
-                            val type = req.recurrenceType?.let { t ->
-                                RecurrenceType.entries.find { it.name.equals(t, ignoreCase = true) }
-                            } ?: existing.schedule.recurrenceRule.type
-                            RecurrenceRule(
-                                type = type,
-                                interval = req.recurrenceInterval ?: existing.schedule.recurrenceRule.interval,
-                                dayOfWeek = req.dayOfWeek ?: existing.schedule.recurrenceRule.dayOfWeek,
-                                dayOfMonth = req.dayOfMonth ?: existing.schedule.recurrenceRule.dayOfMonth
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
                             )
-                        } else existing.schedule.recurrenceRule
+                        val existing = plannedPaymentRepository.getById(id)
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Payment not found")
+                            )
+                        val req = call.receive<UpdatePlannedPaymentRequest>()
+                        val recurrenceRule =
+                            if (req.recurrenceType != null || req.recurrenceInterval != null || req.dayOfWeek != null || req.dayOfMonth != null) {
+                                val type = req.recurrenceType?.let { t ->
+                                    RecurrenceType.entries.find {
+                                        it.name.equals(
+                                            t,
+                                            ignoreCase = true
+                                        )
+                                    }
+                                } ?: existing.schedule.recurrenceRule.type
+                                RecurrenceRule(
+                                    type = type,
+                                    interval = req.recurrenceInterval
+                                        ?: existing.schedule.recurrenceRule.interval,
+                                    dayOfWeek = req.dayOfWeek
+                                        ?: existing.schedule.recurrenceRule.dayOfWeek,
+                                    dayOfMonth = req.dayOfMonth
+                                        ?: existing.schedule.recurrenceRule.dayOfMonth
+                                )
+                            } else existing.schedule.recurrenceRule
                         val schedule = existing.schedule.copy(
                             recurrenceRule = recurrenceRule,
                             startDate = req.startDate ?: existing.schedule.startDate,
@@ -1456,20 +1966,32 @@ class WebApiRoutes(
                             amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
                             currency = req.currency ?: existing.currency,
                             transactionType = req.transactionType?.let { t ->
-                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.transactionType
+                                TransactionType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                } ?: existing.transactionType
                             } ?: existing.transactionType,
                             categoryId = req.categoryId ?: existing.categoryId,
                             accountId = req.accountId ?: existing.accountId,
                             targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
-                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: existing.transferRate,
+                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
+                                ?: existing.transferRate,
                             note = req.note ?: existing.note,
                             payee = req.payee ?: existing.payee,
                             location = req.location ?: existing.location,
                             gpsLocation = req.gpsLocation ?: existing.gpsLocation,
-                            warrantyExpiration = req.warrantyExpiration ?: existing.warrantyExpiration,
+                            warrantyExpiration = req.warrantyExpiration
+                                ?: existing.warrantyExpiration,
                             transactionStatus = req.transactionStatus?.let { s ->
-                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: existing.transactionStatus
+                                TransactionStatus.entries.find {
+                                    it.name.equals(
+                                        s,
+                                        ignoreCase = true
+                                    )
+                                } ?: existing.transactionStatus
                             } ?: existing.transactionStatus,
                             paymentMethod = req.paymentMethod?.let { m ->
                                 PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
@@ -1481,7 +2003,13 @@ class WebApiRoutes(
                         plannedPaymentRepository.update(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1490,23 +2018,37 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
-                        val existing = categoryRepository.getAllCategoriesSync().find { it.id == id }
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Category not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
+                        val existing =
+                            categoryRepository.getAllCategoriesSync().find { it.id == id }
+                                ?: return@put call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse<Unit>(success = false, error = "Category not found")
+                                )
                         val req = call.receive<UpdateCategoryRequest>()
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
                             iconName = req.iconName ?: existing.iconName,
                             colorHex = req.colorHex ?: existing.colorHex,
                             nature = req.nature?.let { n ->
-                                CategoryNature.entries.find { it.name.equals(n, ignoreCase = true) } ?: existing.nature
+                                CategoryNature.entries.find { it.name.equals(n, ignoreCase = true) }
+                                    ?: existing.nature
                             } ?: existing.nature,
                             parentId = req.parentId ?: existing.parentId
                         )
                         categoryRepository.upsertCategory(updated)
                         call.respond(ApiResponse(success = true, data = updated.toDto()))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1517,14 +2059,33 @@ class WebApiRoutes(
                         val req = call.receive<CreateTagRequest>()
                         val allTags = tagRepository.getAllTags().first()
                         if (allTags.any { it.name.equals(req.name, ignoreCase = true) }) {
-                            call.respond(HttpStatusCode.Conflict, ApiResponse<Unit>(success = false, error = "Tag already exists"))
+                            call.respond(
+                                HttpStatusCode.Conflict,
+                                ApiResponse<Unit>(success = false, error = "Tag already exists")
+                            )
                             return@post
                         }
                         val tag = Tag(name = req.name, colorHex = req.colorHex)
                         tagRepository.insertTag(tag)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = TagDto(name = tag.name, colorHex = tag.colorHex, transactionCount = 0)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(
+                                success = true,
+                                data = TagDto(
+                                    name = tag.name,
+                                    colorHex = tag.colorHex,
+                                    transactionCount = 0
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1532,16 +2093,40 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val name = call.parameters["name"]
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid name"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid name")
+                            )
                         val allTags = tagRepository.getAllTags().first()
                         val existing = allTags.find { it.name == name }
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Tag not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Tag not found")
+                            )
                         val req = call.receive<RenameTagRequest>()
-                        val updated = existing.copy(name = req.newName, colorHex = req.colorHex ?: existing.colorHex)
+                        val updated = existing.copy(
+                            name = req.newName,
+                            colorHex = req.colorHex ?: existing.colorHex
+                        )
                         tagRepository.updateTag(existing.name, updated)
-                        call.respond(ApiResponse(success = true, data = TagDto(name = updated.name, colorHex = updated.colorHex, transactionCount = 0)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = TagDto(
+                                    name = updated.name,
+                                    colorHex = updated.colorHex,
+                                    transactionCount = 0
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1553,7 +2138,13 @@ class WebApiRoutes(
                         val dtos = filters.map { it.toDto() }
                         call.respond(ApiResponse(success = true, data = dtos))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1561,12 +2152,24 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val filter = filterRepository.getFilterById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Filter not found")
+                            )
                         call.respond(ApiResponse(success = true, data = filter.toDto()))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1577,9 +2180,18 @@ class WebApiRoutes(
                         val transactionFilter = req.toTransactionFilter()
                         val filter = Filter(name = req.name, filter = transactionFilter)
                         val newId = filterRepository.insertFilter(filter)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1587,16 +2199,28 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         filterRepository.getFilterById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Filter not found")
+                            )
                         val req = call.receive<CreateFilterRequest>()
                         val transactionFilter = req.toTransactionFilter()
                         val updated = Filter(id = id, name = req.name, filter = transactionFilter)
                         filterRepository.updateFilter(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1604,13 +2228,25 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val filter = filterRepository.getFilterById(id)
-                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Filter not found")
+                            )
                         filterRepository.deleteFilter(filter)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1621,15 +2257,22 @@ class WebApiRoutes(
                         val profileId = settingsRepository.currentProfileId.first()
                         val baseCurrency = settingsRepository.currency.first()
                         val precision = settingsRepository.decimalPrecision.first()
-                        call.respond(ApiResponse(success = true, data = SettingsDto(
-                            currentProfileId = profileId,
-                            baseCurrency = baseCurrency,
-                            decimalPrecision = precision
-                        )))
+                        call.respond(
+                            ApiResponse(
+                                success = true, data = SettingsDto(
+                                    currentProfileId = profileId,
+                                    baseCurrency = baseCurrency,
+                                    decimalPrecision = precision
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
                         )
                     }
                 }
@@ -1644,19 +2287,37 @@ class WebApiRoutes(
                         req.use24HourFormat?.let { settingsRepository.saveUse24HourFormat(it) }
                         req.userName?.let { settingsRepository.saveUserName(it) }
                         req.mapsAccessEnabled?.let { settingsRepository.saveMapsAccessEnabled(it) }
-                        req.autoSaveExchangeRates?.let { settingsRepository.saveAutoSaveExchangeRates(it) }
-                        req.cardAnimationEnabled?.let { settingsRepository.saveCardAnimationEnabled(it) }
+                        req.autoSaveExchangeRates?.let {
+                            settingsRepository.saveAutoSaveExchangeRates(
+                                it
+                            )
+                        }
+                        req.cardAnimationEnabled?.let {
+                            settingsRepository.saveCardAnimationEnabled(
+                                it
+                            )
+                        }
                         req.currencyProvider?.let { settingsRepository.saveCurrencyProvider(it) }
                         val profileId = settingsRepository.currentProfileId.first()
                         val baseCurrency = settingsRepository.currency.first()
                         val precision = settingsRepository.decimalPrecision.first()
-                        call.respond(ApiResponse(success = true, data = SettingsDto(
-                            currentProfileId = profileId,
-                            baseCurrency = baseCurrency,
-                            decimalPrecision = precision
-                        )))
+                        call.respond(
+                            ApiResponse(
+                                success = true, data = SettingsDto(
+                                    currentProfileId = profileId,
+                                    baseCurrency = baseCurrency,
+                                    decimalPrecision = precision
+                                )
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1668,7 +2329,13 @@ class WebApiRoutes(
                         val dtos = templates.map { it.toTemplateDto() }
                         call.respond(ApiResponse(success = true, data = dtos))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1681,7 +2348,12 @@ class WebApiRoutes(
                             name = req.name,
                             categoryId = req.categoryId,
                             amount = BigDecimal.valueOf(req.amount),
-                            transactionType = TransactionType.entries.find { it.name.equals(req.transactionType, ignoreCase = true) }
+                            transactionType = TransactionType.entries.find {
+                                it.name.equals(
+                                    req.transactionType,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionType.EXPENSE,
                             currency = req.currency,
                             accountId = req.accountId,
@@ -1693,7 +2365,12 @@ class WebApiRoutes(
                             location = req.location,
                             gpsLocation = req.gpsLocation,
                             warrantyExpiration = req.warrantyExpiration,
-                            transactionStatus = TransactionStatus.entries.find { it.name.equals(req.transactionStatus, ignoreCase = true) }
+                            transactionStatus = TransactionStatus.entries.find {
+                                it.name.equals(
+                                    req.transactionStatus,
+                                    ignoreCase = true
+                                )
+                            }
                                 ?: TransactionStatus.CLEARED,
                             paymentMethod = req.paymentMethod?.let { m ->
                                 PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
@@ -1706,9 +2383,18 @@ class WebApiRoutes(
                             profileId = profileId
                         )
                         val newId = templateRepository.insertTemplate(template)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1716,12 +2402,24 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@get
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val template = templateRepository.getTemplateById(id)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                            ?: return@get call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Template not found")
+                            )
                         call.respond(ApiResponse(success = true, data = template.toTemplateDto()))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1729,29 +2427,47 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@put
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val existing = templateRepository.getTemplateById(id)
-                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                            ?: return@put call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Template not found")
+                            )
                         val req = call.receive<UpdateTemplateRequest>()
                         val updated = existing.copy(
                             name = req.name ?: existing.name,
                             categoryId = req.categoryId ?: existing.categoryId,
                             amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
                             transactionType = req.transactionType?.let { t ->
-                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.transactionType
+                                TransactionType.entries.find {
+                                    it.name.equals(
+                                        t,
+                                        ignoreCase = true
+                                    )
+                                } ?: existing.transactionType
                             } ?: existing.transactionType,
                             currency = req.currency ?: existing.currency,
                             accountId = req.accountId ?: existing.accountId,
                             targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
-                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: existing.transferRate,
+                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
+                                ?: existing.transferRate,
                             note = req.note ?: existing.note,
                             payee = req.payee ?: existing.payee,
                             location = req.location ?: existing.location,
                             gpsLocation = req.gpsLocation ?: existing.gpsLocation,
-                            warrantyExpiration = req.warrantyExpiration ?: existing.warrantyExpiration,
+                            warrantyExpiration = req.warrantyExpiration
+                                ?: existing.warrantyExpiration,
                             transactionStatus = req.transactionStatus?.let { s ->
-                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: existing.transactionStatus
+                                TransactionStatus.entries.find {
+                                    it.name.equals(
+                                        s,
+                                        ignoreCase = true
+                                    )
+                                } ?: existing.transactionStatus
                             } ?: existing.transactionStatus,
                             paymentMethod = req.paymentMethod?.let { m ->
                                 PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
@@ -1765,7 +2481,13 @@ class WebApiRoutes(
                         templateRepository.updateTemplate(updated)
                         call.respond(ApiResponse(success = true, data = updated.toTemplateDto()))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1773,13 +2495,25 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val template = templateRepository.getTemplateById(id)
-                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Template not found"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Template not found")
+                            )
                         templateRepository.deleteTemplate(template)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1788,15 +2522,35 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@post
                     try {
                         val req = call.receive<AddCardRequest>()
-                        val cardType = CardType.entries.find { it.name.equals(req.cardType, ignoreCase = true) || it.serialName.equals(req.cardType, ignoreCase = true) }
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Unknown cardType: ${req.cardType}"))
+                        val cardType = CardType.entries.find {
+                            it.name.equals(
+                                req.cardType,
+                                ignoreCase = true
+                            ) || it.serialName.equals(req.cardType, ignoreCase = true)
+                        }
+                            ?: return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(
+                                    success = false,
+                                    error = "Unknown cardType: ${req.cardType}"
+                                )
+                            )
                         val currentConfig = cardRepository.dashboardCardsConfig.first()
                         val existingCount = currentConfig.cards.size
                         val newCard = cardType.toDefaultCardConfig(existingCount)
                         cardRepository.addDashboardCard(newCard)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("cardId" to newCard.cardId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("cardId" to newCard.cardId))
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1804,11 +2558,20 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val cardId = call.parameters["cardId"]
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid cardId"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid cardId")
+                            )
                         cardRepository.removeDashboardCard(cardId)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to cardId)))
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1822,9 +2585,20 @@ class WebApiRoutes(
                             cardMap[cardId]?.let { it.withOrder(index) }
                         }
                         cardRepository.reorderDashboardCards(reordered)
-                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to reordered.size)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = mapOf("reordered" to reordered.size)
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1834,14 +2608,29 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val id = call.parameters["id"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid id")
+                            )
                         val original = transactionRepository.getTransactionById(id)
-                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
+                            ?: return@post call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse<Unit>(success = false, error = "Transaction not found")
+                            )
                         val clone = original.copy(id = 0, timestamp = System.currentTimeMillis())
                         val newId = transactionRepository.insertTransaction(clone, profileId)
-                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        call.respond(
+                            HttpStatusCode.Created,
+                            ApiResponse(success = true, data = mapOf("id" to newId))
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1855,9 +2644,20 @@ class WebApiRoutes(
                         val accountMap = allAccounts.associateBy { it.id }
                         val reordered = req.accountIds.mapNotNull { accountMap[it] }
                         accountRepository.updateAccounts(reordered, profileId)
-                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to reordered.size)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = mapOf("reordered" to reordered.size)
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1866,11 +2666,25 @@ class WebApiRoutes(
                     if (!authenticate(authSessionManager)) return@delete
                     try {
                         val paymentId = call.parameters["paymentId"]?.toLongOrNull()
-                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid paymentId"))
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid paymentId")
+                            )
                         loanRepository.deletePayment(paymentId)
-                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to paymentId)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = mapOf("deleted" to paymentId)
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
 
@@ -1885,9 +2699,20 @@ class WebApiRoutes(
                             val cat = categoryMap[catId] ?: return@forEachIndexed
                             categoryRepository.upsertCategory(cat)
                         }
-                        call.respond(ApiResponse(success = true, data = mapOf("reordered" to req.categoryIds.size)))
+                        call.respond(
+                            ApiResponse(
+                                success = true,
+                                data = mapOf("reordered" to req.categoryIds.size)
+                            )
+                        )
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(
+                                success = false,
+                                error = e.message ?: "Internal error"
+                            )
+                        )
                     }
                 }
             }
@@ -1899,7 +2724,7 @@ class WebApiRoutes(
     private fun PlannedPayment.toDto(
         now: Long,
         categoryMap: Map<Long, Category>,
-        accountMap: Map<String, com.osscabinet.ossWallet.domain.model.Account>
+        accountMap: Map<String, Account>
     ): PlannedPaymentDto {
         val isOverdue = status == PlannedPaymentStatus.ACTIVE && schedule.nextDueDate < now
         return PlannedPaymentDto(
@@ -1946,7 +2771,13 @@ class WebApiRoutes(
         }
         return bucketMap.map { (label, triple) ->
             val (epoch, income, expense) = triple
-            CashFlowPointDto(label = label, epochMillis = epoch, income = income, expense = expense, net = income - expense)
+            CashFlowPointDto(
+                label = label,
+                epochMillis = epoch,
+                income = income,
+                expense = expense,
+                net = income - expense
+            )
         }
     }
 
@@ -1996,8 +2827,8 @@ class WebApiRoutes(
 
     private fun CardRenderData.toPayloadDto(
         now: Long,
-        categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
-        accountMap: Map<String, com.osscabinet.ossWallet.domain.model.Account>,
+        categoryMap: Map<Long, Category>,
+        accountMap: Map<String, Account>,
         precision: Int,
         baseCurrency: String
     ): CardPayloadDto = when (this) {
@@ -2008,12 +2839,14 @@ class WebApiRoutes(
             cashFlow = currentMetrics.cashFlow.netInBase.toDouble(),
             currency = this.baseCurrency
         )
+
         is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
             income = result.totalIncomeInBase.toDouble(),
             expense = result.totalExpensesInBase.toDouble(),
             net = result.netInBase.toDouble(),
             currency = this.baseCurrency
         )
+
         is CardRenderData.CurrencyBalances -> CardPayloadDto.CurrencyBalances(
             items = items.map { item ->
                 CardPayloadDto.CurrencyBalanceItem(
@@ -2024,6 +2857,7 @@ class WebApiRoutes(
             },
             baseCurrency = this.baseCurrency
         )
+
         is CardRenderData.Accounts -> CardPayloadDto.Accounts(
             accounts = accountStats.map { (id, stats) ->
                 CardPayloadDto.AccountSummaryItem(
@@ -2036,10 +2870,13 @@ class WebApiRoutes(
                 )
             }
         )
+
         is CardRenderData.Budgets -> CardPayloadDto.Budgets(
             items = items.map { progress ->
                 val cal = Calendar.getInstance()
-                val periodLabel = "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}"
+                val periodLabel = "${cal.get(Calendar.YEAR)}-${
+                    (cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+                }"
                 BudgetDto(
                     id = progress.budget.id, name = progress.budget.name,
                     currency = progress.budget.currency,
@@ -2053,10 +2890,18 @@ class WebApiRoutes(
                 )
             }
         )
+
         is CardRenderData.PlannedPayments -> CardPayloadDto.PlannedPayments(
-            upcoming = upcoming.map { item -> item.plannedPayment.toDto(now, categoryMap, accountMap) },
+            upcoming = upcoming.map { item ->
+                item.plannedPayment.toDto(
+                    now,
+                    categoryMap,
+                    accountMap
+                )
+            },
             overdue = overdue.map { it.toDto(now, categoryMap, accountMap) }
         )
+
         is CardRenderData.Loans -> CardPayloadDto.Loans(
             items = items.map { summary ->
                 LoanDto(
@@ -2074,6 +2919,7 @@ class WebApiRoutes(
                 )
             }
         )
+
         is CardRenderData.RecentActivities -> {
             val txList = listState.groups.flatMap { it.transactions }
             CardPayloadDto.RecentActivities(
@@ -2093,6 +2939,7 @@ class WebApiRoutes(
                 total = listState.groups.sumOf { it.transactions.size }
             )
         }
+
         is CardRenderData.CategoryPieChart -> {
             val total = items.sumOf { it.expense.toDouble() }
             CardPayloadDto.CategoryBreakdown(
@@ -2101,13 +2948,15 @@ class WebApiRoutes(
                         categoryId = metrics.categoryId ?: 0L,
                         categoryName = metrics.category,
                         amount = metrics.expense.toDouble(),
-                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
+                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
+                            .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
                         transactionCount = 0
                     )
                 },
                 displayCurrency = displayCurrency
             )
         }
+
         is CardRenderData.CategoryTreemap -> {
             val total = items.sumOf { it.expense.toDouble() }
             CardPayloadDto.CategoryBreakdown(
@@ -2116,33 +2965,61 @@ class WebApiRoutes(
                         categoryId = metrics.categoryId ?: 0L,
                         categoryName = metrics.category,
                         amount = metrics.expense.toDouble(),
-                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
+                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
+                            .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
                         transactionCount = 0
                     )
                 },
                 displayCurrency = displayCurrency
             )
         }
+
         is CardRenderData.CashFlowComparison -> CardPayloadDto.CashFlowComparison(
             current = currentSeries.points.map { p ->
-                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+                CashFlowPointDto(
+                    label = p.label,
+                    epochMillis = p.epochMillis,
+                    income = p.income.toDouble(),
+                    expense = p.expense.toDouble(),
+                    net = p.net.toDouble()
+                )
             },
             previous = previousSeries.points.map { p ->
-                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+                CashFlowPointDto(
+                    label = p.label,
+                    epochMillis = p.epochMillis,
+                    income = p.income.toDouble(),
+                    expense = p.expense.toDouble(),
+                    net = p.net.toDouble()
+                )
             },
             lastYear = lastYearSeries.points.map { p ->
-                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+                CashFlowPointDto(
+                    label = p.label,
+                    epochMillis = p.epochMillis,
+                    income = p.income.toDouble(),
+                    expense = p.expense.toDouble(),
+                    net = p.net.toDouble()
+                )
             },
             granularity = granularity.name,
             baseCurrency = this.baseCurrency
         )
+
         is CardRenderData.IncomeExpenseBar -> CardPayloadDto.IncomeExpenseBar(
             buckets = buckets.map { p ->
-                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+                CashFlowPointDto(
+                    label = p.label,
+                    epochMillis = p.epochMillis,
+                    income = p.income.toDouble(),
+                    expense = p.expense.toDouble(),
+                    net = p.net.toDouble()
+                )
             },
             granularity = granularity.name,
             baseCurrency = this.baseCurrency
         )
+
         is CardRenderData.CategorySpendingTrend -> CardPayloadDto.CategorySpendingTrend(
             buckets = buckets.map { bucket ->
                 CardPayloadDto.CategorySpendingBucketDto(
@@ -2161,6 +3038,7 @@ class WebApiRoutes(
             granularity = granularity.name,
             baseCurrency = this.baseCurrency
         )
+
         is CardRenderData.TagUpSetPlot -> CardPayloadDto.TagUpSetPlot(
             sets = sets.map { s ->
                 CardPayloadDto.TagSetDto(
@@ -2178,6 +3056,7 @@ class WebApiRoutes(
             },
             baseCurrency = this.baseCurrency
         )
+
         is CardRenderData.AccountHero -> CardPayloadDto.NetWorth(
             netWorth = balance.toDouble(),
             income = income.toDouble(),
@@ -2279,7 +3158,11 @@ class WebApiRoutes(
 
     private fun CardType.toDefaultCardConfig(order: Int): CardConfig {
         val cardId = "${serialName}_${System.currentTimeMillis()}"
-        return CardConfig.createDefault(type = this, context = ScreenContext.DASHBOARD, cardId = cardId)
+        return CardConfig.createDefault(
+            type = this,
+            context = ScreenContext.DASHBOARD,
+            cardId = cardId
+        )
     }
 
     private fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
@@ -2296,7 +3179,10 @@ class WebApiRoutes(
         is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> copy(order = newOrder)
         is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> copy(order = newOrder)
         is com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig -> copy(order = newOrder)
-        is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> copy(order = newOrder)
+        is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> copy(
+            order = newOrder
+        )
+
         is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> copy(order = newOrder)
     }
 

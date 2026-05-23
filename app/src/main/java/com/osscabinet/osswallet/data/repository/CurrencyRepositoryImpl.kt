@@ -23,10 +23,10 @@ class CurrencyRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             val providerId = settingsRepository.currencyProvider.first()
             val provider = providerRegistry.getProvider(providerId)
-            
+
             val result = provider.fetchAllRates(baseCurrency)
             val rates = result.getOrThrow()
-            
+
             CurrencyRates(
                 baseCurrency = baseCurrency,
                 rates = rates
@@ -48,27 +48,30 @@ class CurrencyRepositoryImpl @Inject constructor(
         dao.replaceRates(entities)
     }
 
-    override suspend fun getExchangeRates(baseCurrency: String, forceRefresh: Boolean): Map<String, Double> {
+    override suspend fun getExchangeRates(
+        baseCurrency: String,
+        forceRefresh: Boolean
+    ): Map<String, Double> {
         return withContext(Dispatchers.IO) {
             val localRates = dao.getAllRates()
-            
+
             // If cache is valid and matches our base currency, use it
             if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first())) {
                 val rates = localRates.associate { it.currencyCode to it.rate }
-                
+
                 if (localRates.first().baseCurrency == baseCurrency) {
                     return@withContext rates
                 }
-                
+
                 val newBaseRate = rates[baseCurrency]
                 if (newBaseRate != null && newBaseRate != 0.0) {
                     return@withContext rates.mapValues { it.value / newBaseRate }
                 }
             }
-            
+
             val providerId = settingsRepository.currencyProvider.first()
             val provider = providerRegistry.getProvider(providerId)
-            
+
             val result = provider.fetchAllRates(baseCurrency)
             if (result.isSuccess) {
                 val rates = result.getOrThrow()
@@ -85,7 +88,7 @@ class CurrencyRepositoryImpl @Inject constructor(
                 dao.insertRates(entities)
                 return@withContext rates
             }
-            
+
             localRates.associate { it.currencyCode to it.rate }
         }
     }
@@ -93,7 +96,7 @@ class CurrencyRepositoryImpl @Inject constructor(
     override suspend fun convert(amount: Double, fromCurrency: String, toCurrency: String): Double {
         val providerId = settingsRepository.currencyProvider.first()
         val provider = providerRegistry.getProvider(providerId)
-        
+
         val result = provider.convertCurrencyAmount(amount, fromCurrency, toCurrency)
         return result.getOrElse {
             // Fallback to local conversion if provider fails

@@ -24,7 +24,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,23 +42,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +83,12 @@ fun PlannedPaymentsCard(
         baseFilter = baseFilter,
         filterRules = filterRules ?: config.filterRules,
         displaySettings = { onDismiss ->
-            PlannedPaymentsSettingsSheet(config = config, onUpdate = callbacks.onUpdate, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            PlannedPaymentsSettingsSheet(
+                config = config,
+                onUpdate = callbacks.onUpdate,
+                onDelete = callbacks.onDelete,
+                onDismiss = onDismiss
+            )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -178,7 +182,12 @@ private fun PlannedPaymentsSettingsSheet(
                         FilterChip(
                             selected = config.daysAhead == days,
                             onClick = { onUpdate(config.copy(daysAhead = days)) },
-                            label = { Text("${days}d", style = AppTextStyles.transactionSwipeAction) }
+                            label = {
+                                Text(
+                                    "${days}d",
+                                    style = AppTextStyles.transactionSwipeAction
+                                )
+                            }
                         )
                     }
                 }
@@ -360,7 +369,7 @@ fun PlannedPaymentsCardPreview() {
         nextDueDate = System.currentTimeMillis() + 86400000L
     )
 
-    val overduePayment = com.osscabinet.ossWallet.domain.model.PlannedPayment(
+    val overduePayment = PlannedPayment(
         id = 1L,
         name = "Internet Bill",
         categoryId = 1,
@@ -370,7 +379,7 @@ fun PlannedPaymentsCardPreview() {
         schedule = mockSchedule
     )
 
-    val upcomingPayment = com.osscabinet.ossWallet.domain.model.PlannedPayment(
+    val upcomingPayment = PlannedPayment(
         id = 2L,
         name = "Netflix",
         categoryId = 2,
@@ -384,7 +393,7 @@ fun PlannedPaymentsCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             PlannedPaymentsCard(
                 upcoming = listOf(
-                    com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem(
+                    UpcomingPaymentItem(
                         plannedPayment = upcomingPayment,
                         scheduledDate = System.currentTimeMillis() + 86400000L,
                         isOverdue = false
@@ -392,7 +401,10 @@ fun PlannedPaymentsCardPreview() {
                 ),
                 overdue = listOf(overduePayment),
                 config = PlannedPaymentsCardConfig(cardId = "preview"),
-                callbacks = CardCallbacks.PlannedPayments(onUpdate = {}, onDelete = {}, onItemClick = {})
+                callbacks = CardCallbacks.PlannedPayments(
+                    onUpdate = {},
+                    onDelete = {},
+                    onItemClick = {})
             )
         }
     }

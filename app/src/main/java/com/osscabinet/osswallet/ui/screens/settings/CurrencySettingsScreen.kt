@@ -3,7 +3,19 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -12,16 +24,42 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.rounded.Api
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Bookmarks
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.PrecisionManufacturing
+import androidx.compose.material.icons.rounded.Quiz
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -54,15 +92,17 @@ fun CurrencySettingsScreen(
         var searchQuery by remember { mutableStateOf("") }
         val filteredCurrencies = remember(searchQuery, availableCurrencies) {
             availableCurrencies.filter {
-                it.code.contains(searchQuery, ignoreCase = true) || 
-                it.name.contains(searchQuery, ignoreCase = true)
+                it.code.contains(searchQuery, ignoreCase = true) ||
+                        it.name.contains(searchQuery, ignoreCase = true)
             }
         }
 
         BasicAlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.spacingXl)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AeonTheme.dimensions.spacingXl)
         ) {
             Surface(
                 shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
@@ -79,7 +119,7 @@ fun CurrencySettingsScreen(
                         style = AppTextStyles.calculatorKey,
                         modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg)
                     )
-                    
+
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -96,9 +136,9 @@ fun CurrencySettingsScreen(
                         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                         singleLine = true
                     )
-                    
+
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
-                    
+
                     Box(modifier = Modifier.heightIn(max = 400.dp)) {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
@@ -124,7 +164,9 @@ fun CurrencySettingsScreen(
                                         Surface(
                                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                             shape = CircleShape,
-                                            color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.1f) else AppColors.secondaryContainer
+                                            color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(
+                                                alpha = 0.1f
+                                            ) else AppColors.secondaryContainer
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Text(
@@ -138,30 +180,34 @@ fun CurrencySettingsScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(
-                                                    name, 
-                                                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                                                    name,
+                                                    style = AppTextStyles.listItemTitle.copy(
+                                                        fontWeight = FontWeight.Medium
+                                                    ),
                                                     color = if (code == currencyCode) AppColors.onPrimaryContainer else AppColors.contentPrimary
                                                 )
                                                 if (metadata.isVolatile) {
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Icon(
-                                                        Icons.Rounded.Warning, 
-                                                        contentDescription = "Volatile", 
+                                                        Icons.Rounded.Warning,
+                                                        contentDescription = "Volatile",
                                                         tint = AppColors.error,
                                                         modifier = Modifier.size(12.dp)
                                                     )
                                                 }
                                             }
                                             Text(
-                                                "$code • ${metadata.country}", 
-                                                style = AppTextStyles.transactionSwipeAction, 
-                                                color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(alpha = 0.7f) else AppColors.border
+                                                "$code • ${metadata.country}",
+                                                style = AppTextStyles.transactionSwipeAction,
+                                                color = if (code == currencyCode) AppColors.onPrimaryContainer.copy(
+                                                    alpha = 0.7f
+                                                ) else AppColors.border
                                             )
                                         }
                                         if (code == currencyCode) {
                                             Icon(
-                                                Icons.Rounded.Check, 
-                                                contentDescription = null, 
+                                                Icons.Rounded.Check,
+                                                contentDescription = null,
                                                 tint = AppColors.onPrimaryContainer
                                             )
                                         }
@@ -170,9 +216,11 @@ fun CurrencySettingsScreen(
                             }
                         }
                     }
-                    
+
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = AeonTheme.dimensions.spacingLg),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = AeonTheme.dimensions.spacingLg),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showCurrencyDialog = false }) {
@@ -201,14 +249,26 @@ fun CurrencySettingsScreen(
                                 .padding(AeonTheme.dimensions.cardPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Rounded.Api, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Icon(
+                                Icons.Rounded.Api,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                            )
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(provider.name, style = AppTextStyles.listItemTitle)
-                                Text(provider.attribution, style = AppTextStyles.caption, color = AppColors.border)
+                                Text(
+                                    provider.attribution,
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.border
+                                )
                             }
                             if (provider.id == currencyProviderId) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = AppColors.primary
+                                )
                             }
                         }
                     }
@@ -248,21 +308,35 @@ fun CurrencySettingsScreen(
                     icon = Icons.Rounded.CurrencyExchange,
                     onClick = { showCurrencyDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Active Currencies",
-                    subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" } ?: "All currencies",
+                    subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" }
+                        ?: "All currencies",
                     icon = Icons.Rounded.Bookmarks,
                     onClick = onShortlistedCurrenciesClick
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Exchange Rate Provider",
-                    subtitle = availableProviders.find { it.id == currencyProviderId }?.name ?: "Select Provider",
+                    subtitle = availableProviders.find { it.id == currencyProviderId }?.name
+                        ?: "Select Provider",
                     icon = Icons.Rounded.Api,
                     onClick = { showProviderDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Auto-save Exchange Rates",
                     subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
@@ -304,7 +378,11 @@ fun CurrencySettingsScreen(
                                         .clickable {
                                             if (decimalPrecision != p) {
                                                 viewModel.setDecimalPrecision(p)
-                                                Toast.makeText(context, "Precision set to $p decimal places", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Precision set to $p decimal places",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }
                                         },
                                     shape = CircleShape,
@@ -323,7 +401,11 @@ fun CurrencySettingsScreen(
                         }
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "24-Hour Time Format",
                     subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",

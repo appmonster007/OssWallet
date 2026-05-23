@@ -1,6 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -22,9 +27,13 @@ sealed class TransactionEntryEvent {
     data class SetNote(val note: String) : TransactionEntryEvent()
     data class SetWarrantyEnabled(val enabled: Boolean) : TransactionEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : TransactionEntryEvent()
-    data class SetLocation(val gpsLocation: String?, val location: String? = null) : TransactionEntryEvent()
+    data class SetLocation(val gpsLocation: String?, val location: String? = null) :
+        TransactionEntryEvent()
+
     data class AddLinkedTransaction(val id: Long) : TransactionEntryEvent()
-    data class RemoveLinkedTransaction(val transactionId: Long, val linkedTransactionId: Long) : TransactionEntryEvent()
+    data class RemoveLinkedTransaction(val transactionId: Long, val linkedTransactionId: Long) :
+        TransactionEntryEvent()
+
     data class SetLinkedTransactionIds(val ids: List<Long>) : TransactionEntryEvent()
     data class SetAccount(val account: Account?) : TransactionEntryEvent()
     data class SetCurrency(val currency: String) : TransactionEntryEvent()
@@ -39,7 +48,12 @@ sealed class TransactionEntryEvent {
     data class ToggleSplitMode(val enabled: Boolean) : TransactionEntryEvent()
     data object AddSplit : TransactionEntryEvent()
     data class RemoveSplit(val index: Int) : TransactionEntryEvent()
-    data class UpdateSplit(val index: Int, val categoryId: Long? = null, val amount: String? = null, val note: String? = null) : TransactionEntryEvent()
+    data class UpdateSplit(
+        val index: Int,
+        val categoryId: Long? = null,
+        val amount: String? = null,
+        val note: String? = null
+    ) : TransactionEntryEvent()
 
     // Sheet visibility
     data class ShowDatePicker(val show: Boolean) : TransactionEntryEvent()

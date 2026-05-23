@@ -1,19 +1,22 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
+import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPlannedPaymentStatusSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonScheduleBuilder
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
 
@@ -32,7 +35,16 @@ fun PlannedPaymentEntrySheets(
             initialDayOfMonth = state.dayOfMonth,
             initialCronExpression = state.cronExpression,
             onConfirm = { start, type, interval, dow, dom, cron ->
-                onEvent(PlannedPaymentEntryEvent.SetRecurrence(start, type, interval, dow, dom, cron))
+                onEvent(
+                    PlannedPaymentEntryEvent.SetRecurrence(
+                        start,
+                        type,
+                        interval,
+                        dow,
+                        dom,
+                        cron
+                    )
+                )
                 onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false)) }
@@ -42,7 +54,7 @@ fun PlannedPaymentEntrySheets(
     if (state.showEndDatePicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.endDateMillis,
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(PlannedPaymentEntryEvent.SetEndDate(it))
                 onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false))
             },

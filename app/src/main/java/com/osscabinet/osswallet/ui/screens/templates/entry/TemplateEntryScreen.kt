@@ -1,13 +1,15 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
-import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateEntrySheets
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
+import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateEntrySheets
 import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateFormBody
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +36,7 @@ fun TemplateEntryScreen(
         title = if (state.templateId == null) "New Template" else "Edit Template",
         onBackClick = onBackClick,
         onSaveClick = {
-            viewModel.saveTemplate { 
+            viewModel.saveTemplate {
                 viewModel.onEvent(TemplateEntryEvent.TriggerNavigation)
             }
         },

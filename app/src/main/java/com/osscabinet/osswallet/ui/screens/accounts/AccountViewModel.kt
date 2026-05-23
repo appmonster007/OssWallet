@@ -5,11 +5,13 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import java.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,7 +45,10 @@ class AccountViewModel @Inject constructor(
     fun toggleArchiveAccount(account: Account) {
         viewModelScope.launch {
             withProfile { profileId ->
-                accountRepository.insertAccount(account.copy(isArchived = !account.isArchived), profileId)
+                accountRepository.insertAccount(
+                    account.copy(isArchived = !account.isArchived),
+                    profileId
+                )
             }
         }
     }

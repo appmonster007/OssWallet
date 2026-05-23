@@ -1,14 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.loans.detail.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.TrendingUp
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,13 +32,13 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.theme.WarningColor
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.WarningColor
+import java.math.BigDecimal
 
 @Composable
 fun LoanHeroCard(
@@ -38,9 +47,13 @@ fun LoanHeroCard(
     modifier: Modifier = Modifier
 ) {
     val accentColor = if (loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
-    
+
     val progress = if (loan.principalAmount > BigDecimal.ZERO)
-        (summary.totalPaid.divide(loan.principalAmount, 4, java.math.RoundingMode.HALF_UP)).toFloat().coerceIn(0f, 1f)
+        (summary.totalPaid.divide(
+            loan.principalAmount,
+            4,
+            java.math.RoundingMode.HALF_UP
+        )).toFloat().coerceIn(0f, 1f)
     else 0f
 
     AeonExpressiveCard(
@@ -70,8 +83,12 @@ fun LoanHeroCard(
                             ),
                             color = accentColor.copy(alpha = 0.6f)
                         )
-                        
-                        val balanceParts = formatCurrencyRight(summary.remainingBalance, loan.currency, shorten = true).split(" ")
+
+                        val balanceParts = formatCurrencyRight(
+                            summary.remainingBalance,
+                            loan.currency,
+                            shorten = true
+                        ).split(" ")
                         val amountText = balanceParts.dropLast(1).joinToString(" ")
                         val symbolText = balanceParts.lastOrNull() ?: ""
 
@@ -79,11 +96,13 @@ fun LoanHeroCard(
                             text = buildAnnotatedString {
                                 append(amountText)
                                 append(" ")
-                                withStyle(SpanStyle(
-                                    fontWeight = FontWeight.Light,
-                                    color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                                    fontSize = 18.sp
-                                )) {
+                                withStyle(
+                                    SpanStyle(
+                                        fontWeight = FontWeight.Light,
+                                        color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                                        fontSize = 18.sp
+                                    )
+                                ) {
                                     append(symbolText)
                                 }
                             },
@@ -95,7 +114,7 @@ fun LoanHeroCard(
                             color = AppColors.contentPrimary
                         )
                     }
-                    
+
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         style = AppTextStyles.heroAmountDisplay.copy(
@@ -108,12 +127,14 @@ fun LoanHeroCard(
 
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp),
                     color = accentColor,
                     trackColor = accentColor.copy(alpha = 0.1f),
                     strokeCap = StrokeCap.Round
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -124,7 +145,13 @@ fun LoanHeroCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, shorten = true)}",
+                        text = "Original: ${
+                            formatCurrencyRight(
+                                loan.principalAmount,
+                                loan.currency,
+                                shorten = true
+                            )
+                        }",
                         style = AppTextStyles.cardDelta,
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )

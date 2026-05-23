@@ -21,6 +21,10 @@ object ManagerModule {
         plannedPaymentRepository: PlannedPaymentRepository,
         widgetRefreshTrigger: WidgetRefreshTrigger
     ): TransactionManager {
-        return TransactionManager(transactionUseCases, plannedPaymentRepository, widgetRefreshTrigger)
+        return TransactionManager(
+            transactionUseCases,
+            plannedPaymentRepository,
+            widgetRefreshTrigger
+        )
     }
 }

@@ -2,11 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.filters.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.PaymentMethod
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
@@ -16,10 +13,20 @@ import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -52,7 +59,7 @@ class FilterEntryViewModel @Inject constructor(
                     categoryRepository.categories,
                     tagRepository.getAllTags()
                 ) { accounts, categories, tags ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             accounts = accounts,
                             categories = categories,
@@ -96,9 +103,9 @@ class FilterEntryViewModel @Inject constructor(
         }
 
         if (filterId == null || filterId == -1L) {
-            _state.update { 
+            _state.update {
                 it.copy(
-                    isEditMode = false, 
+                    isEditMode = false,
                     filterId = null,
                     selectedAccountIds = emptySet(),
                     selectedCategoryIds = emptySet(),
@@ -107,7 +114,7 @@ class FilterEntryViewModel @Inject constructor(
                     selectedTransactionTypes = emptySet(),
                     selectedCurrencies = emptySet(),
                     selectedTags = emptySet()
-                ) 
+                )
             }
             return
         }
@@ -150,15 +157,27 @@ class FilterEntryViewModel @Inject constructor(
     fun onEvent(event: FilterEntryEvent) {
         when (event) {
             is FilterEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
-            is FilterEntryEvent.SetTransactionTypes -> _state.update { it.copy(selectedTransactionTypes = event.types) }
+            is FilterEntryEvent.SetTransactionTypes -> _state.update {
+                it.copy(
+                    selectedTransactionTypes = event.types
+                )
+            }
+
             is FilterEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
             is FilterEntryEvent.SetCategoryIds -> {
-                val expanded = CategoryHierarchyCache.build(_state.value.categories).expand(event.ids)
+                val expanded =
+                    CategoryHierarchyCache.build(_state.value.categories).expand(event.ids)
                 _state.update { it.copy(selectedCategoryIds = expanded) }
             }
+
             is FilterEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is FilterEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
-            is FilterEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
+            is FilterEntryEvent.SetLinkedTransactions -> _state.update {
+                it.copy(
+                    linkedTransactionIds = event.ids
+                )
+            }
+
             is FilterEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
             is FilterEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is FilterEntryEvent.SetQueryNote -> _state.update { it.copy(queryNote = event.query) }
@@ -169,12 +188,27 @@ class FilterEntryViewModel @Inject constructor(
             is FilterEntryEvent.SetMaxAmount -> _state.update { it.copy(maxAmount = event.amount) }
             is FilterEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
             is FilterEntryEvent.SetHasWarranty -> _state.update { it.copy(hasWarranty = event.hasWarranty) }
-            is FilterEntryEvent.SetWarrantyExpirationStart -> _state.update { it.copy(warrantyExpirationStart = event.date) }
-            is FilterEntryEvent.SetWarrantyExpirationEnd -> _state.update { it.copy(warrantyExpirationEnd = event.date) }
+            is FilterEntryEvent.SetWarrantyExpirationStart -> _state.update {
+                it.copy(
+                    warrantyExpirationStart = event.date
+                )
+            }
+
+            is FilterEntryEvent.SetWarrantyExpirationEnd -> _state.update {
+                it.copy(
+                    warrantyExpirationEnd = event.date
+                )
+            }
+
             is FilterEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
             is FilterEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is FilterEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
-            is FilterEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is FilterEntryEvent.ShowPaymentMethodSheet -> _state.update {
+                it.copy(
+                    showPaymentMethodSheet = event.show
+                )
+            }
+
             is FilterEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
             is FilterEntryEvent.ShowLinkSheet -> _state.update { it.copy(showLinkSheet = event.show) }
             is FilterEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
@@ -183,29 +217,41 @@ class FilterEntryViewModel @Inject constructor(
             is FilterEntryEvent.ShowMinAmountSheet -> _state.update { it.copy(showMinAmountSheet = event.show) }
             is FilterEntryEvent.ShowMaxAmountSheet -> _state.update { it.copy(showMaxAmountSheet = event.show) }
             is FilterEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
-            is FilterEntryEvent.ShowWarrantyStartPicker -> _state.update { it.copy(showWarrantyStartPicker = event.show) }
-            is FilterEntryEvent.ShowWarrantyEndPicker -> _state.update { it.copy(showWarrantyEndPicker = event.show) }
+            is FilterEntryEvent.ShowWarrantyStartPicker -> _state.update {
+                it.copy(
+                    showWarrantyStartPicker = event.show
+                )
+            }
+
+            is FilterEntryEvent.ShowWarrantyEndPicker -> _state.update {
+                it.copy(
+                    showWarrantyEndPicker = event.show
+                )
+            }
+
             is FilterEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
-            FilterEntryEvent.ResetFilter -> _state.update { it.copy(
-                selectedTransactionTypes = emptySet(),
-                selectedAccountIds = emptySet(),
-                selectedCategoryIds = emptySet(),
-                selectedPaymentMethods = emptySet(),
-                selectedStatuses = emptySet(),
-                linkedTransactionIds = emptySet(),
-                selectedTags = emptySet(),
-                selectedCurrencies = emptySet(),
-                queryNote = "",
-                isNoteRegex = false,
-                queryPayee = "",
-                isPayeeRegex = false,
-                minAmount = "",
-                maxAmount = "",
-                hasWarranty = null,
-                warrantyExpirationStart = null,
-                warrantyExpirationEnd = null,
-                excludeFuture = true
-            ) }
+            FilterEntryEvent.ResetFilter -> _state.update {
+                it.copy(
+                    selectedTransactionTypes = emptySet(),
+                    selectedAccountIds = emptySet(),
+                    selectedCategoryIds = emptySet(),
+                    selectedPaymentMethods = emptySet(),
+                    selectedStatuses = emptySet(),
+                    linkedTransactionIds = emptySet(),
+                    selectedTags = emptySet(),
+                    selectedCurrencies = emptySet(),
+                    queryNote = "",
+                    isNoteRegex = false,
+                    queryPayee = "",
+                    isPayeeRegex = false,
+                    minAmount = "",
+                    maxAmount = "",
+                    hasWarranty = null,
+                    warrantyExpirationStart = null,
+                    warrantyExpirationEnd = null,
+                    excludeFuture = true
+                )
+            }
         }
     }
 

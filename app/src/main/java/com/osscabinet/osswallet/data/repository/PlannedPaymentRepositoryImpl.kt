@@ -44,7 +44,8 @@ class PlannedPaymentRepositoryImpl @Inject constructor(
         dao.deleteById(id)
 
     override fun getOccurrences(plannedPaymentId: Long): Flow<List<PlannedPaymentOccurrence>> =
-        occurrenceDao.getOccurrencesForPayment(plannedPaymentId).map { list -> list.map { it.toDomain() } }
+        occurrenceDao.getOccurrencesForPayment(plannedPaymentId)
+            .map { list -> list.map { it.toDomain() } }
 
     override suspend fun upsertOccurrence(occurrence: PlannedPaymentOccurrence): Long =
         occurrenceDao.insert(occurrence.toEntity())
@@ -52,7 +53,10 @@ class PlannedPaymentRepositoryImpl @Inject constructor(
     override suspend fun updateOccurrenceStatus(occurrenceId: Long, status: OccurrenceStatus) =
         occurrenceDao.updateStatus(occurrenceId, status)
 
-    override suspend fun getOccurrenceForDate(plannedPaymentId: Long, scheduledDate: Long): PlannedPaymentOccurrence? =
+    override suspend fun getOccurrenceForDate(
+        plannedPaymentId: Long,
+        scheduledDate: Long
+    ): PlannedPaymentOccurrence? =
         occurrenceDao.getOccurrenceForDate(plannedPaymentId, scheduledDate)?.toDomain()
 
     override suspend fun isTemplateUsedInPlannedPayments(templateId: Long): Boolean =

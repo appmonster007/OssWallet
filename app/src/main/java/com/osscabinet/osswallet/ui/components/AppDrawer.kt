@@ -1,19 +1,41 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AutoGraph
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,13 +47,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import android.graphics.Color as AndroidColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import android.graphics.Color as AndroidColor
 
 @Composable
 fun AppDrawerContent(
@@ -56,7 +78,10 @@ fun AppDrawerContent(
     ModalDrawerSheet(
         modifier = Modifier.width(280.dp),
         drawerContainerColor = AppColors.drawerSurface,
-        drawerShape = RoundedCornerShape(topEnd = AeonTheme.dimensions.cardCornerRadius, bottomEnd = AeonTheme.dimensions.cardCornerRadius)
+        drawerShape = RoundedCornerShape(
+            topEnd = AeonTheme.dimensions.cardCornerRadius,
+            bottomEnd = AeonTheme.dimensions.cardCornerRadius
+        )
     ) {
         val scrollState = rememberScrollState()
 
@@ -73,7 +98,10 @@ fun AppDrawerContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.screenPadding)
+                        .padding(
+                            horizontal = AeonTheme.dimensions.listPadding,
+                            vertical = AeonTheme.dimensions.screenPadding
+                        )
                 ) {
                     Surface(
                         modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
@@ -135,15 +163,26 @@ fun AppDrawerContent(
                                 }
                             }
                         },
-                        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        icon = {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.listPadding,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    ),
                     color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
@@ -154,7 +193,10 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.listPadding,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    )
                 )
 
                 val planningItems = listOf(
@@ -181,8 +223,16 @@ fun AppDrawerContent(
                                 }
                             }
                         },
-                        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        icon = {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
@@ -190,7 +240,10 @@ fun AppDrawerContent(
 
                 if (starredTemplates.isNotEmpty()) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.listPadding,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        ),
                         color = AppColors.insetSurface.copy(alpha = 0.5f)
                     )
 
@@ -201,7 +254,10 @@ fun AppDrawerContent(
                             letterSpacing = 1.sp
                         ),
                         color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.listPadding,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        )
                     )
 
                     starredTemplates.forEach { template ->
@@ -221,7 +277,9 @@ fun AppDrawerContent(
                                     tint = AppColors.primary
                                 )
                             },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
                             shape = RectangleShape,
                             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                         )
@@ -229,7 +287,10 @@ fun AppDrawerContent(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.listPadding,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    ),
                     color = AppColors.insetSurface.copy(alpha = 0.5f)
                 )
 
@@ -240,7 +301,10 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm)
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.listPadding,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    )
                 )
 
                 nonArchivedAccounts.sortedBy { it.name }.forEach { account ->
@@ -280,7 +344,9 @@ fun AppDrawerContent(
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                     )
@@ -306,8 +372,16 @@ fun AppDrawerContent(
                     },
                     selected = selectedDestination == "settings",
                     onClick = { onNavigate { onSettingsClick() } },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)) },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    icon = {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = null,
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     shape = RectangleShape,
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                 )
@@ -321,10 +395,26 @@ fun AppDrawerContent(
 fun AppDrawerContentPreview() {
     val mockProfile = Profile(1, "OssWallet User", "USD")
     val mockAccounts = listOf(
-        Account("1", "Main Savings", "USD", com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS, "#004D40", "AccountBalance", emptyList()),
-        Account("2", "Travel Fund", "EUR", com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS, "#B3261E", "Travel", emptyList())
+        Account(
+            "1",
+            "Main Savings",
+            "USD",
+            com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS,
+            "#004D40",
+            "AccountBalance",
+            emptyList()
+        ),
+        Account(
+            "2",
+            "Travel Fund",
+            "EUR",
+            com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS,
+            "#B3261E",
+            "Travel",
+            emptyList()
+        )
     )
-    
+
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         AppDrawerContent(
             currentProfile = mockProfile,

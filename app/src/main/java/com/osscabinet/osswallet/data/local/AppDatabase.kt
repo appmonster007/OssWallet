@@ -7,8 +7,36 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.osscabinet.ossWallet.data.local.dao.*
-import com.osscabinet.ossWallet.data.local.entity.*
+import com.osscabinet.ossWallet.data.local.dao.AccountDao
+import com.osscabinet.ossWallet.data.local.dao.BudgetDao
+import com.osscabinet.ossWallet.data.local.dao.CategoryDao
+import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
+import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.dao.LoanDao
+import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
+import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
+import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentOccurrenceDao
+import com.osscabinet.ossWallet.data.local.dao.ProfileDao
+import com.osscabinet.ossWallet.data.local.dao.TagDao
+import com.osscabinet.ossWallet.data.local.dao.TemplateDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
+import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.data.local.entity.LoanEntity
+import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
+import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
+import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
+import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
+import com.osscabinet.ossWallet.data.local.entity.TagEntity
+import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionFtsEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
@@ -58,7 +86,8 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // ── transactions: replace latitude+longitude with gpsLocation ──────────
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `transactions_new` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         `name` TEXT NOT NULL,
@@ -80,8 +109,10 @@ abstract class AppDatabase : RoomDatabase() {
                         FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
                         FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT
                     )
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     INSERT INTO `transactions_new`
                     SELECT `id`, `name`, `amount`, `timestamp`, `currency`, `transactionType`,
                            `accountId`, `categoryId`, `tags`, `paymentMethod`, `payee`, `note`,
@@ -91,7 +122,8 @@ abstract class AppDatabase : RoomDatabase() {
                                 ELSE NULL END,
                            `warrantyExpiration`, `status`
                     FROM `transactions`
-                """.trimIndent())
+                """.trimIndent()
+                )
                 db.execSQL("DROP TABLE `transactions`")
                 db.execSQL("ALTER TABLE `transactions_new` RENAME TO `transactions`")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_accountId` ON `transactions` (`accountId`)")
@@ -103,25 +135,32 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
                 db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
                 db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
                       INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
                     END
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
                       DELETE FROM transactions_fts WHERE rowid = old.id;
                       INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
                     END
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
                       DELETE FROM transactions_fts WHERE rowid = old.id;
                     END
-                """.trimIndent())
+                """.trimIndent()
+                )
 
                 // ── templates: replace latitude+longitude with gpsLocation ────────────
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `templates_new` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         `name` TEXT NOT NULL,
@@ -148,8 +187,10 @@ abstract class AppDatabase : RoomDatabase() {
                         `profileId` INTEGER NOT NULL,
                         FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT
                     )
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     INSERT INTO `templates_new`
                     SELECT `id`, `name`, `categoryId`, `amount`, `transactionType`, `icon`, `colorHex`,
                            `accountId`, `targetAccountId`, `targetCurrency`, `transferRate`, `note`, `payee`,
@@ -160,7 +201,8 @@ abstract class AppDatabase : RoomDatabase() {
                            `warrantyExpiration`, `transactionStatus`, `paymentMethod`, `currency`,
                            `tags`, `isStarred`, `displayOrder`, `profileId`
                     FROM `templates`
-                """.trimIndent())
+                """.trimIndent()
+                )
                 db.execSQL("DROP TABLE `templates`")
                 db.execSQL("ALTER TABLE `templates_new` RENAME TO `templates`")
             }
@@ -168,7 +210,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `transaction_tag_cross_ref` (
                         `transactionId` INTEGER NOT NULL, 
                         `tagId` INTEGER NOT NULL, 
@@ -176,7 +219,8 @@ abstract class AppDatabase : RoomDatabase() {
                         FOREIGN KEY(`transactionId`) REFERENCES `transactions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, 
                         FOREIGN KEY(`tagId`) REFERENCES `tags`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
                     )
-                """.trimIndent())
+                """.trimIndent()
+                )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_tag_cross_ref_transactionId` ON `transaction_tag_cross_ref` (`transactionId`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_tag_cross_ref_tagId` ON `transaction_tag_cross_ref` (`tagId`)")
             }
@@ -185,22 +229,28 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` USING fts4(content=`transactions`, `note`, `payee`, `name`)")
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
                       INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
                     END
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
                       DELETE FROM transactions_fts WHERE rowid = old.id;
                       INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
                     END
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
                       DELETE FROM transactions_fts WHERE rowid = old.id;
                     END
-                """.trimIndent())
+                """.trimIndent()
+                )
                 db.execSQL("INSERT INTO transactions_fts(rowid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
             }
         }
@@ -229,7 +279,13 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
+                    )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

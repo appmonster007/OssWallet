@@ -13,7 +13,15 @@ class CurrencyBalancesCardComputer(
 ) : CardDataComputer<CurrencyBalancesCardConfig, CardRenderData.CurrencyBalances> {
     override val supportedType = CardType.CURRENCY_BALANCES
 
-    override suspend fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-        return CardAggregationService.computeCurrencyBalancesCard(queryService, input.profileId, input, config)
+    override suspend fun compute(
+        input: CardInput,
+        config: CurrencyBalancesCardConfig
+    ): CardRenderData.CurrencyBalances {
+        return CardAggregationService.computeCurrencyBalancesCard(
+            queryService,
+            input.profileId,
+            input,
+            config
+        )
     }
 }

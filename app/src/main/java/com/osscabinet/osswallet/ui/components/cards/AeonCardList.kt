@@ -1,24 +1,36 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.components.CardReorderableList
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -107,21 +119,96 @@ private fun CardWithCallbacks.copyWithRules(
     baseFilter: TransactionFilter,
     filterSheetEnabled: Boolean = true
 ): CardWithCallbacks = when (this) {
-    is CardWithCallbacks.NetWorth -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CurrencyBalances -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CashFlow -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.Accounts -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CategoryPieChart -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CategoryTreemap -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.AccountHero -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.Budgets -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.Loans -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.RecentActivities -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CashFlowComparison -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.IncomeExpenseBar -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.CategorySpendingTrend -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
-    is CardWithCallbacks.TagUpSetPlot -> copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    is CardWithCallbacks.NetWorth -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CurrencyBalances -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CashFlow -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.Accounts -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CategoryPieChart -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CategoryTreemap -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.AccountHero -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.PlannedPayments -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.Budgets -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.Loans -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.RecentActivities -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CashFlowComparison -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.IncomeExpenseBar -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.CategorySpendingTrend -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
+    is CardWithCallbacks.TagUpSetPlot -> copy(
+        filterRules = rules,
+        baseFilter = baseFilter,
+        filterSheetEnabled = filterSheetEnabled
+    )
+
     is CardWithCallbacks.ComputeError -> this
 }
 
@@ -133,7 +220,10 @@ private fun CardErrorState(message: String?) {
         colors = CardDefaults.cardColors(
             containerColor = AppColors.errorContainer.copy(alpha = 0.2f)
         ),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, AppColors.error.copy(alpha = 0.2f)),
+        border = androidx.compose.foundation.BorderStroke(
+            0.5.dp,
+            AppColors.error.copy(alpha = 0.2f)
+        ),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(

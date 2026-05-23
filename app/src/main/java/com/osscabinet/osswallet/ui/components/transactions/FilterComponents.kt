@@ -1,54 +1,86 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.rounded.FactCheck
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AttachMoney
 import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.automirrored.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.entry.*
-import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.flow.Flow
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectionSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +114,7 @@ fun FilterFields(
                 title = "Filter Accounts"
             )
         }
+
         "Categories" -> {
             AeonCategorySelection(
                 categories = allCategories,
@@ -95,6 +128,7 @@ fun FilterFields(
                 startExpanded = false
             )
         }
+
         "Currencies" -> {
             val availableCurrencies = if (allAvailableCurrencies.isNotEmpty()) {
                 allAvailableCurrencies
@@ -120,6 +154,7 @@ fun FilterFields(
                 mode = AeonSelectMode.MULTI
             )
         }
+
         "PaymentMethods" -> {
             AeonPaymentMethodSelection(
                 selectedMethods = filter.paymentMethods.toSet(),
@@ -131,6 +166,7 @@ fun FilterFields(
                 title = "Filter Payment Methods"
             )
         }
+
         "Statuses" -> {
             AeonStatusSelection(
                 selectedStatuses = filter.statuses.toSet(),
@@ -142,6 +178,7 @@ fun FilterFields(
                 title = "Filter Statuses"
             )
         }
+
         "Types" -> {
             AeonSelectionSheet(
                 title = "Transaction Types",
@@ -156,6 +193,7 @@ fun FilterFields(
                 mode = AeonSelectMode.MULTI
             )
         }
+
         "LinkedTransactions" -> {
             AeonLinkedTransactionSelection(
                 onSearch = onSearchTransactions,
@@ -164,30 +202,40 @@ fun FilterFields(
                 accounts = accounts,
                 categories = allCategories,
                 allTags = allTags,
-                    onLinkedTransactionsChanged = { ids ->
+                onLinkedTransactionsChanged = { ids ->
                     onFilterChange(filter.copy(linkedTransactionIds = ids.toSet()))
                 },
                 onDismiss = { activeSheet = null }
             )
         }
+
         "MinAmount" -> {
             AeonCalculatorSheet(
                 currentAmount = filter.minAmount?.toString() ?: "",
-                onAmountChanged = { onFilterChange(filter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                onAmountChanged = {
+                    onFilterChange(filter.copy(minAmount = it.ifBlank { null }
+                        ?.toBigDecimalOrNull()))
+                },
                 onDismiss = { activeSheet = null },
                 title = "Minimum Amount"
             )
         }
+
         "MaxAmount" -> {
             AeonCalculatorSheet(
                 currentAmount = filter.maxAmount?.toString() ?: "",
-                onAmountChanged = { onFilterChange(filter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                onAmountChanged = {
+                    onFilterChange(filter.copy(maxAmount = it.ifBlank { null }
+                        ?.toBigDecimalOrNull()))
+                },
                 onDismiss = { activeSheet = null },
                 title = "Maximum Amount"
             )
         }
+
         "WarrantyStart" -> {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationStart)
+            val datePickerState =
+                rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationStart)
             DatePickerDialog(
                 onDismissRequest = { activeSheet = null },
                 confirmButton = {
@@ -209,8 +257,10 @@ fun FilterFields(
                 DatePicker(state = datePickerState)
             }
         }
+
         "WarrantyEnd" -> {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationEnd)
+            val datePickerState =
+                rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationEnd)
             DatePickerDialog(
                 onDismissRequest = { activeSheet = null },
                 confirmButton = {
@@ -232,6 +282,7 @@ fun FilterFields(
                 DatePicker(state = datePickerState)
             }
         }
+
         "Tags" -> {
             AeonTagSelectionDialog(
                 tags = allTags,
@@ -278,13 +329,16 @@ fun FilterFields(
                     isSelected = filter.transactionTypes.isNotEmpty() || isTypeLocked,
                     modifier = Modifier.weight(1f),
                     onClick = { if (!isTypeLocked) activeSheet = "Types" },
-                    iconContainerColor = if (isTypeLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
-                                         else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                    iconContainerColor = if (isTypeLocked) AppColors.formIconContainerPrimary.copy(
+                        alpha = 0.05f
+                    )
+                    else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
                     iconTint = if (isTypeLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                 )
 
                 // Accounts Card
-                val isAccountLocked = !filterRules.allowAccountSelection && filter.accountIds.isNotEmpty()
+                val isAccountLocked =
+                    !filterRules.allowAccountSelection && filter.accountIds.isNotEmpty()
                 if (filterRules.allowAccountSelection || isAccountLocked) {
                     EntryActionCard(
                         icon = if (isAccountLocked) Icons.Default.Lock else Icons.Default.AccountBalance,
@@ -296,8 +350,10 @@ fun FilterFields(
                         enabled = !isAccountLocked,
                         modifier = Modifier.weight(1f),
                         onClick = { if (!isAccountLocked) activeSheet = "Accounts" },
-                        iconContainerColor = if (isAccountLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
-                                             else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconContainerColor = if (isAccountLocked) AppColors.formIconContainerPrimary.copy(
+                            alpha = 0.05f
+                        )
+                        else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
                         iconTint = if (isAccountLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                     )
                 }
@@ -305,27 +361,34 @@ fun FilterFields(
 
             EntryActionRow {
                 // Categories Card
-                val isCategoryLocked = !filterRules.allowCategorySelection && filter.categoryIds.isNotEmpty()
+                val isCategoryLocked =
+                    !filterRules.allowCategorySelection && filter.categoryIds.isNotEmpty()
                 if (filterRules.allowCategorySelection || isCategoryLocked) {
                     EntryActionCard(
                         icon = if (isCategoryLocked) Icons.Default.Lock else Icons.Default.Category,
                         label = "CATEGORIES",
                         value = if (isCategoryLocked) {
-                            val categoryNames = filter.categoryIds.mapNotNull { id -> allCategories.find { it.id == id }?.name }
-                            if (categoryNames.size > 2) "${categoryNames.size} Categories" else categoryNames.joinToString(", ")
+                            val categoryNames =
+                                filter.categoryIds.mapNotNull { id -> allCategories.find { it.id == id }?.name }
+                            if (categoryNames.size > 2) "${categoryNames.size} Categories" else categoryNames.joinToString(
+                                ", "
+                            )
                         } else if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
                         isSelected = filter.categoryIds.isNotEmpty(),
                         enabled = !isCategoryLocked,
                         modifier = Modifier.weight(1f),
                         onClick = { if (!isCategoryLocked) activeSheet = "Categories" },
-                        iconContainerColor = if (isCategoryLocked) AppColors.formIconContainerTertiary.copy(alpha = 0.05f)
-                                             else AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
+                        iconContainerColor = if (isCategoryLocked) AppColors.formIconContainerTertiary.copy(
+                            alpha = 0.05f
+                        )
+                        else AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
                         iconTint = if (isCategoryLocked) AppColors.tertiary.copy(alpha = 0.4f) else AppColors.tertiary
                     )
                 }
 
                 // Currency Card
-                val isCurrencyLocked = !filterRules.allowCurrencySelection && filter.currencies.isNotEmpty()
+                val isCurrencyLocked =
+                    !filterRules.allowCurrencySelection && filter.currencies.isNotEmpty()
                 if (filterRules.allowCurrencySelection || isCurrencyLocked) {
                     EntryActionCard(
                         icon = if (isCurrencyLocked) Icons.Default.Lock else Icons.Default.MonetizationOn,
@@ -337,8 +400,10 @@ fun FilterFields(
                         enabled = !isCurrencyLocked,
                         modifier = Modifier.weight(1f),
                         onClick = { if (!isCurrencyLocked) activeSheet = "Currencies" },
-                        iconContainerColor = if (isCurrencyLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
-                                             else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconContainerColor = if (isCurrencyLocked) AppColors.formIconContainerPrimary.copy(
+                            alpha = 0.05f
+                        )
+                        else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
                         iconTint = if (isCurrencyLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                     )
                 }
@@ -346,8 +411,9 @@ fun FilterFields(
 
             // Status & Methods
             val isStatusLocked = !filterRules.allowStatusSelection && filter.statuses.isNotEmpty()
-            val isMethodLocked = !filterRules.allowPaymentMethodSelection && filter.paymentMethods.isNotEmpty()
-            
+            val isMethodLocked =
+                !filterRules.allowPaymentMethodSelection && filter.paymentMethods.isNotEmpty()
+
             if (filterRules.allowStatusSelection || isStatusLocked || filterRules.allowPaymentMethodSelection || isMethodLocked) {
                 EntryActionRow {
                     if (filterRules.allowStatusSelection || isStatusLocked) {
@@ -362,7 +428,7 @@ fun FilterFields(
                             modifier = Modifier.weight(1f),
                             onClick = { if (!isStatusLocked) activeSheet = "Statuses" },
                             iconContainerColor = if (isStatusLocked) AppColors.secondary.copy(alpha = 0.05f)
-                                                 else AppColors.secondary.copy(alpha = 0.1f),
+                            else AppColors.secondary.copy(alpha = 0.1f),
                             iconTint = if (isStatusLocked) AppColors.secondary.copy(alpha = 0.4f) else AppColors.secondary
                         )
                     }
@@ -379,7 +445,7 @@ fun FilterFields(
                             modifier = Modifier.weight(1f),
                             onClick = { if (!isMethodLocked) activeSheet = "PaymentMethods" },
                             iconContainerColor = if (isMethodLocked) AppColors.primary.copy(alpha = 0.05f)
-                                                 else AppColors.primary.copy(alpha = 0.1f),
+                            else AppColors.primary.copy(alpha = 0.1f),
                             iconTint = if (isMethodLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                         )
                     }
@@ -388,7 +454,8 @@ fun FilterFields(
         }
 
         // Search & Tags
-        val isSearchLocked = !filterRules.allowSearch && (filter.queryNote != null || filter.queryPayee != null)
+        val isSearchLocked =
+            !filterRules.allowSearch && (filter.queryNote != null || filter.queryPayee != null)
         val isTagLocked = !filterRules.allowTagSelection && filter.tags.isNotEmpty()
 
         if (filterRules.allowSearch || isSearchLocked || filterRules.allowTagSelection || isTagLocked) {
@@ -425,8 +492,10 @@ fun FilterFields(
                         isSelected = filter.tags.isNotEmpty(),
                         enabled = !isTagLocked,
                         onClick = { if (!isTagLocked) activeSheet = "Tags" },
-                        iconContainerColor = if (isTagLocked) AppColors.formIconContainerPrimary.copy(alpha = 0.05f)
-                                             else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconContainerColor = if (isTagLocked) AppColors.formIconContainerPrimary.copy(
+                            alpha = 0.05f
+                        )
+                        else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
                         iconTint = if (isTagLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                     )
                 }
@@ -434,8 +503,10 @@ fun FilterFields(
         }
 
         // Amount & Records
-        val isAmountLocked = !filterRules.allowAmountRange && (filter.minAmount != null || filter.maxAmount != null)
-        val isLinkedLocked = !filterRules.allowLinkedRecords && filter.linkedTransactionIds.isNotEmpty()
+        val isAmountLocked =
+            !filterRules.allowAmountRange && (filter.minAmount != null || filter.maxAmount != null)
+        val isLinkedLocked =
+            !filterRules.allowLinkedRecords && filter.linkedTransactionIds.isNotEmpty()
 
         if (filterRules.allowAmountRange || isAmountLocked || filterRules.allowLinkedRecords || isLinkedLocked) {
             EntrySection(
@@ -478,7 +549,7 @@ fun FilterFields(
                         enabled = !isLinkedLocked,
                         onClick = { if (!isLinkedLocked) activeSheet = "LinkedTransactions" },
                         iconContainerColor = if (isLinkedLocked) AppColors.tertiary.copy(alpha = 0.05f)
-                                             else AppColors.tertiary.copy(alpha = 0.1f),
+                        else AppColors.tertiary.copy(alpha = 0.1f),
                         iconTint = if (isLinkedLocked) AppColors.tertiary.copy(alpha = 0.4f) else AppColors.tertiary
                     )
                 }
@@ -487,7 +558,7 @@ fun FilterFields(
 
         // Warranty Section
         val isWarrantyLocked = !filterRules.allowWarrantySelection && filter.hasWarranty != null
-        
+
         if (filterRules.allowWarrantySelection || isWarrantyLocked) {
             EntrySection(
                 title = "WARRANTY",
@@ -515,31 +586,40 @@ fun FilterFields(
                             }
                         },
                         iconContainerColor = if (isWarrantyLocked) AppColors.secondary.copy(alpha = 0.05f)
-                                             else AppColors.secondary.copy(alpha = 0.1f),
+                        else AppColors.secondary.copy(alpha = 0.1f),
                         iconTint = if (isWarrantyLocked) AppColors.secondary.copy(alpha = 0.4f) else AppColors.secondary
                     )
 
                     if (filter.hasWarranty == true) {
-                        val isWarrantyDatesLocked = !filterRules.allowWarrantySelection && (filter.warrantyExpirationStart != null || filter.warrantyExpirationEnd != null)
+                        val isWarrantyDatesLocked =
+                            !filterRules.allowWarrantySelection && (filter.warrantyExpirationStart != null || filter.warrantyExpirationEnd != null)
                         EntryActionRow {
                             EntryActionCard(
                                 icon = if (isWarrantyDatesLocked) Icons.Default.Lock else Icons.Rounded.CalendarToday,
                                 label = "WARRANTY START",
-                                value = filter.warrantyExpirationStart?.let { 
-                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                                value = filter.warrantyExpirationStart?.let {
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(
+                                        Date(it)
+                                    )
                                 } ?: "Select",
                                 enabled = !isWarrantyDatesLocked,
-                                onClick = { if (!isWarrantyDatesLocked) activeSheet = "WarrantyStart" },
+                                onClick = {
+                                    if (!isWarrantyDatesLocked) activeSheet = "WarrantyStart"
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                             EntryActionCard(
                                 icon = if (isWarrantyDatesLocked) Icons.Default.Lock else Icons.Rounded.CalendarToday,
                                 label = "WARRANTY END",
-                                value = filter.warrantyExpirationEnd?.let { 
-                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                                value = filter.warrantyExpirationEnd?.let {
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(
+                                        Date(it)
+                                    )
                                 } ?: "Select",
                                 enabled = !isWarrantyDatesLocked,
-                                onClick = { if (!isWarrantyDatesLocked) activeSheet = "WarrantyEnd" },
+                                onClick = {
+                                    if (!isWarrantyDatesLocked) activeSheet = "WarrantyEnd"
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -565,7 +645,6 @@ fun FilterFieldsPreview() {
         }
     }
 }
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)

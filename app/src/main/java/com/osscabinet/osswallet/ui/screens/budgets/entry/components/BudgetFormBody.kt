@@ -1,32 +1,63 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import kotlinx.coroutines.flow.flowOf
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntryPaymentMethodStatusRow
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryTagSection
+import com.osscabinet.ossWallet.ui.components.entry.SharedFilterConfirmationDialog
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryEvent
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Budget Entry Form Body with Optimized Information Hierarchy.
@@ -103,7 +134,8 @@ fun BudgetFormBody(
                     AeonContextGrid {
                         // Accounts & Categories
                         EntryActionRow {
-                            val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
+                            val accountObj =
+                                if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
                             EntryActionCard(
                                 icon = getAccountIconByName(accountObj?.icon),
                                 label = "ACCOUNTS",
@@ -117,9 +149,11 @@ fun BudgetFormBody(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                            val categoryObj =
+                                if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
                             EntryActionCard(
-                                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                                icon = categoryObj?.let { getIconByName(it.iconName) }
+                                    ?: Icons.Rounded.Category,
                                 label = "CATEGORIES",
                                 value = when {
                                     state.selectedCategoryIds.isEmpty() -> "All Categories"
@@ -206,7 +240,13 @@ fun BudgetFormBody(
                             state.selectedPaymentMethods.size == PaymentMethod.entries.size -> "All Methods"
                             else -> "${state.selectedPaymentMethods.size} Selected"
                         },
-                        onPaymentMethodClick = { onEvent(BudgetEntryEvent.ShowPaymentMethodSheet(show = true)) },
+                        onPaymentMethodClick = {
+                            onEvent(
+                                BudgetEntryEvent.ShowPaymentMethodSheet(
+                                    show = true
+                                )
+                            )
+                        },
                         statusLabel = when {
                             state.selectedStatuses.isEmpty() -> "All Statuses"
                             state.selectedStatuses.size == TransactionStatus.entries.size -> "All Statuses"
@@ -260,20 +300,41 @@ fun BudgetFormBody(
                     )
 
                     if (state.hasWarranty == true) {
-                        val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+                        val formatter = remember {
+                            java.text.SimpleDateFormat(
+                                "MMM dd, yyyy",
+                                java.util.Locale.getDefault()
+                            )
+                        }
                         AeonContextGrid {
                             EntryActionRow {
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY START",
-                                    value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
-                                    onClick = { onEvent(BudgetEntryEvent.ShowWarrantyStartPicker(show = true)) },
+                                    value = state.warrantyExpirationStart?.let {
+                                        formatter.format(
+                                            java.util.Date(it)
+                                        )
+                                    } ?: "Select",
+                                    onClick = {
+                                        onEvent(
+                                            BudgetEntryEvent.ShowWarrantyStartPicker(
+                                                show = true
+                                            )
+                                        )
+                                    },
                                     modifier = Modifier.weight(1f)
                                 )
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY END",
-                                    value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    value = state.warrantyExpirationEnd?.let {
+                                        formatter.format(
+                                            java.util.Date(
+                                                it
+                                            )
+                                        )
+                                    } ?: "Select",
                                     onClick = { onEvent(BudgetEntryEvent.ShowWarrantyEndPicker(show = true)) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -323,8 +384,20 @@ fun BudgetFormBody(
         if (state.showSharedFilterDialog) {
             SharedFilterConfirmationDialog(
                 onDismiss = { onEvent(BudgetEntryEvent.ShowSharedFilterDialog(show = false)) },
-                onConfirmUpdateShared = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
-                onConfirmCreateNew = { onEvent(BudgetEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+                onConfirmUpdateShared = {
+                    onEvent(
+                        BudgetEntryEvent.ConfirmSaveWithSharedFilter(
+                            updateShared = true
+                        )
+                    )
+                },
+                onConfirmCreateNew = {
+                    onEvent(
+                        BudgetEntryEvent.ConfirmSaveWithSharedFilter(
+                            updateShared = false
+                        )
+                    )
+                }
             )
         }
     }

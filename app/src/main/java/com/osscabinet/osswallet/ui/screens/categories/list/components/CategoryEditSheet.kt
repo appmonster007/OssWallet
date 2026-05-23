@@ -1,14 +1,35 @@
 package com.osscabinet.ossWallet.ui.screens.categories.list.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountTree
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,18 +39,18 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CategoryNature
-import com.osscabinet.ossWallet.ui.util.toColorInt
-import com.osscabinet.ossWallet.ui.util.toHex
-import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
-import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OutlineLight
+import com.osscabinet.ossWallet.ui.util.toColorInt
+import com.osscabinet.ossWallet.ui.util.toHex
 
 @Composable
 fun CategoryEditSheet(
@@ -82,10 +103,14 @@ fun CategoryEditSheet(
                         text = if (!isEditMode) "New Category" else "Edit Category",
                         style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
                     )
-                    
+
                     if (isEditMode && !isMandatory && onDelete != null) {
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = AppColors.error)
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = "Delete",
+                                tint = AppColors.error
+                            )
                         }
                     }
                 }
@@ -168,11 +193,17 @@ fun CategoryEditSheet(
 
                     if (showParentPicker && !isMandatory) {
                         var parentSearchQuery by remember { mutableStateOf("") }
-                        val filteredParents = remember(parentSearchQuery, parentCategories, category) {
-                            val base = parentCategories.filter { it.id != (category?.id ?: 0L) }
-                            if (parentSearchQuery.isBlank()) base
-                            else base.filter { it.name.contains(parentSearchQuery, ignoreCase = true) }
-                        }
+                        val filteredParents =
+                            remember(parentSearchQuery, parentCategories, category) {
+                                val base = parentCategories.filter { it.id != (category?.id ?: 0L) }
+                                if (parentSearchQuery.isBlank()) base
+                                else base.filter {
+                                    it.name.contains(
+                                        parentSearchQuery,
+                                        ignoreCase = true
+                                    )
+                                }
+                            }
                         Dialog(
                             onDismissRequest = { showParentPicker = false },
                             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -221,13 +252,19 @@ fun CategoryEditSheet(
                                     AeonHierarchicalHybridSelector(
                                         items = filteredParents,
                                         mode = AeonSelectMode.PARENT,
-                                        selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
+                                        selectedIds = if (selectedParentId != null) setOf(
+                                            selectedParentId!!
+                                        ) else emptySet(),
                                         onSelectionChange = { },
                                         idMapper = { it.id },
                                         labelMapper = { it.name },
                                         parentIdMapper = if (parentSearchQuery.isBlank()) { it -> it.parentId } else { _ -> null },
                                         iconMapper = { getIconByName(it.iconName) },
-                                        colorMapper = { if (it.colorHex == -1) OutlineLight else androidx.compose.ui.graphics.Color(it.colorHex) },
+                                        colorMapper = {
+                                            if (it.colorHex == -1) OutlineLight else androidx.compose.ui.graphics.Color(
+                                                it.colorHex
+                                            )
+                                        },
                                         noneLabel = if (parentSearchQuery.isBlank()) "None (Primary)" else null,
                                         onParentSelected = { id ->
                                             selectedParentId = id
@@ -263,9 +300,17 @@ fun CategoryEditSheet(
                     ) {
                         Text("Cancel", color = AppColors.contentSecondary)
                     }
-                    
+
                     Button(
-                        onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId, selectedNature) },
+                        onClick = {
+                            onSave(
+                                name,
+                                selectedIcon,
+                                displayColorHex.toColorInt(),
+                                selectedParentId,
+                                selectedNature
+                            )
+                        },
                         enabled = name.isNotBlank() && !isMandatory,
                         modifier = Modifier.weight(1.5f),
                         shape = RoundedCornerShape(16.dp),
@@ -303,7 +348,9 @@ fun CategoryEditSheet(
                     verticalArrangement = Arrangement.spacedBy(28.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -316,7 +363,7 @@ fun CategoryEditSheet(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                Icons.Rounded.Close, 
+                                Icons.Rounded.Close,
                                 contentDescription = "Close",
                                 modifier = Modifier.size(20.dp),
                                 tint = AppColors.contentSecondary
@@ -328,9 +375,9 @@ fun CategoryEditSheet(
                         selectedIconName = selectedIcon,
                         onIconSelected = { selectedIcon = it },
                         accentColorHex = displayColorHex,
-                        onColorSelected = { 
+                        onColorSelected = {
                             if (selectedParentId == null) {
-                                selectedColorHex = it 
+                                selectedColorHex = it
                             }
                         },
                         isColorLocked = selectedParentId != null

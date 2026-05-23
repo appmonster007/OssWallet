@@ -1,6 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 sealed class PlannedPaymentEntryEvent {
@@ -20,13 +25,16 @@ sealed class PlannedPaymentEntryEvent {
         val dayOfMonth: Int?,
         val cronExpression: String?
     ) : PlannedPaymentEntryEvent()
+
     data class SetAutoConfirm(val auto: Boolean) : PlannedPaymentEntryEvent()
     data class SetHasEndDate(val has: Boolean) : PlannedPaymentEntryEvent()
     data class SetEndDate(val date: Long) : PlannedPaymentEntryEvent()
     data class SetCategoryId(val id: Long) : PlannedPaymentEntryEvent()
     data class SetPayee(val payee: String) : PlannedPaymentEntryEvent()
     data class SetNote(val note: String) : PlannedPaymentEntryEvent()
-    data class SetLocation(val gpsLocation: String?, val location: String? = null) : PlannedPaymentEntryEvent()
+    data class SetLocation(val gpsLocation: String?, val location: String? = null) :
+        PlannedPaymentEntryEvent()
+
     data class SetWarrantyEnabled(val enabled: Boolean) : PlannedPaymentEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : PlannedPaymentEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : PlannedPaymentEntryEvent()
@@ -36,7 +44,8 @@ sealed class PlannedPaymentEntryEvent {
     data class SetLinkedTemplate(val template: Template?) : PlannedPaymentEntryEvent()
     data class SetDeleteTemplateWithPayment(val delete: Boolean) : PlannedPaymentEntryEvent()
     data class SetLinkedTransactionIds(val ids: List<Long>) : PlannedPaymentEntryEvent()
-    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) : PlannedPaymentEntryEvent()
+    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) :
+        PlannedPaymentEntryEvent()
 
     // Visibility
     data class ShowScheduleBuilder(val show: Boolean) : PlannedPaymentEntryEvent()

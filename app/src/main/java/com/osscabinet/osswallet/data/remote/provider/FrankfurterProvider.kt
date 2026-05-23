@@ -48,7 +48,11 @@ class FrankfurterProvider(
         }
     }
 
-    override suspend fun convertCurrencyAmount(amount: Double, from: String, to: String): Result<Double> {
+    override suspend fun convertCurrencyAmount(
+        amount: Double,
+        from: String,
+        to: String
+    ): Result<Double> {
         return fetchRate(from, to).map { it * amount }
     }
 

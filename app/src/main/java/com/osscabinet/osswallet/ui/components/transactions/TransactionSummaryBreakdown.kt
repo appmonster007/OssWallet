@@ -2,25 +2,38 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
 
@@ -53,13 +66,21 @@ fun TransactionSummaryBreakdown(
 
     val positiveColor = PositiveAmountColor
     val negativeColor = AppColors.error
-    
-    val currencies = remember(incomeByCurrency, expenseByCurrency, openingBalancesByCurrency, closingBalancesByCurrency, currenciesToDisplay) {
-        currenciesToDisplay ?: (incomeByCurrency.keys + expenseByCurrency.keys + openingBalancesByCurrency.keys + closingBalancesByCurrency.keys).distinct().sorted()
+
+    val currencies = remember(
+        incomeByCurrency,
+        expenseByCurrency,
+        openingBalancesByCurrency,
+        closingBalancesByCurrency,
+        currenciesToDisplay
+    ) {
+        currenciesToDisplay
+            ?: (incomeByCurrency.keys + expenseByCurrency.keys + openingBalancesByCurrency.keys + closingBalancesByCurrency.keys).distinct()
+                .sorted()
     }
 
     val canExpand = showCurrencyBreakdown && currencies.isNotEmpty()
-    
+
     val balanceWeight = when {
         showOpeningBalance && showClosingBalance -> 2f
         showOpeningBalance || showClosingBalance -> 1f
@@ -133,33 +154,46 @@ fun TransactionSummaryBreakdown(
                 }
             }
 
-            val baseColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
+            val baseColumnModifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
 
             Text(
                 formatCurrencyRight(incomeBase, baseCurrency, shorten = true),
-                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold
+                ),
                 color = positiveColor,
                 modifier = baseColumnModifier,
                 textAlign = TextAlign.End
             )
             Text(
                 formatCurrencyRight(expenseBase, baseCurrency, shorten = true),
-                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold
+                ),
                 color = negativeColor,
                 modifier = baseColumnModifier,
                 textAlign = TextAlign.End
             )
             Text(
                 formatCurrencyRight(netBase, baseCurrency, shorten = true),
-                style = AppTextStyles.transactionSwipeAction.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold
+                ),
                 color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                 modifier = baseColumnModifier,
                 textAlign = TextAlign.End
             )
 
             if (balanceWeight > 0) {
-                val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, shorten = true)
-                val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, shorten = true)
+                val openingBaseText =
+                    formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, shorten = true)
+                val closingBaseText =
+                    formatCurrencyRight(totalClosingBalanceBase, baseCurrency, shorten = true)
                 val balanceText = when {
                     showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
                     showOpeningBalance -> openingBaseText
@@ -167,7 +201,10 @@ fun TransactionSummaryBreakdown(
                 }
                 Text(
                     text = balanceText,
-                    style = AppTextStyles.transactionSwipeAction.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                    style = AppTextStyles.transactionSwipeAction.copy(
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     modifier = Modifier
                         .weight(balanceWeight)
                         .padding(start = 8.dp),
@@ -197,12 +234,17 @@ fun TransactionSummaryBreakdown(
                     ) {
                         Text(
                             text = curr,
-                            style = AppTextStyles.metaLabel.copy(fontSize = 8.sp, fontWeight = FontWeight.Medium),
+                            style = AppTextStyles.metaLabel.copy(
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
                             modifier = Modifier.width(labelColumnWidth),
                             color = AppColors.border.copy(alpha = 0.8f)
                         )
 
-                        val breakdownColumnModifier = Modifier.weight(1f).padding(start = 8.dp)
+                        val breakdownColumnModifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp)
 
                         Text(
                             formatCurrencyRight(inc, curr, shorten = true),
@@ -220,14 +262,23 @@ fun TransactionSummaryBreakdown(
                         )
                         Text(
                             formatCurrencyRight(net, curr, shorten = true),
-                            style = AppTextStyles.metaLabel.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
-                            color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
+                            style = AppTextStyles.metaLabel.copy(
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(
+                                alpha = 0.7f
+                            ),
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
 
                         if (balanceWeight > 0) {
-                            val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, shorten = true) else "0.00 $curr"
+                            val balAfterText = if (balAfter != null) formatCurrencyRight(
+                                balAfter,
+                                curr,
+                                shorten = true
+                            ) else "0.00 $curr"
                             val balBeforeText = formatCurrencyRight(balBefore, curr, shorten = true)
 
                             val balanceText = when {
@@ -238,7 +289,10 @@ fun TransactionSummaryBreakdown(
 
                             Text(
                                 text = balanceText,
-                                style = AppTextStyles.metaLabel.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.metaLabel.copy(
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
                                 modifier = Modifier
                                     .weight(balanceWeight)
                                     .padding(start = 8.dp),
@@ -261,8 +315,14 @@ fun TransactionSummaryBreakdownPreview() {
     OssWalletTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             TransactionSummaryBreakdown(
-                incomeByCurrency = mapOf("USD" to BigDecimal("1500.00"), "EUR" to BigDecimal("200.00")),
-                expenseByCurrency = mapOf("USD" to BigDecimal("800.00"), "EUR" to BigDecimal("50.00")),
+                incomeByCurrency = mapOf(
+                    "USD" to BigDecimal("1500.00"),
+                    "EUR" to BigDecimal("200.00")
+                ),
+                expenseByCurrency = mapOf(
+                    "USD" to BigDecimal("800.00"),
+                    "EUR" to BigDecimal("50.00")
+                ),
                 incomeBase = BigDecimal("1700.00"),
                 expenseBase = BigDecimal("850.00"),
                 netBase = BigDecimal("850.00"),

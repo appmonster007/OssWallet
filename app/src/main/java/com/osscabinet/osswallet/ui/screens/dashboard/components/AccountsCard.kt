@@ -3,12 +3,10 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
@@ -47,10 +44,9 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -70,9 +66,10 @@ fun AccountsCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -116,7 +113,9 @@ fun AccountsCard(
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
                         filter = config.filter,
-                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(
+                            1f
+                        )
                     )
                 }
 
@@ -126,7 +125,9 @@ fun AccountsCard(
                         currentTheme = currentTheme,
                         onClick = callbacks.onManageClick,
                         gridColumns = config.gridColumns,
-                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(
+                            1f
+                        )
                     )
                 } else if (config.gridColumns > 1 && accounts.size % config.gridColumns != 0) {
                     repeat(config.gridColumns - (accounts.size % config.gridColumns)) {
@@ -313,6 +314,7 @@ private fun AccountItemContent(
                 )
             }
         )
+
         2 -> AeonAccountCardMedium(
             account = account,
             balance = balance,
@@ -324,6 +326,7 @@ private fun AccountItemContent(
             onClick = { onAccountClick(account.id) },
             modifier = modifier
         )
+
         else -> AeonAccountCardSmall(
             account = account,
             balance = balance,
@@ -398,6 +401,7 @@ private fun AeonAddAccountCardContent(
             modifier = modifier,
             extraLabel = "Add New"
         )
+
         2 -> AeonAccountCardMedium(
             account = placeholderAccount,
             balance = BigDecimal.ZERO,
@@ -408,6 +412,7 @@ private fun AeonAddAccountCardContent(
             onClick = onClick,
             modifier = modifier
         )
+
         else -> AeonAccountCardSmall(
             account = placeholderAccount,
             balance = BigDecimal.ZERO,
@@ -425,12 +430,44 @@ private fun AeonAddAccountCardContent(
 @Composable
 fun AccountsCardPreview() {
     val accounts = listOf(
-        Account("1", "Main Savings", "USD", AccountStructureType.SAVINGS, "#004D40", "AccountBalance", emptyList()),
-        Account("2", "Travel Fund", "EUR", AccountStructureType.SAVINGS, "#B3261E", "Travel", emptyList())
+        Account(
+            "1",
+            "Main Savings",
+            "USD",
+            AccountStructureType.SAVINGS,
+            "#004D40",
+            "AccountBalance",
+            emptyList()
+        ),
+        Account(
+            "2",
+            "Travel Fund",
+            "EUR",
+            AccountStructureType.SAVINGS,
+            "#B3261E",
+            "Travel",
+            emptyList()
+        )
     )
     val stats = mapOf(
-        "1" to AccountSummaryItem(accounts[0], mapOf("USD" to BigDecimal("5000.00")), BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("1000.00"), BigDecimal("200.00"), BigDecimal.ZERO),
-        "2" to AccountSummaryItem(accounts[1], mapOf("EUR" to BigDecimal("1200.00")), BigDecimal("1200.00"), BigDecimal("1320.00"), BigDecimal("500.00"), BigDecimal("100.00"), BigDecimal.ZERO)
+        "1" to AccountSummaryItem(
+            accounts[0],
+            mapOf("USD" to BigDecimal("5000.00")),
+            BigDecimal("5000.00"),
+            BigDecimal("5000.00"),
+            BigDecimal("1000.00"),
+            BigDecimal("200.00"),
+            BigDecimal.ZERO
+        ),
+        "2" to AccountSummaryItem(
+            accounts[1],
+            mapOf("EUR" to BigDecimal("1200.00")),
+            BigDecimal("1200.00"),
+            BigDecimal("1320.00"),
+            BigDecimal("500.00"),
+            BigDecimal("100.00"),
+            BigDecimal.ZERO
+        )
     )
 
     OssWalletTheme {

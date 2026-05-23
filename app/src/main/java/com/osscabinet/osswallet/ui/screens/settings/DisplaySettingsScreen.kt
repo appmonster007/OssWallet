@@ -2,24 +2,57 @@ package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.FontDownload
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.SettingsSuggest
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
+import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppFont
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
-import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,17 +87,29 @@ fun DisplaySettingsScreen(
                                 .padding(AeonTheme.dimensions.cardPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val icon = when(t) {
+                            val icon = when (t) {
                                 "Light" -> Icons.Rounded.LightMode
                                 "Dark" -> Icons.Rounded.DarkMode
                                 "Amoled" -> Icons.Rounded.Contrast
                                 else -> Icons.Rounded.SettingsSuggest
                             }
-                            Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                            )
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                            Text(t, modifier = Modifier.weight(1f), style = AppTextStyles.listItemTitle)
+                            Text(
+                                t,
+                                modifier = Modifier.weight(1f),
+                                style = AppTextStyles.listItemTitle
+                            )
                             if (t == theme) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = AppColors.primary
+                                )
                             }
                         }
                     }
@@ -93,11 +138,23 @@ fun DisplaySettingsScreen(
                                 .padding(AeonTheme.dimensions.cardPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Rounded.FontDownload, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
+                            Icon(
+                                Icons.Rounded.FontDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                            )
                             Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                            Text(font.displayName, modifier = Modifier.weight(1f), style = AppTextStyles.listItemTitle)
+                            Text(
+                                font.displayName,
+                                modifier = Modifier.weight(1f),
+                                style = AppTextStyles.listItemTitle
+                            )
                             if (font.name == selectedFont) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = AppColors.primary
+                                )
                             }
                         }
                     }
@@ -137,7 +194,11 @@ fun DisplaySettingsScreen(
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Font",
                     subtitle = AppFont.fromName(selectedFont).displayName,
@@ -162,7 +223,11 @@ fun DisplaySettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Expandable Action Button",
                     subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
@@ -178,7 +243,11 @@ fun DisplaySettingsScreen(
                         )
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Recent Activities Breakdown",
                     subtitle = if (recentActivitiesBreakdown) "Currency breakdown shown in group headers" else "Currency breakdown hidden in group headers",

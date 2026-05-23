@@ -3,11 +3,16 @@ package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
-import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 
@@ -99,7 +104,7 @@ fun TemplateEntrySheets(
     if (state.showExchangeRateDialog) {
         ExchangeRateDialog(
             initialRate = state.transferRate,
-            onConfirm = { 
+            onConfirm = {
                 onEvent(TemplateEntryEvent.SetTransferRate(it))
                 onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false))
             },
@@ -110,7 +115,7 @@ fun TemplateEntrySheets(
     if (state.showWarrantyDatePicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationMillis,
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(TemplateEntryEvent.SetWarrantyExpiration(it))
                 onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(false))
             },

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -51,16 +51,14 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun CategoryTreemapCard(
@@ -77,9 +75,10 @@ fun CategoryTreemapCard(
     currentTheme: String = "System",
     showFilterButton: Boolean = true
 ) {
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -91,7 +90,7 @@ fun CategoryTreemapCard(
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }
     val currentData = navigationStack.last()
-    
+
     // Grouping logic for "Other" category
     val groupedData = remember(currentData, config.showOnlyActiveCategories) {
         val filtered = if (config.showOnlyActiveCategories) {
@@ -108,7 +107,7 @@ fun CategoryTreemapCard(
             } else {
                 val otherSum = others.sumOf { it.amount }
                 val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                
+
                 top + CategoryTreemapData(
                     category = "Other",
                     categoryId = -1L,
@@ -124,7 +123,7 @@ fun CategoryTreemapCard(
             sorted
         }
     }
-    
+
     // Sync with external data changes
     LaunchedEffect(data) {
         navigationStack = listOf(data)
@@ -143,7 +142,12 @@ fun CategoryTreemapCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategoryTreemapSettingsSheet(config = config, onUpdate = { callbacks.onUpdate(it) }, onDelete = callbacks.onDelete, onDismiss = onDismiss)
+            CategoryTreemapSettingsSheet(
+                config = config,
+                onUpdate = { callbacks.onUpdate(it) },
+                onDelete = callbacks.onDelete,
+                onDismiss = onDismiss
+            )
         }
     ) {
         if (navigationStack.size > 1) {
@@ -164,7 +168,7 @@ fun CategoryTreemapCard(
                         tint = AppColors.primary
                     )
                 }
-                
+
                 navigationStack.drop(1).forEachIndexed { index, stack ->
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
@@ -172,10 +176,10 @@ fun CategoryTreemapCard(
                         modifier = Modifier.size(16.dp),
                         tint = AppColors.border
                     )
-                    
+
                     val prevStack = navigationStack[index]
                     val name = prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
-                    
+
                     TextButton(
                         onClick = { navigationStack = navigationStack.take(index + 2) },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
@@ -207,7 +211,7 @@ fun CategoryTreemapCard(
                     } else {
                         Color(item.colorHex)
                     }
-                    
+
                     val displayColor = if (navigationStack.size > 1) {
                         baseColor.generateShade(index, groupedData.size, isDarkTheme, isAmoled)
                     } else {
@@ -224,7 +228,7 @@ fun CategoryTreemapCard(
                         subcategoryCount = item.subcategoryCount
                     )
                 }
-                
+
                 AeonTreemap(
                     nodes = rootNodes,
                     modifier = Modifier.fillMaxSize(),
@@ -241,7 +245,8 @@ fun CategoryTreemapCard(
                     },
                     onNavigateToRecords = { node ->
                         val clickedItem = groupedData.find { it.category == node.name }
-                        val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
+                        val categoryIds =
+                            clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
                         callbacks.onRecordsClick(
                             config.filter.copy(
@@ -252,7 +257,11 @@ fun CategoryTreemapCard(
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No expense data", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+                    Text(
+                        "No expense data",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
                 }
             }
         }
@@ -261,8 +270,8 @@ fun CategoryTreemapCard(
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             TreemapLegend(
-                data = groupedData, 
-                isDarkTheme = isDarkTheme, 
+                data = groupedData,
+                isDarkTheme = isDarkTheme,
                 isAmoled = isAmoled,
                 showFullBreakdown = config.showFullBreakdown,
                 onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
@@ -282,13 +291,33 @@ private fun CategoryTreemapSettingsSheet(
 ) {
     CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            SettingsSwitchRow("Show Labels", config.showLabels, subtitle = "Display category names on segments") { onUpdate(config.copy(showLabels = it)) }
-            SettingsSwitchRow("Show Legend", config.showLegend, subtitle = "Display list of categories beneath the map") { onUpdate(config.copy(showLegend = it)) }
-            SettingsSwitchRow("Rounded Visuals", config.rounded, subtitle = "Apply rounded corners and spacing to segments") { onUpdate(config.copy(rounded = it)) }
+            SettingsSwitchRow(
+                "Show Labels",
+                config.showLabels,
+                subtitle = "Display category names on segments"
+            ) { onUpdate(config.copy(showLabels = it)) }
+            SettingsSwitchRow(
+                "Show Legend",
+                config.showLegend,
+                subtitle = "Display list of categories beneath the map"
+            ) { onUpdate(config.copy(showLegend = it)) }
+            SettingsSwitchRow(
+                "Rounded Visuals",
+                config.rounded,
+                subtitle = "Apply rounded corners and spacing to segments"
+            ) { onUpdate(config.copy(rounded = it)) }
         }
         CardSettingsSection("Data") {
-            SettingsSwitchRow("Full Breakdown", config.showFullBreakdown, subtitle = "Show all categories instead of top 5") { onUpdate(config.copy(showFullBreakdown = it)) }
-            SettingsSwitchRow("Active Only", config.showOnlyActiveCategories, subtitle = "Only show categories with non-zero values") { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            SettingsSwitchRow(
+                "Full Breakdown",
+                config.showFullBreakdown,
+                subtitle = "Show all categories instead of top 5"
+            ) { onUpdate(config.copy(showFullBreakdown = it)) }
+            SettingsSwitchRow(
+                "Active Only",
+                config.showOnlyActiveCategories,
+                subtitle = "Only show categories with non-zero values"
+            ) { onUpdate(config.copy(showOnlyActiveCategories = it)) }
         }
     }
 }
@@ -317,8 +346,8 @@ private fun SettingsSwitchRow(
 
 @Composable
 fun TreemapLegend(
-    data: List<CategoryTreemapData>, 
-    isDarkTheme: Boolean, 
+    data: List<CategoryTreemapData>,
+    isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
     onToggleBreakdown: (Boolean) -> Unit
@@ -340,7 +369,7 @@ fun TreemapLegend(
                     color = Color(item.colorHex).toChartColor(isDarkTheme, isAmoled),
                     border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
                 ) {}
-                
+
                 Text(
                     text = item.category,
                     style = AppTextStyles.drawerItemLabel.copy(
@@ -349,7 +378,7 @@ fun TreemapLegend(
                     ),
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Text(
                     text = formatAmount(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
@@ -360,7 +389,7 @@ fun TreemapLegend(
                 )
             }
         }
-        
+
         if (!showFullBreakdown && data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
@@ -393,23 +422,107 @@ fun TreemapLegend(
 @Composable
 fun CategoryTreemapCardPreview() {
     val sampleData = listOf(
-        CategoryTreemapData(category = "Housing", categoryId = null, amount = BigDecimal("1200.00"), colorHex = 0xFF2196F3.toInt(), percentage = 0.6f),
-        CategoryTreemapData(category = "Food", categoryId = null, amount = BigDecimal("450.00"), colorHex = 0xFFFF5722.toInt(), percentage = 0.2f),
-        CategoryTreemapData(category = "Transport", categoryId = null, amount = BigDecimal("150.00"), colorHex = 0xFF4CAF50.toInt(), percentage = 0.1f),
-        CategoryTreemapData(category = "Entertainment", categoryId = null, amount = BigDecimal("200.00"), colorHex = 0xFF9C27B0.toInt(), percentage = 0.1f),
-        CategoryTreemapData(category = "Misc 1", categoryId = null, amount = BigDecimal("10.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 2", categoryId = null, amount = BigDecimal("9.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 3", categoryId = null, amount = BigDecimal("8.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 4", categoryId = null, amount = BigDecimal("7.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 5", categoryId = null, amount = BigDecimal("6.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 6", categoryId = null, amount = BigDecimal("5.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 7", categoryId = null, amount = BigDecimal("4.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 8", categoryId = null, amount = BigDecimal("3.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 9", categoryId = null, amount = BigDecimal("2.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
-        CategoryTreemapData(category = "Misc 10", categoryId = null, amount = BigDecimal("1.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f)
+        CategoryTreemapData(
+            category = "Housing",
+            categoryId = null,
+            amount = BigDecimal("1200.00"),
+            colorHex = 0xFF2196F3.toInt(),
+            percentage = 0.6f
+        ),
+        CategoryTreemapData(
+            category = "Food",
+            categoryId = null,
+            amount = BigDecimal("450.00"),
+            colorHex = 0xFFFF5722.toInt(),
+            percentage = 0.2f
+        ),
+        CategoryTreemapData(
+            category = "Transport",
+            categoryId = null,
+            amount = BigDecimal("150.00"),
+            colorHex = 0xFF4CAF50.toInt(),
+            percentage = 0.1f
+        ),
+        CategoryTreemapData(
+            category = "Entertainment",
+            categoryId = null,
+            amount = BigDecimal("200.00"),
+            colorHex = 0xFF9C27B0.toInt(),
+            percentage = 0.1f
+        ),
+        CategoryTreemapData(
+            category = "Misc 1",
+            categoryId = null,
+            amount = BigDecimal("10.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 2",
+            categoryId = null,
+            amount = BigDecimal("9.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 3",
+            categoryId = null,
+            amount = BigDecimal("8.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 4",
+            categoryId = null,
+            amount = BigDecimal("7.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 5",
+            categoryId = null,
+            amount = BigDecimal("6.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 6",
+            categoryId = null,
+            amount = BigDecimal("5.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 7",
+            categoryId = null,
+            amount = BigDecimal("4.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 8",
+            categoryId = null,
+            amount = BigDecimal("3.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 9",
+            categoryId = null,
+            amount = BigDecimal("2.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        ),
+        CategoryTreemapData(
+            category = "Misc 10",
+            categoryId = null,
+            amount = BigDecimal("1.00"),
+            colorHex = 0xFF607D8B.toInt(),
+            percentage = 0.01f
+        )
     )
 
-     OssWalletTheme {
+    OssWalletTheme {
         CategoryTreemapCard(
             config = CategoryTreemapCardConfig(
                 cardId = "preview",

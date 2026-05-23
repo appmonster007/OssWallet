@@ -1,20 +1,35 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
@@ -25,9 +40,11 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import java.math.BigDecimal
 
@@ -40,7 +57,7 @@ fun AeonTemplateSelection(
     showCreateNew: Boolean = true
 ) {
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
-    
+
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = "Link Template",
@@ -49,7 +66,12 @@ fun AeonTemplateSelection(
             var query by remember { mutableStateOf("") }
             val filtered = remember(query, templates) {
                 if (query.isBlank()) templates
-                else templates.filter { it.name.contains(query, ignoreCase = true) || it.name.fuzzyMatch(query) }
+                else templates.filter {
+                    it.name.contains(
+                        query,
+                        ignoreCase = true
+                    ) || it.name.fuzzyMatch(query)
+                }
             }
 
             Column(
@@ -62,10 +84,10 @@ fun AeonTemplateSelection(
                     onQueryChange = { query = it },
                     placeholder = "Search templates..."
                 )
-                
+
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Surface(
                         onClick = { onTemplateSelected(null); onDismiss() },
                         shape = RoundedCornerShape(16.dp),
@@ -80,7 +102,11 @@ fun AeonTemplateSelection(
                         ) {
                             Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create New Template", color = AppColors.primary, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Create New Template",
+                                color = AppColors.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -97,7 +123,11 @@ fun AeonTemplateSelection(
                         Card(
                             onClick = { onTemplateSelected(template); onDismiss() },
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = AppColors.insetSurface.copy(alpha = 0.3f))
+                            colors = CardDefaults.cardColors(
+                                containerColor = AppColors.insetSurface.copy(
+                                    alpha = 0.3f
+                                )
+                            )
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -121,8 +151,16 @@ fun AeonTemplateSelection(
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(template.name, style = AppTextStyles.screenSubTitle, fontWeight = FontWeight.Bold)
-                                    Text(category?.name ?: "Unknown", style = AppTextStyles.caption, color = AppColors.border)
+                                    Text(
+                                        template.name,
+                                        style = AppTextStyles.screenSubTitle,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        category?.name ?: "Unknown",
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.border
+                                    )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     val (prefix, color) = when (template.transactionType) {
@@ -172,8 +210,22 @@ fun AeonTemplateSelectionPreview() {
                 )
             ),
             categories = listOf(
-                Category(id = 1, name = "Housing", iconName = "Home", colorHex = -1, isDefault = true, parentId = null),
-                Category(id = 2, name = "Job", iconName = "Work", colorHex = -1, isDefault = true, parentId = null)
+                Category(
+                    id = 1,
+                    name = "Housing",
+                    iconName = "Home",
+                    colorHex = -1,
+                    isDefault = true,
+                    parentId = null
+                ),
+                Category(
+                    id = 2,
+                    name = "Job",
+                    iconName = "Work",
+                    colorHex = -1,
+                    isDefault = true,
+                    parentId = null
+                )
             ),
             onTemplateSelected = {},
             onDismiss = {}

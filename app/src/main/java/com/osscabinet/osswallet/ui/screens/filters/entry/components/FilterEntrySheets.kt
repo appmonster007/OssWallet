@@ -1,13 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.filters.entry.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectionSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonTimelineSheet
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryEvent
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 
@@ -43,8 +53,8 @@ fun FilterEntrySheets(
         AeonAccountSelection(
             accounts = state.accounts,
             selectedAccountIds = state.selectedAccountIds,
-            onSelectionChange = { ids -> 
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetAccountIds(ids)) 
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetAccountIds(ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -56,8 +66,8 @@ fun FilterEntrySheets(
         AeonCategorySelection(
             categories = state.categories,
             selectedCategoryIds = state.selectedCategoryIds,
-            onSelectionChange = { ids -> 
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCategoryIds(ids)) 
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCategoryIds(ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -69,8 +79,8 @@ fun FilterEntrySheets(
     if (state.showPaymentMethodSheet) {
         AeonPaymentMethodSelection(
             selectedMethods = state.selectedPaymentMethods,
-            onSelectionChange = { ids -> 
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetPaymentMethods(ids)) 
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetPaymentMethods(ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -81,8 +91,8 @@ fun FilterEntrySheets(
     if (state.showStatusSheet) {
         AeonStatusSelection(
             selectedStatuses = state.selectedStatuses,
-            onSelectionChange = { ids -> 
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetStatuses(ids)) 
+            onSelectionChange = { ids ->
+                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetStatuses(ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -110,7 +120,7 @@ fun FilterEntrySheets(
             onTagsSelected = {
                 onEvent(FilterEntryEvent.SetTags(it))
             },
-            onAddTag = { name, _ -> 
+            onAddTag = { name, _ ->
                 onEvent(FilterEntryEvent.SetTags(state.selectedTags + name))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowTagSheet(false)) }
@@ -159,7 +169,7 @@ fun FilterEntrySheets(
     if (state.showWarrantyStartPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(FilterEntryEvent.SetWarrantyExpirationStart(it))
                 onEvent(FilterEntryEvent.ShowWarrantyStartPicker(false))
             },
@@ -171,7 +181,7 @@ fun FilterEntrySheets(
     if (state.showWarrantyEndPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(FilterEntryEvent.SetWarrantyExpirationEnd(it))
                 onEvent(FilterEntryEvent.ShowWarrantyEndPicker(false))
             },

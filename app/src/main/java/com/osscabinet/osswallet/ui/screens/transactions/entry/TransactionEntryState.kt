@@ -1,7 +1,14 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -102,11 +109,12 @@ data class TransactionEntryState(
     val canSave: Boolean
         get() {
             if (isSplitMode) {
-                val totalSplitAmount = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
-                return amountValue >= BigDecimal.ZERO && 
-                       totalSplitAmount == amountValue && 
-                       selectedAccount != null && 
-                       splits.all { it.categoryId != null }
+                val totalSplitAmount =
+                    splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
+                return amountValue >= BigDecimal.ZERO &&
+                        totalSplitAmount == amountValue &&
+                        selectedAccount != null &&
+                        splits.all { it.categoryId != null }
             }
             return amountValue >= BigDecimal.ZERO && selectedAccount != null
         }

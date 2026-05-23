@@ -5,10 +5,20 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,9 +37,6 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Label
 
 /**
  * Compact action chip for entry screens.
@@ -51,13 +58,13 @@ fun EntryActionChip(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "chipScale")
-    
+
     val backgroundColor by animateColorAsState(
         if (isSelected) selectedColor.copy(alpha = 0.08f)
         else AppColors.recessedSurface,
         label = "bgColor"
     )
-    
+
     val borderColor by animateColorAsState(
         if (isSelected) selectedColor
         else AppColors.divider.copy(alpha = 0.2f),
@@ -87,7 +94,10 @@ fun EntryActionChip(
         ) {
             Surface(
                 shape = CircleShape,
-                color = iconContainerColor ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else AppColors.primary.copy(alpha = 0.08f)),
+                color = iconContainerColor
+                    ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else AppColors.primary.copy(
+                        alpha = 0.08f
+                    )),
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {

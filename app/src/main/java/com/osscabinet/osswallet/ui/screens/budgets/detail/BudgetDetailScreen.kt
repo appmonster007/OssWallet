@@ -3,16 +3,12 @@ package com.osscabinet.ossWallet.ui.screens.budgets.detail
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -32,53 +28,43 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,10 +115,20 @@ fun BudgetDetailScreen(
     val budgetTransactions =
         remember(budget, absoluteTransactionsWithBalance, categoriesList) {
             if (budget == null) return@remember emptyList()
-            val filter = BudgetService.buildTransactionFilter(budget, System.currentTimeMillis(), categoriesList)
-            android.util.Log.d("BudgetDetail", "[${budget.name}] linked filterId=${budget.filterId} | budget fields: categories=${budget.categoryIds} accounts=${budget.accountIds} tags=${budget.tags} trackTypes=${budget.trackTypes} currencies=${budget.currencies} paymentMethods=${budget.paymentMethods} statuses=${budget.statuses} linkedTxIds=${budget.linkedTransactionIds} timelineRange=${budget.timelineRange}")
+            val filter = BudgetService.buildTransactionFilter(
+                budget,
+                System.currentTimeMillis(),
+                categoriesList
+            )
+            android.util.Log.d(
+                "BudgetDetail",
+                "[${budget.name}] linked filterId=${budget.filterId} | budget fields: categories=${budget.categoryIds} accounts=${budget.accountIds} tags=${budget.tags} trackTypes=${budget.trackTypes} currencies=${budget.currencies} paymentMethods=${budget.paymentMethods} statuses=${budget.statuses} linkedTxIds=${budget.linkedTransactionIds} timelineRange=${budget.timelineRange}"
+            )
             android.util.Log.d("BudgetDetail", "[${budget.name}] activity filter: $filter")
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
+            TransactionFilterService.filterTransactionsWithBalance(
+                absoluteTransactionsWithBalance,
+                filter
+            )
         }
 
     val selectedAccounts = remember(accounts, budget?.accountIds) {
@@ -183,7 +179,9 @@ fun BudgetDetailScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
@@ -193,7 +191,12 @@ fun BudgetDetailScreen(
                     0 -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonTheme.dimensions.screenPadding,
+                                bottom = scrollBottomPadding()
+                            ),
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
                         ) {
                             item {
@@ -262,7 +265,10 @@ fun BudgetDetailScreen(
                                     Surface(
                                         color = AppColors.primary.copy(alpha = 0.05f),
                                         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                                        border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.1f))
+                                        border = BorderStroke(
+                                            1.dp,
+                                            AppColors.primary.copy(alpha = 0.1f)
+                                        )
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -308,7 +314,10 @@ fun BudgetDetailScreen(
                                     AppColors.divider.copy(alpha = 0.15f)
                                 )
                             ) {
-                                Box(Modifier.padding(AeonTheme.dimensions.spacing2xl), contentAlignment = Alignment.Center) {
+                                Box(
+                                    Modifier.padding(AeonTheme.dimensions.spacing2xl),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
                                         "No activity in this period",
                                         style = AppTextStyles.transactionTitle,
@@ -321,7 +330,12 @@ fun BudgetDetailScreen(
                         } else {
                             val now = System.currentTimeMillis()
 
-                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, baseCurrency, allTags) {
+                            val budgetListState = remember(
+                                budgetTransactions,
+                                absoluteTransactionsWithBalance,
+                                baseCurrency,
+                                allTags
+                            ) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = budgetTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
@@ -341,7 +355,11 @@ fun BudgetDetailScreen(
                                 listState = budgetListState,
                                 onRecordsClick = { _ ->
                                     onRecordsClick(
-                                        BudgetService.buildTransactionFilter(budget, now, categoriesList)
+                                        BudgetService.buildTransactionFilter(
+                                            budget,
+                                            now,
+                                            categoriesList
+                                        )
                                     )
                                 },
                                 baseCurrency = baseCurrency,
@@ -351,13 +369,34 @@ fun BudgetDetailScreen(
                                 onTransactionEvent = { event ->
                                     when (event) {
                                         is TransactionItemEvent.Click -> onTransactionClick(event.id)
-                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
-                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
-                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                                        is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                                            event.id,
+                                            event.status
+                                        )
+
+                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Split -> onSplitTransactionClick(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                                            event.id
+                                        )
                                     }
                                 }
                             )

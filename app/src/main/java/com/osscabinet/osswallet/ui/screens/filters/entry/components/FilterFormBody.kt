@@ -1,30 +1,59 @@
 package com.osscabinet.ossWallet.ui.screens.filters.entry.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import kotlinx.coroutines.flow.flowOf
+import androidx.compose.material.icons.automirrored.rounded.FactCheck
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryTagSection
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryEvent
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Filter Entry Form Body.
@@ -96,7 +125,8 @@ fun FilterFormBody(
                         modifier = Modifier.weight(1f)
                     )
 
-                    val accountObj = if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
+                    val accountObj =
+                        if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
                     EntryActionCard(
                         icon = getAccountIconByName(accountObj?.icon),
                         label = "ACCOUNTS",
@@ -112,9 +142,11 @@ fun FilterFormBody(
 
                 // Categories & Currencies selection
                 EntryActionRow {
-                    val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                    val categoryObj =
+                        if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
                     EntryActionCard(
-                        icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                        icon = categoryObj?.let { getIconByName(it.iconName) }
+                            ?: Icons.Rounded.Category,
                         label = "CATEGORIES",
                         value = when {
                             state.selectedCategoryIds.isEmpty() || (state.categories.isNotEmpty() && state.selectedCategoryIds.size == state.categories.size) -> "All Categories"
@@ -268,20 +300,41 @@ fun FilterFormBody(
                     )
 
                     if (state.hasWarranty == true) {
-                        val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+                        val formatter = remember {
+                            java.text.SimpleDateFormat(
+                                "MMM dd, yyyy",
+                                java.util.Locale.getDefault()
+                            )
+                        }
                         AeonContextGrid {
                             EntryActionRow {
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY START",
-                                    value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
-                                    onClick = { onEvent(FilterEntryEvent.ShowWarrantyStartPicker(show = true)) },
+                                    value = state.warrantyExpirationStart?.let {
+                                        formatter.format(
+                                            java.util.Date(it)
+                                        )
+                                    } ?: "Select",
+                                    onClick = {
+                                        onEvent(
+                                            FilterEntryEvent.ShowWarrantyStartPicker(
+                                                show = true
+                                            )
+                                        )
+                                    },
                                     modifier = Modifier.weight(1f)
                                 )
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY END",
-                                    value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    value = state.warrantyExpirationEnd?.let {
+                                        formatter.format(
+                                            java.util.Date(
+                                                it
+                                            )
+                                        )
+                                    } ?: "Select",
                                     onClick = { onEvent(FilterEntryEvent.ShowWarrantyEndPicker(show = true)) },
                                     modifier = Modifier.weight(1f)
                                 )

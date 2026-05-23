@@ -1,16 +1,36 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
-import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,8 +68,8 @@ class TemplateEntryViewModel @Inject constructor(
                 ) { accounts, categories, tags ->
                     val payees = transactionUseCases.getUniquePayees(profileId)
                     val notes = transactionUseCases.getUniqueNotes(profileId)
-                    
-                    _state.update { 
+
+                    _state.update {
                         it.copy(
                             accounts = accounts,
                             categories = categories,
@@ -80,7 +100,8 @@ class TemplateEntryViewModel @Inject constructor(
                         payee = prefill.payee ?: "",
                         location = prefill.location ?: "",
                         gpsLocation = prefill.gpsLocation,
-                        warrantyExpirationMillis = prefill.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        warrantyExpirationMillis = prefill.warrantyExpiration
+                            ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = prefill.warrantyExpiration != null,
                         transactionStatus = prefill.status,
                         paymentMethod = prefill.paymentMethod ?: PaymentMethod.CASH,
@@ -115,7 +136,8 @@ class TemplateEntryViewModel @Inject constructor(
                         payee = template.payee ?: "",
                         location = template.location ?: "",
                         gpsLocation = template.gpsLocation,
-                        warrantyExpirationMillis = template.warrantyExpiration ?: (System.currentTimeMillis() + 31536000000L),
+                        warrantyExpirationMillis = template.warrantyExpiration
+                            ?: (System.currentTimeMillis() + 31536000000L),
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
                         paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
@@ -141,10 +163,12 @@ class TemplateEntryViewModel @Inject constructor(
                     recalculateExchangeRate()
                 }
             }
+
             is TemplateEntryEvent.SetCategory -> {
                 _state.update { it.copy(categoryId = event.categoryId) }
                 updateCategoryName()
             }
+
             is TemplateEntryEvent.SetAccount -> {
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
@@ -155,6 +179,7 @@ class TemplateEntryViewModel @Inject constructor(
                 }
                 recalculateExchangeRate()
             }
+
             is TemplateEntryEvent.SetTargetAccount -> {
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
@@ -165,20 +190,34 @@ class TemplateEntryViewModel @Inject constructor(
                 }
                 recalculateExchangeRate()
             }
+
             is TemplateEntryEvent.SetCurrency -> {
                 _state.update { it.copy(currency = event.currency) }
                 recalculateExchangeRate()
             }
+
             is TemplateEntryEvent.SetTargetCurrency -> {
                 _state.update { it.copy(targetCurrency = event.currency) }
                 recalculateExchangeRate()
             }
+
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
-            is TemplateEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation, location = event.location ?: "") }
+            is TemplateEntryEvent.SetLocation -> _state.update {
+                it.copy(
+                    gpsLocation = event.gpsLocation,
+                    location = event.location ?: ""
+                )
+            }
+
             is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
-            is TemplateEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
+            is TemplateEntryEvent.SetWarrantyExpiration -> _state.update {
+                it.copy(
+                    warrantyExpirationMillis = event.millis
+                )
+            }
+
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
@@ -190,39 +229,74 @@ class TemplateEntryViewModel @Inject constructor(
                     _state.update { it.copy(displayLinkedTxs = transactions) }
                 }
             }
+
             is TemplateEntryEvent.RemoveLinkedTransaction -> {
                 _state.update { state ->
                     val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
                     state.copy(displayLinkedTxs = newList)
                 }
             }
+
             is TemplateEntryEvent.AddTag -> {
                 viewModelScope.launch {
                     tagRepository.insertTag(Tag(name = event.name, colorHex = event.color ?: -1))
                 }
             }
+
             is TemplateEntryEvent.UpdateTag -> {
                 viewModelScope.launch {
                     tagRepository.updateTag(event.tag.name, event.tag)
                 }
             }
+
             is TemplateEntryEvent.DeleteTag -> {
                 viewModelScope.launch {
                     tagRepository.deleteTag(event.tag)
                 }
             }
+
             is TemplateEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
-            is TemplateEntryEvent.ShowTargetAccountSheet -> _state.update { it.copy(showTargetAccountSheet = event.show) }
+            is TemplateEntryEvent.ShowTargetAccountSheet -> _state.update {
+                it.copy(
+                    showTargetAccountSheet = event.show
+                )
+            }
+
             is TemplateEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
-            is TemplateEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
+            is TemplateEntryEvent.ShowPaymentMethodSheet -> _state.update {
+                it.copy(
+                    showPaymentMethodSheet = event.show
+                )
+            }
+
             is TemplateEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is TemplateEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
-            is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update { it.copy(showTargetCurrencySheet = event.show) }
-            is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
-            is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update { it.copy(showWarrantyDatePicker = event.show) }
+            is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update {
+                it.copy(
+                    showTargetCurrencySheet = event.show
+                )
+            }
+
+            is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update {
+                it.copy(
+                    showExchangeRateDialog = event.show
+                )
+            }
+
+            is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update {
+                it.copy(
+                    showWarrantyDatePicker = event.show
+                )
+            }
+
             is TemplateEntryEvent.ShowLocationSheet -> _state.update { it.copy(showLocationSheet = event.show) }
             is TemplateEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
-            is TemplateEntryEvent.ShowLinkedTransactionSheet -> _state.update { it.copy(showLinkedTransactionSheet = event.show) }
+            is TemplateEntryEvent.ShowLinkedTransactionSheet -> _state.update {
+                it.copy(
+                    showLinkedTransactionSheet = event.show
+                )
+            }
+
             is TemplateEntryEvent.ShowNumpad -> _state.update { it.copy(isNumpadVisible = event.show) }
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -258,12 +332,13 @@ class TemplateEntryViewModel @Inject constructor(
                 currentState.targetCurrency?.isNotEmpty() == true
             ) {
                 val rates = computationRepository.exchangeRates.first()
-                val rate = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                    amount = BigDecimal.ONE,
-                    fromCurrency = currentState.currency,
-                    toCurrency = currentState.targetCurrency ?: currentState.currency,
-                    exchangeRates = rates
-                )
+                val rate =
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                        amount = BigDecimal.ONE,
+                        fromCurrency = currentState.currency,
+                        toCurrency = currentState.targetCurrency ?: currentState.currency,
+                        exchangeRates = rates
+                    )
                 _state.update { it.copy(transferRate = rate) }
             }
         }

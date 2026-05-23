@@ -3,14 +3,12 @@ package com.osscabinet.ossWallet.ui.screens.loans.detail
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,7 +31,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,44 +45,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanSummary
-import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.ScopeChip
 import com.osscabinet.ossWallet.ui.components.management.ScopeSection
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -134,9 +126,15 @@ fun LoanDetailScreen(
     // Activity tab — canonical filter from LoanService guarantees consistency with summary.
     val loanTransactions = remember(loan, absoluteTransactionsWithBalance, categoriesList) {
         val filter = LoanService.buildTransactionFilter(loan, categoriesList)
-        android.util.Log.d("LoanDetail", "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}")
+        android.util.Log.d(
+            "LoanDetail",
+            "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}"
+        )
         android.util.Log.d("LoanDetail", "[${loan.name}] activity filter: $filter")
-        TransactionFilterService.filterTransactionsWithBalance(absoluteTransactionsWithBalance, filter)
+        TransactionFilterService.filterTransactionsWithBalance(
+            absoluteTransactionsWithBalance,
+            filter
+        )
     }
 
     val selectedAccount = remember(accounts, loan.linkedAccountId) {
@@ -191,7 +189,9 @@ fun LoanDetailScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
@@ -231,7 +231,12 @@ fun LoanDetailScreen(
                                 }
                             }
                         } else {
-                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, baseCurrency, allTags) {
+                            val loanListState = remember(
+                                loanTransactions,
+                                absoluteTransactionsWithBalance,
+                                baseCurrency,
+                                allTags
+                            ) {
                                 val groups = TimelineService.getGroupedData(
                                     transactions = loanTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
@@ -250,7 +255,12 @@ fun LoanDetailScreen(
                             RecentActivitiesScreen(
                                 listState = loanListState,
                                 onRecordsClick = { _ ->
-                                    onRecordsClick(LoanService.buildTransactionFilter(loan, categoriesList))
+                                    onRecordsClick(
+                                        LoanService.buildTransactionFilter(
+                                            loan,
+                                            categoriesList
+                                        )
+                                    )
                                 },
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
@@ -259,13 +269,34 @@ fun LoanDetailScreen(
                                 onTransactionEvent = { event ->
                                     when (event) {
                                         is TransactionItemEvent.Click -> onTransactionClick(event.id)
-                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
-                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
-                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                                        is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
+                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                                            event.id,
+                                            event.status
+                                        )
+
+                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.Split -> onSplitTransactionClick(
+                                            event.id
+                                        )
+
+                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                                            event.id
+                                        )
                                     }
                                 }
                             )
@@ -298,14 +329,20 @@ private fun LoanOverviewTab(
     val amortizationSchedule = remember(loan, showAmortization) {
         if (!showAmortization || loan.interestRate == null) emptyList()
         else {
-            val monthlyPayment = loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+            val monthlyPayment =
+                loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
             LoanService.getAmortizationSchedule(loan, monthlyPayment, loan.startDate)
         }
     }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = AeonTheme.dimensions.screenPadding, end = AeonTheme.dimensions.screenPadding, top = AeonTheme.dimensions.screenPadding, bottom = scrollBottomPadding()),
+        contentPadding = PaddingValues(
+            start = AeonTheme.dimensions.screenPadding,
+            end = AeonTheme.dimensions.screenPadding,
+            top = AeonTheme.dimensions.screenPadding,
+            bottom = scrollBottomPadding()
+        ),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
         item {
@@ -389,7 +426,8 @@ private fun LoanOverviewTab(
         }
 
         if (showAmortization && amortizationSchedule.isNotEmpty()) {
-            val displayRows = if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
+            val displayRows =
+                if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
             items(displayRows, key = { it.period }) { entry ->
                 AmortizationRow(entry = entry, currency = loan.currency)
             }
@@ -421,7 +459,10 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.listPadding, vertical = AeonTheme.dimensions.spacingSm),
+                .padding(
+                    horizontal = AeonTheme.dimensions.listPadding,
+                    vertical = AeonTheme.dimensions.spacingSm
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

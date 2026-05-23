@@ -1,14 +1,25 @@
 package com.osscabinet.ossWallet.ui.screens.loans.entry.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonFilterSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectionSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonTimelineSheet
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 
@@ -48,7 +59,7 @@ fun LoanEntrySheets(
     if (state.showStartDatePicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.startDate,
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(LoanEntryEvent.SetStartDate(it))
                 onEvent(LoanEntryEvent.ShowStartDatePicker(false))
             },
@@ -60,7 +71,7 @@ fun LoanEntrySheets(
     if (state.showSettlementDatePicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.settlementDate,
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(LoanEntryEvent.SetSettlementDate(it))
                 onEvent(LoanEntryEvent.ShowSettlementDatePicker(false))
             },
@@ -215,7 +226,7 @@ fun LoanEntrySheets(
     if (state.showWarrantyStartPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationStart ?: System.currentTimeMillis(),
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(LoanEntryEvent.SetWarrantyExpirationStart(it))
                 onEvent(LoanEntryEvent.ShowWarrantyStartPicker(false))
             },
@@ -227,7 +238,7 @@ fun LoanEntrySheets(
     if (state.showWarrantyEndPicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationEnd ?: System.currentTimeMillis(),
-            onDateSelected = { 
+            onDateSelected = {
                 onEvent(LoanEntryEvent.SetWarrantyExpirationEnd(it))
                 onEvent(LoanEntryEvent.ShowWarrantyEndPicker(false))
             },

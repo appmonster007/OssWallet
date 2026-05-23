@@ -13,7 +13,15 @@ class NetWorthCardComputer(
 ) : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
     override val supportedType = CardType.NET_WORTH
 
-    override suspend fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        return CardAggregationService.computeNetWorthCard(queryService, input.profileId, input, config)
+    override suspend fun compute(
+        input: CardInput,
+        config: NetWorthCardConfig
+    ): CardRenderData.NetWorth {
+        return CardAggregationService.computeNetWorthCard(
+            queryService,
+            input.profileId,
+            input,
+            config
+        )
     }
 }

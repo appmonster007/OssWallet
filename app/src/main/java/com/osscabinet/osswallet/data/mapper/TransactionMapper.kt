@@ -2,9 +2,6 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.util.splitByComma
-import com.osscabinet.ossWallet.domain.util.joinByComma
 
 /**
  * Mappers for Transaction data.

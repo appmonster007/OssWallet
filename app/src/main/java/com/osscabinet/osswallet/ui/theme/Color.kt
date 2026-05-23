@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.theme
 
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -19,17 +18,17 @@ import androidx.compose.ui.unit.dp
 
 // --- LIGHT THEME (Pristine Architect) ---
 
-val PrimaryLight = Color(0xFF4853A0) 
+val PrimaryLight = Color(0xFF4853A0)
 val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryContainerLight = Color(0xFFE0E0FF)
 val OnPrimaryContainerLight = Color(0xFF00006E)
 
-val SecondaryLight = Color(0xFF5B5D72) 
+val SecondaryLight = Color(0xFF5B5D72)
 val OnSecondaryLight = Color(0xFFFFFFFF)
 val SecondaryContainerLight = Color(0xFFE0E1F9)
 val OnSecondaryContainerLight = Color(0xFF181A2C)
 
-val TertiaryLight = Color(0xFF5D5B7D) 
+val TertiaryLight = Color(0xFF5D5B7D)
 val OnTertiaryLight = Color(0xFFFFFFFF)
 val TertiaryContainerLight = Color(0xFFE3DFFF)
 val OnTertiaryContainerLight = Color(0xFF191836)
@@ -40,7 +39,7 @@ val ErrorContainerLight = Color(0xFFFFDAD6)
 val OnErrorContainerLight = Color(0xFF410002)
 
 // Refined Light Neutrals (Aligned with colors.md Layer 2 & 3)
-val BackgroundLight = Color(0xFFEDECF3) 
+val BackgroundLight = Color(0xFFEDECF3)
 val OnBackgroundLight = Color(0xFF15151F)
 val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF15151F)
@@ -62,17 +61,17 @@ val SurfaceContainerHighestLight = Color(0xFFF1F0F6) // Layer 4
 
 // --- DARK THEME (Midnight Slate) ---
 
-val PrimaryDark = Color(0xFFC5CBEE) 
+val PrimaryDark = Color(0xFFC5CBEE)
 val OnPrimaryDark = Color(0xFF1A1A24)
 val PrimaryContainerDark = Color(0xFF303F90)
 val OnPrimaryContainerDark = Color(0xFFE0E0FF)
 
-val SecondaryDark = Color(0xFFC4C5DD) 
+val SecondaryDark = Color(0xFFC4C5DD)
 val OnSecondaryDark = Color(0xFF2D2F42)
 val SecondaryContainerDark = Color(0xFF434559)
 val OnSecondaryContainerDark = Color(0xFFE0E1F9)
 
-val TertiaryDark = Color(0xFFC6C2EA) 
+val TertiaryDark = Color(0xFFC6C2EA)
 val OnTertiaryDark = Color(0xFF2F2D4D)
 val TertiaryContainerDark = Color(0xFF454364)
 val OnTertiaryContainerDark = Color(0xFFE3DFFF)
@@ -83,7 +82,7 @@ val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
 
 // Refined Dark Neutrals (Aligned with colors.md Layer 2 & 3)
-val BackgroundDark = Color(0xFF11111B) 
+val BackgroundDark = Color(0xFF11111B)
 val OnBackgroundDark = Color(0xFFECEDF3)
 val SurfaceDark = Color(0xFF20212C)
 val OnSurfaceDark = Color(0xFFECEDF3)
@@ -157,10 +156,12 @@ val AccentPurple = Color(0xFFA855F7)
 // structural rendering that cannot be expressed as theme tokens.
 
 val ColorTransparent = Color.Transparent       // No fill / no overlay
-val ColorScrimDark  = Color(0x66000000)        // 40 % black overlay for FAB scrim
-val ColorScrimPill  = Color.Black              // Pill nav scrim base (animated alpha)
-val ColorOnDark     = Color.White              // Content rendered directly on a dark custom-accent surface
-val ColorOnLight    = Color.Black              // Content rendered directly on a light custom-accent surface
+val ColorScrimDark = Color(0x66000000)        // 40 % black overlay for FAB scrim
+val ColorScrimPill = Color.Black              // Pill nav scrim base (animated alpha)
+val ColorOnDark =
+    Color.White              // Content rendered directly on a dark custom-accent surface
+val ColorOnLight =
+    Color.Black              // Content rendered directly on a light custom-accent surface
 
 // Neutral status color (paused / skipped / inactive states)
 val NeutralStatusColor = Color(0xFF9E9E9E)     // Material Gray-500
@@ -170,20 +171,20 @@ val NeutralStatusColor = Color(0xFF9E9E9E)     // Material Gray-500
 // These are deliberately static — charts render data-driven colors passed in,
 // and these serve only as fallbacks or structural rendering aids.
 
-val ChartGridColor      = Color(0x1A9E9E9E)    // 10 % gray grid lines
-val ChartZeroLineColor  = Color(0x4D9E9E9E)    // 30 % gray zero axis
-val ChartDotHighlight   = Color.White          // dot highlight ring on line charts
-val ChartOverlayDark    = Color(0x0A000000)    // 4 % black depth shadow on treemap/pie
+val ChartGridColor = Color(0x1A9E9E9E)    // 10 % gray grid lines
+val ChartZeroLineColor = Color(0x4D9E9E9E)    // 30 % gray zero axis
+val ChartDotHighlight = Color.White          // dot highlight ring on line charts
+val ChartOverlayDark = Color(0x0A000000)    // 4 % black depth shadow on treemap/pie
 val ChartGlossHighlight = Color(0x26FFFFFF)    // 15 % white gloss on treemap cells
-val ChartGlossGradEnd   = Color(0x1AFFFFFF)    // 10 % white gloss gradient end
-val ChartRimHighlight   = Color(0x4DFFFFFF)    // 30 % white rim on treemap/pie
+val ChartGlossGradEnd = Color(0x1AFFFFFF)    // 10 % white gloss gradient end
+val ChartRimHighlight = Color(0x4DFFFFFF)    // 30 % white rim on treemap/pie
 val ChartPieInnerShadow = Color(0x0D000000)    // 5 % black inner shadow on pie center
 
 // Default chart series colors (used as parameter defaults only)
-val ChartColorBlue      = Color(0xFF2979FF)
-val ChartColorGreen     = Color(0xFF00C853)
-val ChartColorRed       = Color(0xFFB3261E)
-val ChartColorOrange    = Color(0xFFFF5722)
+val ChartColorBlue = Color(0xFF2979FF)
+val ChartColorGreen = Color(0xFF00C853)
+val ChartColorRed = Color(0xFFB3261E)
+val ChartColorOrange = Color(0xFFFF5722)
 
 // Tag / category preset palette (user-facing color swatches)
 val TagPresetColors = listOf(
@@ -194,7 +195,7 @@ val TagPresetColors = listOf(
 )
 
 val BrandPresetColorHexes = listOf(
-    "#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", 
+    "#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C",
     "#E65100", "#006064", "#212121", "#795548", "#607D8B"
 )
 
@@ -219,42 +220,52 @@ object AppColors {
     // ── Accent / Brand ──────────────────────────────────────────────────────
     // Primary brand color. Use for buttons, FABs, active icons, and links.
     // Semantic aliases (accent*) and raw M3 names (primary*) point to the same tokens.
-    val accent              : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
-    val onAccent            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimary
-    val accentContainer     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
-    val onAccentContainer   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
-    val primary             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
-    val onPrimary           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimary
-    val primaryContainer    : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
-    val onPrimaryContainer  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
+    val accent: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
+    val onAccent: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimary
+    val accentContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
+    val onAccentContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
+    val primary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
+    val onPrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimary
+    val primaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
+    val onPrimaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
 
     // ── Secondary & Tertiary ────────────────────────────────────────────────
-    val secondary            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondary
-    val onSecondary          : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSecondary
-    val secondaryContainer   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondaryContainer
-    val onSecondaryContainer : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSecondaryContainer
-    val tertiary             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiary
-    val onTertiary           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onTertiary
-    val tertiaryContainer    : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiaryContainer
-    val onTertiaryContainer  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onTertiaryContainer
+    val secondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondary
+    val onSecondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSecondary
+    val secondaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondaryContainer
+    val onSecondaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSecondaryContainer
+    val tertiary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiary
+    val onTertiary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onTertiary
+    val tertiaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiaryContainer
+    val onTertiaryContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onTertiaryContainer
 
     // ── Error & Feedback ────────────────────────────────────────────────────
-    val error                : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.error
-    val onError              : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onError
-    val errorContainer       : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.errorContainer
-    val onErrorContainer     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onErrorContainer
+    val error: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.error
+    val onError: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onError
+    val errorContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.errorContainer
+    val onErrorContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onErrorContainer
 
     // ── Semantic Feedback (colors.md 2.7) ──────────────────────────────────
     // Positive (Income/Profit) and Negative (Expense/Loss) colors.
-    val positive             : Color @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(0xFF5BE093) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFF4DCE85) else Color(0xFF1E9B4F)
-    val negative             : Color @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(0xFFF08782) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFFE27974) else Color(0xFFC8463F)
+    val positive: Color
+        @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(
+            0xFF5BE093
+        ) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFF4DCE85) else Color(
+            0xFF1E9B4F
+        )
+    val negative: Color
+        @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(
+            0xFFF08782
+        ) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFFE27974) else Color(
+            0xFFC8463F
+        )
 
     // ── Screen Background ───────────────────────────────────────────────────
     // Outermost scaffold fill behind all content.
-    val screenBackground     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
-    val onScreenBackground   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onBackground
-    val background           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
-    val onBackground         : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onBackground
+    val screenBackground: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
+    val onScreenBackground: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onBackground
+    val background: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
+    val onBackground: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onBackground
 
     // ── Surface Hierarchy ───────────────────────────────────────────────────
     // Surfaces ordered from lowest to highest visual elevation.
@@ -274,66 +285,66 @@ object AppColors {
     //  popupSurface         surface                 dropdowns, overlays
     //  insetSurface         surfaceVariant          section dividers, progress tracks
     //
-    val recessedSurface          : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val inputSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
-    val cardSurface              : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val cardSurfaceRaised        : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val sheetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
-    val cardSurfaceProminent     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val sheetSurfaceRaised       : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val componentOnCardSubtle    : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val componentOnCard          : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
-    val panelSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val drawerSurface            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val popupSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val insetSurface             : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
+    val recessedSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val inputSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
+    val cardSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val cardSurfaceRaised: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val sheetSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
+    val cardSurfaceProminent: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val sheetSurfaceRaised: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val componentOnCardSubtle: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val componentOnCard: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
+    val panelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val drawerSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val popupSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val insetSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
 
     // Raw M3 surface tokens (for component params that require the M3 name)
-    val surface                  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface
-    val onSurface                : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurface
-    val surfaceVariant           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
-    val onSurfaceVariant         : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
-    val surfaceContainerLowest   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val surfaceContainerLow      : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
-    val surfaceContainer         : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val surfaceContainerHigh     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val surfaceContainerHighest  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
-    val inverseSurface           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inverseSurface
-    val inverseOnSurface         : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inverseOnSurface
-    val inversePrimary           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inversePrimary
-    val scrim                    : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.scrim
+    val surface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surface
+    val onSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurface
+    val surfaceVariant: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
+    val onSurfaceVariant: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
+    val surfaceContainerLowest: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val surfaceContainerLow: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
+    val surfaceContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val surfaceContainerHigh: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val surfaceContainerHighest: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
+    val inverseSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inverseSurface
+    val inverseOnSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inverseOnSurface
+    val inversePrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.inversePrimary
+    val scrim: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.scrim
 
     // ── Content / Text ──────────────────────────────────────────────────────
     // Foreground colors for text and icons on any surface.
-    val contentPrimary           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurface
-    val contentSecondary         : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
+    val contentPrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurface
+    val contentSecondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
 
     // ── Borders & Dividers ──────────────────────────────────────────────────
     // divider — subtle low-contrast separator (list row lines, card edges)
     // border  — prominent high-contrast outline (focused inputs, card frames)
-    val divider                  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outlineVariant
-    val border                   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outline
-    val outline                  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outline
-    val outlineVariant           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outlineVariant
+    val divider: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outlineVariant
+    val border: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outline
+    val outline: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outline
+    val outlineVariant: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.outlineVariant
 
     // ── Selection ───────────────────────────────────────────────────────────
     // Highlight for selected list items, active chips, and chosen options.
-    val selectionContainer       : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
-    val onSelectionContainer     : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
+    val selectionContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
+    val onSelectionContainer: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
 
     // ── Toggle / Switch ─────────────────────────────────────────────────────
-    val switchTrackOn            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
-    val switchTrackOff           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
-    val switchThumbOn            : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
-    val switchThumbOff           : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
+    val switchTrackOn: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
+    val switchTrackOff: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
+    val switchThumbOn: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onPrimaryContainer
+    val switchThumbOff: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurfaceVariant
 
     // ── Form Entry Components ───────────────────────────────────────────────
     // Icon container tints in entry / edit forms.
-    val formIconContainerPrimary   : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
-    val formIconContainerSecondary : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondary
-    val formIconContainerTertiary  : Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiary
+    val formIconContainerPrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
+    val formIconContainerSecondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondary
+    val formIconContainerTertiary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiary
 
     // ── Absolute / Transparent ──────────────────────────────────────────────
     // Not theme tokens — safe to use where a hard "no fill" value is required.
-    val transparent                : Color get() = Color.Transparent
+    val transparent: Color get() = Color.Transparent
 }

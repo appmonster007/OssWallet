@@ -61,19 +61,21 @@ fun EntrySelectionCard(
     trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
-    
+
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary.copy(alpha = 0.08f)
+        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary.copy(
+            alpha = 0.08f
+        )
         else AppColors.recessedSurface,
         label = "bgColor"
     )
-    
+
     val borderColor by animateColorAsState(
         targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary
         else AppColors.divider.copy(alpha = 0.2f),
         label = "borderColor"
     )
-    
+
     val borderWidth by animateDpAsState(
         targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) 1.5.dp else 0.5.dp,
         label = "borderWidth"
@@ -95,7 +97,9 @@ fun EntrySelectionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(alpha = 0.15f) else iconColor.copy(alpha = 0.1f),
+                color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(
+                    alpha = 0.15f
+                ) else iconColor.copy(alpha = 0.1f),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -107,9 +111,9 @@ fun EntrySelectionCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
@@ -128,7 +132,7 @@ fun EntrySelectionCard(
                     )
                 }
             }
-            
+
             if (trailingContent != null) {
                 trailingContent()
             } else {
@@ -143,12 +147,13 @@ fun EntrySelectionCard(
                             )
                         }
                     }
+
                     EntrySelectionMode.MULTI -> {
                         Switch(
                             checked = isSelected,
-                            onCheckedChange = { 
+                            onCheckedChange = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onClick() 
+                                onClick()
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = AppColors.switchThumbOn,
@@ -156,6 +161,7 @@ fun EntrySelectionCard(
                             )
                         )
                     }
+
                     EntrySelectionMode.MANAGEMENT -> {
                         Icon(
                             imageVector = Icons.Rounded.Edit,

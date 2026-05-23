@@ -1,20 +1,41 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,26 +44,21 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.draw.alpha
-import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
-import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
-import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
+import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
+import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionSummaryBreakdown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetData
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetIntersection
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetPlot
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetSet
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionSummaryBreakdown
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -65,9 +81,10 @@ fun TagUpSetPlotCard(
     val config = renderData.config
     var selectedIntersection by remember { mutableStateOf<AeonUpSetIntersection?>(null) }
 
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -94,7 +111,7 @@ fun TagUpSetPlotCard(
             )
         }
     ) {
-        val uiSets = renderData.sets.map { 
+        val uiSets = renderData.sets.map {
             AeonUpSetSet(
                 name = it.tagName,
                 total = it.totalAmount,
@@ -103,10 +120,10 @@ fun TagUpSetPlotCard(
                 incomeByCurrency = it.incomeByCurrency,
                 expenseByCurrency = it.expenseByCurrency,
                 transactionCount = it.transactionCount
-            ) 
+            )
         }
         val setIndexMap = uiSets.withIndex().associate { it.value.name to it.index }
-        
+
         val uiIntersections = renderData.intersections.mapNotNull { intersection ->
             val indices = intersection.tags.mapNotNull { setIndexMap[it] }.toSet()
             if (indices.isEmpty()) null
@@ -148,7 +165,7 @@ fun TagUpSetPlotCard(
                         )
                     }
                 )
-                
+
                 selectedIntersection?.let { intersection ->
                     val isSet = intersection.setIndices.size == 1
                     val titleText = if (isSet) {
@@ -158,11 +175,16 @@ fun TagUpSetPlotCard(
                     }
 
                     Surface(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                         color = AppColors.primaryContainer.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -180,13 +202,17 @@ fun TagUpSetPlotCard(
                                     ),
                                     color = AppColors.primary,
                                     modifier = Modifier.clickable {
-                                        val tags = intersection.setIndices.map { uiSets[it].name }.toSet()
+                                        val tags =
+                                            intersection.setIndices.map { uiSets[it].name }.toSet()
                                         onRecordsClick(displayFilter.copy(tags = tags))
                                     }
                                 )
                             }
 
-                            HorizontalDivider(color = AppColors.border.copy(alpha = 0.1f), thickness = 0.5.dp)
+                            HorizontalDivider(
+                                color = AppColors.border.copy(alpha = 0.1f),
+                                thickness = 0.5.dp
+                            )
 
                             TransactionSummaryBreakdown(
                                 incomeByCurrency = intersection.incomeByCurrency,
@@ -222,8 +248,8 @@ fun TagUpSetPlotCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TagUpSetSettingsSheet(
-    config: com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig,
-    onUpdate: (com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig) -> Unit,
+    config: TagUpSetPlotCardConfig,
+    onUpdate: (TagUpSetPlotCardConfig) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -242,13 +268,21 @@ private fun TagUpSetSettingsSheet(
                         color = AppColors.contentSecondary
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     if (config.maxTags != 7) {
                         IconButton(
                             onClick = { onUpdate(config.copy(maxTags = 7)) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Reset to 7", tint = AppColors.contentSecondary, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Reset to 7",
+                                tint = AppColors.contentSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                     Surface(
@@ -261,7 +295,11 @@ private fun TagUpSetSettingsSheet(
                                 onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Remove,
+                                    contentDescription = "Fewer",
+                                    tint = AppColors.primary
+                                )
                             }
                             Text(
                                 text = "${config.maxTags}",
@@ -272,7 +310,11 @@ private fun TagUpSetSettingsSheet(
                                 onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = "More",
+                                    tint = AppColors.primary
+                                )
                             }
                         }
                     }
@@ -294,13 +336,21 @@ private fun TagUpSetSettingsSheet(
                 }
                 val screenWidthDp = LocalConfiguration.current.screenWidthDp
                 val defaultIntersections = maxOf(1, (screenWidthDp - 32 - 120 - 8) / 24)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     if (config.maxIntersections != defaultIntersections) {
                         IconButton(
                             onClick = { onUpdate(config.copy(maxIntersections = defaultIntersections)) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Reset to default", tint = AppColors.contentSecondary, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Reset to default",
+                                tint = AppColors.contentSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                     Surface(
@@ -310,10 +360,20 @@ private fun TagUpSetSettingsSheet(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(
-                                onClick = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                                onClick = {
+                                    if (config.maxIntersections > 1) onUpdate(
+                                        config.copy(
+                                            maxIntersections = config.maxIntersections - 1
+                                        )
+                                    )
+                                },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(Icons.Rounded.Remove, contentDescription = "Fewer", tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Remove,
+                                    contentDescription = "Fewer",
+                                    tint = AppColors.primary
+                                )
                             }
                             Text(
                                 text = "${config.maxIntersections}",
@@ -324,7 +384,11 @@ private fun TagUpSetSettingsSheet(
                                 onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = "More", tint = AppColors.primary)
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = "More",
+                                    tint = AppColors.primary
+                                )
                             }
                         }
                     }
@@ -396,17 +460,20 @@ private fun TagUpSetSettingsSheet(
                             onClick = {
                                 onUpdate(config.copy(tagSortMode = if (config.tagSortMode == pairA) pairB else pairA))
                             },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = tagPairs.size),
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = tagPairs.size
+                            ),
                             icon = {}
                         ) {
                             Text(
                                 text = when (displayed) {
-                                    UpSetTagSortMode.NAME_ASC       -> "Az"
-                                    UpSetTagSortMode.NAME_DESC      -> "Za"
+                                    UpSetTagSortMode.NAME_ASC -> "Az"
+                                    UpSetTagSortMode.NAME_DESC -> "Za"
                                     UpSetTagSortMode.DECREASING_ABS -> "|↓|"
                                     UpSetTagSortMode.INCREASING_ABS -> "|↑|"
-                                    UpSetTagSortMode.DECREASING     -> "↓"
-                                    UpSetTagSortMode.INCREASING     -> "↑"
+                                    UpSetTagSortMode.DECREASING -> "↓"
+                                    UpSetTagSortMode.INCREASING -> "↑"
                                 },
                                 style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
                                 modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
@@ -432,22 +499,26 @@ private fun TagUpSetSettingsSheet(
                         UpSetIntersectionSortMode.DECREASING to UpSetIntersectionSortMode.INCREASING
                     )
                     intPairs.forEachIndexed { index, (pairA, pairB) ->
-                        val isSelected = config.intersectionSortMode == pairA || config.intersectionSortMode == pairB
+                        val isSelected =
+                            config.intersectionSortMode == pairA || config.intersectionSortMode == pairB
                         val displayed = if (isSelected) config.intersectionSortMode else pairA
                         SegmentedButton(
                             selected = isSelected,
                             onClick = {
                                 onUpdate(config.copy(intersectionSortMode = if (config.intersectionSortMode == pairA) pairB else pairA))
                             },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = intPairs.size),
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = intPairs.size
+                            ),
                             icon = {}
                         ) {
                             Text(
                                 text = when (displayed) {
                                     UpSetIntersectionSortMode.DECREASING_ABS -> "|↓|"
                                     UpSetIntersectionSortMode.INCREASING_ABS -> "|↑|"
-                                    UpSetIntersectionSortMode.DECREASING     -> "↓"
-                                    UpSetIntersectionSortMode.INCREASING     -> "↑"
+                                    UpSetIntersectionSortMode.DECREASING -> "↓"
+                                    UpSetIntersectionSortMode.INCREASING -> "↑"
                                 },
                                 style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
                                 modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
@@ -472,14 +543,44 @@ fun TagUpSetPlotCardPreview() {
                         title = "Monthly Tag Overlaps"
                     ),
                     sets = listOf(
-                        TagUpSetSet("Food", BigDecimal("500"), expense = BigDecimal("500"), transactionCount = 10),
-                        TagUpSetSet("Business", BigDecimal("300"), expense = BigDecimal("300"), transactionCount = 5),
-                        TagUpSetSet("Travel", BigDecimal("200"), expense = BigDecimal("200"), transactionCount = 3)
+                        TagUpSetSet(
+                            "Food",
+                            BigDecimal("500"),
+                            expense = BigDecimal("500"),
+                            transactionCount = 10
+                        ),
+                        TagUpSetSet(
+                            "Business",
+                            BigDecimal("300"),
+                            expense = BigDecimal("300"),
+                            transactionCount = 5
+                        ),
+                        TagUpSetSet(
+                            "Travel",
+                            BigDecimal("200"),
+                            expense = BigDecimal("200"),
+                            transactionCount = 3
+                        )
                     ),
                     intersections = listOf(
-                        TagUpSetIntersection(setOf("Food", "Business"), BigDecimal("100"), expense = BigDecimal("100"), transactionCount = 2),
-                        TagUpSetIntersection(setOf("Food"), BigDecimal("400"), expense = BigDecimal("400"), transactionCount = 8),
-                        TagUpSetIntersection(setOf("Business"), BigDecimal("200"), expense = BigDecimal("200"), transactionCount = 3)
+                        TagUpSetIntersection(
+                            setOf("Food", "Business"),
+                            BigDecimal("100"),
+                            expense = BigDecimal("100"),
+                            transactionCount = 2
+                        ),
+                        TagUpSetIntersection(
+                            setOf("Food"),
+                            BigDecimal("400"),
+                            expense = BigDecimal("400"),
+                            transactionCount = 8
+                        ),
+                        TagUpSetIntersection(
+                            setOf("Business"),
+                            BigDecimal("200"),
+                            expense = BigDecimal("200"),
+                            transactionCount = 3
+                        )
                     ),
                     baseCurrency = "USD"
                 )

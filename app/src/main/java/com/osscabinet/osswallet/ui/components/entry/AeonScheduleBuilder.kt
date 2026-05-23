@@ -1,17 +1,55 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoMode
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Update
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -59,6 +97,7 @@ fun AeonScheduleBuilder(
 
     if (stage == 2) {
         data class Preset(val label: String, val type: RecurrenceType, val interval: Int)
+
         val presets = listOf(
             Preset("One Time", RecurrenceType.ONE_TIME, 1),
             Preset("Daily", RecurrenceType.DAILY, 1),
@@ -72,7 +111,11 @@ fun AeonScheduleBuilder(
         var selectedTabIndex by remember { mutableIntStateOf(if (localType == RecurrenceType.CRON) 1 else 0) }
 
         val parsedCronRule =
-            remember(cronText) { if (cronText.isNotBlank()) PlannedPaymentService.parseCronToRule(cronText) else null }
+            remember(cronText) {
+                if (cronText.isNotBlank()) PlannedPaymentService.parseCronToRule(
+                    cronText
+                ) else null
+            }
 
         LaunchedEffect(parsedCronRule) {
             parsedCronRule?.let { rule ->
@@ -99,16 +142,17 @@ fun AeonScheduleBuilder(
                     TabRow(selectedTabIndex = selectedTabIndex) {
                         Tab(
                             selected = selectedTabIndex == 0,
-                            onClick = { 
-                                selectedTabIndex = 0 
-                                if (localType == RecurrenceType.CRON) localType = RecurrenceType.MONTHLY
+                            onClick = {
+                                selectedTabIndex = 0
+                                if (localType == RecurrenceType.CRON) localType =
+                                    RecurrenceType.MONTHLY
                             },
                             text = { Text("PRESETS") }
                         )
                         Tab(
                             selected = selectedTabIndex == 1,
-                            onClick = { 
-                                selectedTabIndex = 1 
+                            onClick = {
+                                selectedTabIndex = 1
                                 localType = RecurrenceType.CRON
                             },
                             text = { Text("CUSTOM") }
@@ -121,9 +165,10 @@ fun AeonScheduleBuilder(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             presets.forEach { preset ->
-                                val isSelected = localType == preset.type && localInterval == preset.interval
+                                val isSelected =
+                                    localType == preset.type && localInterval == preset.interval
                                 EntryActionChip(
-                                    icon = when(preset.type) {
+                                    icon = when (preset.type) {
                                         RecurrenceType.ONE_TIME -> Icons.Rounded.Done
                                         RecurrenceType.DAILY -> Icons.Rounded.Update
                                         RecurrenceType.WEEKLY -> Icons.Rounded.DateRange
@@ -201,7 +246,11 @@ fun AeonScheduleBuilder(
                                                 onClick = { showCronHelp = false },
                                                 modifier = Modifier.size(24.dp)
                                             ) {
-                                                Icon(Icons.Rounded.Close, null, modifier = Modifier.size(16.dp))
+                                                Icon(
+                                                    Icons.Rounded.Close,
+                                                    null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -223,7 +272,7 @@ fun AeonScheduleBuilder(
                                 }
                             }
                         }
-                        
+
                         if (needsIntervalLocal) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -231,11 +280,19 @@ fun AeonScheduleBuilder(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Every", modifier = Modifier.weight(1f))
-                                FilledIconButton(onClick = { localInterval = (localInterval - 1).coerceAtLeast(1) }) {
+                                FilledIconButton(onClick = {
+                                    localInterval = (localInterval - 1).coerceAtLeast(1)
+                                }) {
                                     Icon(Icons.Rounded.Remove, null)
                                 }
-                                Text(localInterval.toString(), modifier = Modifier.width(40.dp), textAlign = TextAlign.Center)
-                                FilledIconButton(onClick = { localInterval = (localInterval + 1).coerceAtLeast(1) }) {
+                                Text(
+                                    localInterval.toString(),
+                                    modifier = Modifier.width(40.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                                FilledIconButton(onClick = {
+                                    localInterval = (localInterval + 1).coerceAtLeast(1)
+                                }) {
                                     Icon(Icons.Rounded.Add, null)
                                 }
                             }
@@ -244,29 +301,38 @@ fun AeonScheduleBuilder(
                 }
             },
             dismissButton = { TextButton(onClick = { stage = 1 }) { Text("BACK") } },
-            confirmButton = { 
+            confirmButton = {
                 TextButton(
                     onClick = { stage = 3 },
                     enabled = localType != RecurrenceType.CRON || (cronText.isNotBlank() && parsedCronRule != null)
-                ) { Text("NEXT") } 
+                ) { Text("NEXT") }
             }
         )
     }
 
     if (stage == 3) {
-        val rule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth, if (localType == RecurrenceType.CRON) cronText else null)
+        val rule = RecurrenceRule(
+            localType,
+            localInterval,
+            localDayOfWeek,
+            localDayOfMonth,
+            if (localType == RecurrenceType.CRON) cronText else null
+        )
         val summary = PlannedPaymentService.buildScheduleSummary(localStart, rule)
         val previewDates = remember(localStart, rule) {
             PlannedPaymentService.generateOccurrencesPreview(localStart, rule, 5)
         }
-        
+
         AlertDialog(
             onDismissRequest = onDismiss,
             shape = RoundedCornerShape(28.dp),
             title = { Text("Confirm Schedule", style = AppTextStyles.cardTitle) },
-            text = { 
+            text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Verify your recurrence settings before saving.", style = AppTextStyles.transactionTitle)
+                    Text(
+                        "Verify your recurrence settings before saving.",
+                        style = AppTextStyles.transactionTitle
+                    )
                     Surface(
                         color = AppColors.accentContainer.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(16.dp),
@@ -311,7 +377,14 @@ fun AeonScheduleBuilder(
             dismissButton = { TextButton(onClick = { stage = 2 }) { Text("BACK") } },
             confirmButton = {
                 TextButton(onClick = {
-                    onConfirm(localStart, localType, localInterval, localDayOfWeek, localDayOfMonth, if (localType == RecurrenceType.CRON) cronText else null)
+                    onConfirm(
+                        localStart,
+                        localType,
+                        localInterval,
+                        localDayOfWeek,
+                        localDayOfMonth,
+                        if (localType == RecurrenceType.CRON) cronText else null
+                    )
                     onDismiss()
                 }) { Text("DONE") }
             }

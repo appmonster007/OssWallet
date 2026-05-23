@@ -3,17 +3,35 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.runtime.*
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,11 +49,10 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import androidx.compose.material3.ExperimentalMaterial3Api
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
@@ -63,9 +80,10 @@ fun CategorySpendingTrendCard(
     var selectedNature by rememberSaveable { mutableStateOf(config.selectedNature) }
     var categoriesExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -113,7 +131,10 @@ fun CategorySpendingTrendCard(
                             selectedNature = nature
                             callbacks.onUpdate(config.copy(selectedNature = nature))
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = natureOptions.size),
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = natureOptions.size
+                        ),
                         colors = if (nature != CategoryNatureFilter.ALL) {
                             SegmentedButtonDefaults.colors(
                                 activeContainerColor = natureColor.copy(alpha = 0.12f),
@@ -147,7 +168,9 @@ fun CategorySpendingTrendCard(
             if (chartGroups.isNotEmpty()) {
                 AeonBarChart(
                     groups = chartGroups,
-                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
                     currency = renderData.baseCurrency,
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
@@ -233,7 +256,11 @@ private fun CategorySummaryRow(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = CurrencyFormatter.formatCurrencyRight(summary.totalAmount, currency, CurrencyService.precision),
+            text = CurrencyFormatter.formatCurrencyRight(
+                summary.totalAmount,
+                currency,
+                CurrencyService.precision
+            ),
             style = AppTextStyles.formSectionLabel,
             color = AppColors.contentPrimary
         )
@@ -267,7 +294,11 @@ private fun CategorySpendingSettingsSheet(
     callbacks: CardCallbacks.CategorySpendingTrend,
     onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Category Spending", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
+    CardSettingsSheet(
+        title = "Category Spending",
+        onDismiss = onDismiss,
+        onDelete = callbacks.onDelete
+    ) {
         CardSettingsSection("Display") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -294,26 +325,80 @@ fun CategorySpendingTrendCardPreview() {
                 label = "Jan",
                 epochMillis = 1704067200000L,
                 categoryAmounts = listOf(
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-1200.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-400.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Refund", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("50.00"))
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        1L,
+                        "Rent",
+                        0xFFE57373.toInt(),
+                        CategoryNature.MUST,
+                        BigDecimal("-1200.00")
+                    ),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        2L,
+                        "Groceries",
+                        0xFFFFB74D.toInt(),
+                        CategoryNature.NEED,
+                        BigDecimal("-400.00")
+                    ),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        3L,
+                        "Refund",
+                        0xFF81C784.toInt(),
+                        CategoryNature.WANT,
+                        BigDecimal("50.00")
+                    )
                 )
             ),
             com.osscabinet.ossWallet.domain.card.CategorySpendingBucket(
                 label = "Feb",
                 epochMillis = 1706745600000L,
                 categoryAmounts = listOf(
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-1200.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-350.00")),
-                    com.osscabinet.ossWallet.domain.card.CategoryAmount(3L, "Gift", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("150.00"))
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        1L,
+                        "Rent",
+                        0xFFE57373.toInt(),
+                        CategoryNature.MUST,
+                        BigDecimal("-1200.00")
+                    ),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        2L,
+                        "Groceries",
+                        0xFFFFB74D.toInt(),
+                        CategoryNature.NEED,
+                        BigDecimal("-350.00")
+                    ),
+                    com.osscabinet.ossWallet.domain.card.CategoryAmount(
+                        3L,
+                        "Gift",
+                        0xFF81C784.toInt(),
+                        CategoryNature.WANT,
+                        BigDecimal("150.00")
+                    )
                 )
             )
         ),
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
         activeCategories = listOf(
-            CategorySummary(1L, "Rent", 0xFFE57373.toInt(), CategoryNature.MUST, BigDecimal("-2400.00")),
-            CategorySummary(2L, "Groceries", 0xFFFFB74D.toInt(), CategoryNature.NEED, BigDecimal("-750.00")),
-            CategorySummary(3L, "Wants (Net)", 0xFF81C784.toInt(), CategoryNature.WANT, BigDecimal("200.00"))
+            CategorySummary(
+                1L,
+                "Rent",
+                0xFFE57373.toInt(),
+                CategoryNature.MUST,
+                BigDecimal("-2400.00")
+            ),
+            CategorySummary(
+                2L,
+                "Groceries",
+                0xFFFFB74D.toInt(),
+                CategoryNature.NEED,
+                BigDecimal("-750.00")
+            ),
+            CategorySummary(
+                3L,
+                "Wants (Net)",
+                0xFF81C784.toInt(),
+                CategoryNature.WANT,
+                BigDecimal("200.00")
+            )
         ),
         baseCurrency = "USD"
     )

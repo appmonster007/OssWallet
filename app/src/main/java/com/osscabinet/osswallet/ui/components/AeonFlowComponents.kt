@@ -1,37 +1,52 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.clickable
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
 
 @Composable
 fun AeonSettingsToggle(
@@ -180,14 +195,17 @@ fun AeonFlowSectionHeader(
 ) {
     val haptic = LocalHapticFeedback.current
     val activeFilterCount = filter?.let { countActiveFilters(it) } ?: 0
-    
+
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
                     title.uppercase(),
                     style = AppTextStyles.transactionSwipeAction.copy(
@@ -219,13 +237,13 @@ fun AeonFlowSectionHeader(
                     contentDescription = "Home",
                     modifier = Modifier
                         .size(16.dp)
-                        .clickable { 
+                        .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onBreadcrumbClick(-1) 
+                            onBreadcrumbClick(-1)
                         },
                     tint = AppColors.contentSecondary
                 )
-                
+
                 breadcrumbs.forEachIndexed { index, crumb ->
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
@@ -239,13 +257,13 @@ fun AeonFlowSectionHeader(
                             fontSize = 11.sp,
                             fontWeight = if (index == breadcrumbs.size - 1) FontWeight.Bold else FontWeight.Normal
                         ),
-                        color = if (index == breadcrumbs.size - 1) 
-                            AppColors.primary 
-                        else 
+                        color = if (index == breadcrumbs.size - 1)
+                            AppColors.primary
+                        else
                             AppColors.contentSecondary,
-                        modifier = Modifier.clickable { 
+                        modifier = Modifier.clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onBreadcrumbClick(index) 
+                            onBreadcrumbClick(index)
                         },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -265,7 +283,10 @@ fun FilterActiveIndicator(count: Int) {
         modifier = Modifier.size(24.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(12.dp))
                 Text(count.toString(), style = AppTextStyles.chipLabel)
             }
@@ -320,33 +341,33 @@ fun AeonFlowComponentsPreview() {
                 checked = true,
                 onCheckedChange = {}
             )
-            
+
             Text("Base Conversion Toggle", style = AppTextStyles.listSectionHeader)
             AeonBaseConversionToggle(
                 baseCurrency = "USD",
                 showBaseConversion = true,
                 onShowBaseConversionChange = {}
             )
-            
+
             Text("Layout Toggle", style = AppTextStyles.listSectionHeader)
             AeonLayoutToggle(
                 layout = "grid",
                 onLayoutChange = {}
             )
-            
+
             Text("Grid Columns Settings", style = AppTextStyles.listSectionHeader)
             AeonGridColumnsSettings(
                 gridColumns = 2,
                 onGridColumnsChange = {}
             )
-            
+
             Text("Flow Section Header", style = AppTextStyles.listSectionHeader)
             AeonFlowSectionHeader(
                 title = "Transactions",
                 breadcrumbs = listOf("Accounts", "Savings"),
                 onBreadcrumbClick = {}
             )
-            
+
             Text("Flow Badges", style = AppTextStyles.listSectionHeader)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AeonFlowBadge(
@@ -360,7 +381,7 @@ fun AeonFlowComponentsPreview() {
                     currency = "USD"
                 )
             }
-            
+
             Text("Filter Indicator", style = AppTextStyles.listSectionHeader)
             FilterActiveIndicator(count = 3)
         }

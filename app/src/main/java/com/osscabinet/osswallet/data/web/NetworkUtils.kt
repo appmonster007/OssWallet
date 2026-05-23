@@ -14,6 +14,7 @@ object NetworkUtils {
         return try {
             val wifiManager = context.applicationContext
                 .getSystemService(Context.WIFI_SERVICE) as WifiManager
+
             @Suppress("DEPRECATION")
             val wifiIp = intToIp(wifiManager.connectionInfo.ipAddress)
             if (wifiIp != null && wifiIp != "0.0.0.0") return wifiIp
@@ -36,7 +37,9 @@ object NetworkUtils {
                 ?.flatMap { it.inetAddresses.asSequence() }
                 ?.firstOrNull { it is Inet4Address && !it.isLoopbackAddress }
                 ?.hostAddress
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun isConnectedToWifi(context: Context): Boolean {

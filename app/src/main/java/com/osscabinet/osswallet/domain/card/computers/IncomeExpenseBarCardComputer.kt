@@ -36,16 +36,24 @@ class IncomeExpenseBarCardComputer(
         input: CardInput,
         config: IncomeExpenseBarCardConfig
     ): CardRenderData.IncomeExpenseBar {
-        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val rawFilter = resolveEffectiveFilter(
+            input.filter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
         val mergedFilter = if (rawFilter.categoryIds.isEmpty()) rawFilter
-            else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
-        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
+        else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
+        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
+            mergedFilter.timelineRange,
+            input.transactions
+        )
 
         val spanDays = (currentEnd - currentStart) / 86_400_000L
         val granularity = when {
-            spanDays <= 90L  -> CashFlowComparisonGranularity.DAY
+            spanDays <= 90L -> CashFlowComparisonGranularity.DAY
             spanDays <= 365L -> CashFlowComparisonGranularity.WEEK
-            else             -> CashFlowComparisonGranularity.MONTH
+            else -> CashFlowComparisonGranularity.MONTH
         }
 
         // No capping at today — show all buckets in the period (future buckets return zeros)
@@ -85,27 +93,37 @@ class IncomeExpenseBarCardComputer(
                 val lastDay = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone)
                 while (!day.isAfter(lastDay)) {
                     val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = day.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
+                    val end =
+                        day.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
                     buckets.add(Triple(start, end, day.format(dayFormatter)))
                     day = day.plusDays(1)
                 }
             }
+
             CashFlowComparisonGranularity.WEEK -> {
                 var weekStart = LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone)
                     .with(DayOfWeek.MONDAY)
-                    .let { if (it.atStartOfDay(zone).toInstant().toEpochMilli() > rangeStart) it.minusWeeks(1) else it }
+                    .let {
+                        if (it.atStartOfDay(zone).toInstant()
+                                .toEpochMilli() > rangeStart
+                        ) it.minusWeeks(1) else it
+                    }
                 val rangeEndDate = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone)
                 while (!weekStart.isAfter(rangeEndDate)) {
                     val weekEnd = weekStart.plusDays(6)
                     val start = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = weekEnd.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
+                    val end = weekEnd.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant()
+                        .toEpochMilli()
                     buckets.add(Triple(start, end, weekStart.format(dayFormatter)))
                     weekStart = weekStart.plusWeeks(1)
                 }
             }
+
             CashFlowComparisonGranularity.MONTH -> {
-                var month = LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone).withDayOfMonth(1)
-                val lastMonth = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone).withDayOfMonth(1)
+                var month =
+                    LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone).withDayOfMonth(1)
+                val lastMonth =
+                    LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone).withDayOfMonth(1)
                 while (!month.isAfter(lastMonth)) {
                     val start = month.atStartOfDay(zone).toInstant().toEpochMilli()
                     val end = month.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
@@ -139,11 +157,23 @@ class IncomeExpenseBarCardComputer(
 
             summaries.forEach { (currency, summary) ->
                 totalIncome = totalIncome.add(
-                    CurrencyService.convertAmount(summary.income, currency, baseCurrency, exchangeRates, 10)
+                    CurrencyService.convertAmount(
+                        summary.income,
+                        currency,
+                        baseCurrency,
+                        exchangeRates,
+                        10
+                    )
                 )
                 // expense is already negated in FinancialSummary; take abs for display
                 totalExpense = totalExpense.add(
-                    CurrencyService.convertAmount(summary.expense.abs(), currency, baseCurrency, exchangeRates, 10)
+                    CurrencyService.convertAmount(
+                        summary.expense.abs(),
+                        currency,
+                        baseCurrency,
+                        exchangeRates,
+                        10
+                    )
                 )
             }
 
@@ -152,7 +182,8 @@ class IncomeExpenseBarCardComputer(
                 epochMillis = bucketStart,
                 income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                net = totalIncome.subtract(totalExpense).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                net = totalIncome.subtract(totalExpense)
+                    .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }
 

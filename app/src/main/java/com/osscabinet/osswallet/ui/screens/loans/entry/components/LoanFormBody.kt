@@ -1,31 +1,61 @@
 package com.osscabinet.ossWallet.ui.screens.loans.entry.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.NotificationAdd
+import androidx.compose.material.icons.rounded.Percent
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
+import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntryPaymentMethodStatusRow
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryTagSection
+import com.osscabinet.ossWallet.ui.components.entry.SharedFilterConfirmationDialog
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryEvent
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 
 /**
  * Loan Entry Form Body with Optimized Information Hierarchy.
@@ -41,7 +71,8 @@ fun LoanFormBody(
 ) {
     val amountColor = if (state.loanType == LoanType.LENT) AppColors.primary else WarningColor
     val dims = AeonTheme.dimensions
-    val formatter = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+    val formatter =
+        remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -98,7 +129,11 @@ fun LoanFormBody(
                             EntryActionCard(
                                 icon = Icons.Rounded.EventAvailable,
                                 label = "SETTLEMENT",
-                                value = if (state.hasSettlementDate) formatter.format(java.util.Date(state.settlementDate)) else "None Set",
+                                value = if (state.hasSettlementDate) formatter.format(
+                                    java.util.Date(
+                                        state.settlementDate
+                                    )
+                                ) else "None Set",
                                 onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
                                 iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
@@ -177,11 +212,14 @@ fun LoanFormBody(
 
                         // Categories & Flows
                         EntryActionRow {
-                            val categoryObj = if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
+                            val categoryObj =
+                                if (state.selectedCategoryIds.size == 1) state.categories.find { it.id == state.selectedCategoryIds.first() } else null
                             EntryActionCard(
-                                icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.Category,
+                                icon = categoryObj?.let { getIconByName(it.iconName) }
+                                    ?: Icons.Rounded.Category,
                                 label = "CATEGORIES",
-                                value = if (state.selectedCategoryIds.isEmpty()) "All Categories" else categoryObj?.name ?: "${state.selectedCategoryIds.size} Selected",
+                                value = if (state.selectedCategoryIds.isEmpty()) "All Categories" else categoryObj?.name
+                                    ?: "${state.selectedCategoryIds.size} Selected",
                                 onClick = { onEvent(LoanEntryEvent.ShowCategorySheet(show = true)) },
                                 modifier = Modifier.weight(1f)
                             )
@@ -309,14 +347,24 @@ fun LoanFormBody(
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY START",
-                                    value = state.warrantyExpirationStart?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    value = state.warrantyExpirationStart?.let {
+                                        formatter.format(
+                                            java.util.Date(it)
+                                        )
+                                    } ?: "Select",
                                     onClick = { onEvent(LoanEntryEvent.ShowWarrantyStartPicker(show = true)) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 EntryActionCard(
                                     icon = Icons.Rounded.CalendarToday,
                                     label = "WARRANTY END",
-                                    value = state.warrantyExpirationEnd?.let { formatter.format(java.util.Date(it)) } ?: "Select",
+                                    value = state.warrantyExpirationEnd?.let {
+                                        formatter.format(
+                                            java.util.Date(
+                                                it
+                                            )
+                                        )
+                                    } ?: "Select",
                                     onClick = { onEvent(LoanEntryEvent.ShowWarrantyEndPicker(show = true)) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -351,8 +399,20 @@ fun LoanFormBody(
         if (state.showSharedFilterDialog) {
             SharedFilterConfirmationDialog(
                 onDismiss = { onEvent(LoanEntryEvent.ShowSharedFilterDialog(show = false)) },
-                onConfirmUpdateShared = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = true)) },
-                onConfirmCreateNew = { onEvent(LoanEntryEvent.ConfirmSaveWithSharedFilter(updateShared = false)) }
+                onConfirmUpdateShared = {
+                    onEvent(
+                        LoanEntryEvent.ConfirmSaveWithSharedFilter(
+                            updateShared = true
+                        )
+                    )
+                },
+                onConfirmCreateNew = {
+                    onEvent(
+                        LoanEntryEvent.ConfirmSaveWithSharedFilter(
+                            updateShared = false
+                        )
+                    )
+                }
             )
         }
     }

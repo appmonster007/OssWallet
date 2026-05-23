@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
@@ -8,33 +9,28 @@ import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import androidx.lifecycle.SavedStateHandle
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,7 +71,12 @@ class AccountDetailViewModel @Inject constructor(
 
     fun addTag(name: String, color: Int) {
         viewModelScope.launch {
-            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))
+            tagRepository.insertTag(
+                com.osscabinet.ossWallet.domain.model.Tag(
+                    name = name,
+                    colorHex = color
+                )
+            )
         }
     }
 
@@ -157,10 +158,13 @@ class AccountDetailViewModel @Inject constructor(
                 )
 
                 // Filtered transactions for the list tab
-                val filteredTransactionsWithBalance = TransactionFilterService.filterTransactionsWithBalance(
-                    absoluteTransactionsWithBalance,
-                    if (!settings.transactionsSection.showPlannedPayments) currentFilter.copy(excludeFuture = true) else currentFilter
-                )
+                val filteredTransactionsWithBalance =
+                    TransactionFilterService.filterTransactionsWithBalance(
+                        absoluteTransactionsWithBalance,
+                        if (!settings.transactionsSection.showPlannedPayments) currentFilter.copy(
+                            excludeFuture = true
+                        ) else currentFilter
+                    )
 
                 val listState = TimelineService.getGroupedData(
                     transactions = filteredTransactionsWithBalance,

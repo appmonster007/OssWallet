@@ -1,18 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
-import com.osscabinet.ossWallet.ui.components.entry.*
+import com.osscabinet.ossWallet.ui.components.entry.AeonTransactionSplitSheet
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
-
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
 
 /**
  * Container for all bottom sheets used in transaction entry.
@@ -186,9 +191,22 @@ fun TransactionEntrySheets(
             onAddSplit = { onEvent(TransactionEntryEvent.AddSplit) },
             onRemoveSplit = { index -> onEvent(TransactionEntryEvent.RemoveSplit(index)) },
             onUpdateSplit = { index, amount, note, categoryId ->
-                onEvent(TransactionEntryEvent.UpdateSplit(index, amount = amount, note = note, categoryId = categoryId))
+                onEvent(
+                    TransactionEntryEvent.UpdateSplit(
+                        index,
+                        amount = amount,
+                        note = note,
+                        categoryId = categoryId
+                    )
+                )
             },
-            onShowCategorySheet = { index -> onEvent(TransactionEntryEvent.ShowSplitCategorySheet(index)) },
+            onShowCategorySheet = { index ->
+                onEvent(
+                    TransactionEntryEvent.ShowSplitCategorySheet(
+                        index
+                    )
+                )
+            },
             onToggleSplitMode = { onEvent(TransactionEntryEvent.ToggleSplitMode(it)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowSplitSheet(false)) }
         )
@@ -198,7 +216,9 @@ fun TransactionEntrySheets(
     state.showSplitCategorySheet?.let { index ->
         AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryIds = setOf(state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId),
+            selectedCategoryIds = setOf(
+                state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId
+            ),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
                     onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId = id))

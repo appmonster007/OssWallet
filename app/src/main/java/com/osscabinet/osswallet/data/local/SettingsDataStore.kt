@@ -2,15 +2,15 @@ package com.osscabinet.ossWallet.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
-import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
-import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 // These types live in domain — typealiases preserve backward compatibility for data-layer references.
@@ -92,7 +92,8 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val use24HourFormat: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[USE_24_HOUR_FORMAT_KEY] ?: android.text.format.DateFormat.is24HourFormat(context)
+        preferences[USE_24_HOUR_FORMAT_KEY]
+            ?: android.text.format.DateFormat.is24HourFormat(context)
     }
 
     val mapsAccessEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -132,35 +133,38 @@ class SettingsDataStore(private val context: Context) {
         } ?: DashboardSettings()
     }
 
-    val accountsViewSettings: Flow<AccountsViewSettings> = context.dataStore.data.map { preferences ->
-        preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
-            try {
-                Json.decodeFromString<AccountsViewSettings>(it)
-            } catch (e: Exception) {
-                AccountsViewSettings()
-            }
-        } ?: AccountsViewSettings()
-    }
+    val accountsViewSettings: Flow<AccountsViewSettings> =
+        context.dataStore.data.map { preferences ->
+            preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<AccountsViewSettings>(it)
+                } catch (e: Exception) {
+                    AccountsViewSettings()
+                }
+            } ?: AccountsViewSettings()
+        }
 
-    val accountDetailSettings: Flow<AccountDetailSettings> = context.dataStore.data.map { preferences ->
-        preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
-            try {
-                Json.decodeFromString<AccountDetailSettings>(it)
-            } catch (e: Exception) {
-                AccountDetailSettings()
-            }
-        } ?: AccountDetailSettings()
-    }
+    val accountDetailSettings: Flow<AccountDetailSettings> =
+        context.dataStore.data.map { preferences ->
+            preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<AccountDetailSettings>(it)
+                } catch (e: Exception) {
+                    AccountDetailSettings()
+                }
+            } ?: AccountDetailSettings()
+        }
 
-    val recordsSettings: Flow<TransactionSectionSettings> = context.dataStore.data.map { preferences ->
-        preferences[RECORDS_SETTINGS_KEY]?.let {
-            try {
-                Json.decodeFromString<TransactionSectionSettings>(it)
-            } catch (e: Exception) {
-                TransactionSectionSettings()
-            }
-        } ?: TransactionSectionSettings()
-    }
+    val recordsSettings: Flow<TransactionSectionSettings> =
+        context.dataStore.data.map { preferences ->
+            preferences[RECORDS_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<TransactionSectionSettings>(it)
+                } catch (e: Exception) {
+                    TransactionSectionSettings()
+                }
+            } ?: TransactionSectionSettings()
+        }
 
     val dashboardCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[DASHBOARD_CARDS_CONFIG_KEY] ?: ""

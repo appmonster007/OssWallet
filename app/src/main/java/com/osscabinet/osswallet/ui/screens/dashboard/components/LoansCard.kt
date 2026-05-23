@@ -1,38 +1,45 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import androidx.compose.ui.unit.sp
-
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
 fun LoansCard(
@@ -93,7 +100,10 @@ private fun LoansSettingsSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(type.lowercase().replaceFirstChar { it.uppercase() }, style = AppTextStyles.transactionTitle)
+                    Text(
+                        type.lowercase().replaceFirstChar { it.uppercase() },
+                        style = AppTextStyles.transactionTitle
+                    )
                     RadioButton(
                         selected = config.showType == type,
                         onClick = { callbacks.onUpdate(config.copy(showType = type)) }
@@ -109,10 +119,12 @@ private fun LoanSummaryRow(
     summary: LoanSummary,
     onClick: () -> Unit
 ) {
-    val accentColor = if (summary.loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
-    
+    val accentColor =
+        if (summary.loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
+
     val progress = if (summary.loan.principalAmount > BigDecimal.ZERO)
-        (summary.totalPaid.divide(summary.loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat().coerceIn(0f, 1f)
+        (summary.totalPaid.divide(summary.loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat()
+            .coerceIn(0f, 1f)
     else 0f
 
     Surface(
@@ -137,8 +149,8 @@ private fun LoanSummaryRow(
                         color = AppColors.contentPrimary
                     )
                     Text(
-                        text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}" 
-                               else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}",
+                        text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}"
+                        else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
@@ -146,7 +158,7 @@ private fun LoanSummaryRow(
                         color = accentColor.copy(alpha = 0.7f)
                     )
                 }
-                
+
                 Text(
                     text = "${(progress * 100).toInt()}%",
                     style = AppTextStyles.drawerItemLabel.copy(
@@ -156,19 +168,21 @@ private fun LoanSummaryRow(
                     color = accentColor
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp),
                 color = accentColor,
                 trackColor = accentColor.copy(alpha = 0.1f),
                 strokeCap = StrokeCap.Round
             )
-            
+
             Spacer(modifier = Modifier.height(14.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,14 +198,18 @@ private fun LoanSummaryRow(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, shorten = true),
+                        text = formatCurrencyRight(
+                            summary.remainingBalance,
+                            summary.loan.currency,
+                            shorten = true
+                        ),
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),
                         color = AppColors.contentPrimary
                     )
                 }
-                
+
                 Surface(
                     color = AppColors.componentOnCard.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(8.dp)

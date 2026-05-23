@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
 
 fun TemplateEntity.toDomain(): Template {
     return Template(

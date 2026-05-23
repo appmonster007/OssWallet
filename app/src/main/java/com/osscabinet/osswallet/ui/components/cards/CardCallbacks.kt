@@ -12,7 +12,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
  * which often include cardId as the first parameter.
  */
 sealed class CardCallbacks {
-    
+
     /**
      * Common callbacks - just delete
      */
@@ -20,7 +20,7 @@ sealed class CardCallbacks {
         val onDelete: () -> Unit,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for Net Worth
      */
@@ -60,7 +60,7 @@ sealed class CardCallbacks {
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for analytics cards (update config + delete)
      */
@@ -70,7 +70,7 @@ sealed class CardCallbacks {
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for account hero card
      */
@@ -82,7 +82,7 @@ sealed class CardCallbacks {
         val onClick: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
-    
+
     /**
      * Callbacks for accounts card
      */

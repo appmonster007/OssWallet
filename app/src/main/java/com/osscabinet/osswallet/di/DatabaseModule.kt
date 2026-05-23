@@ -3,7 +3,20 @@ package com.osscabinet.ossWallet.di
 import android.content.Context
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
-import com.osscabinet.ossWallet.data.local.dao.*
+import com.osscabinet.ossWallet.data.local.dao.AccountDao
+import com.osscabinet.ossWallet.data.local.dao.BudgetDao
+import com.osscabinet.ossWallet.data.local.dao.CategoryDao
+import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
+import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.dao.LoanDao
+import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
+import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
+import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentOccurrenceDao
+import com.osscabinet.ossWallet.data.local.dao.ProfileDao
+import com.osscabinet.ossWallet.data.local.dao.TagDao
+import com.osscabinet.ossWallet.data.local.dao.TemplateDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -61,7 +74,8 @@ object DatabaseModule {
     fun providePlannedPaymentDao(db: AppDatabase): PlannedPaymentDao = db.plannedPaymentDao()
 
     @Provides
-    fun providePlannedPaymentOccurrenceDao(db: AppDatabase): PlannedPaymentOccurrenceDao = db.plannedPaymentOccurrenceDao()
+    fun providePlannedPaymentOccurrenceDao(db: AppDatabase): PlannedPaymentOccurrenceDao =
+        db.plannedPaymentOccurrenceDao()
 
     @Provides
     fun provideFilterDao(db: AppDatabase): FilterDao = db.filterDao()

@@ -1,6 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
@@ -55,7 +65,7 @@ data class PlannedPaymentEntryState(
     val showExchangeRateDialog: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val deleteTemplateWithPayment: Boolean = false,
-    
+
     val isEditMode: Boolean = false,
     val plannedPaymentId: Long? = null,
     val navTriggered: Boolean = false,

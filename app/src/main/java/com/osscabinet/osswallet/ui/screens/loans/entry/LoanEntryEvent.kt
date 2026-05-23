@@ -9,15 +9,21 @@ sealed class LoanEntryEvent {
     data class SetCurrency(val currency: String) : LoanEntryEvent()
     data class SetLoanType(val type: LoanType) : LoanEntryEvent()
     data class SetCounterparty(val counterparty: String) : LoanEntryEvent()
-    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) : LoanEntryEvent()
+    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) :
+        LoanEntryEvent()
+
     data class SetInterestRate(val rate: String) : LoanEntryEvent()
     data class SetNote(val note: String) : LoanEntryEvent()
     data class SetTrackTypes(val types: Set<TransactionType>) : LoanEntryEvent()
     data class SetCategoryIds(val ids: Set<Long>) : LoanEntryEvent()
     data class SetCurrencies(val currencies: Set<String>) : LoanEntryEvent()
     data class SetTags(val tags: Set<String>) : LoanEntryEvent()
-    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) : LoanEntryEvent()
-    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) : LoanEntryEvent()
+    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) :
+        LoanEntryEvent()
+
+    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) :
+        LoanEntryEvent()
+
     data class SetLinkedTransactions(val ids: Set<Long>) : LoanEntryEvent()
     data class SetQueryNote(val query: String) : LoanEntryEvent()
     data class SetNoteRegex(val isRegex: Boolean) : LoanEntryEvent()
@@ -39,7 +45,7 @@ sealed class LoanEntryEvent {
     data object MakeFilterUnique : LoanEntryEvent()
     data class SetDeleteFilterWithLoan(val delete: Boolean) : LoanEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : LoanEntryEvent()
-    
+
     // Visibility
     data class ShowStartDatePicker(val show: Boolean) : LoanEntryEvent()
     data class ShowSettlementDatePicker(val show: Boolean) : LoanEntryEvent()
@@ -59,9 +65,9 @@ sealed class LoanEntryEvent {
     data class ShowMaxAmountSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowWarrantyStartPicker(val show: Boolean) : LoanEntryEvent()
     data class ShowWarrantyEndPicker(val show: Boolean) : LoanEntryEvent()
-    
+
     data class SetAccountQuery(val query: String) : LoanEntryEvent()
     data class SetCategoryQuery(val query: String) : LoanEntryEvent()
-    
+
     data object TriggerNavigation : LoanEntryEvent()
 }

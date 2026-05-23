@@ -2,25 +2,33 @@ package com.osscabinet.ossWallet.ui.screens.settings
 
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Profile
+import com.osscabinet.ossWallet.domain.model.ProfileType
 import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BackupType
+import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.ProfileRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
-import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
-import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.Profile
-import com.osscabinet.ossWallet.domain.model.ProfileType
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 sealed class SyncState {
@@ -150,13 +158,25 @@ class SettingsViewModel @Inject constructor(
 
     fun setDashboardGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateDashboardSettings {
+                it.copy(
+                    accountsSection = it.accountsSection.copy(
+                        gridColumns = columns
+                    )
+                )
+            }
         }
     }
 
     fun setAccountsViewGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    accountsSection = it.accountsSection.copy(
+                        gridColumns = columns
+                    )
+                )
+            }
         }
     }
 
@@ -168,37 +188,73 @@ class SettingsViewModel @Inject constructor(
 
     fun setDashboardShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateDashboardSettings {
+                it.copy(
+                    accountsSection = it.accountsSection.copy(
+                        showAddAccountCard = show
+                    )
+                )
+            }
         }
     }
 
     fun setAccountsViewShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    accountsSection = it.accountsSection.copy(
+                        showAddAccountCard = show
+                    )
+                )
+            }
         }
     }
 
     fun updateAccountsViewCashFlowShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    cashFlowSection = it.cashFlowSection.copy(
+                        showBaseConversion = show
+                    )
+                )
+            }
         }
     }
 
     fun updateAccountsViewCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    currencyBalancesSection = it.currencyBalancesSection.copy(
+                        layout = layout
+                    )
+                )
+            }
         }
     }
 
     fun updateAccountsViewCurrencyBalancesShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    currencyBalancesSection = it.currencyBalancesSection.copy(
+                        showBaseConversion = show
+                    )
+                )
+            }
         }
     }
 
     fun updateAccountsViewCurrencyBalancesTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings {
+                it.copy(
+                    currencyBalancesSection = it.currencyBalancesSection.copy(
+                        timelineRange = range
+                    )
+                )
+            }
         }
     }
 
@@ -272,7 +328,13 @@ class SettingsViewModel @Inject constructor(
 
     fun createProfile(name: String, currency: String) {
         viewModelScope.launch {
-            profileRepository.insertProfile(Profile(name = name, baseCurrency = currency, type = ProfileType.PERSONAL))
+            profileRepository.insertProfile(
+                Profile(
+                    name = name,
+                    baseCurrency = currency,
+                    type = ProfileType.PERSONAL
+                )
+            )
         }
     }
 

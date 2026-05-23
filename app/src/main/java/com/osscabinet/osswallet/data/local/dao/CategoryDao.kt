@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import kotlinx.coroutines.flow.Flow
 

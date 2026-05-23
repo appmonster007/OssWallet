@@ -1,28 +1,41 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
+import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
-import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +81,11 @@ fun SettingsScreen(
                     icon = Icons.Rounded.Palette,
                     onClick = onDisplayClick
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Currency & Localization",
                     subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
@@ -84,7 +101,11 @@ fun SettingsScreen(
                     icon = Icons.Rounded.Category,
                     onClick = onDataClick
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
                 AeonSettingsItem(
                     title = "Privacy & Security",
                     subtitle = "Location, web access, and backups",
@@ -94,13 +115,21 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(scrollBottomPadding()))
-            
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("OssWallet v1.1.0", style = AppTextStyles.transactionSwipeAction, color = AppColors.border)
-                Text("Built for the Modern Account", style = AppTextStyles.transactionSwipeAction, color = AppColors.contentSecondary.copy(alpha = 0.5f))
+                Text(
+                    "OssWallet v1.1.0",
+                    style = AppTextStyles.transactionSwipeAction,
+                    color = AppColors.border
+                )
+                Text(
+                    "Built for the Modern Account",
+                    style = AppTextStyles.transactionSwipeAction,
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                )
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 Text(
                     "Currency rates provided by",
@@ -108,7 +137,8 @@ fun SettingsScreen(
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
                 Text(
-                    availableProviders.find { it.id == currencyProviderId }?.attribution ?: "Exchangerate.host",
+                    availableProviders.find { it.id == currencyProviderId }?.attribution
+                        ?: "Exchangerate.host",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.Bold,
                         color = AppColors.primary

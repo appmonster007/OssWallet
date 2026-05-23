@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 sealed class TemplateEntryEvent {
@@ -15,7 +18,9 @@ sealed class TemplateEntryEvent {
     data class SetTransferRate(val rate: BigDecimal) : TemplateEntryEvent()
     data class SetNote(val note: String) : TemplateEntryEvent()
     data class SetPayee(val payee: String) : TemplateEntryEvent()
-    data class SetLocation(val gpsLocation: String?, val location: String? = null) : TemplateEntryEvent()
+    data class SetLocation(val gpsLocation: String?, val location: String? = null) :
+        TemplateEntryEvent()
+
     data class SetWarrantyEnabled(val enabled: Boolean) : TemplateEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : TemplateEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : TemplateEntryEvent()
@@ -25,7 +30,8 @@ sealed class TemplateEntryEvent {
     data class UpdateTag(val tag: Tag) : TemplateEntryEvent()
     data class DeleteTag(val tag: Tag) : TemplateEntryEvent()
     data class SetLinkedTransactionIds(val ids: List<Long>) : TemplateEntryEvent()
-    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) : TemplateEntryEvent()
+    data class RemoveLinkedTransaction(val currentId: Long, val targetId: Long) :
+        TemplateEntryEvent()
 
     // Sheet visibility
     data class ShowAccountSheet(val show: Boolean) : TemplateEntryEvent()

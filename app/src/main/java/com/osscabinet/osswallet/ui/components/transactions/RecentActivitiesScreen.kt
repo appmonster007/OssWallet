@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
@@ -35,9 +33,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -149,7 +147,9 @@ fun RecentActivitiesScreen(
                         )
                     }
 
-                    itemsIndexed(group.transactions, key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
+                    itemsIndexed(
+                        group.transactions,
+                        key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
                         val transaction = enriched.item.transaction
 
                         SwipeableTransactionItem(
@@ -180,7 +180,9 @@ fun RecentActivitiesScreen(
                                     TransactionType.INCOME -> CashFlowType.INCOME
                                     else -> CashFlowType.EXPENSE
                                 },
-                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(transaction.timestamp),
+                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
+                                    transaction.timestamp
+                                ),
                                 note = transaction.note,
                                 tags = enriched.tags,
                                 icon = getIconByName(enriched.categoryIcon),

@@ -1,19 +1,25 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -77,34 +83,35 @@ class AccountEntryViewModel @Inject constructor(
 
     fun initialize(accountId: String? = null) {
         if (accountId == null) {
-            _state.update { 
+            _state.update {
                 it.copy(
-                    isEditMode = false, 
+                    isEditMode = false,
                     accountId = null,
                     primaryCurrency = it.defaultCurrency,
                     allowedCurrencies = if (it.defaultCurrency.isNotBlank()) setOf(it.defaultCurrency) else emptySet()
-                ) 
+                )
             }
             return
         }
 
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }?.let { account ->
-                _state.update {
-                    it.copy(
-                        accountId = accountId,
-                        isEditMode = true,
-                        existingAccount = account,
-                        accountName = account.name,
-                        structureType = account.structureType,
-                        primaryCurrency = account.currencyCode,
-                        allowedCurrencies = account.allowedCurrencies.toSet(),
-                        selectedIconName = account.icon,
-                        accentColorHex = account.colorHex
-                    )
+            accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
+                ?.let { account ->
+                    _state.update {
+                        it.copy(
+                            accountId = accountId,
+                            isEditMode = true,
+                            existingAccount = account,
+                            accountName = account.name,
+                            structureType = account.structureType,
+                            primaryCurrency = account.currencyCode,
+                            allowedCurrencies = account.allowedCurrencies.toSet(),
+                            selectedIconName = account.icon,
+                            accentColorHex = account.colorHex
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -120,25 +127,44 @@ class AccountEntryViewModel @Inject constructor(
                         newPrimary = ""
                     } else if (event.currencies.size == 1) {
                         newPrimary = event.currencies.first()
-                    } else if (state.primaryCurrency.isNotEmpty() && !event.currencies.contains(state.primaryCurrency)) {
+                    } else if (state.primaryCurrency.isNotEmpty() && !event.currencies.contains(
+                            state.primaryCurrency
+                        )
+                    ) {
                         newPrimary = event.currencies.first()
                     }
                     state.copy(allowedCurrencies = event.currencies, primaryCurrency = newPrimary)
                 }
             }
+
             is AccountEntryEvent.SetInitialBalance -> {
-                _state.update { 
-                    it.copy(initialBalances = it.initialBalances.toMutableMap().apply { put(event.currency, event.balance) })
+                _state.update {
+                    it.copy(
+                        initialBalances = it.initialBalances.toMutableMap()
+                            .apply { put(event.currency, event.balance) })
                 }
             }
+
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
             is AccountEntryEvent.SetColor -> _state.update { it.copy(accentColorHex = event.color) }
             is AccountEntryEvent.ShowStructureSheet -> _state.update { it.copy(showStructureSheet = event.show) }
             is AccountEntryEvent.ShowIconSheet -> _state.update { it.copy(showIconSheet = event.show) }
             is AccountEntryEvent.ShowColorSheet -> _state.update { it.copy(showColorSheet = event.show) }
             is AccountEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
-            is AccountEntryEvent.OpenCalculator -> _state.update { it.copy(showCalculator = true, activeBalanceCurrency = event.currency) }
-            is AccountEntryEvent.CloseCalculator -> _state.update { it.copy(showCalculator = false, activeBalanceCurrency = null) }
+            is AccountEntryEvent.OpenCalculator -> _state.update {
+                it.copy(
+                    showCalculator = true,
+                    activeBalanceCurrency = event.currency
+                )
+            }
+
+            is AccountEntryEvent.CloseCalculator -> _state.update {
+                it.copy(
+                    showCalculator = false,
+                    activeBalanceCurrency = null
+                )
+            }
+
             is AccountEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }

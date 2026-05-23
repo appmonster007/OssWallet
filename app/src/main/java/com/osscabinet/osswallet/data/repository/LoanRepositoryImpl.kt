@@ -4,7 +4,8 @@ import com.osscabinet.ossWallet.data.local.dao.LoanDao
 import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import kotlinx.coroutines.flow.Flow
@@ -53,7 +54,9 @@ class LoanRepositoryImpl @Inject constructor(
     override suspend fun deleteLoan(loanId: Long) {
         val filterId = loanDao.getLoanById(loanId)?.loan?.filterId
         loanDao.deleteById(loanId)
-        filterId?.let { filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) } }
+        filterId?.let {
+            filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) }
+        }
     }
 
     override suspend fun insertPayment(payment: LoanPayment): Long =

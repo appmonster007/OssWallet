@@ -3,18 +3,40 @@ package com.osscabinet.ossWallet.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material.icons.filled.CalendarViewMonth
+import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material.icons.filled.ViewWeek
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,10 +57,14 @@ fun AeonSegmentedControl(
     Surface(
         color = AppColors.cardSurface,
         shape = RoundedCornerShape(20.dp),
-        modifier = modifier.fillMaxWidth().height(60.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .height(60.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(4.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             options.forEachIndexed { index, option ->
@@ -51,7 +77,7 @@ fun AeonSegmentedControl(
                     if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
                     label = "contentColor"
                 )
-                
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -128,17 +154,19 @@ fun <T> AeonDropdown(
             value = labelProvider(selectedOption),
             onValueChange = {},
             readOnly = true,
-            label = { 
+            label = {
                 Text(
                     label.uppercase(),
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     )
-                ) 
+                )
             },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AppColors.primary,
@@ -160,14 +188,14 @@ fun <T> AeonDropdown(
             options.forEach { option ->
                 val isSelected = option == selectedOption
                 DropdownMenuItem(
-                    text = { 
+                    text = {
                         Text(
                             labelProvider(option),
                             style = AppTextStyles.listItemTitle.copy(
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                             ),
                             color = if (isSelected) AppColors.primary else AppColors.contentPrimary
-                        ) 
+                        )
                     },
                     onClick = {
                         onOptionSelected(option)

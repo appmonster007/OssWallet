@@ -77,8 +77,8 @@ fun TransactionEntryScreen(
         title = if (state.isEditMode) "Edit Transaction" else "New Transaction",
         onBackClick = onBackClick,
         onSaveClick = {
-            viewModel.saveTransaction { 
-                viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) 
+            viewModel.saveTransaction {
+                viewModel.onEvent(TransactionEntryEvent.TriggerNavigation)
             }
         },
         canSave = state.canSave && !state.navTriggered,

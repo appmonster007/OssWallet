@@ -1,14 +1,19 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,17 +28,20 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
+import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import java.math.BigDecimal
 
 @Composable
 fun CashFlowCard(
@@ -53,9 +61,10 @@ fun CashFlowCard(
     val totalIncomeInBase = cashFlowResult?.totalIncomeInBase ?: BigDecimal.ZERO
     val totalExpenseInBase = cashFlowResult?.totalExpensesInBase ?: BigDecimal.ZERO
 
-    val displayFilter = if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-    else config.filter
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
 
     AeonExpressiveCard(
         title = config.title,
@@ -70,7 +79,12 @@ fun CashFlowCard(
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CashFlowSettingsSheet(config = config, baseCurrency = baseCurrency, callbacks = callbacks, onDismiss = onDismiss)
+            CashFlowSettingsSheet(
+                config = config,
+                baseCurrency = baseCurrency,
+                callbacks = callbacks,
+                onDismiss = onDismiss
+            )
         }
     ) {
         Row(
@@ -84,7 +98,15 @@ fun CashFlowCard(
                 type = CashFlowType.INCOME,
                 incomeColor = PositiveAmountColor,
                 modifier = Modifier.weight(1f),
-                onClick = { callbacks.onClickIncome?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))) }
+                onClick = {
+                    callbacks.onClickIncome?.invoke(
+                        config.filter.copy(
+                            transactionTypes = setOf(
+                                TransactionType.INCOME
+                            )
+                        )
+                    )
+                }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -114,7 +136,15 @@ fun CashFlowCard(
                 type = CashFlowType.EXPENSE,
                 expenseColor = NegativeAmountColor,
                 modifier = Modifier.weight(1f),
-                onClick = { callbacks.onClickExpense?.invoke(config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))) }
+                onClick = {
+                    callbacks.onClickExpense?.invoke(
+                        config.filter.copy(
+                            transactionTypes = setOf(
+                                TransactionType.EXPENSE
+                            )
+                        )
+                    )
+                }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -153,7 +183,12 @@ private fun CashFlowSettingsSheet(
             AeonBaseConversionToggle(
                 baseCurrency = baseCurrency,
                 showBaseConversion = config.showBaseConversion,
-                onShowBaseConversionChange = { callbacks.onShowBaseConversionChange(config.cardId, it) }
+                onShowBaseConversionChange = {
+                    callbacks.onShowBaseConversionChange(
+                        config.cardId,
+                        it
+                    )
+                }
             )
         }
     }
@@ -243,7 +278,13 @@ fun AeonFlowCard(
                     ),
                     color = color
                 )
-                AeonFlowBadge(totalInBase, type, baseCurrency, incomeColor = color, expenseColor = color)
+                AeonFlowBadge(
+                    totalInBase,
+                    type,
+                    baseCurrency,
+                    incomeColor = color,
+                    expenseColor = color
+                )
             }
 
             content()
@@ -255,8 +296,24 @@ fun AeonFlowCard(
 @Composable
 fun CashFlowCardPreview() {
     val sampleBreakdown = listOf(
-        CashFlowBreakdownItem("USD", BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("3500.00"), BigDecimal("3500.00"), BigDecimal.ZERO, BigDecimal.ZERO),
-        CashFlowBreakdownItem("EUR", BigDecimal("1000.00"), BigDecimal("1100.00"), BigDecimal("800.00"), BigDecimal("880.00"), BigDecimal.ZERO, BigDecimal.ZERO)
+        CashFlowBreakdownItem(
+            "USD",
+            BigDecimal("5000.00"),
+            BigDecimal("5000.00"),
+            BigDecimal("3500.00"),
+            BigDecimal("3500.00"),
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        ),
+        CashFlowBreakdownItem(
+            "EUR",
+            BigDecimal("1000.00"),
+            BigDecimal("1100.00"),
+            BigDecimal("800.00"),
+            BigDecimal("880.00"),
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        )
     )
     val result = CashFlowResult(
         totalIncomeInBase = BigDecimal("6100.00"),

@@ -21,11 +21,8 @@ class CategoryPieChartCardComputer :
         // Step 1 & 2: Resolve effective filter using the canonical pipeline
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
 
-        // Expand category IDs to include children
-        val expandedCategoryIds = TransactionFilterService.expandCategoryIds(
-            mergedFilter.categoryIds,
-            input.categories
-        )
+        // Expand category IDs to include children using the pre-computed cache
+        val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
 
         // Resolve transaction type: use whatever is in mergedFilter.transactionTypes.
         // If it's a single value, use it. If empty or multiple, default to EXPENSE.

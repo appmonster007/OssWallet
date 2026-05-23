@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -122,7 +123,8 @@ class FilterEntryViewModel @Inject constructor(
                         name = filter.name,
                         selectedTransactionTypes = tf.transactionTypes.toSet(),
                         selectedAccountIds = tf.accountIds.toSet(),
-                        selectedCategoryIds = tf.categoryIds.toSet(),
+                        selectedCategoryIds = CategoryHierarchyCache.build(_state.value.categories)
+                            .expand(tf.categoryIds),
                         selectedPaymentMethods = tf.paymentMethods.toSet(),
                         selectedStatuses = tf.statuses.toSet(),
                         linkedTransactionIds = tf.linkedTransactionIds.toSet(),
@@ -150,7 +152,10 @@ class FilterEntryViewModel @Inject constructor(
             is FilterEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
             is FilterEntryEvent.SetTransactionTypes -> _state.update { it.copy(selectedTransactionTypes = event.types) }
             is FilterEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
-            is FilterEntryEvent.SetCategoryIds -> _state.update { it.copy(selectedCategoryIds = event.ids) }
+            is FilterEntryEvent.SetCategoryIds -> {
+                val expanded = CategoryHierarchyCache.build(_state.value.categories).expand(event.ids)
+                _state.update { it.copy(selectedCategoryIds = expanded) }
+            }
             is FilterEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is FilterEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
             is FilterEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }

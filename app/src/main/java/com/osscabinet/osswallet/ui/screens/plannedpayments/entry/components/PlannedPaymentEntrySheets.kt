@@ -166,31 +166,6 @@ fun PlannedPaymentEntrySheets(
         )
     }
 
-    if (state.showCurrencySheet) {
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.currency),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) }
-            },
-            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false)) },
-            currencies = state.shortlistedCurrencies.ifEmpty { null }
-        )
-    }
-
-    if (state.showTargetCurrencySheet) {
-        val targetAccount = state.accounts.find { it.id == state.targetAccountId }
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.targetCurrency ?: "USD"),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) }
-            },
-            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = "Select Target Currency",
-            currencies = if (targetAccount == null) null
-                         else targetAccount.allowedCurrencies.toList().ifEmpty { null }
-        )
-    }
-
     if (state.showWarrantyDatePicker) {
         AeonDatePickerDialog(
             selectedDateMillis = state.warrantyExpirationMillis,

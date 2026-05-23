@@ -7,7 +7,6 @@ import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
@@ -236,29 +235,4 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Currency Selection
-    if (state.showCurrencySheet) {
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.selectedCurrency),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetCurrency(it)) }
-            },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowCurrencySheet(false)) },
-            currencies = state.selectedAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
-                ?: state.shortlistedCurrencies.ifEmpty { null }
-        )
-    }
-
-    if (state.showTargetCurrencySheet) {
-        AeonCurrencySelection(
-            selectedCurrencies = setOf(state.targetCurrency),
-            onSelectionChange = { ids ->
-                ids.firstOrNull()?.let { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) }
-            },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false)) },
-            title = stringResource(R.string.target_currency_selection_title),
-            currencies = if (state.targetAccount == null) state.fullProviderCurrencies.ifEmpty { null }
-                         else state.targetAccount.allowedCurrencies.toList().ifEmpty { null }
-        )
-    }
 }

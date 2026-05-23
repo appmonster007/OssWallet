@@ -6,7 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.entry.*
@@ -30,6 +30,11 @@ fun TransactionFormBody(
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     modifier: Modifier = Modifier
 ) {
+    val targetCurrencies = remember(state.targetAccount, state.fullProviderCurrencies) {
+        state.targetAccount?.allowedCurrencies?.ifEmpty { null }
+            ?: state.fullProviderCurrencies.ifEmpty { emptyList() }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -47,13 +52,13 @@ fun TransactionFormBody(
                 onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
                 amount = state.amount,
                 currency = state.selectedCurrency,
-                onCurrencyClick = { onEvent(TransactionEntryEvent.ShowNumpad(true)) },
+                onCurrencyClick = { currency -> onEvent(TransactionEntryEvent.SetCurrency(currency)) },
                 onAmountClick = { onEvent(TransactionEntryEvent.ShowNumpad(true)) },
                 showName = false,
                 isTransfer = state.isTransfer,
                 targetAccountId = state.targetAccount?.id,
                 targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(true)) },
+                onTargetCurrencyClick = { currency -> onEvent(TransactionEntryEvent.SetTargetCurrency(currency)) },
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
                 isSplitMode = state.isSplitMode,
@@ -63,7 +68,8 @@ fun TransactionFormBody(
                     }
                     onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                 },
-                supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD")
+                supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD"),
+                targetSupportedCurrencies = targetCurrencies
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category

@@ -37,6 +37,11 @@ fun TemplateFormBody(
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
+    val targetCurrencies = remember(state.selectedTargetAccount) {
+        state.selectedTargetAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
+            ?: CurrencyService.getAllCurrencies()
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -54,7 +59,7 @@ fun TemplateFormBody(
                 onTypeSelected = { onEvent(TemplateEntryEvent.SetTransactionType(it)) },
                 amount = state.amount,
                 currency = state.currency,
-                onCurrencyClick = { onEvent(TemplateEntryEvent.ShowCurrencySheet(true)) },
+                onCurrencyClick = { currency -> onEvent(TemplateEntryEvent.SetCurrency(currency)) },
                 onAmountClick = { onEvent(TemplateEntryEvent.ShowNumpad(true)) },
                 name = state.name,
                 onNameChange = { onEvent(TemplateEntryEvent.SetName(it)) },
@@ -62,10 +67,11 @@ fun TemplateFormBody(
                 isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
                 targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
+                onTargetCurrencyClick = { currency -> onEvent(TemplateEntryEvent.SetTargetCurrency(currency)) },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = sourceCurrencies
+                supportedCurrencies = sourceCurrencies,
+                targetSupportedCurrencies = targetCurrencies
             )
 
             // CONTEXT: Action cards row: Account, Category

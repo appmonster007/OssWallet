@@ -3,55 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OssWallet — Web View</title>
+<title>OssWallet — Web Portal</title>
 <style>
+  /* ── Design tokens ─────────────────────────────────────────── */
   :root {
-    --bg: #ffffff; --surface: #f5f5f5; --border: #e0e0e0;
+    --bg: #ffffff; --surface: #f5f5f5; --surface2: #ececec; --border: #e0e0e0;
     --text: #1a1a1a; --text-muted: #666666;
     --accent: #1976D2; --accent-hover: #1565C0;
     --danger: #c62828; --success: #2e7d32; --warning: #f57f17;
-    --sidebar-w: 220px; --header-h: 56px;
+    --sidebar-w: 230px; --header-h: 56px;
+    --radius: 10px; --radius-sm: 6px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #121212; --surface: #1e1e1e; --border: #2c2c2c;
+      --bg: #121212; --surface: #1e1e1e; --surface2: #272727; --border: #2c2c2c;
       --text: #e0e0e0; --text-muted: #9e9e9e;
       --accent: #42a5f5; --accent-hover: #64b5f6;
       --danger: #ef5350; --success: #66bb6a; --warning: #ffa726;
     }
   }
+
+  /* ── Reset ─────────────────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
+
+  /* ── App shell ─────────────────────────────────────────────── */
   #app { display: flex; flex-direction: column; height: 100%; }
   #header { display: flex; align-items: center; height: var(--header-h); padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--border); gap: 12px; flex-shrink: 0; }
   #header h1 { font-size: 1.1rem; font-weight: 600; flex: 1; }
   #main { display: flex; flex: 1; overflow: hidden; }
   #sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
   #content { flex: 1; overflow-y: auto; padding: 24px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; color: var(--text); text-decoration: none; font-size: 0.92rem; }
+
+  /* ── Nav ───────────────────────────────────────────────────── */
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; cursor: pointer; color: var(--text); text-decoration: none; font-size: 0.9rem; border-left: 3px solid transparent; }
   .nav-item:hover { background: var(--border); }
-  .nav-item.active { background: var(--accent); color: #fff; }
-  .nav-icon { width: 20px; text-align: center; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
-  .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-  .stat-value { font-size: 1.6rem; font-weight: 700; }
+  .nav-item.active { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .nav-icon { width: 22px; text-align: center; font-size: 1rem; }
+  .nav-section { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 16px 16px 4px; }
+
+  /* ── Cards ─────────────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.5rem; font-weight: 700; }
   .stat-value.positive { color: var(--success); }
   .stat-value.negative { color: var(--danger); }
+  .stat-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+
+  /* ── Tables ────────────────────────────────────────────────── */
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 10px 12px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
-  td { padding: 12px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  th { text-align: left; padding: 10px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
   .amount-income { color: var(--success); font-weight: 600; }
   .amount-expense { color: var(--danger); font-weight: 600; }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background 0.15s; }
+
+  /* ── Buttons ───────────────────────────────────────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.88rem; font-weight: 500; transition: background 0.15s, opacity 0.15s; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
   .btn-ghost:hover { background: var(--border); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { opacity: 0.85; }
+  .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+  .btn-icon { padding: 5px 8px; font-size: 0.9rem; background: transparent; border: none; cursor: pointer; color: var(--text-muted); border-radius: 4px; }
+  .btn-icon:hover { background: var(--border); color: var(--danger); }
+
+  /* ── Badges ────────────────────────────────────────────────── */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.73rem; font-weight: 700; }
+  .badge-income { background: #e8f5e9; color: var(--success); }
+  .badge-expense { background: #ffebee; color: var(--danger); }
+  .badge-transfer { background: #e3f2fd; color: var(--accent); }
+  .badge-active { background: #e3f2fd; color: var(--accent); }
+  .badge-settled { background: #e8f5e9; color: var(--success); }
+  .badge-overdue { background: #ffebee; color: var(--danger); }
+  .badge-lent { background: #e8f5e9; color: var(--success); }
+  .badge-borrowed { background: #fff3e0; color: var(--warning); }
+  .badge-must { background: #ffebee; color: var(--danger); }
+  .badge-need { background: #fff3e0; color: var(--warning); }
+  .badge-want { background: #e8f5e9; color: var(--success); }
+  @media (prefers-color-scheme: dark) {
+    .badge-income { background: #1b5e20; } .badge-expense { background: #b71c1c; } .badge-transfer { background: #0d47a1; }
+    .badge-active { background: #0d47a1; } .badge-settled { background: #1b5e20; } .badge-overdue { background: #b71c1c; }
+    .badge-lent { background: #1b5e20; } .badge-borrowed { background: #3e2000; }
+    .badge-must { background: #b71c1c; } .badge-need { background: #3e2000; } .badge-want { background: #1b5e20; }
+  }
+
+  /* ── Login ─────────────────────────────────────────────────── */
   #login-page { display: flex; align-items: center; justify-content: center; min-height: 100dvh; background: var(--bg); padding: 24px; }
   .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 40px; max-width: 380px; width: 100%; }
   .login-card h2 { font-size: 1.4rem; margin-bottom: 8px; }
@@ -60,15 +104,12 @@
   .code-input:focus { border-color: var(--accent); }
   .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
   .login-submit { width: 100%; margin-top: 20px; padding: 12px; font-size: 1rem; }
+
+  /* ── Pagination ────────────────────────────────────────────── */
   .pagination { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   .page-info { font-size: 0.85rem; color: var(--text-muted); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
-  .badge-income { background: #e8f5e9; color: var(--success); }
-  .badge-expense { background: #ffebee; color: var(--danger); }
-  .badge-transfer { background: #e3f2fd; color: var(--accent); }
-  @media (prefers-color-scheme: dark) {
-    .badge-income { background: #1b5e20; } .badge-expense { background: #b71c1c; } .badge-transfer { background: #0d47a1; }
-  }
+
+  /* ── Misc ──────────────────────────────────────────────────── */
   #hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: var(--text); font-size: 1.4rem; }
   @media (max-width: 700px) {
     #hamburger { display: block; }
@@ -77,41 +118,143 @@
     #content { padding: 16px; }
     #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
     #overlay.visible { display: block; }
+    .card-grid { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr !important; }
   }
   .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 40px auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-wrap { display: flex; justify-content: center; }
   .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; }
-  .alert-warn { background: #fff3e0; color: var(--warning); border: 1px solid #ffe0b2; }
-  @media (prefers-color-scheme: dark) { .alert-warn { background: #3e2000; border-color: #bf360c; } }
+  .alert-warn { background: #fff3e0; color: #bf360c; border: 1px solid #ffe0b2; }
+  .alert-error { background: #ffebee; color: var(--danger); border: 1px solid #ffcdd2; }
+  .alert-success { background: #e8f5e9; color: var(--success); border: 1px solid #c8e6c9; }
+  @media (prefers-color-scheme: dark) {
+    .alert-warn { background: #3e2000; color: var(--warning); border-color: #bf360c; }
+    .alert-error { background: #3b0000; color: var(--danger); border-color: #7f0000; }
+    .alert-success { background: #1a3a1a; color: var(--success); border-color: #2e7d32; }
+  }
   .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
-  .empty-state { text-align: center; color: var(--text-muted); padding: 60px 0; }
+  .section-sub { font-size: 1rem; font-weight: 600; margin-bottom: 12px; margin-top: 8px; }
+  .empty-state { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 0.92rem; }
+
+  /* ── Page header row ───────────────────────────────────────── */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .page-header .section-title { margin-bottom: 0; }
+
+  /* ── Progress bars ─────────────────────────────────────────── */
+  .progress-track { background: var(--border); border-radius: 999px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+  .progress-green { background: var(--success); }
+  .progress-orange { background: var(--warning); }
+  .progress-red { background: var(--danger); }
+
+  /* ── Form elements ─────────────────────────────────────────── */
+  .form-field { margin-bottom: 14px; }
+  .form-field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-field input, .form-field select, .form-field textarea {
+    width: 100%; padding: 9px 12px; font-size: 0.9rem; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none;
+    font-family: inherit;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
+  .form-field textarea { resize: vertical; min-height: 72px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Filter panel ──────────────────────────────────────────── */
+  .filter-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .filter-panel.hidden { display: none; }
+  .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .filter-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+  /* ── Modal ─────────────────────────────────────────────────── */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 300; align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-box {
+    background: var(--surface); border-radius: 12px; padding: 24px;
+    max-width: 520px; width: 92%; max-height: 82vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  #modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── Color swatch ──────────────────────────────────────────── */
+  .color-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); vertical-align: middle; margin-right: 6px; }
+
+  /* ── Chart legend ──────────────────────────────────────────── */
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Two-col layout ────────────────────────────────────────── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* ── Toggle / switch ───────────────────────────────────────── */
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle-wrap input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+
+  /* ── Tag chip ──────────────────────────────────────────────── */
+  .tag-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tag-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface2); }
+  .tag-chip .chip-count { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* ── Section divider ───────────────────────────────────────── */
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* ── Overdue section ───────────────────────────────────────── */
+  .overdue-header { color: var(--danger); font-weight: 700; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .upcoming-header { color: var(--warning); font-weight: 700; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  /* ── Settings list ─────────────────────────────────────────── */
+  .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-weight: 600; font-size: 0.92rem; }
+  .settings-value { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* ── Category indent ───────────────────────────────────────── */
+  .cat-child { padding-left: 28px; }
 </style>
 </head>
 <body>
 
+<!-- ───────────────────── Login ───────────────────────────── -->
 <div id="login-page" style="display:none;">
   <div class="login-card">
-    <h2>OssWallet Web View</h2>
+    <h2>OssWallet Web Portal</h2>
     <p>Enter the access code shown on your phone to continue.</p>
-    <input class="code-input" id="code-input" type="text" maxlength="8" placeholder="XXXXXXXX" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input class="code-input" id="code-input" type="text" maxlength="8" placeholder="XXXXXXXX"
+           autocomplete="off" autocorrect="off" spellcheck="false">
     <div class="error-msg" id="login-error"></div>
     <button class="btn btn-primary login-submit" id="login-btn">Verify</button>
   </div>
 </div>
 
+<!-- ───────────────────── App shell ───────────────────────── -->
 <div id="app" style="display:none;">
   <div id="header">
     <button id="hamburger" aria-label="Menu">&#9776;</button>
     <h1>OssWallet</h1>
-    <button class="btn btn-ghost" id="logout-btn" style="font-size:0.85rem; padding:6px 12px;">Log out</button>
+    <button class="btn btn-ghost" id="logout-btn" style="font-size:0.82rem; padding:6px 12px;">Log out</button>
   </div>
   <div id="main">
     <div id="overlay"></div>
     <nav id="sidebar">
-      <a class="nav-item" href="#/accounts"><span class="nav-icon">&#128178;</span> Accounts</a>
-      <a class="nav-item" href="#/transactions"><span class="nav-icon">&#8644;</span> Transactions</a>
-      <a class="nav-item" href="#/summary"><span class="nav-icon">&#128200;</span> Summary</a>
+      <div class="nav-section">Overview</div>
+      <a class="nav-item" href="#/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="#/analytics"><span class="nav-icon">📉</span> Analytics</a>
+      <div class="nav-section">Finance</div>
+      <a class="nav-item" href="#/records"><span class="nav-icon">📋</span> Records</a>
+      <a class="nav-item" href="#/accounts"><span class="nav-icon">💳</span> Accounts</a>
+      <a class="nav-item" href="#/budgets"><span class="nav-icon">📈</span> Budgets</a>
+      <a class="nav-item" href="#/loans"><span class="nav-icon">🏦</span> Loans</a>
+      <a class="nav-item" href="#/planned-payments"><span class="nav-icon">🔄</span> Planned</a>
+      <div class="nav-section">Organize</div>
+      <a class="nav-item" href="#/categories"><span class="nav-icon">🏷️</span> Categories</a>
+      <a class="nav-item" href="#/tags"><span class="nav-icon">🔖</span> Tags</a>
+      <div class="nav-section">System</div>
+      <a class="nav-item" href="#/settings"><span class="nav-icon">⚙️</span> Settings</a>
     </nav>
     <main id="content">
       <div class="loading-wrap"><div class="spinner"></div></div>
@@ -119,25 +262,58 @@
   </div>
 </div>
 
+<!-- ───────────────────── Modal ───────────────────────────── -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────── Script ───────────────────────────── -->
 <script>
-(function() {
+(function () {
   'use strict';
+
+  /* ── State ────────────────────────────────────────────── */
   const baseUrl = window.location.origin;
   let token = sessionStorage.getItem('oss_token') || '';
+  let cachedCategories = [];
+  let cachedAccounts   = [];
+  let cachedSettings   = { baseCurrency: 'USD', decimalPrecision: 2 };
 
-  const loginPage = document.getElementById('login-page');
-  const appPage   = document.getElementById('app');
-  const content   = document.getElementById('content');
-  const sidebar   = document.getElementById('sidebar');
-  const overlay   = document.getElementById('overlay');
+  /* ── DOM refs ─────────────────────────────────────────── */
+  const loginPage  = document.getElementById('login-page');
+  const appPage    = document.getElementById('app');
+  const content    = document.getElementById('content');
+  const sidebar    = document.getElementById('sidebar');
+  const overlay    = document.getElementById('overlay');
+  const modalOverlay  = document.getElementById('modal-overlay');
+  const modalTitle    = document.getElementById('modal-title');
+  const modalBody     = document.getElementById('modal-body');
+  const modalConfBtn  = document.getElementById('modal-confirm-btn');
 
-  if (token) { showApp(); route(); } else { showLogin(); }
+  /* ── Boot ─────────────────────────────────────────────── */
+  if (token) { showApp(); warmCache().then(() => route()); }
+  else { showLogin(); }
 
   document.getElementById('code-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('login-btn').click();
   });
   document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('logout-btn').addEventListener('click', doLogout);
+  document.getElementById('hamburger').addEventListener('click', () => {
+    sidebar.classList.toggle('open'); overlay.classList.toggle('visible');
+  });
+  overlay.addEventListener('click', closeSidebar);
+  window.addEventListener('hashchange', route);
+  modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
+  /* ── Auth ─────────────────────────────────────────────── */
   async function doLogin() {
     const btn   = document.getElementById('login-btn');
     const input = document.getElementById('code-input');
@@ -156,7 +332,9 @@
       } else if (json.success && json.data?.token) {
         token = json.data.token;
         sessionStorage.setItem('oss_token', token);
-        showApp(); navigate('#/accounts');
+        showApp();
+        await warmCache();
+        navigate('#/dashboard');
       } else {
         errEl.textContent = 'Incorrect code. Try again.';
       }
@@ -164,151 +342,1338 @@
     finally { btn.disabled = false; btn.textContent = 'Verify'; }
   }
 
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    token = ''; sessionStorage.removeItem('oss_token'); showLogin();
+  function doLogout() {
+    token = ''; sessionStorage.removeItem('oss_token');
+    cachedCategories = []; cachedAccounts = [];
+    showLogin();
     document.getElementById('code-input').value = '';
     document.getElementById('login-error').textContent = '';
-  });
+  }
 
-  document.getElementById('hamburger').addEventListener('click', () => {
-    sidebar.classList.toggle('open'); overlay.classList.toggle('visible');
-  });
-  overlay.addEventListener('click', closeSidebar);
+  /* ── Cache warm-up ────────────────────────────────────── */
+  async function warmCache() {
+    try {
+      const [catR, accR, setR] = await Promise.allSettled([
+        apiFetch('/api/categories'),
+        apiFetch('/api/accounts'),
+        apiFetch('/api/settings')
+      ]);
+      if (catR.status === 'fulfilled' && catR.value?.success) cachedCategories = catR.value.data || [];
+      if (accR.status === 'fulfilled' && accR.value?.success) cachedAccounts   = accR.value.data || [];
+      if (setR.status === 'fulfilled' && setR.value?.success) cachedSettings   = setR.value.data || cachedSettings;
+    } catch { /* non-fatal */ }
+  }
+
+  /* ── Navigation ───────────────────────────────────────── */
   function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
 
-  window.addEventListener('hashchange', route);
   function route() {
-    const hash = location.hash || '#/accounts';
+    const hash = location.hash || '#/dashboard';
     updateActiveNav(hash); closeSidebar();
-    if (hash.startsWith('#/accounts'))          renderAccounts();
-    else if (hash.startsWith('#/transactions')) renderTransactions();
-    else if (hash.startsWith('#/summary'))      renderSummary();
-    else renderAccounts();
+    if      (hash.startsWith('#/dashboard'))        renderDashboard();
+    else if (hash.startsWith('#/records'))          renderRecords();
+    else if (hash.startsWith('#/accounts'))         renderAccounts();
+    else if (hash.startsWith('#/budgets'))          renderBudgets();
+    else if (hash.startsWith('#/loans'))            renderLoans();
+    else if (hash.startsWith('#/planned-payments')) renderPlannedPayments();
+    else if (hash.startsWith('#/categories'))       renderCategories();
+    else if (hash.startsWith('#/analytics'))        renderAnalytics();
+    else if (hash.startsWith('#/tags'))             renderTags();
+    else if (hash.startsWith('#/settings'))         renderSettings();
+    else renderDashboard();
   }
+
   function navigate(hash) { location.hash = hash; }
+
   function updateActiveNav(hash) {
     document.querySelectorAll('.nav-item').forEach(el => {
-      el.classList.toggle('active', hash.startsWith(el.getAttribute('href')));
+      const href = el.getAttribute('href');
+      el.classList.toggle('active', href && hash.startsWith(href));
     });
   }
 
+  /* ── UI helpers ───────────────────────────────────────── */
+  function showLogin() { loginPage.style.display = 'flex'; appPage.style.display = 'none'; setTimeout(() => document.getElementById('code-input').focus(), 100); }
+  function showApp()   { loginPage.style.display = 'none';  appPage.style.display = 'flex'; }
+  function setContent(html) { content.innerHTML = html; }
+  function showSpinner() { setContent('<div class="loading-wrap"><div class="spinner"></div></div>'); }
+  function showError(msg) { setContent(`<div class="alert alert-error">${esc(msg)}</div>`); }
+
+  /* ── Formatters ───────────────────────────────────────── */
+  function fmt(amount, currency) {
+    try { return new Intl.NumberFormat(navigator.language, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
+    catch { return Number(amount).toFixed(2) + ' ' + (currency || ''); }
+  }
+  function fmtRaw(n, dec) {
+    const d = dec ?? cachedSettings.decimalPrecision ?? 2;
+    return Number(n).toLocaleString(navigator.language, { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleDateString(navigator.language, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function fmtDateTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleString(navigator.language, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* ── API helpers ──────────────────────────────────────── */
   async function apiFetch(path) {
     const res = await fetch(baseUrl + path, { headers: { 'Authorization': 'Bearer ' + token } });
     if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showLogin(); throw new Error('Session expired'); }
     return res.json();
   }
 
-  function showLogin() { loginPage.style.display = 'flex'; appPage.style.display = 'none'; setTimeout(() => document.getElementById('code-input').focus(), 100); }
-  function showApp()   { loginPage.style.display = 'none';  appPage.style.display = 'flex'; }
-  function setContent(html) { content.innerHTML = html; }
-  function showSpinner() { setContent('<div class="loading-wrap"><div class="spinner"></div></div>'); }
-
-  function fmt(amount, currency) {
-    try { return new Intl.NumberFormat(navigator.language, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
-    catch { return amount.toFixed(2) + ' ' + currency; }
-  }
-  function fmtRaw(n) { return n.toLocaleString(navigator.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function fmtDate(ts) { return new Date(ts).toLocaleDateString(navigator.language, { year: 'numeric', month: 'short', day: 'numeric' }); }
-  function esc(str) {
-    if (str == null) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  async function apiWrite(method, path, body) {
+    const res = await fetch(baseUrl + path, {
+      method,
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showLogin(); throw new Error('Session expired'); }
+    try { return await res.json(); } catch { return { success: res.ok }; }
   }
 
-  async function renderAccounts() {
+  /* ── Modal helpers ────────────────────────────────────── */
+  function openModal(titleHtml, bodyHtml, onConfirm, confirmLabel) {
+    modalTitle.innerHTML = titleHtml;
+    modalBody.innerHTML  = bodyHtml;
+    modalConfBtn.textContent = confirmLabel || 'Confirm';
+    modalConfBtn.onclick = () => { if (onConfirm) onConfirm(); };
+    modalOverlay.classList.add('open');
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('open');
+    modalConfBtn.onclick = null;
+  }
+
+  function confirmDelete(message, onConfirm) {
+    openModal(
+      '<span style="color:var(--danger)">⚠️ Confirm Delete</span>',
+      `<p>${esc(message)}</p>`,
+      onConfirm,
+      'Delete'
+    );
+    modalConfBtn.className = 'btn btn-danger';
+  }
+
+  function infoModal(titleHtml, bodyHtml) {
+    openModal(titleHtml, bodyHtml, null, 'OK');
+    modalConfBtn.onclick = closeModal;
+  }
+
+  /* ── Form helper ──────────────────────────────────────── */
+  function formField(label, inputHtml) {
+    return `<div class="form-field"><label>${esc(label)}</label>${inputHtml}</div>`;
+  }
+  function formRow(...fields) {
+    return `<div class="form-row">${fields.join('')}</div>`;
+  }
+
+  /* ── Chart helpers ────────────────────────────────────── */
+  const CHART_COLORS = ['#1976D2','#2e7d32','#c62828','#f57f17','#6a1b9a','#00838f','#ad1457','#4e342e','#37474f','#558b2f'];
+
+  function svgDonut(slices, size) {
+    size = size || 180;
+    if (!slices || !slices.length) return '<p class="empty-state">No data</p>';
+    const total = slices.reduce((s, x) => s + (x.value || 0), 0);
+    if (total === 0) return '<p class="empty-state">No data</p>';
+    const r = 60, cx = size / 2, cy = size / 2, stroke = 28;
+    const circ = 2 * Math.PI * r;
+    let offset = 0, paths = '';
+    slices.forEach((s, i) => {
+      const pct  = s.value / total;
+      const dash = pct * circ;
+      const col  = s.color || CHART_COLORS[i % CHART_COLORS.length];
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${esc(col)}"
+        stroke-width="${stroke}" stroke-dasharray="${dash.toFixed(2)} ${(circ - dash).toFixed(2)}"
+        stroke-dashoffset="${(circ * 0.25 - offset).toFixed(2)}"><title>${esc(s.label)}</title></circle>`;
+      offset += dash;
+    });
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block">${paths}</svg>`;
+  }
+
+  function svgBars(points, width, height) {
+    width  = width  || 560;
+    height = height || 140;
+    if (!points || !points.length) return '<p class="empty-state">No data</p>';
+    const maxVal  = Math.max(...points.flatMap(p => [p.income || 0, p.expense || 0])) || 1;
+    const count   = points.length;
+    const usableW = width - 40;
+    const slotW   = Math.floor(usableW / count);
+    const barW    = Math.max(4, Math.floor(slotW / 2) - 3);
+    const chartH  = height - 24;
+    let rects = '';
+    points.forEach((p, i) => {
+      const x  = 40 + i * slotW;
+      const ih = Math.round(((p.income  || 0) / maxVal) * chartH);
+      const eh = Math.round(((p.expense || 0) / maxVal) * chartH);
+      rects += `<rect x="${x}" y="${chartH - ih}" width="${barW}" height="${Math.max(1,ih)}" fill="var(--success)" opacity="0.85"><title>Income: ${p.income}</title></rect>`;
+      rects += `<rect x="${x + barW + 2}" y="${chartH - eh}" width="${barW}" height="${Math.max(1,eh)}" fill="var(--danger)" opacity="0.85"><title>Expense: ${p.expense}</title></rect>`;
+      rects += `<text x="${x + barW}" y="${height - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(p.label).slice(0, 6))}</text>`;
+    });
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible;display:block">${rects}</svg>`;
+  }
+
+  function progressBar(pct, color) {
+    const cls = color || (pct < 80 ? 'progress-green' : pct < 100 ? 'progress-orange' : 'progress-red');
+    const w   = Math.min(100, Math.max(0, pct));
+    return `<div class="progress-track"><div class="progress-fill ${esc(cls)}" style="width:${w}%"></div></div>`;
+  }
+
+  /* ── Category + account select options ───────────────── */
+  function catOptions(includeBlank) {
+    let o = includeBlank ? '<option value="">— None —</option>' : '';
+    cachedCategories.forEach(c => { o += `<option value="${esc(c.id)}">${esc(c.name)}</option>`; });
+    return o;
+  }
+  function accOptions() {
+    let o = '<option value="">— Select account —</option>';
+    cachedAccounts.forEach(a => { o += `<option value="${esc(a.id)}">${esc(a.name)} (${esc(a.currency)})</option>`; });
+    return o;
+  }
+
+  /* ── Pagination helper (Records page) ─────────────────── */
+  window.navPage = function (page) {
+    const params = new URLSearchParams(location.hash.split('?')[1] || '');
+    params.set('page', page);
+    location.hash = '#/records?' + params.toString();
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Dashboard
+  ══════════════════════════════════════════════════════ */
+  async function renderDashboard() {
     showSpinner();
     try {
-      const json = await apiFetch('/api/accounts');
-      if (!json.success) { setContent('<p class="empty-state">Failed to load accounts.</p>'); return; }
-      const accounts = json.data || [];
-      if (accounts.length === 0) { setContent('<p class="empty-state">No accounts found.</p>'); return; }
-      let html = '<h2 class="section-title">Accounts</h2><div class="card-grid">';
-      for (const acc of accounts) {
-        const balClass = acc.balance >= 0 ? 'positive' : 'negative';
-        html += `<div class="stat-card">
-          <div class="stat-label">${esc(acc.type)}</div>
-          <div style="font-weight:600; margin-bottom:8px;">${esc(acc.name)}</div>
-          <div class="stat-value ${balClass}">${fmt(acc.balance, acc.currency)}</div>
-          <div style="margin-top:12px;">
-            <a class="btn btn-ghost" style="font-size:0.8rem; padding:4px 10px;" href="#/transactions?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View transactions</a>
-          </div>
-        </div>`;
+      const json = await apiFetch('/api/dashboard');
+      if (!json.success) { showError('Failed to load dashboard.'); return; }
+      const d = json.data;
+      const netClass  = (d.netWorth  || 0) >= 0 ? 'positive' : 'negative';
+      const cashClass = (d.cashFlow  || 0) >= 0 ? 'positive' : 'negative';
+      const cur = d.baseCurrency || cachedSettings.baseCurrency || 'USD';
+
+      let html = `<h2 class="section-title">Dashboard <span style="font-size:0.8rem; color:var(--text-muted); font-weight:400">${esc(d.month || '')}</span></h2>`;
+
+      /* ── Stat cards ─ */
+      html += `<div class="card-grid">
+        <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${netClass}">${fmt(d.netWorth || 0, cur)}</div></div>
+        <div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value positive">+${fmt(d.monthlyIncome || 0, cur)}</div></div>
+        <div class="stat-card"><div class="stat-label">Monthly Expenses</div><div class="stat-value negative">−${fmt(d.monthlyExpenses || 0, cur)}</div></div>
+        <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cashClass}">${(d.cashFlow||0) >= 0 ? '+' : ''}${fmt(d.cashFlow || 0, cur)}</div></div>
+      </div>`;
+
+      /* ── Accounts ─ */
+      const accs = d.accounts || cachedAccounts || [];
+      if (accs.length) {
+        html += `<div class="section-sub">Accounts</div><div class="card-grid">`;
+        accs.slice(0, 6).forEach(acc => {
+          const bc = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
+          html += `<div class="stat-card">
+            <div class="stat-label">${esc(acc.type || '')}</div>
+            <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
+            <div class="stat-value ${bc}" style="font-size:1.15rem">${fmt(acc.balance || 0, acc.currency)}</div>
+            <div style="margin-top:10px"><a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View records</a></div>
+          </div>`;
+        });
+        html += `</div>`;
       }
-      html += '</div>';
+
+      /* ── Budgets ─ */
+      const budgets = d.budgets || [];
+      if (budgets.length) {
+        html += `<div class="section-sub">Top Budgets</div><div class="card">`;
+        budgets.slice(0, 5).forEach(b => {
+          const pct = Math.min(999, Math.round((b.spent || 0) / (b.limitAmount || 1) * 100));
+          html += `<div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:4px">
+              <span style="font-weight:600">${esc(b.name)}</span>
+              <span style="color:var(--text-muted)">${fmt(b.spent||0,b.currency)} / ${fmt(b.limitAmount||0,b.currency)}</span>
+            </div>
+            ${progressBar(pct)}
+            <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);margin-top:2px">${pct}%</div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      /* ── Upcoming payments ─ */
+      const upcoming = (d.upcomingPayments || []).concat(d.overduePayments || []);
+      if (upcoming.length) {
+        html += `<div class="section-sub">Upcoming &amp; Overdue Payments</div><div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Status</th></tr></thead><tbody>`;
+        upcoming.slice(0, 8).forEach(p => {
+          const overdue = p.isOverdue ? '<span class="badge badge-overdue">Overdue</span>' : '';
+          html += `<tr>
+            <td>${esc(p.name)}${overdue ? '&nbsp;' + overdue : ''}</td>
+            <td>${fmt(p.amount||0, p.currency)}</td>
+            <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
+            <td><span class="badge ${p.isOverdue ? 'badge-overdue' : 'badge-active'}">${esc(p.status||'')}</span></td>
+          </tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+      }
+
+      /* ── Recent transactions ─ */
+      const txs = d.recentTransactions || [];
+      if (txs.length) {
+        html += `<div class="section-sub">Recent Transactions</div><div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+        txs.slice(0, 10).forEach(tx => {
+          const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
+          const sign     = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
+          const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
+          html += `<tr>
+            <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
+            <td>${esc(tx.title)}</td>
+            <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
+            <td style="text-align:right" class="${amtClass}">${sign}${fmt(tx.amount||0, tx.currency)}</td>
+          </tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+      }
+
+      /* ── Category breakdown chart ─ */
+      const breakdown = d.categoryBreakdown || [];
+      if (breakdown.length) {
+        const slices = breakdown.slice(0, 8).map((c, i) => ({
+          label: c.categoryName, value: c.amount, color: CHART_COLORS[i % CHART_COLORS.length]
+        }));
+        let legendHtml = '<div class="chart-legend">';
+        slices.forEach((s, i) => {
+          legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.label)}</span></div>`;
+        });
+        legendHtml += '</div>';
+        html += `<div class="section-sub">Category Breakdown</div>
+          <div class="card" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+            ${svgDonut(slices, 180)}
+            ${legendHtml}
+          </div>`;
+      }
+
+      /* ── Cash flow chart ─ */
+      const cfPoints = d.cashFlowPoints || [];
+      if (cfPoints.length) {
+        const points = cfPoints.slice(-6).map(p => ({ label: p.label, income: p.income, expense: p.expense }));
+        html += `<div class="section-sub">Cash Flow (Last 6 Months)</div>
+          <div class="card">
+            ${svgBars(points, 560, 140)}
+            <div class="chart-legend" style="margin-top:8px">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
+            </div>
+          </div>`;
+      }
+
       setContent(html);
-    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading accounts.</p>'); }
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading dashboard.'); }
   }
 
-  async function renderTransactions() {
+  /* ══════════════════════════════════════════════════════
+     PAGE: Records
+  ══════════════════════════════════════════════════════ */
+  async function renderRecords() {
     const params      = new URLSearchParams(location.hash.split('?')[1] || '');
     const accountId   = params.get('accountId') || '';
     const accountName = params.get('accountName') ? decodeURIComponent(params.get('accountName')) : '';
     const page        = parseInt(params.get('page') || '0', 10);
+    const type        = params.get('type') || '';
+    const dateFrom    = params.get('dateFrom') || '';
+    const dateTo      = params.get('dateTo') || '';
+    const categoryId  = params.get('categoryId') || '';
+    const minAmount   = params.get('minAmount') || '';
+    const maxAmount   = params.get('maxAmount') || '';
+    const status      = params.get('status') || '';
+    const payee       = params.get('payee') || '';
+    const filtersOpen = params.get('filtersOpen') === '1';
+
     showSpinner();
     try {
       let url = `/api/transactions?page=${page}&limit=25`;
-      if (accountId) url += `&accountId=${encodeURIComponent(accountId)}`;
+      if (accountId)  url += `&accountId=${encodeURIComponent(accountId)}`;
+      if (type)       url += `&type=${encodeURIComponent(type)}`;
+      if (dateFrom)   url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+      if (dateTo)     url += `&dateTo=${encodeURIComponent(dateTo)}`;
+      if (categoryId) url += `&categoryId=${encodeURIComponent(categoryId)}`;
+      if (minAmount)  url += `&minAmount=${encodeURIComponent(minAmount)}`;
+      if (maxAmount)  url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
+      if (status)     url += `&status=${encodeURIComponent(status)}`;
+      if (payee)      url += `&payee=${encodeURIComponent(payee)}`;
+
       const json = await apiFetch(url);
-      if (!json.success) { setContent('<p class="empty-state">Failed to load transactions.</p>'); return; }
+      if (!json.success) { showError('Failed to load records.'); return; }
       const data = json.data || { items: [], total: 0, page: 0, limit: 25, hasMore: false };
-      let title = accountName ? `Transactions — ${esc(accountName)}` : 'Transactions';
-      let html = `<h2 class="section-title">${title}</h2>`;
+      const title = accountName ? `Records — ${esc(accountName)}` : 'Records';
+
+      /* build current param string (without page) for filter apply */
+      function buildFilterHref(overrides) {
+        const p = new URLSearchParams();
+        if (accountId)  p.set('accountId', accountId);
+        if (accountName) p.set('accountName', accountName);
+        Object.entries(overrides).forEach(([k, v]) => { if (v) p.set(k, v); else p.delete(k); });
+        p.set('page', '0');
+        return '#/records?' + p.toString();
+      }
+
+      /* ── Filter panel ─ */
+      const fPanel = `<div class="filter-panel${filtersOpen ? '' : ' hidden'}" id="filter-panel">
+        <div class="filter-grid">
+          <div class="form-field"><label>Type</label>
+            <select id="f-type">
+              <option value="" ${!type?'selected':''}>All</option>
+              <option value="INCOME" ${type==='INCOME'?'selected':''}>Income</option>
+              <option value="EXPENSE" ${type==='EXPENSE'?'selected':''}>Expense</option>
+              <option value="TRANSFER" ${type==='TRANSFER'?'selected':''}>Transfer</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Category</label>
+            <select id="f-cat"><option value="">All</option>${catOptions(false)}</select>
+          </div>
+          <div class="form-field"><label>Date From</label><input type="date" id="f-from" value="${esc(dateFrom)}"></div>
+          <div class="form-field"><label>Date To</label><input type="date" id="f-to" value="${esc(dateTo)}"></div>
+          <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00"></div>
+          <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999"></div>
+          <div class="form-field"><label>Status</label>
+            <select id="f-status">
+              <option value="" ${!status?'selected':''}>All</option>
+              <option value="CLEARED" ${status==='CLEARED'?'selected':''}>Cleared</option>
+              <option value="RECONCILE" ${status==='RECONCILE'?'selected':''}>Reconcile</option>
+              <option value="UNCLEARED" ${status==='UNCLEARED'?'selected':''}>Uncleared</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary btn-sm" onclick="applyRecordFilters()">Apply Filters</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearRecordFilters()">Clear Filters</button>
+        </div>
+      </div>`;
+
+      let html = `<div class="page-header">
+        <h2 class="section-title">${title}</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="toggleRecordFilters()">⚙️ Filters</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Record</button>
+        </div>
+      </div>${fPanel}`;
+
       if (data.items.length === 0) {
-        html += '<p class="empty-state">No transactions found.</p>';
+        html += '<p class="empty-state">No records found. Try adjusting the filters.</p>';
       } else {
         html += `<div class="card"><div class="table-wrap"><table>
-          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
-        for (const tx of data.items) {
-          const amtClass  = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
-          const sign      = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
-          const badgeCls  = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Type</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`;
+        data.items.forEach(tx => {
+          const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
+          const sign     = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
+          const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
           html += `<tr>
             <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
             <td>${esc(tx.title)}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}</td>
             <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td>${esc(tx.accountName)}</td>
+            <td>${esc(tx.accountName || '')}</td>
             <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
-            <td style="text-align:right" class="${amtClass}">${sign}${fmt(tx.amount, tx.currency)}</td>
+            <td style="text-align:right" class="${amtClass}">${sign}${fmt(tx.amount||0, tx.currency)}</td>
+            <td><button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button></td>
           </tr>`;
-        }
-        html += '</tbody></table></div>';
+        });
         const totalPages = Math.ceil(data.total / data.limit);
-        html += `<div class="pagination">
-          <span class="page-info">Page ${page + 1} of ${totalPages} (${data.total} total)</span>
-          ${page > 0 ? `<button class="btn btn-ghost" onclick="navPage(${page - 1})">&#8592; Prev</button>` : ''}
-          ${data.hasMore ? `<button class="btn btn-primary" onclick="navPage(${page + 1})">Next &#8594;</button>` : ''}
-        </div></div>`;
+        html += `</tbody></table></div>
+          <div class="pagination">
+            <span class="page-info">Page ${page+1} of ${totalPages} (${data.total} total)</span>
+            ${page > 0 ? `<button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})">← Prev</button>` : ''}
+            ${data.hasMore ? `<button class="btn btn-primary btn-sm" onclick="navPage(${page+1})">Next →</button>` : ''}
+          </div></div>`;
       }
+
       setContent(html);
-    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading transactions.</p>'); }
+
+      /* restore category filter selection after render */
+      if (categoryId) { const el = document.getElementById('f-cat'); if (el) el.value = categoryId; }
+      if (filtersOpen) { const fp = document.getElementById('filter-panel'); if (fp) fp.classList.remove('hidden'); }
+
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading records.'); }
   }
 
-  window.navPage = function(page) {
+  window.toggleRecordFilters = function () {
     const params = new URLSearchParams(location.hash.split('?')[1] || '');
-    params.set('page', page);
-    location.hash = '#/transactions?' + params.toString();
+    const cur = params.get('filtersOpen') === '1';
+    params.set('filtersOpen', cur ? '0' : '1');
+    location.hash = '#/records?' + params.toString();
   };
 
-  async function renderSummary() {
+  window.applyRecordFilters = function () {
+    const params = new URLSearchParams(location.hash.split('?')[1] || '');
+    const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    params.set('type',       get('f-type'));
+    params.set('categoryId', get('f-cat'));
+    params.set('dateFrom',   get('f-from'));
+    params.set('dateTo',     get('f-to'));
+    params.set('minAmount',  get('f-min'));
+    params.set('maxAmount',  get('f-max'));
+    params.set('status',     get('f-status'));
+    params.set('payee',      get('f-payee'));
+    params.set('page',       '0');
+    params.set('filtersOpen','1');
+    // clean empty
+    [...params.keys()].forEach(k => { if (!params.get(k)) params.delete(k); });
+    params.set('filtersOpen','1');
+    location.hash = '#/records?' + params.toString();
+  };
+
+  window.clearRecordFilters = function () {
+    const params = new URLSearchParams(location.hash.split('?')[1] || '');
+    const keep = ['accountId','accountName'];
+    const fresh = new URLSearchParams();
+    keep.forEach(k => { if (params.get(k)) fresh.set(k, params.get(k)); });
+    fresh.set('filtersOpen','1');
+    location.hash = '#/records?' + fresh.toString();
+  };
+
+  window.openAddTransaction = async function () {
+    const cur = cachedSettings.baseCurrency || 'USD';
+    const body = `
+      ${formRow(formField('Name', '<input type="text" id="tx-name" placeholder="e.g. Grocery run">'),
+                formField('Amount', `<input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01">`))}
+      ${formRow(formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5">`),
+                formField('Type', '<select id="tx-type"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option><option value="TRANSFER">Transfer</option></select>'))}
+      ${formField('Account', `<select id="tx-account">${accOptions()}</select>`)}
+      ${formField('Category', `<select id="tx-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formRow(formField('Date', '<input type="datetime-local" id="tx-date">'),
+                formField('Status', '<select id="tx-status"><option value="CLEARED">Cleared</option><option value="UNCLEARED">Uncleared</option><option value="RECONCILE">Reconcile</option></select>'))}
+      ${formField('Payee', '<input type="text" id="tx-payee" placeholder="Optional payee name">')}
+      ${formField('Tags (comma-separated)', '<input type="text" id="tx-tags" placeholder="food, bills, …">')}
+      ${formField('Note', '<textarea id="tx-note" placeholder="Optional note…"></textarea>')}`;
+    openModal('Add Record', body, submitAddTransaction, 'Save Record');
+    modalConfBtn.className = 'btn btn-primary';
+    /* set default datetime to now */
+    const dtEl = document.getElementById('tx-date');
+    if (dtEl) {
+      const now = new Date(); now.setSeconds(0,0);
+      dtEl.value = now.toISOString().slice(0,16);
+    }
+  };
+
+  window.submitAddTransaction = async function () {
+    const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const name = get('tx-name');
+    if (!name) { alert('Name is required.'); return; }
+    const amount = parseFloat(get('tx-amount'));
+    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+    const body = {
+      title:      name,
+      amount,
+      currency:   get('tx-currency') || cachedSettings.baseCurrency,
+      type:       get('tx-type'),
+      accountId:  get('tx-account'),
+      categoryId: get('tx-category') || undefined,
+      date:       new Date(get('tx-date') || Date.now()).toISOString(),
+      note:       get('tx-note') || undefined,
+      payee:      get('tx-payee') || undefined,
+      status:     get('tx-status'),
+      tags:       get('tx-tags') ? get('tx-tags').split(',').map(t => t.trim()).filter(Boolean) : undefined,
+    };
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/transactions', body);
+      closeModal();
+      if (res.success) { renderRecords(); } else { alert('Failed to save record: ' + (res.error || 'Unknown error')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error saving record.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Record'; }
+  };
+
+  window.deleteTransaction = function (id, name) {
+    confirmDelete(`Delete "${name}"? This action cannot be undone.`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/transactions/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { renderRecords(); } else { alert('Failed to delete record.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting record.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Accounts
+  ══════════════════════════════════════════════════════ */
+  async function renderAccounts() {
     showSpinner();
     try {
-      const json = await apiFetch('/api/summary');
-      if (!json.success) { setContent('<p class="empty-state">Failed to load summary.</p>'); return; }
-      const d = json.data;
-      const netClass  = d.netWorth >= 0 ? 'positive' : 'negative';
-      const cashFlow  = d.monthlyIncome - d.monthlyExpenses;
-      const cashClass = cashFlow >= 0 ? 'positive' : 'negative';
-      setContent(`
-        <h2 class="section-title">Summary — ${esc(d.month)}</h2>
-        <div class="card-grid">
-          <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${netClass}">${fmtRaw(d.netWorth)}</div></div>
-          <div class="stat-card"><div class="stat-label">Income this month</div><div class="stat-value positive">+${fmtRaw(d.monthlyIncome)}</div></div>
-          <div class="stat-card"><div class="stat-label">Expenses this month</div><div class="stat-value negative">−${fmtRaw(d.monthlyExpenses)}</div></div>
-          <div class="stat-card"><div class="stat-label">Cash flow</div><div class="stat-value ${cashClass}">${cashFlow >= 0 ? '+' : '−'}${fmtRaw(Math.abs(cashFlow))}</div></div>
-        </div>
-        <div class="alert alert-warn">Amounts are shown in each account's native currency. Multi-currency net worth may not reflect real-time exchange rates.</div>
-      `);
-    } catch (e) { if (e.message !== 'Session expired') setContent('<p class="empty-state">Error loading summary.</p>'); }
+      const json = await apiFetch('/api/accounts');
+      if (!json.success) { showError('Failed to load accounts.'); return; }
+      cachedAccounts = json.data || [];
+
+      let html = `<div class="page-header"><h2 class="section-title">Accounts</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddAccount()">+ Add Account</button>
+      </div>`;
+
+      if (!cachedAccounts.length) {
+        html += '<p class="empty-state">No accounts found. Add your first account.</p>';
+      } else {
+        html += '<div class="card-grid">';
+        cachedAccounts.forEach(acc => {
+          const balClass = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
+          html += `<div class="stat-card">
+            <div class="stat-label">${esc(acc.type || '')}</div>
+            <div style="font-weight:600;margin-bottom:8px">${esc(acc.name)}</div>
+            <div class="stat-value ${balClass}">${fmt(acc.balance || 0, acc.currency)}</div>
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+              <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View records</a>
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading accounts.'); }
   }
+
+  window.openAddAccount = function () {
+    const body = `
+      ${formField('Account Name', '<input type="text" id="acc-name" placeholder="e.g. Main Checking">')}
+      ${formRow(
+        formField('Currency', `<input type="text" id="acc-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
+        formField('Type', `<select id="acc-type">
+          <option value="CHECKING">Checking</option>
+          <option value="SAVINGS">Savings</option>
+          <option value="CREDIT_CARD">Credit Card</option>
+          <option value="INVESTMENT">Investment</option>
+          <option value="CASH">Cash</option>
+          <option value="OTHER">Other</option>
+        </select>`)
+      )}`;
+    openModal('Add Account', body, submitAddAccount, 'Save Account');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitAddAccount = async function () {
+    const name     = document.getElementById('acc-name')?.value.trim();
+    const currency = document.getElementById('acc-currency')?.value.trim();
+    const type     = document.getElementById('acc-type')?.value;
+    if (!name)     { alert('Account name is required.'); return; }
+    if (!currency) { alert('Currency is required.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/accounts', { name, currency, type });
+      closeModal();
+      if (res.success) { await warmCache(); renderAccounts(); }
+      else { alert('Failed to create account: ' + (res.error || '')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error creating account.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Account'; }
+  };
+
+  window.deleteAccount = function (id, name) {
+    confirmDelete(`Delete account "${name}"? All associated records may also be removed.`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/accounts/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { await warmCache(); renderAccounts(); }
+        else { alert('Failed to delete account.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting account.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Budgets
+  ══════════════════════════════════════════════════════ */
+  async function renderBudgets() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/budgets');
+      if (!json.success) { showError('Failed to load budgets.'); return; }
+      const budgets = json.data || [];
+
+      let html = `<div class="page-header"><h2 class="section-title">Budgets</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddBudget()">+ Add Budget</button>
+      </div>`;
+
+      if (!budgets.length) {
+        html += '<p class="empty-state">No budgets yet. Create one to start tracking spending.</p>';
+      } else {
+        html += '<div class="card-grid">';
+        budgets.forEach(b => {
+          const pct       = Math.round(((b.spent || 0) / (b.limitAmount || 1)) * 100);
+          const alertCls  = pct < 80 ? 'progress-green' : pct < 100 ? 'progress-orange' : 'progress-red';
+          const archived  = b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted)">Archived</span>' : '';
+          html += `<div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div>
+                <div style="font-weight:700">${esc(b.name)} ${archived}</div>
+                <div style="font-size:0.78rem;color:var(--text-muted)">${esc(b.period||'')}</div>
+              </div>
+              <span style="font-size:1rem;font-weight:700;color:${pct>=100?'var(--danger)':pct>=80?'var(--warning)':'var(--success)'}">${pct}%</span>
+            </div>
+            ${progressBar(pct, alertCls)}
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted);margin-top:6px">
+              <span>Spent: ${fmt(b.spent||0,b.currency)}</span>
+              <span>Limit: ${fmt(b.limitAmount||0,b.currency)}</span>
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">Remaining: ${fmt(b.remaining||0,b.currency)}</div>
+            <div style="margin-top:12px">
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteBudget('${esc(b.id)}','${esc(b.name)}')">Delete</button>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading budgets.'); }
+  }
+
+  window.openAddBudget = function () {
+    const body = `
+      ${formField('Budget Name', '<input type="text" id="bud-name" placeholder="e.g. Groceries">')}
+      ${formRow(
+        formField('Currency', `<input type="text" id="bud-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
+        formField('Limit Amount', '<input type="number" id="bud-limit" placeholder="500.00" min="0" step="0.01">')
+      )}
+      ${formRow(
+        formField('Period', `<select id="bud-period">
+          <option value="MONTHLY">Monthly</option>
+          <option value="YEARLY">Yearly</option>
+          <option value="WEEKLY">Weekly</option>
+        </select>`),
+        formField('Alert Threshold (0–1)', '<input type="number" id="bud-alert" value="0.8" min="0" max="1" step="0.05">')
+      )}`;
+    openModal('Add Budget', body, submitAddBudget, 'Save Budget');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitAddBudget = async function () {
+    const name     = document.getElementById('bud-name')?.value.trim();
+    const currency = document.getElementById('bud-currency')?.value.trim();
+    const limit    = parseFloat(document.getElementById('bud-limit')?.value || '0');
+    const period   = document.getElementById('bud-period')?.value;
+    const alert_   = parseFloat(document.getElementById('bud-alert')?.value || '0.8');
+    if (!name)           { alert('Name is required.'); return; }
+    if (isNaN(limit) || limit <= 0) { alert('Enter a valid limit amount.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/budgets', { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alert_ });
+      closeModal();
+      if (res.success) { renderBudgets(); } else { alert('Failed to create budget: ' + (res.error || '')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error creating budget.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Budget'; }
+  };
+
+  window.deleteBudget = function (id, name) {
+    confirmDelete(`Delete budget "${name}"?`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/budgets/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { renderBudgets(); } else { alert('Failed to delete budget.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting budget.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Loans
+  ══════════════════════════════════════════════════════ */
+  async function renderLoans() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/loans');
+      if (!json.success) { showError('Failed to load loans.'); return; }
+      const loans = json.data || [];
+
+      let html = `<div class="page-header"><h2 class="section-title">Loans</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddLoan()">+ Add Loan</button>
+      </div>`;
+
+      if (!loans.length) {
+        html += '<p class="empty-state">No loans yet.</p>';
+      } else {
+        html += '<div class="card-grid">';
+        loans.forEach(loan => {
+          const repaidPct = Math.round(((loan.totalPaid || 0) / (loan.principalAmount || 1)) * 100);
+          const typeBadge = loan.loanType === 'LENT' ? 'badge-lent' : 'badge-borrowed';
+          const statusBadge = loan.status === 'SETTLED' ? 'badge-settled' : 'badge-active';
+          html += `<div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div>
+                <div style="font-weight:700">${esc(loan.name)}</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">${esc(loan.lenderOrBorrowerName || '')}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
+                <span class="badge ${statusBadge}">${esc(loan.status)}</span>
+              </div>
+            </div>
+            <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:2px">Principal</div>
+            <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px">${fmt(loan.principalAmount||0, loan.currency)}</div>
+            ${progressBar(repaidPct, repaidPct >= 100 ? 'progress-green' : 'progress-orange')}
+            <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:4px">
+              <span>Paid: ${fmt(loan.totalPaid||0,loan.currency)}</span>
+              <span>Left: ${fmt(loan.remainingBalance||0,loan.currency)}</span>
+            </div>
+            ${loan.interestAccrued ? `<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued, loan.currency)}</div>` : ''}
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">
+              ${loan.startDate ? `Start: ${fmtDate(loan.startDate)}` : ''}
+              ${loan.expectedSettlementDate ? ` &bull; Due: ${fmtDate(loan.expectedSettlementDate)}` : ''}
+            </div>
+            <div style="margin-top:12px">
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading loans.'); }
+  }
+
+  window.openAddLoan = function () {
+    const body = `
+      ${formField('Loan Name', '<input type="text" id="ln-name" placeholder="e.g. Car loan">')}
+      ${formRow(
+        formField('Principal Amount', '<input type="number" id="ln-principal" placeholder="0.00" min="0" step="0.01">'),
+        formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+      )}
+      ${formRow(
+        formField('Loan Type', `<select id="ln-type"><option value="BORROWED">Borrowed</option><option value="LENT">Lent</option></select>`),
+        formField('Counterparty Name', '<input type="text" id="ln-party" placeholder="Person or institution">')
+      )}
+      ${formRow(
+        formField('Start Date', '<input type="date" id="ln-start">'),
+        formField('Expected Settlement', '<input type="date" id="ln-settle">')
+      )}
+      ${formField('Interest Rate % (optional)', '<input type="number" id="ln-rate" placeholder="0.00" min="0" step="0.01">')}`;
+    openModal('Add Loan', body, submitAddLoan, 'Save Loan');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitAddLoan = async function () {
+    const name      = document.getElementById('ln-name')?.value.trim();
+    const principal = parseFloat(document.getElementById('ln-principal')?.value || '0');
+    const currency  = document.getElementById('ln-currency')?.value.trim();
+    const type      = document.getElementById('ln-type')?.value;
+    const party     = document.getElementById('ln-party')?.value.trim();
+    const start     = document.getElementById('ln-start')?.value;
+    const settle    = document.getElementById('ln-settle')?.value;
+    const rate      = parseFloat(document.getElementById('ln-rate')?.value || '0');
+    if (!name)                        { alert('Name is required.'); return; }
+    if (isNaN(principal) || principal <= 0) { alert('Enter a valid principal amount.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/loans', {
+        name, principalAmount: principal, currency, loanType: type,
+        lenderOrBorrowerName: party || undefined,
+        startDate: start || undefined,
+        expectedSettlementDate: settle || undefined,
+        interestRate: rate || undefined,
+      });
+      closeModal();
+      if (res.success) { renderLoans(); } else { alert('Failed to create loan: ' + (res.error || '')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error creating loan.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Loan'; }
+  };
+
+  window.deleteLoan = function (id, name) {
+    confirmDelete(`Delete loan "${name}"?`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/loans/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { renderLoans(); } else { alert('Failed to delete loan.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting loan.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Planned Payments
+  ══════════════════════════════════════════════════════ */
+  async function renderPlannedPayments() {
+    showSpinner();
+    try {
+      const [allRes, upcomingRes, overdueRes] = await Promise.all([
+        apiFetch('/api/planned-payments'),
+        apiFetch('/api/planned-payments/upcoming?days=30'),
+        apiFetch('/api/planned-payments/overdue'),
+      ]);
+      const allPayments = (allRes.success  ? (allRes.data  || []) : []);
+      const upcoming    = (upcomingRes.success ? (upcomingRes.data || []) : []);
+      const overdue     = (overdueRes.success  ? (overdueRes.data  || []) : []);
+
+      let html = `<div class="page-header"><h2 class="section-title">Planned Payments</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddPlanned()">+ Add Planned Payment</button>
+      </div>`;
+
+      /* ── Overdue ─ */
+      if (overdue.length) {
+        html += `<div class="card" style="border-color:var(--danger)">
+          <div class="overdue-header">⚠️ Overdue (${overdue.length})</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Account</th><th>Actions</th></tr></thead><tbody>`;
+        overdue.forEach(p => {
+          html += `<tr>
+            <td>${esc(p.name)}<br><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'')}</small></td>
+            <td>${fmt(p.amount||0, p.currency)}</td>
+            <td style="white-space:nowrap;color:var(--danger)">${fmtDate(p.nextDueDate)}</td>
+            <td>${esc(p.accountName||'')}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓ Confirm</button>
+              <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      /* ── Upcoming ─ */
+      if (upcoming.length) {
+        html += `<div class="card" style="border-color:var(--warning)">
+          <div class="upcoming-header">📅 Upcoming (next 30 days)</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Recurrence</th><th>Actions</th></tr></thead><tbody>`;
+        upcoming.forEach(p => {
+          html += `<tr>
+            <td>${esc(p.name)}</td>
+            <td>${fmt(p.amount||0, p.currency)}</td>
+            <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
+            <td><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'—')}</small></td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓ Confirm</button>
+              <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      /* ── All planned payments ─ */
+      html += `<div class="section-sub">All Planned Payments</div>`;
+      if (!allPayments.length) {
+        html += '<p class="empty-state">No planned payments yet.</p>';
+      } else {
+        html += `<div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Amount</th><th>Next Due</th><th>Type</th><th>Status</th><th>Auto</th><th></th></tr></thead><tbody>`;
+        allPayments.forEach(p => {
+          const txBadge = p.transactionType === 'INCOME' ? 'badge-income' : 'badge-expense';
+          html += `<tr>
+            <td>${esc(p.name)}<br><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'')}</small></td>
+            <td>${fmt(p.amount||0, p.currency)}</td>
+            <td style="white-space:nowrap${p.isOverdue ? ';color:var(--danger)' : ''}">${fmtDate(p.nextDueDate)}</td>
+            <td><span class="badge ${txBadge}">${esc(p.transactionType||'')}</span></td>
+            <td><span class="badge ${p.isOverdue ? 'badge-overdue' : 'badge-active'}">${esc(p.status||'')}</span></td>
+            <td>${p.autoConfirm ? '✅' : '—'}</td>
+            <td><button class="btn-icon" title="Delete" onclick="deletePlanned('${esc(p.id)}','${esc(p.name)}')">🗑️</button></td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading planned payments.'); }
+  }
+
+  window.confirmPlanned = async function (id) {
+    try {
+      const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/confirm`);
+      if (res.success) { renderPlannedPayments(); } else { alert('Failed to confirm payment.'); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error confirming payment.'); }
+  };
+
+  window.skipPlanned = async function (id) {
+    try {
+      const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/skip`);
+      if (res.success) { renderPlannedPayments(); } else { alert('Failed to skip payment.'); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error skipping payment.'); }
+  };
+
+  window.openAddPlanned = function () {
+    const body = `
+      ${formField('Payment Name', '<input type="text" id="pp-name" placeholder="e.g. Netflix">')}
+      ${formRow(
+        formField('Amount', '<input type="number" id="pp-amount" placeholder="0.00" min="0" step="0.01">'),
+        formField('Currency', `<input type="text" id="pp-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+      )}
+      ${formRow(
+        formField('Type', `<select id="pp-type"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option></select>`),
+        formField('Account', `<select id="pp-account">${accOptions()}</select>`)
+      )}
+      ${formField('Category', `<select id="pp-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formRow(
+        formField('Recurrence', `<select id="pp-recur">
+          <option value="ONE_TIME">One Time</option>
+          <option value="DAILY">Daily</option>
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY" selected>Monthly</option>
+          <option value="YEARLY">Yearly</option>
+        </select>`),
+        formField('Interval', '<input type="number" id="pp-interval" value="1" min="1">')
+      )}
+      ${formField('Start Date', '<input type="date" id="pp-start">')}
+      <div class="form-field"><label>Auto-Confirm</label>
+        <div class="toggle-wrap"><input type="checkbox" id="pp-auto"><span style="font-size:0.88rem">Automatically confirm when due</span></div>
+      </div>`;
+    openModal('Add Planned Payment', body, submitAddPlanned, 'Save Payment');
+    modalConfBtn.className = 'btn btn-primary';
+    const startEl = document.getElementById('pp-start');
+    if (startEl) startEl.value = new Date().toISOString().slice(0,10);
+  };
+
+  window.submitAddPlanned = async function () {
+    const name    = document.getElementById('pp-name')?.value.trim();
+    const amount  = parseFloat(document.getElementById('pp-amount')?.value || '0');
+    const currency= document.getElementById('pp-currency')?.value.trim();
+    const type    = document.getElementById('pp-type')?.value;
+    const account = document.getElementById('pp-account')?.value;
+    const cat     = document.getElementById('pp-category')?.value;
+    const recur   = document.getElementById('pp-recur')?.value;
+    const interval= parseInt(document.getElementById('pp-interval')?.value || '1', 10);
+    const start   = document.getElementById('pp-start')?.value;
+    const auto    = document.getElementById('pp-auto')?.checked || false;
+    if (!name)             { alert('Name is required.'); return; }
+    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/planned-payments', {
+        name, amount, currency, transactionType: type,
+        accountId: account || undefined,
+        categoryId: cat || undefined,
+        recurrenceType: recur,
+        recurrenceInterval: interval,
+        startDate: start || undefined,
+        autoConfirm: auto,
+      });
+      closeModal();
+      if (res.success) { renderPlannedPayments(); } else { alert('Failed to create planned payment: ' + (res.error || '')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error creating planned payment.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Payment'; }
+  };
+
+  window.deletePlanned = function (id, name) {
+    confirmDelete(`Delete planned payment "${name}"?`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/planned-payments/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { renderPlannedPayments(); } else { alert('Failed to delete planned payment.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Categories
+  ══════════════════════════════════════════════════════ */
+  async function renderCategories() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/categories');
+      if (!json.success) { showError('Failed to load categories.'); return; }
+      cachedCategories = json.data || [];
+      const parents  = cachedCategories.filter(c => !c.parentId);
+      const children = cachedCategories.filter(c =>  c.parentId);
+
+      let html = `<div class="page-header"><h2 class="section-title">Categories</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddCategory()">+ Add Category</button>
+      </div>`;
+
+      if (!cachedCategories.length) {
+        html += '<p class="empty-state">No categories found.</p>';
+      } else {
+        html += '<div class="card">';
+        parents.forEach(cat => {
+          html += renderCatRow(cat, false);
+          children.filter(c => c.parentId === cat.id).forEach(child => {
+            html += renderCatRow(child, true);
+          });
+        });
+        /* orphan children */
+        children.filter(c => !parents.find(p => p.id === c.parentId)).forEach(child => {
+          html += renderCatRow(child, true);
+        });
+        html += '</div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading categories.'); }
+  }
+
+  function renderCatRow(cat, indent) {
+    const natureCls = cat.nature === 'MUST' ? 'badge-must' : cat.nature === 'NEED' ? 'badge-need' : 'badge-want';
+    const color     = cat.colorHex || '#9e9e9e';
+    const deleteBtn = !cat.isDefault
+      ? `<button class="btn-icon" title="Delete" onclick="deleteCategory('${esc(cat.id)}','${esc(cat.name)}')">🗑️</button>` : '';
+    return `<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);${indent ? 'padding-left:28px' : ''}">
+      <span class="color-swatch" style="background:${esc(color)}"></span>
+      <span style="flex:1;font-weight:${indent?'400':'600'}">${esc(cat.name)}</span>
+      ${cat.nature ? `<span class="badge ${natureCls}" style="margin-right:10px">${esc(cat.nature)}</span>` : ''}
+      ${cat.isDefault ? '<span style="font-size:0.75rem;color:var(--text-muted);margin-right:10px">Default</span>' : ''}
+      ${deleteBtn}
+    </div>`;
+  }
+
+  window.openAddCategory = function () {
+    const presetColors = ['#1976D2','#2e7d32','#c62828','#f57f17','#6a1b9a','#00838f','#ad1457','#4e342e'];
+    const colorBtns = presetColors.map(c =>
+      `<span class="color-swatch" style="background:${c};width:22px;height:22px;cursor:pointer;border:2px solid transparent"
+        onclick="document.getElementById('cat-color').value='${c}';document.querySelectorAll('.cat-color-btn').forEach(s=>s.style.borderColor='transparent');this.style.borderColor='var(--accent)'"
+        class="cat-color-btn"></span>`
+    ).join(' ');
+    const body = `
+      ${formField('Category Name', '<input type="text" id="cat-name" placeholder="e.g. Groceries">')}
+      ${formField('Parent (optional)', `<select id="cat-parent"><option value="">— Top-level —</option>${catOptions(false)}</select>`)}
+      ${formField('Nature', `<select id="cat-nature"><option value="NEED">Need</option><option value="MUST">Must</option><option value="WANT">Want</option></select>`)}
+      <div class="form-field"><label>Color</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${colorBtns}</div>
+        <input type="text" id="cat-color" value="${presetColors[0]}" placeholder="#1976D2" maxlength="7">
+      </div>`;
+    openModal('Add Category', body, submitAddCategory, 'Save Category');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitAddCategory = async function () {
+    const name   = document.getElementById('cat-name')?.value.trim();
+    const parent = document.getElementById('cat-parent')?.value || undefined;
+    const nature = document.getElementById('cat-nature')?.value;
+    const color  = document.getElementById('cat-color')?.value.trim();
+    if (!name) { alert('Name is required.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/categories', { name, parentId: parent || undefined, nature, colorHex: color || undefined });
+      closeModal();
+      if (res.success) { await warmCache(); renderCategories(); }
+      else { alert('Failed to create category: ' + (res.error || '')); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error creating category.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Category'; }
+  };
+
+  window.deleteCategory = function (id, name) {
+    confirmDelete(`Delete category "${name}"? Transactions using this category will become uncategorised.`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/categories/${encodeURIComponent(id)}`);
+        closeModal();
+        if (res.success) { await warmCache(); renderCategories(); }
+        else { alert('Failed to delete category.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Analytics
+  ══════════════════════════════════════════════════════ */
+  async function renderAnalytics() {
+    /* default date range = current month */
+    const now   = new Date();
+    const y     = now.getFullYear();
+    const m     = String(now.getMonth() + 1).padStart(2,'0');
+    const defFrom = `${y}-${m}-01`;
+    const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
+    const defTo   = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+
+    const params    = new URLSearchParams(location.hash.split('?')[1] || '');
+    const dateFrom  = params.get('dateFrom') || defFrom;
+    const dateTo    = params.get('dateTo')   || defTo;
+    const txType    = params.get('txType')   || 'EXPENSE';
+
+    showSpinner();
+    try {
+      const [bdRes, cfRes] = await Promise.all([
+        apiFetch(`/api/analytics/category-breakdown?dateFrom=${dateFrom}&dateTo=${dateTo}&type=${txType}`),
+        apiFetch(`/api/analytics/cash-flow?dateFrom=${dateFrom}&dateTo=${dateTo}&granularity=MONTH`),
+      ]);
+      const breakdown = bdRes.success ? (bdRes.data || []) : [];
+      const cashFlow  = cfRes.success ? (cfRes.data || []) : [];
+
+      let html = `<h2 class="section-title">Analytics</h2>
+        <div class="card" style="margin-bottom:20px">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
+            <div class="form-field" style="margin:0;flex:1;min-width:140px">
+              <label>From</label><input type="date" id="an-from" value="${esc(dateFrom)}">
+            </div>
+            <div class="form-field" style="margin:0;flex:1;min-width:140px">
+              <label>To</label><input type="date" id="an-to" value="${esc(dateTo)}">
+            </div>
+            <div class="form-field" style="margin:0">
+              <label>Type</label>
+              <select id="an-type">
+                <option value="EXPENSE" ${txType==='EXPENSE'?'selected':''}>Expense</option>
+                <option value="INCOME" ${txType==='INCOME'?'selected':''}>Income</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="applyAnalyticsFilters()" style="align-self:flex-end;margin-bottom:14px">Apply</button>
+          </div>
+        </div>`;
+
+      /* ── Two-col charts ─ */
+      html += '<div class="two-col">';
+
+      /* ── Donut chart ─ */
+      let donutHtml = '';
+      if (!breakdown.length) {
+        donutHtml = '<p class="empty-state">No category data for this period.</p>';
+      } else {
+        let top = breakdown.slice(0, 8);
+        const rest = breakdown.slice(8);
+        if (rest.length) {
+          const otherAmt = rest.reduce((s, c) => s + (c.amount || 0), 0);
+          top.push({ categoryName: 'Other', amount: otherAmt, percentage: rest.reduce((s,c)=>s+(c.percentage||0),0) });
+        }
+        const slices = top.map((c, i) => ({
+          label: c.categoryName, value: c.amount, color: CHART_COLORS[i % CHART_COLORS.length]
+        }));
+        let legend = '<div class="chart-legend" style="margin-top:12px">';
+        top.forEach((c, i) => {
+          legend += `<div class="legend-item">
+            <div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div>
+            <span>${esc(c.categoryName)}</span>
+            <span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount)} (${fmtRaw(c.percentage || 0, 1)}%)</span>
+          </div>`;
+        });
+        legend += '</div>';
+        donutHtml = `<div style="display:flex;justify-content:center">${svgDonut(slices,180)}</div>${legend}`;
+      }
+      html += `<div class="card"><div class="section-sub">Category Breakdown (${esc(txType)})</div>${donutHtml}</div>`;
+
+      /* ── Bar chart ─ */
+      let barHtml = '';
+      if (!cashFlow.length) {
+        barHtml = '<p class="empty-state">No cash flow data for this period.</p>';
+      } else {
+        const points = cashFlow.map(p => ({ label: p.label, income: p.income || 0, expense: p.expense || 0 }));
+        barHtml = svgBars(points, 400, 140);
+        barHtml += `<div class="chart-legend" style="margin-top:8px">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
+        </div>`;
+        /* net row */
+        barHtml += '<div style="margin-top:12px"><div class="table-wrap"><table><thead><tr><th>Period</th><th>Income</th><th>Expense</th><th>Net</th></tr></thead><tbody>';
+        cashFlow.forEach(p => {
+          const net = (p.income||0) - (p.expense||0);
+          const netClass = net >= 0 ? 'amount-income' : 'amount-expense';
+          const sign = net >= 0 ? '+' : '−';
+          barHtml += `<tr>
+            <td>${esc(p.label)}</td>
+            <td class="amount-income">+${fmtRaw(p.income||0)}</td>
+            <td class="amount-expense">−${fmtRaw(p.expense||0)}</td>
+            <td class="${netClass}">${sign}${fmtRaw(Math.abs(net))}</td>
+          </tr>`;
+        });
+        barHtml += '</tbody></table></div></div>';
+      }
+      html += `<div class="card"><div class="section-sub">Cash Flow</div>${barHtml}</div>`;
+
+      html += '</div>'; /* end two-col */
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading analytics.'); }
+  }
+
+  window.applyAnalyticsFilters = function () {
+    const from   = document.getElementById('an-from')?.value;
+    const to     = document.getElementById('an-to')?.value;
+    const txType = document.getElementById('an-type')?.value;
+    const p = new URLSearchParams();
+    if (from)   p.set('dateFrom', from);
+    if (to)     p.set('dateTo',   to);
+    if (txType) p.set('txType',   txType);
+    location.hash = '#/analytics?' + p.toString();
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Tags
+  ══════════════════════════════════════════════════════ */
+  async function renderTags() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/tags');
+      if (!json.success) { showError('Failed to load tags.'); return; }
+      const tags = json.data || [];
+
+      let html = `<div class="page-header"><h2 class="section-title">Tags</h2></div>`;
+      html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Tags are created automatically when you add them to records. Delete unused tags here.</p>';
+
+      if (!tags.length) {
+        html += '<p class="empty-state">No tags yet. Add tags when creating records.</p>';
+      } else {
+        html += '<div class="card"><div class="tag-chips">';
+        tags.forEach(tag => {
+          const col = tag.colorHex || '#9e9e9e';
+          html += `<div class="tag-chip" style="border-left:4px solid ${esc(col)}">
+            <span class="color-swatch" style="background:${esc(col)}"></span>
+            <span>${esc(tag.name)}</span>
+            <span class="chip-count">${tag.transactionCount || 0} records</span>
+            <button class="btn-icon" title="Delete tag" style="padding:2px 4px" onclick="deleteTag('${esc(tag.name)}')">✕</button>
+          </div>`;
+        });
+        html += '</div></div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading tags.'); }
+  }
+
+  window.deleteTag = function (name) {
+    confirmDelete(`Delete tag "${name}"? It will be removed from all records.`, async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/tags/${encodeURIComponent(name)}`);
+        closeModal();
+        if (res.success) { renderTags(); } else { alert('Failed to delete tag.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting tag.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Settings
+  ══════════════════════════════════════════════════════ */
+  async function renderSettings() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/settings');
+      if (!json.success) { showError('Failed to load settings.'); return; }
+      const s = json.data || {};
+      cachedSettings = { ...cachedSettings, ...s };
+
+      const html = `<h2 class="section-title">Settings</h2>
+        <div class="card" style="max-width:480px">
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Profile ID</div>
+              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Active profile</div>
+            </div>
+            <div class="settings-value">${esc(String(s.currentProfileId || '—'))}</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Base Currency</div>
+              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Default currency for new entries</div>
+            </div>
+            <div class="settings-value">${esc(s.baseCurrency || '—')}</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Decimal Precision</div>
+              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Decimal places for amounts</div>
+            </div>
+            <div class="settings-value">${esc(String(s.decimalPrecision ?? '—'))}</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Session</div>
+              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Stored in sessionStorage (cleared on tab close)</div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="doLogout()">Log out</button>
+          </div>
+        </div>
+        <div class="alert alert-warn" style="max-width:480px;margin-top:0">
+          Settings are read-only from the web portal. Manage them in the OssWallet Android app.
+        </div>`;
+
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading settings.'); }
+  }
+
+  /* make doLogout callable from settings page button */
+  window.doLogout = doLogout;
+
 })();
 </script>
 </body>

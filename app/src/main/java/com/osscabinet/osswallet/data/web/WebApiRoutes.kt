@@ -3,30 +3,52 @@ package com.osscabinet.ossWallet.data.web
 import android.content.Context
 import com.osscabinet.ossWallet.data.web.dto.AccountDto
 import com.osscabinet.ossWallet.data.web.dto.ApiResponse
+import com.osscabinet.ossWallet.data.web.dto.CardDataDto
+import com.osscabinet.ossWallet.data.web.dto.CardPayloadDto
+import com.osscabinet.ossWallet.data.web.dto.FilterSummaryDto
 import com.osscabinet.ossWallet.data.web.dto.AuthRequest
 import com.osscabinet.ossWallet.data.web.dto.AuthResponse
 import com.osscabinet.ossWallet.data.web.dto.BudgetDto
 import com.osscabinet.ossWallet.data.web.dto.CashFlowPointDto
 import com.osscabinet.ossWallet.data.web.dto.CategoryBreakdownDto
 import com.osscabinet.ossWallet.data.web.dto.CategoryDto
+import com.osscabinet.ossWallet.data.web.dto.CreateAccountRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateBudgetRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateCategoryRequest
+import com.osscabinet.ossWallet.data.web.dto.CreateFilterRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateLoanRequest
 import com.osscabinet.ossWallet.data.web.dto.CreatePlannedPaymentRequest
+import com.osscabinet.ossWallet.data.web.dto.CreateTagRequest
 import com.osscabinet.ossWallet.data.web.dto.CreateTransactionRequest
 import com.osscabinet.ossWallet.data.web.dto.DashboardDto
+import com.osscabinet.ossWallet.data.web.dto.FilterDto
 import com.osscabinet.ossWallet.data.web.dto.LoanDto
+import com.osscabinet.ossWallet.data.web.dto.LoanPaymentDto
+import com.osscabinet.ossWallet.data.web.dto.LoanPaymentRequest
 import com.osscabinet.ossWallet.data.web.dto.MonthlySummaryDto
 import com.osscabinet.ossWallet.data.web.dto.PagedResponse
 import com.osscabinet.ossWallet.data.web.dto.PlannedPaymentDto
+import com.osscabinet.ossWallet.data.web.dto.RenameTagRequest
 import com.osscabinet.ossWallet.data.web.dto.SettingsDto
 import com.osscabinet.ossWallet.data.web.dto.TagDto
 import com.osscabinet.ossWallet.data.web.dto.TransactionDto
+import com.osscabinet.ossWallet.data.web.dto.UpdateAccountRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateBudgetRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateCategoryRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateLoanRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdatePlannedPaymentRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateSettingsRequest
+import com.osscabinet.ossWallet.data.web.dto.UpdateTransactionRequest
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CategoryNature
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -39,10 +61,16 @@ import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -62,6 +90,7 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.flow.first
@@ -82,7 +111,10 @@ class WebApiRoutes(
     private val loanRepository: LoanRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val tagRepository: TagRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    private val filterRepository: FilterRepository,
+    private val cardRepository: CardRepository,
+    private val cardComputerRegistry: CardComputerRegistry
 ) {
     fun Application.installRoutes() {
         routing {
@@ -939,7 +971,7 @@ class WebApiRoutes(
                     }
                 }
 
-                // ── Dashboard ─────────────────────────────────────────────────────────
+                // ── Dashboard — card-aware, per-card filters ──────────────────────────
                 get("/dashboard") {
                     if (!authenticate(authSessionManager)) return@get
                     try {
@@ -948,147 +980,569 @@ class WebApiRoutes(
                         val precision = settingsRepository.decimalPrecision.first()
                         val now = System.currentTimeMillis()
 
+                        // Load all raw data once — shared across all card computers
                         val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
                         val accounts = accountRepository.getAllAccountsSync(profileId)
                         val categories = categoryRepository.getAllCategoriesSync()
                         val categoryMap = categories.associateBy { it.id }
                         val accountMap = accounts.associateBy { it.id }
-
+                        val allTags = tagRepository.getAllTags().first()
+                        val budgets = budgetRepository.getActiveBudgetsSync(profileId)
+                        val loans = loanRepository.getActiveLoansSync(profileId)
+                        val loanPayments = loans.associate { loan ->
+                            loan.id to loanRepository.getPaymentsForLoanSync(loan.id)
+                        }
+                        val allPayments = plannedPaymentRepository.getAllSync(profileId)
                         val exchangeRates = runCatching {
                             currencyRepository.getExchangeRates(baseCurrency)
                                 .mapValues { BigDecimal.valueOf(it.value) }
                         }.getOrDefault(emptyMap())
 
-                        // Net worth
-                        val netWorth = accounts.sumOf { account ->
-                            allTransactions
-                                .filter { it.accountId == account.id }
-                                .fold(BigDecimal.ZERO) { acc, tx ->
-                                    when (tx.transactionType) {
-                                        TransactionType.INCOME -> acc + tx.amount
-                                        TransactionType.EXPENSE -> acc - tx.amount
-                                        TransactionType.TRANSFER -> acc - tx.amount
-                                    }
-                                }.toDouble()
-                        }
+                        val baseInput = CardInput(
+                            profileId = profileId,
+                            transactions = allTransactions,
+                            accounts = accounts,
+                            categories = categories,
+                            tags = allTags,
+                            exchangeRates = exchangeRates,
+                            baseCurrency = baseCurrency,
+                            displayCurrency = baseCurrency,
+                            plannedPayments = allPayments,
+                            budgets = budgets,
+                            loans = loans,
+                            loanPayments = loanPayments
+                        )
 
-                        // Current month
-                        val cal = Calendar.getInstance()
-                        val year = cal.get(Calendar.YEAR)
-                        val month = cal.get(Calendar.MONTH) + 1
-                        val monthLabel = "$year-${month.toString().padStart(2, '0')}"
+                        // Read the user's actual dashboard card layout
+                        val dashboardConfig = cardRepository.dashboardCardsConfig.first()
+                        val enabledCards = dashboardConfig.cards
+                            .filter { it.isEnabled }
+                            .sortedBy { it.order }
 
-                        // Month boundaries
-                        val monthStart = Calendar.getInstance().also {
-                            it.set(year, month - 1, 1, 0, 0, 0)
-                            it.set(Calendar.MILLISECOND, 0)
-                        }.timeInMillis
-                        val monthEnd = Calendar.getInstance().also {
-                            it.set(year, month - 1, cal.getActualMaximum(Calendar.DAY_OF_MONTH), 23, 59, 59)
-                            it.set(Calendar.MILLISECOND, 999)
-                        }.timeInMillis
-
-                        val monthlyTx = allTransactions.filter { it.timestamp in monthStart..monthEnd }
-                        val monthlyIncome = monthlyTx.filter { it.transactionType == TransactionType.INCOME }.sumOf { it.amount.toDouble() }
-                        val monthlyExpenses = monthlyTx.filter { it.transactionType == TransactionType.EXPENSE }.sumOf { it.amount.toDouble() }
-
-                        // Account DTOs
-                        val accountDtos = accounts.map { account ->
-                            val balance = allTransactions
-                                .filter { it.accountId == account.id }
-                                .fold(BigDecimal.ZERO) { acc, tx ->
-                                    when (tx.transactionType) {
-                                        TransactionType.INCOME -> acc + tx.amount
-                                        TransactionType.EXPENSE -> acc - tx.amount
-                                        TransactionType.TRANSFER -> acc - tx.amount
-                                    }
-                                }
-                            AccountDto(id = account.id, name = account.name, currency = account.currencyCode, balance = balance.toDouble(), type = account.structureType.name)
-                        }
-
-                        // Budget DTOs (first 5)
-                        val budgets = budgetRepository.getActiveBudgetsSync(profileId)
-                        val budgetDtos = budgets.take(5).map { budget ->
-                            val spent = BudgetService.calculateSpent(budget, allTransactions, exchangeRates, baseCurrency, now, categories, precision)
-                            val progress = BudgetService.buildProgress(budget, spent)
-                            BudgetDto(
-                                id = budget.id, name = budget.name, currency = budget.currency,
-                                limitAmount = budget.limitAmount.toDouble(), spent = progress.spent.toDouble(),
-                                remaining = progress.remaining.toDouble(), percentage = progress.percentage.toDouble(),
-                                alertLevel = progress.alertLevel.name, period = monthLabel, isArchived = budget.isArchived
-                            )
-                        }
-
-                        // Loan DTOs (first 5)
-                        val loans = loanRepository.getActiveLoansSync(profileId)
-                        val loanDtos = loans.take(5).map { loan ->
-                            val payments = loanRepository.getPaymentsForLoanSync(loan.id)
-                            val summary = LoanService.buildSummary(loan, payments, now, precision)
-                            LoanDto(
-                                id = loan.id, name = loan.name, loanType = loan.loanType.name,
-                                currency = loan.currency, principalAmount = loan.principalAmount.toDouble(),
-                                totalPaid = summary.totalPaid.toDouble(), remainingBalance = summary.remainingBalance.toDouble(),
-                                interestAccrued = summary.interestAccrued.toDouble(), status = loan.status.name,
-                                lenderOrBorrowerName = loan.lenderOrBorrowerName,
-                                startDate = loan.startDate, expectedSettlementDate = loan.expectedSettlementDate
-                            )
-                        }
-
-                        // Planned payments
-                        val allPayments = plannedPaymentRepository.getAllSync(profileId)
-                        val upcoming14 = PlannedPaymentService.generateUpcoming(allPayments, now, 14)
-                            .map { it.plannedPayment.toDto(now, categoryMap, accountMap) }
-                        val overduePayments = PlannedPaymentService.getOverdue(allPayments, now)
-                            .map { it.toDto(now, categoryMap, accountMap) }
-
-                        // Recent transactions (last 10)
-                        val recentTx = allTransactions.sortedByDescending { it.timestamp }.take(10)
-                            .map { tx ->
-                                TransactionDto(
-                                    id = tx.id, title = tx.name, amount = tx.amount.toDouble(),
-                                    currency = tx.currency, type = tx.transactionType.name,
-                                    categoryName = categoryMap[tx.categoryId]?.name,
-                                    accountName = accountMap[tx.accountId]?.name ?: "",
-                                    date = tx.timestamp, note = tx.note.takeIf { it.isNotBlank() }
+                        val cardResults = enabledCards.map { cardConfig ->
+                            val filterSummary = cardConfig.filter.toFilterSummaryDto()
+                            val payload = runCatching {
+                                val renderData = cardComputerRegistry.compute(
+                                    type = cardConfig.cardType,
+                                    input = baseInput,
+                                    config = cardConfig
                                 )
+                                renderData.toPayloadDto(now, categoryMap, accountMap, precision, baseCurrency)
+                            }.getOrElse { e ->
+                                CardPayloadDto.Error(e.message ?: "Computation failed")
                             }
-
-                        // Category breakdown (current month expenses)
-                        val monthExpenses = monthlyTx.filter { it.transactionType == TransactionType.EXPENSE }
-                        val totalExpense = monthExpenses.sumOf { it.amount.toDouble() }
-                        val catBreakdown = monthExpenses.groupBy { it.categoryId }.map { (catId, txs) ->
-                            val amt = txs.sumOf { it.amount.toDouble() }
-                            CategoryBreakdownDto(
-                                categoryId = catId, categoryName = categoryMap[catId]?.name ?: "Unknown",
-                                amount = amt,
-                                percentage = if (totalExpense > 0.0) (amt / totalExpense * 100.0).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
-                                transactionCount = txs.size
+                            CardDataDto(
+                                cardId = cardConfig.cardId,
+                                cardType = cardConfig.cardType.name,
+                                title = cardConfig.title,
+                                order = cardConfig.order,
+                                isEnabled = cardConfig.isEnabled,
+                                filterSummary = filterSummary,
+                                data = payload
                             )
-                        }.sortedByDescending { it.amount }
+                        }
 
-                        // Last 6 months cash flow
-                        val sixMonthsAgo = Calendar.getInstance().also {
-                            it.add(Calendar.MONTH, -6)
-                            it.set(Calendar.DAY_OF_MONTH, 1)
-                            it.set(Calendar.HOUR_OF_DAY, 0); it.set(Calendar.MINUTE, 0); it.set(Calendar.SECOND, 0); it.set(Calendar.MILLISECOND, 0)
-                        }.timeInMillis
-                        val recentTxForFlow = allTransactions.filter { it.timestamp >= sixMonthsAgo }
-                        val cashFlowPoints = buildMonthlyCashFlowPoints(recentTxForFlow)
-
-                        call.respond(ApiResponse(success = true, data = DashboardDto(
-                            netWorth = netWorth, baseCurrency = baseCurrency,
-                            monthlyIncome = monthlyIncome, monthlyExpenses = monthlyExpenses,
-                            cashFlow = monthlyIncome - monthlyExpenses, month = monthLabel,
-                            accounts = accountDtos, budgets = budgetDtos, loans = loanDtos,
-                            upcomingPayments = upcoming14, overduePayments = overduePayments,
-                            recentTransactions = recentTx, categoryBreakdown = catBreakdown,
-                            cashFlowPoints = cashFlowPoints
-                        )))
+                        call.respond(ApiResponse(success = true, data = cardResults))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
                         )
+                    }
+                }
+
+                // ── Accounts (CRUD) ───────────────────────────────────────────────────
+                post("/accounts") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val req = call.receive<CreateAccountRequest>()
+                        val account = Account(
+                            id = java.util.UUID.randomUUID().toString(),
+                            name = req.name,
+                            currencyCode = req.currencyCode,
+                            structureType = AccountStructureType.entries.find { it.name.equals(req.structureType, ignoreCase = true) }
+                                ?: AccountStructureType.SAVINGS,
+                            colorHex = req.colorHex,
+                            icon = req.icon,
+                            allowedCurrencies = req.allowedCurrencies
+                        )
+                        accountRepository.insertAccount(account, profileId)
+                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val balance = allTransactions.filter { it.accountId == account.id }
+                            .fold(BigDecimal.ZERO) { acc, tx ->
+                                when (tx.transactionType) {
+                                    TransactionType.INCOME -> acc + tx.amount
+                                    TransactionType.EXPENSE -> acc - tx.amount
+                                    TransactionType.TRANSFER -> acc - tx.amount
+                                }
+                            }
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = AccountDto(
+                            id = account.id, name = account.name, currency = account.currencyCode,
+                            balance = balance.toDouble(), type = account.structureType.name
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/accounts/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val id = call.parameters["id"]
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = accountRepository.getAllAccountsSync(profileId).find { it.id == id }
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Account not found"))
+                        val req = call.receive<UpdateAccountRequest>()
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            currencyCode = req.currencyCode ?: existing.currencyCode,
+                            structureType = req.structureType?.let { t ->
+                                AccountStructureType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.structureType
+                            } ?: existing.structureType,
+                            colorHex = req.colorHex ?: existing.colorHex,
+                            icon = req.icon ?: existing.icon,
+                            isArchived = req.isArchived ?: existing.isArchived,
+                            allowedCurrencies = req.allowedCurrencies ?: existing.allowedCurrencies
+                        )
+                        accountRepository.updateAccount(updated, profileId)
+                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val balance = allTransactions.filter { it.accountId == updated.id }
+                            .fold(BigDecimal.ZERO) { acc, tx ->
+                                when (tx.transactionType) {
+                                    TransactionType.INCOME -> acc + tx.amount
+                                    TransactionType.EXPENSE -> acc - tx.amount
+                                    TransactionType.TRANSFER -> acc - tx.amount
+                                }
+                            }
+                        call.respond(ApiResponse(success = true, data = AccountDto(
+                            id = updated.id, name = updated.name, currency = updated.currencyCode,
+                            balance = balance.toDouble(), type = updated.structureType.name
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                delete("/accounts/{id}") {
+                    if (!authenticate(authSessionManager)) return@delete
+                    try {
+                        val id = call.parameters["id"]
+                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        accountRepository.deleteAccount(id)
+                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Transactions (detail + edit) ───────────────────────────────────────
+                get("/transactions/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val tx = transactionRepository.getTransactionById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
+                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(ApiResponse(success = true, data = TransactionDto(
+                            id = tx.id, title = tx.name, amount = tx.amount.toDouble(),
+                            currency = tx.currency, type = tx.transactionType.name,
+                            categoryName = categoryMap[tx.categoryId]?.name,
+                            accountName = accountMap[tx.accountId]?.name ?: "",
+                            date = tx.timestamp, note = tx.note.takeIf { it.isNotBlank() }
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/transactions/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val old = transactionRepository.getTransactionById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Transaction not found"))
+                        val req = call.receive<UpdateTransactionRequest>()
+                        val updated = old.copy(
+                            name = req.name ?: old.name,
+                            amount = req.amount?.let { BigDecimal.valueOf(it) } ?: old.amount,
+                            timestamp = req.timestamp ?: old.timestamp,
+                            currency = req.currency ?: old.currency,
+                            transactionType = req.transactionType?.let { t ->
+                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: old.transactionType
+                            } ?: old.transactionType,
+                            accountId = req.accountId ?: old.accountId,
+                            categoryId = req.categoryId ?: old.categoryId,
+                            tags = req.tags?.toSet() ?: old.tags,
+                            paymentMethod = req.paymentMethod?.let { m ->
+                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) } ?: old.paymentMethod
+                            } ?: old.paymentMethod,
+                            payee = req.payee ?: old.payee,
+                            note = req.note ?: old.note,
+                            status = req.status?.let { s ->
+                                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) } ?: old.status
+                            } ?: old.status
+                        )
+                        transactionRepository.updateTransaction(old, updated, profileId)
+                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(ApiResponse(success = true, data = TransactionDto(
+                            id = updated.id, title = updated.name, amount = updated.amount.toDouble(),
+                            currency = updated.currency, type = updated.transactionType.name,
+                            categoryName = categoryMap[updated.categoryId]?.name,
+                            accountName = accountMap[updated.accountId]?.name ?: "",
+                            date = updated.timestamp, note = updated.note.takeIf { it.isNotBlank() }
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Budgets (detail + edit) ────────────────────────────────────────────
+                get("/budgets/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val baseCurrency = settingsRepository.currency.first()
+                        val precision = settingsRepository.decimalPrecision.first()
+                        val now = System.currentTimeMillis()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val budget = budgetRepository.getById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Budget not found"))
+                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val categories = categoryRepository.getAllCategoriesSync()
+                        val exchangeRates = runCatching {
+                            currencyRepository.getExchangeRates(baseCurrency).mapValues { BigDecimal.valueOf(it.value) }
+                        }.getOrDefault(emptyMap())
+                        val cal = Calendar.getInstance()
+                        val periodLabel = "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}"
+                        val spent = BudgetService.calculateSpent(budget, allTransactions, exchangeRates, baseCurrency, now, categories, precision)
+                        val progress = BudgetService.buildProgress(budget, spent)
+                        call.respond(ApiResponse(success = true, data = BudgetDto(
+                            id = budget.id, name = budget.name, currency = budget.currency,
+                            limitAmount = budget.limitAmount.toDouble(), spent = progress.spent.toDouble(),
+                            remaining = progress.remaining.toDouble(), percentage = progress.percentage.toDouble(),
+                            alertLevel = progress.alertLevel.name, period = periodLabel, isArchived = budget.isArchived
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/budgets/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = budgetRepository.getById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Budget not found"))
+                        val req = call.receive<UpdateBudgetRequest>()
+                        val timelineRange = req.timelineType?.let { t ->
+                            when (t.uppercase()) {
+                                "MONTHLY" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                                "YEARLY" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
+                                "WEEKLY" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
+                                "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
+                                "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
+                                else -> existing.timelineRange
+                            }
+                        } ?: existing.timelineRange
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            currency = req.currency ?: existing.currency,
+                            limitAmount = req.limitAmount?.let { BigDecimal.valueOf(it) } ?: existing.limitAmount,
+                            timelineRange = timelineRange,
+                            categoryIds = req.categoryIds?.toSet() ?: existing.categoryIds,
+                            alertThreshold = req.alertThreshold?.toFloat() ?: existing.alertThreshold,
+                            rollover = req.rollover ?: existing.rollover,
+                            isArchived = req.isArchived ?: existing.isArchived
+                        )
+                        budgetRepository.update(updated)
+                        call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Loans (detail + edit + payments) ──────────────────────────────────
+                get("/loans/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val now = System.currentTimeMillis()
+                        val precision = settingsRepository.decimalPrecision.first()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val loan = loanRepository.getLoanById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                        val payments = loanRepository.getPaymentsForLoanSync(loan.id)
+                        val summary = LoanService.buildSummary(loan, payments, now, precision)
+                        call.respond(ApiResponse(success = true, data = LoanDto(
+                            id = loan.id, name = loan.name, loanType = loan.loanType.name,
+                            currency = loan.currency, principalAmount = loan.principalAmount.toDouble(),
+                            totalPaid = summary.totalPaid.toDouble(), remainingBalance = summary.remainingBalance.toDouble(),
+                            interestAccrued = summary.interestAccrued.toDouble(), status = loan.status.name,
+                            lenderOrBorrowerName = loan.lenderOrBorrowerName,
+                            startDate = loan.startDate, expectedSettlementDate = loan.expectedSettlementDate
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/loans/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = loanRepository.getLoanById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                        val req = call.receive<UpdateLoanRequest>()
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            principalAmount = req.principalAmount?.let { BigDecimal.valueOf(it) } ?: existing.principalAmount,
+                            currency = req.currency ?: existing.currency,
+                            loanType = req.loanType?.let { t ->
+                                LoanType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.loanType
+                            } ?: existing.loanType,
+                            lenderOrBorrowerName = req.lenderOrBorrowerName ?: existing.lenderOrBorrowerName,
+                            startDate = req.startDate ?: existing.startDate,
+                            expectedSettlementDate = req.expectedSettlementDate ?: existing.expectedSettlementDate,
+                            interestRate = req.interestRate?.toFloat() ?: existing.interestRate,
+                            note = req.note ?: existing.note
+                        )
+                        loanRepository.updateLoan(updated)
+                        call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                get("/loans/{id}/payments") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val payments = loanRepository.getPaymentsForLoanSync(id)
+                        val dtos = payments.map { p ->
+                            LoanPaymentDto(id = p.id, loanId = p.loanId, amount = p.amount.toDouble(),
+                                date = p.date, note = p.note)
+                        }
+                        call.respond(ApiResponse(success = true, data = dtos))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                post("/loans/{id}/payments") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        loanRepository.getLoanById(id)
+                            ?: return@post call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Loan not found"))
+                        val req = call.receive<LoanPaymentRequest>()
+                        val payment = LoanPayment(
+                            loanId = id,
+                            amount = BigDecimal.valueOf(req.amount),
+                            date = req.date,
+                            note = req.note
+                        )
+                        val newId = loanRepository.insertPayment(payment)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Planned Payments (detail + edit) ──────────────────────────────────
+                get("/planned-payments/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val now = System.currentTimeMillis()
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val payment = plannedPaymentRepository.getById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
+                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        call.respond(ApiResponse(success = true, data = payment.toDto(now, categoryMap, accountMap)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/planned-payments/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = plannedPaymentRepository.getById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Payment not found"))
+                        val req = call.receive<UpdatePlannedPaymentRequest>()
+                        val recurrenceRule = if (req.recurrenceType != null || req.recurrenceInterval != null) {
+                            val type = req.recurrenceType?.let { t ->
+                                RecurrenceType.entries.find { it.name.equals(t, ignoreCase = true) }
+                            } ?: existing.schedule.recurrenceRule.type
+                            RecurrenceRule(type = type, interval = req.recurrenceInterval ?: existing.schedule.recurrenceRule.interval)
+                        } else existing.schedule.recurrenceRule
+                        val schedule = existing.schedule.copy(
+                            recurrenceRule = recurrenceRule,
+                            startDate = req.startDate ?: existing.schedule.startDate
+                        )
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
+                            currency = req.currency ?: existing.currency,
+                            transactionType = req.transactionType?.let { t ->
+                                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) } ?: existing.transactionType
+                            } ?: existing.transactionType,
+                            categoryId = req.categoryId ?: existing.categoryId,
+                            accountId = req.accountId ?: existing.accountId,
+                            note = req.note ?: existing.note,
+                            schedule = schedule,
+                            autoConfirm = req.autoConfirm ?: existing.autoConfirm
+                        )
+                        plannedPaymentRepository.update(updated)
+                        call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Categories (edit) ──────────────────────────────────────────────────
+                put("/categories/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val existing = categoryRepository.getAllCategoriesSync().find { it.id == id }
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Category not found"))
+                        val req = call.receive<UpdateCategoryRequest>()
+                        val updated = existing.copy(
+                            name = req.name ?: existing.name,
+                            iconName = req.iconName ?: existing.iconName,
+                            colorHex = req.colorHex ?: existing.colorHex,
+                            nature = req.nature?.let { n ->
+                                CategoryNature.entries.find { it.name.equals(n, ignoreCase = true) } ?: existing.nature
+                            } ?: existing.nature,
+                            parentId = req.parentId ?: existing.parentId
+                        )
+                        categoryRepository.upsertCategory(updated)
+                        call.respond(ApiResponse(success = true, data = updated.toDto()))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Tags (create + rename) ─────────────────────────────────────────────
+                post("/tags") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val req = call.receive<CreateTagRequest>()
+                        val allTags = tagRepository.getAllTags().first()
+                        if (allTags.any { it.name.equals(req.name, ignoreCase = true) }) {
+                            call.respond(HttpStatusCode.Conflict, ApiResponse<Unit>(success = false, error = "Tag already exists"))
+                            return@post
+                        }
+                        val tag = Tag(name = req.name, colorHex = req.colorHex)
+                        tagRepository.insertTag(tag)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = TagDto(name = tag.name, colorHex = tag.colorHex, transactionCount = 0)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/tags/{name}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val name = call.parameters["name"]
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid name"))
+                        val allTags = tagRepository.getAllTags().first()
+                        val existing = allTags.find { it.name == name }
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Tag not found"))
+                        val req = call.receive<RenameTagRequest>()
+                        val updated = existing.copy(name = req.newName, colorHex = req.colorHex ?: existing.colorHex)
+                        tagRepository.updateTag(existing.name, updated)
+                        call.respond(ApiResponse(success = true, data = TagDto(name = updated.name, colorHex = updated.colorHex, transactionCount = 0)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                // ── Saved Filters ─────────────────────────────────────────────────────
+                get("/filters") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val filters = filterRepository.getAllFilters().first()
+                        val dtos = filters.map { it.toDto() }
+                        call.respond(ApiResponse(success = true, data = dtos))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                get("/filters/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val filter = filterRepository.getFilterById(id)
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                        call.respond(ApiResponse(success = true, data = filter.toDto()))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                post("/filters") {
+                    if (!authenticate(authSessionManager)) return@post
+                    try {
+                        val req = call.receive<CreateFilterRequest>()
+                        val transactionFilter = req.toTransactionFilter()
+                        val filter = Filter(name = req.name, filter = transactionFilter)
+                        val newId = filterRepository.insertFilter(filter)
+                        call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                put("/filters/{id}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        filterRepository.getFilterById(id)
+                            ?: return@put call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                        val req = call.receive<CreateFilterRequest>()
+                        val transactionFilter = req.toTransactionFilter()
+                        val updated = Filter(id = id, name = req.name, filter = transactionFilter)
+                        filterRepository.updateFilter(updated)
+                        call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
+                    }
+                }
+
+                delete("/filters/{id}") {
+                    if (!authenticate(authSessionManager)) return@delete
+                    try {
+                        val id = call.parameters["id"]?.toLongOrNull()
+                            ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val filter = filterRepository.getFilterById(id)
+                            ?: return@delete call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Filter not found"))
+                        filterRepository.deleteFilter(filter)
+                        call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
                     }
                 }
 
@@ -1109,6 +1563,24 @@ class WebApiRoutes(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
                         )
+                    }
+                }
+                put("/settings") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val req = call.receive<UpdateSettingsRequest>()
+                        req.baseCurrency?.let { settingsRepository.saveCurrency(it) }
+                        req.decimalPrecision?.let { settingsRepository.saveDecimalPrecision(it) }
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val baseCurrency = settingsRepository.currency.first()
+                        val precision = settingsRepository.decimalPrecision.first()
+                        call.respond(ApiResponse(success = true, data = SettingsDto(
+                            currentProfileId = profileId,
+                            baseCurrency = baseCurrency,
+                            decimalPrecision = precision
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
                     }
                 }
             }
@@ -1188,6 +1660,289 @@ class WebApiRoutes(
             return false
         }
         return true
+    }
+
+    private fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
+        val (timelineType, dateFrom, dateTo) = when (val tl = timelineRange) {
+            is TimelineRange.AllTime -> Triple("ALL_TIME", null, null)
+            is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
+            is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
+            is TimelineRange.LastPeriod -> Triple("LAST_${tl.period.name}", null, null)
+            else -> Triple("ALL_TIME", null, null)
+        }
+        return FilterSummaryDto(
+            timelineType = timelineType, dateFrom = dateFrom, dateTo = dateTo,
+            accountIds = accountIds.toList(),
+            categoryIds = categoryIds.toList(),
+            transactionTypes = transactionTypes.map { it.name },
+            tags = tags.toList(),
+            currencies = currencies.toList(),
+            statuses = statuses.map { it.name },
+            paymentMethods = paymentMethods.map { it.name },
+            minAmount = minAmount?.toDouble(),
+            maxAmount = maxAmount?.toDouble(),
+            queryNote = queryNote,
+            queryPayee = queryPayee,
+            excludeFuture = excludeFuture
+        )
+    }
+
+    private fun CardRenderData.toPayloadDto(
+        now: Long,
+        categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
+        accountMap: Map<String, com.osscabinet.ossWallet.domain.model.Account>,
+        precision: Int,
+        baseCurrency: String
+    ): CardPayloadDto = when (this) {
+        is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
+            netWorth = currentMetrics.netWorth.toDouble(),
+            income = currentMetrics.cashFlow.totalIncomeInBase.toDouble(),
+            expense = currentMetrics.cashFlow.totalExpensesInBase.toDouble(),
+            cashFlow = currentMetrics.cashFlow.netInBase.toDouble(),
+            currency = this.baseCurrency
+        )
+        is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
+            income = result.totalIncomeInBase.toDouble(),
+            expense = result.totalExpensesInBase.toDouble(),
+            net = result.netInBase.toDouble(),
+            currency = this.baseCurrency
+        )
+        is CardRenderData.CurrencyBalances -> CardPayloadDto.CurrencyBalances(
+            items = items.map { item ->
+                CardPayloadDto.CurrencyBalanceItem(
+                    currency = item.currency,
+                    balance = item.amount.toDouble(),
+                    balanceInBase = item.amountInBase.toDouble()
+                )
+            },
+            baseCurrency = this.baseCurrency
+        )
+        is CardRenderData.Accounts -> CardPayloadDto.Accounts(
+            accounts = accountStats.map { (id, stats) ->
+                CardPayloadDto.AccountSummaryItem(
+                    id = id,
+                    name = stats.account.name,
+                    currency = stats.account.currencyCode,
+                    balance = stats.balance.toDouble(),
+                    income = stats.incomeInAccountCurrency.toDouble(),
+                    expense = stats.expenseInAccountCurrency.toDouble()
+                )
+            }
+        )
+        is CardRenderData.Budgets -> CardPayloadDto.Budgets(
+            items = items.map { progress ->
+                val cal = Calendar.getInstance()
+                val periodLabel = "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}"
+                BudgetDto(
+                    id = progress.budget.id, name = progress.budget.name,
+                    currency = progress.budget.currency,
+                    limitAmount = progress.budget.limitAmount.toDouble(),
+                    spent = progress.spent.toDouble(),
+                    remaining = progress.remaining.toDouble(),
+                    percentage = progress.percentage.toDouble(),
+                    alertLevel = progress.alertLevel.name,
+                    period = periodLabel,
+                    isArchived = progress.budget.isArchived
+                )
+            }
+        )
+        is CardRenderData.PlannedPayments -> CardPayloadDto.PlannedPayments(
+            upcoming = upcoming.map { item -> item.plannedPayment.toDto(now, categoryMap, accountMap) },
+            overdue = overdue.map { it.toDto(now, categoryMap, accountMap) }
+        )
+        is CardRenderData.Loans -> CardPayloadDto.Loans(
+            items = items.map { summary ->
+                LoanDto(
+                    id = summary.loan.id, name = summary.loan.name,
+                    loanType = summary.loan.loanType.name,
+                    currency = summary.loan.currency,
+                    principalAmount = summary.loan.principalAmount.toDouble(),
+                    totalPaid = summary.totalPaid.toDouble(),
+                    remainingBalance = summary.remainingBalance.toDouble(),
+                    interestAccrued = summary.interestAccrued.toDouble(),
+                    status = summary.loan.status.name,
+                    lenderOrBorrowerName = summary.loan.lenderOrBorrowerName,
+                    startDate = summary.loan.startDate,
+                    expectedSettlementDate = summary.loan.expectedSettlementDate
+                )
+            }
+        )
+        is CardRenderData.RecentActivities -> {
+            val txList = listState.groups.flatMap { it.transactions }
+            CardPayloadDto.RecentActivities(
+                transactions = txList.take(20).map { uiModel ->
+                    val tx = uiModel.item.transaction
+                    TransactionDto(
+                        id = tx.id, title = tx.name,
+                        amount = tx.amount.toDouble(),
+                        currency = tx.currency,
+                        type = tx.transactionType.name,
+                        categoryName = uiModel.categoryName.takeIf { it.isNotBlank() },
+                        accountName = uiModel.accountName,
+                        date = tx.timestamp,
+                        note = tx.note.takeIf { it.isNotBlank() }
+                    )
+                },
+                total = listState.groups.sumOf { it.transactions.size }
+            )
+        }
+        is CardRenderData.CategoryPieChart -> {
+            val total = items.sumOf { it.expense.toDouble() }
+            CardPayloadDto.CategoryBreakdown(
+                items = items.map { metrics ->
+                    CategoryBreakdownDto(
+                        categoryId = metrics.categoryId ?: 0L,
+                        categoryName = metrics.category,
+                        amount = metrics.expense.toDouble(),
+                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
+                        transactionCount = 0
+                    )
+                },
+                displayCurrency = displayCurrency
+            )
+        }
+        is CardRenderData.CategoryTreemap -> {
+            val total = items.sumOf { it.expense.toDouble() }
+            CardPayloadDto.CategoryBreakdown(
+                items = items.map { metrics ->
+                    CategoryBreakdownDto(
+                        categoryId = metrics.categoryId ?: 0L,
+                        categoryName = metrics.category,
+                        amount = metrics.expense.toDouble(),
+                        percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
+                        transactionCount = 0
+                    )
+                },
+                displayCurrency = displayCurrency
+            )
+        }
+        is CardRenderData.CashFlowComparison -> CardPayloadDto.CashFlowComparison(
+            current = currentSeries.points.map { p ->
+                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+            },
+            previous = previousSeries.points.map { p ->
+                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+            },
+            lastYear = lastYearSeries.points.map { p ->
+                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+            },
+            granularity = granularity.name,
+            baseCurrency = this.baseCurrency
+        )
+        is CardRenderData.IncomeExpenseBar -> CardPayloadDto.IncomeExpenseBar(
+            buckets = buckets.map { p ->
+                CashFlowPointDto(label = p.label, epochMillis = p.epochMillis, income = p.income.toDouble(), expense = p.expense.toDouble(), net = p.net.toDouble())
+            },
+            granularity = granularity.name,
+            baseCurrency = this.baseCurrency
+        )
+        is CardRenderData.CategorySpendingTrend -> CardPayloadDto.CategorySpendingTrend(
+            buckets = buckets.map { bucket ->
+                CardPayloadDto.CategorySpendingBucketDto(
+                    label = bucket.label,
+                    epochMillis = bucket.epochMillis,
+                    categories = bucket.categoryAmounts.map { ca ->
+                        CardPayloadDto.CategoryAmountDto(
+                            categoryId = ca.categoryId,
+                            categoryName = ca.categoryName,
+                            amount = ca.amount.toDouble(),
+                            nature = ca.nature.name
+                        )
+                    }
+                )
+            },
+            granularity = granularity.name,
+            baseCurrency = this.baseCurrency
+        )
+        is CardRenderData.TagUpSetPlot -> CardPayloadDto.TagUpSetPlot(
+            sets = sets.map { s ->
+                CardPayloadDto.TagSetDto(
+                    tagName = s.tagName, totalAmount = s.totalAmount.toDouble(),
+                    income = s.income.toDouble(), expense = s.expense.toDouble(),
+                    transactionCount = s.transactionCount
+                )
+            },
+            intersections = intersections.map { i ->
+                CardPayloadDto.TagIntersectionDto(
+                    tags = i.tags.toList(), amount = i.amount.toDouble(),
+                    income = i.income.toDouble(), expense = i.expense.toDouble(),
+                    transactionCount = i.transactionCount
+                )
+            },
+            baseCurrency = this.baseCurrency
+        )
+        is CardRenderData.AccountHero -> CardPayloadDto.NetWorth(
+            netWorth = balance.toDouble(),
+            income = income.toDouble(),
+            expense = expense.toDouble(),
+            cashFlow = (income - expense).toDouble(),
+            currency = account.currencyCode
+        )
+    }
+
+    private fun Filter.toDto(): FilterDto {
+        val tf = this.filter
+        val (timelineType, dateFrom, dateTo) = when (val tl = tf.timelineRange) {
+            is TimelineRange.AllTime -> Triple("ALL_TIME", null, null)
+            is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
+            is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
+            is TimelineRange.LastPeriod -> Triple("LAST_${tl.period.name}", null, null)
+            else -> Triple("ALL_TIME", null, null)
+        }
+        return FilterDto(
+            id = id, name = name,
+            timelineType = timelineType, dateFrom = dateFrom, dateTo = dateTo,
+            queryNote = tf.queryNote, isNoteRegex = tf.isNoteRegex,
+            queryPayee = tf.queryPayee, isPayeeRegex = tf.isPayeeRegex,
+            categoryIds = tf.categoryIds.toList(),
+            accountIds = tf.accountIds.toList(),
+            paymentMethods = tf.paymentMethods.map { it.name },
+            transactionTypes = tf.transactionTypes.map { it.name },
+            currencies = tf.currencies.toList(),
+            tags = tf.tags.toList(),
+            statuses = tf.statuses.map { it.name },
+            minAmount = tf.minAmount?.toDouble(),
+            maxAmount = tf.maxAmount?.toDouble(),
+            hasWarranty = tf.hasWarranty,
+            excludeFuture = tf.excludeFuture
+        )
+    }
+
+    private fun CreateFilterRequest.toTransactionFilter(): TransactionFilter {
+        val timelineRange = when (timelineType.uppercase()) {
+            "ALL_TIME" -> TimelineRange.AllTime
+            "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo)
+            "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+            "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
+            "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
+            "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
+            "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
+            else -> TimelineRange.AllTime
+        }
+        return TransactionFilter(
+            timelineRange = timelineRange,
+            queryNote = queryNote,
+            isNoteRegex = isNoteRegex,
+            queryPayee = queryPayee,
+            isPayeeRegex = isPayeeRegex,
+            categoryIds = categoryIds.toSet(),
+            accountIds = accountIds.toSet(),
+            paymentMethods = paymentMethods.mapNotNull { m ->
+                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+            }.toSet(),
+            transactionTypes = transactionTypes.mapNotNull { t ->
+                TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+            }.toSet(),
+            currencies = currencies.toSet(),
+            tags = tags.toSet(),
+            statuses = statuses.mapNotNull { s ->
+                TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) }
+            }.toSet(),
+            minAmount = minAmount?.let { BigDecimal.valueOf(it) },
+            maxAmount = maxAmount?.let { BigDecimal.valueOf(it) },
+            hasWarranty = hasWarranty,
+            excludeFuture = excludeFuture
+        )
     }
 
     private fun loadIndexHtml(): String {

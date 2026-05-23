@@ -7,7 +7,10 @@ import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -54,7 +57,10 @@ class WebServerManager @Inject constructor(
     private val loanRepository: LoanRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val tagRepository: TagRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    private val filterRepository: FilterRepository,
+    private val cardRepository: CardRepository,
+    private val cardComputerRegistry: CardComputerRegistry
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -102,7 +108,10 @@ class WebServerManager @Inject constructor(
             loanRepository = loanRepository,
             plannedPaymentRepository = plannedPaymentRepository,
             tagRepository = tagRepository,
-            currencyRepository = currencyRepository
+            currencyRepository = currencyRepository,
+            filterRepository = filterRepository,
+            cardRepository = cardRepository,
+            cardComputerRegistry = cardComputerRegistry
         )
 
         try {

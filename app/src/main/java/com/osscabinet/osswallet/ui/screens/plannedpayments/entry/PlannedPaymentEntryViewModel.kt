@@ -237,7 +237,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetCategoryId -> _state.update { it.copy(selectedCategoryId = event.id) }
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }
-            is PlannedPaymentEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation) }
+            is PlannedPaymentEntryEvent.SetLocation -> _state.update { it.copy(gpsLocation = event.gpsLocation, location = event.location ?: "") }
             is PlannedPaymentEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
             is PlannedPaymentEntryEvent.SetWarrantyExpiration -> _state.update { it.copy(warrantyExpirationMillis = event.millis) }
             is PlannedPaymentEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }

@@ -128,6 +128,7 @@ fun TransactionFormBody(
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
                             gpsLocation = state.gpsLocation,
+                            locationName = state.location,
                             linkedTransactions = state.displayLinkedTxs
                         ),
                         accounts = state.accounts,

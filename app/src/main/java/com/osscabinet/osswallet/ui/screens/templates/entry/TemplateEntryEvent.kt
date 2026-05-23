@@ -15,7 +15,7 @@ sealed class TemplateEntryEvent {
     data class SetTransferRate(val rate: BigDecimal) : TemplateEntryEvent()
     data class SetNote(val note: String) : TemplateEntryEvent()
     data class SetPayee(val payee: String) : TemplateEntryEvent()
-    data class SetLocation(val gpsLocation: String?) : TemplateEntryEvent()
+    data class SetLocation(val gpsLocation: String?, val location: String? = null) : TemplateEntryEvent()
     data class SetWarrantyEnabled(val enabled: Boolean) : TemplateEntryEvent()
     data class SetWarrantyExpiration(val millis: Long) : TemplateEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : TemplateEntryEvent()

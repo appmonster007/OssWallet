@@ -26,6 +26,7 @@ data class TransactionPrefillDTO(
     val payee: String = "",
     val note: String = "",
     val gpsLocation: String? = null,
+    val location: String? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED,
     // For transfers and linking
@@ -63,6 +64,7 @@ data class TransactionPrefillDTO(
                 payee = transaction.payee,
                 note = transaction.note,
                 gpsLocation = transaction.gpsLocation,
+                location = transaction.location,
                 warrantyExpiration = transaction.warrantyExpiration,
                 status = transaction.status,
                 clonedFromTransactionId = clonedFromId ?: transaction.id,

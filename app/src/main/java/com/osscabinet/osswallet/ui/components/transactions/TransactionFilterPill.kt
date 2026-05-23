@@ -71,13 +71,13 @@ fun TransactionFilterPill(
     savedFilters: List<Filter>,
     onFilterEvent: (FilterEvent) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit,
-    onAddTag: (String, Int) -> Unit = { _, _ -> },
-    onDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
+    onDismiss: (() -> Unit)? = null,
     bottomPadding: Dp = 16.dp,
     initialMorph: Float = 0f,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
-    baseFilter: TransactionFilter = TransactionFilter()
+    baseFilter: TransactionFilter = TransactionFilter(),
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -87,17 +87,23 @@ fun TransactionFilterPill(
 
     // 0f = collapsed pill  |  1f = expanded filter card
     val morph = remember { Animatable(initialMorph) }
-    val isOpen by remember { derivedStateOf { morph.value > 0f } }
+
+    // The pill is "open" if it's expanded OR if it's an overlay that can be dismissed.
+    // When isOpen is true, we intercept taps outside the pill and handle the back press.
+    val isOpen by remember { derivedStateOf { (morph.value > 0f) || (onDismiss != null) } }
 
     // Always-fresh reference to the dismiss callback so coroutines launched from
     // remembered lambdas don't hold a stale capture.
     val onDismissState = rememberUpdatedState(onDismiss)
 
+    // Stable animation functions — keyed on morph + scope so they are recreated only
+    // when those objects change (i.e. never in practice).
+    val actions = remember(morph, scope, onDismissState) {
+        PillActions(morph, scope, onDismissState)
+    }
+
     BackHandler(enabled = isOpen) {
-        scope.launch {
-            morph.animateTo(0f, pillSpring())
-            onDismissState.value()
-        }
+        actions.collapse()
     }
 
     val pillH = 56.dp
@@ -113,12 +119,6 @@ fun TransactionFilterPill(
         val expandedTopPx  = maxHPx - bottomPx - expandedHPx
         // Total pixel distance the pill travels between collapsed and expanded.
         val dragRange = (collapsedTopPx - expandedTopPx).coerceAtLeast(1f)
-
-        // Stable animation functions — keyed on morph + scope so they are recreated only
-        // when those objects change (i.e. never in practice).
-        val actions = remember(morph, scope, onDismissState) {
-            PillActions(morph, scope, onDismissState)
-        }
 
         // NestedScrollConnection: collapses the pill when expanded content reaches its top
         // and the user continues dragging downward.
@@ -281,7 +281,7 @@ fun TransactionFilterPill(
                     onAddTag = onAddTag,
                     onClose = {},
                     backgroundColor = AppColors.cardSurfaceProminent,
-                    accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
+                    accountNames = remember(accounts) { accounts.associateBy({ it.id }, { it.name }) },
                     filterRules = filterRules.copy(allowTimelineSelection = false),
                     baseFilter = baseFilter
                 )
@@ -301,14 +301,14 @@ private fun pillSpring() = spring<Float>(Spring.DampingRatioNoBouncy, Spring.Sti
 private class PillActions(
     private val morph: Animatable<Float, *>,
     private val scope: CoroutineScope,
-    private val onDismissState: State<() -> Unit>,
+    private val onDismissState: State<(() -> Unit)?>,
 ) {
     fun expand()  { scope.launch { morph.animateTo(1f, pillSpring()) } }
 
     fun collapse() {
         scope.launch {
             morph.animateTo(0f, pillSpring())
-            onDismissState.value()
+            onDismissState.value?.invoke()
         }
     }
 
@@ -316,7 +316,7 @@ private class PillActions(
         scope.launch {
             val target = if (morph.value >= 0.5f) 1f else 0f
             morph.animateTo(target, pillSpring())
-            if (morph.value == 0f) onDismissState.value()
+            if (morph.value == 0f) onDismissState.value?.invoke()
         }
     }
 }

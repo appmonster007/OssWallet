@@ -74,26 +74,32 @@ fun OssWalletNavGraph(
     )
 
     val dashboardUiState by vms.dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    // Observe so that any change triggers recomposition (needed for the splash condition below),
+    // but we do NOT use this as a remember key — that would destroy and rebuild the NavHost
+    // every time DataStore restarts its flow (e.g. after the app comes back from background).
     val isOnboardingCompleted by vms.settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
-    // Freeze the start destination to whichever value DataStore first resolves to.
-    // NavHost does not support a changing startDestination — if the value flips after
-    // first composition the entire NavHost is destroyed and rebuilt, which prevents
-    // DashboardViewModel from ever emitting Success and locks the splash screen forever.
-    val startDestination = remember(isOnboardingCompleted) {
-        if (isOnboardingCompleted == null) return@remember null
-        if (isOnboardingCompleted == true) DashboardRoute() else OnboardingRoute
+    // Read the StateFlow value synchronously at first composition. StateFlow.value is always
+    // available immediately — no suspension needed. This produces a stable startDestination
+    // that is locked for the lifetime of this composable and never causes the NavHost to rebuild.
+    // If DataStore hasn't written anything yet the StateFlow initial value is null, so we fall
+    // back to OnboardingRoute (safe: the onboarding screen navigates to Dashboard on completion).
+    val startDestination: Any = remember {
+        val completed = vms.settingsViewModel.isOnboardingCompleted.value
+        if (completed == true) DashboardRoute() else OnboardingRoute
     }
 
-    // While DataStore has not yet resolved isOnboardingCompleted (still null), keep the
-    // splash on screen regardless of dashboardUiState — the NavHost has not started yet.
+    // Keep the splash visible until DataStore has resolved isOnboardingCompleted AND the
+    // dashboard data has finished loading. isOnboardingCompleted == null means DataStore has
+    // not yet emitted — keep the splash on. Once it resolves, gate on dashboardUiState only
+    // when the resolved destination is the Dashboard (no dashboard load needed for onboarding).
     SideEffect {
+        val destinationIsOnboarding = startDestination is OnboardingRoute
         onSplashConditionChanged(
-            startDestination == null || dashboardUiState is DashboardUiState.Loading
+            isOnboardingCompleted == null ||
+                (!destinationIsOnboarding && dashboardUiState is DashboardUiState.Loading)
         )
     }
-
-    if (startDestination == null) return
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -206,7 +212,7 @@ fun OssWalletNavGraph(
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = startDestination!!
+                startDestination = startDestination
             ) {
                 composable<OnboardingRoute>(
                     enterTransition = { FadeEnterTransitionSpec },

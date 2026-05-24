@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -40,14 +42,35 @@ class ComputationRepositoryImpl @Inject constructor(
     }
 
     init {
+        // Pre-check local rates to set initial hasLoaded state
+        applicationScope.launch {
+            val localRates = currencyRepository.getExchangeRates(settingsRepository.currency.first(), forceRefresh = false)
+            if (localRates.isNotEmpty()) {
+                _exchangeRates.value = localRates.mapValues { BigDecimal.valueOf(it.value) }
+                _hasLoadedExchangeRates.value = true
+            }
+        }
+
         // Automatically fetch rates when currency changes
         settingsRepository.currency
             .onEach { currency ->
-                _hasLoadedExchangeRates.value = false
-                val rates = currencyRepository.getExchangeRates(currency)
-                    .mapValues { BigDecimal.valueOf(it.value) }
-                _exchangeRates.value = rates
-                _hasLoadedExchangeRates.value = true
+                // Only set to false if we have NO rates at all (first run)
+                if (_exchangeRates.value.isEmpty()) {
+                    _hasLoadedExchangeRates.value = false
+                }
+
+                try {
+                    val rates = currencyRepository.getExchangeRates(currency)
+                        .mapValues { BigDecimal.valueOf(it.value) }
+                    _exchangeRates.value = rates
+                } catch (e: Exception) {
+                    // Fallback to empty rates if everything fails to avoid blocking the splash screen forever
+                    if (_exchangeRates.value.isEmpty()) {
+                        _exchangeRates.value = emptyMap()
+                    }
+                } finally {
+                    _hasLoadedExchangeRates.value = true
+                }
             }
             .launchIn(applicationScope)
     }

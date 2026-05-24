@@ -98,7 +98,6 @@ class AnalyticsViewModel @Inject constructor(
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
-                val hasLoadedRates = args[5] as Boolean
 
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[6] as List<PlannedPayment>
@@ -111,10 +110,6 @@ class AnalyticsViewModel @Inject constructor(
 
                 @Suppress("UNCHECKED_CAST")
                 val tags = args[9] as List<Tag>
-
-                if (!hasLoadedRates) {
-                    return@combine AnalyticsUiState.Loading
-                }
 
                 AnalyticsUiState.Success(
                     profileId = profileId,
@@ -132,7 +127,7 @@ class AnalyticsViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = AnalyticsUiState.Loading
         )
 

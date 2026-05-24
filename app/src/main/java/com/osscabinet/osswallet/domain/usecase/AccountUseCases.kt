@@ -50,7 +50,7 @@ class AccountUseCases(
                         accountId = accountId,
                         amount = amount,
                         currency = curr,
-                        categoryId = 1001L,
+                        categoryId = 1004L,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
                         transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE

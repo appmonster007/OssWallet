@@ -9,7 +9,8 @@ data class CreateAccountRequest(
     val structureType: String = "SAVINGS",
     val colorHex: String = "#4CAF50",
     val icon: String = "account_balance",
-    val allowedCurrencies: List<String> = emptyList()
+    val allowedCurrencies: List<String> = emptyList(),
+    val initialBalance: Double? = null
 )
 
 @Serializable

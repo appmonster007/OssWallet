@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.web
 import android.content.Context
 import com.osscabinet.ossWallet.data.web.dto.AccountDto
 import com.osscabinet.ossWallet.data.web.dto.AddCardRequest
+import com.osscabinet.ossWallet.data.web.dto.CardFilterUpdateDto
 import com.osscabinet.ossWallet.data.web.dto.ApiResponse
 import com.osscabinet.ossWallet.data.web.dto.AuthRequest
 import com.osscabinet.ossWallet.data.web.dto.AuthResponse
@@ -295,17 +296,7 @@ class WebApiRoutes(
                         val paged = sorted.drop(page * limit).take(limit)
 
                         val dtos = paged.map { tx ->
-                            TransactionDto(
-                                id = tx.id,
-                                title = tx.name,
-                                amount = tx.amount.toDouble(),
-                                currency = tx.currency,
-                                type = tx.transactionType.name,
-                                categoryName = categoryMap[tx.categoryId]?.name,
-                                accountName = accountMap[tx.accountId]?.name ?: "",
-                                date = tx.timestamp,
-                                note = tx.note.takeIf { it.isNotBlank() }
-                            )
+                            tx.toDto(categoryMap, accountMap)
                         }
                         call.respond(
                             ApiResponse(
@@ -376,17 +367,7 @@ class WebApiRoutes(
                         val accountMap =
                             accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
                         val created = tx.copy(id = newId)
-                        val dto = TransactionDto(
-                            id = created.id,
-                            title = created.name,
-                            amount = created.amount.toDouble(),
-                            currency = created.currency,
-                            type = created.transactionType.name,
-                            categoryName = categoryMap[created.categoryId]?.name,
-                            accountName = accountMap[created.accountId]?.name ?: "",
-                            date = created.timestamp,
-                            note = created.note.takeIf { it.isNotBlank() }
-                        )
+                        val dto = created.toDto(categoryMap, accountMap)
                         call.respond(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = dto)
@@ -1370,6 +1351,18 @@ class WebApiRoutes(
                             allowedCurrencies = req.allowedCurrencies
                         )
                         accountRepository.insertAccount(account, profileId)
+                        if (req.initialBalance != null && req.initialBalance != 0.0) {
+                            val initTx = Transaction(
+                                name = "Initial Balance",
+                                amount = BigDecimal.valueOf(Math.abs(req.initialBalance)),
+                                currency = account.currencyCode,
+                                transactionType = if (req.initialBalance >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
+                                accountId = account.id,
+                                categoryId = 0L,
+                                timestamp = System.currentTimeMillis()
+                            )
+                            transactionRepository.insertTransaction(initTx, profileId)
+                        }
                         val allTransactions =
                             transactionRepository.getAllTransactionsSync(profileId)
                         val balance = allTransactions.filter { it.accountId == account.id }
@@ -1399,6 +1392,35 @@ class WebApiRoutes(
                                 error = e.message ?: "Internal error"
                             )
                         )
+                    }
+                }
+
+                get("/accounts/{id}") {
+                    if (!authenticate(authSessionManager)) return@get
+                    try {
+                        val profileId = settingsRepository.currentProfileId.first()
+                        val id = call.parameters["id"]
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, error = "Invalid id"))
+                        val account = accountRepository.getAllAccountsSync(profileId).find { it.id == id }
+                            ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Account not found"))
+                        val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                        val txForAccount = allTransactions.filter { it.accountId == account.id }
+                        val balance = txForAccount.fold(BigDecimal.ZERO) { acc, tx ->
+                            when (tx.transactionType) {
+                                TransactionType.INCOME -> acc + tx.amount
+                                TransactionType.EXPENSE -> acc - tx.amount
+                                TransactionType.TRANSFER -> acc - tx.amount
+                            }
+                        }
+                        val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
+                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+                        val recentTx = txForAccount.sortedByDescending { it.timestamp }.take(20).map { it.toDto(categoryMap, accountMap) }
+                        call.respond(ApiResponse(success = true, data = mapOf(
+                            "account" to AccountDto(id = account.id, name = account.name, currency = account.currencyCode, balance = balance.toDouble(), type = account.structureType.name),
+                            "recentTransactions" to recentTx
+                        )))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
                     }
                 }
 
@@ -1507,15 +1529,7 @@ class WebApiRoutes(
                             categoryRepository.getAllCategoriesSync().associateBy { it.id }
                         val accountMap =
                             accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(
-                            ApiResponse(
-                            success = true, data = TransactionDto(
-                            id = tx.id, title = tx.name, amount = tx.amount.toDouble(),
-                            currency = tx.currency, type = tx.transactionType.name,
-                            categoryName = categoryMap[tx.categoryId]?.name,
-                            accountName = accountMap[tx.accountId]?.name ?: "",
-                            date = tx.timestamp, note = tx.note.takeIf { it.isNotBlank() }
-                        )))
+                        call.respond(ApiResponse(success = true, data = tx.toDto(categoryMap, accountMap)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
@@ -1581,19 +1595,7 @@ class WebApiRoutes(
                             categoryRepository.getAllCategoriesSync().associateBy { it.id }
                         val accountMap =
                             accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(
-                            ApiResponse(
-                            success = true, data = TransactionDto(
-                            id = updated.id,
-                            title = updated.name,
-                            amount = updated.amount.toDouble(),
-                            currency = updated.currency,
-                            type = updated.transactionType.name,
-                            categoryName = categoryMap[updated.categoryId]?.name,
-                            accountName = accountMap[updated.accountId]?.name ?: "",
-                            date = updated.timestamp,
-                            note = updated.note.takeIf { it.isNotBlank() }
-                        )))
+                        call.respond(ApiResponse(success = true, data = updated.toDto(categoryMap, accountMap)))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
@@ -2575,6 +2577,78 @@ class WebApiRoutes(
                     }
                 }
 
+                put("/dashboard/cards/{cardId}") {
+                    if (!authenticate(authSessionManager)) return@put
+                    try {
+                        val cardId = call.parameters["cardId"]
+                            ?: return@put call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse<Unit>(success = false, error = "Invalid cardId")
+                            )
+                        val req = call.receive<CardFilterUpdateDto>()
+                        val timelineRange: TimelineRange = when (req.timelineType?.uppercase()) {
+                            "MONTH", "MONTHLY" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                            "YEAR", "YEARLY" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
+                            "WEEK", "WEEKLY" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
+                            "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
+                            "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
+                            "HALF_YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR)
+                            "CUSTOM" -> if (req.dateFrom != null && req.dateTo != null)
+                                TimelineRange.CustomRange(req.dateFrom, req.dateTo)
+                            else TimelineRange.AllTime
+                            "ALL_TIME" -> TimelineRange.AllTime
+                            else -> TimelineRange.AllTime
+                        }
+                        val newFilter = TransactionFilter(
+                            timelineRange = timelineRange,
+                            accountIds = req.accountIds.toSet(),
+                            categoryIds = req.categoryIds.toSet(),
+                            transactionTypes = req.transactionTypes.mapNotNull {
+                                runCatching { TransactionType.valueOf(it.uppercase()) }.getOrNull()
+                            }.toSet(),
+                            tags = req.tags.toSet(),
+                            currencies = req.currencies.toSet(),
+                            statuses = req.statuses.mapNotNull {
+                                runCatching { TransactionStatus.valueOf(it.uppercase()) }.getOrNull()
+                            }.toSet(),
+                            paymentMethods = req.paymentMethods.mapNotNull {
+                                runCatching { PaymentMethod.valueOf(it.uppercase()) }.getOrNull()
+                            }.toSet(),
+                            minAmount = req.minAmount?.let { BigDecimal.valueOf(it) },
+                            maxAmount = req.maxAmount?.let { BigDecimal.valueOf(it) },
+                            queryNote = req.queryNote,
+                            queryPayee = req.queryPayee,
+                            excludeFuture = req.excludeFuture
+                        )
+                        cardRepository.updateDashboardCard(cardId) { config ->
+                            when (config) {
+                                is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig -> config.copy(filter = newFilter)
+                                is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> config.copy(filter = newFilter)
+                                else -> config
+                            }
+                        }
+                        call.respond(ApiResponse(success = true, data = mapOf("updated" to cardId)))
+                    } catch (e: Exception) {
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ApiResponse<Unit>(success = false, error = e.message ?: "Internal error")
+                        )
+                    }
+                }
+
                 put("/dashboard/cards/reorder") {
                     if (!authenticate(authSessionManager)) return@put
                     try {
@@ -2930,10 +3004,18 @@ class WebApiRoutes(
                         amount = tx.amount.toDouble(),
                         currency = tx.currency,
                         type = tx.transactionType.name,
+                        categoryId = tx.categoryId,
                         categoryName = uiModel.categoryName.takeIf { it.isNotBlank() },
+                        accountId = tx.accountId,
                         accountName = uiModel.accountName,
                         date = tx.timestamp,
-                        note = tx.note.takeIf { it.isNotBlank() }
+                        note = tx.note.takeIf { it.isNotBlank() },
+                        payee = tx.payee.takeIf { it.isNotBlank() },
+                        tags = tx.tags.toList(),
+                        status = tx.status.name,
+                        paymentMethod = tx.paymentMethod?.name,
+                        warrantyExpiration = tx.warrantyExpiration,
+                        location = tx.location,
                     )
                 },
                 total = listState.groups.sumOf { it.transactions.size }
@@ -3194,3 +3276,26 @@ class WebApiRoutes(
         }
     }
 }
+
+private fun com.osscabinet.ossWallet.domain.model.Transaction.toDto(
+    categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
+    accountMap: Map<String, com.osscabinet.ossWallet.domain.model.Account>
+) = com.osscabinet.ossWallet.data.web.dto.TransactionDto(
+    id = id,
+    title = name,
+    amount = amount.toDouble(),
+    currency = currency,
+    type = transactionType.name,
+    categoryId = categoryId,
+    categoryName = categoryMap[categoryId]?.name,
+    accountId = accountId,
+    accountName = accountMap[accountId]?.name ?: "",
+    date = timestamp,
+    note = note.takeIf { it.isNotBlank() },
+    payee = payee.takeIf { it.isNotBlank() },
+    tags = tags.toList(),
+    status = status.name,
+    paymentMethod = paymentMethod?.name,
+    warrantyExpiration = warrantyExpiration,
+    location = location
+)

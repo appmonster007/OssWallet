@@ -10,6 +10,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -18,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -74,32 +77,30 @@ fun OssWalletNavGraph(
     )
 
     val dashboardUiState by vms.dashboardViewModel.uiState.collectAsStateWithLifecycle()
-    // Observe so that any change triggers recomposition (needed for the splash condition below),
-    // but we do NOT use this as a remember key — that would destroy and rebuild the NavHost
-    // every time DataStore restarts its flow (e.g. after the app comes back from background).
-    val isOnboardingCompleted by vms.settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
-    // Read the StateFlow value synchronously at first composition. StateFlow.value is always
-    // available immediately — no suspension needed. This produces a stable startDestination
-    // that is locked for the lifetime of this composable and never causes the NavHost to rebuild.
-    // If DataStore hasn't written anything yet the StateFlow initial value is null, so we fall
-    // back to OnboardingRoute (safe: the onboarding screen navigates to Dashboard on completion).
-    val startDestination: Any = remember {
-        val completed = vms.settingsViewModel.isOnboardingCompleted.value
-        if (completed == true) DashboardRoute() else OnboardingRoute
+    // Lock startDestination once — suspend until DataStore emits the first real value.
+    // Using LaunchedEffect(Unit) ensures this runs exactly once per composition lifecycle,
+    // and filterNotNull().first() suspends on the main thread without blocking it.
+    var startDestination by remember { mutableStateOf<Any?>(null) }
+    LaunchedEffect(Unit) {
+        val completed = vms.settingsViewModel.isOnboardingCompleted
+            .filterNotNull()
+            .first()
+        startDestination = if (completed) DashboardRoute() else OnboardingRoute
     }
 
-    // Keep the splash visible until DataStore has resolved isOnboardingCompleted AND the
-    // dashboard data has finished loading. isOnboardingCompleted == null means DataStore has
-    // not yet emitted — keep the splash on. Once it resolves, gate on dashboardUiState only
-    // when the resolved destination is the Dashboard (no dashboard load needed for onboarding).
+    // Keep the splash visible until startDestination is resolved AND (if going to Dashboard)
+    // the initial data load completes.
     SideEffect {
-        val destinationIsOnboarding = startDestination is OnboardingRoute
         onSplashConditionChanged(
-            isOnboardingCompleted == null ||
-                (!destinationIsOnboarding && dashboardUiState is DashboardUiState.Loading)
+            startDestination == null ||
+                (startDestination is DashboardRoute && dashboardUiState is DashboardUiState.Loading)
         )
     }
+
+    // Splash covers the blank frame while DataStore resolves (<50ms on any device).
+    // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
+    val resolvedDestination = startDestination ?: return
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -212,7 +213,7 @@ fun OssWalletNavGraph(
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = startDestination
+                startDestination = resolvedDestination
             ) {
                 composable<OnboardingRoute>(
                     enterTransition = { FadeEnterTransitionSpec },

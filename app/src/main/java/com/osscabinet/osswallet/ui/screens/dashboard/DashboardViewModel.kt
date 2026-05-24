@@ -162,8 +162,7 @@ class DashboardViewModel @Inject constructor(
                     @Suppress("UNCHECKED_CAST")
                     val rates = args[3] as Map<String, BigDecimal>
                     val baseCurrency = args[4] as String
-                    val hasLoadedExchangeRates = args[5] as Boolean
-                    val cardsCfg = args[6] as DashboardCardsConfig
+                    // hasLoadedExchangeRates and cardsCfg are used from args directly below
 
                     @Suppress("UNCHECKED_CAST")
                     val plannedPayments = args[7] as List<PlannedPayment>
@@ -180,10 +179,6 @@ class DashboardViewModel @Inject constructor(
                     @Suppress("UNCHECKED_CAST")
                     val loanPayments =
                         args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
-
-                    if (!hasLoadedExchangeRates) {
-                        return@flatMapLatest flowOf(DashboardUiState.Loading)
-                    }
 
                     val baseInput = CardInput(
                         profileId = profileId,
@@ -202,7 +197,7 @@ class DashboardViewModel @Inject constructor(
 
                     flow<DashboardUiState> {
                         val cardDataMap = computeCardUseCase.computeAll(
-                            configs = cardsCfg.cards,
+                            configs = (args[6] as DashboardCardsConfig).cards,
                             input = baseInput
                         )
 
@@ -283,7 +278,7 @@ class DashboardViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = DashboardUiState.Loading
         )
 

@@ -72,6 +72,7 @@ fun AnalyticsScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
+    onAddClick: (com.osscabinet.ossWallet.domain.model.TransactionType?, Long?) -> Unit = { _, _ -> },
     cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -85,10 +86,15 @@ fun AnalyticsScreen(
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
         initialValue = true
     )
+    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -119,6 +125,19 @@ fun AnalyticsScreen(
                         }
                     }
                 )
+            },
+            floatingActionButton = {
+                if (isTopLevel) {
+                    com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = allTemplates,
+                        categories = allCategories,
+                        onAddClick = { type, templateId ->
+                            isFabExpanded = false
+                            onAddClick(type, templateId)
+                        }
+                    )
+                }
             }
         ) { innerPadding ->
             when (val state = uiState) {

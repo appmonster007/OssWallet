@@ -127,7 +127,7 @@ fun RecentActivitiesCardPreview() {
         currency = "USD",
         transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = 1001L
+        categoryId = 1004L
     )
     val mockUiModel = com.osscabinet.ossWallet.domain.model.TransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),

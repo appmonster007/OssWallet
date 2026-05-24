@@ -260,6 +260,7 @@ class DashboardViewModel @Inject constructor(
 
                         emit(
                             DashboardUiState.Success(
+                                profileId = profileId,
                                 accounts = accounts.filter { !it.isArchived },
                                 cardDataMap = cardDataMap,
                                 allTransactions = allTransactions,
@@ -273,7 +274,8 @@ class DashboardViewModel @Inject constructor(
                                 exchangeRates = rates,
                                 plannedPayments = plannedPayments,
                                 budgets = budgets,
-                                loans = loans
+                                loans = loans,
+                                loanPayments = loanPayments.groupBy { it.loanId }
                             )
                         )
                     }
@@ -344,6 +346,7 @@ class DashboardViewModel @Inject constructor(
 sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
+        val profileId: Int,
         val accounts: List<Account>,
         val cardDataMap: Map<String, CardRenderData>,
         val allTransactions: List<Transaction>,
@@ -354,7 +357,8 @@ sealed class DashboardUiState {
         val exchangeRates: Map<String, BigDecimal>,
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),
-        val loans: List<Loan> = emptyList()
+        val loans: List<Loan> = emptyList(),
+        val loanPayments: Map<Long, List<com.osscabinet.ossWallet.domain.model.LoanPayment>> = emptyMap()
     ) : DashboardUiState()
 
     data class Error(val message: String) : DashboardUiState()

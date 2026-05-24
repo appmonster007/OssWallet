@@ -18,10 +18,11 @@ class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans
             "BORROWED" -> input.loans.filter { it.loanType == LoanType.BORROWED }
             else -> input.loans
         }
+        val allTransactions = input.allProfileTransactions.ifEmpty { input.transactions }
         val items = filtered.take(config.maxItems).map { loan ->
             LoanService.buildSummaryFromTransactions(
                 loan = loan,
-                transactions = input.transactions,
+                transactions = allTransactions,
                 exchangeRates = input.exchangeRates,
                 now = now,
                 allCategories = input.categories

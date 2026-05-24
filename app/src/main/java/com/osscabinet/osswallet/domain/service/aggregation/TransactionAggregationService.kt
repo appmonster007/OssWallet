@@ -112,7 +112,7 @@ object TransactionAggregationService {
         // Ensure expense is negative in FinancialSummary if ABS was used in MetricConfig
         // Our StandardMetrics.EXPENSE_SUM uses ABS transform.
         return FinancialSummary(
-            totalAmount = income.subtract(expense), 
+            totalAmount = data.metrics["total"] ?: income.subtract(expense),
             income = income,
             expense = expense.negate(), 
             transfer = transfer,

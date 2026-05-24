@@ -43,7 +43,6 @@ import com.osscabinet.ossWallet.ui.navigation.graphs.transactionsGraph
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
-import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardUiState
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.screens.main.MainViewModel
 import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
@@ -76,8 +75,6 @@ fun OssWalletNavGraph(
         mainViewModel = hiltViewModel()
     )
 
-    val dashboardUiState by vms.dashboardViewModel.uiState.collectAsStateWithLifecycle()
-
     // Lock startDestination once — suspend until DataStore emits the first real value.
     // Using LaunchedEffect(Unit) ensures this runs exactly once per composition lifecycle,
     // and filterNotNull().first() suspends on the main thread without blocking it.
@@ -89,13 +86,11 @@ fun OssWalletNavGraph(
         startDestination = if (completed) DashboardRoute() else OnboardingRoute
     }
 
-    // Keep the splash visible until startDestination is resolved AND (if going to Dashboard)
-    // the initial data load completes.
+    // Only gate the splash on the DataStore read (~50ms). Dashboard data loads after the splash
+    // dismisses and shows AeonShimmer while it does — gating on dashboardUiState caused the splash
+    // to hang indefinitely when the currency network call timed out on a stale cache.
     SideEffect {
-        onSplashConditionChanged(
-            startDestination == null ||
-                (startDestination is DashboardRoute && dashboardUiState is DashboardUiState.Loading)
-        )
+        onSplashConditionChanged(startDestination == null)
     }
 
     // Splash covers the blank frame while DataStore resolves (<50ms on any device).

@@ -98,6 +98,11 @@ class AnalyticsViewModel @Inject constructor(
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
+                val hasLoadedRates = args[5] as Boolean
+
+                if (!hasLoadedRates) {
+                    return@combine AnalyticsUiState.Loading
+                }
 
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[6] as List<PlannedPayment>
@@ -127,7 +132,7 @@ class AnalyticsViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.Eagerly,
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = AnalyticsUiState.Loading
         )
 

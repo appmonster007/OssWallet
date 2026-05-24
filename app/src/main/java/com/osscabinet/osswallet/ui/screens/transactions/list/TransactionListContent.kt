@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -49,14 +47,8 @@ fun TransactionListContent(
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    revealedCardIds: List<Long> = emptyList(),
-    allTemplates: List<com.osscabinet.ossWallet.domain.model.Template> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    onAddClick: (com.osscabinet.ossWallet.domain.model.TransactionType?, Long?) -> Unit = { _, _ -> },
-    expandableFabEnabled: Boolean = true
+    revealedCardIds: List<Long> = emptyList()
 ) {
-    var isFabExpanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.background(AppColors.transparent),
@@ -69,19 +61,6 @@ fun TransactionListContent(
                     isTopLevel = isTopLevel,
                     onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
                 )
-            },
-            floatingActionButton = {
-                if (isTopLevel) {
-                    com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu(
-                        isExpanded = isFabExpanded,
-                        templates = allTemplates,
-                        categories = allCategories,
-                        onAddClick = { type, templateId ->
-                            isFabExpanded = false
-                            onAddClick(type, templateId)
-                        }
-                    )
-                }
             }
         ) { innerPadding ->
             Column(

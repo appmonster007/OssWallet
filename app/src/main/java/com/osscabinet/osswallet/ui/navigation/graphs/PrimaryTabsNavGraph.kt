@@ -127,14 +127,6 @@ fun NavGraphBuilder.primaryTabsGraph(
                 val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
                 navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
             },
-            onAddClick = { type, templateId ->
-                if (templateId != null) {
-                    vms.transactionViewModel.setTemplatePrefill(templateId)
-                    navController.navigate(TransactionEntryRoute())
-                } else {
-                    navController.navigate(TransactionEntryRoute(transactionType = type?.toInt() ?: -1))
-                }
-            },
             templateViewModel = vms.templateViewModel,
             filterJson = route.filterJson.ifEmpty { null }
         )
@@ -171,14 +163,6 @@ fun NavGraphBuilder.primaryTabsGraph(
             onSplitTransactionClick = { id ->
                 vms.transactionViewModel.setSplitTransactionId(id)
                 navController.navigate(TransactionEntryRoute())
-            },
-            onAddClick = { type, templateId ->
-                if (templateId != null) {
-                    vms.transactionViewModel.setTemplatePrefill(templateId)
-                    navController.navigate(TransactionEntryRoute())
-                } else {
-                    navController.navigate(TransactionEntryRoute(transactionType = type?.toInt() ?: -1))
-                }
             },
             cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
         )

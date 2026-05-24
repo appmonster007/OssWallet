@@ -214,7 +214,7 @@ fun RecentActivitiesScreenPreview() {
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = 1004L
+        categoryId = 1001L
     )
     val mockUiModel = TransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),

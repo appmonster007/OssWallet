@@ -8,5 +8,6 @@ data class CategoryBreakdownDto(
     val categoryName: String,
     val amount: Double,
     val percentage: Double,
-    val transactionCount: Int
+    val transactionCount: Int,
+    val colorHex: String? = null
 )

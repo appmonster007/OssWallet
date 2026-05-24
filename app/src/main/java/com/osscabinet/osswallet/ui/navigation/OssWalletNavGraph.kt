@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -143,20 +141,12 @@ fun OssWalletNavGraph(
         }
     }
 
-    // Drawer close takes priority — registered second so it fires first when open
-    BackHandler(enabled = drawerState.isOpen) {
-        scope.launch { drawerState.close() }
-    }
-
-    // Disable NavController's OnBackPressedCallback while drawer is open so the BackHandler
-    // above can intercept back presses (NavHost registers deeper in the tree = higher LIFO priority).
-    SideEffect {
-        navController.enableOnBackPressed(!drawerState.isOpen)
-    }
-
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = false,
+        // Enable gestures only when the drawer is open so Material3's built-in scrim tap-to-close
+        // works, while keeping full-screen swipe-to-open disabled when closed (the 20dp edge strip
+        // below handles open gestures exclusively).
+        gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             AppDrawerContent(
                 currentProfile = currentProfile,
@@ -242,17 +232,10 @@ fun OssWalletNavGraph(
                 planningGraph(navController, vms)
             }
 
-            // Custom scrim: gesturesEnabled=false disables Material3's built-in scrim click,
-            // so we provide our own overlay that closes the drawer on tap.
-            if (drawerState.isOpen) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { scope.launch { drawerState.close() } }
-                )
+            // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
+            // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
+            BackHandler(enabled = drawerState.isOpen) {
+                scope.launch { drawerState.close() }
             }
 
             // Transparent 20dp edge strip — any drag here is always an edge drag.

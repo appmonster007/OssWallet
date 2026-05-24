@@ -35,6 +35,8 @@ import org.json.JSONException
  */
 class CashFlowGlanceWidget : BaseOssWalletWidget() {
 
+    override val widgetNavRoute: String = "analytics"
+
     @Composable
     override fun RenderContent(context: Context, prefs: Preferences, size: DpSize) {
         CashFlowWidgetContent(context, prefs, size)

@@ -34,6 +34,8 @@ import com.osscabinet.ossWallet.MainActivity
  */
 abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
+    protected open val widgetNavRoute: String = "dashboard"
+
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
     override val sizeMode: SizeMode = SizeMode.Exact
 
@@ -71,7 +73,7 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
                     actionStartActivity(
                         Intent(context, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            putExtra(MainActivity.EXTRA_WIDGET_NAV, "dashboard")
+                            putExtra(MainActivity.EXTRA_WIDGET_NAV, widgetNavRoute)
                         }
                     )
                 ),

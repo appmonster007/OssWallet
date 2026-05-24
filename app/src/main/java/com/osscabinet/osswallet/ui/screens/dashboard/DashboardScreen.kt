@@ -557,8 +557,8 @@ fun DashboardGlanceTab(
             }
         }
 
-        val accountsCardConfig = remember(cardsConfig) {
-            cardsConfig.cards.filterIsInstance<AccountsCardConfig>().firstOrNull()
+        val accountsCardConfig = remember(state.profileId) {
+            AccountsCardConfig(cardId = "accounts_dashboard_${state.profileId}")
         }
         val accountsCardInput = remember(state) {
             CardInput(
@@ -572,23 +572,21 @@ fun DashboardGlanceTab(
                 filter = TransactionFilter(excludeFuture = false)
             )
         }
-        val accountsCard = if (accountsCardConfig != null) {
-            rememberCardWithCallbacks(
-                config = accountsCardConfig,
-                input = accountsCardInput,
-                registry = cardComputerRegistry,
-                updateHandler = cardUpdateHandler,
-                onDelete = {},
-                onRecordsClick = onRecordsClick,
-                callbacks = AeonInteractionCallbacks(
-                    accountActions = AccountActions(
-                        onManageClick = onManageAccountsClick,
-                        onClick = onAccountClick,
-                        onSeeAll = onManageAccountsClick
-                    )
+        val accountsCard = rememberCardWithCallbacks(
+            config = accountsCardConfig,
+            input = accountsCardInput,
+            registry = cardComputerRegistry,
+            updateHandler = cardUpdateHandler,
+            onDelete = {},
+            onRecordsClick = onRecordsClick,
+            callbacks = AeonInteractionCallbacks(
+                accountActions = AccountActions(
+                    onManageClick = onManageAccountsClick,
+                    onClick = onAccountClick,
+                    onSeeAll = onManageAccountsClick
                 )
             )
-        } else null
+        )
 
         AeonCardList(
             cards = cardsConfig.cards.filter { it !is AccountsCardConfig },

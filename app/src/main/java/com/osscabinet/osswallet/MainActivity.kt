@@ -75,7 +75,7 @@ class MainActivity : FragmentActivity() {
                     LaunchedEffect(pendingWidgetRoute) {
                         pendingWidgetRoute?.let { route ->
                             val navOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
-                                popUpTo(navController.graph.startDestinationId) { saveState = false }
+                                popUpTo<DashboardRoute> { inclusive = false; saveState = false }
                                 launchSingleTop = true
                             }
                             when (route) {

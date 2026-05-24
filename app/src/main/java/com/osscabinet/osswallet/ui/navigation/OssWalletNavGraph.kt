@@ -76,9 +76,24 @@ fun OssWalletNavGraph(
     val dashboardUiState by vms.dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val isOnboardingCompleted by vms.settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
-    SideEffect {
-        onSplashConditionChanged(dashboardUiState is DashboardUiState.Loading)
+    // Freeze the start destination to whichever value DataStore first resolves to.
+    // NavHost does not support a changing startDestination — if the value flips after
+    // first composition the entire NavHost is destroyed and rebuilt, which prevents
+    // DashboardViewModel from ever emitting Success and locks the splash screen forever.
+    val startDestination = remember(isOnboardingCompleted) {
+        if (isOnboardingCompleted == null) return@remember null
+        if (isOnboardingCompleted == true) DashboardRoute() else OnboardingRoute
     }
+
+    // While DataStore has not yet resolved isOnboardingCompleted (still null), keep the
+    // splash on screen regardless of dashboardUiState — the NavHost has not started yet.
+    SideEffect {
+        onSplashConditionChanged(
+            startDestination == null || dashboardUiState is DashboardUiState.Loading
+        )
+    }
+
+    if (startDestination == null) return
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -191,7 +206,7 @@ fun OssWalletNavGraph(
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = if (isOnboardingCompleted == true) DashboardRoute() else OnboardingRoute
+                startDestination = startDestination!!
             ) {
                 composable<OnboardingRoute>(
                     enterTransition = { FadeEnterTransitionSpec },

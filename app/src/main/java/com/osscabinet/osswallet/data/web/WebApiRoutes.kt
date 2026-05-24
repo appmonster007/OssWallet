@@ -2910,13 +2910,16 @@ class WebApiRoutes(
             netWorth = currentMetrics.netWorth.toDouble(),
             income = currentMetrics.cashFlow.totalIncomeInBase.toDouble(),
             expense = currentMetrics.cashFlow.totalExpensesInBase.toDouble(),
+            transfer = currentMetrics.cashFlow.totalTransfersInBase.toDouble(),
             cashFlow = currentMetrics.cashFlow.netInBase.toDouble(),
+            previousNetWorth = previousMetrics?.netWorth?.toDouble(),
             currency = this.baseCurrency
         )
 
         is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
             income = result.totalIncomeInBase.toDouble(),
             expense = result.totalExpensesInBase.toDouble(),
+            transfer = result.totalTransfersInBase.toDouble(),
             net = result.netInBase.toDouble(),
             currency = this.baseCurrency
         )
@@ -2940,7 +2943,8 @@ class WebApiRoutes(
                     currency = stats.account.currencyCode,
                     balance = stats.balance.toDouble(),
                     income = stats.incomeInAccountCurrency.toDouble(),
-                    expense = stats.expenseInAccountCurrency.toDouble()
+                    expense = stats.expenseInAccountCurrency.toDouble(),
+                    transfer = stats.transferInAccountCurrency.toDouble()
                 )
             }
         )
@@ -3032,7 +3036,8 @@ class WebApiRoutes(
                         amount = metrics.expense.toDouble(),
                         percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
                             .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
-                        transactionCount = 0
+                        transactionCount = 0,
+                        colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
                     )
                 },
                 displayCurrency = displayCurrency
@@ -3049,7 +3054,8 @@ class WebApiRoutes(
                         amount = metrics.expense.toDouble(),
                         percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
                             .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
-                        transactionCount = 0
+                        transactionCount = 0,
+                        colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
                     )
                 },
                 displayCurrency = displayCurrency
@@ -3099,7 +3105,8 @@ class WebApiRoutes(
                 )
             },
             granularity = granularity.name,
-            baseCurrency = this.baseCurrency
+            baseCurrency = this.baseCurrency,
+            todayBucketIndex = todayBucketIndex
         )
 
         is CardRenderData.CategorySpendingTrend -> CardPayloadDto.CategorySpendingTrend(
@@ -3126,7 +3133,8 @@ class WebApiRoutes(
                 CardPayloadDto.TagSetDto(
                     tagName = s.tagName, totalAmount = s.totalAmount.toDouble(),
                     income = s.income.toDouble(), expense = s.expense.toDouble(),
-                    transactionCount = s.transactionCount
+                    transactionCount = s.transactionCount,
+                    colorHex = if (s.colorHex != -1) "#${(s.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}" else null
                 )
             },
             intersections = intersections.map { i ->
@@ -3143,7 +3151,9 @@ class WebApiRoutes(
             netWorth = balance.toDouble(),
             income = income.toDouble(),
             expense = expense.toDouble(),
+            transfer = 0.0,
             cashFlow = (income - expense).toDouble(),
+            previousNetWorth = null,
             currency = account.currencyCode
         )
     }

@@ -62,7 +62,9 @@ sealed class CardPayloadDto {
         val netWorth: Double,
         val income: Double,
         val expense: Double,
+        val transfer: Double = 0.0,
         val cashFlow: Double,
+        val previousNetWorth: Double? = null,
         val currency: String
     ) : CardPayloadDto()
 
@@ -70,6 +72,7 @@ sealed class CardPayloadDto {
     data class CashFlow(
         val income: Double,
         val expense: Double,
+        val transfer: Double = 0.0,
         val net: Double,
         val currency: String
     ) : CardPayloadDto()
@@ -99,7 +102,8 @@ sealed class CardPayloadDto {
         val currency: String,
         val balance: Double,
         val income: Double,
-        val expense: Double
+        val expense: Double,
+        val transfer: Double = 0.0
     )
 
     @Serializable
@@ -143,7 +147,8 @@ sealed class CardPayloadDto {
     data class IncomeExpenseBar(
         val buckets: List<CashFlowPointDto>,
         val granularity: String,
-        val baseCurrency: String
+        val baseCurrency: String,
+        val todayBucketIndex: Int = -1
     ) : CardPayloadDto()
 
     @Serializable
@@ -181,7 +186,8 @@ sealed class CardPayloadDto {
         val totalAmount: Double,
         val income: Double,
         val expense: Double,
-        val transactionCount: Int
+        val transactionCount: Int,
+        val colorHex: String? = null
     )
 
     @Serializable

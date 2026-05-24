@@ -310,6 +310,7 @@
   let cachedCategories = [];
   let cachedAccounts   = [];
   let cachedSettings   = { baseCurrency: 'USD', decimalPrecision: 2 };
+  let cachedTags       = [];
   /* per-card filter overrides: { [cardId]: { timelineType, dateFrom, dateTo, transactionTypes, currencies, accountIds, categoryIds, minAmount, maxAmount } } */
   let cardOverrides = {};
 
@@ -380,14 +381,16 @@
   /* ── Cache warm-up ────────────────────────────────────── */
   async function warmCache() {
     try {
-      const [catR, accR, setR] = await Promise.allSettled([
+      const [catR, accR, setR, tagR] = await Promise.allSettled([
         apiFetch('/api/categories'),
         apiFetch('/api/accounts'),
-        apiFetch('/api/settings')
+        apiFetch('/api/settings'),
+        apiFetch('/api/tags')
       ]);
       if (catR.status === 'fulfilled' && catR.value?.success) cachedCategories = catR.value.data || [];
       if (accR.status === 'fulfilled' && accR.value?.success) cachedAccounts   = accR.value.data || [];
       if (setR.status === 'fulfilled' && setR.value?.success) cachedSettings   = setR.value.data || cachedSettings;
+      if (tagR.status === 'fulfilled' && tagR.value?.success) cachedTags = (tagR.value.data || []).map(t => t.name || t).filter(Boolean);
     } catch { /* non-fatal */ }
   }
 
@@ -530,26 +533,48 @@
     return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block">${paths}</svg>`;
   }
 
-  function svgBars(points, width, height) {
+  function svgBars(points, width, height, showNetLine, todayIdx) {
     width  = width  || 560;
     height = height || 140;
     if (!points || !points.length) return '<p class="empty-state">No data</p>';
     const maxVal  = Math.max(...points.flatMap(p => [p.income || 0, p.expense || 0])) || 1;
     const count   = points.length;
-    const usableW = width - 40;
+    const pl = 40, pb = 24;
+    const usableW = width - pl;
     const slotW   = Math.floor(usableW / count);
     const barW    = Math.max(4, Math.floor(slotW / 2) - 3);
-    const chartH  = height - 24;
-    let rects = '';
+    const chartH  = height - pb;
+    let svg = '';
+    /* Y-axis grid lines and labels */
+    for (let gi = 0; gi <= 4; gi++) {
+      const gy = (chartH * gi / 4).toFixed(1);
+      const val = maxVal * (4 - gi) / 4;
+      svg += `<line x1="${pl}" y1="${gy}" x2="${width}" y2="${gy}" stroke="var(--border)" stroke-width="1"/>`;
+      svg += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(val,0)}</text>`;
+    }
+    const barCenters = [];
     points.forEach((p, i) => {
-      const x  = 40 + i * slotW;
+      const x  = pl + i * slotW;
       const ih = Math.round(((p.income  || 0) / maxVal) * chartH);
       const eh = Math.round(((p.expense || 0) / maxVal) * chartH);
-      rects += `<rect x="${x}" y="${chartH - ih}" width="${barW}" height="${Math.max(1,ih)}" fill="var(--success)" opacity="0.85"><title>Income: ${p.income}</title></rect>`;
-      rects += `<rect x="${x + barW + 2}" y="${chartH - eh}" width="${barW}" height="${Math.max(1,eh)}" fill="var(--danger)" opacity="0.85"><title>Expense: ${p.expense}</title></rect>`;
-      rects += `<text x="${x + barW}" y="${height - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(p.label).slice(0, 6))}</text>`;
+      const cx = x + barW;
+      barCenters.push({ x: cx, net: (p.income||0) - (p.expense||0) });
+      /* today highlight column */
+      if (i === todayIdx) svg += `<rect x="${x}" y="0" width="${slotW}" height="${chartH}" fill="var(--primary)" opacity="0.06"/>`;
+      svg += `<rect x="${x}" y="${chartH - ih}" width="${barW}" height="${Math.max(1,ih)}" fill="var(--success)" opacity="0.85"><title>Income: ${p.income}</title></rect>`;
+      svg += `<rect x="${x + barW + 2}" y="${chartH - eh}" width="${barW}" height="${Math.max(1,eh)}" fill="var(--danger)" opacity="0.85"><title>Expense: ${p.expense}</title></rect>`;
+      svg += `<text x="${cx}" y="${height - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(p.label).slice(0, 6))}</text>`;
     });
-    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible;display:block">${rects}</svg>`;
+    /* Net trend line */
+    if (showNetLine && barCenters.length > 1) {
+      const maxNet = Math.max(...barCenters.map(c=>Math.abs(c.net)), 1);
+      const netPts = barCenters.map(c => {
+        const py = (chartH / 2) - (c.net / maxNet) * (chartH / 2);
+        return `${c.x.toFixed(1)},${Math.max(0, Math.min(chartH, py)).toFixed(1)}`;
+      }).join(' ');
+      svg += `<polyline points="${netPts}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round"/>`;
+    }
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible;display:block">${svg}</svg>`;
   }
 
   function progressBar(pct, color) {
@@ -565,25 +590,35 @@
     const first = seriesList.find(s => s.points && s.points.length);
     if (!first || !first.points.length) return '<p class="empty-state">No data</p>';
     const n = first.points.length;
-    const allVals = seriesList.flatMap(s => s.points || []);
+    const allVals = seriesList.flatMap(s => (s.points||[]).filter(v=>v!=null));
     const minVal = Math.min(0, ...allVals);
     const maxVal = Math.max(...allVals, 1);
     const range = maxVal - minVal || 1;
-    const pl = 40, pr = 10, pt = 10, pb = 22;
+    const pl = 44, pr = 10, pt = 10, pb = 22;
     const cw = w - pl - pr, ch = h - pt - pb;
     let svg = '';
+    /* Y-axis grid lines + labels */
     for (let gi = 0; gi <= 4; gi++) {
       const gy = (pt + ch * gi / 4).toFixed(1);
+      const val = minVal + range * (4 - gi) / 4;
       svg += `<line x1="${pl}" y1="${gy}" x2="${w - pr}" y2="${gy}" stroke="var(--border)" stroke-width="1"/>`;
+      svg += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(val,0)}</text>`;
     }
     seriesList.forEach(s => {
       if (!s.points || !s.points.length) return;
-      const pts = s.points.map((v, i) => {
+      /* Build segments, skipping null values to draw gaps */
+      let segment = [];
+      const flushSegment = () => {
+        if (segment.length > 1) svg += `<polyline points="${segment.join(' ')}" fill="none" stroke="${esc(s.color||'#1976D2')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="${s.opacity!=null?s.opacity:1}"/>`;
+        segment = [];
+      };
+      s.points.forEach((v, i) => {
+        if (v == null) { flushSegment(); return; }
         const px = pl + (n <= 1 ? cw / 2 : i * cw / (n - 1));
         const py = pt + ch - ((v - minVal) / range) * ch;
-        return `${px.toFixed(1)},${py.toFixed(1)}`;
-      }).join(' ');
-      svg += `<polyline points="${pts}" fill="none" stroke="${esc(s.color||'#1976D2')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="${s.opacity!=null?s.opacity:1}"/>`;
+        segment.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+      });
+      flushSegment();
     });
     const labels = first.labels || [];
     if (labels.length) {
@@ -688,46 +723,30 @@
     </div>`;
   }
 
-  /* Dispatch card by payload type */
+  /* Dispatch card by payload type — both initial render and refresh use the same body functions */
   function dispatchCardRender(card, d, payloadType) {
-    switch (payloadType) {
-      case 'NetWorth':          return renderNetWorthCard(card, d);
-      case 'CashFlow':          return renderCashFlowCard(card, d);
-      case 'CurrencyBalances':  return renderCurrencyBalancesCard(card, d);
-      case 'Accounts':          return renderAccountsDashCard(card, d);
-      case 'Budgets':           return renderBudgetsDashCard(card, d);
-      case 'PlannedPayments':   return renderPlannedPaymentsDashCard(card, d);
-      case 'Loans':             return renderLoansDashCard(card, d);
-      case 'RecentActivities':  return renderRecentActivitiesCard(card, d, payloadType);
-      case 'CategoryBreakdown':
-        return card.cardType === 'CATEGORY_TREEMAP'
-          ? renderCategoryTreemapCard(card, d, payloadType)
-          : renderCategoryPieChartCard(card, d, payloadType);
-      case 'CashFlowComparison':    return renderCashFlowComparisonCard(card, d, payloadType);
-      case 'IncomeExpenseBar':       return renderIncomeExpenseBarCard(card, d, payloadType);
-      case 'CategorySpendingTrend':  return renderCategorySpendingTrendCard(card, d, payloadType);
-      case 'TagUpSetPlot':           return renderTagUpSetPlotCard(card, d);
-      case 'Error':
-        return dashCardWrap(card, `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`, payloadType);
-      default:
-        return dashCardWrap(card, `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`, payloadType);
-    }
+    const body = dispatchCardBody(card, d, payloadType);
+    return dashCardWrap(card, body, payloadType);
   }
 
-  /* Returns only the inner body HTML for a card (no dashCardWrap) — used by refreshCardContent */
+  /* Returns only the inner body HTML for a card — single source of truth used by both paths */
   function dispatchCardBody(card, d, payloadType) {
     switch (payloadType) {
-      case 'NetWorth':         { const cur=d.currency||cachedSettings.baseCurrency||'USD'; const nwCls=(d.netWorth||0)>=0?'positive':'negative'; const cfCls=(d.cashFlow||0)>=0?'positive':'negative'; return `<div class="card-grid" style="margin-bottom:0"><div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':'−'}${fmt(Math.abs(d.cashFlow||0),cur)}</div></div></div>`; }
-      case 'CashFlow':         { const cur=d.currency||cachedSettings.baseCurrency||'USD'; const netCls=(d.net||0)>=0?'positive':'negative'; return `<div class="card-grid" style="margin-bottom:0"><div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':'−'}${fmt(Math.abs(d.net||0),cur)}</div></div></div>`; }
-      case 'CurrencyBalances': { const items=d.items||[]; if(!items.length) return '<p class="empty-state">No balances.</p>'; return `<div class="table-wrap"><table><thead><tr><th>Currency</th><th style="text-align:right">Balance</th><th style="text-align:right">In ${esc(d.baseCurrency||'')}</th></tr></thead><tbody>${items.map(i=>`<tr><td><span class="badge">${esc(i.currency)}</span></td><td style="text-align:right">${fmtRaw(i.balance||0)}</td><td style="text-align:right">${fmtRaw(i.balanceInBase||0)}</td></tr>`).join('')}</tbody></table></div>`; }
-      case 'Accounts':         { const accs=d.accounts||[]; if(!accs.length) return '<p class="empty-state">No accounts.</p>'; const cur=cachedSettings.baseCurrency||'USD'; return `<div class="table-wrap"><table><thead><tr><th>Account</th><th>Currency</th><th style="text-align:right">Balance</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th></tr></thead><tbody>${accs.map(a=>`<tr><td>${esc(a.name)}</td><td><span class="badge">${esc(a.currency)}</span></td><td style="text-align:right">${fmtRaw(a.balance||0)}</td><td style="text-align:right" class="amount-income">+${fmtRaw(a.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(a.expense||0)}</td></tr>`).join('')}</tbody></table></div>`; }
-      case 'CategoryBreakdown': return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[]) : renderCategoryPieBody(d.items||[]);
-      case 'IncomeExpenseBar':  return renderIncomeExpenseBody(d.buckets||[], d.granularity||'MONTH');
-      case 'RecentActivities':  return renderRecentActivitiesBody(d.transactions||[], d.total||0);
-      case 'CashFlowComparison':{ const cur2=d.baseCurrency||cachedSettings.baseCurrency||'USD'; const all=[...(d.current||[]),...(d.previous||[]),...(d.lastYear||[])]; if(!all.length) return '<p class="empty-state">No data.</p>'; const series=[{label:'Current',data:d.current||[],color:'var(--primary)'},{label:'Previous',data:d.previous||[],color:'var(--text-muted)'},{label:'Last Year',data:d.lastYear||[],color:'var(--warning)'}]; return `${svgLineChart(series,560,140)}<div class="chart-legend" style="margin-top:8px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div><span>${esc(s.label)}</span></div>`).join('')}</div>`; }
-      case 'CategorySpendingTrend':{ const bkts=d.buckets||[]; if(!bkts.length) return '<p class="empty-state">No spending trend data.</p>'; const allCats=[...new Set(bkts.flatMap(b=>(b.categories||[]).map(c=>c.categoryName)))]; const colorMap={}; allCats.forEach((name,i)=>{colorMap[name]=CHART_COLORS[i%CHART_COLORS.length];}); const catTotals={}; bkts.forEach(b=>(b.categories||[]).forEach(c=>{catTotals[c.categoryName]=(catTotals[c.categoryName]||0)+Math.abs(c.amount||0);})); const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8); let leg='<div class="chart-legend" style="margin-top:12px">'; topCats.forEach(([name,total])=>{leg+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;}); return `${svgStackedBarsChart(bkts,colorMap,560,140)}${leg}</div>`; }
-      case 'TagUpSetPlot':      { const sets=d.sets||[],inters=d.intersections||[]; if(!sets.length) return '<p class="empty-state">No tag data.</p>'; const maxAmt=Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)),1); let body2='<div style="margin-bottom:16px">'; sets.forEach(s=>{const pct=Math.min(100,Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));const isInc=(s.totalAmount||0)>=0;body2+=`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="amount-income" style="font-size:0.78rem">+${fmtRaw(s.income||0)}</span><span class="amount-expense" style="font-size:0.78rem">−${fmtRaw(s.expense||0)}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;}); body2+='</div>'; if(inters.length){body2+=`<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th><th>Txns</th></tr></thead><tbody>`;inters.slice(0,10).forEach(inter=>{const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');body2+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmtRaw(Math.abs(inter.amount||0))}</td><td style="text-align:right" class="amount-income">+${fmtRaw(inter.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(inter.expense||0)}</td><td>${inter.transactionCount||0}</td></tr>`;}); body2+='</tbody></table></div>';} return body2; }
-      default: return dispatchCardRender(card, d, payloadType).replace(/^[\s\S]*?<div[^>]+class="dash-card-body[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*$/, '$1') || '<p class="empty-state">Card refreshed.</p>';
+      case 'NetWorth':              return renderNetWorthBody(d);
+      case 'CashFlow':              return renderCashFlowBody(d);
+      case 'CurrencyBalances':      return renderCurrencyBalancesBody(d);
+      case 'Accounts':              return renderAccountsBody(d);
+      case 'Budgets':               return renderBudgetBody(d);
+      case 'PlannedPayments':       return renderPlannedPaymentsBody(d);
+      case 'Loans':                 return renderLoansBody(d);
+      case 'RecentActivities':      return renderRecentActivitiesBody(d.transactions||[], d.total||0);
+      case 'CategoryBreakdown':     return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[]) : renderCategoryPieBody(d.items||[]);
+      case 'CashFlowComparison':    return renderCashFlowComparisonBody(d);
+      case 'IncomeExpenseBar':      return renderIncomeExpenseBody(d.buckets||[], d.granularity||'MONTH', d.baseCurrency, d.todayBucketIndex);
+      case 'CategorySpendingTrend': return renderCategorySpendingTrendBody(d);
+      case 'TagUpSetPlot':          return renderTagUpSetPlotBody(d);
+      case 'Error':                 return `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`;
+      default:                      return `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`;
     }
   }
 
@@ -761,6 +780,30 @@
       const cards = (Array.isArray(json.data) ? json.data : [])
         .filter(c => c.isEnabled !== false)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      /* Hydrate cardOverrides from server-side filter state so filter sheets pre-populate */
+      cards.forEach(card => {
+        const fs = card.filterSummary;
+        if (fs && !cardOverrides[card.cardId]) {
+          cardOverrides[card.cardId] = {
+            timelineType:   fs.timelineType   || 'ALL_TIME',
+            customFrom:     fs.customFrom      || null,
+            customTo:       fs.customTo        || null,
+            accountIds:     fs.accountIds      || [],
+            categoryIds:    fs.categoryIds     || [],
+            txType:         (fs.transactionTypes||[])[0] || '',
+            currencies:     fs.currencies      || [],
+            statuses:       fs.statuses        || [],
+            paymentMethods: fs.paymentMethods  || [],
+            tags:           fs.tags            || [],
+            queryNote:      fs.queryNote       || '',
+            queryPayee:     fs.queryPayee      || '',
+            minAmount:      fs.minAmount       ?? null,
+            maxAmount:      fs.maxAmount       ?? null,
+            excludeFuture:  fs.excludeFuture   !== false,
+          };
+        }
+      });
 
       let html = `<div class="page-header">
         <h2 class="section-title">Dashboard</h2>
@@ -797,51 +840,12 @@
       case 'THIS_QUARTER':{ const q=Math.floor(mo/3); return { dateFrom: d0(y,q*3,1), dateTo: d0(y,q*3+3,0)+86399999 }; }
       case 'THIS_YEAR':     return { dateFrom: d0(y,0,1), dateTo: d0(y,11,31)+86399999 };
       case 'LAST_YEAR':     return { dateFrom: d0(y-1,0,1), dateTo: d0(y-1,11,31)+86399999 };
+      case 'HALF_YEAR': {   const from = new Date(y, mo - 6, 1);
+                            return { dateFrom: from.getTime(), dateTo: d0(y, mo+1, 0)+86399999 }; }
       case 'CUSTOM':        return { dateFrom: customFrom ? new Date(customFrom).getTime() : null,
                                      dateTo:   customTo   ? new Date(customTo+'T23:59:59').getTime() : null };
       default:              return { dateFrom: null, dateTo: null };
     }
-  }
-
-  /* ── Convert ISO date string param to epoch ms for API ───── */
-  function isoToEpoch(iso) { return iso ? new Date(iso).getTime() : null; }
-
-  /* ── Build category-breakdown URL from override ───────────── */
-  function buildBreakdownUrl(ov) {
-    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
-    let url = '/api/analytics/category-breakdown';
-    const p = new URLSearchParams();
-    if (dateFrom) p.set('dateFrom', dateFrom);
-    if (dateTo)   p.set('dateTo',   dateTo);
-    p.set('type', ov.txType || 'EXPENSE');
-    return url + '?' + p.toString();
-  }
-
-  /* ── Build cash-flow URL from override ───────────────────── */
-  function buildCashFlowUrl(ov, gran) {
-    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
-    const p = new URLSearchParams();
-    if (dateFrom) p.set('dateFrom', dateFrom);
-    if (dateTo)   p.set('dateTo',   dateTo);
-    p.set('granularity', gran || ov.granularity || 'MONTH');
-    return '/api/analytics/cash-flow?' + p.toString();
-  }
-
-  /* ── Build transactions URL from override ────────────────── */
-  function buildTxUrl(ov) {
-    const { dateFrom, dateTo } = timelineToRange(ov.timelineType, ov.customFrom, ov.customTo);
-    const p = new URLSearchParams();
-    p.set('page', '0'); p.set('limit', '30');
-    if (dateFrom) p.set('dateFrom', dateFrom);
-    if (dateTo)   p.set('dateTo',   dateTo);
-    if (ov.txType)      p.set('type',       ov.txType);
-    if (ov.accountId)   p.set('accountId',  ov.accountId);
-    if (ov.categoryId)  p.set('categoryId', ov.categoryId);
-    if (ov.minAmount)   p.set('minAmount',  ov.minAmount);
-    if (ov.maxAmount)   p.set('maxAmount',  ov.maxAmount);
-    if (ov.status)      p.set('status',     ov.status);
-    if (ov.payee)       p.set('payee',      ov.payee);
-    return '/api/transactions?' + p.toString();
   }
 
   /* ── Refresh a single card's body after filter change ────── */
@@ -867,107 +871,87 @@
     }
   }
 
-  /* ── Pure body renderers (no dashCardWrap, used for refresh) */
-  function renderCategoryPieBody(items) {
-    if (!items.length) return '<p class="empty-state">No category data.</p>';
-    const top8 = items.slice(0,8); const rest = items.slice(8);
-    const slices = [...top8];
-    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0), transactionCount:rest.reduce((s,c)=>s+(c.transactionCount||0),0) });
-    const cs = slices.map((c,i)=>({ label:c.categoryName, value:c.amount, color:CHART_COLORS[i%CHART_COLORS.length] }));
-    let leg = '<div class="chart-legend" style="flex:1">';
-    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span>${c.transactionCount?`<span style="color:var(--text-muted);font-size:0.72rem;margin-left:4px">${c.transactionCount} txns</span>`:''}</div>`; });
-    return `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(cs,160)}${leg}</div></div>`;
-  }
+  /* ══════════════════════════════════════════════════════
+     CARD BODY RENDERERS — single source of truth for each card type.
+     All functions return inner HTML only (no dashCardWrap).
+     Used by both initial load (via dispatchCardRender) and filter refresh (via dispatchCardBody).
+  ══════════════════════════════════════════════════════ */
 
-  function renderCategoryTreemapBody(items) {
-    if (!items.length) return '<p class="empty-state">No category data.</p>';
-    const tm = items.map((c,i)=>({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:CHART_COLORS[i%CHART_COLORS.length] }));
-    let leg = '<div class="chart-legend" style="margin-top:12px">';
-    items.slice(0,8).forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`; });
-    return `<div class="treemap-wrap">${svgTreemapChart(tm,560,180)}</div>${leg}</div>`;
-  }
-
-  function renderIncomeExpenseBody(pts, gran) {
-    if (!pts.length) return '<p class="empty-state">No data.</p>';
-    const points = pts.map(b=>({ label:b.label, income:b.income||0, expense:b.expense||0 }));
-    return `${svgBars(points,560,140)}<div class="chart-legend" style="margin-top:8px"><div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div><div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div><span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">${esc(String(gran||'').toLowerCase())}</span></div>`;
-  }
-
-  function renderRecentActivitiesBody(txs, total) {
-    if (!txs.length) return '<p class="empty-state">No transactions found.</p>';
-    let body = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Tags</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
-    txs.forEach(tx => {
-      const amtCls=tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
-      const sign=tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
-      const bdg=tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
-      const tags=tx.tags&&tx.tags.length?tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' '):'—';
-      body+=`<tr><td style="white-space:nowrap">${fmtDate(tx.date)}</td><td><span class="badge ${bdg}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td><td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td><td>${esc(tx.accountName||'—')}</td><td>${tags}</td><td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0),tx.currency)}</td></tr>`;
-    });
-    body += '</tbody></table></div>';
-    if (total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${total} total</div>`;
-    return body;
-  }
-
-  function renderNetWorthCard(card, d) {
+  function renderNetWorthBody(d) {
     const cur = d.currency || cachedSettings.baseCurrency || 'USD';
     const nwCls = (d.netWorth||0) >= 0 ? 'positive' : 'negative';
     const cfCls = (d.cashFlow||0) >= 0 ? 'positive' : 'negative';
-    return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
+    const hasTransfer = d.transfer != null && d.transfer !== 0;
+    let html = `<div class="card-grid" style="margin-bottom:0">
       <div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0,cur)}</div></div>
       <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':''}${fmt(d.cashFlow||0,cur)}</div></div>
-    </div>`, 'NetWorth');
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>`;
+    if (hasTransfer) html += `<div class="stat-card"><div class="stat-label">Transfers</div><div class="stat-value">${fmt(d.transfer||0,cur)}</div></div>`;
+    html += `<div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':'−'}${fmt(Math.abs(d.cashFlow||0),cur)}</div></div>`;
+    if (d.previousNetWorth != null) {
+      const delta = (d.netWorth||0) - d.previousNetWorth;
+      const deltaCls = delta >= 0 ? 'positive' : 'negative';
+      html += `<div class="stat-card"><div class="stat-label">vs Previous</div><div class="stat-value ${deltaCls}">${delta>=0?'+':'−'}${fmt(Math.abs(delta),cur)}</div></div>`;
+    }
+    return html + '</div>';
   }
 
-  function renderCashFlowCard(card, d) {
+  function renderCashFlowBody(d) {
     const cur = d.currency || cachedSettings.baseCurrency || 'USD';
     const netCls = (d.net||0) >= 0 ? 'positive' : 'negative';
-    return dashCardWrap(card, `<div class="card-grid" style="margin-bottom:0">
+    const hasTransfer = d.transfer != null && d.transfer !== 0;
+    let html = `<div class="card-grid" style="margin-bottom:0">
       <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Expense</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>
-      <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':''}${fmt(d.net||0,cur)}</div></div>
-    </div>`, 'CashFlow');
+      <div class="stat-card"><div class="stat-label">Expense</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>`;
+    if (hasTransfer) html += `<div class="stat-card"><div class="stat-label">Transfers</div><div class="stat-value">${fmt(d.transfer||0,cur)}</div></div>`;
+    html += `<div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':'−'}${fmt(Math.abs(d.net||0),cur)}</div></div>`;
+    return html + '</div>';
   }
 
-  function renderCurrencyBalancesCard(card, d) {
+  function renderCurrencyBalancesBody(d) {
     const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No currency balances.</p>', 'CurrencyBalances');
+    const baseCur = d.baseCurrency || cachedSettings.baseCurrency || '';
+    if (!items.length) return '<p class="empty-state">No currency balances.</p>';
     let body = '<div class="currency-grid">';
     items.forEach(item => {
       const cls = (item.balance||0) >= 0 ? 'amount-income' : 'amount-expense';
       body += `<div class="currency-item">
         <div class="currency-code">${esc(item.currency)}</div>
         <div class="currency-balance ${cls}">${fmtRaw(item.balance||0)}</div>
-        ${d.baseCurrency && item.currency !== d.baseCurrency && item.balanceInBase != null
-          ? `<div class="currency-base">≈ ${fmt(item.balanceInBase, d.baseCurrency)}</div>` : ''}
+        ${baseCur && item.currency !== baseCur && item.balanceInBase != null
+          ? `<div class="currency-base">≈ ${fmt(item.balanceInBase, baseCur)}</div>` : ''}
       </div>`;
     });
-    return dashCardWrap(card, body + '</div>', 'CurrencyBalances');
+    return body + '</div>';
   }
 
-  function renderAccountsDashCard(card, d) {
+  function renderAccountsBody(d) {
     const accounts = d.accounts || [];
-    if (!accounts.length) return dashCardWrap(card, '<p class="empty-state">No accounts.</p>', 'Accounts');
+    if (!accounts.length) return '<p class="empty-state">No accounts.</p>';
     let body = '<div class="card-grid" style="margin-bottom:0">';
     accounts.forEach(acc => {
       const cls = (acc.balance||0) >= 0 ? 'positive' : 'negative';
+      const hasTransfer = acc.transfer != null && acc.transfer !== 0;
       body += `<div class="stat-card">
         <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
         <div class="stat-value ${cls}" style="font-size:1.1rem">${fmt(acc.balance||0,acc.currency)}</div>
-        ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px"><span class="amount-income">+${fmtRaw(acc.income||0)}</span><span class="amount-expense">−${fmtRaw(acc.expense||0)}</span></div>` : ''}
+        ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap">
+          <span class="amount-income">+${fmt(acc.income||0,acc.currency)}</span>
+          <span class="amount-expense">−${fmt(acc.expense||0,acc.currency)}</span>
+          ${hasTransfer?`<span style="color:var(--text-muted)">↔${fmt(Math.abs(acc.transfer||0),acc.currency)}</span>`:''}
+        </div>` : ''}
         <div style="margin-top:8px"><a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a></div>
       </div>`;
     });
-    return dashCardWrap(card, body + '</div>', 'Accounts');
+    return body + '</div>';
   }
 
-  function renderBudgetsDashCard(card, d) {
+  function renderBudgetBody(d) {
     const items = d.items || [];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No budgets.</p>', 'Budgets');
+    if (!items.length) return '<p class="empty-state">No budgets.</p>';
     let body = '';
     items.forEach(b => {
-      const pct = Math.round(b.percentage||0);
+      const pct = Math.min(100, Math.round(b.percentage||0));
       const alertCls = b.alertLevel==='EXCEEDED'?'progress-red':b.alertLevel==='WARNING'?'progress-orange':'progress-green';
       const archived = b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted);font-size:0.68rem">Archived</span>' : '';
       body += `<div style="margin-bottom:14px">
@@ -984,12 +968,12 @@
         </div>
       </div>`;
     });
-    return dashCardWrap(card, body, 'Budgets');
+    return body;
   }
 
-  function renderPlannedPaymentsDashCard(card, d) {
+  function renderPlannedPaymentsBody(d) {
     const upcoming = d.upcoming||[], overdue = d.overdue||[];
-    if (!upcoming.length && !overdue.length) return dashCardWrap(card, '<p class="empty-state">No upcoming or overdue payments.</p>', 'PlannedPayments');
+    if (!upcoming.length && !overdue.length) return '<p class="empty-state">No upcoming or overdue payments.</p>';
     let body = '';
     if (overdue.length) {
       body += `<div style="margin-bottom:12px"><div class="overdue-header" style="font-size:0.9rem">⚠️ Overdue (${overdue.length})</div>
@@ -1007,65 +991,95 @@
       });
       body += '</tbody></table></div></div>';
     }
-    return dashCardWrap(card, body, 'PlannedPayments');
+    return body;
   }
 
-  function renderLoansDashCard(card, d) {
+  function renderLoansBody(d) {
     const items = d.items||[];
-    if (!items.length) return dashCardWrap(card, '<p class="empty-state">No loans.</p>', 'Loans');
+    if (!items.length) return '<p class="empty-state">No loans.</p>';
     let body = '<div class="card-grid" style="margin-bottom:0">';
     items.forEach(loan => {
-      const rp = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
+      const rp = Math.min(100, Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100));
       const tb = loan.loanType==='LENT'?'badge-lent':'badge-borrowed';
       const sb = loan.status==='SETTLED'?'badge-settled':'badge-active';
       body += `<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-weight:700">${esc(loan.name)}</div><div style="font-size:0.78rem;color:var(--text-muted)">${esc(loan.lenderOrBorrowerName||'')}</div></div><div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="badge ${tb}">${esc(loan.loanType)}</span><span class="badge ${sb}">${esc(loan.status)}</span></div></div><div style="font-weight:700;margin-bottom:6px">${fmt(loan.principalAmount||0,loan.currency)}</div>${progressBar(rp,rp>=100?'progress-green':'progress-orange')}<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:3px"><span>Paid: ${fmt(loan.totalPaid||0,loan.currency)}</span><span>Left: ${fmt(loan.remainingBalance||0,loan.currency)}</span></div>${loan.interestAccrued?`<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued,loan.currency)}</div>`:''}</div>`;
     });
-    return dashCardWrap(card, body + '</div>', 'Loans');
+    return body + '</div>';
   }
 
-  function renderRecentActivitiesCard(card, d, payloadType) {
-    const body = renderRecentActivitiesBody(d.transactions||[], d.total||0);
-    return dashCardWrap(card, body, payloadType||'RecentActivities');
+  function renderCategoryPieBody(items) {
+    if (!items.length) return '<p class="empty-state">No category data.</p>';
+    const top8 = items.slice(0,8); const rest = items.slice(8);
+    const slices = [...top8];
+    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0), transactionCount:rest.reduce((s,c)=>s+(c.transactionCount||0),0) });
+    const cs = slices.map((c,i)=>({ label:c.categoryName, value:c.amount, color:c.colorHex||CHART_COLORS[i%CHART_COLORS.length] }));
+    let leg = '<div class="chart-legend" style="flex:1">';
+    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span>${c.transactionCount?`<span style="color:var(--text-muted);font-size:0.72rem;margin-left:4px">${c.transactionCount} txns</span>`:''}</div>`; });
+    leg += '</div>';
+    return `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(cs,160)}${leg}</div>`;
   }
 
-  function renderCategoryPieChartCard(card, d, payloadType) {
-    return dashCardWrap(card, renderCategoryPieBody(d.items||[]), payloadType||'CategoryBreakdown');
+  function renderCategoryTreemapBody(items) {
+    if (!items.length) return '<p class="empty-state">No category data.</p>';
+    const tm = items.map((c,i)=>({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:c.colorHex||CHART_COLORS[i%CHART_COLORS.length] }));
+    let leg = '<div class="chart-legend" style="margin-top:12px">';
+    items.slice(0,8).forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`; });
+    leg += '</div>';
+    return `<div class="treemap-wrap">${svgTreemapChart(tm,560,180)}</div>${leg}`;
   }
 
-  function renderCategoryTreemapCard(card, d, payloadType) {
-    return dashCardWrap(card, renderCategoryTreemapBody(d.items||[]), payloadType||'CategoryBreakdown');
+  function renderIncomeExpenseBody(pts, gran, baseCur, todayIdx) {
+    if (!pts.length) return '<p class="empty-state">No data.</p>';
+    const points = pts.map(b=>({ label:b.label, income:b.income||0, expense:b.expense||0 }));
+    const hasTodayMarker = todayIdx != null && todayIdx >= 0 && todayIdx < points.length;
+    return `${svgBars(points,560,140,true,hasTodayMarker?todayIdx:-1)}<div class="chart-legend" style="margin-top:8px">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--primary);border:1px dashed var(--primary);background:none;width:14px;height:2px;border-radius:0;border-top:2px dashed var(--primary)"></div><span>Net</span></div>
+      <span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">${esc(String(gran||'').toLowerCase())}${baseCur?' · '+esc(baseCur):''}</span>
+    </div>`;
   }
 
-  function renderCashFlowComparisonCard(card, d, payloadType) {
+  function renderRecentActivitiesBody(txs, total) {
+    if (!txs.length) return '<p class="empty-state">No transactions found.</p>';
+    let body = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Tags</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+    txs.forEach(tx => {
+      const amtCls=tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
+      const sign=tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
+      const bdg=tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
+      const tags=tx.tags&&tx.tags.length?tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' '):'—';
+      body+=`<tr><td style="white-space:nowrap">${fmtDate(tx.date)}</td><td><span class="badge ${bdg}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td><td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td><td>${esc(tx.accountName||'—')}</td><td>${tags}</td><td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0),tx.currency)}</td></tr>`;
+    });
+    body += '</tbody></table></div>';
+    if (total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${total} total</div>`;
+    return body;
+  }
+
+  function renderCashFlowComparisonBody(d) {
     const current=d.current||[], previous=d.previous||[], lastYear=d.lastYear||[];
-    if (!current.length) return dashCardWrap(card, '<p class="empty-state">No comparison data.</p>', payloadType);
+    if (!current.length) return '<p class="empty-state">No comparison data.</p>';
     const labels = current.map(p=>p.label||'');
+    /* Align previous and lastYear to current's x-axis using epochMillis as key */
+    const prevByMs = Object.fromEntries(previous.map(p=>[p.epochMillis, p.net||0]));
+    const lyByMs   = Object.fromEntries(lastYear.map(p=>[p.epochMillis, p.net||0]));
     const series = [
       { name:'Current',   color:'#1976D2', opacity:1,    labels, points:current.map(p=>p.net||0) },
-      { name:'Previous',  color:'#9e9e9e', opacity:0.7,  labels, points:previous.map(p=>p.net||0) },
-      { name:'Last Year', color:'#bdbdbd', opacity:0.55, labels, points:lastYear.map(p=>p.net||0) },
-    ].filter(s=>s.points.length && s.points.some(v=>v!==0));
-    const body = `${svgLineChart(series,560,160)}<div class="chart-legend" style="margin-top:10px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}</div>`;
-    return dashCardWrap(card, body, payloadType);
+      { name:'Previous',  color:'#9e9e9e', opacity:0.7,  labels, points:current.map(p=>prevByMs[p.epochMillis]??0) },
+      { name:'Last Year', color:'#bdbdbd', opacity:0.55, labels, points:current.map(p=>lyByMs[p.epochMillis]??0) },
+    ].filter(s=>s.points.some(v=>v!==0));
+    if (!series.length) return '<p class="empty-state">No comparison data.</p>';
+    return `${svgLineChart(series,560,160)}<div class="chart-legend" style="margin-top:10px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}</div>`;
   }
 
-  function renderIncomeExpenseBarCard(card, d, payloadType) {
+  function renderCategorySpendingTrendBody(d) {
     const buckets = d.buckets||[];
-    const body = renderIncomeExpenseBody(buckets, d.granularity) +
-      (d.baseCurrency?`<span style="font-size:0.78rem;color:var(--text-muted)">in ${esc(d.baseCurrency)}</span>`:'');
-    return dashCardWrap(card, buckets.length ? body : '<p class="empty-state">No data.</p>', payloadType||'IncomeExpenseBar');
-  }
-
-  function renderCategorySpendingTrendCard(card, d, payloadType) {
-    const buckets = d.buckets||[];
-    if (!buckets.length) return dashCardWrap(card, '<p class="empty-state">No spending trend data.</p>', payloadType);
+    if (!buckets.length) return '<p class="empty-state">No spending trend data.</p>';
     const allCats = [...new Set(buckets.flatMap(b=>(b.categories||[]).map(c=>c.categoryName)))];
     const colorMap = {}; allCats.forEach((name,i)=>{ colorMap[name]=CHART_COLORS[i%CHART_COLORS.length]; });
     const catTotals = {};
     buckets.forEach(b=>(b.categories||[]).forEach(c=>{ catTotals[c.categoryName]=(catTotals[c.categoryName]||0)+Math.abs(c.amount||0); }));
-    /* Collect nature per category (most common across buckets) */
     const catNature = {};
-    buckets.forEach(b=>(b.categories||[]).forEach(c=>{ catNature[c.categoryName]=c.nature||''; }));
+    buckets.forEach(b=>(b.categories||[]).forEach(c=>{ if(c.nature) catNature[c.categoryName]=c.nature; }));
     const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8);
     let legend = '<div class="chart-legend" style="margin-top:12px">';
     topCats.forEach(([name,total])=>{
@@ -1074,12 +1088,12 @@
       legend+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span>${nature?`<span class="badge ${natureCls}" style="font-size:0.68rem;margin-left:4px">${esc(nature)}</span>`:''}<span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;
     });
     legend += '</div>';
-    return dashCardWrap(card, `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`, payloadType);
+    return `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`;
   }
 
-  function renderTagUpSetPlotCard(card, d) {
+  function renderTagUpSetPlotBody(d) {
     const sets=d.sets||[], inters=d.intersections||[];
-    if (!sets.length) return dashCardWrap(card, '<p class="empty-state">No tag data.</p>', 'TagUpSetPlot');
+    if (!sets.length) return '<p class="empty-state">No tag data.</p>';
     const maxAmt = Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)),1);
     let body = '<div style="margin-bottom:16px">';
     sets.forEach(s => {
@@ -1091,13 +1105,12 @@
     if (inters.length) {
       body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th><th>Txns</th></tr></thead><tbody>`;
       inters.slice(0,10).forEach(inter => {
-        const isInc=(inter.amount||0)>=0;
         const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
         body+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmtRaw(Math.abs(inter.amount||0))}</td><td style="text-align:right" class="amount-income">+${fmtRaw(inter.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(inter.expense||0)}</td><td>${inter.transactionCount||0}</td></tr>`;
       });
       body += '</tbody></table></div>';
     }
-    return dashCardWrap(card, body, 'TagUpSetPlot');
+    return body;
   }
 
   /* ══════════════════════════════════════════════════════
@@ -2635,7 +2648,7 @@
     CategoryBreakdown:     { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
     CashFlowComparison:    { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
     IncomeExpenseBar:      { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
-    CategorySpendingTrend: { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    CategorySpendingTrend: { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  nature:true,  refetch:true },
     TagUpSetPlot:          { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
   };
 
@@ -2681,6 +2694,13 @@
         </div></div>`;
     }
 
+    if (caps.nature) {
+      const selNature = fs.natures || [];
+      body += `<div class="form-field"><label>Spending Nature</label>` +
+        chipCheckboxes('cf-nature', [{value:'MUST',label:'Must'},{value:'NEED',label:'Need'},{value:'WANT',label:'Want'}], selNature) +
+        `</div>`;
+    }
+
     if (caps.accounts && cachedAccounts.length) {
       const selAccts = fs.accountIds || [];
       body += `<div class="form-field"><label>Accounts</label>` +
@@ -2720,8 +2740,14 @@
     }
 
     if (caps.tags) {
-      const allTags = [...new Set(cachedAccounts.length ? [] : [])]; // tags from cached data if available
-      body += `<div class="form-field"><label>Tags (comma-separated)</label><input type="text" id="cf-tags" value="${esc((fs.tags||[]).join(', '))}" placeholder="tag1, tag2…"></div>`;
+      const selTags = fs.tags || [];
+      if (cachedTags.length) {
+        body += `<div class="form-field"><label>Tags</label>` +
+          chipCheckboxes('cf-tags-chips', cachedTags.map(t=>({value:t,label:t})), selTags) +
+          `</div>`;
+      } else {
+        body += `<div class="form-field"><label>Tags (comma-separated)</label><input type="text" id="cf-tags-text" value="${esc(selTags.join(', '))}" placeholder="tag1, tag2…"></div>`;
+      }
     }
 
     if (caps.search) {
@@ -2778,12 +2804,19 @@
     } else if (caps.txTypeMode === 'both') {
       fs.txType = '';
     }
+    if (caps.nature)      { const v = getChecked('cf-nature');      if (v.length) fs.natures = v; }
     if (caps.accounts)    { const v = getChecked('cf-accounts');    if (v.length) fs.accountIds = v; }
     if (caps.categories)  { const v = getChecked('cf-categories');  if (v.length) fs.categoryIds = v.map(Number); }
     if (caps.currencies)  { const v = getChecked('cf-currencies');  if (v.length) fs.currencies  = v; }
     if (caps.statuses)    { const v = getChecked('cf-statuses');    if (v.length) fs.statuses    = v; }
     if (caps.methods)     { const v = getChecked('cf-methods');     if (v.length) fs.paymentMethods = v; }
-    if (caps.tags)        { const raw = get('cf-tags'); if (raw) fs.tags = raw.split(',').map(t=>t.trim()).filter(Boolean); }
+    if (caps.tags) {
+      if (cachedTags.length) {
+        const v = getChecked('cf-tags-chips'); if (v.length) fs.tags = v;
+      } else {
+        const raw = get('cf-tags-text'); if (raw) fs.tags = raw.split(',').map(t=>t.trim()).filter(Boolean);
+      }
+    }
     if (caps.search)      { const n=get('cf-note'); const p=get('cf-payee'); if(n) fs.queryNote=n; if(p) fs.queryPayee=p; }
     if (caps.amount)      { const mn=get('cf-min'); const mx=get('cf-max'); if(mn) fs.minAmount=parseFloat(mn); if(mx) fs.maxAmount=parseFloat(mx); }
     if (caps.future)      { fs.excludeFuture = document.getElementById('cf-future')?.checked !== false; }

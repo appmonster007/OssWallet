@@ -175,11 +175,7 @@ fun RecentActivitiesScreen(
                                     enriched.item.balanceAfter,
                                     enriched.accountCurrency
                                 ),
-                                type = when (transaction.transactionType) {
-                                    TransactionType.TRANSFER -> CashFlowType.TRANSFER
-                                    TransactionType.INCOME -> CashFlowType.INCOME
-                                    else -> CashFlowType.EXPENSE
-                                },
+                                type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                                 timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
                                     transaction.timestamp
                                 ),

@@ -79,6 +79,7 @@ enum class CardType(
         "loans",
         "Loans",
         "Track money you lent or borrowed.",
+        availableOnScreens = setOf(ScreenContext.DASHBOARD, ScreenContext.ANALYTICS),
         category = CardCategory.TRACKING
     ),
     RECENT_ACTIVITIES(

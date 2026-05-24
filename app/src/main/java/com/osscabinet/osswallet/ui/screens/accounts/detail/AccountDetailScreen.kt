@@ -200,6 +200,11 @@ fun AccountDetailScreen(
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
 
+    // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
+    // Registered before the dialog/FAB BackHandlers so they retain higher LIFO priority.
+    BackHandler(enabled = pagerState.currentPage > 0 && !showSettingsDialog && !showAddCardDialog && !isFabExpanded) {
+        scope.launch { pagerState.animateScrollToPage(0) }
+    }
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }

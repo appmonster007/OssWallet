@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
@@ -101,10 +102,12 @@ class CardRepositoryImpl @Inject constructor(
 
     private suspend fun saveConfig(context: ScreenContext, config: DashboardCardsConfig) {
         val configToSave = when (context) {
-            // For ACCOUNT_DETAIL: strip AccountHeroCardConfig (always-present, not user-managed).
+            // Strip always-present, non-user-managed header cards before persisting.
             ScreenContext.ACCOUNT_DETAIL -> config.copy(
-                cards = config.cards
-                    .filter { it !is AccountHeroCardConfig }
+                cards = config.cards.filter { it !is AccountHeroCardConfig }
+            )
+            ScreenContext.DASHBOARD -> config.copy(
+                cards = config.cards.filter { it !is AccountsCardConfig }
             )
 
             else -> config
@@ -121,7 +124,10 @@ class CardRepositoryImpl @Inject constructor(
     // Legacy implementations mapping to new unified API
     override val dashboardCardsConfig: Flow<DashboardCardsConfig> =
         settingsDataStore.dashboardCardsConfig.map {
-            if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+            val decoded: DashboardCardsConfig =
+                if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+            // AccountsCard is always-present as a pinned header; strip any persisted copies.
+            decoded.copy(cards = decoded.cards.filter { card -> card !is AccountsCardConfig })
         }
 
     override val accountDetailCardsConfig: Flow<DashboardCardsConfig> =

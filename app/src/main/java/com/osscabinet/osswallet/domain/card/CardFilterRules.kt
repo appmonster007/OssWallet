@@ -146,12 +146,13 @@ data class CardFilterRules(
         }
         if (allowedTransactionTypes != null) {
             val allowedSet = TransactionType.entries.filter { it.value in allowedTransactionTypes }.toSet()
-            if (candidate.transactionTypes.isNotEmpty()) {
+            val effectiveTypes = if (candidate.transactionTypes.isEmpty()) {
+                allowedSet
+            } else {
                 val intersection = candidate.transactionTypes.intersect(allowedSet)
-                return candidate.copy(
-                    transactionTypes = if (intersection.isNotEmpty()) intersection else allowedSet
-                )
+                if (intersection.isNotEmpty()) intersection else allowedSet
             }
+            return candidate.copy(transactionTypes = effectiveTypes)
         }
         return candidate
     }

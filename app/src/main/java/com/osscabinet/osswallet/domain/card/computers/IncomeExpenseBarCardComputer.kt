@@ -180,6 +180,7 @@ class IncomeExpenseBarCardComputer(
             CashFlowTimePoint(
                 label = label,
                 epochMillis = bucketStart,
+                bucketEnd = bucketEnd,
                 income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 net = totalIncome.subtract(totalExpense)

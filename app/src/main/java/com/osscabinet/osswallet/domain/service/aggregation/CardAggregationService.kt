@@ -3,8 +3,8 @@ package com.osscabinet.ossWallet.domain.service.aggregation
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
@@ -29,7 +29,7 @@ object CardAggregationService {
         input: CardInput,
         config: NetWorthCardConfig
     ): CardRenderData.NetWorth {
-        val currentFilter = input.filter.merge(config.filter)
+        val currentFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         
         // For absolute balances, we need cumulative totals up to the end of the period
         val balanceFilter = currentFilter.toBalanceFilter()
@@ -97,7 +97,7 @@ object CardAggregationService {
         input: CardInput,
         config: CashFlowCardConfig
     ): CardRenderData.CashFlow {
-        val mergedFilter = input.filter.merge(config.filter)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val result = computeCashFlowResult(queryService, profileId, input, mergedFilter)
 
         return CardRenderData.CashFlow(
@@ -158,9 +158,9 @@ object CardAggregationService {
         input: CardInput,
         config: CurrencyBalancesCardConfig
     ): CardRenderData.CurrencyBalances {
-        val mergedFilter = input.filter.merge(config.filter)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val balanceFilter = mergedFilter.toBalanceFilter()
-        
+
         val summariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, balanceFilter)
             .getOrDefault(emptyMap())
 
@@ -182,9 +182,9 @@ object CardAggregationService {
         input: CardInput,
         config: AccountsCardConfig
     ): CardRenderData.Accounts {
-        val mergedFilter = input.filter.merge(config.filter)
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val balanceFilter = mergedFilter.toBalanceFilter()
-        
+
         val summariesByAccountAndCurrency = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, balanceFilter)
             .getOrDefault(emptyMap())
 
@@ -241,7 +241,7 @@ object CardAggregationService {
             ?: error("Account not found: $targetAccountId")
 
         // Lifetime balance (base scope)
-        val baseFilter = input.filter.merge(config.filter).copy(excludeFuture = true, timelineRange = TimelineRange.AllTime)
+        val baseFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).copy(excludeFuture = true, timelineRange = TimelineRange.AllTime)
         val lifetimeSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
             .getOrDefault(emptyMap())
         
@@ -252,7 +252,7 @@ object CardAggregationService {
         )
 
         // Period summary
-        val periodFilter = input.filter.merge(config.filter).copy(excludeFuture = true)
+        val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).copy(excludeFuture = true)
         val periodSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, periodFilter)
             .getOrDefault(emptyMap())
 

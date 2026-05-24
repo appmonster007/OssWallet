@@ -550,14 +550,17 @@ fun DashboardGlanceTab(
             cards = cardsConfig.cards,
             cardDataMap = state.cardDataMap,
             cardInput = CardInput(
+                profileId = state.profileId,
                 transactions = state.allTransactions,
                 accounts = state.accounts,
                 categories = state.allCategories,
+                tags = state.allTags,
                 exchangeRates = state.exchangeRates,
                 baseCurrency = state.baseCurrency,
                 plannedPayments = state.plannedPayments,
                 budgets = state.budgets,
                 loans = state.loans,
+                loanPayments = state.loanPayments,
                 filter = TransactionFilter(excludeFuture = false)
             ),
             cardComputerRegistry = cardComputerRegistry,

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun DashboardGlanceTabPreview() {
     val mockState = DashboardUiState.Success(
+        profileId = 1,
         accounts = listOf(
             Account(
                 id = "1",

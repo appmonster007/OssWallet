@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
@@ -111,16 +112,16 @@ fun rememberCardWithCallbacks(
                         },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onClickExpense = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -159,11 +160,11 @@ fun rememberCardWithCallbacks(
                                 timelineRange = range
                             )
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -192,16 +193,16 @@ fun rememberCardWithCallbacks(
                         },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onClickExpense = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -244,11 +245,11 @@ fun rememberCardWithCallbacks(
                         onAccountClick = callbacks.accountActions.onClick,
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -274,7 +275,7 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -300,7 +301,7 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -317,22 +318,22 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.AccountHero(
                         onClickIncome = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onClickExpense = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onClickCurrency = { currency ->
                             val drillDown = TransactionFilter(currencies = setOf(currency))
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onClick = { callbacks.accountActions.onClick(renderData.account.id) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -421,11 +422,11 @@ fun rememberCardWithCallbacks(
                         onTransactionClick = callbacks.transactionActions.onClick,
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSeeAll = {
-                            onRecordsClick(input.filter.merge(config.filter))
+                            onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
                         onDelete = { onDelete(config.cardId) },
                         onItemExpanded = callbacks.transactionActions.onItemExpanded,
@@ -456,7 +457,7 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -480,7 +481,7 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -504,7 +505,7 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = { drillDown ->
                             onRecordsClick(
-                                input.filter.merge(config.filter).merge(drillDown)
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
@@ -530,7 +531,7 @@ fun rememberCardWithCallbacks(
                     ),
                     onRecordsClick = { drillDown ->
                         onRecordsClick(
-                            input.filter.merge(config.filter).merge(drillDown)
+                            resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                         )
                     },
                     filterRules = config.filterRules,

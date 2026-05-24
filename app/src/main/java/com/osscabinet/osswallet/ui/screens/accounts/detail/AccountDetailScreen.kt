@@ -525,12 +525,15 @@ fun DynamicAccountDetailCards(
         CardInput(
             profileId = state.profileId,
             transactions = state.allAccountTransactions,
+            allProfileTransactions = state.allProfileTransactions,
             accounts = listOf(state.account),
             categories = state.allCategories,
+            tags = state.allTags,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
             displayCurrency = state.account.currencyCode,
             filter = accountScopeFilter
+            // TODO: add budgets/loans/plannedPayments when AccountDetailViewModel fetches them
         )
     }
 
@@ -541,6 +544,7 @@ fun DynamicAccountDetailCards(
             transactions = state.allAccountTransactions,
             accounts = listOf(state.account),
             categories = state.allCategories,
+            tags = state.allTags,
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
             displayCurrency = state.account.currencyCode,

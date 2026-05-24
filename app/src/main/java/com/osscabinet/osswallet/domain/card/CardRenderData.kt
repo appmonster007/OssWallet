@@ -21,7 +21,8 @@ data class CashFlowTimePoint(
     val epochMillis: Long,
     val income: BigDecimal,
     val expense: BigDecimal,
-    val net: BigDecimal
+    val net: BigDecimal,
+    val bucketEnd: Long = 0L
 )
 
 data class CashFlowComparisonSeries(val points: List<CashFlowTimePoint>)

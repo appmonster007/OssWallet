@@ -21,6 +21,9 @@ import java.math.BigDecimal
 data class CardInput(
     val profileId: Int = 0,
     val transactions: List<Transaction> = emptyList(),
+    // Full unfiltered profile transaction list. When non-empty, used by service calls that need
+    // all profile transactions (e.g. LoanService, BudgetService) rather than the scoped list.
+    val allProfileTransactions: List<Transaction> = emptyList(),
     val accounts: List<Account>,
     val categories: List<Category>,
     val tags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),

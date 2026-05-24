@@ -69,12 +69,12 @@ object StandardMetrics {
     val INCOME_SUM = MetricConfig(
         name = "income",
         function = AggregationFunction.SUM,
-        filter = MetricConfig.MetricFilter.INCOME_ONLY
+        filter = MetricConfig.MetricFilter.POSITIVE_ONLY
     )
     val EXPENSE_SUM = MetricConfig(
         name = "expense",
         function = AggregationFunction.SUM,
-        filter = MetricConfig.MetricFilter.EXPENSE_ONLY,
+        filter = MetricConfig.MetricFilter.NEGATIVE_ONLY,
         transform = MetricConfig.MetricTransform.ABS
     )
     val TRANSFER_SUM = MetricConfig(
@@ -86,9 +86,14 @@ object StandardMetrics {
     val NET_FLOW = MetricConfig(
         name = "netFlow",
         function = AggregationFunction.SUM,
-        // Net flow calculation: income - expense. 
+        // Net flow calculation: income - expense.
         // This is complex for a single SUM if amount is always positive.
         // We handle this via custom SQL in the builder.
+    )
+    val TOTAL_SUM = MetricConfig(
+        name = "total",
+        function = AggregationFunction.SUM
+        // No filter = all types. No transform = keeps signed DB amounts.
     )
     val COUNT = MetricConfig(
         name = "count",
@@ -96,7 +101,7 @@ object StandardMetrics {
         column = "*"
     )
 
-    fun defaultSet() = listOf(INCOME_SUM, EXPENSE_SUM, TRANSFER_SUM, COUNT)
+    fun defaultSet() = listOf(INCOME_SUM, EXPENSE_SUM, TRANSFER_SUM, TOTAL_SUM, COUNT)
 }
 
 /**

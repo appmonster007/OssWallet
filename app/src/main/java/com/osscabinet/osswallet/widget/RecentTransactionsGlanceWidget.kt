@@ -51,6 +51,8 @@ import kotlinx.serialization.json.Json
 
 class RecentTransactionsGlanceWidget : BaseOssWalletWidget() {
 
+    override val widgetNavRoute: String = "records"
+
     @Composable
     override fun RenderContent(context: Context, prefs: Preferences, size: DpSize) {
         RecentTransactionsWidgetContent(context, prefs, size)

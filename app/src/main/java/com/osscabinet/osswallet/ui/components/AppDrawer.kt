@@ -139,7 +139,7 @@ fun AppDrawerContent(
                 // Navigation Items
                 val navItems = listOf(
                     Triple("DASHBOARD", "dashboard", Icons.Default.Dashboard),
-                    Triple("RECORDS", "list", Icons.AutoMirrored.Filled.ListAlt),
+                    Triple("RECORDS", "transaction_list", Icons.AutoMirrored.Filled.ListAlt),
                     Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
                     Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
                 )
@@ -157,7 +157,7 @@ fun AppDrawerContent(
                             onNavigate {
                                 when (route) {
                                     "dashboard" -> onDashboardClick()
-                                    "list" -> onRecordsClick()
+                                    "transaction_list" -> onRecordsClick()
                                     "analytics" -> onAnalyticsClick()
                                     "exchange_rates" -> onExchangeRatesClick()
                                 }
@@ -200,9 +200,9 @@ fun AppDrawerContent(
                 )
 
                 val planningItems = listOf(
-                    Triple("PLANNED PAYMENTS", "planned_payments", Icons.Rounded.EventRepeat),
-                    Triple("BUDGETS", "budgets", Icons.Default.Savings),
-                    Triple("LOANS", "loans", Icons.Default.AccountBalance)
+                    Triple("PLANNED PAYMENTS", "planned_payment_list", Icons.Rounded.EventRepeat),
+                    Triple("BUDGETS", "budget_list", Icons.Default.Savings),
+                    Triple("LOANS", "loan_list", Icons.Default.AccountBalance)
                 )
 
                 planningItems.forEach { (label, route, icon) ->
@@ -217,9 +217,9 @@ fun AppDrawerContent(
                         onClick = {
                             onNavigate {
                                 when (route) {
-                                    "planned_payments" -> onPlannedPaymentsClick()
-                                    "budgets" -> onBudgetsClick()
-                                    "loans" -> onLoansClick()
+                                    "planned_payment_list" -> onPlannedPaymentsClick()
+                                    "budget_list" -> onBudgetsClick()
+                                    "loan_list" -> onLoansClick()
                                 }
                             }
                         },

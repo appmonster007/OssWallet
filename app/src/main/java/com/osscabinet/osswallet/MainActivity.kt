@@ -12,10 +12,13 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.ui.navigation.AnalyticsRoute
+import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
+import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
+import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import com.osscabinet.ossWallet.ui.navigation.Screen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import android.content.Intent
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -71,11 +74,15 @@ class MainActivity : FragmentActivity() {
                     
                     LaunchedEffect(pendingWidgetRoute) {
                         pendingWidgetRoute?.let { route ->
+                            val navOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
+                                popUpTo(navController.graph.startDestinationId) { saveState = false }
+                                launchSingleTop = true
+                            }
                             when (route) {
-                                "dashboard" -> navController.navigate(Screen.Dashboard.createRoute())
-                                "records" -> navController.navigate(Screen.TransactionList.createRoute())
-                                "analytics" -> navController.navigate(Screen.Analytics.createRoute())
-                                "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute())
+                                "dashboard"      -> navController.navigate(DashboardRoute(), navOptions)
+                                "records"        -> navController.navigate(TransactionListRoute(), navOptions)
+                                "analytics"      -> navController.navigate(AnalyticsRoute, navOptions)
+                                "exchange_rates" -> navController.navigate(ExchangeRatesRoute, navOptions)
                             }
                             pendingWidgetRoute = null
                         }

@@ -28,7 +28,6 @@ fun TransactionListScreen(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
-    onAddClick: (com.osscabinet.ossWallet.domain.model.TransactionType?, Long?) -> Unit = { _, _ -> },
     onBackClick: () -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     templateViewModel: TemplateViewModel,
@@ -44,8 +43,6 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -126,11 +123,7 @@ fun TransactionListScreen(
             }
         },
         onAddTag = viewModel::addTag,
-        revealedCardIds = revealedCardIds,
-        allTemplates = allTemplates,
-        allCategories = categories,
-        onAddClick = onAddClick,
-        expandableFabEnabled = expandableFabEnabled
+        revealedCardIds = revealedCardIds
     )
 }
 

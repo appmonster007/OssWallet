@@ -162,7 +162,12 @@ class DashboardViewModel @Inject constructor(
                     @Suppress("UNCHECKED_CAST")
                     val rates = args[3] as Map<String, BigDecimal>
                     val baseCurrency = args[4] as String
-                    // hasLoadedExchangeRates and cardsCfg are used from args directly below
+                    val hasLoadedExchangeRates = args[5] as Boolean
+                    val cardsCfg = args[6] as DashboardCardsConfig
+
+                    if (!hasLoadedExchangeRates) {
+                        return@flatMapLatest flowOf(DashboardUiState.Loading)
+                    }
 
                     @Suppress("UNCHECKED_CAST")
                     val plannedPayments = args[7] as List<PlannedPayment>
@@ -197,7 +202,7 @@ class DashboardViewModel @Inject constructor(
 
                     flow<DashboardUiState> {
                         val cardDataMap = computeCardUseCase.computeAll(
-                            configs = (args[6] as DashboardCardsConfig).cards,
+                            configs = cardsCfg.cards,
                             input = baseInput
                         )
 
@@ -278,7 +283,7 @@ class DashboardViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.Eagerly,
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = DashboardUiState.Loading
         )
 

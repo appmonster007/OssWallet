@@ -26,6 +26,7 @@ INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId, natur
 INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1001, 'Missing',  'MoreHoriz',     -7829368, 1, 1000, 'need')
 INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1002, 'Unknown',  'QuestionMark',  -7829368, 1, 1000, 'need')
 INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1003, 'Transfer', 'SwapHoriz',     -7829368, 1, 1000, 'need')
+INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1004, 'Initial Balance', 'AccountBalanceWallet', -7829368, 1, 1000, 'need')
 
 -- ============================================================
 -- Food & Drink — Level 1  (parentId = 1)

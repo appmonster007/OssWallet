@@ -56,6 +56,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -64,6 +65,9 @@ import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -206,6 +210,13 @@ fun DashboardScreen(
     val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
+
+    // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
+    // Compound condition ensures dialog/FAB BackHandlers (registered earlier = lower LIFO priority)
+    // still fire first when those overlays are active.
+    BackHandler(enabled = pagerState.currentPage > 0 && !showAddCardDialog && !isFabExpanded) {
+        scope.launch { pagerState.animateScrollToPage(0) }
+    }
 
     val isTopLevel = remember(initialViewContext, isTopLevelParam) {
         isTopLevelParam || initialViewContext == DashboardViewContext.None
@@ -546,8 +557,41 @@ fun DashboardGlanceTab(
             }
         }
 
+        val accountsCardConfig = remember(cardsConfig) {
+            cardsConfig.cards.filterIsInstance<AccountsCardConfig>().firstOrNull()
+        }
+        val accountsCardInput = remember(state) {
+            CardInput(
+                profileId = state.profileId,
+                transactions = state.allTransactions,
+                accounts = state.accounts,
+                categories = state.allCategories,
+                tags = state.allTags,
+                exchangeRates = state.exchangeRates,
+                baseCurrency = state.baseCurrency,
+                filter = TransactionFilter(excludeFuture = false)
+            )
+        }
+        val accountsCard = if (accountsCardConfig != null) {
+            rememberCardWithCallbacks(
+                config = accountsCardConfig,
+                input = accountsCardInput,
+                registry = cardComputerRegistry,
+                updateHandler = cardUpdateHandler,
+                onDelete = {},
+                onRecordsClick = onRecordsClick,
+                callbacks = AeonInteractionCallbacks(
+                    accountActions = AccountActions(
+                        onManageClick = onManageAccountsClick,
+                        onClick = onAccountClick,
+                        onSeeAll = onManageAccountsClick
+                    )
+                )
+            )
+        } else null
+
         AeonCardList(
-            cards = cardsConfig.cards,
+            cards = cardsConfig.cards.filter { it !is AccountsCardConfig },
             cardDataMap = state.cardDataMap,
             cardInput = CardInput(
                 profileId = state.profileId,
@@ -621,6 +665,24 @@ fun DashboardGlanceTab(
                     onAdd = onAddTag
                 )
             ),
+            header = if (accountsCard != null && accountsCard !is CardWithCallbacks.ComputeError) {
+                {
+                    UnifiedCardRenderer(
+                        cardWithCallbacks = accountsCard,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = AeonTheme.dimensions.spacingXs),
+                        currentTheme = currentTheme,
+                        filterContext = FilterSelectionContext(
+                            accounts = state.accounts,
+                            allCategories = state.allCategories,
+                            allTags = state.allTags,
+                            savedFilters = savedFilters,
+                            onSearchTransactions = onSearchTransactions
+                        ),
+                    )
+                }
+            } else null,
         )
     }
 }

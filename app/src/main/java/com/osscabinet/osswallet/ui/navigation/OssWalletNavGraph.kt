@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -146,6 +148,12 @@ fun OssWalletNavGraph(
         scope.launch { drawerState.close() }
     }
 
+    // Disable NavController's OnBackPressedCallback while drawer is open so the BackHandler
+    // above can intercept back presses (NavHost registers deeper in the tree = higher LIFO priority).
+    SideEffect {
+        navController.enableOnBackPressed(!drawerState.isOpen)
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = false,
@@ -232,6 +240,19 @@ fun OssWalletNavGraph(
                 accountsGraph(navController, vms)
                 transactionsGraph(navController, vms)
                 planningGraph(navController, vms)
+            }
+
+            // Custom scrim: gesturesEnabled=false disables Material3's built-in scrim click,
+            // so we provide our own overlay that closes the drawer on tap.
+            if (drawerState.isOpen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { scope.launch { drawerState.close() } }
+                )
             }
 
             // Transparent 20dp edge strip — any drag here is always an edge drag.

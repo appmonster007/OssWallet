@@ -1,0 +1,3 @@
+id,name,currency,limitAmount,filterId,profileId
+1,Monthly Food,USD,800.00,6,1
+2,Japan Trip,JPY,200000.00,7,1

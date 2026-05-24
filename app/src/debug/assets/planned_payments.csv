@@ -1,0 +1,4 @@
+id,templateName,recurrenceType,dayOfMonth,dayOfWeek,offsetDays,autoConfirm
+1,Monthly Rent,MONTHLY,1,,30,true
+2,Salary Deposit,MONTHLY,1,,30,false
+3,Quick Coffee,WEEKLY,,2,7,false

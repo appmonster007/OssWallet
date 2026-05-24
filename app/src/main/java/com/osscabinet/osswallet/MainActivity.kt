@@ -72,10 +72,10 @@ class MainActivity : FragmentActivity() {
                     LaunchedEffect(pendingWidgetRoute) {
                         pendingWidgetRoute?.let { route ->
                             when (route) {
-                                "dashboard" -> navController.navigate(Screen.Main.createRoute("dashboard"))
-                                "records" -> navController.navigate(Screen.Main.createRoute("records"))
-                                "analytics" -> navController.navigate(Screen.Main.createRoute("analytics"))
-                                "exchange_rates" -> navController.navigate(Screen.Main.createRoute("exchange_rates"))
+                                "dashboard" -> navController.navigate(Screen.Dashboard.createRoute())
+                                "records" -> navController.navigate(Screen.TransactionList.createRoute())
+                                "analytics" -> navController.navigate(Screen.Analytics.createRoute())
+                                "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute())
                             }
                             pendingWidgetRoute = null
                         }

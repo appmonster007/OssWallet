@@ -689,7 +689,7 @@
     const parts = [];
     const tl = fs.timelineType;
     if (tl && tl !== 'ALL_TIME') {
-      const map = { MONTH:'This Month', LAST_MONTH:'Last Month', YEAR:'This Year', LAST_YEAR:'Last Year', TODAY:'Today', WEEK:'This Week', QUARTER:'This Quarter', CUSTOM:'Custom', MONTHLY:'This Month', YEARLY:'This Year', WEEKLY:'This Week' };
+      const map = { MONTH:'This Month', YEAR:'This Year', TODAY:'Today', WEEK:'This Week', QUARTER:'This Quarter', HALF_YEAR:'Half Year', CUSTOM:'Custom', MONTHLY:'This Month', YEARLY:'This Year', WEEKLY:'This Week', LAST_24H:'Last 24h', LAST_7_DAYS:'Last 7 Days', LAST_30_DAYS:'Last 30 Days', LAST_12_WEEKS:'Last 12 Weeks', LAST_6_MONTHS:'Last 6 Months', LAST_1_YEAR:'Last Year', LAST_5_YEARS:'Last 5 Years' };
       parts.push(map[tl] || tl);
     }
     if (fs.transactionTypes && fs.transactionTypes.length) parts.push(fs.transactionTypes.join('/'));
@@ -735,16 +735,16 @@
       case 'NetWorth':              return renderNetWorthBody(d);
       case 'CashFlow':              return renderCashFlowBody(d);
       case 'CurrencyBalances':      return renderCurrencyBalancesBody(d);
-      case 'Accounts':              return renderAccountsBody(d);
+      case 'Accounts':              return renderAccountsBody(d, d.baseCurrency||'');
       case 'Budgets':               return renderBudgetBody(d);
       case 'PlannedPayments':       return renderPlannedPaymentsBody(d);
       case 'Loans':                 return renderLoansBody(d);
       case 'RecentActivities':      return renderRecentActivitiesBody(d.transactions||[], d.total||0);
-      case 'CategoryBreakdown':     return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[]) : renderCategoryPieBody(d.items||[]);
-      case 'CashFlowComparison':    return renderCashFlowComparisonBody(d);
+      case 'CategoryBreakdown':     return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[], d.displayCurrency||'') : renderCategoryPieBody(d.items||[], d.displayCurrency||'');
+      case 'CashFlowComparison':    { if (!window.cachedCfcData) window.cachedCfcData={}; window.cachedCfcData[card.cardId]=d; return renderCashFlowComparisonBody(d, card.cardId); }
       case 'IncomeExpenseBar':      return renderIncomeExpenseBody(d.buckets||[], d.granularity||'MONTH', d.baseCurrency, d.todayBucketIndex);
       case 'CategorySpendingTrend': return renderCategorySpendingTrendBody(d);
-      case 'TagUpSetPlot':          return renderTagUpSetPlotBody(d);
+      case 'TagUpSetPlot':          return renderTagUpSetPlotBody(d, d.baseCurrency||'');
       case 'Error':                 return `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`;
       default:                      return `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`;
     }
@@ -787,8 +787,8 @@
         if (fs && !cardOverrides[card.cardId]) {
           cardOverrides[card.cardId] = {
             timelineType:   fs.timelineType   || 'ALL_TIME',
-            customFrom:     fs.customFrom      || null,
-            customTo:       fs.customTo        || null,
+            customFrom: fs.dateFrom ? new Date(fs.dateFrom).toISOString().slice(0,10) : null,
+            customTo:   fs.dateTo   ? new Date(fs.dateTo).toISOString().slice(0,10)   : null,
             accountIds:     fs.accountIds      || [],
             categoryIds:    fs.categoryIds     || [],
             txType:         (fs.transactionTypes||[])[0] || '',
@@ -825,28 +825,6 @@
   }
 
   /* ── Individual dashboard card renderers ─────────────── */
-
-  /* ── Timeline → {dateFrom, dateTo} in epoch ms ───────────── */
-  function timelineToRange(tl, customFrom, customTo) {
-    const now = new Date();
-    const d0  = (y,m,day) => new Date(y,m,day).getTime();
-    const y = now.getFullYear(), mo = now.getMonth();
-    switch (tl) {
-      case 'TODAY':         return { dateFrom: d0(y,mo,now.getDate()), dateTo: d0(y,mo,now.getDate())+86399999 };
-      case 'THIS_WEEK': {   const dow = (now.getDay()+6)%7; const mon = new Date(now); mon.setDate(now.getDate()-dow);
-                            return { dateFrom: d0(mon.getFullYear(),mon.getMonth(),mon.getDate()), dateTo: d0(mon.getFullYear(),mon.getMonth(),mon.getDate()+6)+86399999 }; }
-      case 'THIS_MONTH':    return { dateFrom: d0(y,mo,1), dateTo: d0(y,mo+1,0)+86399999 };
-      case 'LAST_MONTH':    return { dateFrom: d0(y,mo-1,1), dateTo: d0(y,mo,0)+86399999 };
-      case 'THIS_QUARTER':{ const q=Math.floor(mo/3); return { dateFrom: d0(y,q*3,1), dateTo: d0(y,q*3+3,0)+86399999 }; }
-      case 'THIS_YEAR':     return { dateFrom: d0(y,0,1), dateTo: d0(y,11,31)+86399999 };
-      case 'LAST_YEAR':     return { dateFrom: d0(y-1,0,1), dateTo: d0(y-1,11,31)+86399999 };
-      case 'HALF_YEAR': {   const from = new Date(y, mo - 6, 1);
-                            return { dateFrom: from.getTime(), dateTo: d0(y, mo+1, 0)+86399999 }; }
-      case 'CUSTOM':        return { dateFrom: customFrom ? new Date(customFrom).getTime() : null,
-                                     dateTo:   customTo   ? new Date(customTo+'T23:59:59').getTime() : null };
-      default:              return { dateFrom: null, dateTo: null };
-    }
-  }
 
   /* ── Refresh a single card's body after filter change ────── */
   async function refreshCardContent(cardId, payloadType, cardType) {
@@ -888,10 +866,11 @@
       <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div>`;
     if (hasTransfer) html += `<div class="stat-card"><div class="stat-label">Transfers</div><div class="stat-value">${fmt(d.transfer||0,cur)}</div></div>`;
     html += `<div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':'−'}${fmt(Math.abs(d.cashFlow||0),cur)}</div></div>`;
-    if (d.previousNetWorth != null) {
+    if (d.previousNetWorth != null && d.previousNetWorth !== 0) {
       const delta = (d.netWorth||0) - d.previousNetWorth;
-      const deltaCls = delta >= 0 ? 'positive' : 'negative';
-      html += `<div class="stat-card"><div class="stat-label">vs Previous</div><div class="stat-value ${deltaCls}">${delta>=0?'+':'−'}${fmt(Math.abs(delta),cur)}</div></div>`;
+      const pct = (delta / Math.abs(d.previousNetWorth) * 100).toFixed(1);
+      const pctCls = delta >= 0 ? 'positive' : 'negative';
+      html += `<div class="stat-card"><div class="stat-label">vs Previous</div><div class="stat-value ${pctCls}">${delta>=0?'+':'−'}${Math.abs(pct)}%</div></div>`;
     }
     return html + '</div>';
   }
@@ -917,7 +896,7 @@
       const cls = (item.balance||0) >= 0 ? 'amount-income' : 'amount-expense';
       body += `<div class="currency-item">
         <div class="currency-code">${esc(item.currency)}</div>
-        <div class="currency-balance ${cls}">${fmtRaw(item.balance||0)}</div>
+        <div class="currency-balance ${cls}">${fmt(item.balance||0, item.currency)}</div>
         ${baseCur && item.currency !== baseCur && item.balanceInBase != null
           ? `<div class="currency-base">≈ ${fmt(item.balanceInBase, baseCur)}</div>` : ''}
       </div>`;
@@ -925,16 +904,19 @@
     return body + '</div>';
   }
 
-  function renderAccountsBody(d) {
+  function renderAccountsBody(d, baseCur) {
     const accounts = d.accounts || [];
+    const bCur = baseCur || cachedSettings.baseCurrency || '';
     if (!accounts.length) return '<p class="empty-state">No accounts.</p>';
     let body = '<div class="card-grid" style="margin-bottom:0">';
     accounts.forEach(acc => {
       const cls = (acc.balance||0) >= 0 ? 'positive' : 'negative';
       const hasTransfer = acc.transfer != null && acc.transfer !== 0;
+      const showBase = bCur && acc.currency !== bCur && acc.balanceInBase != null;
       body += `<div class="stat-card">
         <div style="font-weight:600;margin-bottom:6px">${esc(acc.name)}</div>
         <div class="stat-value ${cls}" style="font-size:1.1rem">${fmt(acc.balance||0,acc.currency)}</div>
+        ${showBase ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">≈ ${fmt(acc.balanceInBase,bCur)}</div>` : ''}
         ${acc.income != null ? `<div style="font-size:0.78rem;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap">
           <span class="amount-income">+${fmt(acc.income||0,acc.currency)}</span>
           <span class="amount-expense">−${fmt(acc.expense||0,acc.currency)}</span>
@@ -954,9 +936,14 @@
       const pct = Math.min(100, Math.round(b.percentage||0));
       const alertCls = b.alertLevel==='EXCEEDED'?'progress-red':b.alertLevel==='WARNING'?'progress-orange':'progress-green';
       const archived = b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted);font-size:0.68rem">Archived</span>' : '';
+      const statusBadge = b.alertLevel==='EXCEEDED'
+        ? '<span class="badge" style="background:var(--danger);color:#fff;font-size:0.65rem;margin-left:4px">OVER BUDGET</span>'
+        : b.alertLevel==='WARNING'
+        ? '<span class="badge" style="background:var(--warning);color:#fff;font-size:0.65rem;margin-left:4px">WARNING</span>'
+        : '';
       body += `<div style="margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
-          <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.name)} ${archived}</span>
+          <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.name)} ${archived}${statusBadge}</span>
           <span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${esc(b.period||'')}</span>
           <span style="font-weight:700;white-space:nowrap;color:${b.alertLevel==='EXCEEDED'?'var(--danger)':b.alertLevel==='WARNING'?'var(--warning)':'var(--success)'}">${pct}%</span>
         </div>
@@ -1007,23 +994,25 @@
     return body + '</div>';
   }
 
-  function renderCategoryPieBody(items) {
+  function renderCategoryPieBody(items, displayCur) {
     if (!items.length) return '<p class="empty-state">No category data.</p>';
-    const top8 = items.slice(0,8); const rest = items.slice(8);
-    const slices = [...top8];
+    const cur = displayCur || cachedSettings.baseCurrency || '';
+    const top10 = items.slice(0,10); const rest = items.slice(10);
+    const slices = [...top10];
     if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0), transactionCount:rest.reduce((s,c)=>s+(c.transactionCount||0),0) });
     const cs = slices.map((c,i)=>({ label:c.categoryName, value:c.amount, color:c.colorHex||CHART_COLORS[i%CHART_COLORS.length] }));
     let leg = '<div class="chart-legend" style="flex:1">';
-    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span>${c.transactionCount?`<span style="color:var(--text-muted);font-size:0.72rem;margin-left:4px">${c.transactionCount} txns</span>`:''}</div>`; });
+    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmt(c.amount||0,cur)} (${fmtRaw(c.percentage||0,1)}%)</span>${c.transactionCount?`<span style="color:var(--text-muted);font-size:0.72rem;margin-left:4px">${c.transactionCount} txns</span>`:''}</div>`; });
     leg += '</div>';
     return `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(cs,160)}${leg}</div>`;
   }
 
-  function renderCategoryTreemapBody(items) {
+  function renderCategoryTreemapBody(items, displayCur) {
     if (!items.length) return '<p class="empty-state">No category data.</p>';
+    const cur = displayCur || cachedSettings.baseCurrency || '';
     const tm = items.map((c,i)=>({ categoryName:c.categoryName, amount:c.amount, percentage:c.percentage, colorHex:c.colorHex||CHART_COLORS[i%CHART_COLORS.length] }));
     let leg = '<div class="chart-legend" style="margin-top:12px">';
-    items.slice(0,8).forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`; });
+    items.slice(0,10).forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(c.colorHex||CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmt(c.amount||0,cur)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.percentage||0,1)}%</span></div>`; });
     leg += '</div>';
     return `<div class="treemap-wrap">${svgTreemapChart(tm,560,180)}</div>${leg}`;
   }
@@ -1032,7 +1021,16 @@
     if (!pts.length) return '<p class="empty-state">No data.</p>';
     const points = pts.map(b=>({ label:b.label, income:b.income||0, expense:b.expense||0 }));
     const hasTodayMarker = todayIdx != null && todayIdx >= 0 && todayIdx < points.length;
-    return `${svgBars(points,560,140,true,hasTodayMarker?todayIdx:-1)}<div class="chart-legend" style="margin-top:8px">
+    const totalIncome  = pts.reduce((s,p)=>s+(p.income||0),0);
+    const totalExpense = pts.reduce((s,p)=>s+(p.expense||0),0);
+    const netTotal = totalIncome - totalExpense;
+    const netCls   = netTotal >= 0 ? 'positive' : 'negative';
+    const summary = `<div style="display:flex;gap:16px;margin-bottom:8px;font-size:0.85rem;flex-wrap:wrap">
+      <span class="amount-income">Income: +${fmt(totalIncome,baseCur)}</span>
+      <span class="amount-expense">Expense: −${fmt(totalExpense,baseCur)}</span>
+      <span class="${netCls}">Net: ${netTotal>=0?'+':'−'}${fmt(Math.abs(netTotal),baseCur)}</span>
+    </div>`;
+    return `${summary}${svgBars(points,560,140,true,hasTodayMarker?todayIdx:-1)}<div class="chart-legend" style="margin-top:8px">
       <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>Income</span></div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div><span>Expense</span></div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--primary);border:1px dashed var(--primary);background:none;width:14px;height:2px;border-radius:0;border-top:2px dashed var(--primary)"></div><span>Net</span></div>
@@ -1055,20 +1053,25 @@
     return body;
   }
 
-  function renderCashFlowComparisonBody(d) {
+  const cashFlowComparisonMetric = {};
+  function renderCashFlowComparisonBody(d, cardId, metric) {
     const current=d.current||[], previous=d.previous||[], lastYear=d.lastYear||[];
     if (!current.length) return '<p class="empty-state">No comparison data.</p>';
-    const labels = current.map(p=>p.label||'');
-    /* Align previous and lastYear to current's x-axis using epochMillis as key */
-    const prevByMs = Object.fromEntries(previous.map(p=>[p.epochMillis, p.net||0]));
-    const lyByMs   = Object.fromEntries(lastYear.map(p=>[p.epochMillis, p.net||0]));
+    const m = metric || cashFlowComparisonMetric[cardId] || 'net';
+    const getVal = (p,key) => key==='income'?(p.income||0):key==='expense'?(p.expense||0):(p.net||0);
+    const prevByMs = Object.fromEntries(previous.map(p=>[p.epochMillis, getVal(p,m)]));
+    const lyByMs   = Object.fromEntries(lastYear.map(p=>[p.epochMillis, getVal(p,m)]));
     const series = [
-      { name:'Current',   color:'#1976D2', opacity:1,    labels, points:current.map(p=>p.net||0) },
-      { name:'Previous',  color:'#9e9e9e', opacity:0.7,  labels, points:current.map(p=>prevByMs[p.epochMillis]??0) },
-      { name:'Last Year', color:'#bdbdbd', opacity:0.55, labels, points:current.map(p=>lyByMs[p.epochMillis]??0) },
+      { name:'Current',   color:'#1976D2', opacity:1,    labels:current.map(p=>p.label||''), points:current.map(p=>getVal(p,m)) },
+      { name:'Previous',  color:'#FF9800', opacity:0.7,  labels:current.map(p=>p.label||''), points:current.map(p=>prevByMs[p.epochMillis]??0) },
+      { name:'Last Year', color:'#4CAF50', opacity:0.6,  labels:current.map(p=>p.label||''), points:current.map(p=>lyByMs[p.epochMillis]??0) },
     ].filter(s=>s.points.some(v=>v!==0));
     if (!series.length) return '<p class="empty-state">No comparison data.</p>';
-    return `${svgLineChart(series,560,160)}<div class="chart-legend" style="margin-top:10px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}</div>`;
+    const toggleId = cardId ? `cfcm-${esc(cardId)}` : '';
+    const toggleHtml = cardId ? `<div style="display:flex;gap:6px;margin-bottom:10px">
+      ${['net','income','expense'].map(opt=>`<button class="btn btn-sm ${m===opt?'btn-primary':'btn-ghost'}" onclick="(function(){cashFlowComparisonMetric['${esc(cardId)}']='${opt}';document.getElementById('card-body-${esc(cardId)}').innerHTML=renderCashFlowComparisonBody(cachedCfcData&&cachedCfcData['${esc(cardId)}']||{current:[],previous:[],lastYear:[]},'${esc(cardId)}','${opt}');})()">${opt.charAt(0).toUpperCase()+opt.slice(1)}</button>`).join('')}
+    </div>` : '';
+    return `${toggleHtml}${svgLineChart(series,560,160)}<div class="chart-legend" style="margin-top:10px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${esc(s.color)}"></div><span>${esc(s.name)}</span></div>`).join('')}</div>`;
   }
 
   function renderCategorySpendingTrendBody(d) {
@@ -1091,22 +1094,23 @@
     return `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`;
   }
 
-  function renderTagUpSetPlotBody(d) {
+  function renderTagUpSetPlotBody(d, baseCur) {
     const sets=d.sets||[], inters=d.intersections||[];
+    const cur = baseCur || cachedSettings.baseCurrency || '';
     if (!sets.length) return '<p class="empty-state">No tag data.</p>';
     const maxAmt = Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)),1);
     let body = '<div style="margin-bottom:16px">';
     sets.forEach(s => {
       const pct = Math.min(100, Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));
       const isInc = (s.totalAmount||0) >= 0;
-      body += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="amount-income" style="font-size:0.78rem">+${fmtRaw(s.income||0)}</span><span class="amount-expense" style="font-size:0.78rem">−${fmtRaw(s.expense||0)}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;
+      body += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="amount-income" style="font-size:0.78rem">+${fmt(s.income||0,cur)}</span><span class="amount-expense" style="font-size:0.78rem">−${fmt(s.expense||0,cur)}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;
     });
     body += '</div>';
     if (inters.length) {
       body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th><th>Txns</th></tr></thead><tbody>`;
       inters.slice(0,10).forEach(inter => {
         const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
-        body+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmtRaw(Math.abs(inter.amount||0))}</td><td style="text-align:right" class="amount-income">+${fmtRaw(inter.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(inter.expense||0)}</td><td>${inter.transactionCount||0}</td></tr>`;
+        body+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmt(Math.abs(inter.amount||0),cur)}</td><td style="text-align:right" class="amount-income">+${fmt(inter.income||0,cur)}</td><td style="text-align:right" class="amount-expense">−${fmt(inter.expense||0,cur)}</td><td>${inter.transactionCount||0}</td></tr>`;
       });
       body += '</tbody></table></div>';
     }
@@ -2672,7 +2676,7 @@
 
     if (caps.timeline) {
       const tl = fs.timelineType || 'ALL_TIME';
-      const tlLabels = {ALL_TIME:'All Time',TODAY:'Today',WEEK:'This Week',MONTH:'This Month',QUARTER:'This Quarter',YEAR:'This Year',HALF_YEAR:'Half Year',CUSTOM:'Custom Range'};
+      const tlLabels = {ALL_TIME:'All Time',TODAY:'Today',WEEK:'This Week',MONTH:'This Month',QUARTER:'This Quarter',YEAR:'This Year',HALF_YEAR:'Half Year (6mo)',LAST_7_DAYS:'Last 7 Days',LAST_30_DAYS:'Last 30 Days',LAST_6_MONTHS:'Last 6 Months',LAST_1_YEAR:'Last Year',CUSTOM:'Custom Range'};
       body += `<div class="form-field"><label>Period</label>
         <select id="cf-timeline" onchange="toggleCustomDates()">
           ${Object.keys(tlLabels).map(v=>`<option value="${v}" ${tl===v?'selected':''}>${tlLabels[v]}</option>`).join('')}

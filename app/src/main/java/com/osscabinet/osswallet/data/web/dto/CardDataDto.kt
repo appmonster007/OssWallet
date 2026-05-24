@@ -16,6 +16,25 @@ data class CardDataDto(
 )
 
 @Serializable
+data class CardFilterUpdateDto(
+    val timelineType: String? = null,
+    val dateFrom: Long? = null,
+    val dateTo: Long? = null,
+    val accountIds: List<String> = emptyList(),
+    val categoryIds: List<Long> = emptyList(),
+    val transactionTypes: List<String> = emptyList(),
+    val tags: List<String> = emptyList(),
+    val currencies: List<String> = emptyList(),
+    val statuses: List<String> = emptyList(),
+    val paymentMethods: List<String> = emptyList(),
+    val minAmount: Double? = null,
+    val maxAmount: Double? = null,
+    val queryNote: String? = null,
+    val queryPayee: String? = null,
+    val excludeFuture: Boolean = true
+)
+
+@Serializable
 data class FilterSummaryDto(
     val timelineType: String,
     val dateFrom: Long? = null,

@@ -221,6 +221,11 @@
   .dash-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
   .dash-card-title { font-weight: 700; font-size: 1rem; flex: 1; min-width: 0; }
   .filter-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); white-space: nowrap; }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-check { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .chip-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip-check.active { background: color-mix(in srgb, var(--accent) 15%, transparent); border-color: var(--accent); color: var(--accent); }
+  .chip-check:hover { border-color: var(--accent); }
   .dash-card-actions { display: flex; gap: 4px; margin-left: auto; }
   .currency-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
   .currency-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; }
@@ -270,6 +275,7 @@
       <a class="nav-item" href="#/loans"><span class="nav-icon">🏦</span> Loans</a>
       <a class="nav-item" href="#/planned-payments"><span class="nav-icon">🔄</span> Planned</a>
       <div class="nav-section">Organize</div>
+      <a class="nav-item" href="#/templates"><span class="nav-icon">📄</span> Templates</a>
       <a class="nav-item" href="#/categories"><span class="nav-icon">🏷️</span> Categories</a>
       <a class="nav-item" href="#/tags"><span class="nav-icon">🔖</span> Tags</a>
       <div class="nav-section">System</div>
@@ -393,13 +399,17 @@
     updateActiveNav(hash); closeSidebar();
     if      (hash.startsWith('#/dashboard'))        renderDashboard();
     else if (hash.startsWith('#/records'))          renderRecords();
+    else if (hash.startsWith('#/accounts/'))        renderAccountDetail(hash.split('/')[2]);
     else if (hash.startsWith('#/accounts'))         renderAccounts();
+    else if (hash.startsWith('#/budgets/'))         renderBudgetDetail(hash.split('/')[2]);
     else if (hash.startsWith('#/budgets'))          renderBudgets();
+    else if (hash.startsWith('#/loans/'))           renderLoanDetail(hash.split('/')[2]);
     else if (hash.startsWith('#/loans'))            renderLoans();
     else if (hash.startsWith('#/planned-payments')) renderPlannedPayments();
     else if (hash.startsWith('#/categories'))       renderCategories();
     else if (hash.startsWith('#/analytics'))        renderAnalytics();
     else if (hash.startsWith('#/tags'))             renderTags();
+    else if (hash.startsWith('#/templates'))        renderTemplates();
     else if (hash.startsWith('#/settings'))         renderSettings();
     else renderDashboard();
   }
@@ -471,6 +481,7 @@
   function closeModal() {
     modalOverlay.classList.remove('open');
     modalConfBtn.onclick = null;
+    modalConfBtn.style.display = '';
   }
 
   function confirmDelete(message, onConfirm) {
@@ -637,29 +648,26 @@
     return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="display:block;border-radius:6px;overflow:hidden" preserveAspectRatio="none">${rects}${texts}</svg>`;
   }
 
-  /* Filter badge — accepts either a FilterSummaryDto (from server) or a cardOverrides entry */
+  /* Filter badge — accepts FilterSummaryDto (from server) or local fs override object */
   function filterBadge(fs) {
     if (!fs) return '';
     const parts = [];
     const tl = fs.timelineType;
     if (tl && tl !== 'ALL_TIME') {
-      const map = { THIS_MONTH:'This Month', LAST_MONTH:'Last Month', THIS_YEAR:'This Year', LAST_YEAR:'Last Year', TODAY:'Today', THIS_WEEK:'This Week', THIS_QUARTER:'This Quarter', CUSTOM:'Custom' };
+      const map = { MONTH:'This Month', LAST_MONTH:'Last Month', YEAR:'This Year', LAST_YEAR:'Last Year', TODAY:'Today', WEEK:'This Week', QUARTER:'This Quarter', CUSTOM:'Custom', MONTHLY:'This Month', YEARLY:'This Year', WEEKLY:'This Week' };
       parts.push(map[tl] || tl);
     }
-    /* server FilterSummaryDto uses transactionTypes[], override uses txType string */
     if (fs.transactionTypes && fs.transactionTypes.length) parts.push(fs.transactionTypes.join('/'));
     else if (fs.txType) parts.push(fs.txType);
-    if (fs.currencies && fs.currencies.length) parts.push(fs.currencies.join(', '));
-    if (fs.accountIds && fs.accountIds.length) parts.push(`${fs.accountIds.length} acct`);
-    if (fs.accountId) {
-      const acc = cachedAccounts.find(a=>a.id===fs.accountId);
-      parts.push(acc ? acc.name : 'Account');
-    }
-    if (fs.categoryId) {
-      const cat = cachedCategories.find(c=>String(c.id)===String(fs.categoryId));
-      parts.push(cat ? cat.name : 'Category');
-    }
-    if (fs.minAmount || fs.maxAmount) parts.push(`${fs.minAmount||0}–${fs.maxAmount||'∞'}`);
+    if (fs.accountIds && fs.accountIds.length) parts.push(`${fs.accountIds.length} acct${fs.accountIds.length>1?'s':''}`);
+    if (fs.categoryIds && fs.categoryIds.length) parts.push(`${fs.categoryIds.length} cat${fs.categoryIds.length>1?'s':''}`);
+    if (fs.currencies && fs.currencies.length) parts.push(fs.currencies.join('/'));
+    if (fs.statuses && fs.statuses.length) parts.push(fs.statuses.join('/'));
+    if (fs.paymentMethods && fs.paymentMethods.length) parts.push(fs.paymentMethods.join('/'));
+    if (fs.tags && fs.tags.length) parts.push(fs.tags.map(t=>`#${t}`).join(' '));
+    if (fs.queryNote) parts.push(`note:"${fs.queryNote}"`);
+    if (fs.queryPayee) parts.push(`payee:"${fs.queryPayee}"`);
+    if (fs.minAmount != null || fs.maxAmount != null) parts.push(`${fs.minAmount||0}–${fs.maxAmount||'∞'}`);
     return parts.length ? `<span class="filter-badge" title="Active filter">⚙️ ${esc(parts.join(' · '))}</span>` : '';
   }
 
@@ -703,6 +711,23 @@
         return dashCardWrap(card, `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`, payloadType);
       default:
         return dashCardWrap(card, `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`, payloadType);
+    }
+  }
+
+  /* Returns only the inner body HTML for a card (no dashCardWrap) — used by refreshCardContent */
+  function dispatchCardBody(card, d, payloadType) {
+    switch (payloadType) {
+      case 'NetWorth':         { const cur=d.currency||cachedSettings.baseCurrency||'USD'; const nwCls=(d.netWorth||0)>=0?'positive':'negative'; const cfCls=(d.cashFlow||0)>=0?'positive':'negative'; return `<div class="card-grid" style="margin-bottom:0"><div class="stat-card"><div class="stat-label">Net Worth</div><div class="stat-value ${nwCls}">${fmt(d.netWorth||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Cash Flow</div><div class="stat-value ${cfCls}">${(d.cashFlow||0)>=0?'+':'−'}${fmt(Math.abs(d.cashFlow||0),cur)}</div></div></div>`; }
+      case 'CashFlow':         { const cur=d.currency||cachedSettings.baseCurrency||'USD'; const netCls=(d.net||0)>=0?'positive':'negative'; return `<div class="card-grid" style="margin-bottom:0"><div class="stat-card"><div class="stat-label">Income</div><div class="stat-value positive">+${fmt(d.income||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value negative">−${fmt(d.expense||0,cur)}</div></div><div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${(d.net||0)>=0?'+':'−'}${fmt(Math.abs(d.net||0),cur)}</div></div></div>`; }
+      case 'CurrencyBalances': { const items=d.items||[]; if(!items.length) return '<p class="empty-state">No balances.</p>'; return `<div class="table-wrap"><table><thead><tr><th>Currency</th><th style="text-align:right">Balance</th><th style="text-align:right">In ${esc(d.baseCurrency||'')}</th></tr></thead><tbody>${items.map(i=>`<tr><td><span class="badge">${esc(i.currency)}</span></td><td style="text-align:right">${fmtRaw(i.balance||0)}</td><td style="text-align:right">${fmtRaw(i.balanceInBase||0)}</td></tr>`).join('')}</tbody></table></div>`; }
+      case 'Accounts':         { const accs=d.accounts||[]; if(!accs.length) return '<p class="empty-state">No accounts.</p>'; const cur=cachedSettings.baseCurrency||'USD'; return `<div class="table-wrap"><table><thead><tr><th>Account</th><th>Currency</th><th style="text-align:right">Balance</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th></tr></thead><tbody>${accs.map(a=>`<tr><td>${esc(a.name)}</td><td><span class="badge">${esc(a.currency)}</span></td><td style="text-align:right">${fmtRaw(a.balance||0)}</td><td style="text-align:right" class="amount-income">+${fmtRaw(a.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(a.expense||0)}</td></tr>`).join('')}</tbody></table></div>`; }
+      case 'CategoryBreakdown': return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[]) : renderCategoryPieBody(d.items||[]);
+      case 'IncomeExpenseBar':  return renderIncomeExpenseBody(d.buckets||[], d.granularity||'MONTH');
+      case 'RecentActivities':  return renderRecentActivitiesBody(d.transactions||[], d.total||0);
+      case 'CashFlowComparison':{ const cur2=d.baseCurrency||cachedSettings.baseCurrency||'USD'; const all=[...(d.current||[]),...(d.previous||[]),...(d.lastYear||[])]; if(!all.length) return '<p class="empty-state">No data.</p>'; const series=[{label:'Current',data:d.current||[],color:'var(--primary)'},{label:'Previous',data:d.previous||[],color:'var(--text-muted)'},{label:'Last Year',data:d.lastYear||[],color:'var(--warning)'}]; return `${svgLineChart(series,560,140)}<div class="chart-legend" style="margin-top:8px">${series.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div><span>${esc(s.label)}</span></div>`).join('')}</div>`; }
+      case 'CategorySpendingTrend':{ const bkts=d.buckets||[]; if(!bkts.length) return '<p class="empty-state">No spending trend data.</p>'; const allCats=[...new Set(bkts.flatMap(b=>(b.categories||[]).map(c=>c.categoryName)))]; const colorMap={}; allCats.forEach((name,i)=>{colorMap[name]=CHART_COLORS[i%CHART_COLORS.length];}); const catTotals={}; bkts.forEach(b=>(b.categories||[]).forEach(c=>{catTotals[c.categoryName]=(catTotals[c.categoryName]||0)+Math.abs(c.amount||0);})); const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8); let leg='<div class="chart-legend" style="margin-top:12px">'; topCats.forEach(([name,total])=>{leg+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;}); return `${svgStackedBarsChart(bkts,colorMap,560,140)}${leg}</div>`; }
+      case 'TagUpSetPlot':      { const sets=d.sets||[],inters=d.intersections||[]; if(!sets.length) return '<p class="empty-state">No tag data.</p>'; const maxAmt=Math.max(...sets.map(s=>Math.abs(s.totalAmount||0)),1); let body2='<div style="margin-bottom:16px">'; sets.forEach(s=>{const pct=Math.min(100,Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));const isInc=(s.totalAmount||0)>=0;body2+=`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="amount-income" style="font-size:0.78rem">+${fmtRaw(s.income||0)}</span><span class="amount-expense" style="font-size:0.78rem">−${fmtRaw(s.expense||0)}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;}); body2+='</div>'; if(inters.length){body2+=`<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th><th>Txns</th></tr></thead><tbody>`;inters.slice(0,10).forEach(inter=>{const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');body2+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmtRaw(Math.abs(inter.amount||0))}</td><td style="text-align:right" class="amount-income">+${fmtRaw(inter.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(inter.expense||0)}</td><td>${inter.transactionCount||0}</td></tr>`;}); body2+='</tbody></table></div>';} return body2; }
+      default: return dispatchCardRender(card, d, payloadType).replace(/^[\s\S]*?<div[^>]+class="dash-card-body[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*$/, '$1') || '<p class="empty-state">Card refreshed.</p>';
     }
   }
 
@@ -824,28 +849,19 @@
     const el = document.getElementById('card-body-' + cardId);
     if (!el) return;
     el.innerHTML = '<div class="loading-wrap"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:20px auto"></div></div>';
-    const ov = cardOverrides[cardId];
     try {
-      let body = '';
-      if (payloadType === 'CategoryBreakdown' && ov) {
-        const res = await apiFetch(buildBreakdownUrl(ov));
-        const items = res.success ? (res.data || []) : [];
-        /* re-use existing render logic via a fake card object */
-        const fakeCard = { cardId, cardType, title:'', filterSummary:null, data:{ type:payloadType, items } };
-        body = cardType === 'CATEGORY_TREEMAP' ? renderCategoryTreemapBody(items) : renderCategoryPieBody(items);
-      } else if (payloadType === 'IncomeExpenseBar' && ov) {
-        const res = await apiFetch(buildCashFlowUrl(ov));
-        const pts = res.success ? (res.data || []) : [];
-        body = renderIncomeExpenseBody(pts, ov.granularity || 'MONTH');
-      } else if (payloadType === 'RecentActivities' && ov) {
-        const res = await apiFetch(buildTxUrl(ov));
-        const txs = res.success ? (res.data?.items || []) : [];
-        const total = res.success ? (res.data?.total || 0) : 0;
-        body = renderRecentActivitiesBody(txs, total);
-      } else {
-        body = '<div class="alert alert-warn" style="font-size:0.85rem">Filter applied. Re-fetch not supported for this card type — changes are reflected on next dashboard reload.</div>';
-      }
-      el.innerHTML = body;
+      const resp = await apiFetch('/api/dashboard');
+      const cards = resp.success ? (resp.data || []) : [];
+      const card = cards.find(c => c.cardId === cardId);
+      if (!card) { el.innerHTML = '<div class="alert alert-warn" style="font-size:0.85rem">Card not found in dashboard.</div>'; return; }
+      const d  = card.data;
+      const pt = d.type ? d.type.split('.').pop() : payloadType;
+      el.innerHTML = dispatchCardBody(card, d, pt);
+      /* Also update filter badge to reflect server-side filter */
+      const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
+      const newBadge = filterBadge(card.filterSummary);
+      if (badgeEl) { badgeEl.outerHTML = newBadge || ''; }
+      else if (newBadge) { const titleEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`); if (titleEl) titleEl.insertAdjacentHTML('afterend', newBadge); }
     } catch (e) {
       if (e.message !== 'Session expired') el.innerHTML = '<div class="alert alert-error">Error refreshing card.</div>';
     }
@@ -856,10 +872,10 @@
     if (!items.length) return '<p class="empty-state">No category data.</p>';
     const top8 = items.slice(0,8); const rest = items.slice(8);
     const slices = [...top8];
-    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0) });
+    if (rest.length) slices.push({ categoryName:'Other', amount:rest.reduce((s,c)=>s+(c.amount||0),0), percentage:rest.reduce((s,c)=>s+(c.percentage||0),0), transactionCount:rest.reduce((s,c)=>s+(c.transactionCount||0),0) });
     const cs = slices.map((c,i)=>({ label:c.categoryName, value:c.amount, color:CHART_COLORS[i%CHART_COLORS.length] }));
     let leg = '<div class="chart-legend" style="flex:1">';
-    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span></div>`; });
+    slices.forEach((c,i)=>{ leg += `<div class="legend-item"><div class="legend-dot" style="background:${esc(CHART_COLORS[i%CHART_COLORS.length])}"></div><span>${esc(c.categoryName)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(c.amount||0)} (${fmtRaw(c.percentage||0,1)}%)</span>${c.transactionCount?`<span style="color:var(--text-muted);font-size:0.72rem;margin-left:4px">${c.transactionCount} txns</span>`:''}</div>`; });
     return `<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">${svgDonut(cs,160)}${leg}</div></div>`;
   }
 
@@ -1047,9 +1063,16 @@
     const colorMap = {}; allCats.forEach((name,i)=>{ colorMap[name]=CHART_COLORS[i%CHART_COLORS.length]; });
     const catTotals = {};
     buckets.forEach(b=>(b.categories||[]).forEach(c=>{ catTotals[c.categoryName]=(catTotals[c.categoryName]||0)+Math.abs(c.amount||0); }));
+    /* Collect nature per category (most common across buckets) */
+    const catNature = {};
+    buckets.forEach(b=>(b.categories||[]).forEach(c=>{ catNature[c.categoryName]=c.nature||''; }));
     const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,8);
     let legend = '<div class="chart-legend" style="margin-top:12px">';
-    topCats.forEach(([name,total])=>{ legend+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span><span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`; });
+    topCats.forEach(([name,total])=>{
+      const nature = catNature[name] || '';
+      const natureCls = nature==='MUST'?'badge-must':nature==='NEED'?'badge-need':nature==='WANT'?'badge-want':'';
+      legend+=`<div class="legend-item"><div class="legend-dot" style="background:${esc(colorMap[name]||'#9e9e9e')}"></div><span>${esc(name)}</span>${nature?`<span class="badge ${natureCls}" style="font-size:0.68rem;margin-left:4px">${esc(nature)}</span>`:''}<span style="color:var(--text-muted);margin-left:4px">${fmtRaw(total)}</span></div>`;
+    });
     legend += '</div>';
     return dashCardWrap(card, `${svgStackedBarsChart(buckets,colorMap,560,140)}${legend}`, payloadType);
   }
@@ -1062,15 +1085,15 @@
     sets.forEach(s => {
       const pct = Math.min(100, Math.round(Math.abs(s.totalAmount||0)/maxAmt*100));
       const isInc = (s.totalAmount||0) >= 0;
-      body += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(s.totalAmount||0))}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;
+      body += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:3px;gap:8px"><span style="font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.tagName)}</span><span class="amount-income" style="font-size:0.78rem">+${fmtRaw(s.income||0)}</span><span class="amount-expense" style="font-size:0.78rem">−${fmtRaw(s.expense||0)}</span><span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">${s.transactionCount||0} txns</span></div><div class="progress-track"><div class="progress-fill ${isInc?'progress-green':'progress-orange'}" style="width:${pct}%"></div></div></div>`;
     });
     body += '</div>';
     if (inters.length) {
-      body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th>Txns</th></tr></thead><tbody>`;
+      body += `<div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Top Intersections</div><div class="table-wrap"><table><thead><tr><th>Tags</th><th style="text-align:right">Amount</th><th style="text-align:right">Income</th><th style="text-align:right">Expense</th><th>Txns</th></tr></thead><tbody>`;
       inters.slice(0,10).forEach(inter => {
         const isInc=(inter.amount||0)>=0;
         const bdgs=(inter.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.7rem">${esc(t)}</span>`).join(' ');
-        body+=`<tr><td>${bdgs}</td><td style="text-align:right" class="${isInc?'amount-income':'amount-expense'}">${isInc?'+':'−'}${fmtRaw(Math.abs(inter.amount||0))}</td><td>${inter.transactionCount||0}</td></tr>`;
+        body+=`<tr><td>${bdgs}</td><td style="text-align:right">${fmtRaw(Math.abs(inter.amount||0))}</td><td style="text-align:right" class="amount-income">+${fmtRaw(inter.income||0)}</td><td style="text-align:right" class="amount-expense">−${fmtRaw(inter.expense||0)}</td><td>${inter.transactionCount||0}</td></tr>`;
       });
       body += '</tbody></table></div>';
     }
@@ -1174,14 +1197,20 @@
           const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
           const sign     = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
           const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
-          html += `<tr>
+          const tagsHtml = (tx.tags||[]).length ? `<br>${tx.tags.map(t=>`<span class="badge" style="font-size:0.68rem;background:var(--surface2);color:var(--text)">#${esc(t)}</span>`).join(' ')}` : '';
+          const warIcon  = tx.warrantyExpiration ? ' 🛡️' : '';
+          html += `<tr style="cursor:pointer" onclick="openTxDetail(${tx.id})">
             <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-            <td>${esc(tx.title)}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}</td>
+            <td>${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
             <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
             <td>${esc(tx.accountName || '')}</td>
             <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
             <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
-            <td><button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button></td>
+            <td style="white-space:nowrap" onclick="event.stopPropagation()">
+              <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">📋</button>
+              <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
+              <button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button>
+            </td>
           </tr>`;
         });
         const totalPages = Math.ceil(data.total / data.limit);
@@ -1237,28 +1266,42 @@
     location.hash = '#/records?' + fresh.toString();
   };
 
-  window.openAddTransaction = async function () {
-    const cur = cachedSettings.baseCurrency || 'USD';
-    const body = `
-      ${formRow(formField('Name', '<input type="text" id="tx-name" placeholder="e.g. Grocery run">'),
-                formField('Amount', `<input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01">`))}
+  function txFormBody(tx) {
+    const cur = tx ? tx.currency : (cachedSettings.baseCurrency || 'USD');
+    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
+      `<option value="${v}" ${(tx?.paymentMethod||'CASH')===v?'selected':''}>${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
+    const warExp = tx?.warrantyExpiration ? new Date(tx.warrantyExpiration).toISOString().slice(0,10) : '';
+    return `
+      ${formRow(formField('Name', `<input type="text" id="tx-name" placeholder="e.g. Grocery run" value="${esc(tx?.title||'')}">`),
+                formField('Amount', `<input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}">`))}
       ${formRow(formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5">`),
-                formField('Type', '<select id="tx-type"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option><option value="TRANSFER">Transfer</option></select>'))}
+                formField('Type', `<select id="tx-type"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
       ${formField('Account', `<select id="tx-account">${accOptions()}</select>`)}
       ${formField('Category', `<select id="tx-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
-      ${formRow(formField('Date', '<input type="datetime-local" id="tx-date">'),
-                formField('Status', '<select id="tx-status"><option value="CLEARED">Cleared</option><option value="UNCLEARED">Uncleared</option><option value="RECONCILE">Reconcile</option></select>'))}
-      ${formField('Payee', '<input type="text" id="tx-payee" placeholder="Optional payee name">')}
-      ${formField('Tags (comma-separated)', '<input type="text" id="tx-tags" placeholder="food, bills, …">')}
-      ${formField('Note', '<textarea id="tx-note" placeholder="Optional note…"></textarea>')}`;
+      ${formRow(formField('Date', `<input type="datetime-local" id="tx-date" value="${tx ? new Date(tx.date).toISOString().slice(0,16) : ''}">`),
+                formField('Status', `<select id="tx-status"><option value="CLEARED" ${(tx?.status||'CLEARED')==='CLEARED'?'selected':''}>Cleared</option><option value="UNCLEARED" ${tx?.status==='UNCLEARED'?'selected':''}>Uncleared</option><option value="RECONCILE" ${tx?.status==='RECONCILE'?'selected':''}>Reconcile</option></select>`))}
+      ${formRow(formField('Payee', `<input type="text" id="tx-payee" placeholder="Optional payee" value="${esc(tx?.payee||'')}"> `),
+                formField('Payment Method', `<select id="tx-method">${pmOpts}</select>`))}
+      ${formField('Tags (comma-separated)', `<input type="text" id="tx-tags" placeholder="food, bills, …" value="${esc((tx?.tags||[]).join(', '))}">`)}
+      ${formField('Note', `<textarea id="tx-note" placeholder="Optional note…">${esc(tx?.note||'')}</textarea>`)}
+      <div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="tx-warranty" ${tx?.warrantyExpiration?'checked':''}
+          onchange="document.getElementById('tx-warranty-wrap').style.display=this.checked?'':'none'">
+        <label for="tx-warranty" style="margin-bottom:0;cursor:pointer">Has Warranty</label>
+      </div>
+      <div id="tx-warranty-wrap" style="${tx?.warrantyExpiration?'':'display:none'}">
+        ${formField('Warranty Expiry', `<input type="date" id="tx-warranty-date" value="${esc(warExp)}">`)}
+      </div>`;
+  }
+
+  window.openAddTransaction = async function (prefill) {
+    const body = txFormBody(prefill || null);
     openModal('Add Record', body, submitAddTransaction, 'Save Record');
     modalConfBtn.className = 'btn btn-primary';
-    /* set default datetime to now */
     const dtEl = document.getElementById('tx-date');
-    if (dtEl) {
-      const now = new Date(); now.setSeconds(0,0);
-      dtEl.value = now.toISOString().slice(0,16);
-    }
+    if (dtEl && !prefill) { const now = new Date(); now.setSeconds(0,0); dtEl.value = now.toISOString().slice(0,16); }
+    if (prefill?.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = prefill.accountId; }
+    if (prefill?.categoryId) { const el = document.getElementById('tx-category'); if (el) el.value = prefill.categoryId; }
   };
 
   window.submitAddTransaction = async function () {
@@ -1267,18 +1310,22 @@
     if (!name) { alert('Name is required.'); return; }
     const amount = parseFloat(get('tx-amount'));
     if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+    const warrantyEl = document.getElementById('tx-warranty');
+    const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
     const body = {
-      title:      name,
+      name,
       amount,
-      currency:   get('tx-currency') || cachedSettings.baseCurrency,
-      type:       get('tx-type'),
-      accountId:  get('tx-account'),
-      categoryId: get('tx-category') || undefined,
-      date:       new Date(get('tx-date') || Date.now()).toISOString(),
-      note:       get('tx-note') || undefined,
-      payee:      get('tx-payee') || undefined,
-      status:     get('tx-status'),
-      tags:       get('tx-tags') ? get('tx-tags').split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      currency:         get('tx-currency') || cachedSettings.baseCurrency,
+      transactionType:  get('tx-type'),
+      accountId:        get('tx-account') || null,
+      categoryId:       parseInt(get('tx-category')) || 0,
+      timestamp:        new Date(get('tx-date') || Date.now()).getTime(),
+      note:             get('tx-note') || '',
+      payee:            get('tx-payee') || '',
+      status:           get('tx-status') || 'CLEARED',
+      paymentMethod:    get('tx-method') || 'CASH',
+      tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
+      warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
     };
     modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
     try {
@@ -1287,6 +1334,77 @@
       if (res.success) { renderRecords(); } else { alert('Failed to save record: ' + (res.error || 'Unknown error')); }
     } catch (e) { if (e.message !== 'Session expired') alert('Error saving record.'); }
     finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Record'; }
+  };
+
+  window.openEditTransaction = async function (id) {
+    const resp = await apiFetch(`/api/transactions/${id}`);
+    if (!resp.success) { alert('Could not load transaction.'); return; }
+    const tx = resp.data;
+    const body = txFormBody(tx);
+    openModal('Edit Record', body, async () => {
+      const get = i => { const el = document.getElementById(i); return el ? el.value.trim() : ''; };
+      const warrantyEl = document.getElementById('tx-warranty');
+      const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
+      const payload = {
+        name:             get('tx-name') || undefined,
+        amount:           parseFloat(get('tx-amount')) || undefined,
+        currency:         get('tx-currency') || undefined,
+        transactionType:  get('tx-type') || undefined,
+        accountId:        get('tx-account') || undefined,
+        categoryId:       parseInt(get('tx-category')) || undefined,
+        timestamp:        new Date(get('tx-date')).getTime() || undefined,
+        note:             get('tx-note') || undefined,
+        payee:            get('tx-payee') || undefined,
+        status:           get('tx-status') || undefined,
+        paymentMethod:    get('tx-method') || undefined,
+        tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
+        warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
+      };
+      const res = await apiWrite('PUT', `/api/transactions/${id}`, payload);
+      closeModal();
+      if (res.success) renderRecords(); else alert('Failed to update: ' + (res.error||''));
+    }, 'Save Changes');
+    modalConfBtn.className = 'btn btn-primary';
+    if (tx.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = tx.accountId; }
+    if (tx.categoryId) { const el = document.getElementById('tx-category'); if (el) el.value = tx.categoryId; }
+  };
+
+  window.openTxDetail = async function (id) {
+    const resp = await apiFetch(`/api/transactions/${id}`);
+    if (!resp.success) { alert('Could not load transaction.'); return; }
+    const tx = resp.data;
+    const amtCls = tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
+    const sign   = tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
+    const badgeCls = tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
+    const tags = (tx.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2)">#${esc(t)}</span>`).join(' ');
+    const warLine = tx.warrantyExpiration
+      ? `<div class="form-field"><label>Warranty Expires</label><div>${new Date(tx.warrantyExpiration).toLocaleDateString()} 🛡️</div></div>`
+      : '';
+    const body = `<div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">${esc(tx.title)}</h3>
+        <span class="${amtCls}" style="font-size:1.3rem;font-weight:700">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</span>
+      </div>
+      <div><span class="badge ${badgeCls}">${esc(tx.type)}</span> ${tx.status ? `<span class="badge">${esc(tx.status)}</span>` : ''} ${tx.paymentMethod ? `<span class="badge">${esc(tx.paymentMethod)}</span>` : ''}</div>
+      ${formRow(
+        formField('Date', `<div>${new Date(tx.date).toLocaleString()}</div>`),
+        formField('Account', `<div>${esc(tx.accountName||'—')}</div>`)
+      )}
+      ${formRow(
+        formField('Category', `<div>${esc(tx.categoryName||'—')}</div>`),
+        formField('Payee', `<div>${esc(tx.payee||'—')}</div>`)
+      )}
+      ${tx.note ? formField('Note', `<div style="color:var(--text-muted)">${esc(tx.note)}</div>`) : ''}
+      ${tags ? formField('Tags', `<div>${tags}</div>`) : ''}
+      ${tx.location ? formField('Location', `<div>${esc(tx.location)}</div>`) : ''}
+      ${warLine}
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal();openEditTransaction(${tx.id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="closeModal();deleteTransaction('${tx.id}','${esc(tx.title)}')">🗑️ Delete</button>
+      </div>
+    </div>`;
+    openModal(`Transaction Detail`, body, null, '');
+    modalConfBtn.style.display = 'none';
   };
 
   window.deleteTransaction = function (id, name) {
@@ -1325,7 +1443,8 @@
             <div style="font-weight:600;margin-bottom:8px">${esc(acc.name)}</div>
             <div class="stat-value ${balClass}">${fmt(acc.balance || 0, acc.currency)}</div>
             <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
-              <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">View records</a>
+              <a class="btn btn-primary btn-sm" href="#/accounts/${esc(acc.id)}">Details</a>
+              <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
             </div>
           </div>`;
@@ -1349,20 +1468,25 @@
           <option value="CASH">Cash</option>
           <option value="OTHER">Other</option>
         </select>`)
-      )}`;
+      )}
+      ${formField('Initial Balance (optional)', '<input type="number" id="acc-init-bal" placeholder="0.00" step="0.01">')}`;
     openModal('Add Account', body, submitAddAccount, 'Save Account');
     modalConfBtn.className = 'btn btn-primary';
   };
 
   window.submitAddAccount = async function () {
-    const name     = document.getElementById('acc-name')?.value.trim();
-    const currency = document.getElementById('acc-currency')?.value.trim();
-    const type     = document.getElementById('acc-type')?.value;
+    const name       = document.getElementById('acc-name')?.value.trim();
+    const currency   = document.getElementById('acc-currency')?.value.trim();
+    const type       = document.getElementById('acc-type')?.value;
+    const initBalStr = document.getElementById('acc-init-bal')?.value;
+    const initialBalance = initBalStr ? parseFloat(initBalStr) : undefined;
     if (!name)     { alert('Account name is required.'); return; }
     if (!currency) { alert('Currency is required.'); return; }
     modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
     try {
-      const res = await apiWrite('POST', '/api/accounts', { name, currency, type });
+      const body = { name, currencyCode: currency, structureType: type };
+      if (initialBalance !== undefined && !isNaN(initialBalance)) body.initialBalance = initialBalance;
+      const res = await apiWrite('POST', '/api/accounts', body);
       closeModal();
       if (res.success) { await warmCache(); renderAccounts(); }
       else { alert('Failed to create account: ' + (res.error || '')); }
@@ -1418,7 +1542,8 @@
               <span>Limit: ${fmt(b.limitAmount||0,b.currency)}</span>
             </div>
             <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">Remaining: ${fmt(b.remaining||0,b.currency)}</div>
-            <div style="margin-top:12px">
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+              <a class="btn btn-primary btn-sm" href="#/budgets/${esc(b.id)}">Details</a>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteBudget('${esc(b.id)}','${esc(b.name)}')">Delete</button>
             </div>
           </div>`;
@@ -1521,7 +1646,8 @@
               ${loan.startDate ? `Start: ${fmtDate(loan.startDate)}` : ''}
               ${loan.expectedSettlementDate ? ` &bull; Due: ${fmtDate(loan.expectedSettlementDate)}` : ''}
             </div>
-            <div style="margin-top:12px">
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+              <a class="btn btn-primary btn-sm" href="#/loans/${esc(loan.id)}">Details</a>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
             </div>
           </div>`;
@@ -2024,8 +2150,405 @@
   };
 
   /* ══════════════════════════════════════════════════════
+     PAGE: Templates
+  ══════════════════════════════════════════════════════ */
+  async function renderTemplates() {
+    showSpinner();
+    try {
+      const json = await apiFetch('/api/templates');
+      if (!json.success) { showError('Failed to load templates.'); return; }
+      const templates = json.data || [];
+      let html = `<div class="page-header">
+        <h2 class="section-title">Templates</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ New Template</button>
+      </div>`;
+      if (!templates.length) {
+        html += '<p class="empty-state">No templates yet. Create one to quickly prefill transactions.</p>';
+      } else {
+        html += `<div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Type</th><th>Amount</th><th>Category</th><th>Account</th><th></th></tr></thead><tbody>`;
+        templates.forEach(t => {
+          const typeCls = t.transactionType==='INCOME'?'badge-income':t.transactionType==='EXPENSE'?'badge-expense':'badge-transfer';
+          const amtCls  = t.transactionType==='INCOME'?'amount-income':t.transactionType==='EXPENSE'?'amount-expense':'';
+          const sign    = t.transactionType==='EXPENSE'?'−':t.transactionType==='INCOME'?'+':'';
+          const cat     = cachedCategories.find(c=>c.id===t.categoryId);
+          const acc     = cachedAccounts.find(a=>a.id===t.accountId);
+          html += `<tr>
+            <td style="font-weight:600">${esc(t.name)}</td>
+            <td><span class="badge ${typeCls}">${esc(t.transactionType)}</span></td>
+            <td class="${amtCls}">${sign}${fmtRaw(t.amount||0)} ${esc(t.currency||'')}</td>
+            <td>${cat?esc(cat.name):'<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${acc?esc(acc.name):'<span style="color:var(--text-muted)">—</span>'}</td>
+            <td style="white-space:nowrap">
+              <button class="btn-icon" title="Use template" onclick="useTemplate(${t.id})">➕</button>
+              <button class="btn-icon" title="Edit" onclick="openEditTemplate(${t.id})">✏️</button>
+              <button class="btn-icon" title="Delete" onclick="deleteTemplate(${t.id},'${esc(t.name)}')">🗑️</button>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+      setContent(html);
+    } catch(e) { if (e.message !== 'Session expired') showError('Error loading templates.'); }
+  }
+
+  function templateFormBody(t) {
+    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
+      `<option value="${v}" ${(t?.paymentMethod||'CASH')===v?'selected':''}>${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
+    return `
+      ${formRow(formField('Template Name', `<input type="text" id="tpl-name" placeholder="e.g. Monthly Rent" value="${esc(t?.name||'')}">`),
+                formField('Amount', `<input type="number" id="tpl-amount" placeholder="0.00" min="0" step="0.01" value="${esc(t?.amount||'')}">`))}
+      ${formRow(formField('Currency', `<input type="text" id="tpl-currency" value="${esc(t?.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
+                formField('Type', `<select id="tpl-type"><option value="EXPENSE" ${(t?.transactionType||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${t?.transactionType==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${t?.transactionType==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
+      ${formField('Account', `<select id="tpl-account"><option value="">— None —</option>${accOptions()}</select>`)}
+      ${formField('Category', `<select id="tpl-category"><option value="0">— None —</option>${catOptions(false)}</select>`)}
+      ${formRow(formField('Payee', `<input type="text" id="tpl-payee" placeholder="Optional" value="${esc(t?.payee||'')}">`),
+                formField('Payment Method', `<select id="tpl-method">${pmOpts}</select>`))}
+      ${formField('Tags (comma-separated)', `<input type="text" id="tpl-tags" placeholder="food, bills, …" value="${esc((t?.tags||[]).join(', '))}">`)}
+      ${formField('Note', `<textarea id="tpl-note" placeholder="Optional note…">${esc(t?.note||'')}</textarea>`)}`;
+  }
+
+  window.openAddTemplate = function () {
+    const body = templateFormBody(null);
+    openModal('New Template', body, submitAddTemplate, 'Save Template');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitAddTemplate = async function () {
+    const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const name = get('tpl-name');
+    if (!name) { alert('Template name is required.'); return; }
+    const payload = {
+      name,
+      amount:          parseFloat(get('tpl-amount')) || 0,
+      currency:        get('tpl-currency') || cachedSettings.baseCurrency,
+      transactionType: get('tpl-type') || 'EXPENSE',
+      accountId:       get('tpl-account') || null,
+      categoryId:      parseInt(get('tpl-category')) || 0,
+      payee:           get('tpl-payee') || null,
+      paymentMethod:   get('tpl-method') || null,
+      tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
+      note:            get('tpl-note') || null,
+      transactionStatus: 'CLEARED',
+    };
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', '/api/templates', payload);
+      closeModal();
+      if (res.success) renderTemplates(); else alert('Failed: ' + (res.error||''));
+    } catch(e) { if (e.message !== 'Session expired') alert('Error saving template.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Template'; }
+  };
+
+  window.openEditTemplate = async function (id) {
+    const resp = await apiFetch(`/api/templates/${id}`);
+    if (!resp.success) { alert('Could not load template.'); return; }
+    const t = resp.data;
+    const body = templateFormBody(t);
+    openModal('Edit Template', body, async () => {
+      const get = i => { const el = document.getElementById(i); return el ? el.value.trim() : ''; };
+      const payload = {
+        name:            get('tpl-name') || undefined,
+        amount:          parseFloat(get('tpl-amount')) || undefined,
+        currency:        get('tpl-currency') || undefined,
+        transactionType: get('tpl-type') || undefined,
+        accountId:       get('tpl-account') || undefined,
+        categoryId:      parseInt(get('tpl-category')) || undefined,
+        payee:           get('tpl-payee') || undefined,
+        paymentMethod:   get('tpl-method') || undefined,
+        tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
+        note:            get('tpl-note') || undefined,
+      };
+      const res = await apiWrite('PUT', `/api/templates/${id}`, payload);
+      closeModal();
+      if (res.success) renderTemplates(); else alert('Failed: ' + (res.error||''));
+    }, 'Save Changes');
+    modalConfBtn.className = 'btn btn-primary';
+    if (t.accountId) { const el = document.getElementById('tpl-account'); if (el) el.value = t.accountId; }
+    if (t.categoryId) { const el = document.getElementById('tpl-category'); if (el) el.value = t.categoryId; }
+  };
+
+  window.useTemplate = async function (id) {
+    const resp = await apiFetch(`/api/templates/${id}`);
+    if (!resp.success) { alert('Could not load template.'); return; }
+    const t = resp.data;
+    /* Navigate to Records, open Add Record pre-filled from template */
+    location.hash = '#/records';
+    await new Promise(r => setTimeout(r, 80));
+    openAddTransaction({
+      title: t.name,
+      amount: t.amount,
+      currency: t.currency,
+      type: t.transactionType,
+      accountId: t.accountId,
+      categoryId: t.categoryId,
+      payee: t.payee,
+      paymentMethod: t.paymentMethod,
+      tags: t.tags,
+      note: t.note,
+      status: t.transactionStatus,
+    });
+  };
+
+  window.deleteTemplate = function (id, name) {
+    confirmDelete(`Delete template "${name}"?`, async () => {
+      const res = await apiWrite('DELETE', `/api/templates/${id}`);
+      closeModal();
+      if (res.success) renderTemplates(); else alert('Failed to delete.');
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* ══════════════════════════════════════════════════════
      PAGE: Settings
   ══════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════
+     PAGE: Account Detail
+  ══════════════════════════════════════════════════════ */
+  async function renderAccountDetail(id) {
+    if (!id) { navigate('#/accounts'); return; }
+    showSpinner();
+    try {
+      const json = await apiFetch(`/api/accounts/${encodeURIComponent(id)}`);
+      if (!json.success) { showError('Failed to load account.'); return; }
+      const acc = json.data.account || {};
+      const txs = json.data.recentTransactions || [];
+      const balClass = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
+
+      let html = `<div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <a class="btn btn-ghost btn-sm" href="#/accounts">← Back</a>
+          <h2 class="section-title" style="margin:0">${esc(acc.name)}</h2>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
+      </div>
+      <div class="card-grid" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">Current Balance</div>
+          <div class="stat-value ${balClass}">${fmt(acc.balance||0, acc.currency)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Currency</div>
+          <div class="stat-value">${esc(acc.currency||'')}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Type</div>
+          <div class="stat-value" style="font-size:1rem">${esc(acc.type||'')}</div>
+        </div>
+      </div>
+      <div class="section-sub">Recent Transactions (last 20)</div>`;
+
+      if (!txs.length) {
+        html += '<p class="empty-state">No transactions for this account.</p>';
+      } else {
+        html += `<div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`;
+        txs.forEach(tx => {
+          const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
+          const sign = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
+          const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
+          html += `<tr style="cursor:pointer" onclick="openTxDetail(${tx.id})">
+            <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
+            <td>${esc(tx.title)}</td>
+            <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
+            <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading account detail.'); }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Budget Detail
+  ══════════════════════════════════════════════════════ */
+  async function renderBudgetDetail(id) {
+    if (!id) { navigate('#/budgets'); return; }
+    showSpinner();
+    try {
+      const json = await apiFetch(`/api/budgets/${encodeURIComponent(id)}`);
+      if (!json.success) { showError('Failed to load budget.'); return; }
+      const b = json.data || {};
+      const pct = Math.round(((b.spent||0)/(b.limitAmount||1))*100);
+      const alertCls = pct < 80 ? 'progress-green' : pct < 100 ? 'progress-orange' : 'progress-red';
+
+      const html = `<div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <a class="btn btn-ghost btn-sm" href="#/budgets">← Back</a>
+          <h2 class="section-title" style="margin:0">${esc(b.name)}</h2>
+        </div>
+      </div>
+      <div class="card" style="max-width:520px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+          <div>
+            <div style="font-size:0.8rem;color:var(--text-muted)">${esc(b.period||'')}</div>
+            ${b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted)">Archived</span>' : ''}
+          </div>
+          <span style="font-size:1.4rem;font-weight:700;color:${pct>=100?'var(--danger)':pct>=80?'var(--warning)':'var(--success)'}">${pct}%</span>
+        </div>
+        ${progressBar(pct, alertCls)}
+        <div class="card-grid" style="margin-top:16px;grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card">
+            <div class="stat-label">Limit</div>
+            <div class="stat-value" style="font-size:1.1rem">${fmt(b.limitAmount||0, b.currency)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Spent</div>
+            <div class="stat-value" style="font-size:1.1rem;color:var(--danger)">${fmt(b.spent||0, b.currency)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Remaining</div>
+            <div class="stat-value" style="font-size:1.1rem;color:var(--success)">${fmt(b.remaining||0, b.currency)}</div>
+          </div>
+        </div>
+      </div>`;
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading budget detail.'); }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     PAGE: Loan Detail
+  ══════════════════════════════════════════════════════ */
+  async function renderLoanDetail(id) {
+    if (!id) { navigate('#/loans'); return; }
+    showSpinner();
+    try {
+      const [loanRes, paymentsRes] = await Promise.all([
+        apiFetch(`/api/loans/${encodeURIComponent(id)}`),
+        apiFetch(`/api/loans/${encodeURIComponent(id)}/payments`)
+      ]);
+      if (!loanRes.success) { showError('Failed to load loan.'); return; }
+      const loan = loanRes.data || {};
+      const payments = paymentsRes.success ? (paymentsRes.data || []) : [];
+      const typeBadge = loan.loanType === 'LENT' ? 'badge-lent' : 'badge-borrowed';
+      const statusBadge = loan.status === 'SETTLED' ? 'badge-settled' : 'badge-active';
+      const repaidPct = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
+
+      let html = `<div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <a class="btn btn-ghost btn-sm" href="#/loans">← Back</a>
+          <h2 class="section-title" style="margin:0">${esc(loan.name)}</h2>
+        </div>
+        <div style="display:flex;gap:6px">
+          <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
+          <span class="badge ${statusBadge}">${esc(loan.status)}</span>
+        </div>
+      </div>
+      <div class="card-grid" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">Principal</div>
+          <div class="stat-value">${fmt(loan.principalAmount||0, loan.currency)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Paid</div>
+          <div class="stat-value" style="color:var(--success)">${fmt(loan.totalPaid||0, loan.currency)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value" style="color:var(--danger)">${fmt(loan.remainingBalance||0, loan.currency)}</div>
+        </div>
+        ${loan.interestAccrued ? `<div class="stat-card">
+          <div class="stat-label">Interest Accrued</div>
+          <div class="stat-value" style="color:var(--warning)">${fmt(loan.interestAccrued, loan.currency)}</div>
+        </div>` : ''}
+      </div>
+      <div class="card" style="max-width:520px;margin-bottom:20px">
+        ${progressBar(repaidPct, repaidPct>=100?'progress-green':'progress-orange')}
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:4px">
+          <span>Repaid: ${repaidPct}%</span>
+          ${loan.lenderOrBorrowerName ? `<span>${esc(loan.lenderOrBorrowerName)}</span>` : ''}
+        </div>
+        ${loan.startDate ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:8px">Start: ${fmtDate(loan.startDate)}</div>` : ''}
+        ${loan.expectedSettlementDate ? `<div style="font-size:0.8rem;color:var(--text-muted)">Expected settlement: ${fmtDate(loan.expectedSettlementDate)}</div>` : ''}
+      </div>
+      <div class="section-sub" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Repayment History</span>
+        <button class="btn btn-primary btn-sm" onclick="openLogRepayment(${loan.id})">+ Log Repayment</button>
+      </div>`;
+
+      if (!payments.length) {
+        html += '<p class="empty-state">No repayments logged yet.</p>';
+      } else {
+        html += `<div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Note</th><th></th></tr></thead><tbody>`;
+        payments.forEach(p => {
+          html += `<tr>
+            <td style="white-space:nowrap">${fmtDate(p.date)}</td>
+            <td>${fmt(p.amount||0, loan.currency)}</td>
+            <td>${p.note ? esc(p.note) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td><button class="btn-icon" title="Delete" onclick="deleteRepayment(${loan.id},${p.id})">🗑️</button></td>
+          </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      }
+      setContent(html);
+    } catch (e) { if (e.message !== 'Session expired') showError('Error loading loan detail.'); }
+  }
+
+  window.openLogRepayment = function (loanId) {
+    const body = `
+      ${formRow(
+        formField('Amount', '<input type="number" id="rp-amount" placeholder="0.00" min="0" step="0.01">'),
+        formField('Date', `<input type="date" id="rp-date" value="${new Date().toISOString().slice(0,10)}">`)
+      )}
+      ${formField('Note (optional)', '<input type="text" id="rp-note" placeholder="e.g. Monthly payment">')}`;
+    openModal('Log Repayment', body, () => submitLogRepayment(loanId), 'Save');
+    modalConfBtn.className = 'btn btn-primary';
+  };
+
+  window.submitLogRepayment = async function (loanId) {
+    const amount = parseFloat(document.getElementById('rp-amount')?.value || '0');
+    const date = document.getElementById('rp-date')?.value;
+    const note = document.getElementById('rp-note')?.value.trim();
+    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
+    try {
+      const res = await apiWrite('POST', `/api/loans/${encodeURIComponent(loanId)}/payments`, {
+        amount, date: date ? new Date(date).getTime() : Date.now(), note: note || undefined
+      });
+      closeModal();
+      if (res.success) { renderLoanDetail(loanId); } else { alert('Failed to log repayment.'); }
+    } catch (e) { if (e.message !== 'Session expired') alert('Error logging repayment.'); }
+    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save'; }
+  };
+
+  window.deleteRepayment = function (loanId, paymentId) {
+    confirmDelete('Delete this repayment?', async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/loans/${encodeURIComponent(loanId)}/payments/${encodeURIComponent(paymentId)}`);
+        closeModal();
+        if (res.success) { renderLoanDetail(loanId); } else { alert('Failed to delete repayment.'); }
+      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting repayment.'); }
+    });
+    modalConfBtn.className = 'btn btn-danger';
+  };
+
+  /* Clone transaction */
+  window.cloneTransaction = async function (id) {
+    try {
+      const res = await apiFetch(`/api/transactions/${encodeURIComponent(id)}`);
+      if (!res.success) { alert('Failed to load transaction.'); return; }
+      const tx = res.data;
+      openAddTransaction({
+        title: tx.title + ' (copy)',
+        amount: tx.amount,
+        currency: tx.currency,
+        type: tx.type,
+        accountId: tx.accountId,
+        categoryId: tx.categoryId,
+        note: tx.note,
+        payee: tx.payee,
+        tags: tx.tags,
+        paymentMethod: tx.paymentMethod,
+      });
+    } catch (e) { if (e.message !== 'Session expired') alert('Error cloning transaction.'); }
+  };
+
   async function renderSettings() {
     showSpinner();
     try {
@@ -2044,156 +2567,192 @@
             <div class="settings-value">${esc(String(s.currentProfileId || '—'))}</div>
           </div>
           <div class="settings-row">
-            <div>
+            <div style="flex:1">
               <div class="settings-label">Base Currency</div>
-              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Default currency for new entries</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Default currency for new entries</div>
             </div>
-            <div class="settings-value">${esc(s.baseCurrency || '—')}</div>
+            <input type="text" id="set-currency" value="${esc(s.baseCurrency||'')}" maxlength="5" style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:0.9rem">
           </div>
           <div class="settings-row">
-            <div>
+            <div style="flex:1">
               <div class="settings-label">Decimal Precision</div>
-              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Decimal places for amounts</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Decimal places for amounts</div>
             </div>
-            <div class="settings-value">${esc(String(s.decimalPrecision ?? '—'))}</div>
+            <input type="number" id="set-precision" value="${esc(String(s.decimalPrecision ?? 2))}" min="0" max="8" step="1" style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:0.9rem">
           </div>
-          <div class="settings-row">
+          <div class="settings-row" style="justify-content:flex-end;gap:8px;padding-top:4px">
+            <button class="btn btn-primary btn-sm" id="set-save-btn" onclick="saveSettings()">Save Settings</button>
+          </div>
+          <div class="settings-row" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div>
               <div class="settings-label">Session</div>
-              <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Stored in sessionStorage (cleared on tab close)</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Stored in sessionStorage (cleared on tab close)</div>
             </div>
             <button class="btn btn-danger btn-sm" onclick="doLogout()">Log out</button>
           </div>
-        </div>
-        <div class="alert alert-warn" style="max-width:480px;margin-top:0">
-          Settings are read-only from the web portal. Manage them in the OssWallet Android app.
         </div>`;
 
       setContent(html);
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading settings.'); }
   }
 
+  window.saveSettings = async function () {
+    const currency  = document.getElementById('set-currency')?.value.trim();
+    const precision = parseInt(document.getElementById('set-precision')?.value || '2', 10);
+    if (!currency) { alert('Currency is required.'); return; }
+    const btn = document.getElementById('set-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+      const res = await apiWrite('PUT', '/api/settings', { baseCurrency: currency, decimalPrecision: precision });
+      if (res.success) {
+        cachedSettings = { ...cachedSettings, baseCurrency: currency, decimalPrecision: precision };
+        if (btn) { btn.textContent = 'Saved ✓'; setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; } }, 1500); }
+      } else {
+        alert('Failed to save settings: ' + (res.error || ''));
+        if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; }
+      }
+    } catch (e) {
+      if (e.message !== 'Session expired') alert('Error saving settings.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; }
+    }
+  };
+
   /* ══════════════════════════════════════════════════════
      DASHBOARD: Per-card filter sheet
   ══════════════════════════════════════════════════════ */
 
   /* Which filter controls each payload type supports */
+  /* txTypeMode: 'none'=hidden, 'single'=radio one of income/expense, 'both'=forced income+expense (hidden) */
   const CARD_FILTER_CAPS = {
-    NetWorth:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    CashFlow:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    CurrencyBalances:      { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    Accounts:              { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    Budgets:               { timeline:false, txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    PlannedPayments:       { timeline:false, txType:true,  account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    Loans:                 { timeline:false, txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
-    RecentActivities:      { timeline:true,  txType:true,  account:true,  category:true,  amount:true,  status:true,  payee:true,  granularity:false, refetch:true  },
-    CategoryBreakdown:     { timeline:true,  txType:true,  account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:true  },
-    CashFlowComparison:    { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:false },
-    IncomeExpenseBar:      { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:true  },
-    CategorySpendingTrend: { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:true,  refetch:false },
-    TagUpSetPlot:          { timeline:true,  txType:false, account:false, category:false, amount:false, status:false, payee:false, granularity:false, refetch:false },
+    NetWorth:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    CashFlow:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    CurrencyBalances:      { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    Accounts:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    Budgets:               { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    PlannedPayments:       { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    Loans:                 { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    RecentActivities:      { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    CategoryBreakdown:     { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    CashFlowComparison:    { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
+    IncomeExpenseBar:      { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
+    CategorySpendingTrend: { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+    TagUpSetPlot:          { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
   };
 
   window.openCardFilterSheet = function (cardId, payloadType, cardType) {
     const caps = CARD_FILTER_CAPS[payloadType] || {};
-    const ov   = cardOverrides[cardId] || {};
+    const fs   = cardOverrides[cardId] || {};
 
-    let body = '';
+    /* Helper: render a chip-style multi-select checkbox group */
+    function chipCheckboxes(id, items, selected) {
+      return `<div class="chip-group" id="${id}">` +
+        items.map(({value, label}) => {
+          const checked = selected.includes(value);
+          return `<label class="chip-check ${checked?'active':''}"><input type="checkbox" value="${esc(value)}" ${checked?'checked':''} onchange="this.closest('label').classList.toggle('active',this.checked)"><span>${esc(label)}</span></label>`;
+        }).join('') + '</div>';
+    }
+    function getChecked(groupId) {
+      return [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el=>el.value);
+    }
+
+    let body = `<div style="display:flex;flex-direction:column;gap:14px">`;
 
     if (caps.timeline) {
-      const tl = ov.timelineType || 'ALL_TIME';
+      const tl = fs.timelineType || 'ALL_TIME';
+      const tlLabels = {ALL_TIME:'All Time',TODAY:'Today',WEEK:'This Week',MONTH:'This Month',QUARTER:'This Quarter',YEAR:'This Year',HALF_YEAR:'Half Year',CUSTOM:'Custom Range'};
       body += `<div class="form-field"><label>Period</label>
         <select id="cf-timeline" onchange="toggleCustomDates()">
-          ${['ALL_TIME','TODAY','THIS_WEEK','THIS_MONTH','LAST_MONTH','THIS_QUARTER','THIS_YEAR','LAST_YEAR','CUSTOM'].map(v=>
-            `<option value="${v}" ${tl===v?'selected':''}>${{ALL_TIME:'All Time',TODAY:'Today',THIS_WEEK:'This Week',THIS_MONTH:'This Month',LAST_MONTH:'Last Month',THIS_QUARTER:'This Quarter',THIS_YEAR:'This Year',LAST_YEAR:'Last Year',CUSTOM:'Custom Range'}[v]}</option>`
-          ).join('')}
-        </select>
-      </div>
+          ${Object.keys(tlLabels).map(v=>`<option value="${v}" ${tl===v?'selected':''}>${tlLabels[v]}</option>`).join('')}
+        </select></div>
       <div id="cf-custom-dates" style="${tl==='CUSTOM'?'':'display:none'}">
         ${formRow(
-          formField('From', `<input type="date" id="cf-from" value="${esc(ov.customFrom||'')}">`),
-          formField('To',   `<input type="date" id="cf-to"   value="${esc(ov.customTo||'')}">`)
+          formField('From', `<input type="date" id="cf-from" value="${esc(fs.customFrom||'')}">`),
+          formField('To',   `<input type="date" id="cf-to"   value="${esc(fs.customTo||'')}">`)
         )}
       </div>`;
     }
 
-    if (caps.txType) {
-      const cur = ov.txType || '';
-      const opts = payloadType === 'RecentActivities'
-        ? [['','All'],['INCOME','Income'],['EXPENSE','Expense'],['TRANSFER','Transfer']]
-        : [['EXPENSE','Expense'],['INCOME','Income']];
-      body += `<div class="form-field"><label>Type</label>
-        <select id="cf-txtype">
-          ${opts.map(([v,l])=>`<option value="${v}" ${cur===v?'selected':''}>${l}</option>`).join('')}
-        </select>
-      </div>`;
+    if (caps.txTypeMode === 'single') {
+      const cur = fs.txType || 'EXPENSE';
+      body += `<div class="form-field"><label>Transaction Type</label>
+        <div class="chip-group">
+          <label class="chip-check ${cur==='EXPENSE'?'active':''}"><input type="radio" name="cf-txtype" value="EXPENSE" ${cur==='EXPENSE'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Expense</span></label>
+          <label class="chip-check ${cur==='INCOME'?'active':''}"><input type="radio" name="cf-txtype" value="INCOME"  ${cur==='INCOME'?'checked':''}  onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Income</span></label>
+        </div></div>`;
     }
 
-    if (caps.account) {
-      body += `<div class="form-field"><label>Account</label>
-        <select id="cf-account">
-          <option value="">All Accounts</option>
-          ${cachedAccounts.map(a=>`<option value="${esc(a.id)}" ${ov.accountId===a.id?'selected':''}>${esc(a.name)} (${esc(a.currency)})</option>`).join('')}
-        </select>
-      </div>`;
+    if (caps.accounts && cachedAccounts.length) {
+      const selAccts = fs.accountIds || [];
+      body += `<div class="form-field"><label>Accounts</label>` +
+        chipCheckboxes('cf-accounts', cachedAccounts.map(a=>({value:a.id, label:`${a.name} (${a.currency})`})), selAccts) +
+        `</div>`;
     }
 
-    if (caps.category) {
-      body += `<div class="form-field"><label>Category</label>
-        <select id="cf-category">
-          <option value="">All Categories</option>
-          ${cachedCategories.map(c=>`<option value="${esc(c.id)}" ${String(ov.categoryId)===String(c.id)?'selected':''}>${esc(c.name)}</option>`).join('')}
-        </select>
-      </div>`;
+    if (caps.categories && cachedCategories.length) {
+      const selCats = (fs.categoryIds||[]).map(String);
+      body += `<div class="form-field"><label>Categories</label>` +
+        chipCheckboxes('cf-categories', cachedCategories.map(c=>({value:String(c.id), label:c.name})), selCats) +
+        `</div>`;
+    }
+
+    if (caps.currencies) {
+      const allCurrencies = [...new Set(cachedAccounts.map(a=>a.currency))].sort();
+      if (allCurrencies.length) {
+        const selCurr = fs.currencies || [];
+        body += `<div class="form-field"><label>Currencies</label>` +
+          chipCheckboxes('cf-currencies', allCurrencies.map(c=>({value:c,label:c})), selCurr) +
+          `</div>`;
+      }
+    }
+
+    if (caps.statuses) {
+      const selSt = fs.statuses || [];
+      body += `<div class="form-field"><label>Status</label>` +
+        chipCheckboxes('cf-statuses', [{value:'CLEARED',label:'Cleared'},{value:'UNCLEARED',label:'Uncleared'},{value:'RECONCILE',label:'Reconcile'}], selSt) +
+        `</div>`;
+    }
+
+    if (caps.methods) {
+      const selMeth = fs.paymentMethods || [];
+      body += `<div class="form-field"><label>Payment Methods</label>` +
+        chipCheckboxes('cf-methods', [{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}], selMeth) +
+        `</div>`;
+    }
+
+    if (caps.tags) {
+      const allTags = [...new Set(cachedAccounts.length ? [] : [])]; // tags from cached data if available
+      body += `<div class="form-field"><label>Tags (comma-separated)</label><input type="text" id="cf-tags" value="${esc((fs.tags||[]).join(', '))}" placeholder="tag1, tag2…"></div>`;
+    }
+
+    if (caps.search) {
+      body += formRow(
+        formField('Search Note', `<input type="text" id="cf-note" value="${esc(fs.queryNote||'')}" placeholder="Filter by note…">`),
+        formField('Search Payee', `<input type="text" id="cf-payee" value="${esc(fs.queryPayee||'')}" placeholder="Filter by payee…">`)
+      );
     }
 
     if (caps.amount) {
       body += formRow(
-        formField('Min Amount', `<input type="number" id="cf-min" value="${esc(ov.minAmount||'')}" placeholder="0.00" min="0" step="0.01">`),
-        formField('Max Amount', `<input type="number" id="cf-max" value="${esc(ov.maxAmount||'')}" placeholder="any" min="0" step="0.01">`)
+        formField('Min Amount', `<input type="number" id="cf-min" value="${esc(fs.minAmount!=null?fs.minAmount:'')}" placeholder="0.00" min="0" step="0.01">`),
+        formField('Max Amount', `<input type="number" id="cf-max" value="${esc(fs.maxAmount!=null?fs.maxAmount:'')}" placeholder="any" min="0" step="0.01">`)
       );
     }
 
-    if (caps.status) {
-      body += `<div class="form-field"><label>Status</label>
-        <select id="cf-status">
-          <option value="" ${!ov.status?'selected':''}>All</option>
-          <option value="CLEARED"   ${ov.status==='CLEARED'?'selected':''}>Cleared</option>
-          <option value="UNCLEARED" ${ov.status==='UNCLEARED'?'selected':''}>Uncleared</option>
-          <option value="RECONCILE" ${ov.status==='RECONCILE'?'selected':''}>Reconcile</option>
-        </select>
-      </div>`;
+    if (caps.future) {
+      const excl = fs.excludeFuture !== false;
+      body += `<div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="cf-future" ${excl?'checked':''}><label for="cf-future" style="margin-bottom:0;cursor:pointer">Exclude future transactions</label></div>`;
     }
 
-    if (caps.payee) {
-      body += formField('Payee', `<input type="text" id="cf-payee" value="${esc(ov.payee||'')}" placeholder="Search payee…">`);
+    body += '</div>';
+
+    const hasOverride = Object.keys(fs).length > 0;
+    if (hasOverride) {
+      body += `<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
     }
 
-    if (caps.granularity) {
-      const g = ov.granularity || 'MONTH';
-      body += `<div class="form-field"><label>Granularity</label>
-        <select id="cf-gran">
-          <option value="DAY"   ${g==='DAY'?'selected':''}>Day</option>
-          <option value="WEEK"  ${g==='WEEK'?'selected':''}>Week</option>
-          <option value="MONTH" ${g==='MONTH'?'selected':''}>Month</option>
-        </select>
-      </div>`;
-    }
-
-    if (!Object.values(caps).some(Boolean)) {
-      body = '<div class="alert alert-warn" style="font-size:0.85rem">This card\'s filters are managed by the Android app. No web-editable filters are available.</div>';
-    }
-
-    const hasReset = Object.keys(ov).length > 0;
-    if (hasReset) {
-      body += `<div style="margin-top:4px"><button class="btn btn-ghost btn-sm" onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
-    }
-
-    if (!caps.refetch && Object.values(caps).some(Boolean)) {
-      body += '<div class="alert alert-warn" style="font-size:0.85rem;margin-top:12px">Filters for this card are stored in the Android app config. The override you set here is session-only and will be reflected on next dashboard reload.</div>';
-    }
-
-    openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`, body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');
+    openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`,
+      body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');
     modalConfBtn.className = 'btn btn-primary';
   };
 
@@ -2203,48 +2762,83 @@
     if (el) el.style.display = tl === 'CUSTOM' ? '' : 'none';
   };
 
-  window.applyCardFilter = function (cardId, payloadType, cardType, caps) {
+  window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const ov = {};
-    if (caps.timeline)    { ov.timelineType = get('cf-timeline'); ov.customFrom = get('cf-from'); ov.customTo = get('cf-to'); }
-    if (caps.txType)      ov.txType     = get('cf-txtype');
-    if (caps.account)     ov.accountId  = get('cf-account');
-    if (caps.category)    ov.categoryId = get('cf-category');
-    if (caps.amount)      { ov.minAmount = get('cf-min'); ov.maxAmount = get('cf-max'); }
-    if (caps.status)      ov.status     = get('cf-status');
-    if (caps.payee)       ov.payee      = get('cf-payee');
-    if (caps.granularity) ov.granularity= get('cf-gran');
+    const getChecked = groupId => [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el=>el.value);
+    const getRadio = name => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
 
-    /* Only store if something meaningful was set */
-    const isEmpty = !Object.values(ov).some(v=>v && v!=='ALL_TIME');
-    if (isEmpty) { delete cardOverrides[cardId]; }
-    else         { cardOverrides[cardId] = ov; }
+    const fs = {};
+    if (caps.timeline) {
+      fs.timelineType = get('cf-timeline');
+      if (fs.timelineType === 'CUSTOM') { fs.customFrom = get('cf-from'); fs.customTo = get('cf-to'); }
+    }
+    if (caps.txTypeMode === 'single') {
+      const tv = getRadio('cf-txtype');
+      if (tv) fs.txType = tv;
+    } else if (caps.txTypeMode === 'both') {
+      fs.txType = '';
+    }
+    if (caps.accounts)    { const v = getChecked('cf-accounts');    if (v.length) fs.accountIds = v; }
+    if (caps.categories)  { const v = getChecked('cf-categories');  if (v.length) fs.categoryIds = v.map(Number); }
+    if (caps.currencies)  { const v = getChecked('cf-currencies');  if (v.length) fs.currencies  = v; }
+    if (caps.statuses)    { const v = getChecked('cf-statuses');    if (v.length) fs.statuses    = v; }
+    if (caps.methods)     { const v = getChecked('cf-methods');     if (v.length) fs.paymentMethods = v; }
+    if (caps.tags)        { const raw = get('cf-tags'); if (raw) fs.tags = raw.split(',').map(t=>t.trim()).filter(Boolean); }
+    if (caps.search)      { const n=get('cf-note'); const p=get('cf-payee'); if(n) fs.queryNote=n; if(p) fs.queryPayee=p; }
+    if (caps.amount)      { const mn=get('cf-min'); const mx=get('cf-max'); if(mn) fs.minAmount=parseFloat(mn); if(mx) fs.maxAmount=parseFloat(mx); }
+    if (caps.future)      { fs.excludeFuture = document.getElementById('cf-future')?.checked !== false; }
+
+    const isEmpty = Object.keys(fs).length === 0 || (Object.keys(fs).length === 1 && fs.timelineType === 'ALL_TIME' && !fs.customFrom);
 
     closeModal();
 
-    /* Update filter badge in header immediately */
+    if (!isEmpty) {
+      /* Persist to server */
+      const body = {
+        timelineType: fs.timelineType || 'ALL_TIME',
+        dateFrom: fs.customFrom ? new Date(fs.customFrom).getTime() : null,
+        dateTo:   fs.customTo   ? new Date(fs.customTo).getTime()   : null,
+        accountIds:     fs.accountIds     || [],
+        categoryIds:    fs.categoryIds    || [],
+        transactionTypes: fs.txType ? [fs.txType] : [],
+        tags:           fs.tags           || [],
+        currencies:     fs.currencies     || [],
+        statuses:       fs.statuses       || [],
+        paymentMethods: fs.paymentMethods || [],
+        minAmount:      fs.minAmount      ?? null,
+        maxAmount:      fs.maxAmount      ?? null,
+        queryNote:      fs.queryNote      || null,
+        queryPayee:     fs.queryPayee     || null,
+        excludeFuture:  fs.excludeFuture  !== false
+      };
+      await apiWrite('PUT', `/api/dashboard/cards/${cardId}`, body);
+      cardOverrides[cardId] = fs;
+    } else {
+      /* Reset filter on server */
+      await apiWrite('PUT', `/api/dashboard/cards/${cardId}`, { timelineType:'ALL_TIME', excludeFuture:true, accountIds:[], categoryIds:[], transactionTypes:[], tags:[], currencies:[], statuses:[], paymentMethods:[] });
+      delete cardOverrides[cardId];
+    }
+
+    /* Update filter badge immediately */
     const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
-    const newBadge = filterBadge(isEmpty ? null : ov);
+    const newBadge = filterBadge(isEmpty ? null : fs);
     if (badgeEl) { badgeEl.outerHTML = newBadge || ''; }
     else if (newBadge) {
       const titleEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`);
       if (titleEl) titleEl.insertAdjacentHTML('afterend', newBadge);
     }
 
-    /* Refresh card content if this type supports live re-fetch */
-    if (caps.refetch && !isEmpty) {
-      refreshCardContent(cardId, payloadType, cardType);
-    }
+    /* Re-fetch this card's data from server */
+    refreshCardContent(cardId, payloadType, cardType);
   };
 
-  window.resetCardFilter = function (cardId, payloadType, cardType) {
+  window.resetCardFilter = async function (cardId, payloadType, cardType) {
     delete cardOverrides[cardId];
     closeModal();
-    /* Remove badge */
     const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
     if (badgeEl) badgeEl.remove();
-    /* Reload dashboard to get server-computed data */
-    renderDashboard();
+    await apiWrite('PUT', `/api/dashboard/cards/${cardId}`, { timelineType:'ALL_TIME', excludeFuture:true, accountIds:[], categoryIds:[], transactionTypes:[], tags:[], currencies:[], statuses:[], paymentMethods:[] });
+    refreshCardContent(cardId, payloadType, cardType);
   };
 
   /* ══════════════════════════════════════════════════════

@@ -103,7 +103,8 @@ sealed class CardPayloadDto {
         val balance: Double,
         val income: Double,
         val expense: Double,
-        val transfer: Double = 0.0
+        val transfer: Double = 0.0,
+        val balanceInBase: Double? = null
     )
 
     @Serializable

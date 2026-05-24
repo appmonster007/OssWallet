@@ -73,6 +73,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -1276,6 +1277,7 @@ class WebApiRoutes(
                             exchangeRates = exchangeRates,
                             baseCurrency = baseCurrency,
                             displayCurrency = baseCurrency,
+                            filter = TransactionFilter(excludeFuture = false),
                             plannedPayments = allPayments,
                             budgets = budgets,
                             loans = loans,
@@ -2588,16 +2590,23 @@ class WebApiRoutes(
                         val req = call.receive<CardFilterUpdateDto>()
                         val timelineRange: TimelineRange = when (req.timelineType?.uppercase()) {
                             "MONTH", "MONTHLY" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-                            "YEAR", "YEARLY" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
-                            "WEEK", "WEEKLY" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
-                            "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
-                            "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
-                            "HALF_YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR)
-                            "CUSTOM" -> if (req.dateFrom != null && req.dateTo != null)
+                            "YEAR", "YEARLY"   -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
+                            "WEEK", "WEEKLY"   -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
+                            "TODAY"            -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
+                            "QUARTER"          -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
+                            "HALF_YEAR"        -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR)
+                            "LAST_24H"         -> TimelineRange.LastPeriod(LastPeriodType.LAST_24H)
+                            "LAST_7_DAYS"      -> TimelineRange.LastPeriod(LastPeriodType.LAST_7_DAYS)
+                            "LAST_30_DAYS"     -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+                            "LAST_12_WEEKS"    -> TimelineRange.LastPeriod(LastPeriodType.LAST_12_WEEKS)
+                            "LAST_6_MONTHS"    -> TimelineRange.LastPeriod(LastPeriodType.LAST_6_MONTHS)
+                            "LAST_1_YEAR"      -> TimelineRange.LastPeriod(LastPeriodType.LAST_1_YEAR)
+                            "LAST_5_YEARS"     -> TimelineRange.LastPeriod(LastPeriodType.LAST_5_YEARS)
+                            "CUSTOM"           -> if (req.dateFrom != null && req.dateTo != null)
                                 TimelineRange.CustomRange(req.dateFrom, req.dateTo)
                             else TimelineRange.AllTime
-                            "ALL_TIME" -> TimelineRange.AllTime
-                            else -> TimelineRange.AllTime
+                            "ALL_TIME"         -> TimelineRange.AllTime
+                            else               -> TimelineRange.AllTime
                         }
                         val newFilter = TransactionFilter(
                             timelineRange = timelineRange,
@@ -2879,7 +2888,7 @@ class WebApiRoutes(
             is TimelineRange.AllTime -> Triple("ALL_TIME", null, null)
             is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
             is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
-            is TimelineRange.LastPeriod -> Triple("LAST_${tl.period.name}", null, null)
+            is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
             else -> Triple("ALL_TIME", null, null)
         }
         return FilterSummaryDto(
@@ -2944,7 +2953,8 @@ class WebApiRoutes(
                     balance = stats.balance.toDouble(),
                     income = stats.incomeInAccountCurrency.toDouble(),
                     expense = stats.expenseInAccountCurrency.toDouble(),
-                    transfer = stats.transferInAccountCurrency.toDouble()
+                    transfer = stats.transferInAccountCurrency.toDouble(),
+                    balanceInBase = stats.balanceInBase.toDouble()
                 )
             }
         )
@@ -3164,7 +3174,7 @@ class WebApiRoutes(
             is TimelineRange.AllTime -> Triple("ALL_TIME", null, null)
             is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
             is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
-            is TimelineRange.LastPeriod -> Triple("LAST_${tl.period.name}", null, null)
+            is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
             else -> Triple("ALL_TIME", null, null)
         }
         return FilterDto(

@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -28,9 +27,7 @@ import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 @Composable
 fun AeonCalculatorSheet(
     currentAmount: String,
-    transactionType: TransactionType = TransactionType.INCOME,
     onAmountChanged: (String) -> Unit,
-    onTypeChanged: (TransactionType) -> Unit = {},
     onDismiss: () -> Unit,
     title: String? = null
 ) {
@@ -67,11 +64,9 @@ fun AeonCalculatorSheet(
 
             CalculatorNumpad(
                 amount = currentAmount,
-                onAmountChange = { amount, type ->
+                onAmountChange = { amount ->
                     onAmountChanged(amount)
-                    onTypeChanged(type)
                 },
-                transactionType = transactionType,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -85,7 +80,6 @@ fun AeonCalculatorSheetPreview() {
     OssWalletTheme {
         AeonCalculatorSheet(
             currentAmount = "1234.56",
-            transactionType = TransactionType.EXPENSE,
             onAmountChanged = {},
             onDismiss = {},
             title = "Enter Amount"

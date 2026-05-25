@@ -441,7 +441,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amount = s.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val amountValue = s.amount.toBigDecimalOrNull()?.let {
+                if (s.transactionType == TransactionType.EXPENSE) it.abs().negate() else it.abs()
+            } ?: BigDecimal.ZERO
+
             val rule = RecurrenceRule(
                 type = s.recurrenceType,
                 interval = s.recurrenceInterval.coerceAtLeast(1),
@@ -455,7 +458,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 id = s.linkedTemplate?.id ?: 0L,
                 name = s.name,
                 categoryId = s.selectedCategoryId,
-                amount = amount,
+                amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.selectedAccountId,
                 targetAccountId = s.targetAccountId,
@@ -485,7 +488,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 id = 0,
                 name = s.name,
                 categoryId = s.selectedCategoryId,
-                amount = amount,
+                amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.selectedAccountId,
                 targetAccountId = s.targetAccountId,

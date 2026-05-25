@@ -144,12 +144,8 @@ fun PlannedPaymentEntrySheets(
     if (state.showNumpad) {
         AeonCalculatorSheet(
             currentAmount = state.amount,
-            transactionType = state.transactionType,
             onAmountChanged = { amount ->
                 onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
-            },
-            onTypeChanged = { newType ->
-                onEvent(PlannedPaymentEntryEvent.SetTransactionType(newType))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) }
         )

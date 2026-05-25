@@ -381,7 +381,10 @@
   <div id="header">
     <button id="hamburger" aria-label="Menu">&#9776;</button>
     <h1>OssWallet</h1>
-    <button class="btn btn-ghost" id="logout-btn" style="font-size:0.82rem; padding:6px 12px;">Log out</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <button class="btn-icon" id="theme-toggle" title="Toggle dark/light mode" style="font-size:1.1rem">🌙</button>
+      <button class="btn btn-ghost" id="logout-btn" style="font-size:0.82rem; padding:6px 12px;">Log out</button>
+    </div>
   </div>
   <div id="main">
     <div id="overlay"></div>
@@ -462,6 +465,24 @@
     sidebar.classList.toggle('open'); overlay.classList.toggle('visible');
   });
   overlay.addEventListener('click', closeSidebar);
+  /* T5-1: Theme toggle */
+  (function () {
+    const btn = document.getElementById('theme-toggle');
+    function applyTheme(theme) {
+      document.documentElement.classList.remove('force-light', 'force-dark');
+      if (theme === 'light') document.documentElement.classList.add('force-light');
+      else if (theme === 'dark') document.documentElement.classList.add('force-dark');
+      btn.textContent = (theme === 'light') ? '🌙' : '☀️';
+    }
+    const saved = localStorage.getItem('oss-theme');
+    if (saved) applyTheme(saved);
+    btn.addEventListener('click', () => {
+      const isLight = document.documentElement.classList.contains('force-light');
+      const next = isLight ? 'dark' : 'light';
+      applyTheme(next);
+      localStorage.setItem('oss-theme', next);
+    });
+  })();
   window.addEventListener('hashchange', route);
   modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
   /* T5-3: Global keyboard shortcuts */
@@ -596,6 +617,23 @@
   function esc(str) {
     if (str == null) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  const ENUM_LABELS = {
+    INCOME:'Income', EXPENSE:'Expense', TRANSFER:'Transfer',
+    CASH:'Cash', CARD:'Card', BANK_TRANSFER:'Bank Transfer',
+    DIGITAL_WALLET:'Digital Wallet', OTHER:'Other',
+    CLEARED:'Cleared', UNCLEARED:'Uncleared', RECONCILE:'Reconciled',
+    MONTHLY:'Monthly', YEARLY:'Yearly', WEEKLY:'Weekly',
+    DAILY:'Daily', HALF_YEAR:'Half Year', QUARTERLY:'Quarterly',
+    ONE_TIME:'One Time', BORROWED:'Borrowed', LENT:'Lent',
+    CHECKING:'Checking', SAVINGS:'Savings', CREDIT_CARD:'Credit Card',
+    INVESTMENT:'Investment', CREDIT:'Credit',
+    MUST:'Must', NEED:'Need', WANT:'Want',
+  };
+  function prettyEnum(val) {
+    if (!val) return '—';
+    return ENUM_LABELS[val] || val.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   /* ── API helpers ──────────────────────────────────────── */
@@ -1309,7 +1347,7 @@
       const sign=tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
       const bdg=tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
       const tags=tx.tags&&tx.tags.length?tx.tags.map(t=>`<span class="badge" style="background:var(--surface2);color:var(--text);font-size:0.68rem">${esc(t)}</span>`).join(' '):'—';
-      body+=`<tr><td style="white-space:nowrap">${fmtDate(tx.date)}</td><td><span class="badge ${bdg}" style="font-size:0.68rem;margin-right:4px">${esc(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td><td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td><td>${esc(tx.accountName||'—')}</td><td>${tags}</td><td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0),tx.currency)}</td></tr>`;
+      body+=`<tr><td style="white-space:nowrap">${fmtDate(tx.date)}</td><td><span class="badge ${bdg}" style="font-size:0.68rem;margin-right:4px">${prettyEnum(tx.type)}</span>${esc(tx.title)}${tx.note?`<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>`:''}</td><td>${tx.categoryName?esc(tx.categoryName):'<span style="color:var(--text-muted)">—</span>'}</td><td>${esc(tx.accountName||'—')}</td><td>${tags}</td><td style="text-align:right" class="${amtCls}">${sign}${fmt(Math.abs(tx.amount||0),tx.currency)}</td></tr>`;
     });
     body += '</tbody></table></div>';
     if (total) body += `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:right">${total} total</div>`;
@@ -1514,7 +1552,7 @@
             <td>${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
             <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
             <td>${esc(tx.accountName || '')}</td>
-            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
+            <td><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span></td>
             <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
             <td style="white-space:nowrap" onclick="event.stopPropagation()">
               <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">📋</button>
@@ -1524,18 +1562,22 @@
           </tr>`;
         });
         const totalPages = Math.ceil(data.total / data.limit);
+        const lastPage   = Math.max(0, totalPages - 1);
         html += `</tbody></table></div>
           <div class="pagination">
             <span class="page-info">Page ${page+1} of ${totalPages} (${data.total} total)</span>
-            ${page > 0 ? `<button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})">← Prev</button>` : ''}
-            ${data.hasMore ? `<button class="btn btn-primary btn-sm" onclick="navPage(${page+1})">Next →</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="navPage(0)" ${page===0?'disabled':''} title="First page">«</button>
+            <button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
+            <button class="btn btn-ghost btn-sm" onclick="navPage(${page+1})" ${!data.hasMore?'disabled':''}>Next →</button>
+            <button class="btn btn-ghost btn-sm" onclick="navPage(${lastPage})" ${!data.hasMore?'disabled':''} title="Last page">»</button>
           </div></div>`;
       }
 
       setContent(html);
 
-      /* restore category filter selection after render */
+      /* restore filter selections after render (selects reset on innerHTML) */
       if (categoryId) { const el = document.getElementById('f-cat'); if (el) el.value = categoryId; }
+      if (accountId)  { const el = document.getElementById('f-account'); if (el) el.value = accountId; }
       if (filtersOpen) { const fp = document.getElementById('filter-panel'); if (fp) fp.classList.remove('hidden'); }
 
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading records.'); }
@@ -1721,7 +1763,7 @@
         <h3 style="margin:0">${esc(tx.title)}</h3>
         <span class="${amtCls}" style="font-size:1.3rem;font-weight:700">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</span>
       </div>
-      <div><span class="badge ${badgeCls}">${esc(tx.type)}</span> ${tx.status ? `<span class="badge">${esc(tx.status)}</span>` : ''} ${tx.paymentMethod ? `<span class="badge">${esc(tx.paymentMethod)}</span>` : ''}</div>
+      <div><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span> ${tx.status ? `<span class="badge">${prettyEnum(tx.status)}</span>` : ''} ${tx.paymentMethod ? `<span class="badge">${prettyEnum(tx.paymentMethod)}</span>` : ''}</div>
       ${formRow(
         formField('Date', `<div>${new Date(tx.date).toLocaleString()}</div>`),
         formField('Account', `<div>${esc(tx.accountName||'—')}</div>`)
@@ -2913,7 +2955,7 @@
             <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
             <td>${esc(tx.title)}</td>
             <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td><span class="badge ${badgeCls}">${esc(tx.type)}</span></td>
+            <td><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span></td>
             <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
             <td onclick="event.stopPropagation()">
               <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
@@ -3125,7 +3167,10 @@
               <div class="settings-label">Profile ID</div>
               <div class="settings-value" style="font-size:0.78rem;margin-top:2px">Active profile</div>
             </div>
-            <div class="settings-value">${esc(String(s.currentProfileId || '—'))}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="settings-value" style="font-family:monospace">${esc(String(s.currentProfileId || '—'))}</span>
+              <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:3px 8px" onclick="navigator.clipboard.writeText('${esc(String(s.currentProfileId||''))}').then(()=>showToast('Profile ID copied!'))">📋 Copy</button>
+            </div>
           </div>
           <div class="settings-row">
             <div style="flex:1">

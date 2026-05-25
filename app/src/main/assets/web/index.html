@@ -335,6 +335,12 @@
   /* ── Filter-active button state ─────────────────────────────── */
   .btn-filter-active { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; border-color: var(--accent) !important; color: var(--accent) !important; }
 
+  /* ── Color chip picker (F2-B) ───────────────────────────────── */
+  .color-chip-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .color-chip { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .15s; }
+  .color-chip:hover { transform: scale(1.15); }
+  .color-chip.selected { border-color: var(--text); }
+
   /* ── Theme force override ───────────────────────────────────── */
   .force-light { color-scheme: light; }
   .force-light :root { --bg: #ffffff; --surface: #f5f5f5; --surface2: #ececec; --border: #e0e0e0; --text: #1a1a1a; --text-muted: #666666; --accent: #1976D2; --danger: #c62828; --success: #2e7d32; --warning: #f57f17; }
@@ -882,6 +888,13 @@
   function formRow(...fields) {
     return `<div class="form-row">${fields.join('')}</div>`;
   }
+
+  /* ── Color chip picker helper (F2-B) ──────────────────── */
+  window.selectColorChip = function (hiddenId, rowId, chip) {
+    document.querySelectorAll(`#${rowId} .color-chip`).forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    document.getElementById(hiddenId).value = chip.dataset.color;
+  };
 
   /* ── Toast notifications (T2-1) ───────────────────────── */
   function showToast(message, type = 'success') {
@@ -1669,8 +1682,8 @@
             ${buildSelect('f-status',[{value:'',label:'All'},{value:'CLEARED',label:'Cleared'},{value:'RECONCILE',label:'Reconcile'},{value:'UNCLEARED',label:'Uncleared'}],status||'','All',false)}
           </div>
           <div class="form-field"><label>Date Range</label><div class="date-range-wrap"><input type="date" id="f-from" value="${esc(dateFrom)}"><span class="date-range-sep">→</span><input type="date" id="f-to" value="${esc(dateTo)}"></div></div>
-          <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00"></div>
-          <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999"></div>
+          <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999" min="0" step="0.01"></div>
           <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
         </div>
         <div class="filter-actions">
@@ -2006,7 +2019,14 @@
           <input type="number" id="acc-credit-limit" min="0" step="0.01" placeholder="0.00">
         </div>
       </div>
-      ${formField('Initial Balance (optional)', `<div class="input-group"><span class="input-group-addon" id="acc-bal-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="acc-init-bal" placeholder="0.00" step="0.01"></div>`)}`;
+      ${formField('Initial Balance (optional)', `<div class="input-group"><span class="input-group-addon" id="acc-bal-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="acc-init-bal" placeholder="0.00" min="0" step="0.01"></div>`)}
+      <div class="form-field"><label>Color</label>
+        <div class="color-chip-row" id="acc-color-row">
+          ${['#EF5350','#FF9800','#FFEE58','#66BB6A','#26C6DA','#42A5F5','#7E57C2','#EC407A'].map(c=>`<span class="color-chip${c==='#42A5F5'?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectColorChip('acc-color','acc-color-row',this)"></span>`).join('')}
+          <input type="color" id="acc-color-custom" style="width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;padding:0" oninput="document.getElementById('acc-color').value=this.value;document.querySelectorAll('#acc-color-row .color-chip').forEach(c=>c.classList.remove('selected'))">
+        </div>
+        <input type="hidden" id="acc-color" value="#42A5F5">
+      </div>`;
     openModal('Add Account', body, submitAddAccount, 'Save Account');
     modalConfBtn.className = 'btn btn-primary';
     document.getElementById('acc-type')?.addEventListener('change', function() {
@@ -2036,14 +2056,22 @@
           <input type="number" id="acc-credit-limit" min="0" step="0.01" placeholder="0.00" value="${esc(acc.creditLimit||'')}">
         </div>
       </div>
-      <small style="color:var(--text-muted);font-size:0.75rem">Currency cannot be changed after account creation.</small>`;
+      <small style="color:var(--text-muted);font-size:0.75rem">Currency cannot be changed after account creation.</small>
+      <div class="form-field"><label>Color</label>
+        <div class="color-chip-row" id="acc-color-row">
+          ${['#EF5350','#FF9800','#FFEE58','#66BB6A','#26C6DA','#42A5F5','#7E57C2','#EC407A'].map(c=>`<span class="color-chip${(acc.colorHex||'#42A5F5')===c?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectColorChip('acc-color','acc-color-row',this)"></span>`).join('')}
+          <input type="color" id="acc-color-custom" value="${esc(acc.colorHex||'#42A5F5')}" style="width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;padding:0" oninput="document.getElementById('acc-color').value=this.value;document.querySelectorAll('#acc-color-row .color-chip').forEach(c=>c.classList.remove('selected'))">
+        </div>
+        <input type="hidden" id="acc-color" value="${esc(acc.colorHex||'#42A5F5')}">
+      </div>`;
     openModal(`Edit Account — ${esc(acc.name)}`, body, async () => {
       clearFieldErrors(modalBody);
       const name = document.getElementById('acc-name')?.value.trim();
       const type = document.getElementById('acc-type')?.value;
       if (!name) { showFieldError('acc-name', 'Name is required.'); return; }
       await withLoading(modalConfBtn, async () => {
-        const payload = { name, structureType: type };
+        const colorHex = document.getElementById('acc-color')?.value || '#42A5F5';
+        const payload = { name, structureType: type, colorHex };
         if (['CREDIT_CARD','CREDIT'].includes(type)) {
           const clVal = parseFloat(document.getElementById('acc-credit-limit')?.value || '0');
           if (!isNaN(clVal)) payload.creditLimit = clVal;
@@ -2069,7 +2097,8 @@
     if (!name)     { showFieldError('acc-name', 'Account name is required.'); return; }
     if (!currency) { showFieldError('acc-currency', 'Currency is required.'); return; }
     await withLoading(modalConfBtn, async () => {
-      const body = { name, currencyCode: currency, structureType: type };
+      const colorHex = document.getElementById('acc-color')?.value || '#42A5F5';
+      const body = { name, currencyCode: currency, structureType: type, colorHex };
       if (initialBalance !== undefined && !isNaN(initialBalance)) body.initialBalance = initialBalance;
       if (['CREDIT_CARD','CREDIT'].includes(type)) {
         const clVal = parseFloat(document.getElementById('acc-credit-limit')?.value || '0');
@@ -2150,7 +2179,7 @@
       )}
       ${formRow(
         formField('Period', buildSelect('bud-period',[{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'},{value:'WEEKLY',label:'Weekly'}],'MONTHLY','— Select —',false)),
-        formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80"><span class="input-group-addon" data-tip="Notify when this % of budget is spent">%</span></div>`)
+        `<div class="form-field"><label data-tip="Alert when spending reaches this % of the limit">Alert Threshold (%)</label><div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80"><span class="input-group-addon">%</span></div></div>`
       )}
       ${cachedCategories.length ? `<div class="form-field"><label>Track Categories <small style="color:var(--text-muted);font-weight:400">(leave empty to track all)</small></label>${chipCheckboxes('bud-cats', cachedCategories.map(c=>({value:String(c.id),label:c.name})), [])}</div>` : ''}`;
     openModal('Add Budget', body, submitAddBudget, 'Save Budget');
@@ -2189,7 +2218,7 @@
       )}
       ${formRow(
         formField('Period', buildSelect('bud-period',[{value:'MONTHLY',label:'Monthly'},{value:'WEEKLY',label:'Weekly'},{value:'YEARLY',label:'Yearly'},{value:'TODAY',label:'Daily'},{value:'QUARTER',label:'Quarterly'}],b.timelineType||'MONTHLY','— Select —',false)),
-        formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1"><span class="input-group-addon" data-tip="Notify when this % of budget is spent">%</span></div>`)
+        `<div class="form-field"><label data-tip="Alert when spending reaches this % of the limit">Alert Threshold (%)</label><div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1"><span class="input-group-addon">%</span></div></div>`
       )}
       <small style="color:var(--text-muted);font-size:0.75rem">Alert triggers when spending exceeds the threshold percentage.</small>`;
     openModal(`Edit Budget — ${esc(b.name)}`, body, async () => {
@@ -2288,7 +2317,7 @@
         formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('ln-principal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Loan Type', buildSelect('ln-type',[{value:'BORROWED',label:'Borrowed'},{value:'LENT',label:'Lent'}],'BORROWED','— Select —',false,"const l=document.getElementById('ln-party-label');if(l)l.textContent=this.value==='BORROWED'?'Lender Name':'Borrower Name'")),
+        `<div class="form-field"><label data-tip="Borrowed = you owe · Lent = they owe you">Loan Type</label>${buildSelect('ln-type',[{value:'BORROWED',label:'Borrowed'},{value:'LENT',label:'Lent'}],'BORROWED','— Select —',false,"const l=document.getElementById('ln-party-label');if(l)l.textContent=this.value==='BORROWED'?'Lender Name':'Borrower Name'")}</div>`,
         formField('<span id="ln-party-label">Lender Name</span>', '<input type="text" id="ln-party" placeholder="Person or institution">')
       )}
       ${formRow(
@@ -2497,7 +2526,7 @@
       ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— None —',true))}
       ${formRow(
         formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],'MONTHLY','— Select —',false,'document.getElementById(\'pp-interval-row\').style.display=this.value===\'ONE_TIME\'?\'none\':\'\'') ),
-        formField('Interval (days/weeks/months)', '<input type="number" id="pp-interval" value="1" min="1">')
+        formField('Interval (days/weeks/months)', '<input type="number" id="pp-interval" value="1" min="1" step="1">')
       )}
       <div id="pp-interval-row" style="display:none;margin-top:-8px"><small style="color:var(--text-muted);font-size:0.75rem">Number of periods between occurrences</small></div>
       ${formRow(formField('Start Date', '<input type="date" id="pp-start">'),
@@ -2568,7 +2597,7 @@
       ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),p.categoryId?String(p.categoryId):'','— None —',true))}
       ${formRow(
         formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],p.recurrenceType||'MONTHLY','— Select —',false)),
-        formField('Interval', `<input type="number" id="pp-interval" value="1" min="1">`)
+        formField('Interval', `<input type="number" id="pp-interval" value="1" min="1" step="1">`)
       )}
       <div class="form-field"><label>Auto-Confirm</label>
         <div class="toggle-wrap"><input type="checkbox" id="pp-auto" ${p.autoConfirm?'checked':''}><span style="font-size:0.88rem">Automatically confirm when due</span></div>
@@ -2674,8 +2703,14 @@
     ).join(' ');
     const body = `
       ${formField('Category Name', '<input type="text" id="cat-name" placeholder="e.g. Groceries">')}
+      <div class="form-field"><label>Icon (emoji)</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="cat-icon-preview" style="font-size:2rem;min-width:40px;text-align:center">📁</span>
+          <input type="text" id="cat-icon" placeholder="📁" maxlength="2" style="width:64px;font-size:1.5rem;text-align:center" oninput="const p=document.getElementById('cat-icon-preview');if(p)p.textContent=this.value||'📁'">
+        </div>
+      </div>
       ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— Top-level —',true))}
-      ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],'NEED','— Select —',false))}
+      <div class="form-field"><label data-tip="MUST=essential · NEED=important · WANT=discretionary">Nature</label>${buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],'NEED','— Select —',false)}</div>
       <div class="form-field"><label>Type</label><div class="chip-group">
         <label class="chip-check active"><input type="radio" name="cat-type" value="EXPENSE" checked onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Expense</span></label>
         <label class="chip-check"><input type="radio" name="cat-type" value="INCOME" onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Income</span></label>
@@ -2690,14 +2725,23 @@
 
   window.submitAddCategory = async function () {
     clearFieldErrors(modalBody);
-    const name    = document.getElementById('cat-name')?.value.trim();
-    const parent  = document.getElementById('cat-parent')?.value || undefined;
-    const nature  = document.getElementById('cat-nature')?.value;
-    const color   = document.getElementById('cat-color')?.value.trim();
-    const catType = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
+    const name     = document.getElementById('cat-name')?.value.trim();
+    const parentVal = document.getElementById('cat-parent')?.value || '';
+    const nature   = document.getElementById('cat-nature')?.value;
+    const color    = document.getElementById('cat-color')?.value.trim();
+    const catType  = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
+    const iconName = document.getElementById('cat-icon')?.value?.trim() || '📁';
     if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
+    /* F6-E: Duplicate name warning */
+    const existingName = (cachedCategories || []).find(c =>
+      c.name.toLowerCase() === name.toLowerCase() &&
+      (String(c.parentId||'') === String(parentVal||''))
+    );
+    if (existingName) {
+      showToast(`A category named "${name}" already exists at this level.`, 'info');
+    }
     await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/categories', { name, parentId: parent || undefined, nature, colorHex: color || undefined, type: catType });
+      const res = await apiWrite('POST', '/api/categories', { name, parentId: parentVal || undefined, nature, colorHex: color || undefined, type: catType, iconName });
       if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category created!'); }
       else { showToast('Failed to create category: ' + (res.error || ''), 'error'); }
     });
@@ -2716,10 +2760,17 @@
     ).join(' ');
     const currentColor = typeof cat.colorHex === 'number' ? '#' + cat.colorHex.toString(16).padStart(6,'0') : (cat.colorHex || '#9e9e9e');
     const editCatType = cat.type || 'EXPENSE';
+    const catIconVal = cat.iconName || '📁';
     const body = `
       ${formField('Category Name', `<input type="text" id="cat-name" value="${esc(cat.name)}">`)}
+      <div class="form-field"><label>Icon (emoji)</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="cat-icon-preview" style="font-size:2rem;min-width:40px;text-align:center">${esc(catIconVal)}</span>
+          <input type="text" id="cat-icon" value="${esc(catIconVal)}" maxlength="2" style="width:64px;font-size:1.5rem;text-align:center" oninput="const p=document.getElementById('cat-icon-preview');if(p)p.textContent=this.value||'📁'">
+        </div>
+      </div>
       ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.filter(c=>c.id!==catId&&c.parentId!==catId).map(c=>({value:String(c.id),label:c.name}))),cat.parentId?String(cat.parentId):'','— Top-level —',true))}
-      ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],cat.nature||'NEED','— Select —',false))}
+      <div class="form-field"><label data-tip="MUST=essential · NEED=important · WANT=discretionary">Nature</label>${buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],cat.nature||'NEED','— Select —',false)}</div>
       <div class="form-field"><label>Type</label><div class="chip-group">
         <label class="chip-check ${editCatType==='EXPENSE'?'active':''}"><input type="radio" name="cat-type" value="EXPENSE" ${editCatType==='EXPENSE'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Expense</span></label>
         <label class="chip-check ${editCatType==='INCOME'?'active':''}"><input type="radio" name="cat-type" value="INCOME" ${editCatType==='INCOME'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Income</span></label>
@@ -2730,11 +2781,12 @@
       </div>`;
     openModal(`Edit Category — ${esc(cat.name)}`, body, async () => {
       clearFieldErrors(modalBody);
-      const name    = document.getElementById('cat-name')?.value.trim();
-      const parent  = document.getElementById('cat-parent')?.value || null;
-      const nature  = document.getElementById('cat-nature')?.value;
-      const color   = document.getElementById('cat-color')?.value.trim();
-      const catType = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
+      const name     = document.getElementById('cat-name')?.value.trim();
+      const parent   = document.getElementById('cat-parent')?.value || null;
+      const nature   = document.getElementById('cat-nature')?.value;
+      const color    = document.getElementById('cat-color')?.value.trim();
+      const iconName = document.getElementById('cat-icon')?.value?.trim() || '📁';
+      const catType  = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
       if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
       await withLoading(modalConfBtn, async () => {
         const res = await apiWrite('PUT', `/api/categories/${encodeURIComponent(id)}`, {
@@ -2743,6 +2795,7 @@
           nature,
           colorHex: color || undefined,
           type: catType,
+          iconName,
         });
         if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category updated!'); }
         else { showToast('Failed to update: ' + (res.error||''), 'error'); }
@@ -3345,8 +3398,11 @@
       const s = json.data || {};
       cachedSettings = { ...cachedSettings, ...s };
 
+      const inputStyle = 'padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:0.9rem';
       const html = `<h2 class="section-title">Settings</h2>
         <div class="card" style="max-width:480px">
+
+          <div class="form-section-label">👤 Profile</div>
           <div class="settings-row">
             <div>
               <div class="settings-label">Profile ID</div>
@@ -3358,30 +3414,53 @@
             </div>
           </div>
           <div class="settings-row">
-            <div style="flex:1">
-              <div class="settings-label">Base Currency</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Default currency for new entries</div>
-            </div>
-            <input type="text" id="set-currency" value="${esc(s.baseCurrency||'')}" maxlength="5" style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:0.9rem">
-          </div>
-          <div class="settings-row">
-            <div style="flex:1">
-              <div class="settings-label">Decimal Precision</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Decimal places for amounts</div>
-            </div>
-            <input type="number" id="set-precision" value="${esc(String(s.decimalPrecision ?? 2))}" min="0" max="8" step="1" style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:0.9rem">
-          </div>
-          <div class="settings-row" style="justify-content:flex-end;gap:8px;padding-top:4px">
-            <button class="btn btn-primary btn-sm" id="set-save-btn" onclick="saveSettings()">Save Settings</button>
-          </div>
-          <div class="settings-row" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div>
               <div class="settings-label">Timezone</div>
               <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Detected from browser</div>
             </div>
             <span class="settings-value" style="font-size:0.82rem">${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || '—')}</span>
           </div>
-          <div class="settings-row" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+
+          <div class="form-section-label" style="margin-top:20px">💱 Currency &amp; Display</div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-label">Base Currency</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Default currency for new entries</div>
+            </div>
+            <input type="text" id="set-currency" value="${esc(s.baseCurrency||'')}" maxlength="5" style="width:80px;${inputStyle}">
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-label">Decimal Precision</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Decimal places for amounts</div>
+            </div>
+            <input type="number" id="set-precision" value="${esc(String(s.decimalPrecision ?? 2))}" min="0" max="8" step="1" style="width:70px;${inputStyle}">
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-label">Date Format</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">How dates are displayed</div>
+            </div>
+            <select id="set-date-format" style="${inputStyle}">
+              <option value="DD/MM/YYYY" ${(s.dateFormat||'DD/MM/YYYY')==='DD/MM/YYYY'?'selected':''}>DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY" ${s.dateFormat==='MM/DD/YYYY'?'selected':''}>MM/DD/YYYY</option>
+              <option value="YYYY-MM-DD" ${s.dateFormat==='YYYY-MM-DD'?'selected':''}>YYYY-MM-DD</option>
+            </select>
+          </div>
+          <div class="settings-row" style="justify-content:flex-end;gap:8px;padding-top:4px">
+            <button class="btn btn-primary btn-sm" id="set-save-btn" onclick="saveSettings()">Save Settings</button>
+          </div>
+
+          <div class="form-section-label" style="margin-top:20px">🎨 Appearance</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Theme</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Use the toggle in the header to switch light/dark</div>
+            </div>
+          </div>
+
+          <div class="form-section-label" style="margin-top:20px">🔒 Security</div>
+          <div class="settings-row">
             <div>
               <div class="settings-label">Session</div>
               <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Stored in sessionStorage (cleared on tab close)</div>
@@ -3395,15 +3474,18 @@
   }
 
   window.saveSettings = async function () {
-    const currency  = document.getElementById('set-currency')?.value.trim();
-    const precision = parseInt(document.getElementById('set-precision')?.value || '2', 10);
+    const currency   = document.getElementById('set-currency')?.value.trim();
+    const precision  = parseInt(document.getElementById('set-precision')?.value || '2', 10);
+    const dateFormat = document.getElementById('set-date-format')?.value;
     if (!currency) { showFieldError('set-currency', 'Currency is required.'); return; }
     if (isNaN(precision) || precision < 0 || precision > 8) { showFieldError('set-precision', 'Must be 0–8.'); return; }
     const btn = document.getElementById('set-save-btn');
     if (btn) await withLoading(btn, async () => {
-      const res = await apiWrite('PUT', '/api/settings', { baseCurrency: currency, decimalPrecision: precision });
+      const payload = { baseCurrency: currency, decimalPrecision: precision };
+      if (dateFormat) payload.dateFormat = dateFormat;
+      const res = await apiWrite('PUT', '/api/settings', payload);
       if (res.success) {
-        cachedSettings = { ...cachedSettings, baseCurrency: currency, decimalPrecision: precision };
+        cachedSettings = { ...cachedSettings, baseCurrency: currency, decimalPrecision: precision, dateFormat };
         showToast('Settings saved!');
       } else { showToast('Failed to save settings: ' + (res.error || ''), 'error'); }
     });
@@ -3529,7 +3611,7 @@
     if (caps.future) {
       const excl = fs.excludeFuture !== false;
       body += `<div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
-        <input type="checkbox" id="cf-future" ${excl?'checked':''}><label for="cf-future" style="margin-bottom:0;cursor:pointer">Exclude future transactions</label></div>`;
+        <input type="checkbox" id="cf-future" ${excl?'checked':''}><label for="cf-future" style="margin-bottom:0;cursor:pointer" data-tip="Exclude transactions with a future date">Exclude future transactions</label></div>`;
     }
 
     body += '</div>';

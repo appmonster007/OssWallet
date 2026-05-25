@@ -722,6 +722,18 @@
     modalConfBtn.onclick = closeModal;
   }
 
+  /* ── Chip-checkbox multi-select helper (shared) ───────── */
+  function chipCheckboxes(id, items, selected) {
+    return `<div class="chip-group" id="${id}">` +
+      items.map(({value, label}) => {
+        const checked = selected.includes(value);
+        return `<label class="chip-check ${checked?'active':''}"><input type="checkbox" value="${esc(value)}" ${checked?'checked':''} onchange="this.closest('label').classList.toggle('active',this.checked)"><span>${esc(label)}</span></label>`;
+      }).join('') + '</div>';
+  }
+  function getCheckedValues(groupId) {
+    return [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el => el.value);
+  }
+
   /* ── Empty state helper ───────────────────────────────── */
   function emptyState(icon, message, actionLabel, onAction) {
     return `<div class="empty-state">
@@ -1453,10 +1465,11 @@
     const status      = params.get('status') || '';
     const payee       = params.get('payee') || '';
     const filtersOpen = params.get('filtersOpen') === '1';
+    const pageLimit   = parseInt(localStorage.getItem('oss-page-size') || '25', 10);
 
     showSpinner();
     try {
-      let url = `/api/transactions?page=${page}&limit=25`;
+      let url = `/api/transactions?page=${page}&limit=${pageLimit}`;
       if (accountId)  url += `&accountId=${encodeURIComponent(accountId)}`;
       if (type)       url += `&type=${encodeURIComponent(type)}`;
       if (dateFrom)   url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
@@ -1583,6 +1596,9 @@
         html += `</tbody></table></div>
           <div class="pagination">
             <span class="page-info">Page ${page+1} of ${totalPages} (${data.total} total)</span>
+            <select style="font-size:0.78rem;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text)" title="Rows per page" onchange="localStorage.setItem('oss-page-size',this.value);navPage(0)">
+              ${[10,25,50,100].map(n=>`<option value="${n}" ${pageLimit===n?'selected':''}>${n} / page</option>`).join('')}
+            </select>
             <button class="btn btn-ghost btn-sm" onclick="navPage(0)" ${page===0?'disabled':''} title="First page">«</button>
             <button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
             <button class="btn btn-ghost btn-sm" onclick="navPage(${page+1})" ${!data.hasMore?'disabled':''}>Next →</button>
@@ -1999,7 +2015,8 @@
           <option value="WEEKLY">Weekly</option>
         </select>`),
         formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80"><span class="input-group-addon" data-tip="Notify when this % of budget is spent">%</span></div>`)
-      )}`;
+      )}
+      ${cachedCategories.length ? `<div class="form-field"><label>Track Categories <small style="color:var(--text-muted);font-weight:400">(leave empty to track all)</small></label>${chipCheckboxes('bud-cats', cachedCategories.map(c=>({value:String(c.id),label:c.name})), [])}</div>` : ''}`;
     openModal('Add Budget', body, submitAddBudget, 'Save Budget');
     modalConfBtn.className = 'btn btn-primary';
   };
@@ -2011,10 +2028,13 @@
     const limit    = parseFloat(document.getElementById('bud-limit')?.value || '0');
     const period   = document.getElementById('bud-period')?.value;
     const alertPct = parseFloat(document.getElementById('bud-alert')?.value || '80');
+    const catIds   = getCheckedValues('bud-cats').map(Number).filter(Boolean);
     if (!name)                    { showFieldError('bud-name', 'Name is required.'); return; }
     if (isNaN(limit) || limit <= 0) { showFieldError('bud-limit', 'Enter a valid limit amount.'); return; }
     await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/budgets', { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alertPct / 100 });
+      const payload = { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alertPct / 100 };
+      if (catIds.length) payload.categoryIds = catIds;
+      const res = await apiWrite('POST', '/api/budgets', payload);
       if (res.success) { closeModal(); renderBudgets(); showToast('Budget created!'); }
       else { showToast('Failed to create budget: ' + (res.error || ''), 'error'); }
     });
@@ -2136,8 +2156,8 @@
         formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('ln-principal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Loan Type', `<select id="ln-type"><option value="BORROWED">Borrowed</option><option value="LENT">Lent</option></select>`),
-        formField('Counterparty Name', '<input type="text" id="ln-party" placeholder="Person or institution">')
+        formField('Loan Type', `<select id="ln-type" onchange="const l=document.getElementById('ln-party-label');if(l)l.textContent=this.value==='BORROWED'?'Lender Name':'Borrower Name'"><option value="BORROWED">Borrowed</option><option value="LENT">Lent</option></select>`),
+        formField('<span id="ln-party-label">Lender Name</span>', '<input type="text" id="ln-party" placeholder="Person or institution">')
       )}
       ${formRow(
         formField('Start Date', '<input type="date" id="ln-start">'),
@@ -2160,6 +2180,7 @@
     clearFieldErrors(modalBody);
     if (!name)                            { showFieldError('ln-name', 'Name is required.'); return; }
     if (isNaN(principal) || principal <= 0) { showFieldError('ln-principal', 'Enter a valid principal amount.'); return; }
+    if (start && settle && settle < start) { showFieldError('ln-settle', 'Settlement date must be on or after start date.'); return; }
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/loans', {
         name, principalAmount: principal, currency, loanType: type,
@@ -2343,16 +2364,20 @@
       )}
       ${formField('Category', `<select id="pp-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
       ${formRow(
-        formField('Recurrence', `<select id="pp-recur">
+        formField('Recurrence', `<select id="pp-recur" onchange="document.getElementById('pp-interval-row').style.display=this.value==='ONE_TIME'?'none':''">
           <option value="ONE_TIME">One Time</option>
           <option value="DAILY">Daily</option>
           <option value="WEEKLY">Weekly</option>
           <option value="MONTHLY" selected>Monthly</option>
           <option value="YEARLY">Yearly</option>
         </select>`),
-        formField('Interval', '<input type="number" id="pp-interval" value="1" min="1">')
+        formField('Interval (days/weeks/months)', '<input type="number" id="pp-interval" value="1" min="1">')
       )}
-      ${formField('Start Date', '<input type="date" id="pp-start">')}
+      <div id="pp-interval-row" style="display:none;margin-top:-8px"><small style="color:var(--text-muted);font-size:0.75rem">Number of periods between occurrences</small></div>
+      ${formRow(formField('Start Date', '<input type="date" id="pp-start">'),
+                formField('Payment Method', `<select id="pp-method"><option value="">— None —</option>${['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v=>`<option value="${v}">${prettyEnum(v)}</option>`).join('')}</select>`)
+      )}
+      ${formField('Note (optional)', '<input type="text" id="pp-note" placeholder="Optional note…">')}
       <div class="form-field"><label>Auto-Confirm</label>
         <div class="toggle-wrap"><input type="checkbox" id="pp-auto"><span style="font-size:0.88rem">Automatically confirm when due</span></div>
       </div>`;
@@ -2363,28 +2388,34 @@
   };
 
   window.submitAddPlanned = async function () {
-    const name    = document.getElementById('pp-name')?.value.trim();
-    const amount  = parseFloat(document.getElementById('pp-amount')?.value || '0');
-    const currency= document.getElementById('pp-currency')?.value.trim();
-    const type    = document.getElementById('pp-type')?.value;
-    const account = document.getElementById('pp-account')?.value;
-    const cat     = document.getElementById('pp-category')?.value;
-    const recur   = document.getElementById('pp-recur')?.value;
-    const interval= parseInt(document.getElementById('pp-interval')?.value || '1', 10);
-    const start   = document.getElementById('pp-start')?.value;
+    const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const name    = get('pp-name');
+    const amount  = parseFloat(get('pp-amount') || '0');
+    const currency= get('pp-currency');
+    const type    = get('pp-type');
+    const account = get('pp-account');
+    const cat     = get('pp-category');
+    const recur   = get('pp-recur');
+    const interval= parseInt(get('pp-interval') || '1', 10);
+    const start   = get('pp-start');
+    const method  = get('pp-method');
+    const note    = get('pp-note');
     const auto    = document.getElementById('pp-auto')?.checked || false;
     clearFieldErrors(modalBody);
     if (!name)                      { showFieldError('pp-name', 'Name is required.'); return; }
     if (isNaN(amount) || amount <= 0) { showFieldError('pp-amount', 'Enter a valid amount.'); return; }
+    if (!account) { showFieldError('pp-account', 'Account is required.'); return; }
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/planned-payments', {
         name, amount, currency, transactionType: type,
-        accountId: account || undefined,
+        accountId: account,
         categoryId: cat || undefined,
         recurrenceType: recur,
-        recurrenceInterval: interval,
+        recurrenceInterval: recur === 'ONE_TIME' ? 1 : interval,
         startDate: start || undefined,
         autoConfirm: auto,
+        paymentMethod: method || undefined,
+        note: note || undefined,
       });
       if (res.success) { closeModal(); renderPlannedPayments(); showToast('Planned payment created!'); }
       else { showToast('Failed to create: ' + (res.error || ''), 'error'); }
@@ -2720,6 +2751,7 @@
     const from   = document.getElementById('an-from')?.value;
     const to     = document.getElementById('an-to')?.value;
     const txType = document.getElementById('an-type')?.value;
+    if (from && to && from > to) { showFieldError('an-to', 'End date must be after start date.'); return; }
     const p = new URLSearchParams();
     if (from)   p.set('dateFrom', from);
     if (to)     p.set('dateTo',   to);
@@ -2825,8 +2857,12 @@
       ${formField('Category', `<select id="tpl-category"><option value="0">— None —</option>${catOptions(false)}</select>`)}
       ${formRow(formField('Payee', `<input type="text" id="tpl-payee" placeholder="Optional" value="${esc(t?.payee||'')}">`),
                 formField('Payment Method', `<select id="tpl-method">${pmOpts}</select>`))}
+      ${formField('Status', `<div class="chip-group">
+        ${['CLEARED','UNCLEARED','RECONCILE'].map(s=>`<label class="chip-check ${(t?.transactionStatus||'CLEARED')===s?'active':''}"><input type="radio" name="tpl-status" value="${s}" ${(t?.transactionStatus||'CLEARED')===s?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>${prettyEnum(s)}</span></label>`).join('')}
+      </div>`)}
       ${formField('Tags (comma-separated)', `<input type="text" id="tpl-tags" placeholder="food, bills, …" value="${esc((t?.tags||[]).join(', '))}">`)}
-      ${formField('Note', `<textarea id="tpl-note" placeholder="Optional note…">${esc(t?.note||'')}</textarea>`)}`;
+      ${formField('Note', `<textarea id="tpl-note" placeholder="Optional note…">${esc(t?.note||'')}</textarea>`)}
+      <small style="color:var(--text-muted);font-size:0.75rem">Templates are quick-fill presets for manual transactions. For automatic recurring payments, use Planned Payments.</small>`;
   }
 
   window.openAddTemplate = function () {
@@ -2851,7 +2887,7 @@
       paymentMethod:   get('tpl-method') || null,
       tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
       note:            get('tpl-note') || null,
-      transactionStatus: 'CLEARED',
+      transactionStatus: document.querySelector('input[name="tpl-status"]:checked')?.value || 'CLEARED',
     };
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/templates', payload);
@@ -2875,9 +2911,10 @@
         accountId:       get('tpl-account') || undefined,
         categoryId:      parseInt(get('tpl-category')) || undefined,
         payee:           get('tpl-payee') || undefined,
-        paymentMethod:   get('tpl-method') || undefined,
-        tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
-        note:            get('tpl-note') || undefined,
+        paymentMethod:    get('tpl-method') || undefined,
+        tags:             get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
+        note:             get('tpl-note') || undefined,
+        transactionStatus: document.querySelector('input[name="tpl-status"]:checked')?.value || 'CLEARED',
       };
       await withLoading(modalConfBtn, async () => {
         const res = await apiWrite('PUT', `/api/templates/${id}`, payload);
@@ -3091,7 +3128,7 @@
       </div>
       <div class="section-sub" style="display:flex;justify-content:space-between;align-items:center">
         <span>Repayment History</span>
-        <button class="btn btn-primary btn-sm" onclick="openLogRepayment(${loan.id})">+ Log Repayment</button>
+        <button class="btn btn-primary btn-sm" onclick="openLogRepayment(${loan.id},${loan.principalAmount||0},${loan.remainingBalance||0},${loan.totalPaid||0},'${esc(loan.currency||'USD')}')">+ Log Repayment</button>
       </div>`;
 
       if (!payments.length) {
@@ -3113,12 +3150,19 @@
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading loan detail.'); }
   }
 
-  window.openLogRepayment = function (loanId) {
+  window.openLogRepayment = function (loanId, principal=0, remaining=0, paid=0, currency='') {
     const body = `
+      <div style="background:var(--surface2);padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:4px;display:flex;gap:20px;flex-wrap:wrap">
+        <div><div style="font-size:0.72rem;color:var(--text-muted)">Principal</div><div style="font-weight:700">${fmt(principal, currency)}</div></div>
+        <div><div style="font-size:0.72rem;color:var(--text-muted)">Paid</div><div style="font-weight:700;color:var(--success)">${fmt(paid, currency)}</div></div>
+        <div><div style="font-size:0.72rem;color:var(--text-muted)">Remaining</div><div style="font-weight:700;color:var(--danger)">${fmt(remaining, currency)}</div></div>
+      </div>
       ${formRow(
-        formField('Amount', '<input type="number" id="rp-amount" placeholder="0.00" min="0" step="0.01">'),
+        formField('Amount', `<div class="input-group"><span class="input-group-addon">${esc(currency)||'$'}</span><input type="number" id="rp-amount" placeholder="0.00" min="0" step="0.01" oninput="const r=${remaining};const v=parseFloat(this.value)||0;const w=document.getElementById('rp-overpay');if(w)w.style.display=v>r&&r>0?'':'none'"></div>`),
         formField('Date', `<input type="date" id="rp-date" value="${new Date().toISOString().slice(0,10)}">`)
       )}
+      <div id="rp-overpay" style="display:none;color:var(--warning);font-size:0.8rem;margin-top:-8px">⚠️ Exceeds remaining balance — overpayment will settle the loan.</div>
+      ${formField('Account (debited)', `<select id="rp-account"><option value="">— None —</option>${accOptions()}</select>`)}
       ${formField('Note (optional)', '<input type="text" id="rp-note" placeholder="e.g. Monthly payment">')}`;
     openModal('Log Repayment', body, () => submitLogRepayment(loanId), 'Save');
     modalConfBtn.className = 'btn btn-primary';
@@ -3126,13 +3170,15 @@
 
   window.submitLogRepayment = async function (loanId) {
     clearFieldErrors(modalBody);
-    const amount = parseFloat(document.getElementById('rp-amount')?.value || '0');
-    const date = document.getElementById('rp-date')?.value;
-    const note = document.getElementById('rp-note')?.value.trim();
+    const amount    = parseFloat(document.getElementById('rp-amount')?.value || '0');
+    const date      = document.getElementById('rp-date')?.value;
+    const note      = document.getElementById('rp-note')?.value.trim();
+    const accountId = document.getElementById('rp-account')?.value || undefined;
     if (isNaN(amount) || amount <= 0) { showFieldError('rp-amount', 'Enter a valid amount.'); return; }
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', `/api/loans/${encodeURIComponent(loanId)}/payments`, {
-        amount, date: date ? new Date(date).getTime() : Date.now(), note: note || undefined
+        amount, date: date ? new Date(date).getTime() : Date.now(),
+        note: note || undefined, accountId
       });
       if (res.success) { closeModal(); renderLoanDetail(loanId); showToast('Repayment logged!'); }
       else { showToast('Failed to log repayment.', 'error'); }
@@ -3269,18 +3315,6 @@
     const caps = CARD_FILTER_CAPS[payloadType] || {};
     const fs   = cardOverrides[cardId] || {};
 
-    /* Helper: render a chip-style multi-select checkbox group */
-    function chipCheckboxes(id, items, selected) {
-      return `<div class="chip-group" id="${id}">` +
-        items.map(({value, label}) => {
-          const checked = selected.includes(value);
-          return `<label class="chip-check ${checked?'active':''}"><input type="checkbox" value="${esc(value)}" ${checked?'checked':''} onchange="this.closest('label').classList.toggle('active',this.checked)"><span>${esc(label)}</span></label>`;
-        }).join('') + '</div>';
-    }
-    function getChecked(groupId) {
-      return [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el=>el.value);
-    }
-
     let body = `<div style="display:flex;flex-direction:column;gap:14px">`;
 
     if (caps.timeline) {
@@ -3401,7 +3435,7 @@
 
   window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const getChecked = groupId => [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el=>el.value);
+    const getChecked = groupId => getCheckedValues(groupId);
     const getRadio = name => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
 
     const fs = {};

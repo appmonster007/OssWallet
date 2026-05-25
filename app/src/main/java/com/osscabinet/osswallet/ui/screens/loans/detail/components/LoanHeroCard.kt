@@ -1,26 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.loans.detail.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowUpward
-import androidx.compose.material.icons.rounded.TrendingUp
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.SpanStyle
@@ -35,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.WarningColor
@@ -65,10 +57,10 @@ fun LoanHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Main Progress Section
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -77,11 +69,11 @@ fun LoanHeroCard(
                     Column {
                         Text(
                             text = "REMAINING BALANCE",
-                            style = AppTextStyles.drawerItemLabel.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp
+                            style = AppTextStyles.caption.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.5.sp
                             ),
-                            color = accentColor.copy(alpha = 0.6f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
 
                         val balanceParts = formatCurrencyRight(
@@ -95,88 +87,106 @@ fun LoanHeroCard(
                         Text(
                             text = buildAnnotatedString {
                                 append(amountText)
-                                append(" ")
                                 withStyle(
                                     SpanStyle(
-                                        fontWeight = FontWeight.Light,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                                        fontSize = 18.sp
+                                        fontWeight = FontWeight.Normal,
+                                        color = AppColors.contentSecondary.copy(alpha = 0.4f),
+                                        fontSize = 16.sp
                                     )
                                 ) {
-                                    append(symbolText)
+                                    append(" $symbolText")
                                 }
                             },
                             style = AppTextStyles.heroAmount.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 32.sp,
-                                letterSpacing = (-1).sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 36.sp,
+                                letterSpacing = (-1.5).sp
                             ),
                             color = AppColors.contentPrimary
                         )
                     }
 
-                    Text(
-                        text = "${(progress * 100).toInt()}%",
-                        style = AppTextStyles.heroAmountDisplay.copy(
-                            fontWeight = FontWeight.Black,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = accentColor
-                    )
+                    Surface(
+                        color = accentColor.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f))
+                    ) {
+                        Text(
+                            text = "${(progress * 100).toInt()}%",
+                            style = AppTextStyles.screenSubTitle.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp
+                            ),
+                            color = accentColor,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
 
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp),
-                    color = accentColor,
-                    trackColor = accentColor.copy(alpha = 0.1f),
-                    strokeCap = StrokeCap.Round
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(12.dp),
+                        color = accentColor,
+                        trackColor = accentColor.copy(alpha = 0.08f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(accentColor, CircleShape)
+                        )
+                        Text(
+                            text = "${formatAmount(summary.totalPaid)} settled",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                        )
+                    }
                     Text(
-                        text = "${formatAmount(summary.totalPaid)} repaid",
-                        style = AppTextStyles.cardDelta,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = "Original: ${
+                        text = "Goal: ${
                             formatCurrencyRight(
                                 loan.principalAmount,
                                 loan.currency,
                                 shorten = true
                             )
                         }",
-                        style = AppTextStyles.cardDelta,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             }
 
-            // Loan Details Grid-like summary
+            // Loan Details Grid
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 LoanMetricItem(
-                    label = if (loan.loanType == LoanType.LENT) "Lent to" else "Borrowed from",
+                    label = if (loan.loanType == LoanType.LENT) "LENT TO" else "BORROWED FROM",
                     value = loan.lenderOrBorrowerName,
-                    icon = if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
-                    color = accentColor,
-                    modifier = Modifier.weight(1f)
+                    icon = if (loan.loanType == LoanType.LENT) Icons.Rounded.NorthEast else Icons.Rounded.SouthWest,
+                    color = AppColors.primary,
+                    modifier = Modifier.weight(1.2f)
                 )
                 if (loan.interestRate != null) {
                     LoanMetricItem(
-                        label = "Interest",
+                        label = "INTEREST",
                         value = "${loan.interestRate}%",
-                        icon = Icons.Rounded.TrendingUp,
+                        icon = Icons.Rounded.Percent,
                         color = AppColors.error,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(0.8f)
                     )
                 }
             }
@@ -193,38 +203,40 @@ private fun LoanMetricItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = color.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(14.dp)
                 )
                 Text(
-                    text = label.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
+                    text = label,
+                    style = AppTextStyles.caption.copy(
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                        fontSize = 10.sp,
+                        letterSpacing = 0.8.sp
                     ),
-                    color = color.copy(alpha = 0.8f)
+                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
                 )
             }
             Text(
                 text = value,
-                style = AppTextStyles.screenSubTitle.copy(
-                    fontWeight = FontWeight.Bold
+                style = AppTextStyles.managementItemTitle.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
                 ),
                 color = AppColors.contentPrimary,
                 maxLines = 1,

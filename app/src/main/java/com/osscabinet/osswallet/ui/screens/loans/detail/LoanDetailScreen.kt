@@ -1,65 +1,34 @@
 package com.osscabinet.ossWallet.ui.screens.loans.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Label
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.FilterAlt
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Receipt
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.AmortizationEntry
-import com.osscabinet.ossWallet.domain.model.LoanStatus
-import com.osscabinet.ossWallet.domain.model.LoanSummary
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
-import com.osscabinet.ossWallet.ui.components.management.ScopeChip
-import com.osscabinet.ossWallet.ui.components.management.ScopeSection
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -72,6 +41,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -110,41 +80,85 @@ fun LoanDetailScreen(
         return
     }
 
-    // Single category source — always populated via TransactionViewModel.
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val allTags by transactionViewModel.allTags.collectAsStateWithLifecycle()
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-    // Use precomputed summary from ViewModel (matches BudgetViewModel.budgetProgress pattern).
-    // Fall back to empty summary while the combine flow first emits.
     val summary = loanSummaries[loanId] ?: LoanService.buildSummary(
         loan, emptyList(), System.currentTimeMillis()
     )
 
-    // Activity tab — canonical filter from LoanService guarantees consistency with summary.
-    val loanTransactions = remember(loan, absoluteTransactionsWithBalance, categoriesList) {
-        val filter = LoanService.buildTransactionFilter(loan, categoriesList)
-        android.util.Log.d(
-            "LoanDetail",
-            "[${loan.name}] linked filterId=${loan.filterId} | loan fields: categories=${loan.categoryIds} linkedAccountId=${loan.linkedAccountId} tags=${loan.tags} trackTypes=${loan.trackTypes} currencies=${loan.currencies} paymentMethods=${loan.paymentMethods} statuses=${loan.statuses} linkedTxIds=${loan.linkedTransactionIds} timelineRange=${loan.timelineRange}"
-        )
-        android.util.Log.d("LoanDetail", "[${loan.name}] activity filter: $filter")
+    val loanFilter = remember(loan, categoriesList) {
+        LoanService.buildTransactionFilter(loan, categoriesList)
+    }
+
+    val loanTransactions = remember(loanFilter, absoluteTransactionsWithBalance) {
         TransactionFilterService.filterTransactionsWithBalance(
             absoluteTransactionsWithBalance,
-            filter
+            loanFilter
         )
     }
 
-    val selectedAccount = remember(accounts, loan.linkedAccountId) {
-        accounts.find { it.id == loan.linkedAccountId }
-    }
-    val selectedCategories = remember(categoriesList, loan.categoryIds) {
-        if (loan.categoryIds.isEmpty()) emptyList()
-        else categoriesList.filter { it.id in loan.categoryIds }
-    }
+    val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
+    LoanDetailContent(
+        loan = loan,
+        summary = summary,
+        loanFilter = loanFilter,
+        loanTransactions = loanTransactions,
+        absoluteTransactionsWithBalance = absoluteTransactionsWithBalance,
+        accounts = accounts,
+        categoriesList = categoriesList,
+        allTags = allTags,
+        baseCurrency = baseCurrency,
+        revealedCardIds = revealedCardIds,
+        recentActivitiesBreakdown = recentActivitiesBreakdown,
+        onEditClick = onEditClick,
+        onBackClick = onBackClick,
+        onSettleClick = { viewModel.settleLoan(loan); onBackClick() },
+        onTransactionEvent = { event ->
+            when (event) {
+                is TransactionItemEvent.Click -> onTransactionClick(event.id)
+                is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
+                is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
+                is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                    event.id,
+                    event.status
+                )
+                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
+                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                    event.id
+                )
+            }
+        },
+        onRecordsClick = onRecordsClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoanDetailContent(
+    loan: Loan,
+    summary: LoanSummary,
+    loanFilter: TransactionFilter,
+    loanTransactions: List<TransactionWithBalance>,
+    absoluteTransactionsWithBalance: List<TransactionWithBalance>,
+    accounts: List<Account>,
+    categoriesList: List<Category>,
+    allTags: List<Tag>,
+    baseCurrency: String,
+    revealedCardIds: List<Long>,
+    recentActivitiesBreakdown: Boolean,
+    onEditClick: () -> Unit,
+    onBackClick: () -> Unit,
+    onSettleClick: () -> Unit,
+    onTransactionEvent: (TransactionItemEvent) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit
+) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
     val tabs = listOf(
@@ -181,17 +195,32 @@ fun LoanDetailScreen(
                         Icon(Icons.Rounded.Payments, contentDescription = "Edit")
                     }
                     if (loan.status == LoanStatus.ACTIVE) {
-                        TextButton(onClick = { viewModel.settleLoan(loan); onBackClick() }) {
-                            Text("Settle")
+                        Button(
+                            onClick = onSettleClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.primary.copy(alpha = 0.1f),
+                                contentColor = AppColors.primary
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text(
+                                "Settle",
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
@@ -201,9 +230,9 @@ fun LoanDetailScreen(
                     0 -> LoanOverviewTab(
                         loan = loan,
                         summary = summary,
-                        selectedAccount = selectedAccount,
-                        selectedCategories = selectedCategories,
-                        allCategoriesCount = categoriesList.size
+                        loanFilter = loanFilter,
+                        accounts = accounts,
+                        categoriesList = categoriesList
                     )
 
                     1 -> {
@@ -240,7 +269,7 @@ fun LoanDetailScreen(
                                 val groups = TimelineService.getGroupedData(
                                     transactions = loanTransactions,
                                     absoluteHistory = absoluteTransactionsWithBalance,
-                                    groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                                    groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
                                     accounts = accounts,
                                     categories = categoriesList,
                                     allTags = allTags,
@@ -250,55 +279,16 @@ fun LoanDetailScreen(
                                 TransactionListState(groups = groups, isEmpty = groups.isEmpty())
                             }
 
-                            val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
-
                             RecentActivitiesScreen(
                                 listState = loanListState,
                                 onRecordsClick = { _ ->
-                                    onRecordsClick(
-                                        LoanService.buildTransactionFilter(
-                                            loan,
-                                            categoriesList
-                                        )
-                                    )
+                                    onRecordsClick(loanFilter)
                                 },
                                 baseCurrency = baseCurrency,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
                                 showCurrencyBreakdown = recentActivitiesBreakdown,
-                                onTransactionEvent = { event ->
-                                    when (event) {
-                                        is TransactionItemEvent.Click -> onTransactionClick(event.id)
-                                        is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
-                                            event.id
-                                        )
-
-                                        is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(
-                                            event.id
-                                        )
-
-                                        is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
-                                            event.id,
-                                            event.status
-                                        )
-
-                                        is TransactionItemEvent.Clone -> onCloneTransactionClick(
-                                            event.id
-                                        )
-
-                                        is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
-                                            event.id
-                                        )
-
-                                        is TransactionItemEvent.Split -> onSplitTransactionClick(
-                                            event.id
-                                        )
-
-                                        is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
-                                            event.id
-                                        )
-                                    }
-                                }
+                                onTransactionEvent = onTransactionEvent
                             )
                         }
                     }
@@ -315,13 +305,61 @@ fun LoanDetailScreen(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun LoanDetailPreview() {
+    val sampleLoan = Loan(
+        id = 1L,
+        name = "Home Mortgage",
+        principalAmount = BigDecimal("250000"),
+        currency = "USD",
+        interestRate = 3.5f,
+        startDate = System.currentTimeMillis() - 1000000000L,
+        lenderOrBorrowerName = "Chase Bank",
+        loanType = LoanType.BORROWED,
+        linkedAccountId = "acc1",
+        expectedSettlementDate = System.currentTimeMillis() + 5000000000L,
+        status = LoanStatus.ACTIVE,
+        profileId = 1,
+        categoryIds = setOf(1L)
+    )
+
+    val sampleSummary = LoanSummary(
+        loan = sampleLoan,
+        totalPaid = BigDecimal("15000"),
+        remainingBalance = BigDecimal("235000"),
+        interestAccrued = BigDecimal("5000")
+    )
+
+    OssWalletTheme {
+        LoanDetailContent(
+            loan = sampleLoan,
+            summary = sampleSummary,
+            loanFilter = TransactionFilter(),
+            loanTransactions = emptyList(),
+            absoluteTransactionsWithBalance = emptyList(),
+            accounts = emptyList(),
+            categoriesList = emptyList(),
+            allTags = emptyList(),
+            baseCurrency = "USD",
+            revealedCardIds = emptyList(),
+            recentActivitiesBreakdown = false,
+            onEditClick = {},
+            onBackClick = {},
+            onSettleClick = {},
+            onTransactionEvent = {},
+            onRecordsClick = {}
+        )
+    }
+}
+
 @Composable
 private fun LoanOverviewTab(
-    loan: com.osscabinet.ossWallet.domain.model.Loan,
+    loan: Loan,
     summary: LoanSummary,
-    selectedAccount: com.osscabinet.ossWallet.domain.model.Account?,
-    selectedCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
-    allCategoriesCount: Int
+    loanFilter: TransactionFilter,
+    accounts: List<Account>,
+    categoriesList: List<Category>
 ) {
     var showAmortization by remember { mutableStateOf(false) }
     var showAllAmortization by remember { mutableStateOf(false) }
@@ -354,54 +392,11 @@ private fun LoanOverviewTab(
         }
 
         item {
-            AeonExpressiveCard(
-                title = "SCOPE & CONTEXT",
-                icon = Icons.Rounded.FilterAlt,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)) {
-                    ScopeSection(
-                        label = "LINKED ACCOUNT",
-                        icon = Icons.Rounded.AccountBalance,
-                        allText = "No linked account",
-                        isEmpty = loan.linkedAccountId.isBlank(),
-                        items = selectedAccount?.let { account ->
-                            listOf<@Composable () -> Unit> {
-                                val color = try {
-                                    Color(account.colorHex.toColorInt())
-                                } catch (_: Exception) {
-                                    AppColors.primary
-                                }
-                                ScopeChip(text = account.name, color = color)
-                            }
-                        } ?: emptyList()
-                    )
-                    ScopeSection(
-                        label = "CATEGORIES",
-                        icon = Icons.Rounded.Category,
-                        allText = "All Categories",
-                        isEmpty = loan.categoryIds.isEmpty() ||
-                                (allCategoriesCount > 0 && loan.categoryIds.size == allCategoriesCount),
-                        items = selectedCategories.map { category ->
-                            {
-                                ScopeChip(
-                                    text = category.name,
-                                    color = Color(category.colorHex)
-                                )
-                            }
-                        }
-                    )
-                    ScopeSection(
-                        label = "TAGS",
-                        icon = Icons.AutoMirrored.Rounded.Label,
-                        allText = "No Tags",
-                        isEmpty = loan.tags.isEmpty(),
-                        items = loan.tags.map { tag ->
-                            { ScopeChip(text = tag, color = AppColors.secondary) }
-                        }
-                    )
-                }
-            }
+            ManagementScopeCard(
+                filter = loanFilter,
+                allAccounts = accounts,
+                allCategories = categoriesList
+            )
         }
 
         if (loan.interestRate != null) {
@@ -451,46 +446,95 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
         SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date(entry.date))
     }
     Surface(
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.2f),
-        shape = RoundedCornerShape(AeonTheme.dimensions.listPadding),
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.08f)),
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = AeonTheme.dimensions.listPadding,
-                    vertical = AeonTheme.dimensions.spacingSm
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "${entry.period}",
-                style = AppTextStyles.transactionSwipeAction,
-                modifier = Modifier.width(AeonTheme.dimensions.spacingXl),
-                color = AppColors.contentSecondary
-            )
-            Text(
-                dateStr,
-                style = AppTextStyles.caption,
-                modifier = Modifier.width(AeonTheme.dimensions.iconSize3xl)
-            )
-            Text(
-                entry.principal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                style = AppTextStyles.caption
-            )
-            Text(
-                entry.interest.toPlainString(),
-                style = AppTextStyles.caption,
-                color = AppColors.error
-            )
-            Text(
-                entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                style = AppTextStyles.caption,
-                color = AppColors.primary
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        color = AppColors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                entry.period.toString(),
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                ),
+                                color = AppColors.primary
+                            )
+                        }
+                    }
+                    Text(
+                        dateStr,
+                        style = AppTextStyles.managementItemTitle.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
+
+                Text(
+                    text = "Balance: ${entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString()} $currency",
+                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                    color = AppColors.primary
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AmortizationDetailItem(
+                    label = "PRINCIPAL",
+                    value = entry.principal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    color = AppColors.contentPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                AmortizationDetailItem(
+                    label = "INTEREST",
+                    value = entry.interest.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    color = AppColors.error,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun AmortizationDetailItem(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            label,
+            style = AppTextStyles.caption.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                letterSpacing = 1.sp
+            ),
+            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+        )
+        Text(
+            value,
+            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+            color = color
+        )
     }
 }

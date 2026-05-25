@@ -1,27 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.detail.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -53,10 +49,10 @@ fun BudgetHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Main Progress Section
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,11 +61,11 @@ fun BudgetHeroCard(
                     Column {
                         Text(
                             text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
-                            style = AppTextStyles.drawerItemLabel.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp
+                            style = AppTextStyles.caption.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.5.sp
                             ),
-                            color = accentColor.copy(alpha = 0.6f)
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
 
                         val displayAmount = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
@@ -78,105 +74,134 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount =
-                            formatCurrencyRight(displayAmount, budget.currency, shorten = true)
+                        val amount = formatCurrencyRight(displayAmount, budget.currency, shorten = true)
                         val amountParts = amount.split(" ")
-                        amountParts.dropLast(1).joinToString(" ")
-                        amountParts.lastOrNull() ?: ""
+                        val amountText = amountParts.dropLast(1).joinToString(" ")
+                        val symbolText = amountParts.lastOrNull() ?: ""
 
                         Text(
                             text = buildAnnotatedString {
-                                append(amount)
-//                                append(" ")
-//                                withStyle(SpanStyle(
-//                                    fontWeight = FontWeight.Light,
-//                                    color = AppColors.contentSecondary,
-//                                    fontSize = 18.sp
-//                                )) {
-//                                    append(symbolText)
-//                                }
+                                append(amountText)
+                                withStyle(
+                                    SpanStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        color = AppColors.contentSecondary.copy(alpha = 0.4f),
+                                        fontSize = 16.sp
+                                    )
+                                ) {
+                                    append(" $symbolText")
+                                }
                             },
                             style = AppTextStyles.heroAmount.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 32.sp,
-                                letterSpacing = (-1).sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 36.sp,
+                                letterSpacing = (-1.5).sp
                             ),
                             color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary
                         )
                     }
 
-                    Text(
-                        text = "${(progress.percentage * 100).toInt()}%",
-                        style = AppTextStyles.heroAmountDisplay.copy(
-                            fontWeight = FontWeight.Black,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = accentColor
-                    )
+                    Surface(
+                        color = accentColor.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f))
+                    ) {
+                        Text(
+                            text = "${(progress.percentage * 100).toInt()}%",
+                            style = AppTextStyles.screenSubTitle.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp
+                            ),
+                            color = accentColor,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
 
-                LinearProgressIndicator(
-                    progress = { progress.percentage.coerceIn(0f, 1f) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp),
-                    color = accentColor,
-                    trackColor = accentColor.copy(alpha = 0.1f),
-                    strokeCap = StrokeCap.Round
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    LinearProgressIndicator(
+                        progress = { progress.percentage.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(12.dp),
+                        color = accentColor,
+                        trackColor = accentColor.copy(alpha = 0.08f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "${formatAmount(progress.spent)} spent",
-                        style = AppTextStyles.cardDelta,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(accentColor, CircleShape)
+                        )
+                        Text(
+                            text = "${formatAmount(progress.spent)} spent",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                        )
+                    }
                     Text(
                         text = "Limit: ${
                             formatCurrencyRight(
                                 budget.limitAmount,
-                                budget.currency,
-                                shorten = true
+                                budget.currency, shorten = true
                             )
                         }",
-                        style = AppTextStyles.cardDelta,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
             }
 
             if (progress.alertLevel != BudgetAlertLevel.NONE) {
                 Surface(
-                    color = AppColors.error.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, AppColors.error.copy(alpha = 0.1f))
+                    color = AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f))
                 ) {
                     Row(
                         modifier = Modifier
                             .padding(12.dp)
                             .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            Icons.Rounded.Warning,
-                            contentDescription = null,
-                            tint = AppColors.error,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(AppColors.error.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.Warning,
+                                contentDescription = null,
+                                tint = AppColors.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                         Column {
                             Text(
-                                text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "Budget Exceeded" else "Approaching Limit",
-                                style = AppTextStyles.managementItemTitle,
+                                text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "BUDGET EXCEEDED" else "APPROACHING LIMIT",
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    letterSpacing = 0.8.sp
+                                ),
                                 color = AppColors.error
                             )
                             Text(
                                 text = "Alert threshold set at ${(budget.alertThreshold * 100).toInt()}%",
                                 style = AppTextStyles.caption,
-                                color = AppColors.error.copy(alpha = 0.7f)
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f)
                             )
                         }
                     }

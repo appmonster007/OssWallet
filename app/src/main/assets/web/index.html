@@ -462,7 +462,10 @@
   document.getElementById('login-btn').addEventListener('click', doLogin);
   document.getElementById('logout-btn').addEventListener('click', doLogout);
   document.getElementById('hamburger').addEventListener('click', () => {
+    const opening = !sidebar.classList.contains('open');
     sidebar.classList.toggle('open'); overlay.classList.toggle('visible');
+    const mc = document.getElementById('content');
+    if (mc) { if (opening) mc.setAttribute('inert', ''); else mc.removeAttribute('inert'); }
   });
   overlay.addEventListener('click', closeSidebar);
   /* T5-1: Theme toggle */
@@ -550,7 +553,7 @@
   }
 
   /* ── Navigation ───────────────────────────────────────── */
-  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); const mc = document.getElementById('content'); if (mc) mc.removeAttribute('inert'); }
 
   const PAGE_TITLES = {
     '#/dashboard': 'Dashboard', '#/records': 'Records', '#/accounts': 'Accounts',
@@ -732,6 +735,69 @@
   }
   function getCheckedValues(groupId) {
     return [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el => el.value);
+  }
+
+  /* ── Tag chip multi-select (T3-2 / T3-5) ─────────────────────────────── */
+  function buildTagChipInput(id, cachedTagsArr, selectedArr) {
+    const chips = (selectedArr || []).map(tag =>
+      `<span class="chip-ms-tag" data-tag="${esc(tag)}">${esc(tag)}<span class="chip-ms-remove" onclick="(function(el){const w=el.closest('.chip-ms-wrap');w.removeAttribute('data-removing');el.closest('.chip-ms-tag').remove();document.getElementById('${id}').value=[...w.querySelectorAll('.chip-ms-tag')].map(c=>c.dataset.tag).join(',');})(this)">×</span></span>`
+    ).join('');
+    const dlOpts = (cachedTagsArr || []).map(t => `<option value="${esc(t)}">`).join('');
+    return `<div class="chip-ms-wrap" id="${id}-wrap">${chips}<input class="chip-ms-input" id="${id}-input" placeholder="Add tag…" list="${id}-datalist" autocomplete="off"></div><datalist id="${id}-datalist">${dlOpts}</datalist><input type="hidden" id="${id}" value="${esc((selectedArr||[]).join(','))}">`;
+  }
+
+  function initTagChipInput(id, cachedTagsArr, selectedArr) {
+    const container = document.getElementById(id + '-container');
+    if (!container) return;
+    container.innerHTML = buildTagChipInput(id, cachedTagsArr, selectedArr);
+    const wrap = document.getElementById(id + '-wrap');
+    const input = document.getElementById(id + '-input');
+    const hidden = document.getElementById(id);
+    if (!wrap || !input || !hidden) return;
+    wrap.addEventListener('click', () => input.focus());
+    function addTag(raw) {
+      const tag = raw.trim();
+      if (!tag) return;
+      const existing = [...wrap.querySelectorAll('.chip-ms-tag')].map(c => c.dataset.tag);
+      if (existing.includes(tag)) { input.value = ''; return; }
+      const chip = document.createElement('span');
+      chip.className = 'chip-ms-tag';
+      chip.dataset.tag = tag;
+      chip.innerHTML = `${esc(tag)}<span class="chip-ms-remove">×</span>`;
+      chip.querySelector('.chip-ms-remove').addEventListener('click', () => {
+        chip.remove();
+        hidden.value = [...wrap.querySelectorAll('.chip-ms-tag')].map(c => c.dataset.tag).join(',');
+      });
+      wrap.insertBefore(chip, input);
+      input.value = '';
+      hidden.value = [...wrap.querySelectorAll('.chip-ms-tag')].map(c => c.dataset.tag).join(',');
+    }
+    input.addEventListener('keydown', e => {
+      if ((e.key === 'Enter' || e.key === ',') && input.value.replace(',','').trim()) {
+        e.preventDefault();
+        addTag(input.value.replace(/,/g,''));
+      }
+    });
+    input.addEventListener('change', e => {
+      if (input.value.trim()) addTag(input.value);
+    });
+  }
+
+  function getTagValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  /* ── Date range cross-validation (T3-3) ──────────────────────────────── */
+  function wireDateRange(fromId, toId) {
+    const validate = () => {
+      const f = document.getElementById(fromId), t = document.getElementById(toId);
+      if (f && t && f.value && t.value && f.value > t.value) showFieldError(toId, 'End must be after start.');
+      else { const el = document.getElementById(toId); if(el) { el.classList.remove('field-error'); const msg=el.nextElementSibling; if(msg&&msg.classList.contains('field-error-msg')) msg.remove(); } }
+    };
+    const f = document.getElementById(fromId), t = document.getElementById(toId);
+    if (f) f.addEventListener('change', validate);
+    if (t) t.addEventListener('change', validate);
   }
 
   /* ── Custom Select component (T3-1) ──────────────────────────────────── */
@@ -1602,8 +1668,7 @@
           <div class="form-field"><label>Status</label>
             ${buildSelect('f-status',[{value:'',label:'All'},{value:'CLEARED',label:'Cleared'},{value:'RECONCILE',label:'Reconcile'},{value:'UNCLEARED',label:'Uncleared'}],status||'','All',false)}
           </div>
-          <div class="form-field"><label>Date From</label><input type="date" id="f-from" value="${esc(dateFrom)}"></div>
-          <div class="form-field"><label>Date To</label><input type="date" id="f-to" value="${esc(dateTo)}"></div>
+          <div class="form-field"><label>Date Range</label><div class="date-range-wrap"><input type="date" id="f-from" value="${esc(dateFrom)}"><span class="date-range-sep">→</span><input type="date" id="f-to" value="${esc(dateTo)}"></div></div>
           <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00"></div>
           <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999"></div>
           <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
@@ -1668,6 +1733,7 @@
       if (categoryId) { const el = document.getElementById('f-cat'); if (el) el.value = categoryId; }
       if (accountId)  { const el = document.getElementById('f-account'); if (el) el.value = accountId; }
       if (filtersOpen) { const fp = document.getElementById('filter-panel'); if (fp) fp.classList.remove('hidden'); }
+      wireDateRange('f-from', 'f-to');
 
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading records.'); }
   }
@@ -1736,7 +1802,7 @@
                 formField('Status', buildSelect('tx-status',[{value:'CLEARED',label:'Cleared'},{value:'UNCLEARED',label:'Uncleared'},{value:'RECONCILE',label:'Reconcile'}],(tx?.status||'CLEARED'),'— Select —',false)))}
       ${formRow(formField('Payee', `<input type="text" id="tx-payee" placeholder="Optional payee" value="${esc(tx?.payee||'')}"> `),
                 formField('Payment Method', buildSelect('tx-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(tx?.paymentMethod||'CASH'),'— Select —',false)))}
-      ${formField('Tags (comma-separated)', `<input type="text" id="tx-tags" placeholder="food, bills, …" value="${esc((tx?.tags||[]).join(', '))}">`)}
+      ${formField('Tags', `<div id="tx-tags-container"></div>`)}
       ${formField('Note', `<textarea id="tx-note" placeholder="Optional note…">${esc(tx?.note||'')}</textarea>`)}
       <div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
         <input type="checkbox" id="tx-warranty" ${tx?.warrantyExpiration?'checked':''}
@@ -1752,6 +1818,7 @@
     const body = txFormBody(prefill || null);
     openModal('Add Record', body, submitAddTransaction, 'Save Record');
     modalConfBtn.className = 'btn btn-primary';
+    initTagChipInput('tx-tags', cachedTags, prefill?.tags || []);
     const dtEl = document.getElementById('tx-date');
     if (dtEl && !prefill) { const now = new Date(); now.setSeconds(0,0); dtEl.value = now.toISOString().slice(0,16); }
     if (prefill?.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = prefill.accountId; }
@@ -1833,6 +1900,7 @@
         else { showToast('Failed to update: ' + (res.error||''), 'error'); }
       });
     }, 'Save Changes');
+    initTagChipInput('tx-tags', cachedTags, tx.tags || []);
     if (tx.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = tx.accountId; }
     if (tx.categoryId) { const el = document.getElementById('tx-category'); if (el) el.value = tx.categoryId; }
     if (tx.toAccountId) { const el = document.getElementById('tx-to-account'); if (el) el.value = tx.toAccountId; }
@@ -1931,9 +1999,20 @@
         formField('Currency', `<input type="text" id="acc-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('acc-bal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`),
         formField('Type', buildSelect('acc-type',[{value:'CHECKING',label:'Checking'},{value:'SAVINGS',label:'Savings'},{value:'CREDIT_CARD',label:'Credit Card'},{value:'INVESTMENT',label:'Investment'},{value:'CASH',label:'Cash'},{value:'OTHER',label:'Other'}],'CHECKING','— Select —',false))
       )}
+      <div id="acc-credit-limit-row" style="display:none">
+        <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em">Credit Limit</label>
+        <div class="input-group">
+          <span class="input-group-addon" id="acc-cl-pfx">$</span>
+          <input type="number" id="acc-credit-limit" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
       ${formField('Initial Balance (optional)', `<div class="input-group"><span class="input-group-addon" id="acc-bal-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="acc-init-bal" placeholder="0.00" step="0.01"></div>`)}`;
     openModal('Add Account', body, submitAddAccount, 'Save Account');
     modalConfBtn.className = 'btn btn-primary';
+    document.getElementById('acc-type')?.addEventListener('change', function() {
+      const row = document.getElementById('acc-credit-limit-row');
+      if (row) row.style.display = ['CREDIT_CARD','CREDIT'].includes(this.value) ? '' : 'none';
+    });
   };
 
   /* ── F0-1: Edit Account ──────────────────────────────── */
@@ -1950,6 +2029,13 @@
         formField('Currency (read-only)', `<input type="text" id="acc-currency-ro" value="${esc(acc.currency)}" disabled style="opacity:.6">`),
         formField('Type', buildSelect('acc-type',[{value:'CHECKING',label:'Checking'},{value:'SAVINGS',label:'Savings'},{value:'CREDIT_CARD',label:'Credit Card'},{value:'INVESTMENT',label:'Investment'},{value:'CASH',label:'Cash'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],acc.type||'CHECKING','— Select —',false))
       )}
+      <div id="acc-credit-limit-row" style="${['CREDIT_CARD','CREDIT'].includes(acc.type||'')?'':'display:none'}">
+        <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em">Credit Limit</label>
+        <div class="input-group">
+          <span class="input-group-addon" id="acc-cl-pfx">$</span>
+          <input type="number" id="acc-credit-limit" min="0" step="0.01" placeholder="0.00" value="${esc(acc.creditLimit||'')}">
+        </div>
+      </div>
       <small style="color:var(--text-muted);font-size:0.75rem">Currency cannot be changed after account creation.</small>`;
     openModal(`Edit Account — ${esc(acc.name)}`, body, async () => {
       clearFieldErrors(modalBody);
@@ -1957,11 +2043,20 @@
       const type = document.getElementById('acc-type')?.value;
       if (!name) { showFieldError('acc-name', 'Name is required.'); return; }
       await withLoading(modalConfBtn, async () => {
-        const res = await apiWrite('PUT', `/api/accounts/${encodeURIComponent(id)}`, { name, structureType: type });
+        const payload = { name, structureType: type };
+        if (['CREDIT_CARD','CREDIT'].includes(type)) {
+          const clVal = parseFloat(document.getElementById('acc-credit-limit')?.value || '0');
+          if (!isNaN(clVal)) payload.creditLimit = clVal;
+        }
+        const res = await apiWrite('PUT', `/api/accounts/${encodeURIComponent(id)}`, payload);
         if (res.success) { closeModal(); await warmCache(); renderAccounts(); showToast('Account updated!'); }
         else { showToast('Failed to update: ' + (res.error||''), 'error'); }
       });
     }, 'Save Changes');
+    document.getElementById('acc-type')?.addEventListener('change', function() {
+      const row = document.getElementById('acc-credit-limit-row');
+      if (row) row.style.display = ['CREDIT_CARD','CREDIT'].includes(this.value) ? '' : 'none';
+    });
   };
 
   window.submitAddAccount = async function () {
@@ -1976,6 +2071,10 @@
     await withLoading(modalConfBtn, async () => {
       const body = { name, currencyCode: currency, structureType: type };
       if (initialBalance !== undefined && !isNaN(initialBalance)) body.initialBalance = initialBalance;
+      if (['CREDIT_CARD','CREDIT'].includes(type)) {
+        const clVal = parseFloat(document.getElementById('acc-credit-limit')?.value || '0');
+        if (!isNaN(clVal)) body.creditLimit = clVal;
+      }
       const res = await apiWrite('POST', '/api/accounts', body);
       if (res.success) { closeModal(); await warmCache(); renderAccounts(); showToast('Account created!'); }
       else { showToast('Failed to create account: ' + (res.error || ''), 'error'); }
@@ -2577,6 +2676,10 @@
       ${formField('Category Name', '<input type="text" id="cat-name" placeholder="e.g. Groceries">')}
       ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— Top-level —',true))}
       ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],'NEED','— Select —',false))}
+      <div class="form-field"><label>Type</label><div class="chip-group">
+        <label class="chip-check active"><input type="radio" name="cat-type" value="EXPENSE" checked onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Expense</span></label>
+        <label class="chip-check"><input type="radio" name="cat-type" value="INCOME" onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Income</span></label>
+      </div></div>
       <div class="form-field"><label>Color</label>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${colorBtns}</div>
         <input type="text" id="cat-color" value="${presetColors[0]}" placeholder="#1976D2" maxlength="7">
@@ -2587,13 +2690,14 @@
 
   window.submitAddCategory = async function () {
     clearFieldErrors(modalBody);
-    const name   = document.getElementById('cat-name')?.value.trim();
-    const parent = document.getElementById('cat-parent')?.value || undefined;
-    const nature = document.getElementById('cat-nature')?.value;
-    const color  = document.getElementById('cat-color')?.value.trim();
+    const name    = document.getElementById('cat-name')?.value.trim();
+    const parent  = document.getElementById('cat-parent')?.value || undefined;
+    const nature  = document.getElementById('cat-nature')?.value;
+    const color   = document.getElementById('cat-color')?.value.trim();
+    const catType = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
     if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
     await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/categories', { name, parentId: parent || undefined, nature, colorHex: color || undefined });
+      const res = await apiWrite('POST', '/api/categories', { name, parentId: parent || undefined, nature, colorHex: color || undefined, type: catType });
       if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category created!'); }
       else { showToast('Failed to create category: ' + (res.error || ''), 'error'); }
     });
@@ -2611,20 +2715,26 @@
         class="cat-color-btn"></span>`
     ).join(' ');
     const currentColor = typeof cat.colorHex === 'number' ? '#' + cat.colorHex.toString(16).padStart(6,'0') : (cat.colorHex || '#9e9e9e');
+    const editCatType = cat.type || 'EXPENSE';
     const body = `
       ${formField('Category Name', `<input type="text" id="cat-name" value="${esc(cat.name)}">`)}
       ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.filter(c=>c.id!==catId&&c.parentId!==catId).map(c=>({value:String(c.id),label:c.name}))),cat.parentId?String(cat.parentId):'','— Top-level —',true))}
       ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],cat.nature||'NEED','— Select —',false))}
+      <div class="form-field"><label>Type</label><div class="chip-group">
+        <label class="chip-check ${editCatType==='EXPENSE'?'active':''}"><input type="radio" name="cat-type" value="EXPENSE" ${editCatType==='EXPENSE'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Expense</span></label>
+        <label class="chip-check ${editCatType==='INCOME'?'active':''}"><input type="radio" name="cat-type" value="INCOME" ${editCatType==='INCOME'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Income</span></label>
+      </div></div>
       <div class="form-field"><label>Color</label>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${colorBtns}</div>
         <input type="text" id="cat-color" value="${esc(currentColor)}" placeholder="#1976D2" style="width:100px;margin-top:8px">
       </div>`;
     openModal(`Edit Category — ${esc(cat.name)}`, body, async () => {
       clearFieldErrors(modalBody);
-      const name   = document.getElementById('cat-name')?.value.trim();
-      const parent = document.getElementById('cat-parent')?.value || null;
-      const nature = document.getElementById('cat-nature')?.value;
-      const color  = document.getElementById('cat-color')?.value.trim();
+      const name    = document.getElementById('cat-name')?.value.trim();
+      const parent  = document.getElementById('cat-parent')?.value || null;
+      const nature  = document.getElementById('cat-nature')?.value;
+      const color   = document.getElementById('cat-color')?.value.trim();
+      const catType = document.querySelector('input[name="cat-type"]:checked')?.value || 'EXPENSE';
       if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
       await withLoading(modalConfBtn, async () => {
         const res = await apiWrite('PUT', `/api/categories/${encodeURIComponent(id)}`, {
@@ -2632,6 +2742,7 @@
           parentId: parent ? Number(parent) : null,
           nature,
           colorHex: color || undefined,
+          type: catType,
         });
         if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category updated!'); }
         else { showToast('Failed to update: ' + (res.error||''), 'error'); }
@@ -2679,11 +2790,8 @@
       let html = `<h2 class="section-title">Analytics</h2>
         <div class="card" style="margin-bottom:20px">
           <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
-            <div class="form-field" style="margin:0;flex:1;min-width:140px">
-              <label>From</label><input type="date" id="an-from" value="${esc(dateFrom)}">
-            </div>
-            <div class="form-field" style="margin:0;flex:1;min-width:140px">
-              <label>To</label><input type="date" id="an-to" value="${esc(dateTo)}">
+            <div class="form-field" style="margin:0;flex:1;min-width:280px">
+              <label>Date Range</label><div class="date-range-wrap"><input type="date" id="an-from" value="${esc(dateFrom)}"><span class="date-range-sep">→</span><input type="date" id="an-to" value="${esc(dateTo)}"></div>
             </div>
             <div class="form-field" style="margin:0">
               <label>Type</label>
@@ -2753,6 +2861,7 @@
 
       html += '</div>'; /* end two-col */
       setContent(html);
+      wireDateRange('an-from', 'an-to');
     } catch (e) { if (e.message !== 'Session expired') showError('Error loading analytics.'); }
   }
 
@@ -2869,7 +2978,7 @@
       ${formField('Status', `<div class="chip-group">
         ${['CLEARED','UNCLEARED','RECONCILE'].map(s=>`<label class="chip-check ${(t?.transactionStatus||'CLEARED')===s?'active':''}"><input type="radio" name="tpl-status" value="${s}" ${(t?.transactionStatus||'CLEARED')===s?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>${prettyEnum(s)}</span></label>`).join('')}
       </div>`)}
-      ${formField('Tags (comma-separated)', `<input type="text" id="tpl-tags" placeholder="food, bills, …" value="${esc((t?.tags||[]).join(', '))}">`)}
+      ${formField('Tags', `<div id="tpl-tags-container"></div>`)}
       ${formField('Note', `<textarea id="tpl-note" placeholder="Optional note…">${esc(t?.note||'')}</textarea>`)}
       <small style="color:var(--text-muted);font-size:0.75rem">Templates are quick-fill presets for manual transactions. For automatic recurring payments, use Planned Payments.</small>`;
   }
@@ -2878,6 +2987,7 @@
     const body = templateFormBody(null);
     openModal('New Template', body, submitAddTemplate, 'Save Template');
     modalConfBtn.className = 'btn btn-primary';
+    initTagChipInput('tpl-tags', cachedTags, []);
   };
 
   window.submitAddTemplate = async function () {
@@ -2931,6 +3041,7 @@
         else { showToast('Failed: ' + (res.error||''), 'error'); }
       });
     }, 'Save Changes');
+    initTagChipInput('tpl-tags', cachedTags, t.tags || []);
     if (t.accountId) { const el = document.getElementById('tpl-account'); if (el) el.value = t.accountId; }
     if (t.categoryId) { const el = document.getElementById('tpl-category'); if (el) el.value = t.categoryId; }
   };
@@ -3332,10 +3443,7 @@
       body += `<div class="form-field"><label>Period</label>
         ${buildSelect('cf-timeline',Object.keys(tlLabels).map(v=>({value:v,label:tlLabels[v]})),tl,'All Time',false,'toggleCustomDates()')}</div>
       <div id="cf-custom-dates" style="${tl==='CUSTOM'?'':'display:none'}">
-        ${formRow(
-          formField('From', `<input type="date" id="cf-from" value="${esc(fs.customFrom||'')}">`),
-          formField('To',   `<input type="date" id="cf-to"   value="${esc(fs.customTo||'')}">`)
-        )}
+        <div class="form-field"><label>Date Range</label><div class="date-range-wrap"><input type="date" id="cf-from" value="${esc(fs.customFrom||'')}"><span class="date-range-sep">→</span><input type="date" id="cf-to" value="${esc(fs.customTo||'')}"></div></div>
       </div>`;
     }
 
@@ -3432,6 +3540,7 @@
     openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`,
       body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');
     modalConfBtn.className = 'btn btn-primary';
+    wireDateRange('cf-from', 'cf-to');
   };
 
   window.toggleCustomDates = function () {

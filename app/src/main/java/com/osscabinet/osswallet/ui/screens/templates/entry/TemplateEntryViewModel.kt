@@ -124,7 +124,7 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = true,
                         isLinkedToPlannedPayment = isLinked,
                         name = template.name,
-                        amount = template.amount.toPlainString(),
+                        amount = template.amount.abs().toPlainString(),
                         transactionType = template.transactionType,
                         categoryId = template.categoryId,
                         accountId = template.accountId,
@@ -152,10 +152,33 @@ class TemplateEntryViewModel @Inject constructor(
     fun onEvent(event: TemplateEntryEvent) {
         when (event) {
             is TemplateEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
-            is TemplateEntryEvent.SetAmount -> _state.update { it.copy(amount = event.amount) }
+            is TemplateEntryEvent.SetAmount -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                if (inputAmount < BigDecimal.ZERO) {
+                    _state.update { state ->
+                        val newType = when (state.transactionType) {
+                            TransactionType.EXPENSE -> TransactionType.INCOME
+                            TransactionType.INCOME -> TransactionType.EXPENSE
+                            else -> state.transactionType
+                        }
+                        state.copy(
+                            amount = inputAmount.abs().toPlainString(),
+                            transactionType = newType
+                        )
+                    }
+                } else {
+                    _state.update { it.copy(amount = event.amount) }
+                }
+            }
             is TemplateEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
-                _state.update { it.copy(transactionType = event.type) }
+                _state.update { state ->
+                    state.copy(
+                        transactionType = event.type,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
+                            .toPlainString()
+                    )
+                }
                 if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
@@ -355,14 +378,12 @@ class TemplateEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = s.amount.toBigDecimalOrNull()?.let {
-                if (s.transactionType == TransactionType.EXPENSE) it.abs().negate() else it.abs()
-            } ?: BigDecimal.ZERO
+            val amountValue = if (s.isExpense) s.amountValue.abs().negate() else s.amountValue.abs()
 
             val template = Template(
                 id = s.templateId ?: 0,
                 name = s.name,
-                categoryId = if (s.transactionType == TransactionType.TRANSFER) 1003L else s.categoryId,
+                categoryId = if (s.isTransfer) 1003L else s.categoryId,
                 amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.accountId,

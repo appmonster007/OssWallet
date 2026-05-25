@@ -254,7 +254,24 @@ class TransactionEntryViewModel @Inject constructor(
      */
     fun onEvent(event: TransactionEntryEvent) {
         when (event) {
-            is TransactionEntryEvent.SetAmount -> update { it.copy(amount = event.amount) }
+            is TransactionEntryEvent.SetAmount -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                if (inputAmount < BigDecimal.ZERO) {
+                    _state.update { state ->
+                        val newType = when (state.transactionType) {
+                            TransactionType.EXPENSE -> TransactionType.INCOME
+                            TransactionType.INCOME -> TransactionType.EXPENSE
+                            else -> state.transactionType
+                        }
+                        state.copy(
+                            amount = inputAmount.abs().toPlainString(),
+                            transactionType = newType
+                        )
+                    }
+                } else {
+                    _state.update { it.copy(amount = event.amount) }
+                }
+            }
             is TransactionEntryEvent.SetCategory -> update {
                 it.copy(selectedCategoryId = event.categoryId)
             }
@@ -285,7 +302,13 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetStatus -> update { it.copy(status = event.status) }
             is TransactionEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
-                update { it.copy(transactionType = event.type) }
+                _state.update { state ->
+                    state.copy(
+                        transactionType = event.type,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
+                            .toPlainString()
+                    )
+                }
 
                 // Auto-select target account when switching to transfer
                 if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
@@ -554,10 +577,10 @@ class TransactionEntryViewModel @Inject constructor(
         return TransactionRequest(
             name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
                 ?: "Transaction",
-            amount = if (currentState.isIncome || currentState.isTransfer) {
-                currentState.amountValue
+            amount = if (currentState.isExpense) {
+                currentState.amountValue.abs().negate()
             } else {
-                currentState.amountValue.negate()
+                currentState.amountValue.abs()
             },
             transactionType = when {
                 currentState.isIncome -> TransactionType.INCOME
@@ -730,6 +753,6 @@ class TransactionEntryViewModel @Inject constructor(
     }
 
     private inline fun update(transform: (TransactionEntryState) -> TransactionEntryState) {
-        _state.value = transform(_state.value)
+        _state.update(transform)
     }
 }

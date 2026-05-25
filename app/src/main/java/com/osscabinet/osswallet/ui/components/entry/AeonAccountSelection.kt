@@ -62,7 +62,7 @@ fun AeonAccountSelection(
                     mode = mode,
                     selectedIds = if (selectedAccountIds.contains("")) setOf(null) else emptySet<String?>(),
                     onSelectionChange = {
-                        onSelectionChange(selectedAccountIds + "") // Simplistic mapping for "Outside"
+                        onSelectionChange(setOf(""))
                         if (mode == AeonSelectMode.SINGLE) onDismiss()
                     },
                     idMapper = { null },

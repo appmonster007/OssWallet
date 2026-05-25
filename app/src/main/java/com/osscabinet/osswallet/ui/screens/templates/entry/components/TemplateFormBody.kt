@@ -83,8 +83,10 @@ fun TemplateFormBody(
                 },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
+                onSwapClick = { onEvent(TemplateEntryEvent.SwapAccounts) },
                 supportedCurrencies = sourceCurrencies,
-                targetSupportedCurrencies = targetCurrencies
+                targetSupportedCurrencies = targetCurrencies,
+                accountId = state.accountId
             )
 
             // CONTEXT: Action cards row: Account, Category

@@ -16,6 +16,7 @@ sealed class TemplateEntryEvent {
     data class SetCurrency(val currency: String) : TemplateEntryEvent()
     data class SetTargetCurrency(val currency: String?) : TemplateEntryEvent()
     data class SetTransferRate(val rate: BigDecimal) : TemplateEntryEvent()
+    data object SwapAccounts : TemplateEntryEvent()
     data class SetNote(val note: String) : TemplateEntryEvent()
     data class SetPayee(val payee: String) : TemplateEntryEvent()
     data class SetLocation(val gpsLocation: String?, val location: String? = null) :

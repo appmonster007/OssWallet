@@ -112,6 +112,9 @@ class TemplateEntryViewModel @Inject constructor(
             } else {
                 _state.update { it.copy(isEditMode = false, templateId = null) }
             }
+            if (_state.value.transactionType == TransactionType.TRANSFER && prefill == null) {
+                autoSelectTargetAccount()
+            }
             return
         }
 
@@ -124,7 +127,7 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = true,
                         isLinkedToPlannedPayment = isLinked,
                         name = template.name,
-                        amount = template.amount.abs().toPlainString(),
+                        amount = template.amount.abs().stripTrailingZeros().toPlainString(),
                         transactionType = template.transactionType,
                         categoryId = template.categoryId,
                         accountId = template.accountId,
@@ -172,17 +175,21 @@ class TemplateEntryViewModel @Inject constructor(
             }
             is TemplateEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
+                val newType = event.type
                 _state.update { state ->
                     state.copy(
-                        transactionType = event.type,
+                        transactionType = newType,
                         amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .toPlainString()
+                            .toPlainString(),
+                        accountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.accountId,
+                        targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.accountId else state.targetAccountId,
+                        categoryId = if (newType == TransactionType.TRANSFER) 1003L else if (state.categoryId == 1003L) 1002L else state.categoryId
                     )
                 }
-                if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
+                if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
-                if (event.type == TransactionType.TRANSFER) {
+                if (newType == TransactionType.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -225,6 +232,20 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
+
+            is TemplateEntryEvent.SwapAccounts -> {
+                val s = _state.value
+                _state.update {
+                    it.copy(
+                        accountId = s.targetAccountId,
+                        targetAccountId = s.accountId,
+                        currency = s.targetCurrency ?: s.currency,
+                        targetCurrency = s.currency
+                    )
+                }
+                recalculateExchangeRate()
+            }
+
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is TemplateEntryEvent.SetLocation -> _state.update {
@@ -344,6 +365,13 @@ class TemplateEntryViewModel @Inject constructor(
                 }
                 recalculateExchangeRate()
             }
+        } else if (selectedAccount != null && accounts.size == 1) {
+            _state.update {
+                it.copy(
+                    targetAccountId = null,
+                    targetCurrency = ""
+                )
+            }
         }
     }
 
@@ -378,7 +406,11 @@ class TemplateEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = if (s.isExpense) s.amountValue.abs().negate() else s.amountValue.abs()
+            val amountValue = if (s.isIncome) s.amountValue.abs()
+            else if (s.isTransfer) {
+                if (s.accountId == null) s.amountValue.abs() else s.amountValue.abs().negate()
+            }
+            else s.amountValue.abs().negate()
 
             val template = Template(
                 id = s.templateId ?: 0,

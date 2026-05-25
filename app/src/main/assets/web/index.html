@@ -1427,8 +1427,34 @@
         return '#/records?' + p.toString();
       }
 
+      /* count active filters for button badge */
+      const filterKeys = [type, accountId, dateFrom, dateTo, categoryId, minAmount, maxAmount, status, payee];
+      const activeFilterCount = filterKeys.filter(Boolean).length;
+      const filterBtnLabel = `⚙️ Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}`;
+      const filterBtnCls   = activeFilterCount ? 'btn btn-ghost btn-sm btn-filter-active' : 'btn btn-ghost btn-sm';
+
+      /* date quick-select helpers */
+      const today = new Date(); today.setHours(0,0,0,0);
+      const fmtD  = d => d.toISOString().slice(0,10);
+      const todayStr      = fmtD(today);
+      const weekStartStr  = fmtD(new Date(today.getTime() - today.getDay()*86400000));
+      const monthStartStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+      const last30Str     = fmtD(new Date(today.getTime() - 29*86400000));
+
+      /* account options for filter */
+      const accFilterOpts = cachedAccounts.map(a =>
+        `<option value="${esc(a.id)}" ${accountId===a.id?'selected':''}>${esc(a.name)} (${esc(a.currency)})</option>`
+      ).join('');
+
       /* ── Filter panel ─ */
       const fPanel = `<div class="filter-panel${filtersOpen ? '' : ' hidden'}" id="filter-panel">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          <span style="font-size:0.75rem;color:var(--text-muted);align-self:center;padding-right:4px">Quick:</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${todayStr}','${todayStr}')">Today</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${weekStartStr}','${todayStr}')">This Week</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${monthStartStr}','${todayStr}')">This Month</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${last30Str}','${todayStr}')">Last 30 Days</button>
+        </div>
         <div class="filter-grid">
           <div class="form-field"><label>Type</label>
             <select id="f-type">
@@ -1438,13 +1464,12 @@
               <option value="TRANSFER" ${type==='TRANSFER'?'selected':''}>Transfer</option>
             </select>
           </div>
+          <div class="form-field"><label>Account</label>
+            <select id="f-account"><option value="">All Accounts</option>${accFilterOpts}</select>
+          </div>
           <div class="form-field"><label>Category</label>
             <select id="f-cat"><option value="">All</option>${catOptions(false)}</select>
           </div>
-          <div class="form-field"><label>Date From</label><input type="date" id="f-from" value="${esc(dateFrom)}"></div>
-          <div class="form-field"><label>Date To</label><input type="date" id="f-to" value="${esc(dateTo)}"></div>
-          <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00"></div>
-          <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999"></div>
           <div class="form-field"><label>Status</label>
             <select id="f-status">
               <option value="" ${!status?'selected':''}>All</option>
@@ -1453,18 +1478,22 @@
               <option value="UNCLEARED" ${status==='UNCLEARED'?'selected':''}>Uncleared</option>
             </select>
           </div>
+          <div class="form-field"><label>Date From</label><input type="date" id="f-from" value="${esc(dateFrom)}"></div>
+          <div class="form-field"><label>Date To</label><input type="date" id="f-to" value="${esc(dateTo)}"></div>
+          <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00"></div>
+          <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999"></div>
           <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
         </div>
         <div class="filter-actions">
           <button class="btn btn-primary btn-sm" onclick="applyRecordFilters()">Apply Filters</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearRecordFilters()">Clear Filters</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearRecordFilters()">Clear All</button>
         </div>
       </div>`;
 
       let html = `<div class="page-header">
         <h2 class="section-title">${title}</h2>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="toggleRecordFilters()">⚙️ Filters</button>
+          <button class="${filterBtnCls}" id="filters-btn" onclick="toggleRecordFilters()">${filterBtnLabel}</button>
           <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Record</button>
         </div>
       </div>${fPanel}`;
@@ -1519,11 +1548,19 @@
     location.hash = '#/records?' + params.toString();
   };
 
+  window.setDateQuick = function (from, to) {
+    const fFrom = document.getElementById('f-from');
+    const fTo   = document.getElementById('f-to');
+    if (fFrom) fFrom.value = from;
+    if (fTo)   fTo.value   = to;
+  };
+
   window.applyRecordFilters = function () {
     const params = new URLSearchParams(location.hash.split('?')[1] || '');
     const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
     params.set('type',       get('f-type'));
     params.set('categoryId', get('f-cat'));
+    params.set('accountId',  get('f-account'));
     params.set('dateFrom',   get('f-from'));
     params.set('dateTo',     get('f-to'));
     params.set('minAmount',  get('f-min'));
@@ -1900,7 +1937,7 @@
           <option value="YEARLY">Yearly</option>
           <option value="WEEKLY">Weekly</option>
         </select>`),
-        formField('Alert Threshold (0–1)', '<input type="number" id="bud-alert" value="0.8" min="0" max="1" step="0.05">')
+        formField('Alert Threshold (%)', '<input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80">')
       )}`;
     openModal('Add Budget', body, submitAddBudget, 'Save Budget');
     modalConfBtn.className = 'btn btn-primary';
@@ -1912,11 +1949,11 @@
     const currency = document.getElementById('bud-currency')?.value.trim();
     const limit    = parseFloat(document.getElementById('bud-limit')?.value || '0');
     const period   = document.getElementById('bud-period')?.value;
-    const alert_   = parseFloat(document.getElementById('bud-alert')?.value || '0.8');
+    const alertPct = parseFloat(document.getElementById('bud-alert')?.value || '80');
     if (!name)                    { showFieldError('bud-name', 'Name is required.'); return; }
     if (isNaN(limit) || limit <= 0) { showFieldError('bud-limit', 'Enter a valid limit amount.'); return; }
     await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/budgets', { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alert_ });
+      const res = await apiWrite('POST', '/api/budgets', { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alertPct / 100 });
       if (res.success) { closeModal(); renderBudgets(); showToast('Budget created!'); }
       else { showToast('Failed to create budget: ' + (res.error || ''), 'error'); }
     });
@@ -3250,7 +3287,7 @@
           chipCheckboxes('cf-tags-chips', cachedTags.map(t=>({value:t,label:t})), selTags) +
           `</div>`;
       } else {
-        body += `<div class="form-field"><label>Tags (comma-separated)</label><input type="text" id="cf-tags-text" value="${esc(selTags.join(', '))}" placeholder="tag1, tag2…"></div>`;
+        body += `<div class="form-field"><label>Tags</label><input type="text" id="cf-tags-text" value="${esc(selTags.join(', '))}" placeholder="Enter tags, comma-separated…"></div>`;
       }
     }
 
@@ -3277,9 +3314,7 @@
     body += '</div>';
 
     const hasOverride = Object.keys(fs).length > 0;
-    if (hasOverride) {
-      body += `<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
-    }
+    body += `<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" ${hasOverride?'':'disabled style="opacity:0.45;cursor:not-allowed"'} onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
 
     openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`,
       body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');

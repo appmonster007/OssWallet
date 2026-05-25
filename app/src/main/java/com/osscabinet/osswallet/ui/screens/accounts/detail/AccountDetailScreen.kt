@@ -560,15 +560,17 @@ fun DynamicAccountDetailCards(
         )
     }
 
-    val heroConfig = remember(accountId) {
-        AccountHeroCardConfig(
+    val heroConfig = cardsConfig.cards
+        .filterIsInstance<AccountHeroCardConfig>()
+        .minByOrNull { it.order }
+        ?: AccountHeroCardConfig(
             cardId = "hero_$accountId",
+            order = 0,
             filter = TransactionFilter(
                 accountIds = setOf(accountId),
                 timelineRange = TimelineRange.AllTime
             )
         )
-    }
     val heroCard = rememberCardWithCallbacks(
         config = heroConfig,
         input = heroCardInput,
@@ -603,7 +605,7 @@ fun DynamicAccountDetailCards(
             .background(AppColors.screenBackground)
     ) {
         AeonCardList(
-            cards = cardsConfig.cards.filter { it !is AccountHeroCardConfig },
+            cards = cardsConfig.cards.filter { it.cardId != heroConfig.cardId },
             cardInput = sharedCardInput,
             cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,

@@ -48,7 +48,8 @@ fun EntryAmountDisplay(
     amountColor: Color = AppColors.primary,
     supportedCurrencies: List<String> = listOf("USD"),
     showCurrency: Boolean = true,
-    label: String? = null
+    label: String? = null,
+    prefix: String = ""
 ) {
     val haptic = LocalHapticFeedback.current
     Column(
@@ -90,10 +91,11 @@ fun EntryAmountDisplay(
             }
 
             val amountDisplay = if (amount.isEmpty()) "0.00" else amount
-            var multiplier by remember(amountDisplay) { mutableStateOf(1f) }
+            val fullDisplay = if (amount.isEmpty()) amountDisplay else "$prefix$amountDisplay"
+            var multiplier by remember(fullDisplay) { mutableStateOf(1f) }
 
             Text(
-                text = amountDisplay,
+                text = fullDisplay,
                 style = AppTextStyles.calculatorDisplay.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,

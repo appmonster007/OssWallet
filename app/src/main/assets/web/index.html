@@ -1632,11 +1632,13 @@
       `<option value="${v}" ${(tx?.paymentMethod||'CASH')===v?'selected':''}>${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
     const warExp = tx?.warrantyExpiration ? new Date(tx.warrantyExpiration).toISOString().slice(0,10) : '';
     return `
-      ${formRow(formField('Name', `<input type="text" id="tx-name" placeholder="e.g. Grocery run" value="${esc(tx?.title||'')}">`),
-                formField('Amount', `<input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}">`))}
-      ${formRow(formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5">`),
-                formField('Type', `<select id="tx-type" onchange="document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
-      ${formField('Account', `<select id="tx-account">${accOptions()}</select>`)}
+      ${formField('Name', `<input type="text" id="tx-name" placeholder="e.g. Grocery run" value="${esc(tx?.title||'')}">`) }
+      ${formRow(
+        formField('Amount', `<div class="input-group"><span class="input-group-addon" id="tx-amount-prefix">${esc(cur)}</span><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}"></div>`),
+        formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5" oninput="const p=document.getElementById('tx-amount-prefix');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
+      )}
+      ${formRow(formField('Type', `<select id="tx-type" onchange="document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`),
+                formField('Account', `<select id="tx-account">${accOptions()}</select>`))}
       <div id="tx-to-account-row" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'':'display:none'}">
         ${formField('To Account', `<select id="tx-to-account"><option value="">— Select destination —</option>${accOptions()}</select>`)}
       </div>
@@ -1970,8 +1972,8 @@
     const body = `
       ${formField('Budget Name', '<input type="text" id="bud-name" placeholder="e.g. Groceries">')}
       ${formRow(
-        formField('Currency', `<input type="text" id="bud-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
-        formField('Limit Amount', '<input type="number" id="bud-limit" placeholder="500.00" min="0" step="0.01">')
+        formField('Currency', `<input type="text" id="bud-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('bud-limit-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`),
+        formField('Limit Amount', `<div class="input-group"><span class="input-group-addon" id="bud-limit-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="bud-limit" placeholder="500.00" min="0" step="0.01"></div>`)
       )}
       ${formRow(
         formField('Period', `<select id="bud-period">
@@ -1979,7 +1981,7 @@
           <option value="YEARLY">Yearly</option>
           <option value="WEEKLY">Weekly</option>
         </select>`),
-        formField('Alert Threshold (%)', '<input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80">')
+        formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80"><span class="input-group-addon">%</span></div>`)
       )}`;
     openModal('Add Budget', body, submitAddBudget, 'Save Budget');
     modalConfBtn.className = 'btn btn-primary';
@@ -2113,8 +2115,8 @@
     const body = `
       ${formField('Loan Name', '<input type="text" id="ln-name" placeholder="e.g. Car loan">')}
       ${formRow(
-        formField('Principal Amount', '<input type="number" id="ln-principal" placeholder="0.00" min="0" step="0.01">'),
-        formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+        formField('Principal Amount', `<div class="input-group"><span class="input-group-addon" id="ln-principal-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="ln-principal" placeholder="0.00" min="0" step="0.01"></div>`),
+        formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('ln-principal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
         formField('Loan Type', `<select id="ln-type"><option value="BORROWED">Borrowed</option><option value="LENT">Lent</option></select>`),
@@ -2124,7 +2126,7 @@
         formField('Start Date', '<input type="date" id="ln-start">'),
         formField('Expected Settlement', '<input type="date" id="ln-settle">')
       )}
-      ${formField('Interest Rate % (optional)', '<input type="number" id="ln-rate" placeholder="0.00" min="0" step="0.01">')}`;
+      ${formField('Interest Rate (% p.a.)', `<div class="input-group"><input type="number" id="ln-rate" placeholder="0.00" min="0" max="100" step="0.01"><span class="input-group-addon">% p.a.</span></div>`)}`;
     openModal('Add Loan', body, submitAddLoan, 'Save Loan');
     modalConfBtn.className = 'btn btn-primary';
   };
@@ -2315,8 +2317,8 @@
     const body = `
       ${formField('Payment Name', '<input type="text" id="pp-name" placeholder="e.g. Netflix">')}
       ${formRow(
-        formField('Amount', '<input type="number" id="pp-amount" placeholder="0.00" min="0" step="0.01">'),
-        formField('Currency', `<input type="text" id="pp-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+        formField('Amount', `<div class="input-group"><span class="input-group-addon" id="pp-amount-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="pp-amount" placeholder="0.00" min="0" step="0.01"></div>`),
+        formField('Currency', `<input type="text" id="pp-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
         formField('Type', `<select id="pp-type"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option></select>`),
@@ -2382,8 +2384,8 @@
     const body = `
       ${formField('Payment Name', `<input type="text" id="pp-name" value="${esc(p.name)}">`)}
       ${formRow(
-        formField('Amount', `<input type="number" id="pp-amount" value="${esc(p.amount||0)}" min="0" step="0.01">`),
-        formField('Currency', `<input type="text" id="pp-currency" value="${esc(p.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+        formField('Amount', `<div class="input-group"><span class="input-group-addon" id="pp-amount-pfx">${esc(p.currency||cachedSettings.baseCurrency||'USD')}</span><input type="number" id="pp-amount" value="${esc(p.amount||0)}" min="0" step="0.01"></div>`),
+        formField('Currency', `<input type="text" id="pp-currency" value="${esc(p.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
         formField('Type', `<select id="pp-type"><option value="EXPENSE" ${p.transactionType==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${p.transactionType==='INCOME'?'selected':''}>Income</option></select>`),

@@ -355,11 +355,15 @@ class TemplateEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
+            val amountValue = s.amount.toBigDecimalOrNull()?.let {
+                if (s.transactionType == TransactionType.EXPENSE) it.abs().negate() else it.abs()
+            } ?: BigDecimal.ZERO
+
             val template = Template(
                 id = s.templateId ?: 0,
                 name = s.name,
                 categoryId = if (s.transactionType == TransactionType.TRANSFER) 1003L else s.categoryId,
-                amount = s.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.accountId,
                 targetAccountId = s.targetAccountId,

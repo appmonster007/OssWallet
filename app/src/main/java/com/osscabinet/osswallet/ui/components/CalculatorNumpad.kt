@@ -45,7 +45,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.calculator.CalculationHistoryItem
 import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
 import com.osscabinet.ossWallet.ui.calculator.CalculatorState
@@ -64,32 +63,25 @@ import java.math.BigDecimal
 @Composable
 fun CalculatorNumpad(
     amount: String,
-    onAmountChange: (String, TransactionType) -> Unit,
-    transactionType: TransactionType = TransactionType.INCOME,
+    onAmountChange: (String) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var state by remember { mutableStateOf(CalculatorState(transactionType = transactionType)) }
+    var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
 
     val evaluator = remember { ExpressionEvaluator() }
 
-    LaunchedEffect(transactionType, amount) {
-        if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
-            val initialTokens = mutableListOf<Token>()
-            if (transactionType == TransactionType.EXPENSE) initialTokens.add(Token.UnaryMinus)
-
+    LaunchedEffect(amount) {
+        if (state.tokens.isEmpty()) {
             val amountNum = amount.toBigDecimalOrNull()?.abs()
             if (amountNum != null && amountNum != BigDecimal.ZERO) {
-                initialTokens.add(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
+                val initialTokens = listOf(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
+                state = state.copy(
+                    tokens = initialTokens,
+                    display = amountNum.stripTrailingZeros().toPlainString()
+                )
             }
-
-            state = state.copy(
-                transactionType = transactionType,
-                tokens = initialTokens,
-                display = if (amountNum != null && amountNum != BigDecimal.ZERO) amountNum.stripTrailingZeros()
-                    .toPlainString() else state.display
-            )
         }
     }
 
@@ -115,7 +107,6 @@ fun CalculatorNumpad(
                     expression = state.displayExpression,
                     result = state.display,
                     ghostResult = state.ghostResult,
-                    transactionType = state.transactionType,
                     isError = state.isError,
                     onSave = {
                         val finalState = if (!state.isCalculated) {
@@ -124,7 +115,7 @@ fun CalculatorNumpad(
 
                         state = finalState
                         if (!finalState.isError) {
-                            onAmountChange(finalState.display, finalState.transactionType)
+                            onAmountChange(finalState.display)
                             onDone()
                         }
                     }
@@ -156,7 +147,7 @@ fun CalculatorNumpad(
             onEqualsPress = {
                 handleAction(CalculatorAction.Equals)
                 if (!state.isError) {
-                    onAmountChange(state.display, state.transactionType)
+                    onAmountChange(state.display)
                 }
             },
             onPercentPress = { handleAction(CalculatorAction.Percent) }
@@ -181,16 +172,10 @@ private fun CalculatorDisplay(
     expression: String,
     result: String,
     ghostResult: String,
-    transactionType: TransactionType,
     isError: Boolean,
     onSave: () -> Unit
 ) {
-    val displayResult =
-        if (transactionType == TransactionType.EXPENSE && result != "0" && !result.startsWith("-")) {
-            "−$result"
-        } else {
-            result.replace("-", "−")
-        }
+    val displayResult = result.replace("-", "−")
 
     Row(
         modifier = Modifier
@@ -232,7 +217,7 @@ private fun CalculatorDisplay(
             // Ghost Result
             if (ghostResult.isNotEmpty() && ghostResult != result) {
                 Text(
-                    text = if (transactionType == TransactionType.EXPENSE) "−$ghostResult" else ghostResult,
+                    text = ghostResult.replace("-", "−"),
                     style = AppTextStyles.chartTooltipValue,
                     color = AppColors.primary.copy(alpha = 0.4f),
                     textAlign = TextAlign.End,
@@ -483,7 +468,7 @@ fun CalculatorNumpadPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             CalculatorNumpad(
                 amount = "125.50",
-                onAmountChange = { _, _ -> },
+                onAmountChange = { },
                 onDone = {}
             )
         }
@@ -503,7 +488,6 @@ fun CalculatorDisplayPreview() {
                 expression = "50 + 75.50",
                 result = "125.50",
                 ghostResult = "125.50",
-                transactionType = TransactionType.EXPENSE,
                 isError = false,
                 onSave = {}
             )

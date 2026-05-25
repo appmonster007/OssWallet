@@ -113,7 +113,7 @@ fun AccountEntrySheets(
             ) {
                 CalculatorNumpad(
                     amount = state.initialBalances[state.activeBalanceCurrency] ?: "0",
-                    onAmountChange = { amount, _ ->
+                    onAmountChange = { amount ->
                         onEvent(
                             AccountEntryEvent.SetInitialBalance(
                                 state.activeBalanceCurrency,

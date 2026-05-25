@@ -25,11 +25,7 @@ fun TemplateEntrySheets(
     if (state.isNumpadVisible) {
         AeonCalculatorSheet(
             currentAmount = state.amount,
-            transactionType = state.transactionType,
             onAmountChanged = { onEvent(TemplateEntryEvent.SetAmount(it)) },
-            onTypeChanged = { newType ->
-                onEvent(TemplateEntryEvent.SetTransactionType(newType))
-            },
             onDismiss = { onEvent(TemplateEntryEvent.ShowNumpad(false)) }
         )
     }

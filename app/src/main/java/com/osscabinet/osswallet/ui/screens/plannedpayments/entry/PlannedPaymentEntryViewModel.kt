@@ -143,6 +143,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     )
                 }
             }
+            // Auto-select target account if initialized as transfer
+            if (_state.value.transactionType == TransactionType.TRANSFER && prefill == null) {
+                autoSelectTargetAccount()
+            }
             return
         }
 
@@ -230,17 +234,21 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
             is PlannedPaymentEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
+                val newType = event.type
                 _state.update { state ->
                     state.copy(
-                        transactionType = event.type,
+                        transactionType = newType,
                         amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .toPlainString()
+                            .toPlainString(),
+                        selectedAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.selectedAccountId,
+                        targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.selectedAccountId else state.targetAccountId,
+                        selectedCategoryId = if (newType == TransactionType.TRANSFER) 1003L else if (state.selectedCategoryId == 1003L) 1002L else state.selectedCategoryId
                     )
                 }
-                if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
+                if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
-                if (event.type == TransactionType.TRANSFER) {
+                if (newType == TransactionType.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -273,6 +281,20 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetTransferRate -> _state.update { it.copy(transferRate = event.rate) }
+
+            is PlannedPaymentEntryEvent.SwapAccounts -> {
+                val s = _state.value
+                _state.update {
+                    it.copy(
+                        selectedAccountId = s.targetAccountId,
+                        targetAccountId = s.selectedAccountId,
+                        currency = s.targetCurrency ?: s.currency,
+                        targetCurrency = s.currency
+                    )
+                }
+                recalculateExchangeRate()
+            }
+
             is PlannedPaymentEntryEvent.SetCurrency -> {
                 _state.update { it.copy(currency = event.currency) }
                 recalculateExchangeRate()
@@ -464,7 +486,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = if (s.isExpense) s.amountValue.abs().negate() else s.amountValue.abs()
+            val amountValue = if (s.isIncome) s.amountValue.abs()
+            else if (s.isTransfer) {
+                if (s.selectedAccountId == null) s.amountValue.abs() else s.amountValue.abs().negate()
+            }
+            else s.amountValue.abs().negate()
 
             val rule = RecurrenceRule(
                 type = s.recurrenceType,
@@ -590,6 +616,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     )
                 }
                 recalculateExchangeRate()
+            }
+        } else if (selectedAccount != null && accounts.size == 1) {
+            _state.update {
+                it.copy(
+                    targetAccountId = null,
+                    targetCurrency = ""
+                )
             }
         }
     }

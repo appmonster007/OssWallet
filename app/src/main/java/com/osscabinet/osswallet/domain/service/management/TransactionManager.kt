@@ -99,7 +99,30 @@ class TransactionManager(
     ): Long {
         val updated = request.toNormalTransaction(existingTransaction)
         return if (existingTransaction != null) {
-            if (existingTransaction.categoryId == 1003L) {
+            // Conversion Logic: If it was a linked transfer and is now becoming Normal
+            if (existingTransaction.categoryId == 1003L && request.categoryId != 1003L) {
+                val linkedIds = transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
+                linkedIds.forEach { linkedId ->
+                    val linkedTx = transactionUseCases.getTransactionById(linkedId)
+                    if (linkedTx != null && linkedTx.categoryId == 1003L) {
+                        // 1. Delink
+                        transactionUseCases.removeTransactionLink(existingTransaction.id, linkedId)
+                        transactionUseCases.removeTransactionLink(linkedId, existingTransaction.id)
+
+                        // 2. Convert to standalone "Outside" transfer
+                        // The removal of links already makes it standalone in the UI
+                        // but we might want to ensure its category is still 1003L
+                        if (linkedTx.categoryId != 1003L) {
+                            transactionUseCases.updateTransaction(
+                                linkedTx,
+                                linkedTx.copy(categoryId = 1003L),
+                                profileId
+                            )
+                        }
+                    }
+                }
+            } else if (existingTransaction.categoryId == 1003L) {
+                // If it's still a transfer (maybe just account change), clear links to be rebuilt if needed
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
             transactionUseCases.updateTransaction(existingTransaction, updated, profileId)
@@ -114,58 +137,81 @@ class TransactionManager(
         request: TransactionRequest,
         profileId: Int
     ): Long {
+        val sourceAccountId = request.accountId
         val targetAccountId = request.targetAccountId
-        val sourceTransaction = (existingTransaction ?: Transaction(
-            id = 0,
-            name = request.name,
-            amount = BigDecimal.ZERO,
-            timestamp = request.timestamp,
-            currency = request.currency,
-            transactionType = TransactionType.TRANSFER,
-            accountId = request.accountId,
-            categoryId = 1003L
-        )).copy(
-            amount = request.amount.negate(),
-            transactionType = TransactionType.TRANSFER,
-            accountId = request.accountId,
-            currency = request.currency,
-            categoryId = 1003L, // Transfer category ID
-            tags = request.tags,
-            timestamp = request.timestamp,
-            payee = request.payee,
-            note = request.note,
-            gpsLocation = request.gpsLocation,
-            location = request.location,
-            warrantyExpiration = request.warrantyExpiration,
-            status = request.status,
-            sourcePlannedPaymentId = request.sourcePlannedPaymentId
-        )
+        val amount = request.amount.abs()
 
-        if (targetAccountId == null) {
-            return if (existingTransaction != null) {
-                transactionUseCases.clearTransactionLinks(existingTransaction.id)
-                transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
-                existingTransaction.id
-            } else {
-                transactionUseCases.insertTransaction(sourceTransaction, profileId)
+        return when {
+            // Outflow: Wallet -> Outside
+            sourceAccountId.isNotEmpty() && targetAccountId == null -> {
+                val tx = request.toNormalTransaction(existingTransaction).copy(
+                    amount = amount.negate(),
+                    categoryId = 1003L
+                )
+                if (existingTransaction != null) {
+                    transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
+                    existingTransaction.id
+                } else {
+                    transactionUseCases.insertTransaction(tx, profileId)
+                }
             }
+            // Inflow: Outside -> Wallet
+            sourceAccountId.isEmpty() && targetAccountId != null -> {
+                val tx = request.toNormalTransaction(existingTransaction).copy(
+                    accountId = targetAccountId,
+                    amount = amount,
+                    currency = request.targetCurrency ?: request.currency,
+                    categoryId = 1003L
+                )
+                if (existingTransaction != null) {
+                    transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
+                    existingTransaction.id
+                } else {
+                    transactionUseCases.insertTransaction(tx, profileId)
+                }
+            }
+            // Internal: Wallet -> Wallet
+            sourceAccountId.isNotEmpty() && targetAccountId != null -> {
+                val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
+                    amount = amount.negate(),
+                    categoryId = 1003L
+                )
+
+                // Target inherits all shared metadata from source; only the amount, direction,
+                // account, and currency differ — and id must be 0 since it is always a new row.
+                val targetTransaction = sourceTransaction.copy(
+                    id = 0,
+                    amount = amount.multiply(request.transferRate),
+                    accountId = targetAccountId,
+                    currency = request.targetCurrency ?: request.currency
+                )
+
+                if (existingTransaction != null && existingTransaction.categoryId == 1003L) {
+                    // When updating a linked transfer, find the other side and update it too
+                    val linkedIds = transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
+                    linkedIds.forEach { linkedId ->
+                        val linkedTx = transactionUseCases.getTransactionById(linkedId)
+                        if (linkedTx != null && linkedTx.categoryId == 1003L) {
+                            // Update the target side to match the new metadata from source
+                            val updatedTarget = sourceTransaction.copy(
+                                id = linkedId,
+                                amount = amount.multiply(request.transferRate),
+                                accountId = targetAccountId,
+                                currency = request.targetCurrency ?: request.currency
+                            )
+                            transactionUseCases.updateTransaction(linkedTx, updatedTarget, profileId)
+                        }
+                    }
+                    transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
+                    existingTransaction.id
+                } else {
+                    transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
+                }
+            }
+            else -> -1L // Invalid state
         }
-
-        // Target inherits all shared metadata from source; only the amount, direction,
-        // account, and currency differ — and id must be 0 since it is always a new row.
-        val targetTransaction = sourceTransaction.copy(
-            id = 0,
-            amount = request.amount.multiply(request.transferRate),
-            transactionType = TransactionType.TRANSFER,
-            accountId = targetAccountId,
-            currency = request.targetCurrency ?: request.currency
-        )
-
-        if (existingTransaction != null && existingTransaction.categoryId == 1003L) {
-            transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
-        }
-
-        return transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
     }
 
     suspend fun confirmPlannedPaymentTransaction(
@@ -228,6 +274,18 @@ class TransactionManager(
                 )
             )
         }
+    }
+
+    suspend fun deleteTransaction(id: Long) = andRefresh {
+        val transaction = transactionUseCases.getTransactionById(id)
+        if (transaction != null && transaction.categoryId == 1003L) {
+            // Bidirectional deletion for transfers
+            val linkedIds = transactionUseCases.getLinkedTransactionIds(id).first()
+            linkedIds.forEach { linkedId ->
+                transactionUseCases.deleteTransaction(linkedId)
+            }
+        }
+        transactionUseCases.deleteTransaction(id)
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {

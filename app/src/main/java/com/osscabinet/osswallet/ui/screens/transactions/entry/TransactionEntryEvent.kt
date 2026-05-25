@@ -40,6 +40,7 @@ sealed class TransactionEntryEvent {
     data class SetTargetAccount(val account: Account?) : TransactionEntryEvent()
     data class SetTargetCurrency(val currency: String) : TransactionEntryEvent()
     data class SetExchangeRate(val rate: BigDecimal) : TransactionEntryEvent()
+    data object SwapAccounts : TransactionEntryEvent()
     data class SetTemplate(val templateName: String?) : TransactionEntryEvent()
     data class ApplyTemplate(val template: Template) : TransactionEntryEvent()
     data class ApplyPrefill(val prefill: TransactionPrefillDTO) : TransactionEntryEvent()

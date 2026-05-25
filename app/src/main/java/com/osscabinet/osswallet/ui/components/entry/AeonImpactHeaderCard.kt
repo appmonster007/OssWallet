@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
+import androidx.core.graphics.toColorInt
 
 /**
  * Convenience overload for TransactionType.
@@ -67,15 +68,22 @@ fun AeonImpactHeaderCard(
     onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
+    onSwapClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList(),
-    amountPrefix: String = when (transactionType) {
-        TransactionType.EXPENSE -> "-"
-        TransactionType.INCOME -> "+"
-        TransactionType.TRANSFER -> ""
+    accountId: String? = null,
+    amountPrefix: String = when {
+        transactionType == TransactionType.EXPENSE -> "-"
+        transactionType == TransactionType.INCOME -> "+"
+        transactionType == TransactionType.TRANSFER -> {
+            if (accountId == null) "+"
+            else if (targetAccountId == null) "-"
+            else ""
+        }
+        else -> ""
     }
 ) {
     val types = TransactionType.entries.map {
@@ -113,12 +121,13 @@ fun AeonImpactHeaderCard(
         onTargetCurrencyClick = onTargetCurrencyClick,
         transferRate = transferRate,
         onExchangeRateClick = onExchangeRateClick,
+        onSwapClick = onSwapClick,
         isSplitMode = isSplitMode,
         onSplitClick = onSplitClick,
-        amountColor = amountColor
-            ?: Color(android.graphics.Color.parseColor(transactionType.colorHex)),
+        amountColor = amountColor ?: Color(transactionType.colorHex.toColorInt()),
         supportedCurrencies = supportedCurrencies,
         targetSupportedCurrencies = targetSupportedCurrencies,
+        accountId = accountId,
         amountPrefix = amountPrefix
     )
 }
@@ -150,11 +159,13 @@ fun <T> AeonImpactHeaderCard(
     onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
+    onSwapClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList(),
+    accountId: String? = null,
     amountPrefix: String = ""
 ) {
     val activeAmountColor = amountColor ?: AppColors.primary
@@ -199,30 +210,56 @@ fun <T> AeonImpactHeaderCard(
                         prefix = amountPrefix
                     )
 
-                    if (onSplitClick != null && !isTransfer) {
-                        IconButton(
-                            onClick = onSplitClick,
-                            modifier = Modifier
-                                .padding(end = AeonTheme.dimensions.spacingSm)
-                                .size(AeonTheme.dimensions.iconSizeLg)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(AeonTheme.dimensions.iconSizeLg)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isSplitMode) AppColors.primary.copy(alpha = 0.12f)
-                                        else AppColors.transparent
-                                    ),
-                                contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                    ) {
+                        if (isTransfer) {
+                            IconButton(
+                                onClick = onSwapClick,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                             ) {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.CallSplit,
-                                    contentDescription = "Split Transaction",
-                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                    tint = if (isSplitMode) AppColors.primary
-                                    else AppColors.contentSecondary.copy(alpha = 0.4f)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(AeonTheme.dimensions.iconSizeLg)
+                                        .clip(CircleShape)
+                                        .background(AppColors.transparent),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.SwapHoriz,
+                                        contentDescription = "Swap Accounts",
+                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
+                                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                                    )
+                                }
+                            }
+                        }
+
+                        if (onSplitClick != null && !isTransfer) {
+                            IconButton(
+                                onClick = onSplitClick,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(AeonTheme.dimensions.iconSizeLg)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isSplitMode) AppColors.primary.copy(alpha = 0.12f)
+                                            else AppColors.transparent
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.CallSplit,
+                                        contentDescription = "Split Transaction",
+                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
+                                        tint = if (isSplitMode) AppColors.primary
+                                        else AppColors.contentSecondary.copy(alpha = 0.4f)
+                                    )
+                                }
                             }
                         }
                     }

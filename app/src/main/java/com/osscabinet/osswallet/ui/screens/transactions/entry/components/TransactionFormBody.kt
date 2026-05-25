@@ -79,6 +79,7 @@ fun TransactionFormBody(
                 },
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
+                onSwapClick = { onEvent(TransactionEntryEvent.SwapAccounts) },
                 isSplitMode = state.isSplitMode,
                 onSplitClick = {
                     if (!state.isSplitMode) {
@@ -87,7 +88,8 @@ fun TransactionFormBody(
                     onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                 },
                 supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD"),
-                targetSupportedCurrencies = targetCurrencies
+                targetSupportedCurrencies = targetCurrencies,
+                accountId = state.selectedAccount?.id
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category

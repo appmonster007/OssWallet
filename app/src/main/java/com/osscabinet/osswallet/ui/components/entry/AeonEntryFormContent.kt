@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Splitscreen
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -51,34 +52,41 @@ fun AeonEntryContextRow(
     onSplitClick: () -> Unit = {}
 ) {
     EntryActionRow {
-        val accountIcon = getAccountIconByName(selectedAccount?.icon)
-        val accountColor = parseAccountColor(selectedAccount?.colorHex) ?: AppColors.primary
+        // Source selection (FROM)
+        val fromAccount = selectedAccount
+        val fromIcon = if (fromAccount == null && isTransfer) Icons.Rounded.Public else getAccountIconByName(fromAccount?.icon)
+        val fromColor = parseAccountColor(fromAccount?.colorHex) ?: if (isTransfer && fromAccount == null) AppColors.tertiary else AppColors.primary
+        val fromValue = fromAccount?.name ?: if (isTransfer) "Outside of Wallet" else "Select"
+
         EntryActionCard(
-            icon = accountIcon,
+            icon = fromIcon,
             label = if (isTransfer) "FROM" else "ACCOUNT",
-            value = selectedAccount?.name ?: "Select",
+            value = fromValue,
             onClick = onAccountClick,
             modifier = Modifier.weight(1f),
-            isSelected = selectedAccount != null,
-            selectedColor = accountColor,
-            iconContainerColor = accountColor.copy(alpha = 0.1f),
-            iconTint = accountColor
+            isSelected = fromAccount != null || isTransfer,
+            selectedColor = fromColor,
+            iconContainerColor = fromColor.copy(alpha = 0.1f),
+            iconTint = fromColor
         )
 
         if (isTransfer) {
-            val targetDisplay = targetAccount?.name ?: "Select"
-            val targetIcon = getAccountIconByName(targetAccount?.icon)
-            val targetColor = parseAccountColor(targetAccount?.colorHex) ?: AppColors.tertiary
+            // Target selection (TO)
+            val toAccount = targetAccount
+            val toIcon = if (toAccount == null) Icons.Rounded.Public else getAccountIconByName(toAccount.icon)
+            val toColor = parseAccountColor(toAccount?.colorHex) ?: AppColors.tertiary
+            val toValue = toAccount?.name ?: "Outside of Wallet"
+
             EntryActionCard(
-                icon = targetIcon,
+                icon = toIcon,
                 label = "TO",
-                value = targetDisplay,
+                value = toValue,
                 onClick = onTargetAccountClick,
                 modifier = Modifier.weight(1f),
-                isSelected = targetAccount != null,
-                selectedColor = targetColor,
-                iconContainerColor = targetColor.copy(alpha = 0.1f),
-                iconTint = targetColor
+                isSelected = toAccount != null,
+                selectedColor = toColor,
+                iconContainerColor = toColor.copy(alpha = 0.1f),
+                iconTint = toColor
             )
         } else {
             val displayCategoryName = if (isSplitMode) {

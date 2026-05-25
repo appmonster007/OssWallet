@@ -722,6 +722,15 @@
     modalConfBtn.onclick = closeModal;
   }
 
+  /* ── Empty state helper ───────────────────────────────── */
+  function emptyState(icon, message, actionLabel, onAction) {
+    return `<div class="empty-state">
+      <div style="font-size:2.5rem;margin-bottom:8px">${icon}</div>
+      <div style="font-weight:600;margin-bottom:4px">${esc(message)}</div>
+      ${actionLabel ? `<button class="btn btn-primary btn-sm" onclick="${onAction}" style="margin-top:12px">${esc(actionLabel)}</button>` : ''}
+    </div>`;
+  }
+
   /* ── Form helper ──────────────────────────────────────── */
   function formField(label, inputHtml) {
     return `<div class="form-field"><label>${esc(label)}</label>${inputHtml}</div>`;
@@ -1545,7 +1554,7 @@
       </div>${fPanel}`;
 
       if (data.items.length === 0) {
-        html += '<p class="empty-state">No records found. Try adjusting the filters.</p>';
+        html += emptyState('🔍', 'No records found.', 'Clear Filters', 'clearRecordFilters()');
       } else {
         html += `<div class="card"><div class="table-wrap"><table>
           <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Account</th><th>Type</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`;
@@ -1820,7 +1829,7 @@
       </div>`;
 
       if (!cachedAccounts.length) {
-        html += '<p class="empty-state">No accounts found. Add your first account.</p>';
+        html += emptyState('💳', 'No accounts yet.', '+ Add Account', 'openAddAccount()');
       } else {
         html += '<div class="card-grid">';
         cachedAccounts.forEach(acc => {
@@ -1942,7 +1951,7 @@
       </div>`;
 
       if (!budgets.length) {
-        html += '<p class="empty-state">No budgets yet. Create one to start tracking spending.</p>';
+        html += emptyState('📈', 'No budgets yet.', '+ Add Budget', 'openAddBudget()');
       } else {
         html += '<div class="card-grid">';
         budgets.forEach(b => {
@@ -2076,7 +2085,7 @@
       </div>`;
 
       if (!loans.length) {
-        html += '<p class="empty-state">No loans yet.</p>';
+        html += emptyState('🏦', 'No loans yet.', '+ Add Loan', 'openAddLoan()');
       } else {
         html += '<div class="card-grid">';
         loans.forEach(loan => {
@@ -2279,7 +2288,7 @@
       /* ── All planned payments ─ */
       html += `<div class="section-sub">All Planned Payments</div>`;
       if (!allPayments.length) {
-        html += '<p class="empty-state">No planned payments yet.</p>';
+        html += emptyState('🔄', 'No planned payments yet.', '+ Add Planned Payment', 'openAddPlanned()');
       } else {
         html += `<div class="card"><div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Amount</th><th>Next Due</th><th>Type</th><th>Status</th><th>Auto</th><th></th></tr></thead><tbody>`;
@@ -2471,7 +2480,7 @@
       </div>`;
 
       if (!cachedCategories.length) {
-        html += '<p class="empty-state">No categories found.</p>';
+        html += emptyState('🏷️', 'No categories found.', '+ Add Category', 'openAddCategory()');
       } else {
         html += '<div class="card">';
         parents.forEach(cat => {
@@ -2732,7 +2741,7 @@
       html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Tags are created automatically when you add them to records. Delete unused tags here.</p>';
 
       if (!tags.length) {
-        html += '<p class="empty-state">No tags yet. Add tags when creating records.</p>';
+        html += emptyState('🏷️', 'No tags yet.', 'Add a Record with Tags', 'openAddTransaction()');
       } else {
         html += '<div class="card"><div class="tag-chips">';
         tags.forEach(tag => {
@@ -2775,7 +2784,7 @@
         <button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ New Template</button>
       </div>`;
       if (!templates.length) {
-        html += '<p class="empty-state">No templates yet. Create one to quickly prefill transactions.</p>';
+        html += emptyState('📄', 'No templates yet.', '+ Add Template', 'openAddTemplate()');
       } else {
         html += `<div class="card"><div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Type</th><th>Amount</th><th>Category</th><th>Account</th><th></th></tr></thead><tbody>`;

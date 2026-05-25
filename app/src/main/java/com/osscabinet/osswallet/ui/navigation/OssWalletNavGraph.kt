@@ -1,11 +1,7 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
@@ -13,19 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -100,10 +90,6 @@ fun OssWalletNavGraph(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var isDrawerNavigating by remember { mutableStateOf(false) }
-    var edgeDragTotal by remember { mutableFloatStateOf(0f) }
-    val openThresholdPx = with(LocalDensity.current) { 60.dp.toPx() }
-    val currentIsDrawerNavigating by rememberUpdatedState(isDrawerNavigating)
-    val currentOpenThresholdPx by rememberUpdatedState(openThresholdPx)
 
     val currentProfile by vms.mainViewModel.currentProfile.collectAsStateWithLifecycle()
     val nonArchivedAccounts by vms.mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
@@ -143,10 +129,9 @@ fun OssWalletNavGraph(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        // Enable gestures only when the drawer is open so Material3's built-in scrim tap-to-close
-        // works, while keeping full-screen swipe-to-open disabled when closed (the 20dp edge strip
-        // below handles open gestures exclusively).
-        gesturesEnabled = drawerState.isOpen,
+        // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
+        // and background scrim taps to close automatically and robustly.
+        gesturesEnabled = true,
         drawerContent = {
             AppDrawerContent(
                 currentProfile = currentProfile,
@@ -203,67 +188,38 @@ fun OssWalletNavGraph(
             )
         }
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            NavHost(
-                navController = navController,
-                startDestination = resolvedDestination
+        NavHost(
+            navController = navController,
+            startDestination = resolvedDestination
+        ) {
+            composable<OnboardingRoute>(
+                enterTransition = { FadeEnterTransitionSpec },
+                exitTransition = { FadeExitTransitionSpec },
+                popEnterTransition = { FadeEnterTransitionSpec },
+                popExitTransition = { FadeExitTransitionSpec }
             ) {
-                composable<OnboardingRoute>(
-                    enterTransition = { FadeEnterTransitionSpec },
-                    exitTransition = { FadeExitTransitionSpec },
-                    popEnterTransition = { FadeEnterTransitionSpec },
-                    popExitTransition = { FadeExitTransitionSpec }
-                ) {
-                    val onboardingViewModel: OnboardingViewModel = hiltViewModel()
-                    OnboardingScreen(
-                        viewModel = onboardingViewModel,
-                        onComplete = {
-                            navController.navigate(DashboardRoute()) {
-                                popUpTo<OnboardingRoute> { inclusive = true }
-                            }
+                val onboardingViewModel: OnboardingViewModel = hiltViewModel()
+                OnboardingScreen(
+                    viewModel = onboardingViewModel,
+                    onComplete = {
+                        navController.navigate(DashboardRoute()) {
+                            popUpTo<OnboardingRoute> { inclusive = true }
                         }
-                    )
-                }
-
-                primaryTabsGraph(navController, drawerState, scope, vms)
-                settingsGraph(navController, vms)
-                accountsGraph(navController, vms)
-                transactionsGraph(navController, vms)
-                planningGraph(navController, vms)
-            }
-
-            // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
-            // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
-            BackHandler(enabled = drawerState.isOpen) {
-                scope.launch { drawerState.close() }
-            }
-
-            // Transparent 20dp edge strip — any drag here is always an edge drag.
-            Box(
-                modifier = Modifier
-                    .width(20.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.CenterStart)
-                    .pointerInput(drawerState) {
-                        detectHorizontalDragGestures(
-                            onDragStart = { edgeDragTotal = 0f },
-                            onDragEnd = {
-                                if (!currentIsDrawerNavigating) {
-                                    scope.launch {
-                                        if (edgeDragTotal > currentOpenThresholdPx) drawerState.open()
-                                        else drawerState.close()
-                                    }
-                                }
-                                edgeDragTotal = 0f
-                            },
-                            onDragCancel = { edgeDragTotal = 0f },
-                            onHorizontalDrag = { change, dragAmount ->
-                                change.consume()
-                                edgeDragTotal += dragAmount
-                            }
-                        )
                     }
-            )
+                )
+            }
+
+            primaryTabsGraph(navController, drawerState, scope, vms)
+            settingsGraph(navController, vms)
+            accountsGraph(navController, vms)
+            transactionsGraph(navController, vms)
+            planningGraph(navController, vms)
+        }
+
+        // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
+        // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
+        BackHandler(enabled = drawerState.isOpen) {
+            scope.launch { drawerState.close() }
         }
     }
 }

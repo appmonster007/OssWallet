@@ -213,8 +213,19 @@ fun DashboardScreen(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
+
+    // Robust scroll reset: triggers when the Glance tab is selected or the screen is resumed.
+    // This addresses the "swipe back" scenario where LifecycleEventEffect doesn't fire.
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage == 0) {
+            glanceListState.scrollToItem(0)
+        }
+    }
+
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        scope.launch { glanceListState.scrollToItem(0) }
+        if (pagerState.currentPage == 0) {
+            scope.launch { glanceListState.scrollToItem(0) }
+        }
     }
 
     // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
@@ -676,8 +687,8 @@ fun DashboardGlanceTab(
                     onAdd = onAddTag
                 )
             ),
-            header = if (accountsCard != null && accountsCard !is CardWithCallbacks.ComputeError) {
-                {
+            header = {
+                if (accountsCard != null && accountsCard !is CardWithCallbacks.ComputeError) {
                     UnifiedCardRenderer(
                         cardWithCallbacks = accountsCard,
                         modifier = Modifier
@@ -693,7 +704,7 @@ fun DashboardGlanceTab(
                         ),
                     )
                 }
-            } else null,
+            },
         )
     }
 }

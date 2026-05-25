@@ -420,6 +420,9 @@
   </div>
 </div>
 
+<div id="nprogress"></div>
+<div id="toast-container"></div>
+
 <!-- ───────────────────── Script ───────────────────────────── -->
 <script>
 (function () {
@@ -461,6 +464,16 @@
   overlay.addEventListener('click', closeSidebar);
   window.addEventListener('hashchange', route);
   modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+  /* T5-3: Global keyboard shortcuts */
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'Escape') { closeModal(); }
+    if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (location.hash.startsWith('#/records') || location.hash.startsWith('#/dashboard') || location.hash === '') {
+        openAddTransaction();
+      }
+    }
+  });
 
   /* ── Auth ─────────────────────────────────────────────── */
   async function doLogin() {
@@ -518,8 +531,17 @@
   /* ── Navigation ───────────────────────────────────────── */
   function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
 
+  const PAGE_TITLES = {
+    '#/dashboard': 'Dashboard', '#/records': 'Records', '#/accounts': 'Accounts',
+    '#/budgets': 'Budgets', '#/loans': 'Loans', '#/planned-payments': 'Planned Payments',
+    '#/categories': 'Categories', '#/analytics': 'Analytics', '#/tags': 'Tags',
+    '#/templates': 'Templates', '#/settings': 'Settings',
+  };
+
   function route() {
     const hash = location.hash || '#/dashboard';
+    const pageName = Object.entries(PAGE_TITLES).find(([k]) => hash.startsWith(k))?.[1] || 'OssWallet';
+    document.title = 'OssWallet — ' + pageName;
     updateActiveNav(hash); closeSidebar();
     if      (hash.startsWith('#/dashboard'))        renderDashboard();
     else if (hash.startsWith('#/records'))          renderRecords();
@@ -550,9 +572,9 @@
   /* ── UI helpers ───────────────────────────────────────── */
   function showLogin() { loginPage.style.display = 'flex'; appPage.style.display = 'none'; setTimeout(() => document.getElementById('code-input').focus(), 100); }
   function showApp()   { loginPage.style.display = 'none';  appPage.style.display = 'flex'; }
-  function setContent(html) { content.innerHTML = html; }
-  function showSpinner() { setContent('<div class="loading-wrap"><div class="spinner"></div></div>'); }
-  function showError(msg) { setContent(`<div class="alert alert-error">${esc(msg)}</div>`); }
+  function setContent(html) { content.innerHTML = html; endProgress(); }
+  function showSpinner() { startProgress(); setContent('<div class="loading-wrap"><div class="spinner"></div></div>'); }
+  function showError(msg) { endProgress(); setContent(`<div class="alert alert-error">${esc(msg)}</div>`); }
 
   /* ── Formatters ───────────────────────────────────────── */
   function fmt(amount, currency) {
@@ -579,7 +601,7 @@
   /* ── API helpers ──────────────────────────────────────── */
   async function apiFetch(path) {
     const res = await fetch(baseUrl + path, { headers: { 'Authorization': 'Bearer ' + token } });
-    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showLogin(); throw new Error('Session expired'); }
+    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showToast('Session expired. Please log in again.', 'info'); showLogin(); throw new Error('Session expired'); }
     return res.json();
   }
 
@@ -589,7 +611,7 @@
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: body !== undefined ? JSON.stringify(body) : undefined
     });
-    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showLogin(); throw new Error('Session expired'); }
+    if (res.status === 401) { token = ''; sessionStorage.removeItem('oss_token'); showToast('Session expired. Please log in again.', 'info'); showLogin(); throw new Error('Session expired'); }
     try { return await res.json(); } catch { return { success: res.ok }; }
   }
 
@@ -597,15 +619,46 @@
   function openModal(titleHtml, bodyHtml, onConfirm, confirmLabel) {
     modalTitle.innerHTML = titleHtml;
     modalBody.innerHTML  = bodyHtml;
+    /* T1-2: always reset button to known clean state */
+    modalConfBtn.className   = 'btn btn-primary';
+    modalConfBtn.disabled    = false;
+    modalConfBtn.style.display = (confirmLabel === null) ? 'none' : '';
     modalConfBtn.textContent = confirmLabel || 'Confirm';
     modalConfBtn.onclick = () => { if (onConfirm) onConfirm(); };
     modalOverlay.classList.add('open');
+    document.body.classList.add('modal-open');
+    /* T2-4: auto-focus first interactive field */
+    setTimeout(() => {
+      const first = modalBody.querySelector('input:not([type=hidden]):not([disabled]), select, textarea');
+      if (first) first.focus();
+    }, 60);
+    /* T2-5: Enter key submits */
+    const modalBox = document.getElementById('modal-box');
+    if (modalBox) {
+      const handler = e => {
+        if (e.key === 'Enter' && !e.shiftKey && !modalConfBtn.disabled && modalConfBtn.style.display !== 'none' && document.activeElement?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          modalConfBtn.click();
+        }
+      };
+      if (modalBox._enterHandler) modalBox.removeEventListener('keydown', modalBox._enterHandler);
+      modalBox.addEventListener('keydown', handler);
+      modalBox._enterHandler = handler;
+    }
   }
 
   function closeModal() {
     modalOverlay.classList.remove('open');
+    document.body.classList.remove('modal-open');
     modalConfBtn.onclick = null;
     modalConfBtn.style.display = '';
+    modalConfBtn.disabled = false;
+    modalConfBtn.className = 'btn btn-primary';
+    const modalBox = document.getElementById('modal-box');
+    if (modalBox && modalBox._enterHandler) {
+      modalBox.removeEventListener('keydown', modalBox._enterHandler);
+      delete modalBox._enterHandler;
+    }
   }
 
   function confirmDelete(message, onConfirm) {
@@ -629,6 +682,68 @@
   }
   function formRow(...fields) {
     return `<div class="form-row">${fields.join('')}</div>`;
+  }
+
+  /* ── Toast notifications (T2-1) ───────────────────────── */
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(24px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  }
+
+  /* ── Top progress bar (T2-6) ──────────────────────────── */
+  function startProgress() {
+    const el = document.getElementById('nprogress');
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.width = '0';
+    el.style.opacity = '1';
+    requestAnimationFrame(() => {
+      el.style.transition = 'width 1.2s cubic-bezier(.4,0,.2,1)';
+      el.style.width = '75%';
+    });
+  }
+  function endProgress() {
+    const el = document.getElementById('nprogress');
+    if (!el) return;
+    el.style.transition = 'width .2s ease, opacity .3s ease';
+    el.style.width = '100%';
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.width = '0'; el.style.transition = 'none'; }, 300); }, 200);
+  }
+
+  /* ── Button loading state (T2-2) ──────────────────────── */
+  async function withLoading(btn, fn) {
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:4px"></span>Saving…';
+    try { await fn(); } finally { btn.disabled = false; btn.innerHTML = orig; }
+  }
+
+  /* ── Field validation (T2-3) ──────────────────────────── */
+  function showFieldError(elId, msg) {
+    const el = typeof elId === 'string' ? document.getElementById(elId) : elId;
+    if (!el) return;
+    el.classList.add('field-error');
+    const prev = el.parentNode && el.parentNode.querySelector('.field-error-msg');
+    if (prev) prev.remove();
+    const span = document.createElement('span');
+    span.className = 'field-error-msg';
+    span.textContent = msg;
+    if (el.parentNode) el.parentNode.insertBefore(span, el.nextSibling);
+    el.focus();
+  }
+  function clearFieldErrors(container) {
+    if (!container) return;
+    container.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+    container.querySelectorAll('.field-error-msg').forEach(el => el.remove());
   }
 
   /* ── Chart helpers ────────────────────────────────────── */
@@ -1272,7 +1387,8 @@
     const params      = new URLSearchParams(location.hash.split('?')[1] || '');
     const accountId   = params.get('accountId') || '';
     const accountName = params.get('accountName') ? decodeURIComponent(params.get('accountName')) : '';
-    const page        = parseInt(params.get('page') || '0', 10);
+    let page          = parseInt(params.get('page') || '0', 10);
+    if (isNaN(page) || page < 0) page = 0;
     const type        = params.get('type') || '';
     const dateFrom    = params.get('dateFrom') || '';
     const dateTo      = params.get('dateTo') || '';
@@ -1440,8 +1556,11 @@
       ${formRow(formField('Name', `<input type="text" id="tx-name" placeholder="e.g. Grocery run" value="${esc(tx?.title||'')}">`),
                 formField('Amount', `<input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}">`))}
       ${formRow(formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5">`),
-                formField('Type', `<select id="tx-type"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
+                formField('Type', `<select id="tx-type" onchange="document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
       ${formField('Account', `<select id="tx-account">${accOptions()}</select>`)}
+      <div id="tx-to-account-row" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'':'display:none'}">
+        ${formField('To Account', `<select id="tx-to-account"><option value="">— Select destination —</option>${accOptions()}</select>`)}
+      </div>
       ${formField('Category', `<select id="tx-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
       ${formRow(formField('Date', `<input type="datetime-local" id="tx-date" value="${tx ? new Date(tx.date).toISOString().slice(0,16) : ''}">`),
                 formField('Status', `<select id="tx-status"><option value="CLEARED" ${(tx?.status||'CLEARED')==='CLEARED'?'selected':''}>Cleared</option><option value="UNCLEARED" ${tx?.status==='UNCLEARED'?'selected':''}>Uncleared</option><option value="RECONCILE" ${tx?.status==='RECONCILE'?'selected':''}>Reconcile</option></select>`))}
@@ -1471,17 +1590,19 @@
 
   window.submitAddTransaction = async function () {
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    clearFieldErrors(modalBody);
     const name = get('tx-name');
-    if (!name) { alert('Name is required.'); return; }
+    if (!name) { showFieldError('tx-name', 'Name is required.'); return; }
     const amount = parseFloat(get('tx-amount'));
-    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+    if (isNaN(amount) || amount <= 0) { showFieldError('tx-amount', 'Enter a valid positive amount.'); return; }
+    const txType = get('tx-type');
     const warrantyEl = document.getElementById('tx-warranty');
     const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
     const body = {
       name,
       amount,
       currency:         get('tx-currency') || cachedSettings.baseCurrency,
-      transactionType:  get('tx-type'),
+      transactionType:  txType,
       accountId:        get('tx-account') || null,
       categoryId:       parseInt(get('tx-category')) || 0,
       timestamp:        new Date(get('tx-date') || Date.now()).getTime(),
@@ -1492,29 +1613,35 @@
       tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
       warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
     };
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    if (txType === 'TRANSFER') {
+      const toAccId = get('tx-to-account');
+      if (!toAccId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
+      if (toAccId === body.accountId) { showFieldError('tx-to-account', 'Destination must differ from source account.'); return; }
+      body.toAccountId = toAccId;
+    }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/transactions', body);
-      closeModal();
-      if (res.success) { renderRecords(); } else { alert('Failed to save record: ' + (res.error || 'Unknown error')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error saving record.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Record'; }
+      if (res.success) { closeModal(); renderRecords(); showToast('Record saved!'); }
+      else { showToast('Failed to save: ' + (res.error || 'Unknown error'), 'error'); }
+    });
   };
 
   window.openEditTransaction = async function (id) {
     const resp = await apiFetch(`/api/transactions/${id}`);
-    if (!resp.success) { alert('Could not load transaction.'); return; }
+    if (!resp.success) { showToast('Could not load transaction.', 'error'); return; }
     const tx = resp.data;
     const body = txFormBody(tx);
     openModal('Edit Record', body, async () => {
       const get = i => { const el = document.getElementById(i); return el ? el.value.trim() : ''; };
+      clearFieldErrors(modalBody);
+      const txType = get('tx-type');
       const warrantyEl = document.getElementById('tx-warranty');
       const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
       const payload = {
         name:             get('tx-name') || undefined,
         amount:           parseFloat(get('tx-amount')) || undefined,
         currency:         get('tx-currency') || undefined,
-        transactionType:  get('tx-type') || undefined,
+        transactionType:  txType || undefined,
         accountId:        get('tx-account') || undefined,
         categoryId:       parseInt(get('tx-category')) || undefined,
         timestamp:        new Date(get('tx-date')).getTime() || undefined,
@@ -1525,18 +1652,25 @@
         tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
         warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
       };
-      const res = await apiWrite('PUT', `/api/transactions/${id}`, payload);
-      closeModal();
-      if (res.success) renderRecords(); else alert('Failed to update: ' + (res.error||''));
+      if (txType === 'TRANSFER') {
+        const toAccId = get('tx-to-account');
+        if (!toAccId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
+        payload.toAccountId = toAccId;
+      }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/transactions/${id}`, payload);
+        if (res.success) { closeModal(); renderRecords(); showToast('Record updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
     }, 'Save Changes');
-    modalConfBtn.className = 'btn btn-primary';
     if (tx.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = tx.accountId; }
     if (tx.categoryId) { const el = document.getElementById('tx-category'); if (el) el.value = tx.categoryId; }
+    if (tx.toAccountId) { const el = document.getElementById('tx-to-account'); if (el) el.value = tx.toAccountId; }
   };
 
   window.openTxDetail = async function (id) {
     const resp = await apiFetch(`/api/transactions/${id}`);
-    if (!resp.success) { alert('Could not load transaction.'); return; }
+    if (!resp.success) { showToast('Could not load transaction.', 'error'); return; }
     const tx = resp.data;
     const amtCls = tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
     const sign   = tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
@@ -1568,8 +1702,7 @@
         <button class="btn btn-danger btn-sm" onclick="closeModal();deleteTransaction('${tx.id}','${esc(tx.title)}')">🗑️ Delete</button>
       </div>
     </div>`;
-    openModal(`Transaction Detail`, body, null, '');
-    modalConfBtn.style.display = 'none';
+    openModal(`Transaction Detail`, body, null, null);
   };
 
   window.deleteTransaction = function (id, name) {
@@ -1577,10 +1710,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/transactions/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { renderRecords(); } else { alert('Failed to delete record.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting record.'); }
+        if (res.success) { renderRecords(); showToast('Record deleted.'); }
+        else { showToast('Failed to delete record.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting record.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -1640,23 +1773,21 @@
   };
 
   window.submitAddAccount = async function () {
+    clearFieldErrors(modalBody);
     const name       = document.getElementById('acc-name')?.value.trim();
     const currency   = document.getElementById('acc-currency')?.value.trim();
     const type       = document.getElementById('acc-type')?.value;
     const initBalStr = document.getElementById('acc-init-bal')?.value;
     const initialBalance = initBalStr ? parseFloat(initBalStr) : undefined;
-    if (!name)     { alert('Account name is required.'); return; }
-    if (!currency) { alert('Currency is required.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    if (!name)     { showFieldError('acc-name', 'Account name is required.'); return; }
+    if (!currency) { showFieldError('acc-currency', 'Currency is required.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const body = { name, currencyCode: currency, structureType: type };
       if (initialBalance !== undefined && !isNaN(initialBalance)) body.initialBalance = initialBalance;
       const res = await apiWrite('POST', '/api/accounts', body);
-      closeModal();
-      if (res.success) { await warmCache(); renderAccounts(); }
-      else { alert('Failed to create account: ' + (res.error || '')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error creating account.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Account'; }
+      if (res.success) { closeModal(); await warmCache(); renderAccounts(); showToast('Account created!'); }
+      else { showToast('Failed to create account: ' + (res.error || ''), 'error'); }
+    });
   };
 
   window.deleteAccount = function (id, name) {
@@ -1664,11 +1795,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/accounts/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { await warmCache(); renderAccounts(); }
-        else { alert('Failed to delete account.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting account.'); }
+        if (res.success) { await warmCache(); renderAccounts(); showToast('Account deleted.'); }
+        else { showToast('Failed to delete account.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting account.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -1739,20 +1869,19 @@
   };
 
   window.submitAddBudget = async function () {
+    clearFieldErrors(modalBody);
     const name     = document.getElementById('bud-name')?.value.trim();
     const currency = document.getElementById('bud-currency')?.value.trim();
     const limit    = parseFloat(document.getElementById('bud-limit')?.value || '0');
     const period   = document.getElementById('bud-period')?.value;
     const alert_   = parseFloat(document.getElementById('bud-alert')?.value || '0.8');
-    if (!name)           { alert('Name is required.'); return; }
-    if (isNaN(limit) || limit <= 0) { alert('Enter a valid limit amount.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    if (!name)                    { showFieldError('bud-name', 'Name is required.'); return; }
+    if (isNaN(limit) || limit <= 0) { showFieldError('bud-limit', 'Enter a valid limit amount.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/budgets', { name, currency, limitAmount: limit, timelineType: period, alertThreshold: alert_ });
-      closeModal();
-      if (res.success) { renderBudgets(); } else { alert('Failed to create budget: ' + (res.error || '')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error creating budget.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Budget'; }
+      if (res.success) { closeModal(); renderBudgets(); showToast('Budget created!'); }
+      else { showToast('Failed to create budget: ' + (res.error || ''), 'error'); }
+    });
   };
 
   window.deleteBudget = function (id, name) {
@@ -1760,10 +1889,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/budgets/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { renderBudgets(); } else { alert('Failed to delete budget.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting budget.'); }
+        if (res.success) { renderBudgets(); showToast('Budget deleted.'); }
+        else { showToast('Failed to delete budget.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting budget.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -1852,10 +1981,10 @@
     const start     = document.getElementById('ln-start')?.value;
     const settle    = document.getElementById('ln-settle')?.value;
     const rate      = parseFloat(document.getElementById('ln-rate')?.value || '0');
-    if (!name)                        { alert('Name is required.'); return; }
-    if (isNaN(principal) || principal <= 0) { alert('Enter a valid principal amount.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    clearFieldErrors(modalBody);
+    if (!name)                            { showFieldError('ln-name', 'Name is required.'); return; }
+    if (isNaN(principal) || principal <= 0) { showFieldError('ln-principal', 'Enter a valid principal amount.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/loans', {
         name, principalAmount: principal, currency, loanType: type,
         lenderOrBorrowerName: party || undefined,
@@ -1863,10 +1992,9 @@
         expectedSettlementDate: settle || undefined,
         interestRate: rate || undefined,
       });
-      closeModal();
-      if (res.success) { renderLoans(); } else { alert('Failed to create loan: ' + (res.error || '')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error creating loan.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Loan'; }
+      if (res.success) { closeModal(); renderLoans(); showToast('Loan created!'); }
+      else { showToast('Failed to create loan: ' + (res.error || ''), 'error'); }
+    });
   };
 
   window.deleteLoan = function (id, name) {
@@ -1874,10 +2002,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/loans/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { renderLoans(); } else { alert('Failed to delete loan.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting loan.'); }
+        if (res.success) { renderLoans(); showToast('Loan deleted.'); }
+        else { showToast('Failed to delete loan.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting loan.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -1970,15 +2098,17 @@
   window.confirmPlanned = async function (id) {
     try {
       const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/confirm`);
-      if (res.success) { renderPlannedPayments(); } else { alert('Failed to confirm payment.'); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error confirming payment.'); }
+      if (res.success) { renderPlannedPayments(); showToast('Payment confirmed!'); }
+      else { showToast('Failed to confirm payment.', 'error'); }
+    } catch (e) { if (e.message !== 'Session expired') showToast('Error confirming payment.', 'error'); }
   };
 
   window.skipPlanned = async function (id) {
     try {
       const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/skip`);
-      if (res.success) { renderPlannedPayments(); } else { alert('Failed to skip payment.'); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error skipping payment.'); }
+      if (res.success) { renderPlannedPayments(); showToast('Payment skipped.'); }
+      else { showToast('Failed to skip payment.', 'error'); }
+    } catch (e) { if (e.message !== 'Session expired') showToast('Error skipping payment.', 'error'); }
   };
 
   window.openAddPlanned = function () {
@@ -2024,10 +2154,10 @@
     const interval= parseInt(document.getElementById('pp-interval')?.value || '1', 10);
     const start   = document.getElementById('pp-start')?.value;
     const auto    = document.getElementById('pp-auto')?.checked || false;
-    if (!name)             { alert('Name is required.'); return; }
-    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    clearFieldErrors(modalBody);
+    if (!name)                      { showFieldError('pp-name', 'Name is required.'); return; }
+    if (isNaN(amount) || amount <= 0) { showFieldError('pp-amount', 'Enter a valid amount.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/planned-payments', {
         name, amount, currency, transactionType: type,
         accountId: account || undefined,
@@ -2037,10 +2167,9 @@
         startDate: start || undefined,
         autoConfirm: auto,
       });
-      closeModal();
-      if (res.success) { renderPlannedPayments(); } else { alert('Failed to create planned payment: ' + (res.error || '')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error creating planned payment.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Payment'; }
+      if (res.success) { closeModal(); renderPlannedPayments(); showToast('Planned payment created!'); }
+      else { showToast('Failed to create: ' + (res.error || ''), 'error'); }
+    });
   };
 
   window.deletePlanned = function (id, name) {
@@ -2048,10 +2177,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/planned-payments/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { renderPlannedPayments(); } else { alert('Failed to delete planned payment.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting.'); }
+        if (res.success) { renderPlannedPayments(); showToast('Planned payment deleted.'); }
+        else { showToast('Failed to delete planned payment.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -2124,19 +2253,17 @@
   };
 
   window.submitAddCategory = async function () {
+    clearFieldErrors(modalBody);
     const name   = document.getElementById('cat-name')?.value.trim();
     const parent = document.getElementById('cat-parent')?.value || undefined;
     const nature = document.getElementById('cat-nature')?.value;
     const color  = document.getElementById('cat-color')?.value.trim();
-    if (!name) { alert('Name is required.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/categories', { name, parentId: parent || undefined, nature, colorHex: color || undefined });
-      closeModal();
-      if (res.success) { await warmCache(); renderCategories(); }
-      else { alert('Failed to create category: ' + (res.error || '')); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error creating category.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Category'; }
+      if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category created!'); }
+      else { showToast('Failed to create category: ' + (res.error || ''), 'error'); }
+    });
   };
 
   window.deleteCategory = function (id, name) {
@@ -2144,11 +2271,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/categories/${encodeURIComponent(id)}`);
         closeModal();
-        if (res.success) { await warmCache(); renderCategories(); }
-        else { alert('Failed to delete category.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting.'); }
+        if (res.success) { await warmCache(); renderCategories(); showToast('Category deleted.'); }
+        else { showToast('Failed to delete category.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -2308,10 +2434,10 @@
       try {
         const res = await apiWrite('DELETE', `/api/tags/${encodeURIComponent(name)}`);
         closeModal();
-        if (res.success) { renderTags(); } else { alert('Failed to delete tag.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting tag.'); }
+        if (res.success) { renderTags(); showToast('Tag deleted.'); }
+        else { showToast('Failed to delete tag.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting tag.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -2380,9 +2506,10 @@
   };
 
   window.submitAddTemplate = async function () {
+    clearFieldErrors(modalBody);
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const name = get('tpl-name');
-    if (!name) { alert('Template name is required.'); return; }
+    if (!name) { showFieldError('tpl-name', 'Template name is required.'); return; }
     const payload = {
       name,
       amount:          parseFloat(get('tpl-amount')) || 0,
@@ -2396,18 +2523,16 @@
       note:            get('tpl-note') || null,
       transactionStatus: 'CLEARED',
     };
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/templates', payload);
-      closeModal();
-      if (res.success) renderTemplates(); else alert('Failed: ' + (res.error||''));
-    } catch(e) { if (e.message !== 'Session expired') alert('Error saving template.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save Template'; }
+      if (res.success) { closeModal(); renderTemplates(); showToast('Template saved!'); }
+      else { showToast('Failed: ' + (res.error||''), 'error'); }
+    });
   };
 
   window.openEditTemplate = async function (id) {
     const resp = await apiFetch(`/api/templates/${id}`);
-    if (!resp.success) { alert('Could not load template.'); return; }
+    if (!resp.success) { showToast('Could not load template.', 'error'); return; }
     const t = resp.data;
     const body = templateFormBody(t);
     openModal('Edit Template', body, async () => {
@@ -2424,18 +2549,19 @@
         tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
         note:            get('tpl-note') || undefined,
       };
-      const res = await apiWrite('PUT', `/api/templates/${id}`, payload);
-      closeModal();
-      if (res.success) renderTemplates(); else alert('Failed: ' + (res.error||''));
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/templates/${id}`, payload);
+        if (res.success) { closeModal(); renderTemplates(); showToast('Template updated!'); }
+        else { showToast('Failed: ' + (res.error||''), 'error'); }
+      });
     }, 'Save Changes');
-    modalConfBtn.className = 'btn btn-primary';
     if (t.accountId) { const el = document.getElementById('tpl-account'); if (el) el.value = t.accountId; }
     if (t.categoryId) { const el = document.getElementById('tpl-category'); if (el) el.value = t.categoryId; }
   };
 
   window.useTemplate = async function (id) {
     const resp = await apiFetch(`/api/templates/${id}`);
-    if (!resp.success) { alert('Could not load template.'); return; }
+    if (!resp.success) { showToast('Could not load template.', 'error'); return; }
     const t = resp.data;
     /* Navigate to Records, open Add Record pre-filled from template */
     location.hash = '#/records';
@@ -2457,11 +2583,13 @@
 
   window.deleteTemplate = function (id, name) {
     confirmDelete(`Delete template "${name}"?`, async () => {
-      const res = await apiWrite('DELETE', `/api/templates/${id}`);
-      closeModal();
-      if (res.success) renderTemplates(); else alert('Failed to delete.');
+      try {
+        const res = await apiWrite('DELETE', `/api/templates/${id}`);
+        closeModal();
+        if (res.success) { renderTemplates(); showToast('Template deleted.'); }
+        else { showToast('Failed to delete.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting template.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* ══════════════════════════════════════════════════════
@@ -2667,19 +2795,18 @@
   };
 
   window.submitLogRepayment = async function (loanId) {
+    clearFieldErrors(modalBody);
     const amount = parseFloat(document.getElementById('rp-amount')?.value || '0');
     const date = document.getElementById('rp-date')?.value;
     const note = document.getElementById('rp-note')?.value.trim();
-    if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
-    modalConfBtn.disabled = true; modalConfBtn.textContent = 'Saving…';
-    try {
+    if (isNaN(amount) || amount <= 0) { showFieldError('rp-amount', 'Enter a valid amount.'); return; }
+    await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', `/api/loans/${encodeURIComponent(loanId)}/payments`, {
         amount, date: date ? new Date(date).getTime() : Date.now(), note: note || undefined
       });
-      closeModal();
-      if (res.success) { renderLoanDetail(loanId); } else { alert('Failed to log repayment.'); }
-    } catch (e) { if (e.message !== 'Session expired') alert('Error logging repayment.'); }
-    finally { modalConfBtn.disabled = false; modalConfBtn.textContent = 'Save'; }
+      if (res.success) { closeModal(); renderLoanDetail(loanId); showToast('Repayment logged!'); }
+      else { showToast('Failed to log repayment.', 'error'); }
+    });
   };
 
   window.deleteRepayment = function (loanId, paymentId) {
@@ -2687,17 +2814,17 @@
       try {
         const res = await apiWrite('DELETE', `/api/loans/${encodeURIComponent(loanId)}/payments/${encodeURIComponent(paymentId)}`);
         closeModal();
-        if (res.success) { renderLoanDetail(loanId); } else { alert('Failed to delete repayment.'); }
-      } catch (e) { if (e.message !== 'Session expired') alert('Error deleting repayment.'); }
+        if (res.success) { renderLoanDetail(loanId); showToast('Repayment deleted.'); }
+        else { showToast('Failed to delete repayment.', 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting repayment.', 'error'); }
     });
-    modalConfBtn.className = 'btn btn-danger';
   };
 
   /* Clone transaction */
   window.cloneTransaction = async function (id) {
     try {
       const res = await apiFetch(`/api/transactions/${encodeURIComponent(id)}`);
-      if (!res.success) { alert('Failed to load transaction.'); return; }
+      if (!res.success) { showToast('Failed to load transaction.', 'error'); return; }
       const tx = res.data;
       openAddTransaction({
         title: tx.title + ' (copy)',
@@ -2711,7 +2838,7 @@
         tags: tx.tags,
         paymentMethod: tx.paymentMethod,
       });
-    } catch (e) { if (e.message !== 'Session expired') alert('Error cloning transaction.'); }
+    } catch (e) { if (e.message !== 'Session expired') showToast('Error cloning transaction.', 'error'); }
   };
 
   async function renderSettings() {
@@ -2764,22 +2891,15 @@
   window.saveSettings = async function () {
     const currency  = document.getElementById('set-currency')?.value.trim();
     const precision = parseInt(document.getElementById('set-precision')?.value || '2', 10);
-    if (!currency) { alert('Currency is required.'); return; }
+    if (!currency) { showFieldError('set-currency', 'Currency is required.'); return; }
     const btn = document.getElementById('set-save-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-    try {
+    if (btn) await withLoading(btn, async () => {
       const res = await apiWrite('PUT', '/api/settings', { baseCurrency: currency, decimalPrecision: precision });
       if (res.success) {
         cachedSettings = { ...cachedSettings, baseCurrency: currency, decimalPrecision: precision };
-        if (btn) { btn.textContent = 'Saved ✓'; setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; } }, 1500); }
-      } else {
-        alert('Failed to save settings: ' + (res.error || ''));
-        if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; }
-      }
-    } catch (e) {
-      if (e.message !== 'Session expired') alert('Error saving settings.');
-      if (btn) { btn.disabled = false; btn.textContent = 'Save Settings'; }
-    }
+        showToast('Settings saved!');
+      } else { showToast('Failed to save settings: ' + (res.error || ''), 'error'); }
+    });
   };
 
   /* ══════════════════════════════════════════════════════
@@ -3092,16 +3212,18 @@
     try {
       const res = await apiWrite('POST', '/api/dashboard/cards', { cardType: serialName });
       if (res.success) { closeModal(); renderDashboard(); }
-      else alert('Failed to add card: ' + (res.error || ''));
-    } catch (e) { if (e.message !== 'Session expired') alert('Error adding card.'); }
+      else { showToast('Failed to add card: ' + (res.error || ''), 'error'); }
+    } catch (e) { if (e.message !== 'Session expired') showToast('Error adding card.', 'error'); }
   };
 
-  window.removeDashboardCard = async function (cardId) {
-    try {
-      const res = await apiWrite('DELETE', `/api/dashboard/cards/${encodeURIComponent(cardId)}`);
-      if (res.success) { closeModal(); renderDashboard(); }
-      else alert('Failed to remove card: ' + (res.error || ''));
-    } catch (e) { if (e.message !== 'Session expired') alert('Error removing card.'); }
+  window.removeDashboardCard = function (cardId) {
+    confirmDelete('Remove this card from your dashboard?', async () => {
+      try {
+        const res = await apiWrite('DELETE', `/api/dashboard/cards/${encodeURIComponent(cardId)}`);
+        if (res.success) { closeModal(); renderDashboard(); showToast('Card removed.'); }
+        else { showToast('Failed to remove card: ' + (res.error || ''), 'error'); }
+      } catch (e) { if (e.message !== 'Session expired') showToast('Error removing card.', 'error'); }
+    });
   };
 
   window.reorderDashboardCard = async function (cardIds, idx, dir) {
@@ -3112,8 +3234,8 @@
     try {
       const res = await apiWrite('PUT', '/api/dashboard/cards/reorder', { cardIds: newIds });
       if (res.success) { closeModal(); renderDashboard(); }
-      else alert('Failed to reorder: ' + (res.error || ''));
-    } catch (e) { if (e.message !== 'Session expired') alert('Error reordering.'); }
+      else { showToast('Failed to reorder: ' + (res.error || ''), 'error'); }
+    } catch (e) { if (e.message !== 'Session expired') showToast('Error reordering.', 'error'); }
   };
 
   /* make doLogout callable from settings page button */

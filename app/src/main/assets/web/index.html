@@ -734,6 +734,72 @@
     return [...document.querySelectorAll(`#${groupId} input[type=checkbox]:checked`)].map(el => el.value);
   }
 
+  /* ── Custom Select component (T3-1) ──────────────────────────────────── */
+  function buildSelect(id, options, currentValue, placeholder, searchable, onchangeAttr) {
+    placeholder = placeholder || '— Select —';
+    const selOpt = options.find(o => String(o.value) === String(currentValue));
+    const displayLabel = selOpt ? selOpt.label : placeholder;
+    const hiddenOpts = options.map(o =>
+      `<option value="${esc(String(o.value))}" ${String(o.value)===String(currentValue)?'selected':''}>${esc(o.label)}</option>`
+    ).join('');
+    const visibleOpts = `<div class="cs-option" data-value="" onclick="csSelect(this,'${id}')">${esc(placeholder)}</div>` +
+      options.map(o =>
+        `<div class="cs-option${String(o.value)===String(currentValue)?' selected':''}" data-value="${esc(String(o.value))}" onclick="csSelect(this,'${id}')">${esc(o.label)}</div>`
+      ).join('');
+    return `<div class="custom-select" id="${id}-cs">
+    <select id="${id}" style="display:none"${onchangeAttr ? ` onchange="${onchangeAttr}"` : ''}>${hiddenOpts}</select>
+    <div class="cs-trigger" tabindex="0" onclick="csToggle(event,'${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();csToggle(event,'${id}')}">
+      <span class="cs-label" id="${id}-lbl">${esc(displayLabel)}</span>
+      <span class="cs-chevron">▾</span>
+    </div>
+    <div class="cs-dropdown" id="${id}-dd" style="display:none">
+      ${searchable ? `<div class="cs-search-wrap"><input type="text" placeholder="Search…" onclick="event.stopPropagation()" oninput="csFilter(this,'${id}')"></div>` : ''}
+      <div id="${id}-opts">${visibleOpts}</div>
+    </div>
+  </div>`;
+  }
+
+  window.csToggle = function(e, id) {
+    e.stopPropagation();
+    const dd = document.getElementById(id + '-dd');
+    if (!dd) return;
+    const isOpen = dd.style.display !== 'none';
+    document.querySelectorAll('.cs-dropdown').forEach(d => { d.style.display = 'none'; });
+    document.querySelectorAll('.custom-select').forEach(c => c.classList.remove('open'));
+    if (!isOpen) {
+      dd.style.display = '';
+      const cs = document.getElementById(id + '-cs');
+      if (cs) cs.classList.add('open');
+      const search = dd.querySelector('.cs-search-wrap input');
+      if (search) search.focus();
+    }
+  };
+
+  window.csSelect = function(optEl, id) {
+    const value = optEl.dataset.value;
+    const label = optEl.textContent.trim();
+    const sel = document.getElementById(id);
+    const lbl = document.getElementById(id + '-lbl');
+    const cs  = document.getElementById(id + '-cs');
+    const dd  = document.getElementById(id + '-dd');
+    if (sel) sel.value = value;
+    if (lbl) lbl.textContent = label;
+    if (cs) { cs.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected')); optEl.classList.add('selected'); cs.classList.remove('open'); }
+    if (dd) dd.style.display = 'none';
+    if (sel) sel.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  window.csFilter = function(input, id) {
+    const q = input.value.toLowerCase();
+    const opts = document.querySelectorAll(`#${id}-opts .cs-option`);
+    opts.forEach(o => { o.style.display = o.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  };
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.cs-dropdown').forEach(d => { d.style.display = 'none'; });
+    document.querySelectorAll('.custom-select').forEach(c => c.classList.remove('open'));
+  });
+
   /* ── Empty state helper ───────────────────────────────── */
   function emptyState(icon, message, actionLabel, onAction) {
     return `<div class="empty-state">
@@ -1525,26 +1591,16 @@
         </div>
         <div class="filter-grid">
           <div class="form-field"><label>Type</label>
-            <select id="f-type">
-              <option value="" ${!type?'selected':''}>All</option>
-              <option value="INCOME" ${type==='INCOME'?'selected':''}>Income</option>
-              <option value="EXPENSE" ${type==='EXPENSE'?'selected':''}>Expense</option>
-              <option value="TRANSFER" ${type==='TRANSFER'?'selected':''}>Transfer</option>
-            </select>
+            ${buildSelect('f-type',[{value:'',label:'All'},{value:'INCOME',label:'Income'},{value:'EXPENSE',label:'Expense'},{value:'TRANSFER',label:'Transfer'}],type||'','All',false)}
           </div>
           <div class="form-field"><label>Account</label>
-            <select id="f-account"><option value="">All Accounts</option>${accFilterOpts}</select>
+            ${buildSelect('f-account',[{value:'',label:'All Accounts'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),accountId||'','All Accounts',true)}
           </div>
           <div class="form-field"><label>Category</label>
-            <select id="f-cat"><option value="">All</option>${catOptions(false)}</select>
+            ${buildSelect('f-cat',[{value:'',label:'All'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),categoryId||'','All',true)}
           </div>
           <div class="form-field"><label>Status</label>
-            <select id="f-status">
-              <option value="" ${!status?'selected':''}>All</option>
-              <option value="CLEARED" ${status==='CLEARED'?'selected':''}>Cleared</option>
-              <option value="RECONCILE" ${status==='RECONCILE'?'selected':''}>Reconcile</option>
-              <option value="UNCLEARED" ${status==='UNCLEARED'?'selected':''}>Uncleared</option>
-            </select>
+            ${buildSelect('f-status',[{value:'',label:'All'},{value:'CLEARED',label:'Cleared'},{value:'RECONCILE',label:'Reconcile'},{value:'UNCLEARED',label:'Uncleared'}],status||'','All',false)}
           </div>
           <div class="form-field"><label>Date From</label><input type="date" id="f-from" value="${esc(dateFrom)}"></div>
           <div class="form-field"><label>Date To</label><input type="date" id="f-to" value="${esc(dateTo)}"></div>
@@ -1670,16 +1726,16 @@
         formField('Amount', `<div class="input-group"><span class="input-group-addon" id="tx-amount-prefix">${esc(cur)}</span><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}"></div>`),
         formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5" oninput="const p=document.getElementById('tx-amount-prefix');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
-      ${formRow(formField('Type', `<select id="tx-type" onchange="document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'"><option value="EXPENSE" ${(tx?.type||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${tx?.type==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${tx?.type==='TRANSFER'?'selected':''}>Transfer</option></select>`),
-                formField('Account', `<select id="tx-account">${accOptions()}</select>`))}
+      ${formRow(formField('Type', buildSelect('tx-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(tx?.type||'EXPENSE'),'— Select —',false,"document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'")),
+                formField('Account', buildSelect('tx-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),tx?.accountId||'','— Select account —',true)))}
       <div id="tx-to-account-row" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'':'display:none'}">
-        ${formField('To Account', `<select id="tx-to-account"><option value="">— Select destination —</option>${accOptions()}</select>`)}
+        ${formField('To Account', buildSelect('tx-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),tx?.toAccountId||'','— Select destination —',true))}
       </div>
-      ${formField('Category', `<select id="tx-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formField('Category', buildSelect('tx-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),tx?.categoryId?String(tx.categoryId):'','— None —',true))}
       ${formRow(formField('Date', `<input type="datetime-local" id="tx-date" value="${tx ? new Date(tx.date).toISOString().slice(0,16) : ''}">`),
-                formField('Status', `<select id="tx-status"><option value="CLEARED" ${(tx?.status||'CLEARED')==='CLEARED'?'selected':''}>Cleared</option><option value="UNCLEARED" ${tx?.status==='UNCLEARED'?'selected':''}>Uncleared</option><option value="RECONCILE" ${tx?.status==='RECONCILE'?'selected':''}>Reconcile</option></select>`))}
+                formField('Status', buildSelect('tx-status',[{value:'CLEARED',label:'Cleared'},{value:'UNCLEARED',label:'Uncleared'},{value:'RECONCILE',label:'Reconcile'}],(tx?.status||'CLEARED'),'— Select —',false)))}
       ${formRow(formField('Payee', `<input type="text" id="tx-payee" placeholder="Optional payee" value="${esc(tx?.payee||'')}"> `),
-                formField('Payment Method', `<select id="tx-method">${pmOpts}</select>`))}
+                formField('Payment Method', buildSelect('tx-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(tx?.paymentMethod||'CASH'),'— Select —',false)))}
       ${formField('Tags (comma-separated)', `<input type="text" id="tx-tags" placeholder="food, bills, …" value="${esc((tx?.tags||[]).join(', '))}">`)}
       ${formField('Note', `<textarea id="tx-note" placeholder="Optional note…">${esc(tx?.note||'')}</textarea>`)}
       <div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
@@ -1873,14 +1929,7 @@
       ${formField('Account Name', '<input type="text" id="acc-name" placeholder="e.g. Main Checking">')}
       ${formRow(
         formField('Currency', `<input type="text" id="acc-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('acc-bal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`),
-        formField('Type', `<select id="acc-type">
-          <option value="CHECKING">Checking</option>
-          <option value="SAVINGS">Savings</option>
-          <option value="CREDIT_CARD">Credit Card</option>
-          <option value="INVESTMENT">Investment</option>
-          <option value="CASH">Cash</option>
-          <option value="OTHER">Other</option>
-        </select>`)
+        formField('Type', buildSelect('acc-type',[{value:'CHECKING',label:'Checking'},{value:'SAVINGS',label:'Savings'},{value:'CREDIT_CARD',label:'Credit Card'},{value:'INVESTMENT',label:'Investment'},{value:'CASH',label:'Cash'},{value:'OTHER',label:'Other'}],'CHECKING','— Select —',false))
       )}
       ${formField('Initial Balance (optional)', `<div class="input-group"><span class="input-group-addon" id="acc-bal-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="acc-init-bal" placeholder="0.00" step="0.01"></div>`)}`;
     openModal('Add Account', body, submitAddAccount, 'Save Account');
@@ -1899,15 +1948,7 @@
       ${formField('Account Name', `<input type="text" id="acc-name" value="${esc(acc.name)}">`)}
       ${formRow(
         formField('Currency (read-only)', `<input type="text" id="acc-currency-ro" value="${esc(acc.currency)}" disabled style="opacity:.6">`),
-        formField('Type', `<select id="acc-type">
-          <option value="CHECKING" ${acc.type==='CHECKING'?'selected':''}>Checking</option>
-          <option value="SAVINGS" ${acc.type==='SAVINGS'?'selected':''}>Savings</option>
-          <option value="CREDIT_CARD" ${acc.type==='CREDIT_CARD'?'selected':''}>Credit Card</option>
-          <option value="INVESTMENT" ${acc.type==='INVESTMENT'?'selected':''}>Investment</option>
-          <option value="CASH" ${acc.type==='CASH'?'selected':''}>Cash</option>
-          <option value="DIGITAL_WALLET" ${acc.type==='DIGITAL_WALLET'?'selected':''}>Digital Wallet</option>
-          <option value="OTHER" ${(acc.type==='OTHER'||!['CHECKING','SAVINGS','CREDIT_CARD','INVESTMENT','CASH','DIGITAL_WALLET'].includes(acc.type))?'selected':''}>Other</option>
-        </select>`)
+        formField('Type', buildSelect('acc-type',[{value:'CHECKING',label:'Checking'},{value:'SAVINGS',label:'Savings'},{value:'CREDIT_CARD',label:'Credit Card'},{value:'INVESTMENT',label:'Investment'},{value:'CASH',label:'Cash'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],acc.type||'CHECKING','— Select —',false))
       )}
       <small style="color:var(--text-muted);font-size:0.75rem">Currency cannot be changed after account creation.</small>`;
     openModal(`Edit Account — ${esc(acc.name)}`, body, async () => {
@@ -2009,11 +2050,7 @@
         formField('Limit Amount', `<div class="input-group"><span class="input-group-addon" id="bud-limit-pfx">${esc(cachedSettings.baseCurrency||'USD')}</span><input type="number" id="bud-limit" placeholder="500.00" min="0" step="0.01"></div>`)
       )}
       ${formRow(
-        formField('Period', `<select id="bud-period">
-          <option value="MONTHLY">Monthly</option>
-          <option value="YEARLY">Yearly</option>
-          <option value="WEEKLY">Weekly</option>
-        </select>`),
+        formField('Period', buildSelect('bud-period',[{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'},{value:'WEEKLY',label:'Weekly'}],'MONTHLY','— Select —',false)),
         formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1" placeholder="80"><span class="input-group-addon" data-tip="Notify when this % of budget is spent">%</span></div>`)
       )}
       ${cachedCategories.length ? `<div class="form-field"><label>Track Categories <small style="color:var(--text-muted);font-weight:400">(leave empty to track all)</small></label>${chipCheckboxes('bud-cats', cachedCategories.map(c=>({value:String(c.id),label:c.name})), [])}</div>` : ''}`;
@@ -2045,10 +2082,6 @@
     const resp = await apiFetch(`/api/budgets/${encodeURIComponent(id)}`);
     if (!resp.success) { showToast('Could not load budget.', 'error'); return; }
     const b = resp.data;
-    const periodOpts = [
-      {v:'MONTHLY',l:'Monthly'},{v:'WEEKLY',l:'Weekly'},{v:'YEARLY',l:'Yearly'},
-      {v:'TODAY',l:'Daily'},{v:'QUARTER',l:'Quarterly'},
-    ].map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
     const body = `
       ${formField('Budget Name', `<input type="text" id="bud-name" value="${esc(b.name)}">`)}
       ${formRow(
@@ -2056,7 +2089,7 @@
         formField('Limit Amount', `<div class="input-group"><span class="input-group-addon" id="bud-limit-pfx">${esc(b.currency)}</span><input type="number" id="bud-limit" value="${esc(b.limitAmount||0)}" min="0" step="0.01"></div>`)
       )}
       ${formRow(
-        formField('Period', `<select id="bud-period">${periodOpts}</select>`),
+        formField('Period', buildSelect('bud-period',[{value:'MONTHLY',label:'Monthly'},{value:'WEEKLY',label:'Weekly'},{value:'YEARLY',label:'Yearly'},{value:'TODAY',label:'Daily'},{value:'QUARTER',label:'Quarterly'}],b.timelineType||'MONTHLY','— Select —',false)),
         formField('Alert Threshold (%)', `<div class="input-group"><input type="number" id="bud-alert" value="80" min="0" max="100" step="1"><span class="input-group-addon" data-tip="Notify when this % of budget is spent">%</span></div>`)
       )}
       <small style="color:var(--text-muted);font-size:0.75rem">Alert triggers when spending exceeds the threshold percentage.</small>`;
@@ -2156,7 +2189,7 @@
         formField('Currency', `<input type="text" id="ln-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('ln-principal-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Loan Type', `<select id="ln-type" onchange="const l=document.getElementById('ln-party-label');if(l)l.textContent=this.value==='BORROWED'?'Lender Name':'Borrower Name'"><option value="BORROWED">Borrowed</option><option value="LENT">Lent</option></select>`),
+        formField('Loan Type', buildSelect('ln-type',[{value:'BORROWED',label:'Borrowed'},{value:'LENT',label:'Lent'}],'BORROWED','— Select —',false,"const l=document.getElementById('ln-party-label');if(l)l.textContent=this.value==='BORROWED'?'Lender Name':'Borrower Name'")),
         formField('<span id="ln-party-label">Lender Name</span>', '<input type="text" id="ln-party" placeholder="Person or institution">')
       )}
       ${formRow(
@@ -2359,23 +2392,17 @@
         formField('Currency', `<input type="text" id="pp-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Type', `<select id="pp-type"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option></select>`),
-        formField('Account', `<select id="pp-account">${accOptions()}</select>`)
+        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'}],'EXPENSE','— Select —',false)),
+        formField('Account', buildSelect('pp-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),'','— Select account —',true))
       )}
-      ${formField('Category', `<select id="pp-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— None —',true))}
       ${formRow(
-        formField('Recurrence', `<select id="pp-recur" onchange="document.getElementById('pp-interval-row').style.display=this.value==='ONE_TIME'?'none':''">
-          <option value="ONE_TIME">One Time</option>
-          <option value="DAILY">Daily</option>
-          <option value="WEEKLY">Weekly</option>
-          <option value="MONTHLY" selected>Monthly</option>
-          <option value="YEARLY">Yearly</option>
-        </select>`),
+        formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],'MONTHLY','— Select —',false,'document.getElementById(\'pp-interval-row\').style.display=this.value===\'ONE_TIME\'?\'none\':\'\'') ),
         formField('Interval (days/weeks/months)', '<input type="number" id="pp-interval" value="1" min="1">')
       )}
       <div id="pp-interval-row" style="display:none;margin-top:-8px"><small style="color:var(--text-muted);font-size:0.75rem">Number of periods between occurrences</small></div>
       ${formRow(formField('Start Date', '<input type="date" id="pp-start">'),
-                formField('Payment Method', `<select id="pp-method"><option value="">— None —</option>${['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v=>`<option value="${v}">${prettyEnum(v)}</option>`).join('')}</select>`)
+                formField('Payment Method', buildSelect('pp-method',[{value:'',label:'— None —'},{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],'','— None —',false))
       )}
       ${formField('Note (optional)', '<input type="text" id="pp-note" placeholder="Optional note…">')}
       <div class="form-field"><label>Auto-Confirm</label>
@@ -2436,18 +2463,12 @@
         formField('Currency', `<input type="text" id="pp-currency" value="${esc(p.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Type', `<select id="pp-type"><option value="EXPENSE" ${p.transactionType==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${p.transactionType==='INCOME'?'selected':''}>Income</option></select>`),
-        formField('Account', `<select id="pp-account">${accOptions()}</select>`)
+        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'}],p.transactionType||'EXPENSE','— Select —',false)),
+        formField('Account', buildSelect('pp-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),p.accountId||'','— Select account —',true))
       )}
-      ${formField('Category', `<select id="pp-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),p.categoryId?String(p.categoryId):'','— None —',true))}
       ${formRow(
-        formField('Recurrence', `<select id="pp-recur">
-          <option value="ONE_TIME">One Time</option>
-          <option value="DAILY">Daily</option>
-          <option value="WEEKLY">Weekly</option>
-          <option value="MONTHLY" selected>Monthly</option>
-          <option value="YEARLY">Yearly</option>
-        </select>`),
+        formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],p.recurrenceType||'MONTHLY','— Select —',false)),
         formField('Interval', `<input type="number" id="pp-interval" value="1" min="1">`)
       )}
       <div class="form-field"><label>Auto-Confirm</label>
@@ -2554,8 +2575,8 @@
     ).join(' ');
     const body = `
       ${formField('Category Name', '<input type="text" id="cat-name" placeholder="e.g. Groceries">')}
-      ${formField('Parent (optional)', `<select id="cat-parent"><option value="">— Top-level —</option>${catOptions(false)}</select>`)}
-      ${formField('Nature', `<select id="cat-nature"><option value="NEED">Need</option><option value="MUST">Must</option><option value="WANT">Want</option></select>`)}
+      ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— Top-level —',true))}
+      ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],'NEED','— Select —',false))}
       <div class="form-field"><label>Color</label>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${colorBtns}</div>
         <input type="text" id="cat-color" value="${presetColors[0]}" placeholder="#1976D2" maxlength="7">
@@ -2589,20 +2610,11 @@
         onclick="document.getElementById('cat-color').value='${c}';document.querySelectorAll('.cat-color-btn').forEach(s=>s.style.borderColor='transparent');this.style.borderColor='var(--accent)'"
         class="cat-color-btn"></span>`
     ).join(' ');
-    /* exclude self and descendants from parent options */
-    const parentOpts = cachedCategories
-      .filter(c => c.id !== catId && c.parentId !== catId)
-      .map(c => `<option value="${c.id}" ${c.id === cat.parentId ? 'selected' : ''}>${esc(c.name)}</option>`)
-      .join('');
     const currentColor = typeof cat.colorHex === 'number' ? '#' + cat.colorHex.toString(16).padStart(6,'0') : (cat.colorHex || '#9e9e9e');
     const body = `
       ${formField('Category Name', `<input type="text" id="cat-name" value="${esc(cat.name)}">`)}
-      ${formField('Parent (optional)', `<select id="cat-parent"><option value="">— Top-level —</option>${parentOpts}</select>`)}
-      ${formField('Nature', `<select id="cat-nature">
-        <option value="NEED" ${cat.nature==='NEED'?'selected':''}>Need</option>
-        <option value="MUST" ${cat.nature==='MUST'?'selected':''}>Must</option>
-        <option value="WANT" ${cat.nature==='WANT'?'selected':''}>Want</option>
-      </select>`)}
+      ${formField('Parent (optional)', buildSelect('cat-parent',[{value:'',label:'— Top-level —'}].concat(cachedCategories.filter(c=>c.id!==catId&&c.parentId!==catId).map(c=>({value:String(c.id),label:c.name}))),cat.parentId?String(cat.parentId):'','— Top-level —',true))}
+      ${formField('Nature', buildSelect('cat-nature',[{value:'NEED',label:'Need'},{value:'MUST',label:'Must'},{value:'WANT',label:'Want'}],cat.nature||'NEED','— Select —',false))}
       <div class="form-field"><label>Color</label>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${colorBtns}</div>
         <input type="text" id="cat-color" value="${esc(currentColor)}" placeholder="#1976D2" style="width:100px;margin-top:8px">
@@ -2675,10 +2687,7 @@
             </div>
             <div class="form-field" style="margin:0">
               <label>Type</label>
-              <select id="an-type">
-                <option value="EXPENSE" ${txType==='EXPENSE'?'selected':''}>Expense</option>
-                <option value="INCOME" ${txType==='INCOME'?'selected':''}>Income</option>
-              </select>
+              ${buildSelect('an-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'}],txType||'EXPENSE','— Select —',false)}
             </div>
             <button class="btn btn-primary btn-sm" onclick="applyAnalyticsFilters()" style="align-self:flex-end;margin-bottom:14px">Apply</button>
           </div>
@@ -2852,11 +2861,11 @@
       ${formRow(formField('Template Name', `<input type="text" id="tpl-name" placeholder="e.g. Monthly Rent" value="${esc(t?.name||'')}">`),
                 formField('Amount', `<input type="number" id="tpl-amount" placeholder="0.00" min="0" step="0.01" value="${esc(t?.amount||'')}">`))}
       ${formRow(formField('Currency', `<input type="text" id="tpl-currency" value="${esc(t?.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
-                formField('Type', `<select id="tpl-type"><option value="EXPENSE" ${(t?.transactionType||'EXPENSE')==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${t?.transactionType==='INCOME'?'selected':''}>Income</option><option value="TRANSFER" ${t?.transactionType==='TRANSFER'?'selected':''}>Transfer</option></select>`))}
-      ${formField('Account', `<select id="tpl-account"><option value="">— None —</option>${accOptions()}</select>`)}
-      ${formField('Category', `<select id="tpl-category"><option value="0">— None —</option>${catOptions(false)}</select>`)}
+                formField('Type', buildSelect('tpl-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(t?.transactionType||'EXPENSE'),'— Select —',false)))}
+      ${formField('Account', buildSelect('tpl-account',[{value:'',label:'— None —'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),t?.accountId||'','— None —',true))}
+      ${formField('Category', buildSelect('tpl-category',[{value:'0',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),t?.categoryId?String(t.categoryId):'0','— None —',true))}
       ${formRow(formField('Payee', `<input type="text" id="tpl-payee" placeholder="Optional" value="${esc(t?.payee||'')}">`),
-                formField('Payment Method', `<select id="tpl-method">${pmOpts}</select>`))}
+                formField('Payment Method', buildSelect('tpl-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(t?.paymentMethod||'CASH'),'— Select —',false)))}
       ${formField('Status', `<div class="chip-group">
         ${['CLEARED','UNCLEARED','RECONCILE'].map(s=>`<label class="chip-check ${(t?.transactionStatus||'CLEARED')===s?'active':''}"><input type="radio" name="tpl-status" value="${s}" ${(t?.transactionStatus||'CLEARED')===s?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>${prettyEnum(s)}</span></label>`).join('')}
       </div>`)}
@@ -3162,7 +3171,7 @@
         formField('Date', `<input type="date" id="rp-date" value="${new Date().toISOString().slice(0,10)}">`)
       )}
       <div id="rp-overpay" style="display:none;color:var(--warning);font-size:0.8rem;margin-top:-8px">⚠️ Exceeds remaining balance — overpayment will settle the loan.</div>
-      ${formField('Account (debited)', `<select id="rp-account"><option value="">— None —</option>${accOptions()}</select>`)}
+      ${formField('Account (debited)', buildSelect('rp-account',[{value:'',label:'— None —'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),'','— None —',true))}
       ${formField('Note (optional)', '<input type="text" id="rp-note" placeholder="e.g. Monthly payment">')}`;
     openModal('Log Repayment', body, () => submitLogRepayment(loanId), 'Save');
     modalConfBtn.className = 'btn btn-primary';
@@ -3321,9 +3330,7 @@
       const tl = fs.timelineType || 'ALL_TIME';
       const tlLabels = {ALL_TIME:'All Time',TODAY:'Today',WEEK:'This Week',MONTH:'This Month',QUARTER:'This Quarter',YEAR:'This Year',HALF_YEAR:'Half Year (6mo)',LAST_7_DAYS:'Last 7 Days',LAST_30_DAYS:'Last 30 Days',LAST_6_MONTHS:'Last 6 Months',LAST_1_YEAR:'Last Year',CUSTOM:'Custom Range'};
       body += `<div class="form-field"><label>Period</label>
-        <select id="cf-timeline" onchange="toggleCustomDates()">
-          ${Object.keys(tlLabels).map(v=>`<option value="${v}" ${tl===v?'selected':''}>${tlLabels[v]}</option>`).join('')}
-        </select></div>
+        ${buildSelect('cf-timeline',Object.keys(tlLabels).map(v=>({value:v,label:tlLabels[v]})),tl,'All Time',false,'toggleCustomDates()')}</div>
       <div id="cf-custom-dates" style="${tl==='CUSTOM'?'':'display:none'}">
         ${formRow(
           formField('From', `<input type="date" id="cf-from" value="${esc(fs.customFrom||'')}">`),

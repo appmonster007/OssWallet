@@ -35,6 +35,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -210,6 +212,10 @@ fun DashboardScreen(
     val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
+    val glanceListState = rememberLazyListState()
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        scope.launch { glanceListState.scrollToItem(0) }
+    }
 
     // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
     // Compound condition ensures dialog/FAB BackHandlers (registered earlier = lower LIFO priority)
@@ -308,6 +314,7 @@ fun DashboardScreen(
                         dashboardViewModel = dashboardViewModel,
                         cardComputerRegistry = cardComputerRegistry,
                         cardsConfig = cardsConfig,
+                        glanceListState = glanceListState,
                         showAddCardDialog = showAddCardDialog,
                         onShowAddCardDialogChange = { showAddCardDialog = it },
                         cardAnimationEnabled = cardAnimationEnabled
@@ -379,6 +386,7 @@ fun DashboardContent(
     dashboardViewModel: DashboardViewModel,
     cardComputerRegistry: CardComputerRegistry,
     cardsConfig: DashboardCardsConfig,
+    glanceListState: LazyListState,
     showAddCardDialog: Boolean,
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
@@ -399,6 +407,7 @@ fun DashboardContent(
                     DashboardGlanceTab(
                         state = state,
                         cardsConfig = cardsConfig,
+                        listState = glanceListState,
                         cardComputerRegistry = cardComputerRegistry,
                         cardUpdateHandler = dashboardViewModel,
                         savedFilters = savedFilters,
@@ -492,6 +501,7 @@ fun DashboardContent(
 fun DashboardGlanceTab(
     state: DashboardUiState.Success,
     cardsConfig: DashboardCardsConfig,
+    listState: LazyListState = rememberLazyListState(),
     cardComputerRegistry: CardComputerRegistry,
     cardUpdateHandler: CardUpdateHandler,
     savedFilters: List<Filter>,
@@ -592,6 +602,7 @@ fun DashboardGlanceTab(
 
         AeonCardList(
             cards = cardsConfig.cards.filter { it.cardId != pinnedAccountsConfig.cardId },
+            state = listState,
             cardDataMap = state.cardDataMap,
             cardInput = CardInput(
                 profileId = state.profileId,

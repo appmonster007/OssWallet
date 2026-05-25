@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -57,7 +59,8 @@ fun AeonCardList(
     screenRules: CardFilterRules = CardFilterRules.DEFAULT,
     disableFilterSheet: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
-    cardDataMap: Map<String, CardRenderData> = emptyMap()
+    cardDataMap: Map<String, CardRenderData> = emptyMap(),
+    state: LazyListState = rememberLazyListState()
 ) {
     CardReorderableList(
         items = cards.sortedBy { it.order },
@@ -67,7 +70,8 @@ fun AeonCardList(
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
         animateCards = animateCards,
-        header = header
+        header = header,
+        state = state
     ) { cardConfig, isDragging, dragModifier ->
 
         val preComputedData = cardDataMap[cardConfig.cardId]

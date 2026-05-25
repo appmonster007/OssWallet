@@ -63,7 +63,6 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.merge
-import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -343,7 +342,6 @@ fun AccountDetailScreen(
                                     accountDetailViewModel = accountDetailViewModel,
                                     cardComputerRegistry = cardComputerRegistry,
                                     onRecordsClick = onRecordsClick,
-                                    accountId = accountId,
                                     currentTheme = currentTheme,
                                     savedFilters = savedFilters,
                                     transactionViewModel = transactionViewModel,
@@ -361,7 +359,6 @@ fun AccountDetailScreen(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(horizontal = AeonTheme.dimensions.screenPadding),
-                                    screenPadding = PaddingValues(),
                                     showAddCardDialog = showAddCardDialog,
                                     onShowAddCardDialogChange = { showAddCardDialog = it },
                                     cardAnimationEnabled = cardAnimationEnabled
@@ -502,7 +499,6 @@ fun DynamicAccountDetailCards(
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
     onRecordsClick: (TransactionFilter) -> Unit,
-    accountId: String,
     currentTheme: String,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
     transactionViewModel: TransactionViewModel,
@@ -518,7 +514,6 @@ fun DynamicAccountDetailCards(
     onAccountClick: (String) -> Unit,
     navigate: (() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
-    screenPadding: PaddingValues = PaddingValues(),
     showAddCardDialog: Boolean,
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
@@ -596,55 +591,12 @@ fun DynamicAccountDetailCards(
         )
     }
 
-    // Always-present hero card — no filters (All Time)
-    val heroCardInput = remember(state) {
-        CardInput(
-            profileId = state.profileId,
-            transactions = state.allAccountTransactions,
-            accounts = listOf(state.account),
-            categories = state.allCategories,
-            tags = state.allTags,
-            exchangeRates = state.exchangeRates,
-            baseCurrency = state.baseCurrency,
-            displayCurrency = state.account.currencyCode,
-            filter = TransactionFilter(
-                accountIds = setOf(accountId),
-                timelineRange = TimelineRange.AllTime
-            )
-        )
-    }
-
-    val heroConfig = remember(cardsConfig.cards) {
-        cardsConfig.cards
-            .filter { it.isPinned }
-            .minByOrNull { it.order }
-            ?: AccountHeroCardConfig(
-                cardId = "default_account_hero_card",
-                order = 0,
-                filter = TransactionFilter(
-                    accountIds = setOf(accountId),
-                    timelineRange = TimelineRange.AllTime
-                )
-            )
-    }
-
-    val heroCard = rememberCardWithCallbacks(
-        config = heroConfig,
-        input = heroCardInput,
-        registry = cardComputerRegistry,
-        updateHandler = accountDetailViewModel,
-        onDelete = {},
-        onRecordsClick = onRecordsClick,
-        callbacks = sharedCallbacks,
-        currentTheme = currentTheme
-    )
-
     Column(
         modifier = modifier
             .background(AppColors.screenBackground)
     ) {
         AeonCardList(
-            cards = cardsConfig.cards.filter { it.cardId != heroConfig.cardId },
+            cards = cardsConfig.cards,
             cardInput = sharedCardInput,
             cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,
@@ -669,36 +621,7 @@ fun DynamicAccountDetailCards(
             ),
             callbacks = sharedCallbacks,
             baseFilter = accountScopeFilter,
-            screenRules = CardFilterRules.ACCOUNT_LOCKED,
-            header = {
-                when (val card = heroCard) {
-                    is CardWithCallbacks.ComputeError -> {
-                        com.osscabinet.ossWallet.ui.components.cards.CardErrorState(card.message)
-                    }
-                    null -> {}
-                    else -> {
-                        UnifiedCardRenderer(
-                            cardWithCallbacks = card,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    top = screenPadding.calculateTopPadding() + AeonTheme.dimensions.spacingLg,
-                                    bottom = AeonTheme.dimensions.spacingXs
-                                ),
-                            currentTheme = currentTheme,
-                            filterContext = FilterSelectionContext(
-                                accounts = listOf(state.account),
-                                allCategories = state.allCategories,
-                                allTags = state.allTags,
-                                savedFilters = savedFilters,
-                                onSearchTransactions = transactionViewModel::searchTransactions
-                            ),
-                            inheritedFilter = heroCardInput.filter,
-                            screenOwnsTimeline = heroCardInput.screenOwnsTimeline
-                        )
-                    }
-                }
-            }
+            screenRules = CardFilterRules.ACCOUNT_LOCKED
         )
     }
 

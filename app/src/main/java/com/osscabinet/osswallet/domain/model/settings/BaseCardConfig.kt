@@ -10,7 +10,6 @@ interface BaseCardConfig {
     val isEnabled: Boolean
     val order: Int
     val screenContext: ScreenContext
-    val isPinned: Boolean get() = false
 }
 
 /**

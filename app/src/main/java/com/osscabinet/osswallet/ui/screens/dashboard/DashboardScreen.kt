@@ -58,7 +58,6 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -656,26 +655,8 @@ fun DashboardGlanceTab(
         )
     }
 
-    val pinnedHeaderConfig = remember(cardsConfig.cards) {
-        cardsConfig.cards
-            .filter { it.isPinned }
-            .minByOrNull { it.order }
-            ?: AccountsCardConfig(cardId = "default_accounts_card", order = 0)
-    }
-
-    val headerCard = rememberCardWithCallbacks(
-        config = pinnedHeaderConfig,
-        input = sharedCardInput,
-        registry = cardComputerRegistry,
-        updateHandler = cardUpdateHandler,
-        onDelete = onRemoveCard,
-        onRecordsClick = onRecordsClick,
-        callbacks = sharedCallbacks,
-        preComputedData = state.cardDataMap[pinnedHeaderConfig.cardId]
-    )
-
     AeonCardList(
-        cards = cardsConfig.cards.filter { it.cardId != pinnedHeaderConfig.cardId },
+        cards = cardsConfig.cards,
         state = listState,
         cardDataMap = state.cardDataMap,
         cardInput = sharedCardInput,
@@ -700,33 +681,7 @@ fun DashboardGlanceTab(
             savedFilters = savedFilters,
             onSearchTransactions = onSearchTransactions
         ),
-        callbacks = sharedCallbacks,
-        header = {
-            when (val card = headerCard) {
-                is CardWithCallbacks.ComputeError -> {
-                    com.osscabinet.ossWallet.ui.components.cards.CardErrorState(card.message)
-                }
-                null -> {}
-                else -> {
-                    UnifiedCardRenderer(
-                        cardWithCallbacks = card,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = AeonTheme.dimensions.spacingXs),
-                        currentTheme = currentTheme,
-                        filterContext = FilterSelectionContext(
-                            accounts = state.accounts,
-                            allCategories = state.allCategories,
-                            allTags = state.allTags,
-                            savedFilters = savedFilters,
-                            onSearchTransactions = onSearchTransactions
-                        ),
-                        inheritedFilter = sharedCardInput.filter,
-                        screenOwnsTimeline = sharedCardInput.screenOwnsTimeline
-                    )
-                }
-            }
-        },
+        callbacks = sharedCallbacks
     )
     }
 }

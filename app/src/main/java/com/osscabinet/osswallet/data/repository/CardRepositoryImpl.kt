@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.repository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
@@ -27,6 +28,24 @@ class CardRepositoryImpl @Inject constructor(
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    private fun defaultDashboardConfig(): DashboardCardsConfig = DashboardCardsConfig(
+        cards = listOf(
+            AccountsCardConfig(
+                cardId = "default_accounts_card",
+                order = 0
+            )
+        )
+    )
+
+    private fun defaultAccountDetailConfig(): DashboardCardsConfig = DashboardCardsConfig(
+        cards = listOf(
+            com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig(
+                cardId = "default_account_hero_card",
+                order = 0
+            )
+        )
+    )
 
     private fun defaultAnalyticsConfig(): DashboardCardsConfig = DashboardCardsConfig(
         cards = listOf(
@@ -112,12 +131,24 @@ class CardRepositoryImpl @Inject constructor(
     // Legacy implementations mapping to new unified API
     override val dashboardCardsConfig: Flow<DashboardCardsConfig> =
         settingsDataStore.dashboardCardsConfig.map {
-            if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+            if (it.isEmpty()) defaultDashboardConfig() else {
+                try {
+                    json.decodeFromString(it)
+                } catch (e: Exception) {
+                    defaultDashboardConfig()
+                }
+            }
         }
 
     override val accountDetailCardsConfig: Flow<DashboardCardsConfig> =
         settingsDataStore.accountDetailCardsConfig.map {
-            if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+            if (it.isEmpty()) defaultAccountDetailConfig() else {
+                try {
+                    json.decodeFromString(it)
+                } catch (e: Exception) {
+                    defaultAccountDetailConfig()
+                }
+            }
         }
 
     override val accountsViewCardsConfig: Flow<DashboardCardsConfig> =

@@ -525,8 +525,62 @@ fun DynamicAccountDetailCards(
 ) {
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
 
+    val sharedCallbacks = remember(
+        onAccountClick,
+        onNavigateToBudgetDetail,
+        onNavigateToBudgetList,
+        onNavigateToLoanDetail,
+        onNavigateToLoanList,
+        onEditTransactionClick,
+        transactionViewModel,
+        onCloneTransactionClick,
+        onSplitTransactionClick,
+        onNavigateToPlannedPaymentDetail,
+        onNavigateToPlannedPaymentList,
+        accountDetailViewModel,
+        onRecordsClick,
+        state.currentFilter
+    ) {
+        AeonInteractionCallbacks(
+            accountActions = AccountActions(
+                onClick = { id -> navigate { onAccountClick(id) } },
+                onSeeAll = { navigate { onRecordsClick(state.currentFilter) } }
+            ),
+            budgetActions = BudgetActions(
+                onClick = { id -> navigate { onNavigateToBudgetDetail(id) } },
+                onSeeAll = { navigate { onNavigateToBudgetList() } }
+            ),
+            loanActions = LoanActions(
+                onClick = { id -> navigate { onNavigateToLoanDetail(id) } },
+                onSeeAll = { navigate { onNavigateToLoanList() } }
+            ),
+            transactionActions = TransactionActions(
+                onClick = onEditTransactionClick,
+                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                onStatusChange = { id, status ->
+                    transactionViewModel.quickUpdateStatus(
+                        id,
+                        status
+                    )
+                },
+                onClone = { onCloneTransactionClick(it) },
+                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                onSplit = { onSplitTransactionClick(it) },
+                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+            ),
+            paymentActions = PaymentActions(
+                onClick = { id -> navigate { onNavigateToPlannedPaymentDetail(id) } },
+                onSeeAll = { navigate { onNavigateToPlannedPaymentList() } }
+            ),
+            tagActions = TagActions(
+                onAdd = accountDetailViewModel::addTag
+            )
+        )
+    }
+
     val accountScopeFilter = state.currentFilter
-    val sharedCardInput = remember(state) {
+    val sharedCardInput = remember(state, accountScopeFilter) {
         CardInput(
             profileId = state.profileId,
             transactions = state.allAccountTransactions,
@@ -560,17 +614,20 @@ fun DynamicAccountDetailCards(
         )
     }
 
-    val heroConfig = cardsConfig.cards
-        .filter { it.isPinned }
-        .minByOrNull { it.order }
-        ?: AccountHeroCardConfig(
-            cardId = "hero_$accountId",
-            order = 0,
-            filter = TransactionFilter(
-                accountIds = setOf(accountId),
-                timelineRange = TimelineRange.AllTime
+    val heroConfig = remember(cardsConfig.cards) {
+        cardsConfig.cards
+            .filter { it.isPinned }
+            .minByOrNull { it.order }
+            ?: AccountHeroCardConfig(
+                cardId = "default_account_hero_card",
+                order = 0,
+                filter = TransactionFilter(
+                    accountIds = setOf(accountId),
+                    timelineRange = TimelineRange.AllTime
+                )
             )
-        )
+    }
+
     val heroCard = rememberCardWithCallbacks(
         config = heroConfig,
         input = heroCardInput,
@@ -578,25 +635,7 @@ fun DynamicAccountDetailCards(
         updateHandler = accountDetailViewModel,
         onDelete = {},
         onRecordsClick = onRecordsClick,
-        callbacks = AeonInteractionCallbacks(
-            transactionActions = TransactionActions(
-                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                onStatusChange = { id, status ->
-                    transactionViewModel.quickUpdateStatus(
-                        id,
-                        status
-                    )
-                },
-                onClone = { onCloneTransactionClick(it) },
-                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                onSplit = { onSplitTransactionClick(it) },
-                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
-            ),
-            tagActions = TagActions(
-                onAdd = accountDetailViewModel::addTag
-            )
-        ),
+        callbacks = sharedCallbacks,
         currentTheme = currentTheme
     )
 
@@ -628,63 +667,36 @@ fun DynamicAccountDetailCards(
                 savedFilters = savedFilters,
                 onSearchTransactions = transactionViewModel::searchTransactions
             ),
-            callbacks = AeonInteractionCallbacks(
-                accountActions = AccountActions(
-                    onClick = { id -> navigate { onAccountClick(id) } },
-                    onSeeAll = { navigate { onRecordsClick(state.currentFilter) } }
-                ),
-                budgetActions = BudgetActions(
-                    onClick = { id -> navigate { onNavigateToBudgetDetail(id) } },
-                    onSeeAll = { navigate { onNavigateToBudgetList() } }
-                ),
-                loanActions = LoanActions(
-                    onClick = { id -> navigate { onNavigateToLoanDetail(id) } },
-                    onSeeAll = { navigate { onNavigateToLoanList() } }
-                ),
-                transactionActions = TransactionActions(
-                    onClick = onEditTransactionClick,
-                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                    onStatusChange = { id, status ->
-                        transactionViewModel.quickUpdateStatus(
-                            id,
-                            status
-                        )
-                    },
-                    onClone = { onCloneTransactionClick(it) },
-                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                    onSplit = { onSplitTransactionClick(it) },
-                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
-                ),
-                paymentActions = PaymentActions(
-                    onClick = { id -> navigate { onNavigateToPlannedPaymentDetail(id) } },
-                    onSeeAll = { navigate { onNavigateToPlannedPaymentList() } }
-                ),
-                tagActions = TagActions(
-                    onAdd = accountDetailViewModel::addTag
-                )
-            ),
+            callbacks = sharedCallbacks,
             baseFilter = accountScopeFilter,
             screenRules = CardFilterRules.ACCOUNT_LOCKED,
             header = {
-                if (heroCard != null && heroCard !is CardWithCallbacks.ComputeError) {
-                    UnifiedCardRenderer(
-                        cardWithCallbacks = heroCard,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                top = screenPadding.calculateTopPadding() + AeonTheme.dimensions.spacingLg,
-                                bottom = AeonTheme.dimensions.spacingXs
+                when (val card = heroCard) {
+                    is CardWithCallbacks.ComputeError -> {
+                        com.osscabinet.ossWallet.ui.components.cards.CardErrorState(card.message)
+                    }
+                    null -> {}
+                    else -> {
+                        UnifiedCardRenderer(
+                            cardWithCallbacks = card,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = screenPadding.calculateTopPadding() + AeonTheme.dimensions.spacingLg,
+                                    bottom = AeonTheme.dimensions.spacingXs
+                                ),
+                            currentTheme = currentTheme,
+                            filterContext = FilterSelectionContext(
+                                accounts = listOf(state.account),
+                                allCategories = state.allCategories,
+                                allTags = state.allTags,
+                                savedFilters = savedFilters,
+                                onSearchTransactions = transactionViewModel::searchTransactions
                             ),
-                        currentTheme = currentTheme,
-                        filterContext = FilterSelectionContext(
-                            accounts = listOf(state.account),
-                            allCategories = state.allCategories,
-                            allTags = state.allTags,
-                            savedFilters = savedFilters,
-                            onSearchTransactions = transactionViewModel::searchTransactions
-                        ),
-                    )
+                            inheritedFilter = heroCardInput.filter,
+                            screenOwnsTimeline = heroCardInput.screenOwnsTimeline
+                        )
+                    }
                 }
             }
         )

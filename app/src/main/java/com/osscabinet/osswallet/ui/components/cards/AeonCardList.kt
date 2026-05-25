@@ -217,7 +217,7 @@ private fun CardWithCallbacks.copyWithRules(
 }
 
 @Composable
-private fun CardErrorState(message: String?) {
+fun CardErrorState(message: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),

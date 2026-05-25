@@ -578,119 +578,138 @@ fun DashboardGlanceTab(
             }
         }
 
-        val pinnedAccountsConfig = cardsConfig.cards
-            .filter { it.isPinned }
-            .minByOrNull { it.order }
-            ?: AccountsCardConfig(cardId = "accounts_dashboard_${state.profileId}", order = 0)
-
-        val accountsCardInput = remember(state) {
-            CardInput(
-                profileId = state.profileId,
-                transactions = state.allTransactions,
-                accounts = state.accounts,
-                categories = state.allCategories,
-                tags = state.allTags,
-                exchangeRates = state.exchangeRates,
-                baseCurrency = state.baseCurrency,
-                filter = TransactionFilter(excludeFuture = false)
-            )
-        }
-        val accountsCard = rememberCardWithCallbacks(
-            config = pinnedAccountsConfig,
-            input = accountsCardInput,
-            registry = cardComputerRegistry,
-            updateHandler = cardUpdateHandler,
-            onDelete = {},
-            onRecordsClick = onRecordsClick,
-            callbacks = AeonInteractionCallbacks(
-                accountActions = AccountActions(
-                    onManageClick = onManageAccountsClick,
-                    onClick = onAccountClick,
-                    onSeeAll = onManageAccountsClick
-                )
+    val sharedCallbacks = remember(
+        onManageAccountsClick,
+        onAccountClick,
+        onNavigateToBudgetDetail,
+        onNavigateToBudgetList,
+        onNavigateToLoanDetail,
+        onNavigateToLoanList,
+        onEditTransactionClick,
+        onItemExpanded,
+        onItemCollapsed,
+        onStatusChange,
+        onCloneTransactionClick,
+        onDeleteTransaction,
+        onSplitTransactionClick,
+        onFullSwipeRight,
+        onNavigateToPlannedPaymentDetail,
+        onQuickConfirm,
+        onQuickSkip,
+        onNavigateToPlannedPaymentList,
+        onSaveFilterClick,
+        onAddTag
+    ) {
+        AeonInteractionCallbacks(
+            accountActions = AccountActions(
+                onManageClick = onManageAccountsClick,
+                onClick = onAccountClick,
+                onSeeAll = onManageAccountsClick
+            ),
+            budgetActions = BudgetActions(
+                onClick = onNavigateToBudgetDetail,
+                onSeeAll = onNavigateToBudgetList
+            ),
+            loanActions = LoanActions(
+                onClick = onNavigateToLoanDetail,
+                onSeeAll = onNavigateToLoanList
+            ),
+            transactionActions = TransactionActions(
+                onClick = onEditTransactionClick,
+                onItemExpanded = onItemExpanded,
+                onItemCollapsed = onItemCollapsed,
+                onStatusChange = onStatusChange,
+                onClone = onCloneTransactionClick,
+                onDelete = onDeleteTransaction,
+                onSplit = onSplitTransactionClick,
+                onFullSwipeRight = onFullSwipeRight
+            ),
+            paymentActions = PaymentActions(
+                onClick = onNavigateToPlannedPaymentDetail,
+                onConfirm = onQuickConfirm,
+                onSkip = onQuickSkip,
+                onSeeAll = onNavigateToPlannedPaymentList
+            ),
+            filterActions = FilterActions(
+                onSaveClick = onSaveFilterClick
+            ),
+            tagActions = TagActions(
+                onAdd = onAddTag
             )
         )
+    }
 
-        AeonCardList(
-            cards = cardsConfig.cards.filter { it.cardId != pinnedAccountsConfig.cardId },
-            state = listState,
-            cardDataMap = state.cardDataMap,
-            cardInput = CardInput(
-                profileId = state.profileId,
-                transactions = state.allTransactions,
-                accounts = state.accounts,
-                categories = state.allCategories,
-                tags = state.allTags,
-                exchangeRates = state.exchangeRates,
-                baseCurrency = state.baseCurrency,
-                plannedPayments = state.plannedPayments,
-                budgets = state.budgets,
-                loans = state.loans,
-                loanPayments = state.loanPayments,
-                filter = TransactionFilter(excludeFuture = false)
-            ),
-            cardComputerRegistry = cardComputerRegistry,
-            cardUpdateHandler = cardUpdateHandler,
-            onReorder = onReorderCards,
-            onDelete = onRemoveCard,
-            onRecordsClick = onRecordsClick,
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(
-                start = AeonTheme.dimensions.screenPadding,
-                end = AeonTheme.dimensions.screenPadding,
-                top = AeonTheme.dimensions.spacingMd,
-                bottom = scrollBottomPadding()
-            ),
-            animateCards = cardAnimationEnabled,
-            currentTheme = currentTheme,
-            filterContext = FilterSelectionContext(
-                accounts = state.accounts,
-                allCategories = state.allCategories,
-                allTags = state.allTags,
-                savedFilters = savedFilters,
-                onSearchTransactions = onSearchTransactions
-            ),
-            callbacks = AeonInteractionCallbacks(
-                accountActions = AccountActions(
-                    onManageClick = onManageAccountsClick,
-                    onClick = onAccountClick,
-                    onSeeAll = onManageAccountsClick
-                ),
-                budgetActions = BudgetActions(
-                    onClick = onNavigateToBudgetDetail,
-                    onSeeAll = onNavigateToBudgetList
-                ),
-                loanActions = LoanActions(
-                    onClick = onNavigateToLoanDetail,
-                    onSeeAll = onNavigateToLoanList
-                ),
-                transactionActions = TransactionActions(
-                    onClick = onEditTransactionClick,
-                    onItemExpanded = onItemExpanded,
-                    onItemCollapsed = onItemCollapsed,
-                    onStatusChange = onStatusChange,
-                    onClone = onCloneTransactionClick,
-                    onDelete = onDeleteTransaction,
-                    onSplit = onSplitTransactionClick,
-                    onFullSwipeRight = onFullSwipeRight
-                ),
-                paymentActions = PaymentActions(
-                    onClick = onNavigateToPlannedPaymentDetail,
-                    onConfirm = onQuickConfirm,
-                    onSkip = onQuickSkip,
-                    onSeeAll = onNavigateToPlannedPaymentList
-                ),
-                filterActions = FilterActions(
-                    onSaveClick = onSaveFilterClick
-                ),
-                tagActions = TagActions(
-                    onAdd = onAddTag
-                )
-            ),
-            header = {
-                if (accountsCard != null && accountsCard !is CardWithCallbacks.ComputeError) {
+    val sharedCardInput = remember(state) {
+        CardInput(
+            profileId = state.profileId,
+            transactions = state.allTransactions,
+            accounts = state.accounts,
+            categories = state.allCategories,
+            tags = state.allTags,
+            exchangeRates = state.exchangeRates,
+            baseCurrency = state.baseCurrency,
+            plannedPayments = state.plannedPayments,
+            budgets = state.budgets,
+            loans = state.loans,
+            loanPayments = state.loanPayments,
+            filter = TransactionFilter(excludeFuture = false)
+        )
+    }
+
+    val pinnedHeaderConfig = remember(cardsConfig.cards) {
+        cardsConfig.cards
+            .filter { it.isPinned }
+            .minByOrNull { it.order }
+            ?: AccountsCardConfig(cardId = "default_accounts_card", order = 0)
+    }
+
+    val headerCard = rememberCardWithCallbacks(
+        config = pinnedHeaderConfig,
+        input = sharedCardInput,
+        registry = cardComputerRegistry,
+        updateHandler = cardUpdateHandler,
+        onDelete = onRemoveCard,
+        onRecordsClick = onRecordsClick,
+        callbacks = sharedCallbacks,
+        preComputedData = state.cardDataMap[pinnedHeaderConfig.cardId]
+    )
+
+    AeonCardList(
+        cards = cardsConfig.cards.filter { it.cardId != pinnedHeaderConfig.cardId },
+        state = listState,
+        cardDataMap = state.cardDataMap,
+        cardInput = sharedCardInput,
+        cardComputerRegistry = cardComputerRegistry,
+        cardUpdateHandler = cardUpdateHandler,
+        onReorder = onReorderCards,
+        onDelete = onRemoveCard,
+        onRecordsClick = onRecordsClick,
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(
+            start = AeonTheme.dimensions.screenPadding,
+            end = AeonTheme.dimensions.screenPadding,
+            top = AeonTheme.dimensions.spacingMd,
+            bottom = scrollBottomPadding()
+        ),
+        animateCards = cardAnimationEnabled,
+        currentTheme = currentTheme,
+        filterContext = FilterSelectionContext(
+            accounts = state.accounts,
+            allCategories = state.allCategories,
+            allTags = state.allTags,
+            savedFilters = savedFilters,
+            onSearchTransactions = onSearchTransactions
+        ),
+        callbacks = sharedCallbacks,
+        header = {
+            when (val card = headerCard) {
+                is CardWithCallbacks.ComputeError -> {
+                    com.osscabinet.ossWallet.ui.components.cards.CardErrorState(card.message)
+                }
+                null -> {}
+                else -> {
                     UnifiedCardRenderer(
-                        cardWithCallbacks = accountsCard,
+                        cardWithCallbacks = card,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = AeonTheme.dimensions.spacingXs),
@@ -702,10 +721,13 @@ fun DashboardGlanceTab(
                             savedFilters = savedFilters,
                             onSearchTransactions = onSearchTransactions
                         ),
+                        inheritedFilter = sharedCardInput.filter,
+                        screenOwnsTimeline = sharedCardInput.screenOwnsTimeline
                     )
                 }
-            },
-        )
+            }
+        },
+    )
     }
 }
 

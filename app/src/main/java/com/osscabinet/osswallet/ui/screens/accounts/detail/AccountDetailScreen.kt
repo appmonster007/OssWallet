@@ -561,7 +561,7 @@ fun DynamicAccountDetailCards(
     }
 
     val heroConfig = cardsConfig.cards
-        .filterIsInstance<AccountHeroCardConfig>()
+        .filter { it.isPinned }
         .minByOrNull { it.order }
         ?: AccountHeroCardConfig(
             cardId = "hero_$accountId",

@@ -568,7 +568,7 @@ fun DashboardGlanceTab(
         }
 
         val pinnedAccountsConfig = cardsConfig.cards
-            .filterIsInstance<AccountsCardConfig>()
+            .filter { it.isPinned }
             .minByOrNull { it.order }
             ?: AccountsCardConfig(cardId = "accounts_dashboard_${state.profileId}", order = 0)
 

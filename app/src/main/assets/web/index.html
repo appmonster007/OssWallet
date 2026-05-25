@@ -3210,6 +3210,13 @@
           </div>
           <div class="settings-row" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div>
+              <div class="settings-label">Timezone</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Detected from browser</div>
+            </div>
+            <span class="settings-value" style="font-size:0.82rem">${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || '—')}</span>
+          </div>
+          <div class="settings-row" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+            <div>
               <div class="settings-label">Session</div>
               <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Stored in sessionStorage (cleared on tab close)</div>
             </div>
@@ -3225,6 +3232,7 @@
     const currency  = document.getElementById('set-currency')?.value.trim();
     const precision = parseInt(document.getElementById('set-precision')?.value || '2', 10);
     if (!currency) { showFieldError('set-currency', 'Currency is required.'); return; }
+    if (isNaN(precision) || precision < 0 || precision > 8) { showFieldError('set-precision', 'Must be 0–8.'); return; }
     const btn = document.getElementById('set-save-btn');
     if (btn) await withLoading(btn, async () => {
       const res = await apiWrite('PUT', '/api/settings', { baseCurrency: currency, decimalPrecision: precision });

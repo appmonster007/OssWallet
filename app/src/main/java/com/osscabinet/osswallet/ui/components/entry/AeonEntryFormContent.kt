@@ -28,6 +28,12 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
+private fun parseAccountColor(colorHex: String?): Color? =
+    colorHex?.runCatching { Color(android.graphics.Color.parseColor(this)) }?.getOrNull()
+
+private fun parseCategoryColor(colorHex: Int?): Color? =
+    colorHex?.let { Color(it) }
+
 /**
  * Shared Context grid for Account and Category/Target account selection.
  */
@@ -46,27 +52,29 @@ fun AeonEntryContextRow(
 ) {
     EntryActionRow {
         val accountIcon = getAccountIconByName(selectedAccount?.icon)
+        val accountColor = parseAccountColor(selectedAccount?.colorHex) ?: AppColors.primary
         EntryActionCard(
             icon = accountIcon,
             label = if (isTransfer) "FROM" else "ACCOUNT",
             value = selectedAccount?.name ?: "Select",
             onClick = onAccountClick,
             modifier = Modifier.weight(1f),
-            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-            iconTint = AppColors.primary
+            iconContainerColor = accountColor.copy(alpha = 0.1f),
+            iconTint = accountColor
         )
 
         if (isTransfer) {
             val targetDisplay = targetAccount?.name ?: "Select"
             val targetIcon = getAccountIconByName(targetAccount?.icon)
+            val targetColor = parseAccountColor(targetAccount?.colorHex) ?: AppColors.tertiary
             EntryActionCard(
                 icon = targetIcon,
                 label = "TO",
                 value = targetDisplay,
                 onClick = onTargetAccountClick,
                 modifier = Modifier.weight(1f),
-                iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                iconTint = AppColors.tertiary
+                iconContainerColor = targetColor.copy(alpha = 0.1f),
+                iconTint = targetColor
             )
         } else {
             val displayCategoryName = if (isSplitMode) {
@@ -79,6 +87,8 @@ fun AeonEntryContextRow(
             } else {
                 getIconByName(selectedCategory?.iconName)
             }
+            val categoryColor = if (isSplitMode) AppColors.primary
+            else parseCategoryColor(selectedCategory?.colorHex) ?: AppColors.tertiary
 
             EntryActionCard(
                 icon = categoryIcon,
@@ -86,16 +96,8 @@ fun AeonEntryContextRow(
                 value = displayCategoryName,
                 onClick = if (isSplitMode) onSplitClick else onCategoryClick,
                 modifier = Modifier.weight(1f),
-                iconContainerColor = if (isSplitMode) {
-                    AppColors.primary.copy(alpha = 0.1f)
-                } else {
-                    AppColors.tertiary.copy(alpha = 0.1f)
-                },
-                iconTint = if (isSplitMode) {
-                    AppColors.primary
-                } else {
-                    AppColors.tertiary
-                }
+                iconContainerColor = categoryColor.copy(alpha = 0.1f),
+                iconTint = categoryColor
             )
         }
     }

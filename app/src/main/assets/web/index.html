@@ -1742,6 +1742,7 @@
             <div class="stat-value ${balClass}">${fmt(acc.balance || 0, acc.currency)}</div>
             <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
               <a class="btn btn-primary btn-sm" href="#/accounts/${esc(acc.id)}">Details</a>
+              <button class="btn btn-ghost btn-sm" onclick="openEditAccount('${esc(acc.id)}')">✏️ Edit</button>
               <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
             </div>
@@ -1770,6 +1771,42 @@
       ${formField('Initial Balance (optional)', '<input type="number" id="acc-init-bal" placeholder="0.00" step="0.01">')}`;
     openModal('Add Account', body, submitAddAccount, 'Save Account');
     modalConfBtn.className = 'btn btn-primary';
+  };
+
+  /* ── F0-1: Edit Account ──────────────────────────────── */
+  window.openEditAccount = function (id) {
+    const acc = cachedAccounts.find(a => a.id === id);
+    if (!acc) { showToast('Account not found.', 'error'); return; }
+    const body = `
+      <div class="form-field" style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);margin-bottom:4px">
+        <div style="font-size:0.78rem;color:var(--text-muted)">Current Balance</div>
+        <div style="font-weight:700;font-size:1.1rem">${fmt(acc.balance||0, acc.currency)}</div>
+      </div>
+      ${formField('Account Name', `<input type="text" id="acc-name" value="${esc(acc.name)}">`)}
+      ${formRow(
+        formField('Currency (read-only)', `<input type="text" id="acc-currency-ro" value="${esc(acc.currency)}" disabled style="opacity:.6">`),
+        formField('Type', `<select id="acc-type">
+          <option value="CHECKING" ${acc.type==='CHECKING'?'selected':''}>Checking</option>
+          <option value="SAVINGS" ${acc.type==='SAVINGS'?'selected':''}>Savings</option>
+          <option value="CREDIT_CARD" ${acc.type==='CREDIT_CARD'?'selected':''}>Credit Card</option>
+          <option value="INVESTMENT" ${acc.type==='INVESTMENT'?'selected':''}>Investment</option>
+          <option value="CASH" ${acc.type==='CASH'?'selected':''}>Cash</option>
+          <option value="DIGITAL_WALLET" ${acc.type==='DIGITAL_WALLET'?'selected':''}>Digital Wallet</option>
+          <option value="OTHER" ${(acc.type==='OTHER'||!['CHECKING','SAVINGS','CREDIT_CARD','INVESTMENT','CASH','DIGITAL_WALLET'].includes(acc.type))?'selected':''}>Other</option>
+        </select>`)
+      )}
+      <small style="color:var(--text-muted);font-size:0.75rem">Currency cannot be changed after account creation.</small>`;
+    openModal(`Edit Account — ${esc(acc.name)}`, body, async () => {
+      clearFieldErrors(modalBody);
+      const name = document.getElementById('acc-name')?.value.trim();
+      const type = document.getElementById('acc-type')?.value;
+      if (!name) { showFieldError('acc-name', 'Name is required.'); return; }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/accounts/${encodeURIComponent(id)}`, { name, structureType: type });
+        if (res.success) { closeModal(); await warmCache(); renderAccounts(); showToast('Account updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
+    }, 'Save Changes');
   };
 
   window.submitAddAccount = async function () {
@@ -1839,6 +1876,7 @@
             <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">Remaining: ${fmt(b.remaining||0,b.currency)}</div>
             <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
               <a class="btn btn-primary btn-sm" href="#/budgets/${esc(b.id)}">Details</a>
+              <button class="btn btn-ghost btn-sm" onclick="openEditBudget('${esc(b.id)}')">✏️ Edit</button>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteBudget('${esc(b.id)}','${esc(b.name)}')">Delete</button>
             </div>
           </div>`;
@@ -1882,6 +1920,45 @@
       if (res.success) { closeModal(); renderBudgets(); showToast('Budget created!'); }
       else { showToast('Failed to create budget: ' + (res.error || ''), 'error'); }
     });
+  };
+
+  /* ── F0-2: Edit Budget ───────────────────────────────── */
+  window.openEditBudget = async function (id) {
+    const resp = await apiFetch(`/api/budgets/${encodeURIComponent(id)}`);
+    if (!resp.success) { showToast('Could not load budget.', 'error'); return; }
+    const b = resp.data;
+    const periodOpts = [
+      {v:'MONTHLY',l:'Monthly'},{v:'WEEKLY',l:'Weekly'},{v:'YEARLY',l:'Yearly'},
+      {v:'TODAY',l:'Daily'},{v:'QUARTER',l:'Quarterly'},
+    ].map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+    const body = `
+      ${formField('Budget Name', `<input type="text" id="bud-name" value="${esc(b.name)}">`)}
+      ${formRow(
+        formField('Currency', `<input type="text" id="bud-currency" value="${esc(b.currency)}" maxlength="5">`),
+        formField('Limit Amount', `<input type="number" id="bud-limit" value="${esc(b.limitAmount||0)}" min="0" step="0.01">`)
+      )}
+      ${formRow(
+        formField('Period', `<select id="bud-period">${periodOpts}</select>`),
+        formField('Alert Threshold (%)', `<input type="number" id="bud-alert" value="80" min="0" max="100" step="1">`)
+      )}
+      <small style="color:var(--text-muted);font-size:0.75rem">Alert triggers when spending exceeds the threshold percentage.</small>`;
+    openModal(`Edit Budget — ${esc(b.name)}`, body, async () => {
+      clearFieldErrors(modalBody);
+      const name   = document.getElementById('bud-name')?.value.trim();
+      const curr   = document.getElementById('bud-currency')?.value.trim();
+      const limit  = parseFloat(document.getElementById('bud-limit')?.value || '0');
+      const period = document.getElementById('bud-period')?.value;
+      const alertPct = parseFloat(document.getElementById('bud-alert')?.value || '80');
+      if (!name)                    { showFieldError('bud-name', 'Name is required.'); return; }
+      if (isNaN(limit) || limit <= 0) { showFieldError('bud-limit', 'Enter a valid limit.'); return; }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/budgets/${encodeURIComponent(id)}`, {
+          name, currency: curr, limitAmount: limit, timelineType: period, alertThreshold: alertPct / 100
+        });
+        if (res.success) { closeModal(); renderBudgets(); showToast('Budget updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
+    }, 'Save Changes');
   };
 
   window.deleteBudget = function (id, name) {
@@ -1942,6 +2019,7 @@
             </div>
             <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
               <a class="btn btn-primary btn-sm" href="#/loans/${esc(loan.id)}">Details</a>
+              <button class="btn btn-ghost btn-sm" onclick="openEditLoan('${esc(loan.id)}')">✏️ Edit</button>
               <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
             </div>
           </div>`;
@@ -1995,6 +2073,46 @@
       if (res.success) { closeModal(); renderLoans(); showToast('Loan created!'); }
       else { showToast('Failed to create loan: ' + (res.error || ''), 'error'); }
     });
+  };
+
+  /* ── F0-3: Edit Loan ─────────────────────────────────── */
+  window.openEditLoan = async function (id) {
+    const resp = await apiFetch(`/api/loans/${encodeURIComponent(id)}`);
+    if (!resp.success) { showToast('Could not load loan.', 'error'); return; }
+    const loan = resp.data;
+    const partyLabel = loan.loanType === 'BORROWED' ? 'Lender Name' : 'Borrower Name';
+    const settleVal  = loan.expectedSettlementDate ? new Date(loan.expectedSettlementDate).toISOString().slice(0,10) : '';
+    const body = `
+      <div class="form-field" style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);margin-bottom:4px;display:flex;gap:20px">
+        <div><div style="font-size:0.75rem;color:var(--text-muted)">Principal</div><div style="font-weight:700">${fmt(loan.principalAmount||0, loan.currency)}</div></div>
+        <div><div style="font-size:0.75rem;color:var(--text-muted)">Remaining</div><div style="font-weight:700">${fmt(loan.remainingBalance||0, loan.currency)}</div></div>
+        <div><div style="font-size:0.75rem;color:var(--text-muted)">Type</div><div style="font-weight:700">${esc(loan.loanType)}</div></div>
+      </div>
+      ${formField('Loan Name', `<input type="text" id="ln-name" value="${esc(loan.name)}">`)}
+      ${formField(partyLabel, `<input type="text" id="ln-party" value="${esc(loan.lenderOrBorrowerName||'')}" placeholder="${partyLabel}…">`)}
+      ${formRow(
+        formField('Expected Settlement', `<input type="date" id="ln-settle" value="${esc(settleVal)}">`),
+        formField('Interest Rate (% p.a.)', `<input type="number" id="ln-rate" value="0" min="0" max="100" step="0.01" placeholder="0">`)
+      )}
+      <small style="color:var(--text-muted);font-size:0.75rem">Principal cannot be changed. Use repayments to adjust balance.</small>`;
+    openModal(`Edit Loan — ${esc(loan.name)}`, body, async () => {
+      clearFieldErrors(modalBody);
+      const name   = document.getElementById('ln-name')?.value.trim();
+      const party  = document.getElementById('ln-party')?.value.trim();
+      const settle = document.getElementById('ln-settle')?.value;
+      const rate   = parseFloat(document.getElementById('ln-rate')?.value || '0');
+      if (!name) { showFieldError('ln-name', 'Name is required.'); return; }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/loans/${encodeURIComponent(id)}`, {
+          name,
+          lenderOrBorrowerName: party || undefined,
+          expectedSettlementDate: settle || undefined,
+          interestRate: isNaN(rate) ? undefined : rate,
+        });
+        if (res.success) { closeModal(); renderLoans(); showToast('Loan updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
+    }, 'Save Changes');
   };
 
   window.deleteLoan = function (id, name) {
@@ -2085,7 +2203,10 @@
             <td><span class="badge ${txBadge}">${esc(p.transactionType||'')}</span></td>
             <td><span class="badge ${p.isOverdue ? 'badge-overdue' : 'badge-active'}">${esc(p.status||'')}</span></td>
             <td>${p.autoConfirm ? '✅' : '—'}</td>
-            <td><button class="btn-icon" title="Delete" onclick="deletePlanned('${esc(p.id)}','${esc(p.name)}')">🗑️</button></td>
+            <td style="white-space:nowrap">
+              <button class="btn-icon" title="Edit" onclick="openEditPlanned('${esc(p.id)}')">✏️</button>
+              <button class="btn-icon" title="Delete" onclick="deletePlanned('${esc(p.id)}','${esc(p.name)}')">🗑️</button>
+            </td>
           </tr>`;
         });
         html += '</tbody></table></div></div>';
@@ -2172,6 +2293,67 @@
     });
   };
 
+  /* ── F0-4: Edit Planned Payment ──────────────────────── */
+  window.openEditPlanned = async function (id) {
+    const resp = await apiFetch(`/api/planned-payments/${encodeURIComponent(id)}`);
+    if (!resp.success) { showToast('Could not load planned payment.', 'error'); return; }
+    const p = resp.data;
+    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
+      `<option value="${v}">${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
+    const body = `
+      ${formField('Payment Name', `<input type="text" id="pp-name" value="${esc(p.name)}">`)}
+      ${formRow(
+        formField('Amount', `<input type="number" id="pp-amount" value="${esc(p.amount||0)}" min="0" step="0.01">`),
+        formField('Currency', `<input type="text" id="pp-currency" value="${esc(p.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5">`)
+      )}
+      ${formRow(
+        formField('Type', `<select id="pp-type"><option value="EXPENSE" ${p.transactionType==='EXPENSE'?'selected':''}>Expense</option><option value="INCOME" ${p.transactionType==='INCOME'?'selected':''}>Income</option></select>`),
+        formField('Account', `<select id="pp-account">${accOptions()}</select>`)
+      )}
+      ${formField('Category', `<select id="pp-category"><option value="">— None —</option>${catOptions(false)}</select>`)}
+      ${formRow(
+        formField('Recurrence', `<select id="pp-recur">
+          <option value="ONE_TIME">One Time</option>
+          <option value="DAILY">Daily</option>
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY" selected>Monthly</option>
+          <option value="YEARLY">Yearly</option>
+        </select>`),
+        formField('Interval', `<input type="number" id="pp-interval" value="1" min="1">`)
+      )}
+      <div class="form-field"><label>Auto-Confirm</label>
+        <div class="toggle-wrap"><input type="checkbox" id="pp-auto" ${p.autoConfirm?'checked':''}><span style="font-size:0.88rem">Automatically confirm when due</span></div>
+      </div>`;
+    openModal(`Edit Planned Payment — ${esc(p.name)}`, body, async () => {
+      clearFieldErrors(modalBody);
+      const name   = document.getElementById('pp-name')?.value.trim();
+      const amount = parseFloat(document.getElementById('pp-amount')?.value || '0');
+      const currency = document.getElementById('pp-currency')?.value.trim();
+      const type   = document.getElementById('pp-type')?.value;
+      const account= document.getElementById('pp-account')?.value;
+      const cat    = document.getElementById('pp-category')?.value;
+      const recur  = document.getElementById('pp-recur')?.value;
+      const interval = parseInt(document.getElementById('pp-interval')?.value || '1', 10);
+      const auto   = document.getElementById('pp-auto')?.checked || false;
+      if (!name)                      { showFieldError('pp-name', 'Name is required.'); return; }
+      if (isNaN(amount) || amount <= 0) { showFieldError('pp-amount', 'Enter a valid amount.'); return; }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/planned-payments/${encodeURIComponent(id)}`, {
+          name, amount, currency, transactionType: type,
+          accountId: account || undefined,
+          categoryId: cat || undefined,
+          recurrenceType: recur,
+          recurrenceInterval: interval,
+          autoConfirm: auto,
+        });
+        if (res.success) { closeModal(); renderPlannedPayments(); showToast('Planned payment updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
+    }, 'Save Changes');
+    if (p.accountId) { const el = document.getElementById('pp-account'); if (el) el.value = p.accountId; }
+    if (p.categoryId) { const el = document.getElementById('pp-category'); if (el) el.value = p.categoryId; }
+  };
+
   window.deletePlanned = function (id, name) {
     confirmDelete(`Delete planned payment "${name}"?`, async () => {
       try {
@@ -2229,6 +2411,7 @@
       <span style="flex:1;font-weight:${indent?'400':'600'}">${esc(cat.name)}</span>
       ${cat.nature ? `<span class="badge ${natureCls}" style="margin-right:10px">${esc(cat.nature)}</span>` : ''}
       ${cat.isDefault ? '<span style="font-size:0.75rem;color:var(--text-muted);margin-right:10px">Default</span>' : ''}
+      <button class="btn-icon" title="Edit" onclick="openEditCategory('${esc(cat.id)}')">✏️</button>
       ${deleteBtn}
     </div>`;
   }
@@ -2264,6 +2447,55 @@
       if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category created!'); }
       else { showToast('Failed to create category: ' + (res.error || ''), 'error'); }
     });
+  };
+
+  /* ── F0-5: Edit Category ─────────────────────────────── */
+  window.openEditCategory = function (id) {
+    const catId = Number(id);
+    const cat = cachedCategories.find(c => c.id === catId);
+    if (!cat) { showToast('Category not found.', 'error'); return; }
+    const presetColors = ['#1976D2','#2e7d32','#c62828','#f57f17','#6a1b9a','#00838f','#ad1457','#4e342e'];
+    const colorBtns = presetColors.map(c =>
+      `<span class="color-swatch" style="background:${c};width:22px;height:22px;cursor:pointer;border:2px solid transparent"
+        onclick="document.getElementById('cat-color').value='${c}';document.querySelectorAll('.cat-color-btn').forEach(s=>s.style.borderColor='transparent');this.style.borderColor='var(--accent)'"
+        class="cat-color-btn"></span>`
+    ).join(' ');
+    /* exclude self and descendants from parent options */
+    const parentOpts = cachedCategories
+      .filter(c => c.id !== catId && c.parentId !== catId)
+      .map(c => `<option value="${c.id}" ${c.id === cat.parentId ? 'selected' : ''}>${esc(c.name)}</option>`)
+      .join('');
+    const currentColor = typeof cat.colorHex === 'number' ? '#' + cat.colorHex.toString(16).padStart(6,'0') : (cat.colorHex || '#9e9e9e');
+    const body = `
+      ${formField('Category Name', `<input type="text" id="cat-name" value="${esc(cat.name)}">`)}
+      ${formField('Parent (optional)', `<select id="cat-parent"><option value="">— Top-level —</option>${parentOpts}</select>`)}
+      ${formField('Nature', `<select id="cat-nature">
+        <option value="NEED" ${cat.nature==='NEED'?'selected':''}>Need</option>
+        <option value="MUST" ${cat.nature==='MUST'?'selected':''}>Must</option>
+        <option value="WANT" ${cat.nature==='WANT'?'selected':''}>Want</option>
+      </select>`)}
+      <div class="form-field"><label>Color</label>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${colorBtns}</div>
+        <input type="text" id="cat-color" value="${esc(currentColor)}" placeholder="#1976D2" style="width:100px;margin-top:8px">
+      </div>`;
+    openModal(`Edit Category — ${esc(cat.name)}`, body, async () => {
+      clearFieldErrors(modalBody);
+      const name   = document.getElementById('cat-name')?.value.trim();
+      const parent = document.getElementById('cat-parent')?.value || null;
+      const nature = document.getElementById('cat-nature')?.value;
+      const color  = document.getElementById('cat-color')?.value.trim();
+      if (!name) { showFieldError('cat-name', 'Name is required.'); return; }
+      await withLoading(modalConfBtn, async () => {
+        const res = await apiWrite('PUT', `/api/categories/${encodeURIComponent(id)}`, {
+          name,
+          parentId: parent ? Number(parent) : null,
+          nature,
+          colorHex: color || undefined,
+        });
+        if (res.success) { closeModal(); await warmCache(); renderCategories(); showToast('Category updated!'); }
+        else { showToast('Failed to update: ' + (res.error||''), 'error'); }
+      });
+    }, 'Save Changes');
   };
 
   window.deleteCategory = function (id, name) {

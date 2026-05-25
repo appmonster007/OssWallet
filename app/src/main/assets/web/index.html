@@ -3474,20 +3474,20 @@
   /* type = CardType.name (used to match card.cardType from response)
      serialName = CardType.serialName (sent to POST /api/dashboard/cards) */
   const ALL_CARD_TYPES = [
-    { type:'NET_WORTH',               serialName:'net_worth',                label:'Net Worth' },
-    { type:'CASH_FLOW',               serialName:'cash_flow',                label:'Cash Flow' },
-    { type:'CURRENCY_BALANCES',       serialName:'currency_balances',        label:'Currency Balances' },
-    { type:'ACCOUNTS',                serialName:'accounts',                 label:'Accounts' },
-    { type:'BUDGETS',                 serialName:'budgets',                  label:'Budgets' },
-    { type:'PLANNED_PAYMENTS',        serialName:'planned_payments',         label:'Planned Payments' },
-    { type:'LOANS',                   serialName:'loans',                    label:'Loans' },
-    { type:'RECENT_ACTIVITIES',       serialName:'recent_activities',        label:'Recent Activities' },
-    { type:'CATEGORY_PIE_CHART',      serialName:'category_breakdown',       label:'Category Pie Chart' },
-    { type:'CATEGORY_TREEMAP',        serialName:'category_expense_treemap', label:'Category Treemap' },
-    { type:'CASHFLOW_COMPARISON',     serialName:'cashflow_comparison',      label:'Cash Flow Comparison' },
-    { type:'INCOME_EXPENSE_BAR',      serialName:'income_expense_bar',       label:'Income & Expense Bar' },
-    { type:'CATEGORY_SPENDING_TREND', serialName:'category_spending_trend',  label:'Category Spending Trend' },
-    { type:'TAG_UPSET_PLOT',          serialName:'tag_upset_plot',           label:'Tag Analysis' },
+    { type:'NET_WORTH',               serialName:'net_worth',                label:'Net Worth',               desc:'Total assets minus liabilities with period cash flow' },
+    { type:'CASH_FLOW',               serialName:'cash_flow',                label:'Cash Flow',               desc:'Income vs expenses for the selected period' },
+    { type:'CURRENCY_BALANCES',       serialName:'currency_balances',        label:'Currency Balances',       desc:'Account balances grouped by currency with base conversion' },
+    { type:'ACCOUNTS',                serialName:'accounts',                 label:'Accounts',                desc:'All account balances, income, and expenses' },
+    { type:'BUDGETS',                 serialName:'budgets',                  label:'Budgets',                 desc:'Spending progress against budget limits' },
+    { type:'PLANNED_PAYMENTS',        serialName:'planned_payments',         label:'Planned Payments',        desc:'Upcoming and overdue scheduled payments' },
+    { type:'LOANS',                   serialName:'loans',                    label:'Loans',                   desc:'Borrowed and lent money with repayment tracking' },
+    { type:'RECENT_ACTIVITIES',       serialName:'recent_activities',        label:'Recent Activities',       desc:'Latest transactions at a glance' },
+    { type:'CATEGORY_PIE_CHART',      serialName:'category_breakdown',       label:'Category Pie Chart',      desc:'Spending breakdown by category as a pie chart' },
+    { type:'CATEGORY_TREEMAP',        serialName:'category_expense_treemap', label:'Category Treemap',        desc:'Visual treemap of category spending proportions' },
+    { type:'CASHFLOW_COMPARISON',     serialName:'cashflow_comparison',      label:'Cash Flow Comparison',    desc:'Period-over-period cash flow chart (current vs previous vs last year)' },
+    { type:'INCOME_EXPENSE_BAR',      serialName:'income_expense_bar',       label:'Income & Expense Bar',   desc:'Income vs expense bar chart over time' },
+    { type:'CATEGORY_SPENDING_TREND', serialName:'category_spending_trend',  label:'Category Spending Trend', desc:'How category spending changes over time' },
+    { type:'TAG_UPSET_PLOT',          serialName:'tag_upset_plot',           label:'Tag Analysis',            desc:'Tag co-occurrence and intersection amounts' },
   ];
 
   window.openManageCards = async function () {
@@ -3519,8 +3519,10 @@
       body += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:${cards.length?'20px':'0'} 0 8px">Add Card</div>
         <div class="add-card-grid">`;
       available.forEach(t => {
-        /* server accepts either enum name or serialName; we send serialName which is always accepted */
-        body += `<div class="add-card-btn" onclick="addDashboardCard('${esc(t.serialName)}')">+ ${esc(t.label)}</div>`;
+        body += `<div class="add-card-btn" onclick="addDashboardCard('${esc(t.serialName)}')">
+          <div style="font-weight:600">+ ${esc(t.label)}</div>
+          ${t.desc ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;line-height:1.3">${esc(t.desc)}</div>` : ''}
+        </div>`;
       });
       body += '</div>';
     }

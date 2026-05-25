@@ -99,29 +99,31 @@ class TransactionEntryViewModel @Inject constructor(
 
             val defaultCategory = categories.find { it.id == 1002L } ?: categories.firstOrNull()
 
-            _state.value = TransactionEntryState(
-                transactionId = transactionId,
-                isEditMode = isEditMode,
-                existingTransaction = existingTransaction,
-                linkedTxs = linkedTxs,
-                linkedTransactionIds = linkedTxs.map { it.id },
-                prefillDto = prefillDto,
-                accounts = accounts,
-                categories = categories,
-                allTags = tags,
-                templates = templates,
-                allPayees = payees,
-                allNotes = notes,
-                mapsAccessEnabled = mapsAccess,
-                selectedAccount = selectedAccount,
-                selectedCurrency = selectedAccount?.currencyCode ?: "",
-                transactionType = initialType,
-                selectedTemplateName = null,
-                selectedDateMillis = initialTimestamp,
-                selectedCategoryId = defaultCategory?.id ?: 1002L,
-                shortlistedCurrencies = effectiveShortlistedCurrencies.value,
-                fullProviderCurrencies = CurrencyService.getAllCurrencies()
-            )
+            _state.update {
+                TransactionEntryState(
+                    transactionId = transactionId,
+                    isEditMode = isEditMode,
+                    existingTransaction = existingTransaction,
+                    linkedTxs = linkedTxs,
+                    linkedTransactionIds = linkedTxs.map { it.id },
+                    prefillDto = prefillDto,
+                    accounts = accounts,
+                    categories = categories,
+                    allTags = tags,
+                    templates = templates,
+                    allPayees = payees,
+                    allNotes = notes,
+                    mapsAccessEnabled = mapsAccess,
+                    selectedAccount = selectedAccount,
+                    selectedCurrency = selectedAccount?.currencyCode ?: "",
+                    transactionType = initialType,
+                    selectedTemplateName = null,
+                    selectedDateMillis = initialTimestamp,
+                    selectedCategoryId = defaultCategory?.id ?: 1002L,
+                    shortlistedCurrencies = effectiveShortlistedCurrencies.value,
+                    fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                )
+            }
 
             // Initialize from template ID if provided
             if (initialTemplateId != null && initialTemplateId != -1L) {
@@ -162,27 +164,29 @@ class TransactionEntryViewModel @Inject constructor(
             targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
         }
 
-        _state.value = _state.value.copy(
-            amount = transaction.amount.abs().toPlainString(),
-            selectedCategoryId = transaction.categoryId,
-            selectedTags = transaction.tags,
-            paymentMethod = transaction.paymentMethod,
-            status = transaction.status,
-            transactionType = txType,
-            selectedDateMillis = transaction.timestamp,
-            payee = transaction.payee,
-            note = transaction.note,
-            warrantyExpirationMillis = transaction.warrantyExpiration
-                ?: (System.currentTimeMillis() + 31536000000L),
-            isWarrantyEnabled = transaction.warrantyExpiration != null,
-            gpsLocation = transaction.gpsLocation,
-            location = transaction.location,
-            selectedAccount = selectedAcc,
-            selectedCurrency = transaction.currency,
-            targetAccount = targetAcc,
-            targetCurrency = targetAcc?.currencyCode ?: "",
-            exchangeRate = BigDecimal.ONE // Transaction entity doesn't have transferRate
-        )
+        _state.update {
+            it.copy(
+                amount = transaction.amount.abs().toPlainString(),
+                selectedCategoryId = transaction.categoryId,
+                selectedTags = transaction.tags,
+                paymentMethod = transaction.paymentMethod,
+                status = transaction.status,
+                transactionType = txType,
+                selectedDateMillis = transaction.timestamp,
+                payee = transaction.payee,
+                note = transaction.note,
+                warrantyExpirationMillis = transaction.warrantyExpiration
+                    ?: (System.currentTimeMillis() + 31536000000L),
+                isWarrantyEnabled = transaction.warrantyExpiration != null,
+                gpsLocation = transaction.gpsLocation,
+                location = transaction.location,
+                selectedAccount = selectedAcc,
+                selectedCurrency = transaction.currency,
+                targetAccount = targetAcc,
+                targetCurrency = targetAcc?.currencyCode ?: "",
+                exchangeRate = BigDecimal.ONE // Transaction entity doesn't have transferRate
+            )
+        }
     }
 
     private fun applyPrefill(prefill: TransactionPrefillDTO) {
@@ -200,45 +204,47 @@ class TransactionEntryViewModel @Inject constructor(
                 ?: currentState.targetAccount
         }
 
-        _state.value = currentState.copy(
-            amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()
-                ?.toPlainString()
-                ?: prefill.amount,
-            selectedCategoryId = prefill.categoryId,
-            selectedTags = prefill.tags,
-            paymentMethod = prefill.paymentMethod,
-            status = prefill.status,
-            transactionType = txType,
-            payee = prefill.payee,
-            note = prefill.note,
-            warrantyExpirationMillis = prefill.warrantyExpiration
-                ?: System.currentTimeMillis() + 31536000000L,
-            isWarrantyEnabled = prefill.warrantyExpiration != null,
-            gpsLocation = prefill.gpsLocation,
-            location = prefill.location,
-            linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
-                ?: prefill.linkedTransactionIds,
-            selectedAccount = prefillAcc,
-            selectedCurrency = prefill.currency.ifEmpty { prefillAcc?.currencyCode ?: "" },
-            selectedDateMillis = prefill.timestamp ?: currentState.selectedDateMillis,
-            targetAccount = targetAcc,
-            targetCurrency = prefill.targetCurrency ?: targetAcc?.currencyCode ?: "",
-            exchangeRate = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE,
-            selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.name else currentState.selectedTemplateName,
-            prefillDto = prefill,
-            isSplitMode = prefill.isSplitMode,
-            showSplitSheet = prefill.isSplitMode,
-            splits = if (prefill.isSplitMode) {
-                listOf(
-                    TransactionSplit(
-                        categoryId = prefill.categoryId,
-                        amount = prefill.amount,
-                        note = prefill.note
-                    ),
-                    TransactionSplit(categoryId = null, amount = "", note = "")
-                )
-            } else emptyList()
-        )
+        _state.update {
+            it.copy(
+                amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()
+                    ?.toPlainString()
+                    ?: prefill.amount,
+                selectedCategoryId = prefill.categoryId,
+                selectedTags = prefill.tags,
+                paymentMethod = prefill.paymentMethod,
+                status = prefill.status,
+                transactionType = txType,
+                payee = prefill.payee,
+                note = prefill.note,
+                warrantyExpirationMillis = prefill.warrantyExpiration
+                    ?: System.currentTimeMillis() + 31536000000L,
+                isWarrantyEnabled = prefill.warrantyExpiration != null,
+                gpsLocation = prefill.gpsLocation,
+                location = prefill.location,
+                linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
+                    ?: prefill.linkedTransactionIds,
+                selectedAccount = prefillAcc,
+                selectedCurrency = prefill.currency.ifEmpty { prefillAcc?.currencyCode ?: "" },
+                selectedDateMillis = prefill.timestamp ?: it.selectedDateMillis,
+                targetAccount = targetAcc,
+                targetCurrency = prefill.targetCurrency ?: targetAcc?.currencyCode ?: "",
+                exchangeRate = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE,
+                selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.name else it.selectedTemplateName,
+                prefillDto = prefill,
+                isSplitMode = prefill.isSplitMode,
+                showSplitSheet = prefill.isSplitMode,
+                splits = if (prefill.isSplitMode) {
+                    listOf(
+                        TransactionSplit(
+                            categoryId = prefill.categoryId,
+                            amount = prefill.amount,
+                            note = prefill.note
+                        ),
+                        TransactionSplit(categoryId = null, amount = "", note = "")
+                    )
+                } else emptyList()
+            )
+        }
 
         // Post-prefill logic for transfers
         if (txType == TransactionType.TRANSFER) {

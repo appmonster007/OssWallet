@@ -71,7 +71,12 @@ fun AeonImpactHeaderCard(
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
     supportedCurrencies: List<String> = emptyList(),
-    targetSupportedCurrencies: List<String> = emptyList()
+    targetSupportedCurrencies: List<String> = emptyList(),
+    amountPrefix: String = when (transactionType) {
+        TransactionType.EXPENSE -> "-"
+        TransactionType.INCOME -> "+"
+        TransactionType.TRANSFER -> ""
+    }
 ) {
     val types = TransactionType.entries.map {
         Triple(
@@ -113,7 +118,8 @@ fun AeonImpactHeaderCard(
         amountColor = amountColor
             ?: Color(android.graphics.Color.parseColor(transactionType.colorHex)),
         supportedCurrencies = supportedCurrencies,
-        targetSupportedCurrencies = targetSupportedCurrencies
+        targetSupportedCurrencies = targetSupportedCurrencies,
+        amountPrefix = amountPrefix
     )
 }
 
@@ -148,7 +154,8 @@ fun <T> AeonImpactHeaderCard(
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
     supportedCurrencies: List<String> = emptyList(),
-    targetSupportedCurrencies: List<String> = emptyList()
+    targetSupportedCurrencies: List<String> = emptyList(),
+    amountPrefix: String = ""
 ) {
     val activeAmountColor = amountColor ?: AppColors.primary
 
@@ -188,7 +195,8 @@ fun <T> AeonImpactHeaderCard(
                         amountColor = activeAmountColor,
                         supportedCurrencies = supportedCurrencies,
                         showCurrency = showCurrency,
-                        label = amountLabel
+                        label = amountLabel,
+                        prefix = amountPrefix
                     )
 
                     if (onSplitClick != null && !isTransfer) {
@@ -266,7 +274,8 @@ fun <T> AeonImpactHeaderCard(
                     onCurrencyClick = onTargetCurrencyClick,
                     onAmountClick = onAmountClick,
                     amountColor = AppColors.contentPrimary.copy(alpha = 0.8f),
-                    supportedCurrencies = targetSupportedCurrencies.ifEmpty { supportedCurrencies }
+                    supportedCurrencies = targetSupportedCurrencies.ifEmpty { supportedCurrencies },
+                    prefix = amountPrefix
                 )
             }
 

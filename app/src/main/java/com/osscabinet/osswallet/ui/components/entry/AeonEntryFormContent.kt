@@ -59,6 +59,8 @@ fun AeonEntryContextRow(
             value = selectedAccount?.name ?: "Select",
             onClick = onAccountClick,
             modifier = Modifier.weight(1f),
+            isSelected = selectedAccount != null,
+            selectedColor = accountColor,
             iconContainerColor = accountColor.copy(alpha = 0.1f),
             iconTint = accountColor
         )
@@ -73,6 +75,8 @@ fun AeonEntryContextRow(
                 value = targetDisplay,
                 onClick = onTargetAccountClick,
                 modifier = Modifier.weight(1f),
+                isSelected = targetAccount != null,
+                selectedColor = targetColor,
                 iconContainerColor = targetColor.copy(alpha = 0.1f),
                 iconTint = targetColor
             )
@@ -96,6 +100,8 @@ fun AeonEntryContextRow(
                 value = displayCategoryName,
                 onClick = if (isSplitMode) onSplitClick else onCategoryClick,
                 modifier = Modifier.weight(1f),
+                isSelected = isSplitMode || selectedCategory != null,
+                selectedColor = categoryColor,
                 iconContainerColor = categoryColor.copy(alpha = 0.1f),
                 iconTint = categoryColor
             )

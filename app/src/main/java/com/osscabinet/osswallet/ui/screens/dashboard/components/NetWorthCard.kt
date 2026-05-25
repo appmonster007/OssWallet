@@ -99,27 +99,33 @@ fun NetWorthCard(
                 else -> 20.sp
             }
 
-            Column {
-                Text(
-                    text = formatCurrencyRight(
-                        currentMetrics.netWorth,
-                        displayCurrency,
-                        shorten = true
-                    ),
-                    style = AppTextStyles.screenTitle.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = baseFontSize,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = AppColors.contentPrimary
-                )
-
-                currentMetrics.netWorthInBase?.let { inBase ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
                     Text(
-                        text = "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
-                        style = AppTextStyles.metaLabel,
-                        color = AppColors.contentPrimary.copy(alpha = 0.6f)
+                        text = formatCurrencyRight(
+                            currentMetrics.netWorth,
+                            displayCurrency,
+                            shorten = true
+                        ),
+                        style = AppTextStyles.screenTitle.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = baseFontSize,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = AppColors.contentPrimary
                     )
+
+                    currentMetrics.netWorthInBase?.let { inBase ->
+                        Text(
+                            text = "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
+                            style = AppTextStyles.metaLabel,
+                            color = AppColors.contentPrimary.copy(alpha = 0.6f)
+                        )
+                    }
                 }
 
                 if (config.showComparison && previousMetrics != null) {
@@ -130,7 +136,8 @@ fun NetWorthCard(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp)
                         ) {
                             Icon(
                                 if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
@@ -139,7 +146,7 @@ fun NetWorthCard(
                                 tint = AppColors.contentSecondary
                             )
                             Text(
-                                text = "${if (change.signum() > 0) "+" else ""}$percentage% from prev. period",
+                                text = "${if (change.signum() > 0) "+" else ""}$percentage%",
                                 style = AppTextStyles.transactionSwipeAction.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp
@@ -229,7 +236,7 @@ private fun FlowBadge(
                         text = label,
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
+                            fontSize = 10.sp,
                             letterSpacing = 0.5.sp
                         ),
                         color = AppColors.contentSecondary
@@ -255,7 +262,7 @@ private fun FlowBadge(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage%",
                                 style = AppTextStyles.transactionSwipeAction.copy(
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = 12.sp
+                                    fontSize = 10.sp
                                 ),
                                 color = color
                             )

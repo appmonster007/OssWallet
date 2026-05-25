@@ -557,9 +557,11 @@ fun DashboardGlanceTab(
             }
         }
 
-        val accountsCardConfig = remember(state.profileId) {
-            AccountsCardConfig(cardId = "accounts_dashboard_${state.profileId}")
-        }
+        val pinnedAccountsConfig = cardsConfig.cards
+            .filterIsInstance<AccountsCardConfig>()
+            .minByOrNull { it.order }
+            ?: AccountsCardConfig(cardId = "accounts_dashboard_${state.profileId}", order = 0)
+
         val accountsCardInput = remember(state) {
             CardInput(
                 profileId = state.profileId,
@@ -573,7 +575,7 @@ fun DashboardGlanceTab(
             )
         }
         val accountsCard = rememberCardWithCallbacks(
-            config = accountsCardConfig,
+            config = pinnedAccountsConfig,
             input = accountsCardInput,
             registry = cardComputerRegistry,
             updateHandler = cardUpdateHandler,
@@ -589,7 +591,7 @@ fun DashboardGlanceTab(
         )
 
         AeonCardList(
-            cards = cardsConfig.cards.filter { it !is AccountsCardConfig },
+            cards = cardsConfig.cards.filter { it.cardId != pinnedAccountsConfig.cardId },
             cardDataMap = state.cardDataMap,
             cardInput = CardInput(
                 profileId = state.profileId,

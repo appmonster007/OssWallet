@@ -81,7 +81,7 @@ class CardRepositoryImpl @Inject constructor(
         val current = flow.first()
 
         // Find the maximum order and set new card's order to max + 1
-        val maxOrder = current.cards.maxOfOrNull { it.order } ?: -1
+        val maxOrder = current.cards.maxOfOrNull { it.order } ?: 0
         val cardWithOrder = card.withOrder(maxOrder + 1)
 
         val updated = current.copy(cards = current.cards + cardWithOrder)
@@ -101,17 +101,7 @@ class CardRepositoryImpl @Inject constructor(
     }
 
     private suspend fun saveConfig(context: ScreenContext, config: DashboardCardsConfig) {
-        val configToSave = when (context) {
-            // Strip always-present, non-user-managed header cards before persisting.
-            ScreenContext.ACCOUNT_DETAIL -> config.copy(
-                cards = config.cards.filter { it !is AccountHeroCardConfig }
-            )
-            ScreenContext.DASHBOARD -> config.copy(
-                cards = config.cards.filter { it !is AccountsCardConfig }
-            )
-
-            else -> config
-        }
+        val configToSave = config
         val encoded = json.encodeToString(configToSave)
         when (context) {
             ScreenContext.DASHBOARD -> settingsDataStore.saveDashboardCardsConfig(encoded)
@@ -126,16 +116,17 @@ class CardRepositoryImpl @Inject constructor(
         settingsDataStore.dashboardCardsConfig.map {
             val decoded: DashboardCardsConfig =
                 if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
-            // AccountsCard is always-present as a pinned header; strip any persisted copies.
-            decoded.copy(cards = decoded.cards.filter { card -> card !is AccountsCardConfig })
+            // Seed the pinned accounts card at order 0 if not yet present.
+            if (decoded.cards.none { card -> card is AccountsCardConfig && card.order == 0 }) {
+                decoded.copy(
+                    cards = listOf(AccountsCardConfig(cardId = "accounts_dashboard", order = 0)) + decoded.cards
+                )
+            } else decoded
         }
 
     override val accountDetailCardsConfig: Flow<DashboardCardsConfig> =
         settingsDataStore.accountDetailCardsConfig.map {
-            val decoded: DashboardCardsConfig =
-                if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
-            // AccountHeroCard is always-present; strip it from the managed list so legacy data is cleaned.
-            decoded.copy(cards = decoded.cards.filter { card -> card !is AccountHeroCardConfig })
+            if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
         }
 
     override val accountsViewCardsConfig: Flow<DashboardCardsConfig> =
@@ -204,6 +195,6 @@ class CardRepositoryImpl @Inject constructor(
 
     private fun withUpdatedOrder(cards: List<CardConfig>): List<CardConfig> =
         cards.mapIndexed { index, card ->
-            card.withOrder(index)
+            card.withOrder(index + 1)
         }
 }

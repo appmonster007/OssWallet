@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -67,15 +68,20 @@ fun EntryActionCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed && enabled) 0.98f else 1f, label = "cardScale")
 
+    // Luminance-based contrast: dark text on light backgrounds, white on dark
+    val contentColor = remember(isSelected, selectedColor) {
+        if (isSelected) {
+            if (selectedColor.luminance() > 0.4f) Color(0xFF1A1A1A) else Color.White
+        } else Color.Unspecified
+    }
+
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor.copy(alpha = 0.08f)
-        else AppColors.cardSurface,
+        if (isSelected) selectedColor else AppColors.cardSurface,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor
-        else AppColors.divider.copy(alpha = 0.15f),
+        if (isSelected) selectedColor else AppColors.divider.copy(alpha = 0.15f),
         label = "borderColor"
     )
 
@@ -105,7 +111,7 @@ fun EntryActionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected) selectedColor.copy(alpha = 0.12f) else iconContainerColor,
+                color = if (isSelected) contentColor.copy(alpha = 0.15f) else iconContainerColor,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -113,7 +119,7 @@ fun EntryActionCard(
                         icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) selectedColor else iconTint
+                        tint = if (isSelected) contentColor else iconTint
                     )
                 }
             }
@@ -129,16 +135,15 @@ fun EntryActionCard(
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     ),
-                    color = if (isSelected) selectedColor.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(
-                        alpha = 0.6f
-                    )
+                    color = if (isSelected) contentColor.copy(alpha = 0.75f)
+                    else AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
                 Text(
                     text = value,
                     style = AppTextStyles.listItemTitle.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                     ),
-                    color = if (isSelected) selectedColor else AppColors.contentPrimary,
+                    color = if (isSelected) contentColor else AppColors.contentPrimary,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -156,9 +161,8 @@ fun EntryActionCard(
                         trailingIcon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) selectedColor.copy(alpha = 0.5f) else AppColors.contentSecondary.copy(
-                            alpha = 0.4f
-                        )
+                        tint = if (isSelected) contentColor.copy(alpha = 0.6f)
+                        else AppColors.contentSecondary.copy(alpha = 0.4f)
                     )
                 }
             }

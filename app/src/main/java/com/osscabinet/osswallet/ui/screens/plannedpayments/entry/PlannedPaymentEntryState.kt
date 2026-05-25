@@ -82,6 +82,13 @@ data class PlannedPaymentEntryState(
     val displayLinkedTxs: List<Transaction> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    val isIncome: Boolean get() = transactionType == TransactionType.INCOME
+    val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
+    val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+
+    val amountValue: BigDecimal
+        get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+
     val canSave: Boolean
         get() = name.isNotBlank()
 }

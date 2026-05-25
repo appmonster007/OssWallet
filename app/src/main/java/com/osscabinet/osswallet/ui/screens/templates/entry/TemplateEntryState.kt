@@ -71,6 +71,10 @@ data class TemplateEntryState(
     val selectedTargetAccount: Account? get() = accounts.find { it.id == targetAccountId }
     val selectedCategory: Category? get() = categories.find { it.id == categoryId }
 
+    val isIncome: Boolean get() = transactionType == TransactionType.INCOME
+    val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
+    val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
 

@@ -160,7 +160,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         linkedTemplate = existing.templateId?.let { id -> it.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
                         name = existing.name,
-                        amount = existing.amount.toPlainString(),
+                        amount = existing.amount.abs().toPlainString(),
                         currency = existing.currency,
                         transactionType = existing.transactionType,
                         selectedAccountId = existing.accountId,
@@ -210,10 +210,33 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 }
             }
 
-            is PlannedPaymentEntryEvent.SetAmountText -> _state.update { it.copy(amount = event.amount) }
+            is PlannedPaymentEntryEvent.SetAmountText -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                if (inputAmount < BigDecimal.ZERO) {
+                    _state.update { state ->
+                        val newType = when (state.transactionType) {
+                            TransactionType.EXPENSE -> TransactionType.INCOME
+                            TransactionType.INCOME -> TransactionType.EXPENSE
+                            else -> state.transactionType
+                        }
+                        state.copy(
+                            amount = inputAmount.abs().toPlainString(),
+                            transactionType = newType
+                        )
+                    }
+                } else {
+                    _state.update { it.copy(amount = event.amount) }
+                }
+            }
             is PlannedPaymentEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
-                _state.update { it.copy(transactionType = event.type) }
+                _state.update { state ->
+                    state.copy(
+                        transactionType = event.type,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
+                            .toPlainString()
+                    )
+                }
                 if (event.type == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
                     autoSelectTargetAccount()
                 }
@@ -441,9 +464,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = s.amount.toBigDecimalOrNull()?.let {
-                if (s.transactionType == TransactionType.EXPENSE) it.abs().negate() else it.abs()
-            } ?: BigDecimal.ZERO
+            val amountValue = if (s.isExpense) s.amountValue.abs().negate() else s.amountValue.abs()
 
             val rule = RecurrenceRule(
                 type = s.recurrenceType,

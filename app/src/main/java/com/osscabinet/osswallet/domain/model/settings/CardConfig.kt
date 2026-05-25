@@ -166,7 +166,7 @@ data class AccountsCardConfig(
     override val cardId: String,
     override val title: String = "ACCOUNTS",
     override val isEnabled: Boolean = true,
-    override val order: Int = 3,
+    override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "grid",
     val gridColumns: Int = 2,
@@ -175,6 +175,7 @@ data class AccountsCardConfig(
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+    override val isPinned: Boolean get() = true
 }
 
 /**
@@ -238,6 +239,7 @@ data class AccountHeroCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
+    override val isPinned: Boolean get() = true
     override val filterRules: CardFilterRules get() = CardFilterRules(
         allowAccountSelection = false,
         allowCategorySelection = false,

@@ -3,8 +3,6 @@ package com.osscabinet.ossWallet.data.repository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
@@ -114,14 +112,7 @@ class CardRepositoryImpl @Inject constructor(
     // Legacy implementations mapping to new unified API
     override val dashboardCardsConfig: Flow<DashboardCardsConfig> =
         settingsDataStore.dashboardCardsConfig.map {
-            val decoded: DashboardCardsConfig =
-                if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
-            // Seed the pinned accounts card at order 0 if not yet present.
-            if (decoded.cards.none { card -> card is AccountsCardConfig && card.order == 0 }) {
-                decoded.copy(
-                    cards = listOf(AccountsCardConfig(cardId = "accounts_dashboard", order = 0)) + decoded.cards
-                )
-            } else decoded
+            if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
         }
 
     override val accountDetailCardsConfig: Flow<DashboardCardsConfig> =

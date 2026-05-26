@@ -90,3 +90,5 @@ enum class TransactionType(
     @Deprecated("Use equality check with INCOME to support Transfers", ReplaceWith("this == TransactionType.INCOME"))
     fun toBoolean(): Boolean = this == INCOME
 }
+
+enum class AmountEditingSide { SOURCE, TARGET }

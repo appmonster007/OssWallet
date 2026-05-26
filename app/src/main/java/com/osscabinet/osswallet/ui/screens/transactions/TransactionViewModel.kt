@@ -431,6 +431,7 @@ class TransactionViewModel @Inject constructor(
                         } else BigDecimal.ONE
 
                         prefill = prefill.copy(
+                            accountId = transaction.accountId,
                             targetAccountId = targetTx.accountId,
                             targetCurrency = targetTx.currency,
                             exchangeRate = rate.toPlainString()

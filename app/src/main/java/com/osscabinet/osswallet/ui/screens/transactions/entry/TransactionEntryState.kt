@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -19,6 +20,8 @@ import java.math.BigDecimal
 data class TransactionEntryState(
     // Core form fields
     val amount: String = "",
+    val targetAmount: String = "",
+    val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val selectedCategoryId: Long = Category.SYSTEM_UNKNOWN,
     val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
@@ -99,7 +102,7 @@ data class TransactionEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
-    val isTransferInflow: Boolean get() = isTransfer && selectedCategoryId == Category.SYSTEM_TRANSFER_INFLOW
+    val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(selectedCategoryId)
 
     val displayLinkedTxs: List<Transaction>
         get() = linkedTxs.sortedByDescending { it.timestamp }

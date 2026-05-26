@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -17,13 +18,15 @@ data class TemplateEntryState(
     // Core form fields
     val name: String = "",
     val amount: String = "",
+    val targetAmount: String = "",
+    val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val transactionType: TransactionType = TransactionType.EXPENSE,
     val categoryId: Long = Category.SYSTEM_UNKNOWN,
     val categoryName: String = "Unknown",
     val accountId: String? = null,
     val targetAccountId: String? = null,
+    val targetCurrency: String = "",
     val currency: String = "USD",
-    val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
     val note: String = "",
     val payee: String = "",
@@ -74,7 +77,7 @@ data class TemplateEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
-    val isTransferInflow: Boolean get() = isTransfer && categoryId == Category.SYSTEM_TRANSFER_INFLOW
+    val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(categoryId)
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

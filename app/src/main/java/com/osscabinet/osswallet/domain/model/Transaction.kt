@@ -23,7 +23,10 @@ data class Transaction(
     val gpsLocation: String? = null,
     val location: String? = null,
     val warrantyExpiration: Long? = null,
-    val status: TransactionStatus = TransactionStatus.CLEARED
+    val status: TransactionStatus = TransactionStatus.CLEARED,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: BigDecimal = BigDecimal.ONE
 ) : Timestamped
 
 data class TransactionWithBalance(

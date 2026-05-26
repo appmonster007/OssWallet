@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
@@ -144,9 +145,13 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showNumpad) {
         AeonCalculatorSheet(
-            currentAmount = state.amount,
+            currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
             onAmountChanged = { amount ->
-                onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
+                if (state.activeAmountSide == AmountEditingSide.SOURCE) {
+                    onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
+                } else {
+                    onEvent(PlannedPaymentEntryEvent.SetTargetAmount(amount))
+                }
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(false)) }
         )

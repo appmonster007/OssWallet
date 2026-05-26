@@ -26,7 +26,7 @@ data class TransactionRequest(
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val sourcePlannedPaymentId: Long? = null,
-    
+
     // Transfer-specific fields
     val isTransfer: Boolean = false,
     val targetAccountId: String? = null,

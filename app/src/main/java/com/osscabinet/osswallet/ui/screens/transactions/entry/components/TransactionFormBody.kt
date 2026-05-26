@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
@@ -65,7 +66,9 @@ fun TransactionFormBody(
                 amount = state.amount,
                 currency = state.selectedCurrency,
                 onCurrencyClick = { currency -> onEvent(TransactionEntryEvent.SetCurrency(currency)) },
-                onAmountClick = { onEvent(TransactionEntryEvent.ShowNumpad(true)) },
+                onAmountClick = { side -> onEvent(TransactionEntryEvent.ShowNumpad(true, side)) },
+                amountLabel = if (state.isTransfer) "SOURCE AMOUNT" else "AMOUNT",
+                targetAmount = if (state.isTransfer) state.targetAmount else null,
                 showName = false,
                 isTransfer = state.isTransfer,
                 targetAccountId = state.targetAccount?.id,

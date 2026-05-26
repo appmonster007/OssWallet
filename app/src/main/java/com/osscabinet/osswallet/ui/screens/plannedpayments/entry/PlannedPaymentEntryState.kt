@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -16,6 +17,8 @@ import java.math.BigDecimal
 data class PlannedPaymentEntryState(
     val name: String = "",
     val amount: String = "",
+    val targetAmount: String = "",
+    val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val currency: String = "USD",
     val transactionType: TransactionType = TransactionType.EXPENSE,
     val selectedAccountId: String? = null,
@@ -85,7 +88,7 @@ data class PlannedPaymentEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
-    val isTransferInflow: Boolean get() = isTransfer && selectedCategoryId == Category.SYSTEM_TRANSFER_INFLOW
+    val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(selectedCategoryId)
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

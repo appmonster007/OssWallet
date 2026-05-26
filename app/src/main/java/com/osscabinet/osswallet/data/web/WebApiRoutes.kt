@@ -813,7 +813,6 @@ class WebApiRoutes(
                                 ?: TransactionType.EXPENSE,
                             categoryId = req.categoryId,
                             accountId = req.accountId,
-                            targetAccountId = req.targetAccountId,
                             targetCurrency = req.targetCurrency,
                             transferRate = BigDecimal.valueOf(req.transferRate),
                             note = req.note,
@@ -1979,7 +1978,6 @@ class WebApiRoutes(
                             } ?: existing.transactionType,
                             categoryId = req.categoryId ?: existing.categoryId,
                             accountId = req.accountId ?: existing.accountId,
-                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
                             transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
                                 ?: existing.transferRate,
@@ -2361,7 +2359,6 @@ class WebApiRoutes(
                                 ?: TransactionType.EXPENSE,
                             currency = req.currency,
                             accountId = req.accountId,
-                            targetAccountId = req.targetAccountId,
                             targetCurrency = req.targetCurrency,
                             transferRate = BigDecimal.valueOf(req.transferRate),
                             note = req.note,
@@ -2455,7 +2452,6 @@ class WebApiRoutes(
                             } ?: existing.transactionType,
                             currency = req.currency ?: existing.currency,
                             accountId = req.accountId ?: existing.accountId,
-                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
                             transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
                                 ?: existing.transferRate,

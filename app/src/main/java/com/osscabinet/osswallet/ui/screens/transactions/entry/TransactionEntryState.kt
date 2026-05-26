@@ -47,7 +47,6 @@ data class TransactionEntryState(
     val targetAccount: Account? = null,
     val targetCurrency: String = "",
     val exchangeRate: BigDecimal = BigDecimal.ONE,
-    val isAmountPositive: Boolean = false,
 
     // Template
     val selectedTemplateName: String? = null,
@@ -100,6 +99,7 @@ data class TransactionEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+    val isTransferInflow: Boolean get() = isTransfer && selectedCategoryId == Category.SYSTEM_TRANSFER_INFLOW
 
     val displayLinkedTxs: List<Transaction>
         get() = linkedTxs.sortedByDescending { it.timestamp }

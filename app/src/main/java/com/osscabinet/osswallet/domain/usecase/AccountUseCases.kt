@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -50,7 +51,7 @@ class AccountUseCases(
                         accountId = accountId,
                         amount = amount,
                         currency = curr,
-                        categoryId = 1001L,
+                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
                         transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
@@ -58,6 +59,42 @@ class AccountUseCases(
                     profileId
                 )
             }
+        }
+    }
+
+    suspend fun upsertInitialBalance(
+        accountId: String,
+        currency: String,
+        amount: BigDecimal,
+        profileId: Int
+    ) {
+        val existing = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
+        when {
+            amount == BigDecimal.ZERO && existing != null ->
+                transactionRepository.deleteTransaction(existing.id)
+            amount != BigDecimal.ZERO && existing != null ->
+                transactionRepository.updateTransaction(
+                    existing,
+                    existing.copy(
+                        amount = amount,
+                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+                    ),
+                    profileId
+                )
+            amount != BigDecimal.ZERO ->
+                transactionRepository.insertTransaction(
+                    Transaction(
+                        name = "Initial Balance",
+                        accountId = accountId,
+                        amount = amount,
+                        currency = currency,
+                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
+                        note = "Initial Balance",
+                        timestamp = System.currentTimeMillis(),
+                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+                    ),
+                    profileId
+                )
         }
     }
 }

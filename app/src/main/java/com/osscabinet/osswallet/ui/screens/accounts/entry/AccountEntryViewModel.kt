@@ -98,6 +98,11 @@ class AccountEntryViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
                 ?.let { account ->
+                    val initialBalances = account.allowedCurrencies.mapNotNull { currency ->
+                        val tx = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
+                        tx?.let { currency to it.amount.abs().stripTrailingZeros().toPlainString() }
+                    }.toMap()
+
                     _state.update {
                         it.copy(
                             accountId = accountId,
@@ -108,7 +113,8 @@ class AccountEntryViewModel @Inject constructor(
                             primaryCurrency = account.currencyCode,
                             allowedCurrencies = account.allowedCurrencies.toSet(),
                             selectedIconName = account.icon,
-                            accentColorHex = account.colorHex
+                            accentColorHex = account.colorHex,
+                            initialBalances = initialBalances
                         )
                     }
                 }
@@ -187,6 +193,10 @@ class AccountEntryViewModel @Inject constructor(
                     ),
                     profileId
                 )
+                s.allowedCurrencies.forEach { currency ->
+                    val amount = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    accountUseCases.upsertInitialBalance(s.accountId!!, currency, amount, profileId)
+                }
             } else {
                 accountUseCases.createAccountWithInitialBalances(
                     name = s.accountName,

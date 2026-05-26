@@ -176,7 +176,7 @@ fun AccountFormBody(
             }
 
             // DETAIL: Initial balances with Calculator integration
-            if (!state.isEditMode && state.allowedCurrencies.isNotEmpty()) {
+            if (state.allowedCurrencies.isNotEmpty()) {
                 EntrySection(
                     title = "INITIAL BALANCES",
                     icon = Icons.Rounded.AccountBalanceWallet

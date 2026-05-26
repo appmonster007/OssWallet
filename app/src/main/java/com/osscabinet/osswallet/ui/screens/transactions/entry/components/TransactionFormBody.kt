@@ -90,7 +90,7 @@ fun TransactionFormBody(
                 supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD"),
                 targetSupportedCurrencies = targetCurrencies,
                 accountId = state.selectedAccount?.id,
-                isAmountPositive = state.isAmountPositive
+                isAmountPositive = state.isTransferInflow
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category

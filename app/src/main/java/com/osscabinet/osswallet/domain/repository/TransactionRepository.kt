@@ -33,6 +33,8 @@ interface TransactionRepository {
     suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
     suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
 
+    suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction?
+
     /** Executes [block] inside a single database transaction. */
     suspend fun <T> runAtomically(block: suspend () -> T): T
 }

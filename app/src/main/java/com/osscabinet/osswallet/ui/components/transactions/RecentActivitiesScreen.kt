@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -214,7 +215,7 @@ fun RecentActivitiesScreenPreview() {
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = 1001L
+        categoryId = Category.SYSTEM_UNKNOWN
     )
     val mockUiModel = TransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),

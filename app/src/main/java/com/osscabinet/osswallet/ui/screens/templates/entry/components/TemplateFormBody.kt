@@ -87,7 +87,7 @@ fun TemplateFormBody(
                 supportedCurrencies = sourceCurrencies,
                 targetSupportedCurrencies = targetCurrencies,
                 accountId = state.accountId,
-                isAmountPositive = state.isAmountPositive
+                isAmountPositive = state.isTransferInflow
             )
 
             // CONTEXT: Action cards row: Account, Category

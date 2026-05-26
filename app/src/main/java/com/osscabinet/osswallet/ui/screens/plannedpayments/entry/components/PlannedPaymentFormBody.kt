@@ -111,7 +111,7 @@ fun PlannedPaymentFormBody(
                 supportedCurrencies = sourceCurrencies,
                 targetSupportedCurrencies = targetCurrencies,
                 accountId = state.selectedAccountId,
-                isAmountPositive = state.isAmountPositive
+                isAmountPositive = state.isTransferInflow
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category

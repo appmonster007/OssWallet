@@ -22,7 +22,6 @@ data class PlannedPaymentEntryState(
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
-    val isAmountPositive: Boolean = false,
     val recurrenceType: RecurrenceType = RecurrenceType.MONTHLY,
     val recurrenceInterval: Int = 1,
     val dayOfWeek: Int? = null,
@@ -86,6 +85,7 @@ data class PlannedPaymentEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+    val isTransferInflow: Boolean get() = isTransfer && selectedCategoryId == Category.SYSTEM_TRANSFER_INFLOW
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
@@ -64,7 +65,7 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories,
+            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
             selectedCategoryIds = setOf(state.selectedCategoryId),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCategoryId(it)) }

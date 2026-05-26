@@ -153,7 +153,7 @@ class TransactionEntryViewModel @Inject constructor(
         linkedTxs: List<Transaction>
     ) {
         val txType = when {
-            transaction.categoryId == Category.SYSTEM_TRANSFER -> TransactionType.TRANSFER
+            Category.isTransfer(transaction.categoryId) -> TransactionType.TRANSFER
             else -> transaction.transactionType
         }
 
@@ -163,7 +163,7 @@ class TransactionEntryViewModel @Inject constructor(
         var targetAcc: Account? = null
         if (txType == TransactionType.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
-                tx.categoryId == Category.SYSTEM_TRANSFER &&
+                Category.isTransfer(tx.categoryId) &&
                         tx.transactionType == TransactionType.TRANSFER &&
                         tx.id != transaction.id &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 5000
@@ -191,7 +191,6 @@ class TransactionEntryViewModel @Inject constructor(
                 selectedCurrency = transaction.currency,
                 targetAccount = targetAcc,
                 targetCurrency = targetAcc?.currencyCode ?: "",
-                isAmountPositive = transaction.amount.signum() > 0,
                 exchangeRate = BigDecimal.ONE // Transaction entity doesn't have transferRate
             )
         }
@@ -212,8 +211,8 @@ class TransactionEntryViewModel @Inject constructor(
             targetAcc = prefill.targetAccountId?.let { id -> accounts.find { acc -> acc.id == id } }
                 ?: currentState.targetAccount
             
-            // If it's an inflow template (Positive amount, null source)
-            if (prefill.accountId == null && prefill.amount.toBigDecimalOrNull()?.signum()?.let { it > 0 } == true) {
+            // If it's an inflow template (target-only, no source account)
+            if (prefill.accountId == null && prefill.categoryId == Category.SYSTEM_TRANSFER_INFLOW) {
                 sourceAcc = null
                 targetAcc = prefill.targetAccountId?.let { accounts.find { a -> a.id == it } }
             }
@@ -293,8 +292,10 @@ class TransactionEntryViewModel @Inject constructor(
                     _state.update { it.copy(amount = event.amount) }
                 }
             }
-            is TransactionEntryEvent.SetCategory -> update {
-                it.copy(selectedCategoryId = event.categoryId)
+            is TransactionEntryEvent.SetCategory -> {
+                if (event.categoryId != Category.SYSTEM_INITIAL_BALANCE) update {
+                    it.copy(selectedCategoryId = event.categoryId)
+                }
             }
 
             is TransactionEntryEvent.SetTags -> update { it.copy(selectedTags = event.tags) }
@@ -328,7 +329,7 @@ class TransactionEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
                     
-                    val primaryAccount = if (isTransferToNormal && state.isAmountPositive) {
+                    val primaryAccount = if (isTransferToNormal && state.isTransferInflow) {
                         state.targetAccount ?: state.selectedAccount
                     } else {
                         state.selectedAccount
@@ -337,34 +338,29 @@ class TransactionEntryViewModel @Inject constructor(
                     state.copy(
                         transactionType = newType,
                         amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
-                        
+
                         selectedAccount = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
                             else -> primaryAccount
                         },
-                        
+
                         targetAccount = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccount
                             newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
                             newType == TransactionType.TRANSFER -> state.targetAccount
                             else -> null
                         },
-                        
-                        isAmountPositive = when {
-                            newType == TransactionType.INCOME -> true
-                            newType == TransactionType.EXPENSE -> false
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
-                            else -> state.isAmountPositive
-                        },
 
                         // Prohibit transfers in split mode
                         isSplitMode = if (newType == TransactionType.TRANSFER) false else state.isSplitMode,
                         showSplitSheet = if (newType == TransactionType.TRANSFER) false else state.showSplitSheet,
-                        // Conversion category: TRANSFER -> (Normal) defaults to SYSTEM_UNKNOWN
-                        selectedCategoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER
-                        else if (state.selectedCategoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN
-                        else state.selectedCategoryId
+                        selectedCategoryId = when {
+                            newType != TransactionType.TRANSFER && Category.isTransfer(state.selectedCategoryId) -> Category.SYSTEM_UNKNOWN
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            newType == TransactionType.TRANSFER -> state.selectedCategoryId.takeIf { Category.isTransfer(it) } ?: Category.SYSTEM_TRANSFER_OUTFLOW
+                            else -> state.selectedCategoryId
+                        }
                     )
                 }
 
@@ -471,7 +467,11 @@ class TransactionEntryViewModel @Inject constructor(
                         targetAccount = s.selectedAccount,
                         selectedCurrency = s.targetAccount?.currencyCode ?: s.selectedCurrency,
                         targetCurrency = s.selectedAccount?.currencyCode ?: "",
-                        isAmountPositive = !s.isAmountPositive
+                        selectedCategoryId = when (s.selectedCategoryId) {
+                            Category.SYSTEM_TRANSFER_INFLOW -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            Category.SYSTEM_TRANSFER_OUTFLOW -> Category.SYSTEM_TRANSFER_INFLOW
+                            else -> s.selectedCategoryId
+                        }
                     )
                 }
                 recalculateExchangeRate()
@@ -661,7 +661,7 @@ class TransactionEntryViewModel @Inject constructor(
             amount = when {
                 currentState.isIncome -> currentState.amountValue.abs()
                 currentState.isExpense -> currentState.amountValue.abs().negate()
-                currentState.isTransfer -> if (currentState.isAmountPositive) currentState.amountValue.abs() else currentState.amountValue.abs().negate()
+                currentState.isTransfer -> if (currentState.isTransferInflow) currentState.amountValue.abs() else currentState.amountValue.abs().negate()
                 else -> currentState.amountValue
             },
             transactionType = when {
@@ -671,7 +671,7 @@ class TransactionEntryViewModel @Inject constructor(
             },
             accountId = currentState.selectedAccount?.id,
             currency = currentState.selectedCurrency,
-            categoryId = if (currentState.isTransfer) Category.SYSTEM_TRANSFER else currentState.selectedCategoryId,
+            categoryId = currentState.selectedCategoryId,
             tags = currentState.selectedTags,
             paymentMethod = currentState.paymentMethod,
             timestamp = finalTimestamp,
@@ -759,7 +759,7 @@ class TransactionEntryViewModel @Inject constructor(
             },
             accountId = currentState.selectedAccount?.id,
             currency = currentState.selectedCurrency,
-            categoryId = if (currentState.isTransfer) Category.SYSTEM_TRANSFER else currentState.selectedCategoryId,
+            categoryId = currentState.selectedCategoryId,
             tags = currentState.selectedTags,
             paymentMethod = currentState.paymentMethod,
             timestamp = finalTimestamp,

@@ -417,10 +417,10 @@ class TransactionViewModel @Inject constructor(
                 )
 
                 // If it's a transfer, try to find the linked transaction to get the target account and rate
-                if (transaction.categoryId == Category.SYSTEM_TRANSFER) {
+                if (Category.isTransfer(transaction.categoryId)) {
                     val linkedTxs = transactionUseCases.getLinkedTransactions(transactionId).first()
                     val targetTx = linkedTxs.find {
-                        it.categoryId == Category.SYSTEM_TRANSFER &&
+                        Category.isTransfer(it.categoryId) &&
                                 it.accountId != transaction.accountId &&
                                 it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
                     }

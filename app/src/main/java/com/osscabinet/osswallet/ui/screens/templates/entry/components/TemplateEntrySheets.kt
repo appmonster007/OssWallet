@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
@@ -54,7 +55,7 @@ fun TemplateEntrySheets(
 
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories,
+            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
             selectedCategoryIds = setOf(state.categoryId),
             onSelectionChange = { ids ->
                 onEvent(TemplateEntryEvent.SetCategory(ids.firstOrNull() ?: -1L))

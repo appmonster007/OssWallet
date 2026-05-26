@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.SystemCategory
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
@@ -58,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -267,6 +268,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_unique
+                       ON transactions(accountId, currency, categoryId)
+                       WHERE categoryId = 1003"""
+                )
+            }
+        }
+
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Clean up potential case-duplicates before enforcing unique index
@@ -304,11 +315,13 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_6_7,
                         MIGRATION_7_8,
                         MIGRATION_8_9,
-                        MIGRATION_9_10
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
+                            ensureSystemCategories(db)
                             context.applicationContext.assets.open("default_data.sql")
                                 .bufferedReader()
                                 .useLines { lines ->
@@ -316,6 +329,20 @@ abstract class AppDatabase : RoomDatabase() {
                                         .filter { it.isNotBlank() && !it.startsWith("--") }
                                         .forEach { db.execSQL(it) }
                                 }
+                        }
+
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            ensureSystemCategories(db)
+                        }
+
+                        private fun ensureSystemCategories(db: SupportSQLiteDatabase) {
+                            SystemCategory.entries.forEach { sc ->
+                                db.execSQL(
+                                    "INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (?, ?, ?, ?, 1, ?, ?)",
+                                    arrayOf(sc.id, sc.displayName, sc.iconName, sc.colorHex, sc.parentId, sc.nature.value)
+                                )
+                            }
                         }
                     })
                     .build()

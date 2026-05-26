@@ -172,7 +172,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         targetAccountId = existing.targetAccountId,
                         targetCurrency = existing.targetCurrency,
                         transferRate = existing.transferRate,
-                        isAmountPositive = existing.amount.signum() > 0,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
                         dayOfWeek = schedule.recurrenceRule.dayOfWeek,
@@ -240,7 +239,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
                     
-                    val primaryAccountId = if (isTransferToNormal && state.isAmountPositive) {
+                    val primaryAccountId = if (isTransferToNormal && state.isTransferInflow) {
                         state.targetAccountId ?: state.selectedAccountId
                     } else {
                         state.selectedAccountId
@@ -249,28 +248,26 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     state.copy(
                         transactionType = newType,
                         amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
-                        
+
                         selectedAccountId = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
                             else -> primaryAccountId
                         },
-                        
+
                         targetAccountId = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
                             newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
                             newType == TransactionType.TRANSFER -> state.targetAccountId
                             else -> null
                         },
-                        
-                        isAmountPositive = when {
-                            newType == TransactionType.INCOME -> true
-                            newType == TransactionType.EXPENSE -> false
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
-                            else -> state.isAmountPositive
-                        },
 
-                        selectedCategoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.selectedCategoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.selectedCategoryId
+                        selectedCategoryId = when {
+                            newType != TransactionType.TRANSFER && Category.isTransfer(state.selectedCategoryId) -> Category.SYSTEM_UNKNOWN
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            newType == TransactionType.TRANSFER -> state.selectedCategoryId.takeIf { Category.isTransfer(it) } ?: Category.SYSTEM_TRANSFER_OUTFLOW
+                            else -> state.selectedCategoryId
+                        }
                     )
                 }
                 if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
@@ -318,7 +315,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         targetAccountId = s.selectedAccountId,
                         currency = s.targetCurrency ?: s.currency,
                         targetCurrency = s.currency,
-                        isAmountPositive = !s.isAmountPositive
+                        selectedCategoryId = when (s.selectedCategoryId) {
+                            Category.SYSTEM_TRANSFER_INFLOW -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            Category.SYSTEM_TRANSFER_OUTFLOW -> Category.SYSTEM_TRANSFER_INFLOW
+                            else -> s.selectedCategoryId
+                        }
                     )
                 }
                 recalculateExchangeRate()
@@ -343,7 +344,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetAutoConfirm -> _state.update { it.copy(autoConfirm = event.auto) }
             is PlannedPaymentEntryEvent.SetHasEndDate -> _state.update { it.copy(hasEndDate = event.has) }
             is PlannedPaymentEntryEvent.SetEndDate -> _state.update { it.copy(endDateMillis = event.date) }
-            is PlannedPaymentEntryEvent.SetCategoryId -> _state.update { it.copy(selectedCategoryId = event.id) }
+            is PlannedPaymentEntryEvent.SetCategoryId -> {
+                if (event.id != Category.SYSTEM_INITIAL_BALANCE) _state.update { it.copy(selectedCategoryId = event.id) }
+            }
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }
             is PlannedPaymentEntryEvent.SetLocation -> _state.update {
@@ -518,7 +521,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             val amountValue = when {
                 s.isIncome -> s.amountValue.abs()
                 s.isExpense -> s.amountValue.abs().negate()
-                s.isTransfer -> if (s.isAmountPositive) s.amountValue.abs() else s.amountValue.abs().negate()
+                s.isTransfer -> if (s.isTransferInflow) s.amountValue.abs() else s.amountValue.abs().negate()
                 else -> s.amountValue
             }
 

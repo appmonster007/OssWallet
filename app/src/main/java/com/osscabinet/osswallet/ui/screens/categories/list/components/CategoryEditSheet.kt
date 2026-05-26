@@ -66,7 +66,7 @@ fun CategoryEditSheet(
     var selectedParentId by remember { mutableStateOf(category?.parentId) }
     var selectedNature by remember { mutableStateOf(category?.nature ?: CategoryNature.WANT) }
 
-    val isMandatory = category != null && category.id >= 1000L && category.id <= Category.SYSTEM_TRANSFER
+    val isMandatory = category != null && Category.isSystemCategory(category.id)
     val isEditMode = category != null && category.id != 0L
 
     val displayColorHex = if (selectedParentId != null) {

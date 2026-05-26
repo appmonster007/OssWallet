@@ -22,7 +22,6 @@ data class TemplateEntryState(
     val categoryName: String = "Unknown",
     val accountId: String? = null,
     val targetAccountId: String? = null,
-    val isAmountPositive: Boolean = false,
     val currency: String = "USD",
     val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
@@ -75,6 +74,7 @@ data class TemplateEntryState(
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+    val isTransferInflow: Boolean get() = isTransfer && categoryId == Category.SYSTEM_TRANSFER_INFLOW
 
     val amountValue: BigDecimal
         get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO

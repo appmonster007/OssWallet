@@ -136,7 +136,6 @@ class TemplateEntryViewModel @Inject constructor(
                         currency = template.currency ?: "USD",
                         targetCurrency = template.targetCurrency,
                         transferRate = template.transferRate,
-                        isAmountPositive = template.amount.signum() > 0,
                         note = template.note ?: "",
                         payee = template.payee ?: "",
                         location = template.location ?: "",
@@ -181,7 +180,7 @@ class TemplateEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
                     
-                    val primaryAccountId = if (isTransferToNormal && state.isAmountPositive) {
+                    val primaryAccountId = if (isTransferToNormal && state.isTransferInflow) {
                         state.targetAccountId ?: state.accountId
                     } else {
                         state.accountId
@@ -190,28 +189,26 @@ class TemplateEntryViewModel @Inject constructor(
                     state.copy(
                         transactionType = newType,
                         amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
-                        
+
                         accountId = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
                             else -> primaryAccountId
                         },
-                        
+
                         targetAccountId = when {
                             newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
                             newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
                             newType == TransactionType.TRANSFER -> state.targetAccountId
                             else -> null
                         },
-                        
-                        isAmountPositive = when {
-                            newType == TransactionType.INCOME -> true
-                            newType == TransactionType.EXPENSE -> false
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
-                            else -> state.isAmountPositive
-                        },
 
-                        categoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.categoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.categoryId
+                        categoryId = when {
+                            newType != TransactionType.TRANSFER && Category.isTransfer(state.categoryId) -> Category.SYSTEM_UNKNOWN
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            newType == TransactionType.TRANSFER -> state.categoryId.takeIf { Category.isTransfer(it) } ?: Category.SYSTEM_TRANSFER_OUTFLOW
+                            else -> state.categoryId
+                        }
                     )
                 }
                 if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
@@ -223,8 +220,10 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetCategory -> {
-                _state.update { it.copy(categoryId = event.categoryId) }
-                updateCategoryName()
+                if (event.categoryId != Category.SYSTEM_INITIAL_BALANCE) {
+                    _state.update { it.copy(categoryId = event.categoryId) }
+                    updateCategoryName()
+                }
             }
 
             is TemplateEntryEvent.SetAccount -> {
@@ -269,7 +268,11 @@ class TemplateEntryViewModel @Inject constructor(
                         targetAccountId = s.accountId,
                         currency = s.targetCurrency ?: s.currency,
                         targetCurrency = s.currency,
-                        isAmountPositive = !s.isAmountPositive
+                        categoryId = when (s.categoryId) {
+                            Category.SYSTEM_TRANSFER_INFLOW -> Category.SYSTEM_TRANSFER_OUTFLOW
+                            Category.SYSTEM_TRANSFER_OUTFLOW -> Category.SYSTEM_TRANSFER_INFLOW
+                            else -> s.categoryId
+                        }
                     )
                 }
                 recalculateExchangeRate()
@@ -437,14 +440,14 @@ class TemplateEntryViewModel @Inject constructor(
         viewModelScope.launch {
             val amountValue = if (s.isIncome) s.amountValue.abs()
             else if (s.isTransfer) {
-                if (s.isAmountPositive) s.amountValue.abs() else s.amountValue.abs().negate()
+                if (s.isTransferInflow) s.amountValue.abs() else s.amountValue.abs().negate()
             }
             else s.amountValue.abs().negate()
 
             val template = Template(
                 id = s.templateId ?: 0,
                 name = s.name,
-                categoryId = if (s.isTransfer) Category.SYSTEM_TRANSFER else s.categoryId,
+                categoryId = s.categoryId,
                 amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.accountId,

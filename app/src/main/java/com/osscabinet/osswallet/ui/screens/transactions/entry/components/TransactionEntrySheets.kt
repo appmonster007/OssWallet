@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
@@ -45,7 +46,7 @@ fun TransactionEntrySheets(
     // Category Selection
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories,
+            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
             selectedCategoryIds = setOf(state.selectedCategoryId),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
@@ -215,7 +216,7 @@ fun TransactionEntrySheets(
     // Split Category Selection
     state.showSplitCategorySheet?.let { index ->
         AeonCategorySelection(
-            categories = state.categories,
+            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
             selectedCategoryIds = setOf(
                 state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId
             ),

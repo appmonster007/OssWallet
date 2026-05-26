@@ -296,6 +296,12 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getTransactionById(id)?.toDomain()
     }
 
+    override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? {
+        return transactionDao.getInitialBalanceTransaction(
+            accountId, currency, com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE, profileId
+        )?.toDomain()
+    }
+
     override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> {
         return transactionDao.getCurrencySummaries(profileId).map { dao ->
             CurrencySummary(

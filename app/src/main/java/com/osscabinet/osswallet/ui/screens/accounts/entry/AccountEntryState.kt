@@ -37,6 +37,6 @@ data class AccountEntryState(
             val isBalanceValid =
                 initialBalances.values.all { it.isEmpty() || it.toBigDecimalOrNull() != null }
             return accountName.isNotBlank() && primaryCurrency.isNotBlank() &&
-                    allowedCurrencies.isNotEmpty() && (isEditMode || isBalanceValid)
+                    allowedCurrencies.isNotEmpty() && isBalanceValid
         }
 }

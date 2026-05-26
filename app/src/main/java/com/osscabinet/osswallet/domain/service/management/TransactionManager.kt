@@ -99,11 +99,11 @@ class TransactionManager(
     ): Long {
         val updated = request.toNormalTransaction(existingTransaction)
         return if (existingTransaction != null) {
-            if (existingTransaction.categoryId == Category.SYSTEM_TRANSFER && request.categoryId != Category.SYSTEM_TRANSFER) {
+            if (Category.isTransfer(existingTransaction.categoryId) && !Category.isTransfer(request.categoryId)) {
                 // Conversion Logic: If it was a linked transfer and is now becoming Normal
                 // 1. Delink bidirectionally. Counterparts automatically become standalone transfers.
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
-            } else if (existingTransaction.categoryId == Category.SYSTEM_TRANSFER) {
+            } else if (Category.isTransfer(existingTransaction.categoryId)) {
                 // If it's still a transfer (maybe just account change), clear links to be rebuilt if needed
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
@@ -128,7 +128,7 @@ class TransactionManager(
             sourceAccountId != null && targetAccountId == null -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = Category.SYSTEM_TRANSFER
+                    categoryId = Category.SYSTEM_TRANSFER_OUTFLOW
                 )
                 if (existingTransaction != null) {
                     transactionUseCases.clearTransactionLinks(existingTransaction.id)
@@ -144,7 +144,7 @@ class TransactionManager(
                     accountId = targetAccountId,
                     amount = amount,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = Category.SYSTEM_TRANSFER
+                    categoryId = Category.SYSTEM_TRANSFER_INFLOW
                 )
                 if (existingTransaction != null) {
                     transactionUseCases.clearTransactionLinks(existingTransaction.id)
@@ -158,7 +158,7 @@ class TransactionManager(
             sourceAccountId != null && targetAccountId != null -> {
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = Category.SYSTEM_TRANSFER
+                    categoryId = Category.SYSTEM_TRANSFER_OUTFLOW
                 )
 
                 // Target inherits all shared metadata from source; only the amount, direction,
@@ -167,21 +167,23 @@ class TransactionManager(
                     id = 0,
                     amount = amount.multiply(request.transferRate),
                     accountId = targetAccountId,
-                    currency = request.targetCurrency ?: request.currency
+                    currency = request.targetCurrency ?: request.currency,
+                    categoryId = Category.SYSTEM_TRANSFER_INFLOW
                 )
 
-                if (existingTransaction != null && existingTransaction.categoryId == Category.SYSTEM_TRANSFER) {
+                if (existingTransaction != null && Category.isTransfer(existingTransaction.categoryId)) {
                     // When updating a linked transfer, find the other side and update it too
                     val linkedIds = transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
                     linkedIds.forEach { linkedId ->
                         val linkedTx = transactionUseCases.getTransactionById(linkedId)
-                        if (linkedTx != null && linkedTx.categoryId == Category.SYSTEM_TRANSFER) {
+                        if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
                             // Update the target side to match the new metadata from source
                             val updatedTarget = sourceTransaction.copy(
                                 id = linkedId,
                                 amount = amount.multiply(request.transferRate),
                                 accountId = targetAccountId,
-                                currency = request.targetCurrency ?: request.currency
+                                currency = request.targetCurrency ?: request.currency,
+                                categoryId = Category.SYSTEM_TRANSFER_INFLOW
                             )
                             transactionUseCases.updateTransaction(linkedTx, updatedTarget, profileId)
                         }
@@ -260,7 +262,7 @@ class TransactionManager(
 
     suspend fun deleteTransaction(id: Long) = andRefresh {
         val transaction = transactionUseCases.getTransactionById(id)
-        if (transaction != null && transaction.categoryId == Category.SYSTEM_TRANSFER) {
+        if (transaction != null && Category.isTransfer(transaction.categoryId)) {
             // Decouple from linked transfers instead of deleting them.
             // This converts internal transfers into standalone "Outside Wallet" transfers.
             val linkedIds = transactionUseCases.getLinkedTransactionIds(id).first()
@@ -268,9 +270,6 @@ class TransactionManager(
                 // Remove bidirectional links
                 transactionUseCases.removeTransactionLink(id, linkedId)
                 transactionUseCases.removeTransactionLink(linkedId, id)
-                
-                // The linked transaction remains as a standalone "Outside" transfer
-                // because it is now unlinked but still has category SYSTEM_TRANSFER.
             }
         }
         transactionUseCases.deleteTransaction(id)

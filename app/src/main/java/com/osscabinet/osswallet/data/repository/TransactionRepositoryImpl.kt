@@ -202,13 +202,16 @@ class TransactionRepositoryImpl @Inject constructor(
 
         // 2. Ensure tags exist and collect their IDs uniquely by name
         val tagIds = sanitizedNames.mapNotNull { name ->
-            tagDao.getTagIdByName(name) ?: tagDao.insertTag(
-                com.osscabinet.ossWallet.data.local.entity.TagEntity(
-                    name = name,
-                    colorHex = -1
+            tagDao.getTagIdByName(name) ?: run {
+                val newId = tagDao.insertTag(
+                    com.osscabinet.ossWallet.data.local.entity.TagEntity(
+                        name = name,
+                        colorHex = -1
+                    )
                 )
-            )
-        }.filter { it > 0 }.toSet()
+                if (newId > 0) newId else tagDao.getTagIdByName(name)
+            }
+        }.toSet()
 
         // 3. Insert cross-references
         tagIds.forEach { tagId ->

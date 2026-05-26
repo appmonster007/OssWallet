@@ -58,7 +58,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -267,6 +267,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Clean up potential case-duplicates before enforcing unique index
+                // We keep the one with the lowest ID
+                db.execSQL(
+                    """
+                    DELETE FROM tags 
+                    WHERE id NOT IN (
+                        SELECT MIN(id) 
+                        FROM tags 
+                        GROUP BY LOWER(name)
+                    )
+                    """.trimIndent()
+                )
+                // 2. Create the unique case-insensitive index
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `tags` (`name`)")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -284,7 +303,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

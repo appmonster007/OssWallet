@@ -18,7 +18,7 @@ data class TemplateEntryState(
     val name: String = "",
     val amount: String = "",
     val transactionType: TransactionType = TransactionType.EXPENSE,
-    val categoryId: Long = 1002L,
+    val categoryId: Long = Category.SYSTEM_UNKNOWN,
     val categoryName: String = "Unknown",
     val accountId: String? = null,
     val targetAccountId: String? = null,

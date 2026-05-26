@@ -47,6 +47,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -372,7 +373,7 @@ fun SwipeableTransactionItemPreview() {
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = 1002L
+        categoryId = Category.SYSTEM_UNKNOWN
     )
 
     OssWalletTheme {

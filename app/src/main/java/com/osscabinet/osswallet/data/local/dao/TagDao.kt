@@ -13,8 +13,11 @@ interface TagDao {
     @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE ASC")
     fun getAllTags(): Flow<List<TagEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTag(tag: TagEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTag(tag: TagEntity): Long
+
+    @Query("SELECT id FROM tags WHERE LOWER(name) = LOWER(:name) LIMIT 1")
+    suspend fun getTagIdByName(name: String): Long?
 
     @Delete
     suspend fun deleteTag(tag: TagEntity)

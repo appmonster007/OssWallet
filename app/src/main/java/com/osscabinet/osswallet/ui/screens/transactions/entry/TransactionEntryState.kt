@@ -19,7 +19,7 @@ import java.math.BigDecimal
 data class TransactionEntryState(
     // Core form fields
     val amount: String = "",
-    val selectedCategoryId: Long = 1002L,
+    val selectedCategoryId: Long = Category.SYSTEM_UNKNOWN,
     val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,

@@ -25,6 +25,9 @@ abstract class TransactionLinkDao {
     @Query("DELETE FROM transaction_links WHERE transactionId = :transactionId")
     abstract suspend fun deleteAllLinksForTransaction(transactionId: Long)
 
+    @Query("DELETE FROM transaction_links WHERE transactionId = :transactionId OR linkedTransactionId = :transactionId")
+    abstract suspend fun deleteAnyLink(transactionId: Long)
+
     @Query("SELECT linkedTransactionId FROM transaction_links WHERE transactionId = :transactionId")
     abstract fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>>
 

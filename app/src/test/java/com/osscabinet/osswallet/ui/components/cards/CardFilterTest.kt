@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -60,7 +61,7 @@ class CardFilterTest {
         id = 2,
         name = "Transport",
         amount = BigDecimal("200"),
-        categoryId = 1002L,
+        categoryId = Category.SYSTEM_UNKNOWN,
         timestamp = System.currentTimeMillis(),
         currency = "EUR",
         transactionType = TransactionType.EXPENSE,
@@ -72,7 +73,7 @@ class CardFilterTest {
         id = 3,
         name = "Entertainment",
         amount = BigDecimal("300"),
-        categoryId = 1003L,
+        categoryId = Category.SYSTEM_TRANSFER,
         timestamp = System.currentTimeMillis(),
         currency = "GBP",
         transactionType = TransactionType.EXPENSE,

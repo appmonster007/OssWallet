@@ -13,7 +13,7 @@ data class TransactionRequest(
     val name: String,
     val amount: BigDecimal,
     val transactionType: TransactionType,
-    val accountId: String,
+    val accountId: String?,
     val currency: String,
     val categoryId: Long,
     val tags: Set<String> = emptySet(),

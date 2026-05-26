@@ -382,7 +382,7 @@ fun TemplateDialog(
     onConfirm: (String, Long, Double, TransactionType, String?, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(template?.name ?: "") }
-    var categoryId by remember { mutableLongStateOf(template?.categoryId ?: 1002L) }
+    var categoryId by remember { mutableLongStateOf(template?.categoryId ?: Category.SYSTEM_UNKNOWN) }
     var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
     var type by remember { mutableStateOf(template?.transactionType ?: TransactionType.EXPENSE) }
     var note by remember { mutableStateOf(template?.note ?: "") }
@@ -405,7 +405,7 @@ fun TemplateDialog(
                 // Note: Simplified for now, real implementation should use a category picker
                 OutlinedTextField(
                     value = categoryId.toString(),
-                    onValueChange = { categoryId = it.toLongOrNull() ?: 1002L },
+                    onValueChange = { categoryId = it.toLongOrNull() ?: Category.SYSTEM_UNKNOWN },
                     label = { Text("Category ID") },
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -191,18 +191,31 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     private suspend fun syncTransactionTags(transactionId: Long, tagNames: Set<String>) {
-        if (tagNames.isEmpty()) {
-            transactionDao.deleteTransactionTagCrossRefs(transactionId)
-            return
-        }
-
-        val tags = tagDao.getTagsByNamesSync(tagNames.toList())
+        if (transactionId <= 0) return
+        
+        val sanitizedNames = tagNames.filter { it.isNotBlank() }.map { it.trim() }.toSet()
+        
+        // 1. Clear existing links for this transaction to allow a clean sync
         transactionDao.deleteTransactionTagCrossRefs(transactionId)
-        tags.forEach { tag ->
+        
+        if (sanitizedNames.isEmpty()) return
+
+        // 2. Ensure tags exist and collect their IDs uniquely by name
+        val tagIds = sanitizedNames.mapNotNull { name ->
+            tagDao.getTagIdByName(name) ?: tagDao.insertTag(
+                com.osscabinet.ossWallet.data.local.entity.TagEntity(
+                    name = name,
+                    colorHex = -1
+                )
+            )
+        }.filter { it > 0 }.toSet()
+
+        // 3. Insert cross-references
+        tagIds.forEach { tagId ->
             transactionDao.insertTransactionTagCrossRef(
                 com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef(
                     transactionId = transactionId,
-                    tagId = tag.id
+                    tagId = tagId
                 )
             )
         }
@@ -221,22 +234,24 @@ class TransactionRepositoryImpl @Inject constructor(
                 targetTransaction.toEntity(profileId), accountDao
             )
 
-            syncTransactionTags(sourceId, sourceTransaction.tags)
-            syncTransactionTags(targetId, targetTransaction.tags)
+            if (sourceId > 0) syncTransactionTags(sourceId, sourceTransaction.tags)
+            if (targetId > 0) syncTransactionTags(targetId, targetTransaction.tags)
 
-            // Create bi-directional links for transfers
-            transactionLinkDao.insertLink(
-                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
-                    transactionId = sourceId,
-                    linkedTransactionId = targetId
+            if (sourceId > 0 && targetId > 0) {
+                // Create bi-directional links for transfers
+                transactionLinkDao.insertLink(
+                    com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                        transactionId = sourceId,
+                        linkedTransactionId = targetId
+                    )
                 )
-            )
-            transactionLinkDao.insertLink(
-                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
-                    transactionId = targetId,
-                    linkedTransactionId = sourceId
+                transactionLinkDao.insertLink(
+                    com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                        transactionId = targetId,
+                        linkedTransactionId = sourceId
+                    )
                 )
-            )
+            }
 
             Pair(sourceId, targetId)
         }
@@ -248,12 +263,14 @@ class TransactionRepositoryImpl @Inject constructor(
         profileId: Int
     ) {
         database.withTransaction {
-            transactionDao.updateTransactionWithBalanceUpdate(
+            val id = transactionDao.updateTransactionWithBalanceUpdate(
                 oldTransaction.toEntity(profileId),
                 newTransaction.toEntity(profileId),
                 accountDao
             )
-            syncTransactionTags(newTransaction.id, newTransaction.tags)
+            if (id > 0) {
+                syncTransactionTags(id, newTransaction.tags)
+            }
         }
     }
 
@@ -315,7 +332,7 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearTransactionLinks(transactionId: Long) {
-        transactionLinkDao.deleteAllLinksForTransaction(transactionId)
+        transactionLinkDao.deleteAnyLink(transactionId)
     }
 
     override fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {

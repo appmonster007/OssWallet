@@ -1,12 +1,12 @@
 seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accountId,paymentMethod,payee,note,tags,recurring,profileId,latitude,longitude,warrantyExpiration,status,daysAgo
-1,Initial Balance,1000.00,Initial Balance,0,946684800000,USD,income,acc_cash,Cash,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-2,Initial Balance,5000.00,Initial Balance,0,946684800000,USD,income,acc_bank,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-3,Initial Balance,15000.00,Initial Balance,0,946684800000,USD,income,acc_savings,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-4,Initial Balance,0.00,Initial Balance,0,946684800000,USD,income,acc_credit,Credit Card,Self,Opening balance,"Essential,Adjustment",,1,,,,,cleared,
-5,Initial Balance,10000.00,Initial Balance,0,946684800000,USD,income,acc_invest,Bank Transfer,Self,Opening balance,"Essential,Investments",,1,,,,,cleared,
-6,Initial Balance,100000.00,Initial Balance,0,946684800000,JPY,income,acc_jpy,Cash,Self,Opening balance JPY,"Travel,Vacation,Japan",,1,,,,,cleared,
-7,Initial Balance,5000.00,Initial Balance,0,946684800000,SGD,income,acc_sgd,Bank Transfer,Self,Opening balance SGD,"Essential,Personal",,1,,,,,cleared,
-8,Initial Balance,10000000.00,Initial Balance,0,946684800000,IDR,income,acc_idr,E-Wallet,Self,Opening balance IDR,"Essential,Personal",,1,,,,,cleared,
+1,Initial Balance,1000.00,Initial Balance,1003,946684800000,USD,transfer,acc_cash,Cash,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
+2,Initial Balance,5000.00,Initial Balance,1003,946684800000,USD,transfer,acc_bank,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
+3,Initial Balance,15000.00,Initial Balance,1003,946684800000,USD,transfer,acc_savings,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
+4,Initial Balance,0.00,Initial Balance,1003,946684800000,USD,transfer,acc_credit,Credit Card,Self,Opening balance,"Essential,Adjustment",,1,,,,,cleared,
+5,Initial Balance,10000.00,Initial Balance,1003,946684800000,USD,transfer,acc_invest,Bank Transfer,Self,Opening balance,"Essential,Investments",,1,,,,,cleared,
+6,Initial Balance,100000.00,Initial Balance,1003,946684800000,JPY,transfer,acc_jpy,Cash,Self,Opening balance JPY,"Travel,Vacation,Japan",,1,,,,,cleared,
+7,Initial Balance,5000.00,Initial Balance,1003,946684800000,SGD,transfer,acc_sgd,Bank Transfer,Self,Opening balance SGD,"Essential,Personal",,1,,,,,cleared,
+8,Initial Balance,10000000.00,Initial Balance,1003,946684800000,IDR,transfer,acc_idr,E-Wallet,Self,Opening balance IDR,"Essential,Personal",,1,,,,,cleared,
 9,Monthly Salary,5250.00,Salary,197,,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,"Work,Salary,Essential",monthly,1,,,,,cleared,60
 10,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent payment,"Housing,Essential,Rent,Bills",monthly,1,,,,,cleared,58
 11,Whole Foods Groceries,-142.50,Groceries,101,,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly groceries,"Food,Essential,Groceries",,1,,,,,cleared,55

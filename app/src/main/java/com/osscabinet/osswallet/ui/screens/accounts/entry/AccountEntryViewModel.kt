@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -160,14 +163,69 @@ class AccountEntryViewModel @Inject constructor(
             is AccountEntryEvent.OpenCalculator -> _state.update {
                 it.copy(
                     showCalculator = true,
-                    activeBalanceCurrency = event.currency
+                    activeBalanceCurrency = event.currency,
+                    calculatorOriginalValue = it.initialBalances[event.currency]
                 )
             }
 
             is AccountEntryEvent.CloseCalculator -> _state.update {
                 it.copy(
                     showCalculator = false,
-                    activeBalanceCurrency = null
+                    activeBalanceCurrency = null,
+                    calculatorOriginalValue = null
+                )
+            }
+
+            is AccountEntryEvent.ShowAdjustmentDialog -> _state.update {
+                it.copy(
+                    showCalculator = false,
+                    showAdjustmentDialog = true,
+                    adjustmentDialogCurrency = event.currency,
+                    adjustmentDialogNewValue = event.newValue
+                )
+            }
+
+            is AccountEntryEvent.DismissAdjustmentDialog -> _state.update {
+                val orig = it.calculatorOriginalValue
+                val reverted = if (orig != null && it.adjustmentDialogCurrency != null)
+                    it.initialBalances.toMutableMap().apply { put(it.adjustmentDialogCurrency, orig) }
+                else it.initialBalances
+                it.copy(
+                    showAdjustmentDialog = false,
+                    adjustmentDialogCurrency = null,
+                    adjustmentDialogNewValue = null,
+                    activeBalanceCurrency = null,
+                    calculatorOriginalValue = null,
+                    initialBalances = reverted
+                )
+            }
+
+            is AccountEntryEvent.ConfirmAsNewTransaction -> {
+                val newBD = event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val origBD = event.originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val delta = newBD - origBD
+                _state.update {
+                    val reverted = it.initialBalances.toMutableMap()
+                        .apply { put(event.currency, event.originalValue) }
+                    it.copy(
+                        showAdjustmentDialog = false,
+                        adjustmentDialogCurrency = null,
+                        adjustmentDialogNewValue = null,
+                        activeBalanceCurrency = null,
+                        calculatorOriginalValue = null,
+                        initialBalances = reverted,
+                        pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (event.currency to delta)
+                    )
+                }
+            }
+
+            is AccountEntryEvent.ConfirmAsInitialBalanceUpdate -> _state.update {
+                it.copy(
+                    showAdjustmentDialog = false,
+                    adjustmentDialogCurrency = null,
+                    adjustmentDialogNewValue = null,
+                    activeBalanceCurrency = null,
+                    calculatorOriginalValue = null
                 )
             }
 
@@ -193,6 +251,25 @@ class AccountEntryViewModel @Inject constructor(
                     ),
                     profileId
                 )
+                s.pendingAdjustmentDeltas.forEach { (currency, delta) ->
+                    if (delta.signum() != 0) {
+                        val absAmount = delta.abs()
+                        transactionRepository.insertTransaction(
+                            Transaction(
+                                name = "Balance Adjustment",
+                                accountId = s.accountId!!,
+                                amount = if (delta.signum() > 0) absAmount else absAmount.negate(),
+                                timestamp = System.currentTimeMillis(),
+                                currency = currency,
+                                categoryId = if (delta.signum() > 0) Category.SYSTEM_TRANSFER_INFLOW
+                                             else Category.SYSTEM_TRANSFER_OUTFLOW,
+                                transactionType = TransactionType.TRANSFER,
+                                note = "Balance adjustment"
+                            ),
+                            profileId
+                        )
+                    }
+                }
                 s.allowedCurrencies.forEach { currency ->
                     val amount = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     accountUseCases.upsertInitialBalance(s.accountId!!, currency, amount, profileId)

@@ -54,7 +54,7 @@ class AccountUseCases(
                         categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
-                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+                        transactionType = TransactionType.TRANSFER
                     ),
                     profileId
                 )
@@ -77,7 +77,7 @@ class AccountUseCases(
                     existing,
                     existing.copy(
                         amount = amount,
-                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+                        transactionType = TransactionType.TRANSFER
                     ),
                     profileId
                 )
@@ -91,7 +91,7 @@ class AccountUseCases(
                         categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
-                        transactionType = if (amount >= BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+                        transactionType = TransactionType.TRANSFER
                     ),
                     profileId
                 )

@@ -86,7 +86,8 @@ fun TemplateFormBody(
                 onSwapClick = { onEvent(TemplateEntryEvent.SwapAccounts) },
                 supportedCurrencies = sourceCurrencies,
                 targetSupportedCurrencies = targetCurrencies,
-                accountId = state.accountId
+                accountId = state.accountId,
+                isAmountPositive = state.isAmountPositive
             )
 
             // CONTEXT: Action cards row: Account, Category

@@ -47,6 +47,7 @@ data class TransactionEntryState(
     val targetAccount: Account? = null,
     val targetCurrency: String = "",
     val exchangeRate: BigDecimal = BigDecimal.ONE,
+    val isAmountPositive: Boolean = false,
 
     // Template
     val selectedTemplateName: String? = null,

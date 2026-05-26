@@ -110,7 +110,8 @@ fun PlannedPaymentFormBody(
                 onSwapClick = { onEvent(PlannedPaymentEntryEvent.SwapAccounts) },
                 supportedCurrencies = sourceCurrencies,
                 targetSupportedCurrencies = targetCurrencies,
-                accountId = state.selectedAccountId
+                accountId = state.selectedAccountId,
+                isAmountPositive = state.isAmountPositive
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category

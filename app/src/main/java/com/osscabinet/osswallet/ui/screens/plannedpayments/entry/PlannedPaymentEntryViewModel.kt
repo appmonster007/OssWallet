@@ -172,6 +172,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         targetAccountId = existing.targetAccountId,
                         targetCurrency = existing.targetCurrency,
                         transferRate = existing.transferRate,
+                        isAmountPositive = existing.amount.signum() > 0,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
                         dayOfWeek = schedule.recurrenceRule.dayOfWeek,
@@ -237,12 +238,38 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val oldType = _state.value.transactionType
                 val newType = event.type
                 _state.update { state ->
+                    val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
+                    
+                    val primaryAccountId = if (isTransferToNormal && state.isAmountPositive) {
+                        state.targetAccountId ?: state.selectedAccountId
+                    } else {
+                        state.selectedAccountId
+                    }
+
                     state.copy(
                         transactionType = newType,
-                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .toPlainString(),
-                        selectedAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.selectedAccountId,
-                        targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.selectedAccountId else state.targetAccountId,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
+                        
+                        selectedAccountId = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
+                            else -> primaryAccountId
+                        },
+                        
+                        targetAccountId = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
+                            newType == TransactionType.TRANSFER -> state.targetAccountId
+                            else -> null
+                        },
+                        
+                        isAmountPositive = when {
+                            newType == TransactionType.INCOME -> true
+                            newType == TransactionType.EXPENSE -> false
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
+                            else -> state.isAmountPositive
+                        },
+
                         selectedCategoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.selectedCategoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.selectedCategoryId
                     )
                 }
@@ -290,7 +317,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         selectedAccountId = s.targetAccountId,
                         targetAccountId = s.selectedAccountId,
                         currency = s.targetCurrency ?: s.currency,
-                        targetCurrency = s.currency
+                        targetCurrency = s.currency,
+                        isAmountPositive = !s.isAmountPositive
                     )
                 }
                 recalculateExchangeRate()
@@ -487,11 +515,12 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = if (s.isIncome) s.amountValue.abs()
-            else if (s.isTransfer) {
-                if (s.selectedAccountId == null) s.amountValue.abs() else s.amountValue.abs().negate()
+            val amountValue = when {
+                s.isIncome -> s.amountValue.abs()
+                s.isExpense -> s.amountValue.abs().negate()
+                s.isTransfer -> if (s.isAmountPositive) s.amountValue.abs() else s.amountValue.abs().negate()
+                else -> s.amountValue
             }
-            else s.amountValue.abs().negate()
 
             val rule = RecurrenceRule(
                 type = s.recurrenceType,

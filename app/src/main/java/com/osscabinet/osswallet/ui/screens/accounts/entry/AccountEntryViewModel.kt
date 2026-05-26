@@ -101,10 +101,14 @@ class AccountEntryViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
                 ?.let { account ->
-                    val initialBalances = account.allowedCurrencies.mapNotNull { currency ->
+                    val txByCurrency = account.allowedCurrencies.mapNotNull { currency ->
                         val tx = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
-                        tx?.let { currency to it.amount.abs().stripTrailingZeros().toPlainString() }
+                        tx?.let { currency to it }
                     }.toMap()
+
+                    val initialBalances = txByCurrency.mapValues { (_, tx) ->
+                        tx.amount.stripTrailingZeros().toPlainString()
+                    }
 
                     _state.update {
                         it.copy(
@@ -154,6 +158,12 @@ class AccountEntryViewModel @Inject constructor(
                 }
             }
 
+            is AccountEntryEvent.ToggleInitialBalanceDirection -> _state.update {
+                val current = it.initialBalances[event.currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val toggled = current.negate()
+                it.copy(initialBalances = it.initialBalances + (event.currency to toggled.toPlainString()))
+            }
+
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
             is AccountEntryEvent.SetColor -> _state.update { it.copy(accentColorHex = event.color) }
             is AccountEntryEvent.ShowStructureSheet -> _state.update { it.copy(showStructureSheet = event.show) }
@@ -164,7 +174,7 @@ class AccountEntryViewModel @Inject constructor(
                 it.copy(
                     showCalculator = true,
                     activeBalanceCurrency = event.currency,
-                    calculatorOriginalValue = it.initialBalances[event.currency]
+                    calculatorOriginalValue = it.initialBalances[event.currency] ?: "0"
                 )
             }
 
@@ -187,8 +197,9 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.DismissAdjustmentDialog -> _state.update {
                 val orig = it.calculatorOriginalValue
-                val reverted = if (orig != null && it.adjustmentDialogCurrency != null)
-                    it.initialBalances.toMutableMap().apply { put(it.adjustmentDialogCurrency, orig) }
+                val currency = it.adjustmentDialogCurrency
+                val revertedBalances = if (orig != null && currency != null)
+                    it.initialBalances.toMutableMap().apply { put(currency, orig) }
                 else it.initialBalances
                 it.copy(
                     showAdjustmentDialog = false,
@@ -196,24 +207,23 @@ class AccountEntryViewModel @Inject constructor(
                     adjustmentDialogNewValue = null,
                     activeBalanceCurrency = null,
                     calculatorOriginalValue = null,
-                    initialBalances = reverted
+                    initialBalances = revertedBalances
                 )
             }
 
             is AccountEntryEvent.ConfirmAsNewTransaction -> {
-                val newBD = event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 val origBD = event.originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val delta = newBD - origBD
+                val delta = (event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO) - origBD
                 _state.update {
-                    val reverted = it.initialBalances.toMutableMap()
-                        .apply { put(event.currency, event.originalValue) }
                     it.copy(
                         showAdjustmentDialog = false,
                         adjustmentDialogCurrency = null,
                         adjustmentDialogNewValue = null,
                         activeBalanceCurrency = null,
                         calculatorOriginalValue = null,
-                        initialBalances = reverted,
+                        initialBalances = it.initialBalances.toMutableMap().apply {
+                            put(event.currency, event.originalValue)
+                        },
                         pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (event.currency to delta)
                     )
                 }
@@ -271,8 +281,8 @@ class AccountEntryViewModel @Inject constructor(
                     }
                 }
                 s.allowedCurrencies.forEach { currency ->
-                    val amount = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    accountUseCases.upsertInitialBalance(s.accountId!!, currency, amount, profileId)
+                    val signed = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    accountUseCases.upsertInitialBalance(s.accountId!!, currency, signed, profileId)
                 }
             } else {
                 accountUseCases.createAccountWithInitialBalances(

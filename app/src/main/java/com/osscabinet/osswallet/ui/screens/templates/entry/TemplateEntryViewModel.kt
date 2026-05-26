@@ -220,7 +220,7 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetCategory -> {
-                if (event.categoryId != Category.SYSTEM_INITIAL_BALANCE) {
+                if (!Category.isInitialBalance(event.categoryId)) {
                     _state.update { it.copy(categoryId = event.categoryId) }
                     updateCategoryName()
                 }

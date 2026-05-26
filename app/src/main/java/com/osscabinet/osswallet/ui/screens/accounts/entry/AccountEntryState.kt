@@ -9,7 +9,7 @@ data class AccountEntryState(
     val structureType: AccountStructureType = AccountStructureType.SAVINGS,
     val primaryCurrency: String = "USD",
     val allowedCurrencies: Set<String> = emptySet(),
-    val initialBalances: Map<String, String> = emptyMap(),
+    val initialBalances: Map<String, String> = emptyMap(),  // signed amounts: positive=inflow, negative=outflow
     val selectedIconName: String = "AccountBalance",
     val accentColorHex: String = "#004D5F",
     val currentBalance: BigDecimal = BigDecimal.ZERO,

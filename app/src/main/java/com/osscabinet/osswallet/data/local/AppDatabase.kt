@@ -59,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -278,6 +278,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Shift existing transfer rows BEFORE inserting new category rows
+                db.execSQL("UPDATE transactions SET categoryId = 1006 WHERE categoryId = 1005")
+                db.execSQL("UPDATE transactions SET categoryId = 1005 WHERE categoryId = 1004")
+                // Update the categories table
+                db.execSQL("UPDATE categories SET id = 1006, name = 'Transfer Outflow', iconName = 'CallMade'  WHERE id = 1005")
+                db.execSQL("UPDATE categories SET id = 1005, name = 'Transfer Inflow',  iconName = 'CallReceived' WHERE id = 1004")
+                db.execSQL("UPDATE categories SET name = 'Initial Balance', iconName = 'CallReceived' WHERE id = 1003")
+                db.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1004, 'Initial Balance', 'CallMade', -7829368, 1, 1000, 'need')")
+                // Drop old partial index and re-create for both 1003 and 1004
+                db.execSQL("DROP INDEX IF EXISTS idx_transactions_initial_balance_unique")
+                db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_inflow_unique
+                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1003""")
+                db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_outflow_unique
+                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1004""")
+            }
+        }
+
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Clean up potential case-duplicates before enforcing unique index
@@ -316,7 +335,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_7_8,
                         MIGRATION_8_9,
                         MIGRATION_9_10,
-                        MIGRATION_10_11
+                        MIGRATION_10_11,
+                        MIGRATION_11_12
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

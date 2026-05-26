@@ -21,6 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AccountTree
+import androidx.compose.material.icons.rounded.CallMade
+import androidx.compose.material.icons.rounded.CallReceived
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -183,19 +186,51 @@ fun AccountFormBody(
                 ) {
                     state.allowedCurrencies.forEach { currencyCode ->
                         val requester = remember { BringIntoViewRequester() }
+                        val isInflow = (state.initialBalances[currencyCode]?.toBigDecimalOrNull() ?: BigDecimal.ZERO).signum() >= 0
 
-                        EntryEditorialInput(
-                            value = state.initialBalances[currencyCode] ?: "",
-                            onValueChange = { /* Calculator handles this */ },
-                            label = "BALANCE ($currencyCode)",
-                            icon = Icons.Rounded.AccountBalanceWallet,
-                            placeholder = "0.00",
-                            iconColor = accentColor,
-                            modifier = Modifier
-                                .bringIntoViewRequester(requester)
-                                .clickable { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) },
-                            enabled = false
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                        ) {
+                            EntryEditorialInput(
+                                value = state.initialBalances[currencyCode]?.let {
+                                    it.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+                                } ?: "",
+                                onValueChange = { /* Calculator handles this */ },
+                                label = "BALANCE ($currencyCode)",
+                                icon = Icons.Rounded.AccountBalanceWallet,
+                                placeholder = "0.00",
+                                iconColor = accentColor,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .bringIntoViewRequester(requester)
+                                    .clickable { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) },
+                                enabled = false
+                            )
+
+                            Surface(
+                                onClick = { onEvent(AccountEntryEvent.ToggleInitialBalanceDirection(currencyCode)) },
+                                shape = CircleShape,
+                                color = if (isInflow) AppColors.positive.copy(alpha = 0.12f)
+                                        else AppColors.negative.copy(alpha = 0.12f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isInflow) AppColors.positive.copy(alpha = 0.3f)
+                                    else AppColors.negative.copy(alpha = 0.3f)
+                                ),
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = if (isInflow) Icons.Rounded.CallReceived else Icons.Rounded.CallMade,
+                                        contentDescription = if (isInflow) "Inflow" else "Outflow",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = if (isInflow) AppColors.positive else AppColors.negative
+                                    )
+                                }
+                            }
+                        }
 
                         // Smart scroll when this currency becomes active in calculator
                         LaunchedEffect(state.showCalculator, state.activeBalanceCurrency) {

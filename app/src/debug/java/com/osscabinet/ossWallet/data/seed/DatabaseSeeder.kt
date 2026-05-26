@@ -4,6 +4,7 @@ import android.content.Context
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -102,7 +103,7 @@ class DatabaseSeeder @Inject constructor(
         var ok = 0; var fail = 0
         csvTransactions.forEach { tx ->
             try {
-                val catId = categoryNameToId[tx.category] ?: tx.categoryId ?: 1002L
+                val catId = categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
                 val entity = tx.copy(categoryId = catId).toTransactionEntity()
                 val dbId = transactionDao._insertTransaction(entity)
                 if (tx.seedId != null) {
@@ -322,7 +323,7 @@ class DatabaseSeeder @Inject constructor(
         val payee: String, val note: String, val tags: String
     ) {
         fun toEntity(categoryNameToId: Map<String, Long>) = TemplateEntity(
-            name = name, categoryId = categoryNameToId[categoryName] ?: 1002L,
+            name = name, categoryId = categoryNameToId[categoryName] ?: Category.SYSTEM_UNKNOWN,
             amount = amount, transactionType = transactionType, currency = currency,
             paymentMethod = paymentMethod, payee = payee, note = note,
             tags = tags.split(",").filter { it.isNotBlank() }.toSet()
@@ -431,7 +432,7 @@ class DatabaseSeeder @Inject constructor(
             amount = amount.enforceSign(transactionType),
             timestamp = daysAgo?.let { System.currentTimeMillis() - it * 86_400_000L } ?: timestamp ?: System.currentTimeMillis(),
             currency = currency, transactionType = transactionType,
-            accountId = accountId, categoryId = categoryId ?: 1002L,
+            accountId = accountId, categoryId = categoryId ?: Category.SYSTEM_UNKNOWN,
             paymentMethod = paymentMethod, payee = payee, note = note,
             tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
             sourcePlannedPaymentId = sourcePlannedPaymentId,

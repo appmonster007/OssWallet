@@ -19,8 +19,9 @@ class TagRepositoryImpl @Inject constructor(
         entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex) }
     }
 
-    override suspend fun insertTag(tag: Tag) =
+    override suspend fun insertTag(tag: Tag) {
         tagDao.insertTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
+    }
 
     override suspend fun deleteTag(tag: Tag) =
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))

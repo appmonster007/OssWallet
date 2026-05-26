@@ -77,9 +77,9 @@ abstract class TransactionDao {
         oldTransaction: TransactionEntity,
         newTransaction: TransactionEntity,
         accountDao: AccountDao
-    ) {
-        // Perform the database update
-        insertTransaction(newTransaction)
+    ): Long {
+        // Perform the database update and return the ID
+        return _insertTransaction(newTransaction)
     }
 
     @Query("SELECT * FROM transactions WHERE profileId = :profileId")

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -202,7 +203,7 @@ class TransactionViewModel @Inject constructor(
             val accounts = args[2] as List<com.osscabinet.ossWallet.domain.model.Account>
 
             @Suppress("UNCHECKED_CAST")
-            val categories = args[3] as List<com.osscabinet.ossWallet.domain.model.Category>
+            val categories = args[3] as List<Category>
 
             @Suppress("UNCHECKED_CAST")
             val tags = args[4] as List<com.osscabinet.ossWallet.domain.model.Tag>
@@ -416,10 +417,10 @@ class TransactionViewModel @Inject constructor(
                 )
 
                 // If it's a transfer, try to find the linked transaction to get the target account and rate
-                if (transaction.categoryId == 1003L) {
+                if (transaction.categoryId == Category.SYSTEM_TRANSFER) {
                     val linkedTxs = transactionUseCases.getLinkedTransactions(transactionId).first()
                     val targetTx = linkedTxs.find {
-                        it.categoryId == 1003L &&
+                        it.categoryId == Category.SYSTEM_TRANSFER &&
                                 it.accountId != transaction.accountId &&
                                 it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
                     }

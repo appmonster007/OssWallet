@@ -31,7 +31,7 @@ data class PlannedPaymentEntryState(
     val startDateMillis: Long = System.currentTimeMillis(),
     val hasEndDate: Boolean = false,
     val endDateMillis: Long = System.currentTimeMillis(),
-    val selectedCategoryId: Long = 1002L,
+    val selectedCategoryId: Long = Category.SYSTEM_UNKNOWN,
     val payee: String = "",
     val noteUserPart: String = "",
     val location: String = "",

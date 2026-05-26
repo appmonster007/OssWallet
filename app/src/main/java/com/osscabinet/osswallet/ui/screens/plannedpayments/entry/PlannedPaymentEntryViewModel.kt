@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -242,7 +243,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             .toPlainString(),
                         selectedAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.selectedAccountId,
                         targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.selectedAccountId else state.targetAccountId,
-                        selectedCategoryId = if (newType == TransactionType.TRANSFER) 1003L else if (state.selectedCategoryId == 1003L) 1002L else state.selectedCategoryId
+                        selectedCategoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.selectedCategoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.selectedCategoryId
                     )
                 }
                 if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {

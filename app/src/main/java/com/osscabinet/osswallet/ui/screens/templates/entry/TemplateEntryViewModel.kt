@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
@@ -183,7 +184,7 @@ class TemplateEntryViewModel @Inject constructor(
                             .toPlainString(),
                         accountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.accountId,
                         targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.accountId else state.targetAccountId,
-                        categoryId = if (newType == TransactionType.TRANSFER) 1003L else if (state.categoryId == 1003L) 1002L else state.categoryId
+                        categoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.categoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.categoryId
                     )
                 }
                 if (newType == TransactionType.TRANSFER && oldType != TransactionType.TRANSFER) {
@@ -415,7 +416,7 @@ class TemplateEntryViewModel @Inject constructor(
             val template = Template(
                 id = s.templateId ?: 0,
                 name = s.name,
-                categoryId = if (s.isTransfer) 1003L else s.categoryId,
+                categoryId = if (s.isTransfer) Category.SYSTEM_TRANSFER else s.categoryId,
                 amount = amountValue,
                 transactionType = s.transactionType,
                 accountId = s.accountId,

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
@@ -97,7 +98,7 @@ class TransactionEntryViewModel @Inject constructor(
             val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
                 ?: accounts.firstOrNull()
 
-            val defaultCategory = categories.find { it.id == 1002L } ?: categories.firstOrNull()
+            val defaultCategory = categories.find { it.id == Category.SYSTEM_UNKNOWN } ?: categories.firstOrNull()
 
             _state.update {
                 TransactionEntryState(
@@ -119,7 +120,7 @@ class TransactionEntryViewModel @Inject constructor(
                     transactionType = initialType,
                     selectedTemplateName = null,
                     selectedDateMillis = initialTimestamp,
-                    selectedCategoryId = defaultCategory?.id ?: 1002L,
+                    selectedCategoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN,
                     shortlistedCurrencies = effectiveShortlistedCurrencies.value,
                     fullProviderCurrencies = CurrencyService.getAllCurrencies()
                 )
@@ -152,7 +153,7 @@ class TransactionEntryViewModel @Inject constructor(
         linkedTxs: List<Transaction>
     ) {
         val txType = when {
-            transaction.categoryId == 1003L -> TransactionType.TRANSFER
+            transaction.categoryId == Category.SYSTEM_TRANSFER -> TransactionType.TRANSFER
             else -> transaction.transactionType
         }
 
@@ -162,7 +163,7 @@ class TransactionEntryViewModel @Inject constructor(
         var targetAcc: Account? = null
         if (txType == TransactionType.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
-                tx.categoryId == 1003L &&
+                tx.categoryId == Category.SYSTEM_TRANSFER &&
                         tx.transactionType == TransactionType.TRANSFER &&
                         tx.id != transaction.id &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 5000
@@ -364,9 +365,9 @@ class TransactionEntryViewModel @Inject constructor(
                         // Prohibit transfers in split mode
                         isSplitMode = if (newType == TransactionType.TRANSFER) false else state.isSplitMode,
                         showSplitSheet = if (newType == TransactionType.TRANSFER) false else state.showSplitSheet,
-                        // Conversion category: TRANSFER -> (Normal) defaults to 1002
-                        selectedCategoryId = if (newType == TransactionType.TRANSFER) 1003L
-                        else if (state.selectedCategoryId == 1003L) 1002L
+                        // Conversion category: TRANSFER -> (Normal) defaults to SYSTEM_UNKNOWN
+                        selectedCategoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER
+                        else if (state.selectedCategoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN
                         else state.selectedCategoryId
                     )
                 }
@@ -670,9 +671,9 @@ class TransactionEntryViewModel @Inject constructor(
                 currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
-            accountId = currentState.selectedAccount?.id ?: "",
+            accountId = currentState.selectedAccount?.id,
             currency = currentState.selectedCurrency,
-            categoryId = if (currentState.isTransfer) 1003L else currentState.selectedCategoryId,
+            categoryId = if (currentState.isTransfer) Category.SYSTEM_TRANSFER else currentState.selectedCategoryId,
             tags = currentState.selectedTags,
             paymentMethod = currentState.paymentMethod,
             timestamp = finalTimestamp,
@@ -758,9 +759,9 @@ class TransactionEntryViewModel @Inject constructor(
                 currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
-            accountId = currentState.selectedAccount?.id ?: "",
+            accountId = currentState.selectedAccount?.id,
             currency = currentState.selectedCurrency,
-            categoryId = if (currentState.isTransfer) 1003L else currentState.selectedCategoryId,
+            categoryId = if (currentState.isTransfer) Category.SYSTEM_TRANSFER else currentState.selectedCategoryId,
             tags = currentState.selectedTags,
             paymentMethod = currentState.paymentMethod,
             timestamp = finalTimestamp,

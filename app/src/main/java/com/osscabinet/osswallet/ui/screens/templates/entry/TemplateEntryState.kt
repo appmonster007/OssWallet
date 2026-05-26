@@ -22,6 +22,7 @@ data class TemplateEntryState(
     val categoryName: String = "Unknown",
     val accountId: String? = null,
     val targetAccountId: String? = null,
+    val isAmountPositive: Boolean = false,
     val currency: String = "USD",
     val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,

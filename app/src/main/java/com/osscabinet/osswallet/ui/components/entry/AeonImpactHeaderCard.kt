@@ -75,14 +75,11 @@ fun AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList(),
     accountId: String? = null,
+    isAmountPositive: Boolean = false,
     amountPrefix: String = when {
         transactionType == TransactionType.EXPENSE -> "-"
         transactionType == TransactionType.INCOME -> "+"
-        transactionType == TransactionType.TRANSFER -> {
-            if (accountId == null) "+"
-            else if (targetAccountId == null) "-"
-            else ""
-        }
+        transactionType == TransactionType.TRANSFER -> if (isAmountPositive) "+" else "-"
         else -> ""
     }
 ) {
@@ -128,6 +125,7 @@ fun AeonImpactHeaderCard(
         supportedCurrencies = supportedCurrencies,
         targetSupportedCurrencies = targetSupportedCurrencies,
         accountId = accountId,
+        isAmountPositive = isAmountPositive,
         amountPrefix = amountPrefix
     )
 }
@@ -166,6 +164,7 @@ fun <T> AeonImpactHeaderCard(
     supportedCurrencies: List<String> = emptyList(),
     targetSupportedCurrencies: List<String> = emptyList(),
     accountId: String? = null,
+    isAmountPositive: Boolean = false,
     amountPrefix: String = ""
 ) {
     val activeAmountColor = amountColor ?: AppColors.primary

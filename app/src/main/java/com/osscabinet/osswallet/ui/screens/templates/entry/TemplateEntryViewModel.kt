@@ -136,6 +136,7 @@ class TemplateEntryViewModel @Inject constructor(
                         currency = template.currency ?: "USD",
                         targetCurrency = template.targetCurrency,
                         transferRate = template.transferRate,
+                        isAmountPositive = template.amount.signum() > 0,
                         note = template.note ?: "",
                         payee = template.payee ?: "",
                         location = template.location ?: "",
@@ -178,12 +179,38 @@ class TemplateEntryViewModel @Inject constructor(
                 val oldType = _state.value.transactionType
                 val newType = event.type
                 _state.update { state ->
+                    val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
+                    
+                    val primaryAccountId = if (isTransferToNormal && state.isAmountPositive) {
+                        state.targetAccountId ?: state.accountId
+                    } else {
+                        state.accountId
+                    }
+
                     state.copy(
                         transactionType = newType,
-                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .toPlainString(),
-                        accountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.accountId,
-                        targetAccountId = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.accountId else state.targetAccountId,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
+                        
+                        accountId = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
+                            else -> primaryAccountId
+                        },
+                        
+                        targetAccountId = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
+                            newType == TransactionType.TRANSFER -> state.targetAccountId
+                            else -> null
+                        },
+                        
+                        isAmountPositive = when {
+                            newType == TransactionType.INCOME -> true
+                            newType == TransactionType.EXPENSE -> false
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
+                            else -> state.isAmountPositive
+                        },
+
                         categoryId = if (newType == TransactionType.TRANSFER) Category.SYSTEM_TRANSFER else if (state.categoryId == Category.SYSTEM_TRANSFER) Category.SYSTEM_UNKNOWN else state.categoryId
                     )
                 }
@@ -241,7 +268,8 @@ class TemplateEntryViewModel @Inject constructor(
                         accountId = s.targetAccountId,
                         targetAccountId = s.accountId,
                         currency = s.targetCurrency ?: s.currency,
-                        targetCurrency = s.currency
+                        targetCurrency = s.currency,
+                        isAmountPositive = !s.isAmountPositive
                     )
                 }
                 recalculateExchangeRate()
@@ -409,7 +437,7 @@ class TemplateEntryViewModel @Inject constructor(
         viewModelScope.launch {
             val amountValue = if (s.isIncome) s.amountValue.abs()
             else if (s.isTransfer) {
-                if (s.accountId == null) s.amountValue.abs() else s.amountValue.abs().negate()
+                if (s.isAmountPositive) s.amountValue.abs() else s.amountValue.abs().negate()
             }
             else s.amountValue.abs().negate()
 

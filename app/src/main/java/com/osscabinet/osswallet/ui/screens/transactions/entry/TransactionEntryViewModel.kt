@@ -169,34 +169,6 @@ class TransactionEntryViewModel @Inject constructor(
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 5000
             }
             targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
-            
-            // If it's an inflow transfer, the wallet account is the target
-            if (transaction.amount.signum() > 0) {
-                _state.update {
-                    it.copy(
-                        amount = transaction.amount.abs().stripTrailingZeros().toPlainString(),
-                        selectedCategoryId = transaction.categoryId,
-                        selectedTags = transaction.tags,
-                        paymentMethod = transaction.paymentMethod,
-                        status = transaction.status,
-                        transactionType = txType,
-                        selectedDateMillis = transaction.timestamp,
-                        payee = transaction.payee,
-                        note = transaction.note,
-                        warrantyExpirationMillis = transaction.warrantyExpiration
-                            ?: (System.currentTimeMillis() + 31536000000L),
-                        isWarrantyEnabled = transaction.warrantyExpiration != null,
-                        gpsLocation = transaction.gpsLocation,
-                        location = transaction.location,
-                        selectedAccount = null, // Inflow from Outside
-                        selectedCurrency = transaction.currency,
-                        targetAccount = selectedAcc,
-                        targetCurrency = selectedAcc?.currencyCode ?: "",
-                        exchangeRate = BigDecimal.ONE
-                    )
-                }
-                return
-            }
         }
 
         _state.update {
@@ -219,6 +191,7 @@ class TransactionEntryViewModel @Inject constructor(
                 selectedCurrency = transaction.currency,
                 targetAccount = targetAcc,
                 targetCurrency = targetAcc?.currencyCode ?: "",
+                isAmountPositive = transaction.amount.signum() > 0,
                 exchangeRate = BigDecimal.ONE // Transaction entity doesn't have transferRate
             )
         }
@@ -353,15 +326,38 @@ class TransactionEntryViewModel @Inject constructor(
                 val newType = event.type
                 
                 _state.update { state ->
+                    val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
+                    
+                    val primaryAccount = if (isTransferToNormal && state.isAmountPositive) {
+                        state.targetAccount ?: state.selectedAccount
+                    } else {
+                        state.selectedAccount
+                    }
+
                     state.copy(
                         transactionType = newType,
-                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .toPlainString(),
-                        // Auto-calculate direction based on conversion
-                        // Expense -> Transfer = Wallet -> Outside (Source = Acc, Target = null)
-                        // Income -> Transfer = Outside -> Wallet (Source = null, Target = Acc)
-                        selectedAccount = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) null else state.selectedAccount,
-                        targetAccount = if (newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME) state.selectedAccount else state.targetAccount,
+                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs().toPlainString(),
+                        
+                        selectedAccount = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
+                            else -> primaryAccount
+                        },
+                        
+                        targetAccount = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccount
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
+                            newType == TransactionType.TRANSFER -> state.targetAccount
+                            else -> null
+                        },
+                        
+                        isAmountPositive = when {
+                            newType == TransactionType.INCOME -> true
+                            newType == TransactionType.EXPENSE -> false
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> true
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> false
+                            else -> state.isAmountPositive
+                        },
+
                         // Prohibit transfers in split mode
                         isSplitMode = if (newType == TransactionType.TRANSFER) false else state.isSplitMode,
                         showSplitSheet = if (newType == TransactionType.TRANSFER) false else state.showSplitSheet,
@@ -474,7 +470,8 @@ class TransactionEntryViewModel @Inject constructor(
                         selectedAccount = s.targetAccount,
                         targetAccount = s.selectedAccount,
                         selectedCurrency = s.targetAccount?.currencyCode ?: s.selectedCurrency,
-                        targetCurrency = s.selectedAccount?.currencyCode ?: ""
+                        targetCurrency = s.selectedAccount?.currencyCode ?: "",
+                        isAmountPositive = !s.isAmountPositive
                     )
                 }
                 recalculateExchangeRate()
@@ -661,10 +658,11 @@ class TransactionEntryViewModel @Inject constructor(
         return TransactionRequest(
             name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
                 ?: "Transaction",
-            amount = if (currentState.isExpense) {
-                currentState.amountValue.abs().negate()
-            } else {
-                currentState.amountValue.abs()
+            amount = when {
+                currentState.isIncome -> currentState.amountValue.abs()
+                currentState.isExpense -> currentState.amountValue.abs().negate()
+                currentState.isTransfer -> if (currentState.isAmountPositive) currentState.amountValue.abs() else currentState.amountValue.abs().negate()
+                else -> currentState.amountValue
             },
             transactionType = when {
                 currentState.isIncome -> TransactionType.INCOME

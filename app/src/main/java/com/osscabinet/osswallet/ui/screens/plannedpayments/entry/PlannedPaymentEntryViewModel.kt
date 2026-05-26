@@ -345,7 +345,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetHasEndDate -> _state.update { it.copy(hasEndDate = event.has) }
             is PlannedPaymentEntryEvent.SetEndDate -> _state.update { it.copy(endDateMillis = event.date) }
             is PlannedPaymentEntryEvent.SetCategoryId -> {
-                if (event.id != Category.SYSTEM_INITIAL_BALANCE) _state.update { it.copy(selectedCategoryId = event.id) }
+                if (!Category.isInitialBalance(event.id)) _state.update { it.copy(selectedCategoryId = event.id) }
             }
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }

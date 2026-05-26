@@ -46,7 +46,7 @@ fun TransactionEntrySheets(
     // Category Selection
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
+            categories = state.categories.filter { !Category.isInitialBalance(it.id) },
             selectedCategoryIds = setOf(state.selectedCategoryId),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
@@ -216,7 +216,7 @@ fun TransactionEntrySheets(
     // Split Category Selection
     state.showSplitCategorySheet?.let { index ->
         AeonCategorySelection(
-            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
+            categories = state.categories.filter { !Category.isInitialBalance(it.id) },
             selectedCategoryIds = setOf(
                 state.splits.getOrNull(index)?.categoryId ?: state.selectedCategoryId
             ),

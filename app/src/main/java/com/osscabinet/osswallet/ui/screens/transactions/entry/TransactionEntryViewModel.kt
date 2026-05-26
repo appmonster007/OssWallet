@@ -293,7 +293,7 @@ class TransactionEntryViewModel @Inject constructor(
                 }
             }
             is TransactionEntryEvent.SetCategory -> {
-                if (event.categoryId != Category.SYSTEM_INITIAL_BALANCE) update {
+                if (!Category.isInitialBalance(event.categoryId)) update {
                     it.copy(selectedCategoryId = event.categoryId)
                 }
             }

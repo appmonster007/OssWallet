@@ -121,17 +121,22 @@ fun AccountEntrySheets(
                     .padding(bottom = 32.dp)
             ) {
                 CalculatorNumpad(
-                    amount = state.initialBalances[activeCurrency] ?: "0",
-                    onAmountChange = { amount ->
-                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, amount))
+                    amount = state.initialBalances[activeCurrency]?.let {
+                        it.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString() ?: "0"
+                    } ?: "0",
+                    onAmountChange = { magnitude ->
+                        val currentSigned = state.initialBalances[activeCurrency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val isNegative = currentSigned.signum() < 0
+                        val newSigned = if (isNegative && magnitude.isNotEmpty() && magnitude != "0") "-$magnitude" else magnitude
+                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, newSigned))
                     },
                     onDone = {
-                        val newValue = state.initialBalances[activeCurrency] ?: ""
-                        val originalValue = state.calculatorOriginalValue ?: ""
-                        val newBD = newValue.toBigDecimalOrNull()
-                        val origBD = originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val newSigned = state.initialBalances[activeCurrency] ?: ""
+                        val origSigned = state.calculatorOriginalValue ?: ""
+                        val newBD = newSigned.toBigDecimalOrNull()
+                        val origBD = origSigned.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         if (state.isEditMode && newBD != null && newBD.compareTo(origBD) != 0) {
-                            onEvent(AccountEntryEvent.ShowAdjustmentDialog(activeCurrency, newValue))
+                            onEvent(AccountEntryEvent.ShowAdjustmentDialog(activeCurrency, newSigned))
                         } else {
                             onEvent(AccountEntryEvent.CloseCalculator)
                         }

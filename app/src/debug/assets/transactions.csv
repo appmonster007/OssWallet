@@ -52,20 +52,20 @@ seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accou
 203,John Repayment,100.00,Other Income,200,,USD,income,acc_cash,CASH,John Doe,Partial repayment of loan,,,1,,,,,cleared,2
 204,Berlin Hotel,-120.00,Hotels,161,,EUR,expense,acc_bank,CREDIT_CARD,Hilton Berlin,Business trip,Travel,,1,52.5200,13.4050,,,cleared,12
 205,Bangalore Dinner,-2500.00,Dining Out,102,,INR,expense,acc_bank,MOBILE_PAYMENT,Toit,Dinner in Bangalore,Social,,1,12.9716,77.5946,,,cleared,4
-1001,Cash Deposit to Bank,-500.00,Transfer Outflow,1005,,USD,transfer,acc_cash,CASH,,Depositing cash at the bank,,,1,,,,,cleared,25
-1002,Cash Deposit to Bank,500.00,Transfer Inflow,1004,,USD,transfer,acc_bank,BANK_TRANSFER,,Depositing cash at the bank,,,1,,,,,cleared,25
-1003,Monthly Savings Transfer,-1000.00,Transfer Outflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
-1004,Monthly Savings Transfer,1000.00,Transfer Inflow,1004,,USD,transfer,acc_savings,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
-1005,Credit Card Payment,-350.00,Transfer Outflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
-1006,Credit Card Payment,350.00,Transfer Inflow,1004,,USD,transfer,acc_credit,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
-1007,Investment Top-up,-2000.00,Transfer Outflow,1005,,USD,transfer,acc_savings,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
-1008,Investment Top-up,2000.00,Transfer Inflow,1004,,USD,transfer,acc_invest,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
-1009,USD to JPY Exchange,-200.00,Transfer Outflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
-1010,USD to JPY Exchange,29400.00,Transfer Inflow,1004,,JPY,transfer,acc_jpy,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
-1011,USD to SGD Transfer,-300.00,Transfer Outflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
-1012,USD to SGD Transfer,400.00,Transfer Inflow,1004,,SGD,transfer,acc_sgd,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
-1013,IDR to USD Repatriation,-780000.00,Transfer Outflow,1005,,IDR,transfer,acc_idr,DIGITAL_WALLET,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
-1014,IDR to USD Repatriation,50.00,Transfer Inflow,1004,,USD,transfer,acc_bank,BANK_TRANSFER,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
+1001,Cash Deposit to Bank,-500.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Depositing cash at the bank,,,1,,,,,cleared,25
+1002,Cash Deposit to Bank,500.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Depositing cash at the bank,,,1,,,,,cleared,25
+1003,Monthly Savings Transfer,-1000.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
+1004,Monthly Savings Transfer,1000.00,Transfer Inflow,1005,,USD,transfer,acc_savings,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
+1005,Credit Card Payment,-350.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
+1006,Credit Card Payment,350.00,Transfer Inflow,1005,,USD,transfer,acc_credit,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
+1007,Investment Top-up,-2000.00,Transfer Outflow,1006,,USD,transfer,acc_savings,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
+1008,Investment Top-up,2000.00,Transfer Inflow,1005,,USD,transfer,acc_invest,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
+1009,USD to JPY Exchange,-200.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
+1010,USD to JPY Exchange,29400.00,Transfer Inflow,1005,,JPY,transfer,acc_jpy,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
+1011,USD to SGD Transfer,-300.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
+1012,USD to SGD Transfer,400.00,Transfer Inflow,1005,,SGD,transfer,acc_sgd,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
+1013,IDR to USD Repatriation,-780000.00,Transfer Outflow,1006,,IDR,transfer,acc_idr,DIGITAL_WALLET,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
+1014,IDR to USD Repatriation,50.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
 2000,Unpaid Invoice,500.00,Freelance,198,,USD,income,acc_bank,BANK_TRANSFER,Client Z,Pending payment,Project,,1,,,,,pending,2
 2001,Returned Item,45.00,Shopping,124,,USD,expense,acc_credit,CREDIT_CARD,Target,Cancelled order,Shopping,,1,,,,,cancelled,5
 2002,Lunch at Cafe,-25.00,Dining Out,102,,USD,expense,acc_cash,CASH,Cafe Lola,Lunch,Social,,1,40.7128,-74.0060,,,cleared,1
@@ -98,8 +98,8 @@ seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accou
 2029,Phone Bill,-65.00,Phone,131,,USD,expense,acc_bank,BANK_TRANSFER,Verizon,Monthly bill,Housing,,1,,,,,cleared,0
 2030,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,BANK_TRANSFER,Landlord,Monthly rent,Housing,,1,,,,,cleared,0
 2031,Salary Deposit,5250.00,Salary,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Monthly salary,Work,,1,,,,,cleared,0
-2032,Wallet to Bank,-100.00,Transfer Outflow,1005,,USD,transfer,acc_cash,CASH,,Deposit,Transfer,,1,,,,,cleared,0
-2033,Wallet to Bank,100.00,Transfer Inflow,1004,,USD,transfer,acc_bank,BANK_TRANSFER,,Deposit,Transfer,,1,,,,,cleared,0
+2032,Wallet to Bank,-100.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Deposit,Transfer,,1,,,,,cleared,0
+2033,Wallet to Bank,100.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Deposit,Transfer,,1,,,,,cleared,0
 3001,Monthly Salary,5250.00,Salary,197,1743379200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Apr 2025,Work,monthly,1,,,,,cleared,
 3002,Rent Payment,-1850.00,Rent,130,1743465600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Apr 2025,Housing,monthly,1,,,,,cleared,
 3003,Electricity,-142.00,Electricity,131,1743552000000,USD,expense,acc_bank,Bank Transfer,Power Co,Usage Apr 2025,Housing,monthly,1,,,,,cleared,
@@ -129,8 +129,8 @@ seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accou
 3027,Rent July,-1850.00,Rent,130,1751328000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jul 2025,Housing,monthly,1,,,,,cleared,
 3028,Amazon Prime,-14.99,Software Subscriptions,187,1751414400000,USD,expense,acc_credit,Credit Card,Amazon,Prime sub,Subscription,monthly,1,,,,,cleared,
 3029,Bonus Pay,2000.00,Bonus,197,1751500800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Mid-year bonus,Work,,1,,,,,cleared,
-3030,Savings Transfer,-1000.00,Transfer Outflow,1005,1751587200000,USD,transfer,acc_bank,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
-3031,Savings Transfer,1000.00,Transfer Inflow,1004,1751587200000,USD,transfer,acc_savings,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
+3030,Savings Transfer,-1000.00,Transfer Outflow,1006,1751587200000,USD,transfer,acc_bank,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
+3031,Savings Transfer,1000.00,Transfer Inflow,1005,1751587200000,USD,transfer,acc_savings,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
 3032,Groceries,-110.00,Groceries,101,1751673600000,USD,expense,acc_cash,Debit Card,Market,Food,Food,,1,,,,,cleared,
 3033,Lunch,-20.00,Dining Out,102,1751760000000,USD,expense,acc_cash,Cash,Deli,Quick lunch,Food,,1,,,,,cleared,
 3034,Salary Aug,5250.00,Salary,197,1753920000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Aug 2025,Work,monthly,1,,,,,cleared,

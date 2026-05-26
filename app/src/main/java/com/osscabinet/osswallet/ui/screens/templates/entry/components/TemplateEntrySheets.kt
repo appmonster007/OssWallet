@@ -55,7 +55,7 @@ fun TemplateEntrySheets(
 
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
+            categories = state.categories.filter { !Category.isInitialBalance(it.id) },
             selectedCategoryIds = setOf(state.categoryId),
             onSelectionChange = { ids ->
                 onEvent(TemplateEntryEvent.SetCategory(ids.firstOrNull() ?: -1L))

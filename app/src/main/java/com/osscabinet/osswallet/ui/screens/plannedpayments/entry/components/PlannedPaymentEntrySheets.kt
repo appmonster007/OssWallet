@@ -65,7 +65,7 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showCategorySheet) {
         AeonCategorySelection(
-            categories = state.categories.filter { it.id != Category.SYSTEM_INITIAL_BALANCE },
+            categories = state.categories.filter { !Category.isInitialBalance(it.id) },
             selectedCategoryIds = setOf(state.selectedCategoryId),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCategoryId(it)) }

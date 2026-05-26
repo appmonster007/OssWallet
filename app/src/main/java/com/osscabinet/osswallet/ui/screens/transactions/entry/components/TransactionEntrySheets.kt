@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
@@ -232,9 +233,13 @@ fun TransactionEntrySheets(
     // Numpad (Calculator)
     if (state.isNumpadVisible) {
         AeonCalculatorSheet(
-            currentAmount = state.amount,
+            currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
             onAmountChanged = { amount ->
-                onEvent(TransactionEntryEvent.SetAmount(amount))
+                if (state.activeAmountSide == AmountEditingSide.SOURCE) {
+                    onEvent(TransactionEntryEvent.SetAmount(amount))
+                } else {
+                    onEvent(TransactionEntryEvent.SetTargetAmount(amount))
+                }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowNumpad(false)) }
         )

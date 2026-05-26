@@ -14,9 +14,11 @@ import java.io.InputStreamReader
 import java.math.BigDecimal
 import javax.inject.Inject
 
-private fun BigDecimal.enforceSign(type: TransactionType): BigDecimal = when (type) {
-    TransactionType.EXPENSE -> abs().negate()
-    TransactionType.INCOME -> abs()
+private fun BigDecimal.enforceSign(type: TransactionType, categoryId: Long): BigDecimal = when {
+    type == TransactionType.EXPENSE -> abs().negate()
+    type == TransactionType.INCOME -> abs()
+    Category.isAnyTransferInflow(categoryId) -> abs()
+    Category.isAnyTransferOutflow(categoryId) -> abs().negate()
     else -> this
 }
 
@@ -182,7 +184,7 @@ class DatabaseSeeder @Inject constructor(
     // ── CSV Loaders ───────────────────────────────────────────────────────────
 
     private fun loadProfilesFromCsv(): List<ProfileEntity> = loadFromCsv("profiles.csv") { ProfileSeedRow.fromCsv(it).toEntity() }
-    
+
     private fun loadFiltersFromCsv(): List<FilterSeedRow> = loadFromCsv("filters.csv") { FilterSeedRow.fromCsv(it) }
 
     private fun loadBudgetsFromCsv(): List<BudgetSeedRow> = loadFromCsv("budgets.csv") { BudgetSeedRow.fromCsv(it) }
@@ -429,7 +431,7 @@ class DatabaseSeeder @Inject constructor(
     ) {
         fun toTransactionEntity() = TransactionEntity(
             name = title.ifBlank { category },
-            amount = amount.enforceSign(transactionType),
+            amount = amount.enforceSign(transactionType, categoryId ?: Category.SYSTEM_UNKNOWN),
             timestamp = daysAgo?.let { System.currentTimeMillis() - it * 86_400_000L } ?: timestamp ?: System.currentTimeMillis(),
             currency = currency, transactionType = transactionType,
             accountId = accountId, categoryId = categoryId ?: Category.SYSTEM_UNKNOWN,

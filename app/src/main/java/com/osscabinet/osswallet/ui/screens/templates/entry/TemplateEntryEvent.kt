@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -9,12 +10,13 @@ import java.math.BigDecimal
 sealed class TemplateEntryEvent {
     data class SetName(val name: String) : TemplateEntryEvent()
     data class SetAmount(val amount: String) : TemplateEntryEvent()
+    data class SetTargetAmount(val amount: String) : TemplateEntryEvent()
     data class SetTransactionType(val type: TransactionType) : TemplateEntryEvent()
     data class SetCategory(val categoryId: Long) : TemplateEntryEvent()
     data class SetAccount(val accountId: String?) : TemplateEntryEvent()
     data class SetTargetAccount(val accountId: String?) : TemplateEntryEvent()
     data class SetCurrency(val currency: String) : TemplateEntryEvent()
-    data class SetTargetCurrency(val currency: String?) : TemplateEntryEvent()
+    data class SetTargetCurrency(val currency: String) : TemplateEntryEvent()
     data class SetTransferRate(val rate: BigDecimal) : TemplateEntryEvent()
     data object SwapAccounts : TemplateEntryEvent()
     data class SetNote(val note: String) : TemplateEntryEvent()
@@ -46,7 +48,7 @@ sealed class TemplateEntryEvent {
     data class ShowWarrantyDatePicker(val show: Boolean) : TemplateEntryEvent()
     data class ShowLocationSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : TemplateEntryEvent()
-    data class ShowNumpad(val show: Boolean) : TemplateEntryEvent()
+    data class ShowNumpad(val show: Boolean, val side: AmountEditingSide = AmountEditingSide.SOURCE) : TemplateEntryEvent()
     data class ShowLinkedTransactionSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 

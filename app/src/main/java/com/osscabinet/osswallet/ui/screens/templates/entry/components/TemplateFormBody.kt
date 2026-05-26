@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
@@ -67,7 +68,9 @@ fun TemplateFormBody(
                 amount = state.amount,
                 currency = state.currency,
                 onCurrencyClick = { currency -> onEvent(TemplateEntryEvent.SetCurrency(currency)) },
-                onAmountClick = { onEvent(TemplateEntryEvent.ShowNumpad(true)) },
+                onAmountClick = { side -> onEvent(TemplateEntryEvent.ShowNumpad(true, side)) },
+                amountLabel = if (state.isTransfer) "SOURCE AMOUNT" else "AMOUNT",
+                targetAmount = if (state.isTransfer) state.targetAmount else null,
                 name = state.name,
                 onNameChange = { onEvent(TemplateEntryEvent.SetName(it)) },
                 nameLabel = "TEMPLATE NAME",

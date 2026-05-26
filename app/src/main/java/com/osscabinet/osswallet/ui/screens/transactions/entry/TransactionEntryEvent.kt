@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
@@ -14,6 +15,7 @@ import java.math.BigDecimal
  */
 sealed class TransactionEntryEvent {
     data class SetAmount(val amount: String) : TransactionEntryEvent()
+    data class SetTargetAmount(val amount: String) : TransactionEntryEvent()
     data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
     data class SetTags(val tags: Set<String>) : TransactionEntryEvent()
     data class AddTag(val tag: String, val color: Int? = null) : TransactionEntryEvent()
@@ -71,7 +73,7 @@ sealed class TransactionEntryEvent {
     data class ShowLocationSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowSplitSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowSplitCategorySheet(val splitIndex: Int?) : TransactionEntryEvent()
-    data class ShowNumpad(val show: Boolean) : TransactionEntryEvent()
+    data class ShowNumpad(val show: Boolean, val side: AmountEditingSide = AmountEditingSide.SOURCE) : TransactionEntryEvent()
     data class ShowCurrencySheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowTargetCurrencySheet(val show: Boolean) : TransactionEntryEvent()
 

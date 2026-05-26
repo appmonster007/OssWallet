@@ -123,12 +123,19 @@ class TransactionManager(
         val targetAccountId = request.targetAccountId
         val amount = request.amount.abs()
 
+        val baseInflowCategory = if (Category.isInitialBalance(request.categoryId)) 
+            Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
+        val baseOutflowCategory = if (Category.isInitialBalance(request.categoryId)) 
+            Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+
         return when {
             // Outflow: Wallet -> Outside
             sourceAccountId != null && targetAccountId == null -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = Category.SYSTEM_TRANSFER_OUTFLOW
+                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId 
+                                 else baseOutflowCategory,
+                    targetCurrency = request.targetCurrency
                 )
                 if (existingTransaction != null) {
                     transactionUseCases.clearTransactionLinks(existingTransaction.id)
@@ -144,7 +151,10 @@ class TransactionManager(
                     accountId = targetAccountId,
                     amount = amount,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
+                                 else baseInflowCategory,
+                    targetAccountId = null,
+                    targetCurrency = request.currency
                 )
                 if (existingTransaction != null) {
                     transactionUseCases.clearTransactionLinks(existingTransaction.id)
@@ -156,19 +166,26 @@ class TransactionManager(
             }
             // Internal: Wallet -> Wallet
             sourceAccountId != null && targetAccountId != null -> {
+                // If it's an internal transfer, we force the signs: Source is -ve, Target is +ve
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = Category.SYSTEM_TRANSFER_OUTFLOW
+                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId 
+                                 else baseOutflowCategory,
+                    targetAccountId = targetAccountId,
+                    targetCurrency = request.targetCurrency
                 )
 
-                // Target inherits all shared metadata from source; only the amount, direction,
-                // account, and currency differ — and id must be 0 since it is always a new row.
+                // Target inherits all shared metadata from source
                 val targetTransaction = sourceTransaction.copy(
                     id = 0,
                     amount = amount.multiply(request.transferRate),
                     accountId = targetAccountId,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
+                                 else baseInflowCategory,
+                    targetAccountId = sourceAccountId,
+                    targetCurrency = request.currency,
+                    transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(request.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros() else BigDecimal.ONE
                 )
 
                 if (existingTransaction != null && Category.isTransfer(existingTransaction.categoryId)) {
@@ -183,7 +200,11 @@ class TransactionManager(
                                 amount = amount.multiply(request.transferRate),
                                 accountId = targetAccountId,
                                 currency = request.targetCurrency ?: request.currency,
-                                categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                                categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
+                                             else baseInflowCategory,
+                                targetAccountId = sourceAccountId,
+                                targetCurrency = request.currency,
+                                transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(request.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros() else BigDecimal.ONE
                             )
                             transactionUseCases.updateTransaction(linkedTx, updatedTarget, profileId)
                         }
@@ -204,7 +225,7 @@ class TransactionManager(
         scheduledDate: Long
     ) {
         val payment = plannedPaymentRepository.getById(paymentId) ?: return
-        
+
         // Mark occurrence as confirmed
         val occurrence = PlannedPaymentOccurrence(
             id = 0,
@@ -236,7 +257,7 @@ class TransactionManager(
         scheduledDate: Long
     ) {
         val payment = plannedPaymentRepository.getById(paymentId) ?: return
-        
+
         val occurrence = PlannedPaymentOccurrence(
             id = 0,
             plannedPaymentId = paymentId,
@@ -327,7 +348,10 @@ class TransactionManager(
             location = location,
             warrantyExpiration = warrantyExpiration,
             status = status,
-            sourcePlannedPaymentId = sourcePlannedPaymentId
+            sourcePlannedPaymentId = sourcePlannedPaymentId,
+            targetAccountId = targetAccountId,
+            targetCurrency = targetCurrency,
+            transferRate = transferRate
         )
 
     private suspend fun <T> andRefresh(block: suspend () -> T): T =

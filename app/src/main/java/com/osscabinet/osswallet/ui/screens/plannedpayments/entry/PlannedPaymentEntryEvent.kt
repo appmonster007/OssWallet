@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
@@ -11,6 +12,7 @@ import java.math.BigDecimal
 sealed class PlannedPaymentEntryEvent {
     data class SetName(val name: String) : PlannedPaymentEntryEvent()
     data class SetAmountText(val amount: String) : PlannedPaymentEntryEvent()
+    data class SetTargetAmount(val amount: String) : PlannedPaymentEntryEvent()
     data class SetCurrency(val currency: String) : PlannedPaymentEntryEvent()
     data class SetTransactionType(val type: TransactionType) : PlannedPaymentEntryEvent()
     data class SetAccountId(val id: String?) : PlannedPaymentEntryEvent()
@@ -60,7 +62,7 @@ sealed class PlannedPaymentEntryEvent {
     data class ShowTransactionStatusSheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowWarrantyDatePicker(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowLocationSheet(val show: Boolean) : PlannedPaymentEntryEvent()
-    data class ShowNumpad(val show: Boolean) : PlannedPaymentEntryEvent()
+    data class ShowNumpad(val show: Boolean, val side: AmountEditingSide = AmountEditingSide.SOURCE) : PlannedPaymentEntryEvent()
     data class ShowCurrencySheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowTargetCurrencySheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowTemplateSheet(val show: Boolean) : PlannedPaymentEntryEvent()

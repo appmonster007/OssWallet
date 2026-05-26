@@ -25,7 +25,10 @@ fun TransactionEntity.toDomain(): Transaction {
         gpsLocation = gpsLocation,
         location = location,
         warrantyExpiration = warrantyExpiration,
-        status = status
+        status = status,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate
     )
 }
 
@@ -50,6 +53,9 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         gpsLocation = gpsLocation,
         location = location,
         warrantyExpiration = warrantyExpiration,
-        status = status
+        status = status,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate
     )
 }

@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -52,8 +53,9 @@ fun AeonImpactHeaderCard(
     amount: String,
     currency: String,
     onCurrencyClick: (String) -> Unit,
-    onAmountClick: () -> Unit,
+    onAmountClick: (side: AmountEditingSide) -> Unit,
     amountLabel: String? = null,
+    targetAmount: String? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
@@ -79,7 +81,8 @@ fun AeonImpactHeaderCard(
     amountPrefix: String = when {
         transactionType == TransactionType.EXPENSE -> "-"
         transactionType == TransactionType.INCOME -> "+"
-        transactionType == TransactionType.TRANSFER -> if (isAmountPositive) "+" else "-"
+        transactionType == TransactionType.TRANSFER && isAmountPositive -> "+"
+        transactionType == TransactionType.TRANSFER && !isAmountPositive -> "-"
         else -> ""
     }
 ) {
@@ -104,6 +107,7 @@ fun AeonImpactHeaderCard(
         onCurrencyClick = onCurrencyClick,
         onAmountClick = onAmountClick,
         amountLabel = amountLabel,
+        targetAmount = targetAmount,
         name = name,
         onNameChange = onNameChange,
         nameLabel = nameLabel,
@@ -141,8 +145,9 @@ fun <T> AeonImpactHeaderCard(
     amount: String,
     currency: String,
     onCurrencyClick: (String) -> Unit,
-    onAmountClick: () -> Unit,
+    onAmountClick: (side: AmountEditingSide) -> Unit,
     amountLabel: String? = null,
+    targetAmount: String? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
@@ -201,12 +206,12 @@ fun <T> AeonImpactHeaderCard(
                         amount = amount,
                         currency = currency,
                         onCurrencyClick = onCurrencyClick,
-                        onAmountClick = onAmountClick,
+                        onAmountClick = { onAmountClick(AmountEditingSide.SOURCE) },
                         amountColor = activeAmountColor,
                         supportedCurrencies = supportedCurrencies,
                         showCurrency = showCurrency,
                         label = amountLabel,
-                        prefix = amountPrefix
+                        prefix = if (isTransfer) "-" else amountPrefix
                     )
 
                     Row(
@@ -303,15 +308,17 @@ fun <T> AeonImpactHeaderCard(
 
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
+                val displayTargetAmount = targetAmount ?: (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate)
+                    .setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+
                 EntryAmountDisplay(
-                    amount = (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate)
-                        .setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    amount = displayTargetAmount,
                     currency = targetCurrency ?: currency,
                     onCurrencyClick = onTargetCurrencyClick,
-                    onAmountClick = onAmountClick,
+                    onAmountClick = { onAmountClick(AmountEditingSide.TARGET) },
                     amountColor = AppColors.contentPrimary.copy(alpha = 0.8f),
                     supportedCurrencies = targetSupportedCurrencies.ifEmpty { supportedCurrencies },
-                    prefix = amountPrefix
+                    prefix = if (isTransfer) "+" else amountPrefix
                 )
             }
 
@@ -344,7 +351,7 @@ fun AeonImpactHeaderCardPreview() {
                 amount = "1,250.00",
                 currency = "USD",
                 onCurrencyClick = {},
-                onAmountClick = {},
+                onAmountClick = { _ -> },
                 name = "Monthly Rent",
                 onNameChange = {},
                 nameLabel = "BUDGET NAME"

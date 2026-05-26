@@ -157,10 +157,13 @@ class TransactionEntryViewModel @Inject constructor(
             else -> transaction.transactionType
         }
 
-        val selectedAcc = accounts.find { it.id == transaction.accountId }
+        var selectedAcc: Account? = accounts.find { it.id == transaction.accountId }
+        var targetAcc: Account? = accounts.find { it.id == transaction.targetAccountId }
+        var amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
+        var targetAmountStr = ""
+        val isOpenedAsReceiver = transaction.amount.signum() > 0
+        var categoryId = transaction.categoryId
 
-        // Find target account for transfers
-        var targetAcc: Account? = null
         if (txType == TransactionType.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
                 Category.isTransfer(tx.categoryId) &&
@@ -168,13 +171,32 @@ class TransactionEntryViewModel @Inject constructor(
                         tx.id != transaction.id &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 5000
             }
-            targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
+
+            if (isOpenedAsReceiver) {
+                // Flip for display consistency (Giver above, Receiver below)
+                // transaction is the Receiver, so its accountId goes to bottom slot (targetAcc)
+                // and its targetAccountId goes to top slot (selectedAcc)
+                targetAcc = selectedAcc
+                selectedAcc = accounts.find { it.id == transaction.targetAccountId }
+                targetAmountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
+                amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+                categoryId = if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+            } else {
+                // transaction is the Giver (amount < 0), so its accountId is already in selectedAcc (top slot)
+                targetAmountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+                categoryId = if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+            }
         }
+
+        val exchangeRate = if (amountStr.toBigDecimalOrNull()?.signum() != 0 && targetAmountStr.isNotEmpty()) {
+            targetAmountStr.toBigDecimal().divide(amountStr.toBigDecimal(), 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+        } else transaction.transferRate
 
         _state.update {
             it.copy(
-                amount = transaction.amount.abs().stripTrailingZeros().toPlainString(),
-                selectedCategoryId = transaction.categoryId,
+                amount = amountStr,
+                targetAmount = targetAmountStr,
+                selectedCategoryId = categoryId,
                 selectedTags = transaction.tags,
                 paymentMethod = transaction.paymentMethod,
                 status = transaction.status,
@@ -188,10 +210,10 @@ class TransactionEntryViewModel @Inject constructor(
                 gpsLocation = transaction.gpsLocation,
                 location = transaction.location,
                 selectedAccount = selectedAcc,
-                selectedCurrency = transaction.currency,
+                selectedCurrency = selectedAcc?.currencyCode ?: transaction.currency,
                 targetAccount = targetAcc,
                 targetCurrency = targetAcc?.currencyCode ?: "",
-                exchangeRate = BigDecimal.ONE // Transaction entity doesn't have transferRate
+                exchangeRate = exchangeRate
             )
         }
     }
@@ -218,11 +240,14 @@ class TransactionEntryViewModel @Inject constructor(
             }
         }
 
+        val amountBD = prefill.amount.toBigDecimalOrNull()?.abs() ?: BigDecimal.ZERO
+        val rateBD = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE
+        val targetAmtBD = amountBD.multiply(rateBD).setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+
         _state.update {
             it.copy(
-                amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()
-                    ?.toPlainString()
-                    ?: prefill.amount,
+                amount = amountBD.stripTrailingZeros().toPlainString(),
+                targetAmount = targetAmtBD.toPlainString(),
                 selectedCategoryId = prefill.categoryId,
                 selectedTags = prefill.tags,
                 paymentMethod = prefill.paymentMethod,
@@ -283,13 +308,34 @@ class TransactionEntryViewModel @Inject constructor(
                             TransactionType.INCOME -> TransactionType.EXPENSE
                             else -> state.transactionType
                         }
+                        val finalInput = inputAmount.abs()
                         state.copy(
-                            amount = inputAmount.abs().toPlainString(),
+                            amount = finalInput.toPlainString(),
+                            targetAmount = finalInput.multiply(state.exchangeRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString(),
                             transactionType = newType
                         )
                     }
                 } else {
-                    _state.update { it.copy(amount = event.amount) }
+                    _state.update {
+                        it.copy(
+                            amount = event.amount,
+                            targetAmount = inputAmount.multiply(it.exchangeRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                        )
+                    }
+                }
+            }
+
+            is TransactionEntryEvent.SetTargetAmount -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                _state.update { state ->
+                    val newSourceAmount = if (state.exchangeRate.signum() != 0) {
+                        inputAmount.divide(state.exchangeRate, 2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                    } else state.amount
+
+                    state.copy(
+                        targetAmount = event.amount,
+                        amount = newSourceAmount
+                    )
                 }
             }
             is TransactionEntryEvent.SetCategory -> {
@@ -325,10 +371,10 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
                 val newType = event.type
-                
+
                 _state.update { state ->
                     val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
-                    
+
                     val primaryAccount = if (isTransferToNormal && state.isTransferInflow) {
                         state.targetAccount ?: state.selectedAccount
                     } else {
@@ -456,25 +502,47 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetExchangeRate -> update {
-                it.copy(exchangeRate = event.rate)
+                val inputAmt = it.amountValue
+                it.copy(
+                    exchangeRate = event.rate,
+                    targetAmount = inputAmt.multiply(event.rate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                )
             }
 
             is TransactionEntryEvent.SwapAccounts -> {
                 val s = _state.value
-                update {
-                    it.copy(
-                        selectedAccount = s.targetAccount,
-                        targetAccount = s.selectedAccount,
-                        selectedCurrency = s.targetAccount?.currencyCode ?: s.selectedCurrency,
-                        targetCurrency = s.selectedAccount?.currencyCode ?: "",
-                        selectedCategoryId = when (s.selectedCategoryId) {
-                            Category.SYSTEM_TRANSFER_INFLOW -> Category.SYSTEM_TRANSFER_OUTFLOW
-                            Category.SYSTEM_TRANSFER_OUTFLOW -> Category.SYSTEM_TRANSFER_INFLOW
-                            else -> s.selectedCategoryId
-                        }
+                if (s.transactionType != TransactionType.TRANSFER) return
+
+                update { state ->
+                    val newSourceAccount = s.targetAccount
+                    val newTargetAccount = s.selectedAccount
+
+                    val newSourceCurrency = if (s.targetCurrency.isNotBlank()) s.targetCurrency else s.selectedCurrency
+                    val newTargetCurrency = if (s.selectedCurrency.isNotBlank()) s.selectedCurrency else s.targetCurrency
+
+                    val newSourceAmount = if (s.targetAmount.isNotBlank() && s.targetAmount != "0") s.targetAmount else s.amount
+                    val newTargetAmount = if (s.amount.isNotBlank() && s.amount != "0") s.amount else s.targetAmount
+
+                    val newExchangeRate = if (s.exchangeRate.signum() != 0) {
+                        BigDecimal.ONE.divide(s.exchangeRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                    } else s.exchangeRate
+
+                    val newCategoryId = when {
+                        newSourceAccount == null -> Category.SYSTEM_TRANSFER_INFLOW
+                        else -> Category.SYSTEM_TRANSFER_OUTFLOW
+                    }
+
+                    state.copy(
+                        selectedAccount = newSourceAccount,
+                        targetAccount = newTargetAccount,
+                        selectedCurrency = newSourceCurrency,
+                        targetCurrency = newTargetCurrency,
+                        amount = newSourceAmount,
+                        targetAmount = newTargetAmount,
+                        exchangeRate = newExchangeRate,
+                        selectedCategoryId = newCategoryId
                     )
                 }
-                recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetTemplate -> update {
@@ -572,7 +640,7 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
-            is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show) }
+            is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show, activeAmountSide = event.side) }
             is TransactionEntryEvent.ShowCurrencySheet -> update { it.copy(showCurrencySheet = event.show) }
             is TransactionEntryEvent.ShowTargetCurrencySheet -> update {
                 it.copy(

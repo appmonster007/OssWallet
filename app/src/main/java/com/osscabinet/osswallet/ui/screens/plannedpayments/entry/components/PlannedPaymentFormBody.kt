@@ -81,7 +81,7 @@ fun PlannedPaymentFormBody(
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
                 transactionType = state.transactionType,
-                onTypeSelected = { onEvent(PlannedPaymentEntryEvent.SetTransactionType(it)) },
+                onTypeSelected = { onType -> onEvent(PlannedPaymentEntryEvent.SetTransactionType(onType)) },
                 amount = state.amount,
                 currency = state.currency,
                 onCurrencyClick = { currency ->
@@ -91,7 +91,9 @@ fun PlannedPaymentFormBody(
                         )
                     )
                 },
-                onAmountClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true)) },
+                onAmountClick = { side -> onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, side)) },
+                amountLabel = if (state.transactionType == TransactionType.TRANSFER) "SOURCE AMOUNT" else "AMOUNT",
+                targetAmount = if (state.transactionType == TransactionType.TRANSFER) state.targetAmount else null,
                 name = state.name,
                 onNameChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
                 nameLabel = "PAYMENT NAME",

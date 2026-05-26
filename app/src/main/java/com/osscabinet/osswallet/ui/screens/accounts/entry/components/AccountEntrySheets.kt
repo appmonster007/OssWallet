@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -12,9 +14,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CallMade
+import androidx.compose.material.icons.rounded.CallReceived
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -31,11 +37,13 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionChip
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +107,7 @@ fun AccountEntrySheets(
     }
 
     if (state.showCalculator && state.activeBalanceCurrency != null) {
+        val activeCurrency = state.activeBalanceCurrency
         ModalBottomSheet(
             onDismissRequest = { onEvent(AccountEntryEvent.CloseCalculator) },
             containerColor = AppColors.cardSurface,
@@ -112,16 +121,84 @@ fun AccountEntrySheets(
                     .padding(bottom = 32.dp)
             ) {
                 CalculatorNumpad(
-                    amount = state.initialBalances[state.activeBalanceCurrency] ?: "0",
+                    amount = state.initialBalances[activeCurrency] ?: "0",
                     onAmountChange = { amount ->
-                        onEvent(
-                            AccountEntryEvent.SetInitialBalance(
-                                state.activeBalanceCurrency,
-                                amount
-                            )
-                        )
+                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, amount))
                     },
-                    onDone = { onEvent(AccountEntryEvent.CloseCalculator) }
+                    onDone = {
+                        val newValue = state.initialBalances[activeCurrency] ?: ""
+                        val originalValue = state.calculatorOriginalValue ?: ""
+                        val newBD = newValue.toBigDecimalOrNull()
+                        val origBD = originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        if (state.isEditMode && newBD != null && newBD.compareTo(origBD) != 0) {
+                            onEvent(AccountEntryEvent.ShowAdjustmentDialog(activeCurrency, newValue))
+                        } else {
+                            onEvent(AccountEntryEvent.CloseCalculator)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    if (state.showAdjustmentDialog && state.adjustmentDialogCurrency != null) {
+        val currency = state.adjustmentDialogCurrency
+        val origBD = state.calculatorOriginalValue?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val newBD = state.adjustmentDialogNewValue?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val delta = newBD - origBD
+        val isInflow = delta.signum() > 0
+        val deltaStr = "${if (isInflow) "+" else ""}${delta.stripTrailingZeros().toPlainString()} $currency"
+
+        ModalBottomSheet(
+            onDismissRequest = { onEvent(AccountEntryEvent.DismissAdjustmentDialog) },
+            containerColor = AppColors.cardSurface,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 40.dp),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            ) {
+                Text(
+                    text = "Apply balance change ($deltaStr)",
+                    style = AppTextStyles.cardSectionTitle,
+                    modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingXs)
+                )
+
+                HorizontalDivider(color = AppColors.divider.copy(alpha = 0.15f))
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXs))
+
+                EntryActionChip(
+                    icon = if (isInflow) Icons.Rounded.CallReceived else Icons.Rounded.CallMade,
+                    label = "Add Adjustment Transaction",
+                    onClick = {
+                        onEvent(AccountEntryEvent.ConfirmAsNewTransaction(
+                            currency = currency,
+                            originalValue = state.calculatorOriginalValue ?: "",
+                            newValue = state.adjustmentDialogNewValue ?: ""
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    iconTint = if (isInflow) AppColors.positive else AppColors.negative,
+                    iconContainerColor = if (isInflow) AppColors.positive.copy(alpha = 0.1f)
+                                         else AppColors.negative.copy(alpha = 0.1f)
+                )
+
+                EntryActionChip(
+                    icon = Icons.Rounded.EditNote,
+                    label = "Update Opening Balance",
+                    onClick = {
+                        onEvent(AccountEntryEvent.ConfirmAsInitialBalanceUpdate(
+                            currency = currency,
+                            newValue = state.adjustmentDialogNewValue ?: ""
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    iconTint = AppColors.primary,
+                    iconContainerColor = AppColors.primary.copy(alpha = 0.1f)
                 )
             }
         }

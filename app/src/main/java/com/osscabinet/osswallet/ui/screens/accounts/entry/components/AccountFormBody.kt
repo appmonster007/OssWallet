@@ -178,7 +178,7 @@ fun AccountFormBody(
             // DETAIL: Initial balances with Calculator integration
             if (state.allowedCurrencies.isNotEmpty()) {
                 EntrySection(
-                    title = "INITIAL BALANCES",
+                    title = if (state.isEditMode) "ACCOUNT BALANCES" else "INITIAL BALANCES",
                     icon = Icons.Rounded.AccountBalanceWallet
                 ) {
                     state.allowedCurrencies.forEach { currencyCode ->

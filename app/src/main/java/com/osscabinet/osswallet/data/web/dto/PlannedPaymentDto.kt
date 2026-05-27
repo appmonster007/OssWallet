@@ -17,5 +17,14 @@ data class PlannedPaymentDto(
     val recurrenceDescription: String,
     val status: String,
     val isOverdue: Boolean,
-    val autoConfirm: Boolean
+    val autoConfirm: Boolean,
+    val targetAccountId: String? = null,
+    val targetAccountName: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: Double = 1.0,
+    val location: String? = null,
+    val gpsLocation: String? = null,
+    val warrantyExpiration: Long? = null,
+    val payee: String? = null,
+    val tags: List<String> = emptyList()
 )

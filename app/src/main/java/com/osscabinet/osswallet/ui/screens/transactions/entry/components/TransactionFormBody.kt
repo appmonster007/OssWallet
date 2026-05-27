@@ -82,7 +82,6 @@ fun TransactionFormBody(
                 },
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
-                onSwapClick = { onEvent(TransactionEntryEvent.SwapAccounts) },
                 isSplitMode = state.isSplitMode,
                 onSplitClick = {
                     if (!state.isSplitMode) {

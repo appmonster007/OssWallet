@@ -109,7 +109,6 @@ fun PlannedPaymentFormBody(
                 },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
-                onSwapClick = { onEvent(PlannedPaymentEntryEvent.SwapAccounts) },
                 supportedCurrencies = sourceCurrencies,
                 targetSupportedCurrencies = targetCurrencies,
                 accountId = state.selectedAccountId,

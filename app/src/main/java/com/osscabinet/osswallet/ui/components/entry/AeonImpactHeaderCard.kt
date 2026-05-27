@@ -70,7 +70,6 @@ fun AeonImpactHeaderCard(
     onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
-    onSwapClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
@@ -122,7 +121,6 @@ fun AeonImpactHeaderCard(
         onTargetCurrencyClick = onTargetCurrencyClick,
         transferRate = transferRate,
         onExchangeRateClick = onExchangeRateClick,
-        onSwapClick = onSwapClick,
         isSplitMode = isSplitMode,
         onSplitClick = onSplitClick,
         amountColor = amountColor ?: Color(transactionType.colorHex.toColorInt()),
@@ -162,7 +160,6 @@ fun <T> AeonImpactHeaderCard(
     onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
-    onSwapClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     amountColor: Color? = null,
@@ -219,28 +216,6 @@ fun <T> AeonImpactHeaderCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                     ) {
-                        if (isTransfer) {
-                            IconButton(
-                                onClick = onSwapClick,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(AeonTheme.dimensions.iconSizeLg)
-                                        .clip(CircleShape)
-                                        .background(AppColors.transparent),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.SwapHoriz,
-                                        contentDescription = "Swap Accounts",
-                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
-                                    )
-                                }
-                            }
-                        }
-
                         if (onSplitClick != null && !isTransfer) {
                             IconButton(
                                 onClick = onSplitClick,

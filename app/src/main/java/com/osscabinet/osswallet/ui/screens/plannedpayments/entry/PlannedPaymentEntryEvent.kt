@@ -19,7 +19,6 @@ sealed class PlannedPaymentEntryEvent {
     data class SetTargetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetCurrency(val currency: String?) : PlannedPaymentEntryEvent()
     data class SetTransferRate(val rate: BigDecimal) : PlannedPaymentEntryEvent()
-    data object SwapAccounts : PlannedPaymentEntryEvent()
     data class SetRecurrence(
         val startDate: Long,
         val type: RecurrenceType,

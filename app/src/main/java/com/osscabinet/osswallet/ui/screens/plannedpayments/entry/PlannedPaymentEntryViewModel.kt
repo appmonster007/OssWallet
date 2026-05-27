@@ -334,34 +334,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 )
             }
 
-            is PlannedPaymentEntryEvent.SwapAccounts -> {
-                val s = _state.value
-                _state.update {
-                    val newSourceAmount = s.targetAmount
-                    val newTargetAmount = s.amount
-                    val newExchangeRate = if (newSourceAmount.toBigDecimalOrNull()?.signum() != 0 && newTargetAmount.toBigDecimalOrNull() != null) {
-                        newTargetAmount.toBigDecimal().divide(newSourceAmount.toBigDecimal(), 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                    } else s.transferRate
-
-                    it.copy(
-                        selectedAccountId = s.targetAccountId,
-                        targetAccountId = s.selectedAccountId,
-                        currency = s.targetCurrency ?: s.currency,
-                        targetCurrency = s.currency,
-                        amount = newSourceAmount,
-                        targetAmount = newTargetAmount,
-                        transferRate = newExchangeRate,
-                        selectedCategoryId = when (s.selectedCategoryId) {
-                            Category.SYSTEM_TRANSFER_INFLOW -> Category.SYSTEM_TRANSFER_OUTFLOW
-                            Category.SYSTEM_TRANSFER_OUTFLOW -> Category.SYSTEM_TRANSFER_INFLOW
-                            Category.SYSTEM_INITIAL_BALANCE_INFLOW -> Category.SYSTEM_INITIAL_BALANCE_OUTFLOW
-                            Category.SYSTEM_INITIAL_BALANCE_OUTFLOW -> Category.SYSTEM_INITIAL_BALANCE_INFLOW
-                            else -> s.selectedCategoryId
-                        }
-                    )
-                }
-            }
-
             is PlannedPaymentEntryEvent.SetCurrency -> {
                 _state.update { it.copy(currency = event.currency) }
                 recalculateExchangeRate()

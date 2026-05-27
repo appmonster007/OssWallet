@@ -427,7 +427,10 @@ class DatabaseSeeder @Inject constructor(
         val profileId: Int, val gpsLocation: String? = null,
         val warrantyExpiration: Long? = null,
         val status: TransactionStatus = TransactionStatus.CLEARED,
-        val daysAgo: Long? = null
+        val daysAgo: Long? = null,
+        val targetAccountId: String? = null,
+        val targetCurrency: String? = null,
+        val transferRate: BigDecimal = BigDecimal.ONE
     ) {
         fun toTransactionEntity() = TransactionEntity(
             name = title.ifBlank { category },
@@ -439,7 +442,9 @@ class DatabaseSeeder @Inject constructor(
             tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
             sourcePlannedPaymentId = sourcePlannedPaymentId,
             profileId = profileId, gpsLocation = gpsLocation,
-            warrantyExpiration = warrantyExpiration, status = status
+            warrantyExpiration = warrantyExpiration, status = status,
+            targetAccountId = targetAccountId, targetCurrency = targetCurrency,
+            transferRate = transferRate
         )
         companion object {
             fun fromCsv(line: String): TransactionSeedRow {
@@ -463,7 +468,10 @@ class DatabaseSeeder @Inject constructor(
                     },
                     warrantyExpiration = p.getOrNull(17)?.toLongOrNull(),
                     status = TransactionStatus.fromString(p.getOrNull(18) ?: "cleared"),
-                    daysAgo = p.getOrNull(19)?.toLongOrNull()
+                    daysAgo = p.getOrNull(19)?.toLongOrNull(),
+                    targetAccountId = p.getOrNull(20)?.takeIf { it.isNotBlank() },
+                    targetCurrency = p.getOrNull(21)?.takeIf { it.isNotBlank() },
+                    transferRate = p.getOrNull(22)?.toBigDecimalOrNull() ?: BigDecimal.ONE
                 )
             }
         }

@@ -509,42 +509,6 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
-            is TransactionEntryEvent.SwapAccounts -> {
-                val s = _state.value
-                if (s.transactionType != TransactionType.TRANSFER) return
-
-                update { state ->
-                    val newSourceAccount = s.targetAccount
-                    val newTargetAccount = s.selectedAccount
-
-                    val newSourceCurrency = if (s.targetCurrency.isNotBlank()) s.targetCurrency else s.selectedCurrency
-                    val newTargetCurrency = if (s.selectedCurrency.isNotBlank()) s.selectedCurrency else s.targetCurrency
-
-                    val newSourceAmount = if (s.targetAmount.isNotBlank() && s.targetAmount != "0") s.targetAmount else s.amount
-                    val newTargetAmount = if (s.amount.isNotBlank() && s.amount != "0") s.amount else s.targetAmount
-
-                    val newExchangeRate = if (s.exchangeRate.signum() != 0) {
-                        BigDecimal.ONE.divide(s.exchangeRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                    } else s.exchangeRate
-
-                    val newCategoryId = when {
-                        newSourceAccount == null -> Category.SYSTEM_TRANSFER_INFLOW
-                        else -> Category.SYSTEM_TRANSFER_OUTFLOW
-                    }
-
-                    state.copy(
-                        selectedAccount = newSourceAccount,
-                        targetAccount = newTargetAccount,
-                        selectedCurrency = newSourceCurrency,
-                        targetCurrency = newTargetCurrency,
-                        amount = newSourceAmount,
-                        targetAmount = newTargetAmount,
-                        exchangeRate = newExchangeRate,
-                        selectedCategoryId = newCategoryId
-                    )
-                }
-            }
-
             is TransactionEntryEvent.SetTemplate -> update {
                 it.copy(selectedTemplateName = event.templateName)
             }

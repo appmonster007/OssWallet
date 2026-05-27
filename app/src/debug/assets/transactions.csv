@@ -1,201 +1,205 @@
-seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accountId,paymentMethod,payee,note,tags,recurring,profileId,latitude,longitude,warrantyExpiration,status,daysAgo
-1,Initial Balance,1000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_cash,Cash,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-2,Initial Balance,5000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_bank,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-3,Initial Balance,15000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_savings,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,
-4,Initial Balance,0.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_credit,Credit Card,Self,Opening balance,"Essential,Adjustment",,1,,,,,cleared,
-5,Initial Balance,10000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_invest,Bank Transfer,Self,Opening balance,"Essential,Investments",,1,,,,,cleared,
-6,Initial Balance,100000.00,Initial Balance Inflow,1003,946684800000,JPY,transfer,acc_jpy,Cash,Self,Opening balance JPY,"Travel,Vacation,Japan",,1,,,,,cleared,
-7,Initial Balance,5000.00,Initial Balance Inflow,1003,946684800000,SGD,transfer,acc_sgd,Bank Transfer,Self,Opening balance SGD,"Essential,Personal",,1,,,,,cleared,
-8,Initial Balance,10000000.00,Initial Balance Inflow,1003,946684800000,IDR,transfer,acc_idr,E-Wallet,Self,Opening balance IDR,"Essential,Personal",,1,,,,,cleared,
-9,Monthly Salary,5250.00,Salary,197,,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,"Work,Salary,Essential",monthly,1,,,,,cleared,60
-10,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent payment,"Housing,Essential,Rent,Bills",monthly,1,,,,,cleared,58
-11,Whole Foods Groceries,-142.50,Groceries,101,,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly groceries,"Food,Essential,Groceries",,1,,,,,cleared,55
-12,Morning Coffee,-6.50,Coffee & Snacks,103,,USD,expense,acc_cash,Cash,Starbucks,Latte,"Food,Social,Dining",,1,40.7128,-74.0060,,,cleared,54
-13,Gas Station,-55.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Shell,Full tank,"Transport,Essential,Auto",,1,,,,,cleared,53
-14,Netflix Subscription,-15.99,Streaming,185,,USD,expense,acc_credit,Credit Card,Netflix,Monthly subscription,"Subscription,Entertainment",monthly,1,,,,,cleared,52
-15,Phone Bill,-65.00,Phone,131,,USD,expense,acc_bank,Bank Transfer,Verizon,Monthly mobile bill,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,51
-16,Gym Membership,-49.99,Gym,142,,USD,expense,acc_credit,Credit Card,LA Fitness,Monthly membership,"Health,Essential,Fitness",monthly,1,,,,,cleared,50
-17,Dinner with Friends,-85.00,Dining Out,102,,USD,expense,acc_cash,Credit Card,Italian Bistro,Weekend dinner,"Social,Food,Dining",,1,,,,,cleared,49
-18,Amazon Purchase,-45.99,Online Shopping,124,,USD,expense,acc_credit,Credit Card,Amazon,Books,"Shopping,Personal,Education",,1,,,,,cleared,48
-19,Freelance Payment,1200.00,Freelance,198,,USD,income,acc_bank,Bank Transfer,Client A,Web dev project,"Work,Project,Freelance,Business",,1,,,,,cleared,47
-20,Lunch at Work,-15.50,Dining Out,102,,USD,expense,acc_cash,Cash,Cafeteria,Daily lunch,"Work,Food,Dining",,1,,,,,cleared,46
-21,Gas Station,-52.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Exxon,Weekly gas,"Transport,Essential,Auto",,1,,,,,cleared,45
-22,Pharmacy,-35.00,Pharmacy,141,,USD,expense,acc_cash,Debit Card,CVS,Vitamins,"Health,Essential",,1,,,,,cleared,44
-23,Weekend Getaway Hotel,-220.00,Hotels,161,,USD,expense,acc_credit,Credit Card,Marriott,One night stay,"Travel,Vacation,Luxury",,1,,,,,cleared,43
-24,Uber Ride,-24.00,Rideshare,112,,USD,expense,acc_credit,Credit Card,Uber,Ride to hotel,"Travel,Transport",,1,,,,,cleared,42
-25,Consulting Income,3500.00,Salary,197,,USD,income,acc_bank,Bank Transfer,Consulting Group,Project milestone,"Work,Project,Business,Freelance",,1,,,,,cleared,41
-26,Electricity Bill,-135.00,Electricity,131,,USD,expense,acc_bank,Bank Transfer,Power Co,Monthly usage,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,40
-27,Internet Bill,-79.99,Internet,131,,USD,expense,acc_bank,Bank Transfer,ISP,Fiber internet,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,39
-28,Spotify,-10.99,Music & Audio,186,,USD,expense,acc_credit,Credit Card,Spotify,Music subscription,"Subscription,Entertainment",monthly,1,,,,,cleared,38
-29,Weekly Groceries,-95.20,Groceries,101,,USD,expense,acc_cash,Debit Card,Trader Joe's,Groceries,"Food,Essential,Groceries",,1,,,,,cleared,37
-30,Coffee and Muffin,-8.50,Coffee & Snacks,103,,USD,expense,acc_cash,Cash,Local Cafe,Breakfast,"Food,Personal,Dining",,1,,,,,cleared,36
-31,INR Salary Deposit,125000.00,Salary,197,,INR,income,acc_bank,Bank Transfer,India Corp,Monthly INR salary,"Work,Salary",monthly,1,,,,,cleared,35
-32,Indian Grocery Store,-4500.00,Groceries,101,,INR,expense,acc_bank,MOBILE_PAYMENT,Local Market,INR groceries,"Food,Essential,Groceries",,1,,,,,cleared,34
-33,INR Savings Transfer,50000.00,Salary,197,,INR,income,acc_savings,Bank Transfer,Self,Monthly INR savings,"Personal,Savings",monthly,1,,,,,cleared,33
-34,European Client Payment,1500.00,Freelance,198,,EUR,income,acc_bank,Bank Transfer,Client B,EUR project payment,"Work,Project,Freelance,Business",,1,,,,,cleared,32
-35,Paris Business Trip Lunch,-45.00,Dining Out,102,,EUR,expense,acc_bank,Debit Card,Le Bistro,Lunch in Paris,"Travel,Work,Dining",,1,48.8566,2.3522,,,cleared,31
-36,Paris Metro Pass,-25.00,Public Transit,111,,EUR,expense,acc_bank,Cash,RATP,Metro travel,"Travel,Transport",,1,,,,,cleared,30
-101,Salary Deposit,5250.00,Salary,197,,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,"Work,Salary,Essential",monthly,1,,,,,cleared,29
-102,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,"Housing,Essential,Rent,Bills",monthly,1,,,,,cleared,28
-103,Whole Foods,-135.20,Groceries,101,,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly food,"Food,Essential,Groceries",,1,,,,,cleared,25
-104,Gas Station,-50.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Shell,Full tank,"Transport,Essential,Auto",,1,,,,,cleared,23
-105,Movie Tickets,-30.00,Movies & Theater,150,,USD,expense,acc_cash,Debit Card,AMC,Weekend movie,"Entertainment,Social",,1,,,,,cleared,22
-106,Dinner Date,-110.00,Dining Out,102,,USD,expense,acc_credit,Credit Card,Steakhouse,Nice dinner,"Social,Food,Dining,Luxury",,1,,,,,cleared,21
-107,Adobe CC,-54.99,Software Subscriptions,187,,USD,expense,acc_credit,Credit Card,Adobe,Subscription,"Work,Subscription,Project,Business",monthly,1,,,,,cleared,20
-108,Cloud Storage,-9.99,Cloud Storage,187,,USD,expense,acc_credit,Credit Card,Google,100GB plan,"Work,Subscription,Personal",monthly,1,,,,,cleared,19
-109,Haircut,-40.00,Haircut,144,,USD,expense,acc_cash,Cash,Barber,Monthly haircut,"Personal,Health",,1,,,,,cleared,18
-110,Amazon Household,-65.00,Online Shopping,124,,USD,expense,acc_credit,Credit Card,Amazon,Supplies,"Shopping,Essential,Housing",,1,,,,,cleared,17
-111,Water Bill,-40.00,Water,131,,USD,expense,acc_bank,Bank Transfer,Water Dept,Monthly bill,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,16
-112,Electric Bill,-125.00,Electricity,131,,USD,expense,acc_bank,Bank Transfer,Power Co,Power,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,15
-201,Car Loan Payment,-450.00,Loans & Debt,184,,USD,expense,acc_bank,BANK_TRANSFER,Chase Auto,Monthly installment,CarLoan,,1,,,,,cleared,10
-202,Sushi Dinner Tokyo,-8500.00,Dining Out,102,,JPY,expense,acc_jpy,CASH,Kyubey Sushi,Amazing sushi,"Travel,Food",,1,35.6762,139.7646,,,cleared,5
-203,John Repayment,100.00,Other Income,200,,USD,income,acc_cash,CASH,John Doe,Partial repayment of loan,,,1,,,,,cleared,2
-204,Berlin Hotel,-120.00,Hotels,161,,EUR,expense,acc_bank,CREDIT_CARD,Hilton Berlin,Business trip,Travel,,1,52.5200,13.4050,,,cleared,12
-205,Bangalore Dinner,-2500.00,Dining Out,102,,INR,expense,acc_bank,MOBILE_PAYMENT,Toit,Dinner in Bangalore,Social,,1,12.9716,77.5946,,,cleared,4
-1001,Cash Deposit to Bank,-500.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Depositing cash at the bank,,,1,,,,,cleared,25
-1002,Cash Deposit to Bank,500.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Depositing cash at the bank,,,1,,,,,cleared,25
-1003,Monthly Savings Transfer,-1000.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
-1004,Monthly Savings Transfer,1000.00,Transfer Inflow,1005,,USD,transfer,acc_savings,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20
-1005,Credit Card Payment,-350.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
-1006,Credit Card Payment,350.00,Transfer Inflow,1005,,USD,transfer,acc_credit,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14
-1007,Investment Top-up,-2000.00,Transfer Outflow,1006,,USD,transfer,acc_savings,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
-1008,Investment Top-up,2000.00,Transfer Inflow,1005,,USD,transfer,acc_invest,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10
-1009,USD to JPY Exchange,-200.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
-1010,USD to JPY Exchange,29400.00,Transfer Inflow,1005,,JPY,transfer,acc_jpy,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18
-1011,USD to SGD Transfer,-300.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
-1012,USD to SGD Transfer,400.00,Transfer Inflow,1005,,SGD,transfer,acc_sgd,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12
-1013,IDR to USD Repatriation,-780000.00,Transfer Outflow,1006,,IDR,transfer,acc_idr,DIGITAL_WALLET,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
-1014,IDR to USD Repatriation,50.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Converting leftover IDR back to USD,,,1,,,,,cleared,6
-2000,Unpaid Invoice,500.00,Freelance,198,,USD,income,acc_bank,BANK_TRANSFER,Client Z,Pending payment,Project,,1,,,,,pending,2
-2001,Returned Item,45.00,Shopping,124,,USD,expense,acc_credit,CREDIT_CARD,Target,Cancelled order,Shopping,,1,,,,,cancelled,5
-2002,Lunch at Cafe,-25.00,Dining Out,102,,USD,expense,acc_cash,CASH,Cafe Lola,Lunch,Social,,1,40.7128,-74.0060,,,cleared,1
-2003,New Monitor,-300.00,Electronics,121,,USD,expense,acc_credit,CREDIT_CARD,Best Buy,UltraWide,Work,,1,,,1767225600000,cleared,10
-2004,Upcoming Subscription,-15.00,Streaming,185,,USD,expense,acc_credit,CREDIT_CARD,Hulu,Next month,Entertainment,,1,,,,,cleared,-15
-2005,Quarterly Dividend,250.00,Investment Returns,199,,USD,income,acc_invest,BANK_TRANSFER,Vanguard,Q1 Dividends,Investment,,1,,,,,cleared,3
-2006,Annual Insurance,-1200.00,Insurance,182,,USD,expense,acc_bank,BANK_TRANSFER,Geico,Annual auto insurance,Auto,Essential,1,,,,,cleared,20
-2007,New Laptop,-2500.00,Electronics,121,,USD,expense,acc_credit,CREDIT_CARD,Apple Store,MacBook Pro 16,Work,,1,,,1798761600000,cleared,40
-2008,Salary 2024,5250.00,Salary,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Old salary,Work,,1,,,,,cleared,45
-2009,Bonus 2024,3000.00,Bonus,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Performance bonus,Work,,1,,,,,cleared,44
-2010,Charity Donation,-100.00,Donations,191,,USD,expense,acc_bank,BANK_TRANSFER,Red Cross,Help,Gifts,,1,,,,,cleared,3
-2011,Coffee,-5.50,Coffee & Snacks,103,,USD,expense,acc_cash,CASH,Local Cafe,Morning routine,Food,,1,,,,,cleared,2
-2012,Lunch,-18.00,Dining Out,102,,USD,expense,acc_cash,CASH,Deli,Quick bite,Food,,1,,,,,cleared,2
-2013,Weekly Gas,-60.00,Fuel,110,,USD,expense,acc_bank,CREDIT_CARD,Shell,Gas,Transport,,1,,,,,cleared,1
-2014,Uber to Airport,-45.00,Rideshare,112,,USD,expense,acc_credit,CREDIT_CARD,Uber,Travel day,Travel,,1,,,,,cleared,0
-2015,Flight to NYC,-350.00,Flights,160,,USD,expense,acc_credit,CREDIT_CARD,Delta,Business trip,Travel,,1,,,,,cleared,0
-2016,Hotel NYC,-600.00,Hotels,161,,USD,expense,acc_credit,CREDIT_CARD,Hilton,3 nights,Travel,,1,40.7531,-73.9822,,,cleared,0
-2017,Client Dinner,-150.00,Dining Out,102,,USD,expense,acc_credit,CREDIT_CARD,The Grill,Business meeting,Business,,1,40.7580,-73.9855,,,cleared,0
-2018,Interest Income,12.50,Investment Returns,199,,USD,income,acc_savings,BANK_TRANSFER,Bank,Monthly interest,Savings,,1,,,,,cleared,1
-2019,Cashback,5.20,Refunds & Cashback,200,,USD,income,acc_credit,OTHER,Bank,Credit card rewards,Personal,,1,,,,,cleared,1
-2020,Yoga Class,-20.00,Fitness Classes,142,,USD,expense,acc_cash,CASH,Yoga Studio,Session,Health,,1,,,,,cleared,3
-2021,New Shoes,-120.00,Shoes,120,,USD,expense,acc_credit,CREDIT_CARD,Nike,Running shoes,Shopping,,1,,,1767225600000,cleared,12
-2022,Gifts Received,200.00,Gifts Received,200,,USD,income,acc_cash,CASH,Family,Birthday money,Gifts,,1,,,,,cleared,15
-2023,Book Purchase,-25.00,Books & Stationery,123,,USD,expense,acc_cash,CASH,Bookstore,Novel,Education,,1,,,,,cleared,14
-2024,Utility Bill Adjustment,10.00,Refunds & Cashback,200,,USD,income,acc_bank,BANK_TRANSFER,Power Co,Overpayment refund,Housing,,1,,,,,cleared,20
-2025,Miscellaneous,-12.00,Others,1000,,USD,expense,acc_cash,CASH,Small Shop,Misc item,Misc,,1,,,,,cleared,7
-2026,Coffee,-6.00,Coffee & Snacks,103,,USD,expense,acc_cash,CASH,Starbucks,Latte,Food,,1,,,,,cleared,0
-2027,Grocery Run,-85.00,Groceries,101,,USD,expense,acc_cash,DEBIT_CARD,Safeway,Weekly food,Food,,1,,,,,cleared,0
-2028,Internet Bill,-79.99,Internet,131,,USD,expense,acc_bank,BANK_TRANSFER,ISP,Monthly bill,Housing,,1,,,,,cleared,0
-2029,Phone Bill,-65.00,Phone,131,,USD,expense,acc_bank,BANK_TRANSFER,Verizon,Monthly bill,Housing,,1,,,,,cleared,0
-2030,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,BANK_TRANSFER,Landlord,Monthly rent,Housing,,1,,,,,cleared,0
-2031,Salary Deposit,5250.00,Salary,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Monthly salary,Work,,1,,,,,cleared,0
-2032,Wallet to Bank,-100.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Deposit,Transfer,,1,,,,,cleared,0
-2033,Wallet to Bank,100.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Deposit,Transfer,,1,,,,,cleared,0
-3001,Monthly Salary,5250.00,Salary,197,1743379200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Apr 2025,Work,monthly,1,,,,,cleared,
-3002,Rent Payment,-1850.00,Rent,130,1743465600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Apr 2025,Housing,monthly,1,,,,,cleared,
-3003,Electricity,-142.00,Electricity,131,1743552000000,USD,expense,acc_bank,Bank Transfer,Power Co,Usage Apr 2025,Housing,monthly,1,,,,,cleared,
-3004,Groceries,-120.00,Groceries,101,1743638400000,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly shopping,Food,,1,,,,,cleared,
-3005,Coffee,-6.50,Coffee & Snacks,103,1743724800000,USD,expense,acc_cash,Cash,Starbucks,Latte,Food,,1,,,,,cleared,
-3006,Dinner Out,-75.00,Dining Out,102,1743811200000,USD,expense,acc_credit,Credit Card,Restaurant,Friday Dinner,Social,,1,,,,,cleared,
-3007,Gas,-55.00,Fuel,110,1743897600000,USD,expense,acc_bank,Credit Card,Shell,Full tank,Transport,,1,,,,,cleared,
-3008,Netflix,-15.99,Streaming,185,1743984000000,USD,expense,acc_credit,Credit Card,Netflix,Subscription,Entertainment,monthly,1,,,,,cleared,
-3009,Phone Bill,-65.00,Phone,131,1744070400000,USD,expense,acc_bank,Bank Transfer,Verizon,Monthly bill,Housing,monthly,1,,,,,cleared,
-3010,Gym,-49.99,Gym,142,1744156800000,USD,expense,acc_credit,Credit Card,LA Fitness,Membership,Health,monthly,1,,,,,cleared,
-3011,Monthly Salary,5250.00,Salary,197,1745971200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary May 2025,Work,monthly,1,,,,,cleared,
-3012,Rent Payment,-1850.00,Rent,130,1746057600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent May 2025,Housing,monthly,1,,,,,cleared,
-3013,Internet,-79.99,Internet,131,1746144000000,USD,expense,acc_bank,Bank Transfer,ISP,Monthly bill,Housing,monthly,1,,,,,cleared,
-3014,New Jacket,-150.00,Clothing,120,1746230400000,USD,expense,acc_credit,Credit Card,Zara,Shopping,Shopping,,1,,,,,cleared,
-3015,Birthday Gift,-100.00,Gifts,190,1746316800000,USD,expense,acc_cash,Cash,Friend,Gift,Gifts,,1,,,,,cleared,
-3016,Brunch,-45.00,Dining Out,102,1746403200000,USD,expense,acc_cash,Cash,Cafe,Weekend brunch,Social,,1,,,,,cleared,
-3017,Bus Pass,-80.00,Public Transit,111,1746489600000,USD,expense,acc_cash,Debit Card,City Transit,Monthly pass,Transport,,1,,,,,cleared,
-3018,Mutual Fund,-500.00,Mutual Funds,181,1746576000000,USD,expense,acc_invest,Bank Transfer,Vanguard,Investment,Investments,monthly,1,,,,,cleared,
-3019,Salary June,5250.00,Salary,197,1748563200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jun 2025,Work,monthly,1,,,,,cleared,
-3020,Rent June,-1850.00,Rent,130,1748649600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jun 2025,Housing,monthly,1,,,,,cleared,
-3021,Summer Vacation Flight,-850.00,Flights,160,1751241600000,USD,expense,acc_credit,Credit Card,Airline,Europe trip,Travel,,1,,,,,cleared,
-3022,Summer Vacation Hotel,-1200.00,Hotels,161,1751328000000,USD,expense,acc_credit,Credit Card,Hotel,Stay in Rome,Travel,,1,41.9028,12.4964,,,cleared,
-3023,Roman Dinner,-120.00,Dining Out,102,1751414400000,EUR,expense,acc_bank,Debit Card,Trattoria,Dinner in Rome,Travel,,1,41.8902,12.4922,,,cleared,
-3024,Gelato,-15.00,Coffee & Snacks,103,1751500800000,EUR,expense,acc_cash,Cash,Gelateria,Treat,Travel,,1,,,,,cleared,
-3025,Museum Tickets,-60.00,Activities,163,1751587200000,EUR,expense,acc_cash,Cash,Vatican,Tours,Travel,,1,,,,,cleared,
-3026,Salary July,5250.00,Salary,197,1751241600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jul 2025,Work,monthly,1,,,,,cleared,
-3027,Rent July,-1850.00,Rent,130,1751328000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jul 2025,Housing,monthly,1,,,,,cleared,
-3028,Amazon Prime,-14.99,Software Subscriptions,187,1751414400000,USD,expense,acc_credit,Credit Card,Amazon,Prime sub,Subscription,monthly,1,,,,,cleared,
-3029,Bonus Pay,2000.00,Bonus,197,1751500800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Mid-year bonus,Work,,1,,,,,cleared,
-3030,Savings Transfer,-1000.00,Transfer Outflow,1006,1751587200000,USD,transfer,acc_bank,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
-3031,Savings Transfer,1000.00,Transfer Inflow,1005,1751587200000,USD,transfer,acc_savings,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,
-3032,Groceries,-110.00,Groceries,101,1751673600000,USD,expense,acc_cash,Debit Card,Market,Food,Food,,1,,,,,cleared,
-3033,Lunch,-20.00,Dining Out,102,1751760000000,USD,expense,acc_cash,Cash,Deli,Quick lunch,Food,,1,,,,,cleared,
-3034,Salary Aug,5250.00,Salary,197,1753920000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Aug 2025,Work,monthly,1,,,,,cleared,
-3035,Rent Aug,-1850.00,Rent,130,1754006400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Aug 2025,Housing,monthly,1,,,,,cleared,
-3036,Back to School Supplies,-150.00,Books & Supplies,172,1754092800000,USD,expense,acc_cash,Debit Card,Store,Stationery,Education,,1,,,,,cleared,
-3037,New Backpack,-80.00,Clothing,120,1754179200000,USD,expense,acc_credit,Credit Card,Mall,Bag,Shopping,,1,,,,,cleared,
-3038,Laptop Repair,-200.00,Electronics,121,1754265600000,USD,expense,acc_cash,Cash,Repair,Screen fix,Work,,1,,,,,cleared,
-3039,Utility Bill,-155.00,Electricity,131,1754352000000,USD,expense,acc_bank,Bank Transfer,Power,Usage,Housing,monthly,1,,,,,cleared,
-3040,Salary Sept,5250.00,Salary,197,1756512000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Sept 2025,Work,monthly,1,,,,,cleared,
-3041,Rent Sept,-1850.00,Rent,130,1756598400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Sept 2025,Housing,monthly,1,,,,,cleared,
-3042,Dental Checkup,-250.00,Doctor,140,1756684800000,USD,expense,acc_cash,Credit Card,Dentist,Clean,Health,,1,,,,,cleared,
-3043,Vitamins,-45.00,Pharmacy,141,1756771200000,USD,expense,acc_cash,Debit Card,CVS,Supplements,Health,,1,,,,,cleared,
-3044,Yoga Membership,-120.00,Fitness,142,1756857600000,USD,expense,acc_credit,Credit Card,Studio,Monthly,Health,monthly,1,,,,,cleared,
-3045,Salary Oct,5250.00,Salary,197,1759190400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Oct 2025,Work,monthly,1,,,,,cleared,
-3046,Rent Oct,-1850.00,Rent,130,1759276800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Oct 2025,Housing,monthly,1,,,,,cleared,
-3047,Halloween Party,-100.00,Entertainment,6,1761436800000,USD,expense,acc_cash,Cash,Store,Supplies,Social,,1,,,,,cleared,
-3048,Dinner,-60.00,Dining Out,102,1761523200000,USD,expense,acc_credit,Credit Card,Bistro,Night out,Social,,1,,,,,cleared,
-3049,Salary Nov,5250.00,Salary,197,1761868800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Nov 2025,Work,monthly,1,,,,,cleared,
-3050,Rent Nov,-1850.00,Rent,130,1761955200000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Nov 2025,Housing,monthly,1,,,,,cleared,
-3051,Thanksgiving Dinner,-250.00,Groceries,101,1763942400000,USD,expense,acc_cash,Debit Card,Market,Turkey etc,Food,,1,,,,,cleared,
-3052,Black Friday Deal,-400.00,Electronics,121,1764028800000,USD,expense,acc_credit,Credit Card,Best Buy,Gadget,Shopping,,1,,,1795564800000,cleared,
-3053,Salary Dec,5250.00,Salary,197,1764460800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Dec 2025,Work,monthly,1,,,,,cleared,
-3054,Rent Dec,-1850.00,Rent,130,1764547200000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Dec 2025,Housing,monthly,1,,,,,cleared,
-3055,Holiday Travel Flight,-700.00,Flights,160,1766448000000,USD,expense,acc_credit,Credit Card,Airline,Xmas trip,Travel,,1,,,,,cleared,
-3056,Holiday Gifts,-500.00,Gifts,190,1766534400000,USD,expense,acc_cash,Cash,Store,Family gifts,Gifts,,1,,,,,cleared,
-3057,New Year Dinner,-300.00,Dining Out,102,1767225600000,USD,expense,acc_credit,Credit Card,Hotel,Eve party,Social,,1,,,,,cleared,
-3058,Salary Jan 2026,5500.00,Salary,197,1767225600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Raise! 2026,Work,monthly,1,,,,,cleared,
-3059,Rent Jan 2026,-1900.00,Rent,130,1767312000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent 2026,Housing,monthly,1,,,,,cleared,
-3060,Gym 2026,-55.00,Gym,142,1767398400000,USD,expense,acc_credit,Credit Card,LA Fitness,New rate,Health,monthly,1,,,,,cleared,
-3061,Internet 2026,-85.00,Internet,131,1767484800000,USD,expense,acc_bank,Bank Transfer,ISP,New rate,Housing,monthly,1,,,,,cleared,
-3062,Salary Feb 2026,5500.00,Salary,197,1769817600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Feb 2026,Work,monthly,1,,,,,cleared,
-3063,Rent Feb 2026,-1900.00,Rent,130,1769904000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Feb 2026,Housing,monthly,1,,,,,cleared,
-3064,Valentines Dinner,-200.00,Dining Out,102,1771027200000,USD,expense,acc_credit,Credit Card,Restaurant,Night out,Social,,1,,,,,cleared,
-3065,Valentines Flowers,-75.00,Gifts,190,1771113600000,USD,expense,acc_cash,Cash,Florist,Roses,Personal,,1,,,,,cleared,
-3066,Salary Mar 2026,5500.00,Salary,197,1772323200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Mar 2026,Work,monthly,1,,,,,cleared,
-3067,Rent Mar 2026,-1900.00,Rent,130,1772409600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Mar 2026,Housing,monthly,1,,,,,cleared,
-3068,Tax Refund 2026,1500.00,Tax Refund,200,1774828800000,USD,income,acc_bank,Bank Transfer,IRS,Refund,Tax,,1,,,,,cleared,
-3069,Spring Shopping,-300.00,Clothing,120,1774915200000,USD,expense,acc_credit,Credit Card,Mall,New clothes,Shopping,,1,,,,,cleared,
-3070,Salary Apr 2026,5500.00,Salary,197,1774915200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Apr 2026,Work,monthly,1,,,,,cleared,
-3071,Rent Apr 2026,-1900.00,Rent,130,1775001600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Apr 2026,Housing,monthly,1,,,,,cleared,
-3072,Electricity,-160.00,Electricity,131,1775088000000,USD,expense,acc_bank,Bank Transfer,Power,Spring usage,Housing,monthly,1,,,,,cleared,
-3073,Salary May 2026,5500.00,Salary,197,1777507200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary May 2026,Work,monthly,1,,,,,cleared,
-3074,Rent May 2026,-1900.00,Rent,130,1777593600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent May 2026,Housing,monthly,1,,,,,cleared,
-3075,Mother's Day Gift,-120.00,Gifts,190,1778371200000,USD,expense,acc_credit,Credit Card,Jewelry,Gift,Gifts,,1,,,,,cleared,
-3076,Weekend Trip,-400.00,Travel,7,1778457600000,USD,expense,acc_cash,Credit Card,Getaway,Drive,Travel,,1,,,,,cleared,
-3077,Salary June 2026,5500.00,Salary,197,1780166400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jun 2026,Work,monthly,1,,,,,cleared,
-3078,Rent June 2026,-1900.00,Rent,130,1780252800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jun 2026,Housing,monthly,1,,,,,cleared,
-3079,New Phone,-1200.00,Phones,121,1780339200000,USD,expense,acc_credit,Credit Card,Apple,Upgrade,Work,,1,,,1811894400000,cleared,
-3080,Phone Insurance,-150.00,Insurance,182,1780425600000,USD,expense,acc_credit,Credit Card,AppleCare,Protection,Work,,1,,,,,cleared,
-3081,Salary July 2026,5500.00,Salary,197,1782777600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jul 2026,Work,monthly,1,,,,,cleared,
-3082,Rent July 2026,-1900.00,Rent,130,1782864000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jul 2026,Housing,monthly,1,,,,,cleared,
-3083,Summer BBQ,-150.00,Groceries,101,1782950400000,USD,expense,acc_cash,Cash,Market,Food,Social,,1,,,,,cleared,
-3084,Patio Furniture,-600.00,Furniture,122,1783036800000,USD,expense,acc_credit,Credit Card,Store,Outdoor set,Shopping,,1,,,,,cleared,
-3085,Salary Aug 2026,5500.00,Salary,197,1785369600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Aug 2026,Work,monthly,1,,,,,cleared,
-3086,Rent Aug 2026,-1900.00,Rent,130,1785456000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Aug 2026,Housing,monthly,1,,,,,cleared,
-3087,Salary Sept 2026,5500.00,Salary,197,1788048000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Sept 2026,Work,monthly,1,,,,,cleared,
-3088,Rent Sept 2026,-1900.00,Rent,130,1788134400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Sept 2026,Housing,monthly,1,,,,,cleared,
-3089,Salary Oct 2026,5500.00,Salary,197,1790640000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Oct 2026,Work,monthly,1,,,,,cleared,
-3090,Rent Oct 2026,-1900.00,Rent,130,1790726400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Oct 2026,Housing,monthly,1,,,,,cleared,
-3091,Salary Nov 2026,5500.00,Salary,197,1793318400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Nov 2026,Work,monthly,1,,,,,cleared,
-3092,Rent Nov 2026,-1900.00,Rent,130,1793404800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Nov 2026,Housing,monthly,1,,,,,cleared,
-3093,Salary Dec 2026,5500.00,Salary,197,1795910400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Dec 2026,Work,monthly,1,,,,,cleared,
-3094,Rent Dec 2026,-1900.00,Rent,130,1795996800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Dec 2026,Housing,monthly,1,,,,,cleared,
-3095,Holiday Bonus,5000.00,Bonus,197,1798588800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Year end bonus,Work,,1,,,,,cleared,
-3096,Holiday Travel,-1000.00,Flights,160,1798675200000,USD,expense,acc_credit,Credit Card,Airline,Tickets,Travel,,1,,,,,cleared,
-3097,Holiday Gifts,-600.00,Gifts,190,1798761600000,USD,expense,acc_cash,Cash,Store,Final gifts,Gifts,,1,,,,,cleared,
-3098,Interest Income 2026,150.00,Investment Returns,199,1798761600000,USD,income,acc_savings,Bank Transfer,Bank,Annual interest,Savings,,1,,,,,cleared,
-3099,Last Transaction 2026,-10.00,Others,1000,1798761600000,USD,expense,acc_cash,Cash,Self,Closing year,Misc,,1,,,,,cleared,
+seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accountId,paymentMethod,payee,note,tags,recurring,profileId,latitude,longitude,warrantyExpiration,status,daysAgo,targetAccountId,targetCurrency,transferRate
+1,Initial Balance,1000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_cash,Cash,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,,,1.0
+2,Initial Balance,5000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_bank,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,,,1.0
+3,Initial Balance,15000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_savings,Bank Transfer,Self,Opening balance,"Essential,Savings",,1,,,,,cleared,,,1.0
+4,Initial Balance,0.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_credit,Credit Card,Self,Opening balance,"Essential,Adjustment",,1,,,,,cleared,,,1.0
+5,Initial Balance,10000.00,Initial Balance Inflow,1003,946684800000,USD,transfer,acc_invest,Bank Transfer,Self,Opening balance,"Essential,Investments",,1,,,,,cleared,,,1.0
+6,Initial Balance,100000.00,Initial Balance Inflow,1003,946684800000,JPY,transfer,acc_jpy,Cash,Self,Opening balance JPY,"Travel,Vacation,Japan",,1,,,,,cleared,,,1.0
+7,Initial Balance,5000.00,Initial Balance Inflow,1003,946684800000,SGD,transfer,acc_sgd,Bank Transfer,Self,Opening balance SGD,"Essential,Personal",,1,,,,,cleared,,,1.0
+8,Initial Balance,10000000.00,Initial Balance Inflow,1003,946684800000,IDR,transfer,acc_idr,E-Wallet,Self,Opening balance IDR,"Essential,Personal",,1,,,,,cleared,,,1.0
+9,Monthly Salary,5250.00,Salary,197,,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary deposit,"Work,Salary,Essential",monthly,1,,,,,cleared,60,,
+10,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent payment,"Housing,Essential,Rent,Bills",monthly,1,,,,,cleared,58,,
+11,Whole Foods Groceries,-142.50,Groceries,101,,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly groceries,"Food,Essential,Groceries",,1,,,,,cleared,55,,
+12,Morning Coffee,-6.50,Coffee & Snacks,103,,USD,expense,acc_cash,Cash,Starbucks,Latte,"Food,Social,Dining",,1,40.7128,-74.0060,,,cleared,54,,
+13,Gas Station,-55.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Shell,Full tank,"Transport,Essential,Auto",,1,,,,,cleared,53,,
+14,Netflix Subscription,-15.99,Streaming,185,,USD,expense,acc_credit,Credit Card,Netflix,Monthly subscription,"Subscription,Entertainment",monthly,1,,,,,cleared,52,,
+15,Phone Bill,-65.00,Phone,131,,USD,expense,acc_bank,Bank Transfer,Verizon,Monthly mobile bill,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,51,,
+16,Gym Membership,-49.99,Gym,142,,USD,expense,acc_credit,Credit Card,LA Fitness,Monthly membership,"Health,Essential,Fitness",monthly,1,,,,,cleared,50,,
+17,Dinner with Friends,-85.00,Dining Out,102,,USD,expense,acc_cash,Credit Card,Italian Bistro,Weekend dinner,"Social,Food,Dining",,1,,,,,cleared,49,,
+18,Amazon Purchase,-45.99,Online Shopping,124,,USD,expense,acc_credit,Credit Card,Amazon,Books,"Shopping,Personal,Education",,1,,,,,cleared,48,,
+19,Freelance Payment,1200.00,Freelance,198,,USD,income,acc_bank,Bank Transfer,Client A,Web dev project,"Work,Project,Freelance,Business",,1,,,,,cleared,47,,
+20,Lunch at Work,-15.50,Dining Out,102,,USD,expense,acc_cash,Cash,Cafeteria,Daily lunch,"Work,Food,Dining",,1,,,,,cleared,46,,
+21,Gas Station,-52.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Exxon,Weekly gas,"Transport,Essential,Auto",,1,,,,,cleared,45,,
+22,Pharmacy,-35.00,Pharmacy,141,,USD,expense,acc_cash,Debit Card,CVS,Vitamins,"Health,Essential",,1,,,,,cleared,44,,
+23,Weekend Getaway Hotel,-220.00,Hotels,161,,USD,expense,acc_credit,Credit Card,Marriott,One night stay,"Travel,Vacation,Luxury",,1,,,,,cleared,43,,
+24,Uber Ride,-24.00,Rideshare,112,,USD,expense,acc_credit,Credit Card,Uber,Ride to hotel,"Travel,Transport",,1,,,,,cleared,42,,
+25,Consulting Income,3500.00,Salary,197,,USD,income,acc_bank,Bank Transfer,Consulting Group,Project milestone,"Work,Project,Business,Freelance",,1,,,,,cleared,41,,
+26,Electricity Bill,-135.00,Electricity,131,,USD,expense,acc_bank,Bank Transfer,Power Co,Monthly usage,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,40,,
+27,Internet Bill,-79.99,Internet,131,,USD,expense,acc_bank,Bank Transfer,ISP,Fiber internet,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,39,,
+28,Spotify,-10.99,Music & Audio,186,,USD,expense,acc_credit,Credit Card,Spotify,Music subscription,"Subscription,Entertainment",monthly,1,,,,,cleared,38,,
+29,Weekly Groceries,-95.20,Groceries,101,,USD,expense,acc_cash,Debit Card,Trader Joe's,Groceries,"Food,Essential,Groceries",,1,,,,,cleared,37,,
+30,Coffee and Muffin,-8.50,Coffee & Snacks,103,,USD,expense,acc_cash,Cash,Local Cafe,Breakfast,"Food,Personal,Dining",,1,,,,,cleared,36,,
+31,INR Salary Deposit,125000.00,Salary,197,,INR,income,acc_bank,Bank Transfer,India Corp,Monthly INR salary,"Work,Salary",monthly,1,,,,,cleared,35,,
+32,Indian Grocery Store,-4500.00,Groceries,101,,INR,expense,acc_bank,MOBILE_PAYMENT,Local Market,INR groceries,"Food,Essential,Groceries",,1,,,,,cleared,34,,
+33,INR Savings Transfer,50000.00,Salary,197,,INR,income,acc_savings,Bank Transfer,Self,Monthly INR savings,"Personal,Savings",monthly,1,,,,,cleared,33,,
+34,European Client Payment,1500.00,Freelance,198,,EUR,income,acc_bank,Bank Transfer,Client B,EUR project payment,"Work,Project,Freelance,Business",,1,,,,,cleared,32,,
+35,Paris Business Trip Lunch,-45.00,Dining Out,102,,EUR,expense,acc_bank,Debit Card,Le Bistro,Lunch in Paris,"Travel,Work,Dining",,1,48.8566,2.3522,,,cleared,31,,
+36,Paris Metro Pass,-25.00,Public Transit,111,,EUR,expense,acc_bank,Cash,RATP,Metro travel,"Travel,Transport",,1,,,,,cleared,30,,
+101,Salary Deposit,5250.00,Salary,197,,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,"Work,Salary,Essential",monthly,1,,,,,cleared,29,,
+102,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,Bank Transfer,Property Management,Monthly rent,"Housing,Essential,Rent,Bills",monthly,1,,,,,cleared,28,,
+103,Whole Foods,-135.20,Groceries,101,,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly food,"Food,Essential,Groceries",,1,,,,,cleared,25,,
+104,Gas Station,-50.00,Fuel,110,,USD,expense,acc_bank,Credit Card,Shell,Full tank,"Transport,Essential,Auto",,1,,,,,cleared,23,,
+105,Movie Tickets,-30.00,Movies & Theater,150,,USD,expense,acc_cash,Debit Card,AMC,Weekend movie,"Entertainment,Social",,1,,,,,cleared,22,,
+106,Dinner Date,-110.00,Dining Out,102,,USD,expense,acc_credit,Credit Card,Steakhouse,Nice dinner,"Social,Food,Dining,Luxury",,1,,,,,cleared,21,,
+107,Adobe CC,-54.99,Software Subscriptions,187,,USD,expense,acc_credit,Credit Card,Adobe,Subscription,"Work,Subscription,Project,Business",monthly,1,,,,,cleared,20,,
+108,Cloud Storage,-9.99,Cloud Storage,187,,USD,expense,acc_credit,Credit Card,Google,100GB plan,"Work,Subscription,Personal",monthly,1,,,,,cleared,19,,
+109,Haircut,-40.00,Haircut,144,,USD,expense,acc_cash,Cash,Barber,Monthly haircut,"Personal,Health",,1,,,,,cleared,18,,
+110,Amazon Household,-65.00,Online Shopping,124,,USD,expense,acc_credit,Credit Card,Amazon,Supplies,"Shopping,Essential,Housing",,1,,,,,cleared,17,,
+111,Water Bill,-40.00,Water,131,,USD,expense,acc_bank,Bank Transfer,Water Dept,Monthly bill,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,16,,
+112,Electric Bill,-125.00,Electricity,131,,USD,expense,acc_bank,Bank Transfer,Power Co,Power,"Housing,Essential,Bills,Utilities",monthly,1,,,,,cleared,15,,
+201,Car Loan Payment,-450.00,Loans & Debt,184,,USD,expense,acc_bank,BANK_TRANSFER,Chase Auto,Monthly installment,CarLoan,,1,,,,,cleared,10,,
+202,Sushi Dinner Tokyo,-8500.00,Dining Out,102,,JPY,expense,acc_jpy,CASH,Kyubey Sushi,Amazing sushi,"Travel,Food",,1,35.6762,139.7646,,,cleared,5,,
+203,John Repayment,100.00,Other Income,200,,USD,income,acc_cash,CASH,John Doe,Partial repayment of loan,,,1,,,,,cleared,2,,
+204,Berlin Hotel,-120.00,Hotels,161,,EUR,expense,acc_bank,CREDIT_CARD,Hilton Berlin,Business trip,Travel,,1,52.5200,13.4050,,,cleared,12,,
+205,Bangalore Dinner,-2500.00,Dining Out,102,,INR,expense,acc_bank,MOBILE_PAYMENT,Toit,Dinner in Bangalore,Social,,1,12.9716,77.5946,,,cleared,4,,
+1001,Cash Deposit to Bank,-500.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Depositing cash at the bank,,,1,,,,,cleared,25,acc_bank,USD,1.0
+1002,Cash Deposit to Bank,500.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Depositing cash at the bank,,,1,,,,,cleared,25,acc_cash,USD,1.0
+1003,Monthly Savings Transfer,-1000.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20,acc_savings,USD,1.0
+1004,Monthly Savings Transfer,1000.00,Transfer Inflow,1005,,USD,transfer,acc_savings,BANK_TRANSFER,,Routine savings deposit,Savings,,1,,,,,cleared,20,acc_bank,USD,1.0
+1005,Credit Card Payment,-350.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14,acc_credit,USD,1.0
+1006,Credit Card Payment,350.00,Transfer Inflow,1005,,USD,transfer,acc_credit,BANK_TRANSFER,,Paying off credit card balance,,,1,,,,,cleared,14,acc_bank,USD,1.0
+1007,Investment Top-up,-2000.00,Transfer Outflow,1006,,USD,transfer,acc_savings,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10,acc_invest,USD,1.0
+1008,Investment Top-up,2000.00,Transfer Inflow,1005,,USD,transfer,acc_invest,BANK_TRANSFER,,Adding funds to investment account,Investment,,1,,,,,cleared,10,acc_savings,USD,1.0
+1009,USD to JPY Exchange,-200.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18,acc_jpy,JPY,147.0
+1010,USD to JPY Exchange,29400.00,Transfer Inflow,1005,,JPY,transfer,acc_jpy,BANK_TRANSFER,,Currency exchange before Japan trip,Travel,,1,,,,,cleared,18,acc_bank,USD,0.0068
+1011,USD to SGD Transfer,-300.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12,acc_sgd,SGD,1.33
+1012,USD to SGD Transfer,400.00,Transfer Inflow,1005,,SGD,transfer,acc_sgd,BANK_TRANSFER,,Top up SGD account,,,1,,,,,cleared,12,acc_bank,USD,0.75
+1013,IDR to USD Repatriation,-780000.00,Transfer Outflow,1006,,IDR,transfer,acc_idr,DIGITAL_WALLET,,Converting leftover IDR back to USD,,,1,,,,,cleared,6,acc_bank,USD,0.000064
+1014,IDR to USD Repatriation,50.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Converting leftover IDR back to USD,,,1,,,,,cleared,6,acc_idr,IDR,15600.0
+2000,Unpaid Invoice,500.00,Freelance,198,,USD,income,acc_bank,BANK_TRANSFER,Client Z,Pending payment,Project,,1,,,,,pending,2,,
+2001,Returned Item,45.00,Shopping,124,,USD,expense,acc_credit,CREDIT_CARD,Target,Cancelled order,Shopping,,1,,,,,cancelled,5,,
+2002,Lunch at Cafe,-25.00,Dining Out,102,,USD,expense,acc_cash,CASH,Cafe Lola,Lunch,Social,,1,40.7128,-74.0060,,,cleared,1,,
+2003,New Monitor,-300.00,Electronics,121,,USD,expense,acc_credit,CREDIT_CARD,Best Buy,UltraWide,Work,,1,,,1767225600000,cleared,10,,
+2004,Upcoming Subscription,-15.00,Streaming,185,,USD,expense,acc_credit,CREDIT_CARD,Hulu,Next month,Entertainment,,1,,,,,cleared,-15,,
+2005,Quarterly Dividend,250.00,Investment Returns,199,,USD,income,acc_invest,BANK_TRANSFER,Vanguard,Q1 Dividends,Investment,,1,,,,,cleared,3,,
+2006,Annual Insurance,-1200.00,Insurance,182,,USD,expense,acc_bank,BANK_TRANSFER,Geico,Annual auto insurance,Auto,Essential,1,,,,,cleared,20,,
+2007,New Laptop,-2500.00,Electronics,121,,USD,expense,acc_credit,CREDIT_CARD,Apple Store,MacBook Pro 16,Work,,1,,,1798761600000,cleared,40,,
+2008,Salary 2024,5250.00,Salary,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Old salary,Work,,1,,,,,cleared,45,,
+2009,Bonus 2024,3000.00,Bonus,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Performance bonus,Work,,1,,,,,cleared,44,,
+2010,Charity Donation,-100.00,Donations,191,,USD,expense,acc_bank,BANK_TRANSFER,Red Cross,Help,Gifts,,1,,,,,cleared,3,,
+2011,Coffee,-5.50,Coffee & Snacks,103,,USD,expense,acc_cash,CASH,Local Cafe,Morning routine,Food,,1,,,,,cleared,2,,
+2012,Lunch,-18.00,Dining Out,102,,USD,expense,acc_cash,CASH,Deli,Quick bite,Food,,1,,,,,cleared,2,,
+2013,Weekly Gas,-60.00,Fuel,110,,USD,expense,acc_bank,CREDIT_CARD,Shell,Gas,Transport,,1,,,,,cleared,1,,
+2014,Uber to Airport,-45.00,Rideshare,112,,USD,expense,acc_credit,CREDIT_CARD,Uber,Travel day,Travel,,1,,,,,cleared,0,,
+2015,Flight to NYC,-350.00,Flights,160,,USD,expense,acc_credit,CREDIT_CARD,Delta,Business trip,Travel,,1,,,,,cleared,0,,
+2016,Hotel NYC,-600.00,Hotels,161,,USD,expense,acc_credit,CREDIT_CARD,Hilton,3 nights,Travel,,1,40.7531,-73.9822,,,cleared,0,,
+2017,Client Dinner,-150.00,Dining Out,102,,USD,expense,acc_credit,CREDIT_CARD,The Grill,Business meeting,Business,,1,40.7580,-73.9855,,,cleared,0,,
+2018,Interest Income,12.50,Investment Returns,199,,USD,income,acc_savings,BANK_TRANSFER,Bank,Monthly interest,Savings,,1,,,,,cleared,1,,
+2019,Cashback,5.20,Refunds & Cashback,200,,USD,income,acc_credit,OTHER,Bank,Credit card rewards,Personal,,1,,,,,cleared,1,,
+2020,Yoga Class,-20.00,Fitness Classes,142,,USD,expense,acc_cash,CASH,Yoga Studio,Session,Health,,1,,,,,cleared,3,,
+2021,New Shoes,-120.00,Shoes,120,,USD,expense,acc_credit,CREDIT_CARD,Nike,Running shoes,Shopping,,1,,,1767225600000,cleared,12,,
+2022,Gifts Received,200.00,Gifts Received,200,,USD,income,acc_cash,CASH,Family,Birthday money,Gifts,,1,,,,,cleared,15,,
+2023,Book Purchase,-25.00,Books & Stationery,123,,USD,expense,acc_cash,CASH,Bookstore,Novel,Education,,1,,,,,cleared,14,,
+2024,Utility Bill Adjustment,10.00,Refunds & Cashback,200,,USD,income,acc_bank,BANK_TRANSFER,Power Co,Overpayment refund,Housing,,1,,,,,cleared,20,,
+2025,Miscellaneous,-12.00,Others,1000,,USD,expense,acc_cash,CASH,Small Shop,Misc item,Misc,,1,,,,,cleared,7,,
+2026,Coffee,-6.00,Coffee & Snacks,103,,USD,expense,acc_cash,CASH,Starbucks,Latte,Food,,1,,,,,cleared,0,,
+2027,Grocery Run,-85.00,Groceries,101,,USD,expense,acc_cash,DEBIT_CARD,Safeway,Weekly food,Food,,1,,,,,cleared,0,,
+2028,Internet Bill,-79.99,Internet,131,,USD,expense,acc_bank,BANK_TRANSFER,ISP,Monthly bill,Housing,,1,,,,,cleared,0,,
+2029,Phone Bill,-65.00,Phone,131,,USD,expense,acc_bank,BANK_TRANSFER,Verizon,Monthly bill,Housing,,1,,,,,cleared,0,,
+2030,Rent Payment,-1850.00,Rent,130,,USD,expense,acc_bank,BANK_TRANSFER,Landlord,Monthly rent,Housing,,1,,,,,cleared,0,,
+2031,Salary Deposit,5250.00,Salary,197,,USD,income,acc_bank,BANK_TRANSFER,TechCorp Inc,Monthly salary,Work,,1,,,,,cleared,0,,
+2032,Wallet to Bank,-100.00,Transfer Outflow,1006,,USD,transfer,acc_cash,CASH,,Deposit,Transfer,,1,,,,,cleared,0,acc_bank,USD,1.0
+2033,Wallet to Bank,100.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Deposit,Transfer,,1,,,,,cleared,0,acc_cash,USD,1.0
+3001,Monthly Salary,5250.00,Salary,197,1743379200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Apr 2025,Work,monthly,1,,,,,cleared,,,,
+3002,Rent Payment,-1850.00,Rent,130,1743465600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Apr 2025,Housing,monthly,1,,,,,cleared,,,,
+3003,Electricity,-142.00,Electricity,131,1743552000000,USD,expense,acc_bank,Bank Transfer,Power Co,Usage Apr 2025,Housing,monthly,1,,,,,cleared,,,,
+3004,Groceries,-120.00,Groceries,101,1743638400000,USD,expense,acc_cash,Debit Card,Whole Foods,Weekly shopping,Food,,1,,,,,cleared,,,,
+3005,Coffee,-6.50,Coffee & Snacks,103,1743724800000,USD,expense,acc_cash,Cash,Starbucks,Latte,Food,,1,,,,,cleared,,,,
+3006,Dinner Out,-75.00,Dining Out,102,1743811200000,USD,expense,acc_credit,Credit Card,Restaurant,Friday Dinner,Social,,1,,,,,cleared,,,,
+3007,Gas,-55.00,Fuel,110,1743897600000,USD,expense,acc_bank,Credit Card,Shell,Full tank,Transport,,1,,,,,cleared,,,,
+3008,Netflix,-15.99,Streaming,185,1743984000000,USD,expense,acc_credit,Credit Card,Netflix,Subscription,Entertainment,monthly,1,,,,,cleared,,,,
+3009,Phone Bill,-65.00,Phone,131,1744070400000,USD,expense,acc_bank,Bank Transfer,Verizon,Monthly bill,Housing,monthly,1,,,,,cleared,,,,
+3010,Gym,-49.99,Gym,142,1744156800000,USD,expense,acc_credit,Credit Card,LA Fitness,Membership,Health,monthly,1,,,,,cleared,,,,
+3011,Monthly Salary,5250.00,Salary,197,1745971200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary May 2025,Work,monthly,1,,,,,cleared,,,,
+3012,Rent Payment,-1850.00,Rent,130,1746057600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent May 2025,Housing,monthly,1,,,,,cleared,,,,
+3013,Internet,-79.99,Internet,131,1746144000000,USD,expense,acc_bank,Bank Transfer,ISP,Monthly bill,Housing,monthly,1,,,,,cleared,,,,
+3014,New Jacket,-150.00,Clothing,120,1746230400000,USD,expense,acc_credit,Credit Card,Zara,Shopping,Shopping,,1,,,,,cleared,,,,
+3015,Birthday Gift,-100.00,Gifts,190,1746316800000,USD,expense,acc_cash,Cash,Friend,Gift,Gifts,,1,,,,,cleared,,,,
+3016,Brunch,-45.00,Dining Out,102,1746403200000,USD,expense,acc_cash,Cash,Cafe,Weekend brunch,Social,,1,,,,,cleared,,,,
+3017,Bus Pass,-80.00,Public Transit,111,1746489600000,USD,expense,acc_cash,Debit Card,City Transit,Monthly pass,Transport,,1,,,,,cleared,,,,
+3018,Mutual Fund,-500.00,Mutual Funds,181,1746576000000,USD,expense,acc_invest,Bank Transfer,Vanguard,Investment,Investments,monthly,1,,,,,cleared,,,,
+3019,Salary June,5250.00,Salary,197,1748563200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jun 2025,Work,monthly,1,,,,,cleared,,,,
+3020,Rent June,-1850.00,Rent,130,1748649600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jun 2025,Housing,monthly,1,,,,,cleared,,,,
+3021,Summer Vacation Flight,-850.00,Flights,160,1751241600000,USD,expense,acc_credit,Credit Card,Airline,Europe trip,Travel,,1,,,,,cleared,,,,
+3022,Summer Vacation Hotel,-1200.00,Hotels,161,1751328000000,USD,expense,acc_credit,Credit Card,Hotel,Stay in Rome,Travel,,1,41.9028,12.4964,,,cleared,,,,
+3023,Roman Dinner,-120.00,Dining Out,102,1751414400000,EUR,expense,acc_bank,Debit Card,Trattoria,Dinner in Rome,Travel,,1,41.8902,12.4922,,,cleared,,,,
+3024,Gelato,-15.00,Coffee & Snacks,103,1751500800000,EUR,expense,acc_cash,Cash,Gelateria,Treat,Travel,,1,,,,,cleared,,,,
+3025,Museum Tickets,-60.00,Activities,163,1751587200000,EUR,expense,acc_cash,Cash,Vatican,Tours,Travel,,1,,,,,cleared,,,,
+3026,Salary July,5250.00,Salary,197,1751241600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jul 2025,Work,monthly,1,,,,,cleared,,,,
+3027,Rent July,-1850.00,Rent,130,1751328000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jul 2025,Housing,monthly,1,,,,,cleared,,,,
+3028,Amazon Prime,-14.99,Software Subscriptions,187,1751414400000,USD,expense,acc_credit,Credit Card,Amazon,Prime sub,Subscription,monthly,1,,,,,cleared,,,,
+3029,Bonus Pay,2000.00,Bonus,197,1751500800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Mid-year bonus,Work,,1,,,,,cleared,,,,
+3030,Savings Transfer,-1000.00,Transfer Outflow,1006,1751587200000,USD,transfer,acc_bank,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,,,1.0
+3031,Savings Transfer,1000.00,Transfer Inflow,1005,1751587200000,USD,transfer,acc_savings,Bank Transfer,,Monthly save,Savings,,1,,,,,cleared,,,1.0
+3032,Groceries,-110.00,Groceries,101,1751673600000,USD,expense,acc_cash,Debit Card,Market,Food,Food,,1,,,,,cleared,,,,
+3033,Lunch,-20.00,Dining Out,102,1751760000000,USD,expense,acc_cash,Cash,Deli,Quick lunch,Food,,1,,,,,cleared,,,,
+3034,Salary Aug,5250.00,Salary,197,1753920000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Aug 2025,Work,monthly,1,,,,,cleared,,,,
+3035,Rent Aug,-1850.00,Rent,130,1754006400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Aug 2025,Housing,monthly,1,,,,,cleared,,,,
+3036,Back to School Supplies,-150.00,Books & Supplies,172,1754092800000,USD,expense,acc_cash,Debit Card,Store,Stationery,Education,,1,,,,,cleared,,,,
+3037,New Backpack,-80.00,Clothing,120,1754179200000,USD,expense,acc_credit,Credit Card,Mall,Bag,Shopping,,1,,,,,cleared,,,,
+3038,Laptop Repair,-200.00,Electronics,121,1754265600000,USD,expense,acc_cash,Cash,Repair,Screen fix,Work,,1,,,,,cleared,,,,
+3039,Utility Bill,-155.00,Electricity,131,1754352000000,USD,expense,acc_bank,Bank Transfer,Power,Usage,Housing,monthly,1,,,,,cleared,,,,
+3040,Salary Sept,5250.00,Salary,197,1756512000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Sept 2025,Work,monthly,1,,,,,cleared,,,,
+3041,Rent Sept,-1850.00,Rent,130,1756598400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Sept 2025,Housing,monthly,1,,,,,cleared,,,,
+3042,Dental Checkup,-250.00,Doctor,140,1756684800000,USD,expense,acc_cash,Credit Card,Dentist,Clean,Health,,1,,,,,cleared,,,,
+3043,Vitamins,-45.00,Pharmacy,141,1756771200000,USD,expense,acc_cash,Debit Card,CVS,Supplements,Health,,1,,,,,cleared,,,,
+3044,Yoga Membership,-120.00,Fitness,142,1756857600000,USD,expense,acc_credit,Credit Card,Studio,Monthly,Health,monthly,1,,,,,cleared,,,,
+3045,Salary Oct,5250.00,Salary,197,1759190400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Oct 2025,Work,monthly,1,,,,,cleared,,,,
+3046,Rent Oct,-1850.00,Rent,130,1759276800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Oct 2025,Housing,monthly,1,,,,,cleared,,,,
+3047,Halloween Party,-100.00,Entertainment,6,1761436800000,USD,expense,acc_cash,Cash,Store,Supplies,Social,,1,,,,,cleared,,,,
+3048,Dinner,-60.00,Dining Out,102,1761523200000,USD,expense,acc_credit,Credit Card,Bistro,Night out,Social,,1,,,,,cleared,,,,
+3049,Salary Nov,5250.00,Salary,197,1761868800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Nov 2025,Work,monthly,1,,,,,cleared,,,,
+3050,Rent Nov,-1850.00,Rent,130,1761955200000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Nov 2025,Housing,monthly,1,,,,,cleared,,,,
+3051,Thanksgiving Dinner,-250.00,Groceries,101,1763942400000,USD,expense,acc_cash,Debit Card,Market,Turkey etc,Food,,1,,,,,cleared,,,,
+3052,Black Friday Deal,-400.00,Electronics,121,1764028800000,USD,expense,acc_credit,Credit Card,Best Buy,Gadget,Shopping,,1,,,1795564800000,cleared,,,,
+3053,Salary Dec,5250.00,Salary,197,1764460800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Dec 2025,Work,monthly,1,,,,,cleared,,,,
+3054,Rent Dec,-1850.00,Rent,130,1764547200000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Dec 2025,Housing,monthly,1,,,,,cleared,,,,
+3055,Holiday Travel Flight,-700.00,Flights,160,1766448000000,USD,expense,acc_credit,Credit Card,Airline,Xmas trip,Travel,,1,,,,,cleared,,,,
+3056,Holiday Gifts,-500.00,Gifts,190,1766534400000,USD,expense,acc_cash,Cash,Store,Family gifts,Gifts,,1,,,,,cleared,,,,
+3057,New Year Dinner,-300.00,Dining Out,102,1767225600000,USD,expense,acc_credit,Credit Card,Hotel,Eve party,Social,,1,,,,,cleared,,,,
+3058,Salary Jan 2026,5500.00,Salary,197,1767225600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Raise! 2026,Work,monthly,1,,,,,cleared,,,,
+3059,Rent Jan 2026,-1900.00,Rent,130,1767312000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent 2026,Housing,monthly,1,,,,,cleared,,,,
+3060,Gym 2026,-55.00,Gym,142,1767398400000,USD,expense,acc_credit,Credit Card,LA Fitness,New rate,Health,monthly,1,,,,,cleared,,,,
+3061,Internet 2026,-85.00,Internet,131,1767484800000,USD,expense,acc_bank,Bank Transfer,ISP,New rate,Housing,monthly,1,,,,,cleared,,,,
+3062,Salary Feb 2026,5500.00,Salary,197,1769817600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Feb 2026,Work,monthly,1,,,,,cleared,,,,
+3063,Rent Feb 2026,-1900.00,Rent,130,1769904000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Feb 2026,Housing,monthly,1,,,,,cleared,,,,
+3064,Valentines Dinner,-200.00,Dining Out,102,1771027200000,USD,expense,acc_credit,Credit Card,Restaurant,Night out,Social,,1,,,,,cleared,,,,
+3065,Valentines Flowers,-75.00,Gifts,190,1771113600000,USD,expense,acc_cash,Cash,Florist,Roses,Personal,,1,,,,,cleared,,,,
+3066,Salary Mar 2026,5500.00,Salary,197,1772323200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Mar 2026,Work,monthly,1,,,,,cleared,,,,
+3067,Rent Mar 2026,-1900.00,Rent,130,1772409600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Mar 2026,Housing,monthly,1,,,,,cleared,,,,
+3068,Tax Refund 2026,1500.00,Tax Refund,200,1774828800000,USD,income,acc_bank,Bank Transfer,IRS,Refund,Tax,,1,,,,,cleared,,,,
+3069,Spring Shopping,-300.00,Clothing,120,1774915200000,USD,expense,acc_credit,Credit Card,Mall,New clothes,Shopping,,1,,,,,cleared,,,,
+3070,Salary Apr 2026,5500.00,Salary,197,1774915200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Apr 2026,Work,monthly,1,,,,,cleared,,,,
+3071,Rent Apr 2026,-1900.00,Rent,130,1775001600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Apr 2026,Housing,monthly,1,,,,,cleared,,,,
+3072,Electricity,-160.00,Electricity,131,1775088000000,USD,expense,acc_bank,Bank Transfer,Power,Spring usage,Housing,monthly,1,,,,,cleared,,,,
+3073,Salary May 2026,5500.00,Salary,197,1777507200000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary May 2026,Work,monthly,1,,,,,cleared,,,,
+3074,Rent May 2026,-1900.00,Rent,130,1777593600000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent May 2026,Housing,monthly,1,,,,,cleared,,,,
+3075,Mother's Day Gift,-120.00,Gifts,190,1778371200000,USD,expense,acc_credit,Credit Card,Jewelry,Gift,Gifts,,1,,,,,cleared,,,,
+3076,Weekend Trip,-400.00,Travel,7,1778457600000,USD,expense,acc_cash,Credit Card,Getaway,Drive,Travel,,1,,,,,cleared,,,,
+3077,Salary June 2026,5500.00,Salary,197,1780166400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jun 2026,Work,monthly,1,,,,,cleared,,,,
+3078,Rent June 2026,-1900.00,Rent,130,1780252800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jun 2026,Housing,monthly,1,,,,,cleared,,,,
+3079,New Phone,-1200.00,Phones,121,1780339200000,USD,expense,acc_credit,Credit Card,Apple,Upgrade,Work,,1,,,1811894400000,cleared,,,,
+3080,Phone Insurance,-150.00,Insurance,182,1780425600000,USD,expense,acc_credit,Credit Card,AppleCare,Protection,Work,,1,,,,,cleared,,,,
+3081,Salary July 2026,5500.00,Salary,197,1782777600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Jul 2026,Work,monthly,1,,,,,cleared,,,,
+3082,Rent July 2026,-1900.00,Rent,130,1782864000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Jul 2026,Housing,monthly,1,,,,,cleared,,,,
+3083,Summer BBQ,-150.00,Groceries,101,1782950400000,USD,expense,acc_cash,Cash,Market,Food,Social,,1,,,,,cleared,,,,
+3084,Patio Furniture,-600.00,Furniture,122,1783036800000,USD,expense,acc_credit,Credit Card,Store,Outdoor set,Shopping,,1,,,,,cleared,,,,
+3085,Salary Aug 2026,5500.00,Salary,197,1785369600000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Aug 2026,Work,monthly,1,,,,,cleared,,,,
+3086,Rent Aug 2026,-1900.00,Rent,130,1785456000000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Aug 2026,Housing,monthly,1,,,,,cleared,,,,
+3087,Salary Sept 2026,5500.00,Salary,197,1788048000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Sept 2026,Work,monthly,1,,,,,cleared,,,,
+3088,Rent Sept 2026,-1900.00,Rent,130,1788134400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Sept 2026,Housing,monthly,1,,,,,cleared,,,,
+3089,Salary Oct 2026,5500.00,Salary,197,1790640000000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Oct 2026,Work,monthly,1,,,,,cleared,,,,
+3090,Rent Oct 2026,-1900.00,Rent,130,1790726400000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Oct 2026,Housing,monthly,1,,,,,cleared,,,,
+3091,Salary Nov 2026,5500.00,Salary,197,1793318400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Nov 2026,Work,monthly,1,,,,,cleared,,,,
+3092,Rent Nov 2026,-1900.00,Rent,130,1793404800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Nov 2026,Housing,monthly,1,,,,,cleared,,,,
+3093,Salary Dec 2026,5500.00,Salary,197,1795910400000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Salary Dec 2026,Work,monthly,1,,,,,cleared,,,,
+3094,Rent Dec 2026,-1900.00,Rent,130,1795996800000,USD,expense,acc_bank,Bank Transfer,Landlord,Rent Dec 2026,Housing,monthly,1,,,,,cleared,,,,
+3095,Holiday Bonus,5000.00,Bonus,197,1798588800000,USD,income,acc_bank,Bank Transfer,TechCorp Inc,Year end bonus,Work,,1,,,,,cleared,,,,
+3096,Holiday Travel,-1000.00,Flights,160,1798675200000,USD,expense,acc_credit,Credit Card,Airline,Tickets,Travel,,1,,,,,cleared,,,,
+3097,Holiday Gifts,-600.00,Gifts,190,1798761600000,USD,expense,acc_cash,Cash,Store,Final gifts,Gifts,,1,,,,,cleared,,,,
+3098,Interest Income 2026,150.00,Investment Returns,199,1798761600000,USD,income,acc_savings,Bank Transfer,Bank,Annual interest,Savings,,1,,,,,cleared,,,,
+3099,Last Transaction 2026,-10.00,Others,1000,1798761600000,USD,expense,acc_cash,Cash,Self,Closing year,Misc,,1,,,,,cleared,,,,
+1015,Internal Transfer,-100.00,Transfer Outflow,1006,,USD,transfer,acc_savings,BANK_TRANSFER,,Savings to Checking,Savings,,1,,,,,cleared,5,acc_bank,USD,1.0
+1016,Internal Transfer,100.00,Transfer Inflow,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Savings to Checking,Savings,,1,,,,,cleared,5,acc_savings,USD,1.0
+1017,Pay to Outside,-50.00,Transfer Outflow,1006,,USD,transfer,acc_bank,BANK_TRANSFER,,Payment to unknown,Outside,,1,,,,,cleared,4,,,1.0
+1018,Receive from Outside,75.00,Transfer Inflow,1005,,USD,transfer,acc_savings,BANK_TRANSFER,,Refund from unknown,Outside,,1,,,,,cleared,3,,,1.0

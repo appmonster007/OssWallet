@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/app/src/debug/assets/planned_payments.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/debug/assets/profiles.csv">
           <value>
             <Attribute>
@@ -18,6 +25,13 @@
           </value>
         </entry>
         <entry key="/app/src/debug/assets/templates.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/debug/assets/transaction_links.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

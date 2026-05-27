@@ -10,20 +10,17 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
     val name: String = "",
-    val amount: String = "",
-    val targetAmount: String = "",
+    val source: TransactionSide = TransactionSide(currency = "USD"),
+    val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
-    val currency: String = "USD",
     val transactionType: TransactionType = TransactionType.EXPENSE,
-    val selectedAccountId: String? = null,
-    val targetAccountId: String? = null,
-    val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
     val recurrenceType: RecurrenceType = RecurrenceType.MONTHLY,
     val recurrenceInterval: Int = 1,
@@ -34,7 +31,6 @@ data class PlannedPaymentEntryState(
     val startDateMillis: Long = System.currentTimeMillis(),
     val hasEndDate: Boolean = false,
     val endDateMillis: Long = System.currentTimeMillis(),
-    val selectedCategoryId: Long = Category.SYSTEM_UNKNOWN,
     val payee: String = "",
     val noteUserPart: String = "",
     val location: String = "",
@@ -85,13 +81,22 @@ data class PlannedPaymentEntryState(
     val displayLinkedTxs: List<Transaction> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    // Legacy mapping
+    val amount: String get() = source.amount
+    val targetAmount: String get() = destination.amount
+    val currency: String get() = source.currency
+    val selectedAccountId: String? get() = source.accountId
+    val targetAccountId: String? get() = destination.accountId
+    val targetCurrency: String get() = destination.currency
+    val selectedCategoryId: Long get() = source.categoryId
+
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
     val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(selectedCategoryId)
 
     val amountValue: BigDecimal
-        get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        get() = source.amountValue
 
     val canSave: Boolean
         get() = name.isNotBlank()

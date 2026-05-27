@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
@@ -17,16 +18,11 @@ import java.math.BigDecimal
 data class TemplateEntryState(
     // Core form fields
     val name: String = "",
-    val amount: String = "",
-    val targetAmount: String = "",
+    val source: TransactionSide = TransactionSide(currency = "USD"),
+    val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val transactionType: TransactionType = TransactionType.EXPENSE,
-    val categoryId: Long = Category.SYSTEM_UNKNOWN,
     val categoryName: String = "Unknown",
-    val accountId: String? = null,
-    val targetAccountId: String? = null,
-    val targetCurrency: String = "",
-    val currency: String = "USD",
     val transferRate: BigDecimal = BigDecimal.ONE,
     val note: String = "",
     val payee: String = "",
@@ -70,6 +66,15 @@ data class TemplateEntryState(
     val prefillDto: TransactionPrefillDTO? = null,
     val displayLinkedTxs: List<Transaction> = emptyList()
 ) {
+    // Legacy mapping
+    val accountId: String? get() = source.accountId
+    val targetAccountId: String? get() = destination.accountId
+    val amount: String get() = source.amount
+    val targetAmount: String get() = destination.amount
+    val categoryId: Long get() = source.categoryId
+    val currency: String get() = source.currency
+    val targetCurrency: String get() = destination.currency
+
     val selectedAccount: Account? get() = accounts.find { it.id == accountId }
     val selectedTargetAccount: Account? get() = accounts.find { it.id == targetAccountId }
     val selectedCategory: Category? get() = categories.find { it.id == categoryId }
@@ -80,7 +85,7 @@ data class TemplateEntryState(
     val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(categoryId)
 
     val amountValue: BigDecimal
-        get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        get() = source.amountValue
 
     val canSave: Boolean
         get() = name.isNotBlank()

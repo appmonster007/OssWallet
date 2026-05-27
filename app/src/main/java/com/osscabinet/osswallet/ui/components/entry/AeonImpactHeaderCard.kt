@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -44,47 +45,52 @@ import java.math.RoundingMode
 import androidx.core.graphics.toColorInt
 
 /**
+ * Data class representing amount-related state to reduce parameter bloating.
+ */
+data class AeonAmountData(
+    val value: String,
+    val currency: String,
+    val onValueClick: () -> Unit = {},
+    val onCurrencyClick: (String) -> Unit = {},
+    val label: String? = null,
+    val color: Color? = null,
+    val supportedCurrencies: List<String> = emptyList()
+)
+
+/**
  * Convenience overload for TransactionType.
  */
 @Composable
 fun AeonImpactHeaderCard(
     transactionType: TransactionType,
     onTypeSelected: (TransactionType) -> Unit,
-    amount: String,
-    currency: String,
-    onCurrencyClick: (String) -> Unit,
-    onAmountClick: (side: AmountEditingSide) -> Unit,
-    amountLabel: String? = null,
-    targetAmount: String? = null,
+    source: AeonAmountData,
+    target: AeonAmountData? = null,
+    categoryId: Long? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
     nameIcon: ImageVector = Icons.Rounded.Title,
     showName: Boolean = true,
     showAmount: Boolean = true,
-    showCurrency: Boolean = true,
     showTypeSelector: Boolean = true,
-    isTransfer: Boolean = false,
     targetAccountId: String? = null,
-    targetCurrency: String? = null,
-    onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
-    amountColor: Color? = null,
-    supportedCurrencies: List<String> = emptyList(),
-    targetSupportedCurrencies: List<String> = emptyList(),
-    accountId: String? = null,
-    isAmountPositive: Boolean = false,
-    amountPrefix: String = when {
+    accountId: String? = null
+) {
+    val isTransfer = transactionType == TransactionType.TRANSFER
+    val isAmountPositive = Category.isAnyTransferInflow(categoryId ?: 0) || transactionType == TransactionType.INCOME
+    val amountPrefix = when {
         transactionType == TransactionType.EXPENSE -> "-"
         transactionType == TransactionType.INCOME -> "+"
-        transactionType == TransactionType.TRANSFER && isAmountPositive -> "+"
-        transactionType == TransactionType.TRANSFER && !isAmountPositive -> "-"
+        isTransfer && isAmountPositive -> "+"
+        isTransfer && !isAmountPositive -> "-"
         else -> ""
     }
-) {
+
     val types = TransactionType.entries.map {
         Triple(
             when (it) {
@@ -97,35 +103,37 @@ fun AeonImpactHeaderCard(
         )
     }
 
+    // Default colors based on transaction type if not explicitly provided
+    val defaultSourceColor = if (isTransfer) Color(TransactionType.EXPENSE.colorHex.toColorInt()) else Color(transactionType.colorHex.toColorInt())
+    val defaultTargetColor = if (isTransfer) Color(TransactionType.INCOME.colorHex.toColorInt()) else null
+
     AeonImpactHeaderCard(
         selectedType = transactionType,
         onTypeSelected = onTypeSelected,
         types = types,
-        amount = amount,
-        currency = currency,
-        onCurrencyClick = onCurrencyClick,
-        onAmountClick = onAmountClick,
-        amountLabel = amountLabel,
-        targetAmount = targetAmount,
+        source = source.copy(
+            color = source.color ?: defaultSourceColor,
+            // Labels are only used for transfers
+            label = if (isTransfer) source.label else null
+        ),
+        target = target?.copy(
+            color = target.color ?: defaultTargetColor,
+            // Labels are only used for transfers
+            label = if (isTransfer) target.label else null
+        ),
         name = name,
         onNameChange = onNameChange,
         nameLabel = nameLabel,
         nameIcon = nameIcon,
         showName = showName,
         showAmount = showAmount,
-        showCurrency = showCurrency,
         showTypeSelector = showTypeSelector,
         isTransfer = isTransfer,
         targetAccountId = targetAccountId,
-        targetCurrency = targetCurrency,
-        onTargetCurrencyClick = onTargetCurrencyClick,
         transferRate = transferRate,
         onExchangeRateClick = onExchangeRateClick,
         isSplitMode = isSplitMode,
         onSplitClick = onSplitClick,
-        amountColor = amountColor ?: Color(transactionType.colorHex.toColorInt()),
-        supportedCurrencies = supportedCurrencies,
-        targetSupportedCurrencies = targetSupportedCurrencies,
         accountId = accountId,
         isAmountPositive = isAmountPositive,
         amountPrefix = amountPrefix
@@ -140,36 +148,26 @@ fun <T> AeonImpactHeaderCard(
     selectedType: T,
     onTypeSelected: (T) -> Unit,
     types: List<Triple<ImageVector, String, T>>,
-    amount: String,
-    currency: String,
-    onCurrencyClick: (String) -> Unit,
-    onAmountClick: (side: AmountEditingSide) -> Unit,
-    amountLabel: String? = null,
-    targetAmount: String? = null,
+    source: AeonAmountData,
+    target: AeonAmountData? = null,
     name: String = "",
     onNameChange: (String) -> Unit = {},
     nameLabel: String = "",
     nameIcon: ImageVector = Icons.Rounded.Title,
     showName: Boolean = true,
     showAmount: Boolean = true,
-    showCurrency: Boolean = true,
     showTypeSelector: Boolean = true,
     isTransfer: Boolean = false,
     targetAccountId: String? = null,
-    targetCurrency: String? = null,
-    onTargetCurrencyClick: (String) -> Unit = {},
     transferRate: BigDecimal = BigDecimal.ONE,
     onExchangeRateClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
-    amountColor: Color? = null,
-    supportedCurrencies: List<String> = emptyList(),
-    targetSupportedCurrencies: List<String> = emptyList(),
     accountId: String? = null,
     isAmountPositive: Boolean = false,
     amountPrefix: String = ""
 ) {
-    val activeAmountColor = amountColor ?: AppColors.primary
+    val activeAmountColor = source.color ?: AppColors.primary
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -200,15 +198,15 @@ fun <T> AeonImpactHeaderCard(
             if (showAmount) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                     EntryAmountDisplay(
-                        amount = amount,
-                        currency = currency,
-                        onCurrencyClick = onCurrencyClick,
-                        onAmountClick = { onAmountClick(AmountEditingSide.SOURCE) },
+                        amount = source.value,
+                        currency = source.currency,
+                        onCurrencyClick = source.onCurrencyClick,
+                        onAmountClick = source.onValueClick,
                         amountColor = activeAmountColor,
-                        supportedCurrencies = supportedCurrencies,
-                        showCurrency = showCurrency,
-                        label = amountLabel,
-                        prefix = if (isTransfer) "-" else amountPrefix
+                        supportedCurrencies = source.supportedCurrencies,
+                        showCurrency = true,
+                        label = source.label,
+                        prefix = if (isTransfer && amountPrefix.isEmpty()) "-" else amountPrefix
                     )
 
                     Row(
@@ -245,7 +243,7 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && targetAccountId != null) {
+            if (isTransfer && targetAccountId != null && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 Surface(
@@ -283,17 +281,20 @@ fun <T> AeonImpactHeaderCard(
 
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
-                val displayTargetAmount = targetAmount ?: (amount.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate)
-                    .setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                val displayTargetAmount = target.value.ifBlank {
+                    (source.value.toBigDecimalOrNull() ?: BigDecimal.ZERO).multiply(transferRate)
+                        .setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                }
 
                 EntryAmountDisplay(
                     amount = displayTargetAmount,
-                    currency = targetCurrency ?: currency,
-                    onCurrencyClick = onTargetCurrencyClick,
-                    onAmountClick = { onAmountClick(AmountEditingSide.TARGET) },
-                    amountColor = AppColors.contentPrimary.copy(alpha = 0.8f),
-                    supportedCurrencies = targetSupportedCurrencies.ifEmpty { supportedCurrencies },
-                    prefix = if (isTransfer) "+" else amountPrefix
+                    currency = target.currency,
+                    onCurrencyClick = target.onCurrencyClick,
+                    onAmountClick = target.onValueClick,
+                    amountColor = target.color ?: AppColors.contentPrimary.copy(alpha = 0.8f),
+                    supportedCurrencies = target.supportedCurrencies.ifEmpty { source.supportedCurrencies },
+                    label = target.label,
+                    prefix = if (isTransfer && amountPrefix.isEmpty()) "+" else if (isTransfer) (if (amountPrefix == "+") "-" else "+") else amountPrefix
                 )
             }
 
@@ -323,10 +324,10 @@ fun AeonImpactHeaderCardPreview() {
             AeonImpactHeaderCard(
                 transactionType = TransactionType.EXPENSE,
                 onTypeSelected = {},
-                amount = "1,250.00",
-                currency = "USD",
-                onCurrencyClick = {},
-                onAmountClick = { _ -> },
+                source = AeonAmountData(
+                    value = "1,250.00",
+                    currency = "USD"
+                ),
                 name = "Monthly Rent",
                 onNameChange = {},
                 nameLabel = "BUDGET NAME"

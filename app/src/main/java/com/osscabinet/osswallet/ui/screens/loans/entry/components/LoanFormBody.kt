@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
@@ -90,15 +91,17 @@ fun LoanFormBody(
                     Triple(Icons.Rounded.ArrowUpward, "Lent", LoanType.LENT),
                     Triple(Icons.Rounded.ArrowDownward, "Borrowed", LoanType.BORROWED)
                 ),
-                amount = state.principalAmount,
-                currency = state.currency,
-                onCurrencyClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
-                onAmountClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
+                source = AeonAmountData(
+                    value = state.principalAmount,
+                    currency = state.currency,
+                    onValueClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
+                    onCurrencyClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
+                    color = amountColor
+                ),
                 name = state.name,
                 onNameChange = { onEvent(LoanEntryEvent.SetName(it)) },
                 nameLabel = "LOAN NAME",
-                showName = true,
-                amountColor = amountColor
+                showName = true
             )
 
             // LOAN CONTEXT: Core parameters of the loan agreement

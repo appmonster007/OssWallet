@@ -123,20 +123,41 @@ class TemplateEntryViewModel @Inject constructor(
         viewModelScope.launch {
             templateRepository.getTemplateById(templateId)?.let { template ->
                 val isLinked = plannedPaymentRepository.isTemplateUsedInPlannedPayments(templateId)
+
+                val isOpenedAsReceiver = Category.isAnyTransferInflow(template.categoryId)
+                var sourceAccId = template.accountId
+                var targetAccId = template.targetAccountId
+                var sourceCurrency = template.currency ?: "USD"
+                var targetCurr = template.targetCurrency ?: ""
+                var sourceAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
+                var targetAmtStr = template.amount.abs().multiply(template.transferRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+
+                if (template.transactionType == TransactionType.TRANSFER && isOpenedAsReceiver) {
+                    // Flip for Source-Target consistency
+                    sourceAccId = template.targetAccountId
+                    targetAccId = template.accountId
+                    sourceCurrency = template.targetCurrency ?: template.currency ?: "USD"
+                    targetCurr = template.currency ?: ""
+                    targetAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
+                    sourceAmtStr = if (template.transferRate.signum() != 0) {
+                        template.amount.abs().divide(template.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                    } else targetAmtStr
+                }
+
                 _state.update {
                     it.copy(
                         templateId = templateId,
                         isEditMode = true,
                         isLinkedToPlannedPayment = isLinked,
                         name = template.name,
-                        amount = template.amount.abs().stripTrailingZeros().toPlainString(),
-                        targetAmount = template.amount.abs().multiply(template.transferRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString(),
+                        amount = sourceAmtStr,
+                        targetAmount = targetAmtStr,
                         transactionType = template.transactionType,
                         categoryId = template.categoryId,
-                        accountId = template.accountId,
-                        targetAccountId = template.targetAccountId,
-                        currency = template.currency ?: "USD",
-                        targetCurrency = template.targetCurrency ?: "",
+                        accountId = sourceAccId,
+                        targetAccountId = targetAccId,
+                        currency = sourceCurrency,
+                        targetCurrency = targetCurr,
                         transferRate = template.transferRate,
                         note = template.note ?: "",
                         payee = template.payee ?: "",

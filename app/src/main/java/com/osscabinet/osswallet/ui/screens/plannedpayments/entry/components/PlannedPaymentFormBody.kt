@@ -21,10 +21,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
@@ -82,37 +84,30 @@ fun PlannedPaymentFormBody(
             AeonImpactHeaderCard(
                 transactionType = state.transactionType,
                 onTypeSelected = { onType -> onEvent(PlannedPaymentEntryEvent.SetTransactionType(onType)) },
-                amount = state.amount,
-                currency = state.currency,
-                onCurrencyClick = { currency ->
-                    onEvent(
-                        PlannedPaymentEntryEvent.SetCurrency(
-                            currency
-                        )
-                    )
-                },
-                onAmountClick = { side -> onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, side)) },
-                amountLabel = if (state.transactionType == TransactionType.TRANSFER) "SOURCE AMOUNT" else "AMOUNT",
-                targetAmount = if (state.transactionType == TransactionType.TRANSFER) state.targetAmount else null,
+                source = AeonAmountData(
+                    value = state.amount,
+                    currency = state.currency,
+                    onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
+                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) },
+                    label = "SOURCE AMOUNT",
+                    supportedCurrencies = sourceCurrencies
+                ),
+                target = AeonAmountData(
+                    value = state.targetAmount ?: "",
+                    currency = state.targetCurrency ?: state.currency,
+                    onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
+                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) },
+                    label = "DESTINATION AMOUNT",
+                    supportedCurrencies = targetCurrencies
+                ),
+                categoryId = state.selectedCategoryId,
                 name = state.name,
                 onNameChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
                 nameLabel = "PAYMENT NAME",
-                isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
-                targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { currency ->
-                    onEvent(
-                        PlannedPaymentEntryEvent.SetTargetCurrency(
-                            currency
-                        )
-                    )
-                },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = sourceCurrencies,
-                targetSupportedCurrencies = targetCurrencies,
-                accountId = state.selectedAccountId,
-                isAmountPositive = state.isTransferInflow
+                accountId = state.selectedAccountId
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category

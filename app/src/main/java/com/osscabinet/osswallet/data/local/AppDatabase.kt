@@ -24,7 +24,6 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.domain.model.SystemCategory
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
@@ -38,6 +37,7 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionFtsEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef
+import com.osscabinet.ossWallet.domain.model.SystemCategory
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
@@ -290,10 +290,14 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (1004, 'Initial Balance', 'CallMade', -7829368, 1, 1000, 'need')")
                 // Drop old partial index and re-create for both 1003 and 1004
                 db.execSQL("DROP INDEX IF EXISTS idx_transactions_initial_balance_unique")
-                db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_inflow_unique
-                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1003""")
-                db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_outflow_unique
-                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1004""")
+                db.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_inflow_unique
+                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1003"""
+                )
+                db.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_outflow_unique
+                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1004"""
+                )
             }
         }
 
@@ -342,6 +346,7 @@ abstract class AppDatabase : RoomDatabase() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
                             ensureSystemCategories(db)
+                            ensureSystemTags(db)
                             context.applicationContext.assets.open("default_data.sql")
                                 .bufferedReader()
                                 .useLines { lines ->
@@ -354,13 +359,32 @@ abstract class AppDatabase : RoomDatabase() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
                             ensureSystemCategories(db)
+                            ensureSystemTags(db)
                         }
 
                         private fun ensureSystemCategories(db: SupportSQLiteDatabase) {
                             SystemCategory.entries.forEach { sc ->
+                                // Using REPLACE to override user changes to system categories
                                 db.execSQL(
                                     "INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (?, ?, ?, ?, 1, ?, ?)",
-                                    arrayOf(sc.id, sc.displayName, sc.iconName, sc.colorHex, sc.parentId, sc.nature.value)
+                                    arrayOf(
+                                        sc.id,
+                                        sc.displayName,
+                                        sc.iconName,
+                                        sc.colorHex,
+                                        sc.parentId,
+                                        sc.nature.value
+                                    )
+                                )
+                            }
+                        }
+
+                        private fun ensureSystemTags(db: SupportSQLiteDatabase) {
+                            com.osscabinet.ossWallet.domain.model.SystemTag.entries.forEach { st ->
+                                // For tags, name is unique.
+                                db.execSQL(
+                                    "INSERT OR IGNORE INTO tags (id, name, colorHex) VALUES (?, ?, ?)",
+                                    arrayOf(st.id, st.tagName, st.colorHex)
                                 )
                             }
                         }

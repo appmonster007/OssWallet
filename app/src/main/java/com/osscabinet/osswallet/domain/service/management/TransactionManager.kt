@@ -1,6 +1,13 @@
 package com.osscabinet.ossWallet.domain.service.management
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSplit
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
@@ -23,8 +30,9 @@ class TransactionManager(
         sourcePlannedPaymentId: Long? = null,
         scheduledDate: Long? = null
     ): Long = andRefresh {
-        val newId = if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
-        else handleNormalSave(existingTransaction, request, profileId)
+        val newId =
+            if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
+            else handleNormalSave(existingTransaction, request, profileId)
 
         // Manage links
         if (existingTransaction != null) {
@@ -123,9 +131,9 @@ class TransactionManager(
         val targetAccountId = request.targetAccountId
         val amount = request.amount.abs()
 
-        val baseInflowCategory = if (Category.isInitialBalance(request.categoryId)) 
+        val baseInflowCategory = if (Category.isInitialBalance(request.categoryId))
             Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
-        val baseOutflowCategory = if (Category.isInitialBalance(request.categoryId)) 
+        val baseOutflowCategory = if (Category.isInitialBalance(request.categoryId))
             Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
 
         return when {
@@ -133,8 +141,8 @@ class TransactionManager(
             sourceAccountId != null && targetAccountId == null -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId 
-                                 else baseOutflowCategory,
+                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
+                    else baseOutflowCategory,
                     targetCurrency = request.targetCurrency
                 )
                 if (existingTransaction != null) {
@@ -151,8 +159,8 @@ class TransactionManager(
                     accountId = targetAccountId,
                     amount = amount,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
-                                 else baseInflowCategory,
+                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
+                    else baseInflowCategory,
                     targetAccountId = null,
                     targetCurrency = request.currency
                 )
@@ -169,8 +177,8 @@ class TransactionManager(
                 // If it's an internal transfer, we force the signs: Source is -ve, Target is +ve
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
-                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId 
-                                 else baseOutflowCategory,
+                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
+                    else baseOutflowCategory,
                     targetAccountId = targetAccountId,
                     targetCurrency = request.targetCurrency
                 )
@@ -178,43 +186,68 @@ class TransactionManager(
                 // Target inherits all shared metadata from source
                 val targetTransaction = sourceTransaction.copy(
                     id = 0,
-                    amount = amount.multiply(request.transferRate),
+                    amount = amount.multiply(request.transferRate)
+                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros(),
                     accountId = targetAccountId,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
-                                 else baseInflowCategory,
+                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
+                    else baseInflowCategory,
                     targetAccountId = sourceAccountId,
                     targetCurrency = request.currency,
-                    transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(request.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros() else BigDecimal.ONE
+                    transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(
+                        request.transferRate,
+                        8,
+                        java.math.RoundingMode.HALF_UP
+                    ).stripTrailingZeros() else BigDecimal.ONE
                 )
 
                 if (existingTransaction != null && Category.isTransfer(existingTransaction.categoryId)) {
                     // When updating a linked transfer, find the other side and update it too
-                    val linkedIds = transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
+                    val linkedIds =
+                        transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
                     linkedIds.forEach { linkedId ->
                         val linkedTx = transactionUseCases.getTransactionById(linkedId)
                         if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
                             // Update the target side to match the new metadata from source
                             val updatedTarget = sourceTransaction.copy(
                                 id = linkedId,
-                                amount = amount.multiply(request.transferRate),
+                                amount = amount.multiply(request.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP)
+                                    .stripTrailingZeros(),
                                 accountId = targetAccountId,
                                 currency = request.targetCurrency ?: request.currency,
-                                categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId 
-                                             else baseInflowCategory,
+                                categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
+                                else baseInflowCategory,
                                 targetAccountId = sourceAccountId,
                                 targetCurrency = request.currency,
-                                transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(request.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros() else BigDecimal.ONE
+                                transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(
+                                    request.transferRate,
+                                    8,
+                                    java.math.RoundingMode.HALF_UP
+                                ).stripTrailingZeros() else BigDecimal.ONE
                             )
-                            transactionUseCases.updateTransaction(linkedTx, updatedTarget, profileId)
+                            transactionUseCases.updateTransaction(
+                                linkedTx,
+                                updatedTarget,
+                                profileId
+                            )
                         }
                     }
-                    transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
+                    transactionUseCases.updateTransaction(
+                        existingTransaction,
+                        sourceTransaction,
+                        profileId
+                    )
                     existingTransaction.id
                 } else {
-                    transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
+                    transactionUseCases.saveTransfer(
+                        sourceTransaction,
+                        targetTransaction,
+                        profileId
+                    ).first
                 }
             }
+
             else -> -1L // Invalid state
         }
     }
@@ -310,13 +343,25 @@ class TransactionManager(
             TransactionStatus.UNCLEARED -> TransactionStatus.CLEARED
             TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
         }
-        transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
+        transactionUseCases.updateTransaction(
+            transaction,
+            transaction.copy(status = newStatus),
+            profileId
+        )
         return newStatus.also { widgetRefreshTrigger.trigger() }
     }
 
-    suspend fun updateStatus(transactionId: Long, newStatus: TransactionStatus, profileId: Int): Boolean {
+    suspend fun updateStatus(
+        transactionId: Long,
+        newStatus: TransactionStatus,
+        profileId: Int
+    ): Boolean {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
-        transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
+        transactionUseCases.updateTransaction(
+            transaction,
+            transaction.copy(status = newStatus),
+            profileId
+        )
         widgetRefreshTrigger.trigger()
         return true
     }

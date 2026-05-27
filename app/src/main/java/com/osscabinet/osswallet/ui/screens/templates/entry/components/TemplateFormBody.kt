@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
@@ -65,31 +66,30 @@ fun TemplateFormBody(
             AeonImpactHeaderCard(
                 transactionType = state.transactionType,
                 onTypeSelected = { onEvent(TemplateEntryEvent.SetTransactionType(it)) },
-                amount = state.amount,
-                currency = state.currency,
-                onCurrencyClick = { currency -> onEvent(TemplateEntryEvent.SetCurrency(currency)) },
-                onAmountClick = { side -> onEvent(TemplateEntryEvent.ShowNumpad(true, side)) },
-                amountLabel = if (state.isTransfer) "SOURCE AMOUNT" else "AMOUNT",
-                targetAmount = if (state.isTransfer) state.targetAmount else null,
+                source = AeonAmountData(
+                    value = state.amount,
+                    currency = state.currency,
+                    onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
+                    onCurrencyClick = { onEvent(TemplateEntryEvent.SetCurrency(it)) },
+                    label = "SOURCE AMOUNT",
+                    supportedCurrencies = sourceCurrencies
+                ),
+                target = AeonAmountData(
+                    value = state.targetAmount ?: "",
+                    currency = state.targetCurrency ?: state.currency,
+                    onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
+                    onCurrencyClick = { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) },
+                    label = "DESTINATION AMOUNT",
+                    supportedCurrencies = targetCurrencies
+                ),
+                categoryId = state.categoryId,
                 name = state.name,
                 onNameChange = { onEvent(TemplateEntryEvent.SetName(it)) },
                 nameLabel = "TEMPLATE NAME",
-                isTransfer = state.transactionType == TransactionType.TRANSFER,
                 targetAccountId = state.targetAccountId,
-                targetCurrency = state.targetCurrency,
-                onTargetCurrencyClick = { currency ->
-                    onEvent(
-                        TemplateEntryEvent.SetTargetCurrency(
-                            currency
-                        )
-                    )
-                },
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
-                supportedCurrencies = sourceCurrencies,
-                targetSupportedCurrencies = targetCurrencies,
-                accountId = state.accountId,
-                isAmountPositive = state.isTransferInflow
+                accountId = state.accountId
             )
 
             // CONTEXT: Action cards row: Account, Category

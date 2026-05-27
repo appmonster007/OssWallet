@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
@@ -80,17 +81,16 @@ fun FilterFormBody(
             AeonImpactHeaderCard(
                 transactionType = TransactionType.EXPENSE,
                 onTypeSelected = { },
-                amount = "",
-                currency = "",
-                onCurrencyClick = { },
-                onAmountClick = { },
+                source = AeonAmountData(
+                    value = "",
+                    currency = "",
+                    color = AppColors.primary
+                ),
                 name = state.name,
                 onNameChange = { onEvent(FilterEntryEvent.SetName(it)) },
                 nameLabel = "FILTER NAME",
                 showTypeSelector = false,
-                showAmount = false,
-                showCurrency = false,
-                amountColor = AppColors.primary
+                showAmount = false
             )
 
             // CORE CRITERIA: Primary structural filter logic

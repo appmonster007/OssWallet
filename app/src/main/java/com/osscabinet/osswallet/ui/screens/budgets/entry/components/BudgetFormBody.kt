@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
@@ -84,15 +85,17 @@ fun BudgetFormBody(
             AeonImpactHeaderCard(
                 transactionType = if (state.selectedTrackTypes.contains(TransactionType.EXPENSE)) TransactionType.EXPENSE else TransactionType.INCOME,
                 onTypeSelected = { },
-                amount = state.limitAmount,
-                currency = state.currency,
-                onCurrencyClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
-                onAmountClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
+                source = AeonAmountData(
+                    value = state.limitAmount,
+                    currency = state.currency,
+                    onValueClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
+                    onCurrencyClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
+                    color = AppColors.primary
+                ),
                 name = state.name,
                 onNameChange = { onEvent(BudgetEntryEvent.SetName(it)) },
                 nameLabel = "BUDGET NAME",
-                showTypeSelector = false,
-                amountColor = AppColors.primary
+                showTypeSelector = false
             )
 
             // BUDGET CONTEXT: The core parameters of the budget itself

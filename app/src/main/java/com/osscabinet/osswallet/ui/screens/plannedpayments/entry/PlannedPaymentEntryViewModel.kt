@@ -158,6 +158,27 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val usageCount =
                     existing.templateId?.let { plannedPaymentRepository.getCountByTemplateId(it) }
                         ?: 0
+
+                val isOpenedAsReceiver = Category.isAnyTransferInflow(existing.categoryId)
+                var sourceAccId = existing.accountId
+                var targetAccId = existing.targetAccountId
+                var sourceCurrency = existing.currency
+                var targetCurr = existing.targetCurrency ?: existing.currency
+                var sourceAmtStr = existing.amount.abs().toPlainString()
+                var targetAmtStr = existing.amount.abs().multiply(existing.transferRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+
+                if (existing.transactionType == TransactionType.TRANSFER && isOpenedAsReceiver) {
+                    // Flip for Source-Target consistency
+                    sourceAccId = existing.targetAccountId
+                    targetAccId = existing.accountId
+                    sourceCurrency = existing.targetCurrency ?: existing.currency
+                    targetCurr = existing.currency
+                    targetAmtStr = existing.amount.abs().toPlainString()
+                    sourceAmtStr = if (existing.transferRate.signum() != 0) {
+                        existing.amount.abs().divide(existing.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                    } else targetAmtStr
+                }
+
                 _state.update {
                     it.copy(
                         plannedPaymentId = plannedPaymentId,
@@ -166,13 +187,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         linkedTemplate = existing.templateId?.let { id -> it.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
                         name = existing.name,
-                        amount = existing.amount.abs().toPlainString(),
-                        targetAmount = existing.amount.abs().multiply(existing.transferRate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString(),
-                        currency = existing.currency,
+                        amount = sourceAmtStr,
+                        targetAmount = targetAmtStr,
+                        currency = sourceCurrency,
                         transactionType = existing.transactionType,
-                        selectedAccountId = existing.accountId,
-                        targetAccountId = existing.targetAccountId,
-                        targetCurrency = existing.targetCurrency,
+                        selectedAccountId = sourceAccId,
+                        targetAccountId = targetAccId,
+                        targetCurrency = targetCurr,
                         transferRate = existing.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,

@@ -157,11 +157,13 @@ class TransactionEntryViewModel @Inject constructor(
             else -> transaction.transactionType
         }
 
+        val isOpenedAsReceiver = Category.isAnyTransferInflow(transaction.categoryId)
         var selectedAcc: Account? = accounts.find { it.id == transaction.accountId }
         var targetAcc: Account? = accounts.find { it.id == transaction.targetAccountId }
-        var amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
+        var amountStr = ""
         var targetAmountStr = ""
-        val isOpenedAsReceiver = transaction.amount.signum() > 0
+        var currentCurrency = transaction.currency
+        var targetCurrency = transaction.targetCurrency ?: transaction.currency
         var categoryId = transaction.categoryId
 
         if (txType == TransactionType.TRANSFER) {
@@ -178,18 +180,29 @@ class TransactionEntryViewModel @Inject constructor(
                 // and its targetAccountId goes to top slot (selectedAcc)
                 targetAcc = selectedAcc
                 selectedAcc = accounts.find { it.id == transaction.targetAccountId }
+                currentCurrency = transaction.targetCurrency ?: transaction.currency
+                targetCurrency = transaction.currency
                 targetAmountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
-                amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+                amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
+                    ?: if (transaction.transferRate.signum() != 0) {
+                        transaction.amount.abs().divide(transaction.transferRate, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                    } else ""
                 categoryId = if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
             } else {
                 // transaction is the Giver (amount < 0), so its accountId is already in selectedAcc (top slot)
-                targetAmountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+                amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
+                targetAmountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
+                    ?: transaction.amount.abs().multiply(transaction.transferRate).stripTrailingZeros().toPlainString()
                 categoryId = if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
             }
+        } else {
+            amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
         }
 
-        val exchangeRate = if (amountStr.toBigDecimalOrNull()?.signum() != 0 && targetAmountStr.isNotEmpty()) {
-            targetAmountStr.toBigDecimal().divide(amountStr.toBigDecimal(), 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+        val amountBD = amountStr.toBigDecimalOrNull()
+        val targetAmountBD = targetAmountStr.toBigDecimalOrNull()
+        val exchangeRate = if (amountBD != null && amountBD.signum() != 0 && targetAmountBD != null) {
+            targetAmountBD.divide(amountBD, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
         } else transaction.transferRate
 
         _state.update {
@@ -210,9 +223,9 @@ class TransactionEntryViewModel @Inject constructor(
                 gpsLocation = transaction.gpsLocation,
                 location = transaction.location,
                 selectedAccount = selectedAcc,
-                selectedCurrency = selectedAcc?.currencyCode ?: transaction.currency,
+                selectedCurrency = currentCurrency,
                 targetAccount = targetAcc,
-                targetCurrency = targetAcc?.currencyCode ?: "",
+                targetCurrency = targetCurrency,
                 exchangeRate = exchangeRate
             )
         }

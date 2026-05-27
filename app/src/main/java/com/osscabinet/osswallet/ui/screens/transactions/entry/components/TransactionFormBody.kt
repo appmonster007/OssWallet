@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
@@ -228,8 +229,10 @@ fun TransactionFormBodyPreview() {
         Surface(color = MaterialTheme.colorScheme.background) {
             TransactionFormBody(
                 state = TransactionEntryState(
-                    amount = "125.00",
-                    selectedCurrency = "USD",
+                    source = TransactionSide(
+                        amount = "125.00",
+                        currency = "USD"
+                    ),
                     note = "Dinner with friends"
                 ),
                 onEvent = {},

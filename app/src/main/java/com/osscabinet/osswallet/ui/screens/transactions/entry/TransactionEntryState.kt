@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -19,10 +20,9 @@ import java.math.BigDecimal
  */
 data class TransactionEntryState(
     // Core form fields
-    val amount: String = "",
-    val targetAmount: String = "",
+    val source: TransactionSide = TransactionSide(),
+    val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
-    val selectedCategoryId: Long = Category.SYSTEM_UNKNOWN,
     val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,
@@ -42,13 +42,7 @@ data class TransactionEntryState(
     // Linked transactions
     val linkedTransactionIds: List<Long> = emptyList(),
 
-    // Account selection
-    val selectedAccount: Account? = null,
-    val selectedCurrency: String = "",
-
     // Transfer specific
-    val targetAccount: Account? = null,
-    val targetCurrency: String = "",
     val exchangeRate: BigDecimal = BigDecimal.ONE,
 
     // Template
@@ -99,6 +93,15 @@ data class TransactionEntryState(
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false
 ) {
+    // Legacy mapping for UI and logic compatibility
+    val amount: String get() = source.amount
+    val targetAmount: String get() = destination.amount
+    val selectedCategoryId: Long get() = source.categoryId
+    val selectedAccount: Account? get() = accounts.find { it.id == source.accountId }
+    val selectedCurrency: String get() = source.currency
+    val targetAccount: Account? get() = accounts.find { it.id == destination.accountId }
+    val targetCurrency: String get() = destination.currency
+
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
@@ -108,7 +111,7 @@ data class TransactionEntryState(
         get() = linkedTxs.sortedByDescending { it.timestamp }
 
     val amountValue: BigDecimal
-        get() = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        get() = source.amountValue
 
     val canSave: Boolean
         get() {

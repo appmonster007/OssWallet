@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
@@ -178,8 +179,10 @@ fun TemplateFormBodyPreview() {
             TemplateFormBody(
                 state = TemplateEntryState(
                     name = "Grocery Template",
-                    amount = "50.00",
-                    currency = "USD"
+                    source = TransactionSide(
+                        amount = "50.00",
+                        currency = "USD"
+                    )
                 ),
                 onSearch = { flowOf(emptyList()) },
                 onEvent = {}

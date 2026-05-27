@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -102,15 +103,20 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         plannedPaymentId = null,
                         linkedTemplate = null,
                         name = template.name,
-                        amount = template.amount.abs().stripTrailingZeros().toPlainString(),
-                        targetAmount = template.amount.abs().multiply(template.transferRate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString(),
-                        currency = template.currency,
+                        source = TransactionSide(
+                            accountId = template.accountId,
+                            amount = template.amount.abs().stripTrailingZeros().toPlainString(),
+                            currency = template.currency,
+                            categoryId = template.categoryId
+                        ),
+                        destination = TransactionSide(
+                            accountId = template.targetAccountId,
+                            amount = template.amount.abs().multiply(template.transferRate)
+                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                .toPlainString(),
+                            currency = template.targetCurrency ?: ""
+                        ),
                         transactionType = template.transactionType,
-                        selectedAccountId = template.accountId,
-                        targetAccountId = template.targetAccountId,
-                        targetCurrency = template.targetCurrency,
                         transferRate = template.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
@@ -120,7 +126,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         startDateMillis = schedule.startDate,
                         hasEndDate = false,
                         endDateMillis = schedule.startDate,
-                        selectedCategoryId = template.categoryId,
                         payee = template.payee ?: "",
                         noteUserPart = template.note ?: "",
                         location = template.location ?: "",
@@ -143,7 +148,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         plannedPaymentId = null,
                         startDateMillis = now,
                         endDateMillis = now,
-                        selectedAccountId = null
+                        source = it.source.copy(accountId = null)
                     )
                 }
             }
@@ -196,13 +201,18 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         linkedTemplate = existing.templateId?.let { id -> it.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
                         name = existing.name,
-                        amount = sourceAmtStr,
-                        targetAmount = targetAmtStr,
-                        currency = sourceCurrency,
+                        source = TransactionSide(
+                            accountId = sourceAccId,
+                            amount = sourceAmtStr,
+                            currency = sourceCurrency,
+                            categoryId = existingCategoryId
+                        ),
+                        destination = TransactionSide(
+                            accountId = targetAccId,
+                            amount = targetAmtStr,
+                            currency = targetCurr
+                        ),
                         transactionType = existing.transactionType,
-                        selectedAccountId = sourceAccId,
-                        targetAccountId = targetAccId,
-                        targetCurrency = targetCurr,
                         transferRate = existing.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
@@ -213,7 +223,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         startDateMillis = schedule.startDate,
                         hasEndDate = schedule.endDate != null,
                         endDateMillis = schedule.endDate ?: schedule.startDate,
-                        selectedCategoryId = existingCategoryId,
                         payee = existing.payee ?: "",
                         noteUserPart = existing.note ?: "",
                         location = existing.location ?: "",
@@ -258,20 +267,26 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         }
                         val finalInput = inputAmount.abs()
                         state.copy(
-                            amount = finalInput.stripTrailingZeros().toPlainString(),
-                            targetAmount = finalInput.multiply(state.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString(),
+                            source = state.source.copy(
+                                amount = finalInput.stripTrailingZeros().toPlainString()
+                            ),
+                            destination = state.destination.copy(
+                                amount = finalInput.multiply(state.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString()
+                            ),
                             transactionType = newType
                         )
                     }
                 } else {
                     _state.update {
                         it.copy(
-                            amount = event.amount,
-                            targetAmount = inputAmount.multiply(it.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString()
+                            source = it.source.copy(amount = event.amount),
+                            destination = it.destination.copy(
+                                amount = inputAmount.multiply(it.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString()
+                            )
                         )
                     }
                 }
@@ -286,8 +301,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     } else state.amount
 
                     state.copy(
-                        targetAmount = event.amount,
-                        amount = newSourceAmount
+                        destination = state.destination.copy(amount = event.amount),
+                        source = state.source.copy(amount = newSourceAmount)
                     )
                 }
             }
@@ -299,40 +314,44 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     val isTransferToNormal =
                         oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
 
-                    val primaryAccountId = if (isTransferToNormal && state.isTransferInflow) {
-                        state.targetAccountId ?: state.selectedAccountId
+                    val primarySide = if (isTransferToNormal && state.isTransferInflow) {
+                        state.destination
                     } else {
-                        state.selectedAccountId
+                        state.source
                     }
 
                     state.copy(
                         transactionType = newType,
-                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .stripTrailingZeros().toPlainString(),
+                        source = primarySide.copy(
+                            amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs()
+                                .stripTrailingZeros().toPlainString(),
 
-                        selectedAccountId = when {
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
-                            else -> primaryAccountId
-                        },
+                            accountId = when {
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
+                                else -> primarySide.accountId
+                            },
 
-                        targetAccountId = when {
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
-                            newType == TransactionType.TRANSFER -> state.targetAccountId
-                            else -> null
-                        },
+                            categoryId = when {
+                                newType != TransactionType.TRANSFER && Category.isTransfer(state.selectedCategoryId) -> Category.SYSTEM_UNKNOWN
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
+                                newType == TransactionType.TRANSFER -> state.selectedCategoryId.takeIf {
+                                    Category.isTransfer(
+                                        it
+                                    )
+                                } ?: Category.SYSTEM_TRANSFER_OUTFLOW
 
-                        selectedCategoryId = when {
-                            newType != TransactionType.TRANSFER && Category.isTransfer(state.selectedCategoryId) -> Category.SYSTEM_UNKNOWN
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
-                            newType == TransactionType.TRANSFER -> state.selectedCategoryId.takeIf {
-                                Category.isTransfer(
-                                    it
-                                )
-                            } ?: Category.SYSTEM_TRANSFER_OUTFLOW
+                                else -> state.selectedCategoryId
+                            }
+                        ),
 
-                            else -> state.selectedCategoryId
+                        destination = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primarySide.copy(
+                                categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                            )
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> TransactionSide()
+                            newType == TransactionType.TRANSFER -> state.destination
+                            else -> TransactionSide()
                         }
                     )
                 }
@@ -345,8 +364,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.id }
                     state.copy(
-                        selectedAccountId = event.id,
-                        currency = account?.currencyCode ?: state.currency
+                        source = state.source.copy(
+                            accountId = event.id,
+                            currency = account?.currencyCode ?: state.currency
+                        )
                     )
                 }
                 recalculateExchangeRate()
@@ -356,29 +377,33 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.id }
                     state.copy(
-                        targetAccountId = event.id,
-                        targetCurrency = account?.currencyCode ?: state.targetCurrency
+                        destination = state.destination.copy(
+                            accountId = event.id,
+                            currency = account?.currencyCode ?: state.targetCurrency
+                        )
                     )
                 }
                 recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetCurrency -> {
-                _state.update { it.copy(targetCurrency = event.currency) }
+                _state.update { it.copy(destination = it.destination.copy(currency = event.currency ?: "")) }
                 recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTransferRate -> _state.update {
                 it.copy(
                     transferRate = event.rate,
-                    targetAmount = it.amountValue.multiply(event.rate)
-                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                        .toPlainString()
+                    destination = it.destination.copy(
+                        amount = it.amountValue.multiply(event.rate)
+                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                            .toPlainString()
+                    )
                 )
             }
 
             is PlannedPaymentEntryEvent.SetCurrency -> {
-                _state.update { it.copy(currency = event.currency) }
+                _state.update { it.copy(source = it.source.copy(currency = event.currency)) }
                 recalculateExchangeRate()
             }
 
@@ -397,7 +422,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetHasEndDate -> _state.update { it.copy(hasEndDate = event.has) }
             is PlannedPaymentEntryEvent.SetEndDate -> _state.update { it.copy(endDateMillis = event.date) }
             is PlannedPaymentEntryEvent.SetCategoryId -> {
-                if (!Category.isInitialBalance(event.id)) _state.update { it.copy(selectedCategoryId = event.id) }
+                if (!Category.isInitialBalance(event.id)) _state.update {
+                    it.copy(source = it.source.copy(categoryId = event.id))
+                }
             }
 
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
@@ -454,19 +481,23 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         state.copy(
                             linkedTemplate = event.template,
                             name = event.template.name,
-                            amount = event.template.amount.abs().stripTrailingZeros()
-                                .toPlainString(),
-                            currency = event.template.currency,
+                            source = TransactionSide(
+                                accountId = event.template.accountId,
+                                amount = event.template.amount.abs().stripTrailingZeros()
+                                    .toPlainString(),
+                                currency = event.template.currency,
+                                categoryId = event.template.categoryId
+                            ),
+                            destination = TransactionSide(
+                                accountId = event.template.targetAccountId,
+                                amount = event.template.amount.abs()
+                                    .multiply(event.template.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString(),
+                                currency = event.template.targetCurrency ?: ""
+                            ),
                             transactionType = event.template.transactionType,
-                            selectedAccountId = event.template.accountId,
-                            targetAccountId = event.template.targetAccountId,
-                            targetCurrency = event.template.targetCurrency,
                             transferRate = event.template.transferRate,
-                            targetAmount = event.template.amount.abs()
-                                .multiply(event.template.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString(),
-                            selectedCategoryId = event.template.categoryId,
                             payee = event.template.payee ?: "",
                             noteUserPart = event.template.note ?: "",
                             paymentMethod = event.template.paymentMethod ?: PaymentMethod.CASH,
@@ -724,9 +755,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         transferRate = rate,
-                        targetAmount = it.amountValue.multiply(rate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString()
+                        destination = it.destination.copy(
+                            amount = it.amountValue.multiply(rate)
+                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                .toPlainString()
+                        )
                     )
                 }
             }

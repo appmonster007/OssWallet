@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
@@ -300,8 +301,10 @@ fun PlannedPaymentFormBodyPreview() {
             PlannedPaymentFormBody(
                 state = PlannedPaymentEntryState(
                     name = "Netflix Subscription",
-                    amount = "15.99",
-                    currency = "USD"
+                    source = TransactionSide(
+                        amount = "15.99",
+                        currency = "USD"
+                    )
                 ),
                 onSearch = { flowOf(emptyList()) },
                 onEvent = {}

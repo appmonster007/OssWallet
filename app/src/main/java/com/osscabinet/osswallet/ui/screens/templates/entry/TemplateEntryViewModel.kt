@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -92,12 +93,16 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = false,
                         templateId = null,
                         name = prefill.name,
-                        amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
-                        targetAmount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
+                        source = TransactionSide(
+                            accountId = prefill.accountId,
+                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
+                            currency = prefill.currency ?: "USD",
+                            categoryId = prefill.categoryId
+                        ),
+                        destination = TransactionSide(
+                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString()
+                        ),
                         transactionType = prefill.transactionType,
-                        categoryId = prefill.categoryId,
-                        accountId = prefill.accountId,
-                        currency = prefill.currency ?: "USD",
                         note = prefill.note ?: "",
                         payee = prefill.payee ?: "",
                         location = prefill.location ?: "",
@@ -158,14 +163,18 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = true,
                         isLinkedToPlannedPayment = isLinked,
                         name = template.name,
-                        amount = sourceAmtStr,
-                        targetAmount = targetAmtStr,
+                        source = TransactionSide(
+                            accountId = sourceAccId,
+                            amount = sourceAmtStr,
+                            currency = sourceCurrency,
+                            categoryId = existingCategoryId
+                        ),
+                        destination = TransactionSide(
+                            accountId = targetAccId,
+                            amount = targetAmtStr,
+                            currency = targetCurr
+                        ),
                         transactionType = template.transactionType,
-                        categoryId = existingCategoryId,
-                        accountId = sourceAccId,
-                        targetAccountId = targetAccId,
-                        currency = sourceCurrency,
-                        targetCurrency = targetCurr,
                         transferRate = template.transferRate,
                         note = template.note ?: "",
                         payee = template.payee ?: "",
@@ -198,20 +207,26 @@ class TemplateEntryViewModel @Inject constructor(
                         }
                         val finalAmt = inputAmount.abs()
                         state.copy(
-                            amount = finalAmt.stripTrailingZeros().toPlainString(),
-                            targetAmount = finalAmt.multiply(state.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString(),
+                            source = state.source.copy(
+                                amount = finalAmt.stripTrailingZeros().toPlainString()
+                            ),
+                            destination = state.destination.copy(
+                                amount = finalAmt.multiply(state.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString()
+                            ),
                             transactionType = newType
                         )
                     }
                 } else {
                     _state.update {
                         it.copy(
-                            amount = event.amount,
-                            targetAmount = inputAmount.multiply(it.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString()
+                            source = it.source.copy(amount = event.amount),
+                            destination = it.destination.copy(
+                                amount = inputAmount.multiply(it.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString()
+                            )
                         )
                     }
                 }
@@ -226,8 +241,8 @@ class TemplateEntryViewModel @Inject constructor(
                     } else state.amount
 
                     state.copy(
-                        targetAmount = event.amount,
-                        amount = newSourceAmount
+                        destination = state.destination.copy(amount = event.amount),
+                        source = state.source.copy(amount = newSourceAmount)
                     )
                 }
             }
@@ -239,40 +254,44 @@ class TemplateEntryViewModel @Inject constructor(
                     val isTransferToNormal =
                         oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
 
-                    val primaryAccountId = if (isTransferToNormal && state.isTransferInflow) {
-                        state.targetAccountId ?: state.accountId
+                    val primarySide = if (isTransferToNormal && state.isTransferInflow) {
+                        state.destination
                     } else {
-                        state.accountId
+                        state.source
                     }
 
                     state.copy(
                         transactionType = newType,
-                        amount = if (state.amount.isEmpty()) "" else state.amountValue.abs()
-                            .stripTrailingZeros().toPlainString(),
+                        source = primarySide.copy(
+                            amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs()
+                                .stripTrailingZeros().toPlainString(),
 
-                        accountId = when {
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
-                            else -> primaryAccountId
-                        },
+                            accountId = when {
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
+                                else -> primarySide.accountId
+                            },
 
-                        targetAccountId = when {
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primaryAccountId
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> null
-                            newType == TransactionType.TRANSFER -> state.targetAccountId
-                            else -> null
-                        },
+                            categoryId = when {
+                                newType != TransactionType.TRANSFER && Category.isTransfer(state.categoryId) -> Category.SYSTEM_UNKNOWN
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
+                                newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
+                                newType == TransactionType.TRANSFER -> state.categoryId.takeIf {
+                                    Category.isTransfer(
+                                        it
+                                    )
+                                } ?: Category.SYSTEM_TRANSFER_OUTFLOW
 
-                        categoryId = when {
-                            newType != TransactionType.TRANSFER && Category.isTransfer(state.categoryId) -> Category.SYSTEM_UNKNOWN
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
-                            newType == TransactionType.TRANSFER -> state.categoryId.takeIf {
-                                Category.isTransfer(
-                                    it
-                                )
-                            } ?: Category.SYSTEM_TRANSFER_OUTFLOW
+                                else -> state.categoryId
+                            }
+                        ),
 
-                            else -> state.categoryId
+                        destination = when {
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primarySide.copy(
+                                categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                            )
+                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> TransactionSide()
+                            newType == TransactionType.TRANSFER -> state.destination
+                            else -> TransactionSide()
                         }
                     )
                 }
@@ -283,7 +302,7 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SetCategory -> {
                 if (!Category.isInitialBalance(event.categoryId)) {
-                    _state.update { it.copy(categoryId = event.categoryId) }
+                    _state.update { it.copy(source = it.source.copy(categoryId = event.categoryId)) }
                     updateCategoryName()
                 }
             }
@@ -292,8 +311,10 @@ class TemplateEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
                     state.copy(
-                        accountId = event.accountId,
-                        currency = account?.currencyCode ?: state.currency
+                        source = state.source.copy(
+                            accountId = event.accountId,
+                            currency = account?.currencyCode ?: state.currency
+                        )
                     )
                 }
                 recalculateExchangeRate()
@@ -303,29 +324,33 @@ class TemplateEntryViewModel @Inject constructor(
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
                     state.copy(
-                        targetAccountId = event.accountId,
-                        targetCurrency = account?.currencyCode ?: state.targetCurrency ?: ""
+                        destination = state.destination.copy(
+                            accountId = event.accountId,
+                            currency = account?.currencyCode ?: state.targetCurrency ?: ""
+                        )
                     )
                 }
                 recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetCurrency -> {
-                _state.update { it.copy(currency = event.currency) }
+                _state.update { it.copy(source = it.source.copy(currency = event.currency)) }
                 recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetCurrency -> {
-                _state.update { it.copy(targetCurrency = event.currency) }
+                _state.update { it.copy(destination = it.destination.copy(currency = event.currency)) }
                 recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTransferRate -> _state.update {
                 it.copy(
                     transferRate = event.rate,
-                    targetAmount = it.amountValue.multiply(event.rate)
-                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                        .toPlainString()
+                    destination = it.destination.copy(
+                        amount = it.amountValue.multiply(event.rate)
+                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                            .toPlainString()
+                    )
                 )
             }
 
@@ -454,9 +479,11 @@ class TemplateEntryViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         transferRate = rate,
-                        targetAmount = it.amountValue.multiply(rate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString()
+                        destination = it.destination.copy(
+                            amount = it.amountValue.multiply(rate)
+                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                .toPlainString()
+                        )
                     )
                 }
             }

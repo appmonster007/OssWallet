@@ -20,13 +20,17 @@ class TagRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertTag(tag: Tag) {
+        if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
         tagDao.insertTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
     }
 
-    override suspend fun deleteTag(tag: Tag) =
+    override suspend fun deleteTag(tag: Tag) {
+        if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
+    }
 
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {
+        if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
         val transactions = transactionDao.getTransactionsWithTag(tag.name)
         val updatedTransactions = transactions.map { tx ->
             tx.copy(tags = tx.tags - tag.name)
@@ -41,6 +45,7 @@ class TagRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateTag(oldName: String, newTag: Tag) {
+        if (Tag.isSystemTag(oldName) || Tag.isSystemTag(newTag.name) || Tag.isSystemTag(newTag.id)) return
         if (oldName != newTag.name) {
             val transactions = transactionDao.getTransactionsWithTag(oldName)
             val updatedTransactions = transactions.map { tx ->

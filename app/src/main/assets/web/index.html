@@ -341,6 +341,13 @@
   .color-chip:hover { transform: scale(1.15); }
   .color-chip.selected { border-color: var(--text); }
 
+  /* ── Splits UI ────────────────────────────────────────────── */
+  .split-row { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; background: var(--bg); position: relative; }
+  .split-remove { position: absolute; top: 4px; right: 4px; }
+  .split-total-info { font-size: 0.82rem; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .split-match { background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--success); }
+  .split-mismatch { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+
   /* ── Theme force override ───────────────────────────────────── */
   .force-light { color-scheme: light; }
   .force-light :root { --bg: #ffffff; --surface: #f5f5f5; --surface2: #ececec; --border: #e0e0e0; --text: #1a1a1a; --text-muted: #666666; --accent: #1976D2; --danger: #c62828; --success: #2e7d32; --warning: #f57f17; }
@@ -1796,25 +1803,48 @@
 
   function txFormBody(tx) {
     const cur = tx ? tx.currency : (cachedSettings.baseCurrency || 'USD');
-    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
-      `<option value="${v}" ${(tx?.paymentMethod||'CASH')===v?'selected':''}>${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
     const warExp = tx?.warrantyExpiration ? new Date(tx.warrantyExpiration).toISOString().slice(0,10) : '';
+    const splits = tx?.splits || [];
+
     return `
       ${formField('Name', `<input type="text" id="tx-name" placeholder="e.g. Grocery run" value="${esc(tx?.title||'')}">`) }
       ${formRow(
-        formField('Amount', `<div class="input-group"><span class="input-group-addon" id="tx-amount-prefix">${esc(cur)}</span><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}"></div>`),
-        formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5" oninput="const p=document.getElementById('tx-amount-prefix');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
+        formField('Amount', `<div class="input-group"><span class="input-group-addon" id="tx-amount-prefix">${esc(cur)}</span><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01" value="${esc(tx?.amount||'')}" oninput="updateSplitTotal();updateTransferResult()"></div>`),
+        formField('Currency', `<input type="text" id="tx-currency" value="${esc(cur)}" maxlength="5" oninput="const p=document.getElementById('tx-amount-prefix');if(p)p.textContent=this.value.toUpperCase()||'—';updateSplitTotal();updateTransferResult()">`)
       )}
-      ${formRow(formField('Type', buildSelect('tx-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(tx?.type||'EXPENSE'),'— Select —',false,"document.getElementById('tx-to-account-row').style.display=this.value==='TRANSFER'?'':'none'")),
+      ${formRow(formField('Type', buildSelect('tx-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(tx?.type||'EXPENSE'),'— Select —',false,"document.getElementById('tx-transfer-fields').style.display=this.value==='TRANSFER'?'':'none';document.getElementById('tx-splits-section').style.display=this.value==='TRANSFER'?'none':'';updateTransferResult();")),
                 formField('Account', buildSelect('tx-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),tx?.accountId||'','— Select account —',true)))}
-      <div id="tx-to-account-row" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'':'display:none'}">
-        ${formField('To Account', buildSelect('tx-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),tx?.toAccountId||'','— Select destination —',true))}
+
+      <div id="tx-transfer-fields" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'':'display:none'}">
+        <div class="card" style="padding:12px;background:var(--surface2);border-style:dashed;margin-bottom:14px">
+          ${formField('To Account', buildSelect('tx-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),tx?.targetAccountId||'','— Select destination —',true,"updateTransferResult()"))}
+          <div class="form-row">
+            ${formField('Transfer Rate', `<input type="number" id="tx-rate" value="${esc(tx?.transferRate||1)}" step="any" placeholder="1.0" oninput="updateTransferResult()">`)}
+            <div class="form-field"><label>Resulting Amount</label><div id="tx-transfer-result" style="font-size:0.9rem;font-weight:700;padding-top:8px">—</div></div>
+          </div>
+        </div>
       </div>
+
+      <div id="tx-splits-section" style="${(tx?.type||'EXPENSE')==='TRANSFER'?'display:none':''}">
+        <div class="form-section-label">Splits</div>
+        <div id="tx-splits-container">
+          ${splits.map((s, i) => renderSplitRow(i, s)).join('')}
+        </div>
+        <div id="tx-split-summary" class="split-total-info"></div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:14px" onclick="addSplitRow()">+ Add Split</button>
+      </div>
+
       ${formField('Category', buildSelect('tx-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),tx?.categoryId?String(tx.categoryId):'','— None —',true))}
       ${formRow(formField('Date', `<input type="datetime-local" id="tx-date" value="${tx ? new Date(tx.date).toISOString().slice(0,16) : ''}">`),
                 formField('Status', buildSelect('tx-status',[{value:'CLEARED',label:'Cleared'},{value:'UNCLEARED',label:'Uncleared'},{value:'RECONCILE',label:'Reconcile'}],(tx?.status||'CLEARED'),'— Select —',false)))}
       ${formRow(formField('Payee', `<input type="text" id="tx-payee" placeholder="Optional payee" value="${esc(tx?.payee||'')}"> `),
                 formField('Payment Method', buildSelect('tx-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(tx?.paymentMethod||'CASH'),'— Select —',false)))}
+
+      <div class="form-row">
+        ${formField('Location', `<input type="text" id="tx-location" placeholder="e.g. Starbucks" value="${esc(tx?.location||'')}">`)}
+        ${formField('GPS (Lat,Lon)', `<input type="text" id="tx-gps" placeholder="0.0,0.0" value="${esc(tx?.gpsLocation||'')}">`)}
+      </div>
+
       ${formField('Tags', `<div id="tx-tags-container"></div>`)}
       ${formField('Note', `<textarea id="tx-note" placeholder="Optional note…">${esc(tx?.note||'')}</textarea>`)}
       <div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
@@ -1826,6 +1856,79 @@
         ${formField('Warranty Expiry', `<input type="date" id="tx-warranty-date" value="${esc(warExp)}">`)}
       </div>`;
   }
+
+  window.renderSplitRow = function(index, split) {
+    return `<div class="split-row" id="split-row-${index}">
+      <button class="btn-icon btn-icon-danger split-remove" onclick="removeSplitRow(${index})">✕</button>
+      <div class="form-row">
+        ${formField('Amount', `<input type="number" class="split-amount" data-index="${index}" value="${esc(split?.amount||'')}" placeholder="0.00" step="0.01" oninput="updateSplitTotal()">`)}
+        ${formField('Category', buildSelect(`split-cat-${index}`, [{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))), split?.categoryId?String(split.categoryId):'', '— None —', true))}
+      </div>
+      <div class="form-field">
+        <label>Note</label>
+        <input type="text" class="split-note" data-index="${index}" value="${esc(split?.note||'')}" placeholder="Split note…">
+      </div>
+    </div>`;
+  };
+
+  let splitCounter = 0;
+  window.addSplitRow = function() {
+    const container = document.getElementById('tx-splits-container');
+    if (!container) return;
+    const div = document.createElement('div');
+    const idx = ++splitCounter;
+    div.innerHTML = renderSplitRow(idx, null);
+    container.appendChild(div.firstElementChild);
+    updateSplitTotal();
+  };
+
+  window.removeSplitRow = function(index) {
+    const row = document.getElementById(`split-row-${index}`);
+    if (row) row.remove();
+    updateSplitTotal();
+  };
+
+  window.updateSplitTotal = function() {
+    const mainAmt = parseFloat(document.getElementById('tx-amount')?.value) || 0;
+    const mainCur = document.getElementById('tx-currency')?.value || '';
+    const rows = document.querySelectorAll('.split-row');
+    const summary = document.getElementById('tx-split-summary');
+    if (!summary) return;
+
+    if (rows.length === 0) {
+      summary.style.display = 'none';
+      return;
+    }
+    summary.style.display = 'flex';
+
+    let total = 0;
+    rows.forEach(row => {
+      const amt = parseFloat(row.querySelector('.split-amount').value) || 0;
+      total += amt;
+    });
+
+    const diff = mainAmt - total;
+
+    if (Math.abs(diff) < 0.001) {
+      summary.className = 'split-total-info split-match';
+      summary.innerHTML = `<span>All split amounts match total</span> <span>${fmt(mainAmt, mainCur)}</span>`;
+    } else {
+      summary.className = 'split-total-info split-mismatch';
+      summary.innerHTML = `<span>Remaining to split:</span> <span>${fmt(diff, mainCur)}</span>`;
+    }
+  };
+
+  window.updateTransferResult = function() {
+    const amt = parseFloat(document.getElementById('tx-amount')?.value) || 0;
+    const rate = parseFloat(document.getElementById('tx-rate')?.value) || 1;
+    const toAccId = document.getElementById('tx-to-account')?.value;
+    const toAcc = cachedAccounts.find(a => a.id === toAccId);
+    const resEl = document.getElementById('tx-transfer-result');
+    if (resEl) {
+      const result = amt * rate;
+      resEl.textContent = toAcc ? fmt(result, toAcc.currency) : result.toFixed(2);
+    }
+  };
 
   window.openAddTransaction = async function (prefill) {
     const body = txFormBody(prefill || null);
@@ -1848,6 +1951,23 @@
     const txType = get('tx-type');
     const warrantyEl = document.getElementById('tx-warranty');
     const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
+
+    const splits = [];
+    if (txType !== 'TRANSFER') {
+      document.querySelectorAll('.split-row').forEach(row => {
+        const sAmt = parseFloat(row.querySelector('.split-amount').value) || 0;
+        if (sAmt > 0) {
+          const sIdx = row.id.split('-').pop();
+          splits.push({
+            amount: sAmt,
+            currency: row.querySelector('.split-currency').value || get('tx-currency'),
+            categoryId: parseInt(document.getElementById(`split-cat-${sIdx}`)?.value) || 0,
+            note: row.querySelector('.split-note').value || ''
+          });
+        }
+      });
+    }
+
     const body = {
       name,
       amount,
@@ -1862,13 +1982,19 @@
       paymentMethod:    get('tx-method') || 'CASH',
       tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
       warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
+      location:         get('tx-location') || null,
+      gpsLocation:      get('tx-gps') || null,
+      splits:           splits.length > 0 ? splits : null
     };
+
     if (txType === 'TRANSFER') {
-      const toAccId = get('tx-to-account');
-      if (!toAccId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
-      if (toAccId === body.accountId) { showFieldError('tx-to-account', 'Destination must differ from source account.'); return; }
-      body.toAccountId = toAccId;
+      const targetAccountId = get('tx-to-account');
+      if (!targetAccountId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
+      if (targetAccountId === body.accountId) { showFieldError('tx-to-account', 'Destination must differ from source account.'); return; }
+      body.targetAccountId = targetAccountId;
+      body.transferRate = parseFloat(get('tx-rate')) || 1;
     }
+
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/transactions', body);
       if (res.success) { closeModal(); renderRecords(); showToast('Record saved!'); }
@@ -1887,6 +2013,23 @@
       const txType = get('tx-type');
       const warrantyEl = document.getElementById('tx-warranty');
       const warrantyDateStr = warrantyEl?.checked ? get('tx-warranty-date') : '';
+
+      const splits = [];
+      if (txType !== 'TRANSFER') {
+        document.querySelectorAll('.split-row').forEach(row => {
+          const sAmt = parseFloat(row.querySelector('.split-amount').value) || 0;
+          if (sAmt > 0) {
+            const sIdx = row.id.split('-').pop();
+            splits.push({
+              amount: sAmt,
+              currency: row.querySelector('.split-currency').value || get('tx-currency'),
+              categoryId: parseInt(document.getElementById(`split-cat-${sIdx}`)?.value) || 0,
+              note: row.querySelector('.split-note').value || ''
+            });
+          }
+        });
+      }
+
       const payload = {
         name:             get('tx-name') || undefined,
         amount:           parseFloat(get('tx-amount')) || undefined,
@@ -1901,11 +2044,15 @@
         paymentMethod:    get('tx-method') || undefined,
         tags:             get('tx-tags') ? get('tx-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
         warrantyExpiration: warrantyDateStr ? new Date(warrantyDateStr).getTime() : null,
+        location:         get('tx-location') || undefined,
+        gpsLocation:      get('tx-gps') || undefined,
+        splits:           splits.length > 0 ? splits : null
       };
       if (txType === 'TRANSFER') {
-        const toAccId = get('tx-to-account');
-        if (!toAccId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
-        payload.toAccountId = toAccId;
+        const targetAccountId = get('tx-to-account');
+        if (!targetAccountId) { showFieldError('tx-to-account', 'Destination account is required for transfers.'); return; }
+        payload.targetAccountId = targetAccountId;
+        payload.transferRate = parseFloat(get('tx-rate')) || 1;
       }
       await withLoading(modalConfBtn, async () => {
         const res = await apiWrite('PUT', `/api/transactions/${id}`, payload);
@@ -1916,7 +2063,8 @@
     initTagChipInput('tx-tags', cachedTags, tx.tags || []);
     if (tx.accountId) { const el = document.getElementById('tx-account'); if (el) el.value = tx.accountId; }
     if (tx.categoryId) { const el = document.getElementById('tx-category'); if (el) el.value = tx.categoryId; }
-    if (tx.toAccountId) { const el = document.getElementById('tx-to-account'); if (el) el.value = tx.toAccountId; }
+    if (tx.targetAccountId) { const el = document.getElementById('tx-to-account'); if (el) el.value = tx.targetAccountId; }
+    updateSplitTotal();
   };
 
   window.openTxDetail = async function (id) {
@@ -2520,24 +2668,33 @@
         formField('Currency', `<input type="text" id="pp-currency" value="${esc(cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'}],'EXPENSE','— Select —',false)),
+        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],'EXPENSE','— Select —',false,"document.getElementById('pp-to-account-row').style.display=this.value==='TRANSFER'?'':'none'")),
         formField('Account', buildSelect('pp-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),'','— Select account —',true))
       )}
+      <div id="pp-to-account-row" style="display:none">
+        ${formField('To Account', buildSelect('pp-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),'','— Select destination —',true))}
+      </div>
       ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),'','— None —',true))}
       ${formRow(
         formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],'MONTHLY','— Select —',false,'document.getElementById(\'pp-interval-row\').style.display=this.value===\'ONE_TIME\'?\'none\':\'\'') ),
-        formField('Interval (days/weeks/months)', '<input type="number" id="pp-interval" value="1" min="1" step="1">')
+        formField('Interval', '<input type="number" id="pp-interval" value="1" min="1" step="1">')
       )}
       <div id="pp-interval-row" style="display:none;margin-top:-8px"><small style="color:var(--text-muted);font-size:0.75rem">Number of periods between occurrences</small></div>
       ${formRow(formField('Start Date', '<input type="date" id="pp-start">'),
                 formField('Payment Method', buildSelect('pp-method',[{value:'',label:'— None —'},{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],'','— None —',false))
       )}
+      ${formRow(
+        formField('Payee', `<input type="text" id="pp-payee" placeholder="Optional payee">`),
+        formField('Location', `<input type="text" id="pp-location" placeholder="Optional location">`)
+      )}
+      ${formField('Tags', `<div id="pp-tags-container"></div>`)}
       ${formField('Note (optional)', '<input type="text" id="pp-note" placeholder="Optional note…">')}
       <div class="form-field"><label>Auto-Confirm</label>
         <div class="toggle-wrap"><input type="checkbox" id="pp-auto"><span style="font-size:0.88rem">Automatically confirm when due</span></div>
       </div>`;
     openModal('Add Planned Payment', body, submitAddPlanned, 'Save Payment');
     modalConfBtn.className = 'btn btn-primary';
+    initTagChipInput('pp-tags', cachedTags, []);
     const startEl = document.getElementById('pp-start');
     if (startEl) startEl.value = new Date().toISOString().slice(0,10);
   };
@@ -2556,12 +2713,16 @@
     const method  = get('pp-method');
     const note    = get('pp-note');
     const auto    = document.getElementById('pp-auto')?.checked || false;
+    const payee   = get('pp-payee');
+    const location= get('pp-location');
+    const tags    = get('pp-tags') ? get('pp-tags').split(',').map(t=>t.trim()).filter(Boolean) : [];
+
     clearFieldErrors(modalBody);
     if (!name)                      { showFieldError('pp-name', 'Name is required.'); return; }
     if (isNaN(amount) || amount <= 0) { showFieldError('pp-amount', 'Enter a valid amount.'); return; }
     if (!account) { showFieldError('pp-account', 'Account is required.'); return; }
     await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/planned-payments', {
+      const body = {
         name, amount, currency, transactionType: type,
         accountId: account,
         categoryId: cat || undefined,
@@ -2571,7 +2732,14 @@
         autoConfirm: auto,
         paymentMethod: method || undefined,
         note: note || undefined,
-      });
+        payee: payee || undefined,
+        location: location || undefined,
+        tags
+      };
+      if (type === 'TRANSFER') {
+        body.targetAccountId = get('pp-to-account') || undefined;
+      }
+      const res = await apiWrite('POST', '/api/planned-payments', body);
       if (res.success) { closeModal(); renderPlannedPayments(); showToast('Planned payment created!'); }
       else { showToast('Failed to create: ' + (res.error || ''), 'error'); }
     });
@@ -2582,8 +2750,6 @@
     const resp = await apiFetch(`/api/planned-payments/${encodeURIComponent(id)}`);
     if (!resp.success) { showToast('Could not load planned payment.', 'error'); return; }
     const p = resp.data;
-    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
-      `<option value="${v}">${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
     const body = `
       ${formField('Payment Name', `<input type="text" id="pp-name" value="${esc(p.name)}">`)}
       ${formRow(
@@ -2591,45 +2757,68 @@
         formField('Currency', `<input type="text" id="pp-currency" value="${esc(p.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5" oninput="const p=document.getElementById('pp-amount-pfx');if(p)p.textContent=this.value.toUpperCase()||'—'">`)
       )}
       ${formRow(
-        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'}],p.transactionType||'EXPENSE','— Select —',false)),
+        formField('Type', buildSelect('pp-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],p.transactionType||'EXPENSE','— Select —',false,"document.getElementById('pp-to-account-row').style.display=this.value==='TRANSFER'?'':'none'")),
         formField('Account', buildSelect('pp-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),p.accountId||'','— Select account —',true))
       )}
+      <div id="pp-to-account-row" style="${p.transactionType==='TRANSFER'?'':'display:none'}">
+        ${formField('To Account', buildSelect('pp-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),p.targetAccountId||'','— Select destination —',true))}
+      </div>
       ${formField('Category', buildSelect('pp-category',[{value:'',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),p.categoryId?String(p.categoryId):'','— None —',true))}
       ${formRow(
         formField('Recurrence', buildSelect('pp-recur',[{value:'ONE_TIME',label:'One Time'},{value:'DAILY',label:'Daily'},{value:'WEEKLY',label:'Weekly'},{value:'MONTHLY',label:'Monthly'},{value:'YEARLY',label:'Yearly'}],p.recurrenceType||'MONTHLY','— Select —',false)),
-        formField('Interval', `<input type="number" id="pp-interval" value="1" min="1" step="1">`)
+        formField('Interval', `<input type="number" id="pp-interval" value="${esc(p.recurrenceInterval||1)}" min="1" step="1">`)
       )}
+      ${formRow(
+        formField('Payee', `<input type="text" id="pp-payee" value="${esc(p.payee||'')}" placeholder="Optional payee">`),
+        formField('Location', `<input type="text" id="pp-location" value="${esc(p.location||'')}" placeholder="Optional location">`)
+      )}
+      ${formField('Tags', `<div id="pp-tags-container"></div>`)}
+      ${formField('Note (optional)', `<input type="text" id="pp-note" value="${esc(p.note||'')}" placeholder="Optional note…">`)}
       <div class="form-field"><label>Auto-Confirm</label>
         <div class="toggle-wrap"><input type="checkbox" id="pp-auto" ${p.autoConfirm?'checked':''}><span style="font-size:0.88rem">Automatically confirm when due</span></div>
       </div>`;
     openModal(`Edit Planned Payment — ${esc(p.name)}`, body, async () => {
+      const get = i => { const el = document.getElementById(i); return el ? el.value.trim() : ''; };
       clearFieldErrors(modalBody);
-      const name   = document.getElementById('pp-name')?.value.trim();
-      const amount = parseFloat(document.getElementById('pp-amount')?.value || '0');
-      const currency = document.getElementById('pp-currency')?.value.trim();
-      const type   = document.getElementById('pp-type')?.value;
-      const account= document.getElementById('pp-account')?.value;
-      const cat    = document.getElementById('pp-category')?.value;
-      const recur  = document.getElementById('pp-recur')?.value;
-      const interval = parseInt(document.getElementById('pp-interval')?.value || '1', 10);
+      const name   = get('pp-name');
+      const amount = parseFloat(get('pp-amount') || '0');
+      const currency = get('pp-currency');
+      const type   = get('pp-type');
+      const account= get('pp-account');
+      const cat    = get('pp-category');
+      const recur  = get('pp-recur');
+      const interval = parseInt(get('pp-interval') || '1', 10);
       const auto   = document.getElementById('pp-auto')?.checked || false;
+      const payee  = get('pp-payee');
+      const location = get('pp-location');
+      const tags   = get('pp-tags') ? get('pp-tags').split(',').map(t=>t.trim()).filter(Boolean) : [];
+
       if (!name)                      { showFieldError('pp-name', 'Name is required.'); return; }
       if (isNaN(amount) || amount <= 0) { showFieldError('pp-amount', 'Enter a valid amount.'); return; }
       await withLoading(modalConfBtn, async () => {
-        const res = await apiWrite('PUT', `/api/planned-payments/${encodeURIComponent(id)}`, {
+        const payload = {
           name, amount, currency, transactionType: type,
           accountId: account || undefined,
           categoryId: cat || undefined,
           recurrenceType: recur,
           recurrenceInterval: interval,
           autoConfirm: auto,
-        });
+          payee: payee || undefined,
+          location: location || undefined,
+          tags
+        };
+        if (type === 'TRANSFER') {
+          payload.targetAccountId = get('pp-to-account') || undefined;
+        }
+        const res = await apiWrite('PUT', `/api/planned-payments/${encodeURIComponent(id)}`, payload);
         if (res.success) { closeModal(); renderPlannedPayments(); showToast('Planned payment updated!'); }
         else { showToast('Failed to update: ' + (res.error||''), 'error'); }
       });
     }, 'Save Changes');
+    initTagChipInput('pp-tags', cachedTags, p.tags || []);
     if (p.accountId) { const el = document.getElementById('pp-account'); if (el) el.value = p.accountId; }
     if (p.categoryId) { const el = document.getElementById('pp-category'); if (el) el.value = p.categoryId; }
+    if (p.targetAccountId) { const el = document.getElementById('pp-to-account'); if (el) el.value = p.targetAccountId; }
   };
 
   window.deletePlanned = function (id, name) {
@@ -3017,17 +3206,21 @@
   }
 
   function templateFormBody(t) {
-    const pmOpts = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(v =>
-      `<option value="${v}" ${(t?.paymentMethod||'CASH')===v?'selected':''}>${{CASH:'Cash',CARD:'Card',BANK_TRANSFER:'Bank Transfer',DIGITAL_WALLET:'Digital Wallet',OTHER:'Other'}[v]}</option>`).join('');
     return `
       ${formRow(formField('Template Name', `<input type="text" id="tpl-name" placeholder="e.g. Monthly Rent" value="${esc(t?.name||'')}">`),
                 formField('Amount', `<input type="number" id="tpl-amount" placeholder="0.00" min="0" step="0.01" value="${esc(t?.amount||'')}">`))}
       ${formRow(formField('Currency', `<input type="text" id="tpl-currency" value="${esc(t?.currency||cachedSettings.baseCurrency||'USD')}" maxlength="5">`),
-                formField('Type', buildSelect('tpl-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(t?.transactionType||'EXPENSE'),'— Select —',false)))}
+                formField('Type', buildSelect('tpl-type',[{value:'EXPENSE',label:'Expense'},{value:'INCOME',label:'Income'},{value:'TRANSFER',label:'Transfer'}],(t?.transactionType||'EXPENSE'),'— Select —',false,"document.getElementById('tpl-to-account-row').style.display=this.value==='TRANSFER'?'':'none'")))}
+      <div id="tpl-to-account-row" style="${(t?.transactionType||'EXPENSE')==='TRANSFER'?'':'display:none'}">
+        ${formField('To Account', buildSelect('tpl-to-account',cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`})),t?.targetAccountId||'','— Select destination —',true))}
+      </div>
       ${formField('Account', buildSelect('tpl-account',[{value:'',label:'— None —'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),t?.accountId||'','— None —',true))}
       ${formField('Category', buildSelect('tpl-category',[{value:'0',label:'— None —'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),t?.categoryId?String(t.categoryId):'0','— None —',true))}
-      ${formRow(formField('Payee', `<input type="text" id="tpl-payee" placeholder="Optional" value="${esc(t?.payee||'')}">`),
-                formField('Payment Method', buildSelect('tpl-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(t?.paymentMethod||'CASH'),'— Select —',false)))}
+      ${formRow(
+        formField('Payee', `<input type="text" id="tpl-payee" placeholder="Optional payee" value="${esc(t?.payee||'')}">`),
+        formField('Location', `<input type="text" id="tpl-location" placeholder="Optional location" value="${esc(t?.location||'')}">`)
+      )}
+      ${formField('Payment Method', buildSelect('tpl-method',[{value:'CASH',label:'Cash'},{value:'CARD',label:'Card'},{value:'BANK_TRANSFER',label:'Bank Transfer'},{value:'DIGITAL_WALLET',label:'Digital Wallet'},{value:'OTHER',label:'Other'}],(t?.paymentMethod||'CASH'),'— Select —',false))}
       ${formField('Status', `<div class="chip-group">
         ${['CLEARED','UNCLEARED','RECONCILE'].map(s=>`<label class="chip-check ${(t?.transactionStatus||'CLEARED')===s?'active':''}"><input type="radio" name="tpl-status" value="${s}" ${(t?.transactionStatus||'CLEARED')===s?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>${prettyEnum(s)}</span></label>`).join('')}
       </div>`)}
@@ -3047,20 +3240,25 @@
     clearFieldErrors(modalBody);
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const name = get('tpl-name');
+    const txType = get('tpl-type');
     if (!name) { showFieldError('tpl-name', 'Template name is required.'); return; }
     const payload = {
       name,
       amount:          parseFloat(get('tpl-amount')) || 0,
       currency:        get('tpl-currency') || cachedSettings.baseCurrency,
-      transactionType: get('tpl-type') || 'EXPENSE',
+      transactionType: txType,
       accountId:       get('tpl-account') || null,
       categoryId:      parseInt(get('tpl-category')) || 0,
       payee:           get('tpl-payee') || null,
+      location:        get('tpl-location') || null,
       paymentMethod:   get('tpl-method') || null,
       tags:            get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
       note:            get('tpl-note') || null,
       transactionStatus: document.querySelector('input[name="tpl-status"]:checked')?.value || 'CLEARED',
     };
+    if (txType === 'TRANSFER') {
+      payload.targetAccountId = get('tpl-to-account') || null;
+    }
     await withLoading(modalConfBtn, async () => {
       const res = await apiWrite('POST', '/api/templates', payload);
       if (res.success) { closeModal(); renderTemplates(); showToast('Template saved!'); }
@@ -3075,19 +3273,24 @@
     const body = templateFormBody(t);
     openModal('Edit Template', body, async () => {
       const get = i => { const el = document.getElementById(i); return el ? el.value.trim() : ''; };
+      const txType = get('tpl-type');
       const payload = {
         name:            get('tpl-name') || undefined,
         amount:          parseFloat(get('tpl-amount')) || undefined,
         currency:        get('tpl-currency') || undefined,
-        transactionType: get('tpl-type') || undefined,
+        transactionType: txType || undefined,
         accountId:       get('tpl-account') || undefined,
         categoryId:      parseInt(get('tpl-category')) || undefined,
         payee:           get('tpl-payee') || undefined,
+        location:        get('tpl-location') || undefined,
         paymentMethod:    get('tpl-method') || undefined,
         tags:             get('tpl-tags') ? get('tpl-tags').split(',').map(t=>t.trim()).filter(Boolean) : [],
         note:             get('tpl-note') || undefined,
         transactionStatus: document.querySelector('input[name="tpl-status"]:checked')?.value || 'CLEARED',
       };
+      if (txType === 'TRANSFER') {
+        payload.targetAccountId = get('tpl-to-account') || undefined;
+      }
       await withLoading(modalConfBtn, async () => {
         const res = await apiWrite('PUT', `/api/templates/${id}`, payload);
         if (res.success) { closeModal(); renderTemplates(); showToast('Template updated!'); }
@@ -3097,6 +3300,7 @@
     initTagChipInput('tpl-tags', cachedTags, t.tags || []);
     if (t.accountId) { const el = document.getElementById('tpl-account'); if (el) el.value = t.accountId; }
     if (t.categoryId) { const el = document.getElementById('tpl-category'); if (el) el.value = t.categoryId; }
+    if (t.targetAccountId) { const el = document.getElementById('tpl-to-account'); if (el) el.value = t.targetAccountId; }
   };
 
   window.useTemplate = async function (id) {

@@ -15,6 +15,8 @@ data class TransactionDto(
     val accountName: String,
     val targetAccountId: String? = null,
     val targetAccountName: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: Double = 1.0,
     val date: Long,
     val note: String? = null,
     val payee: String? = null,
@@ -22,5 +24,6 @@ data class TransactionDto(
     val status: String = "CLEARED",
     val paymentMethod: String? = null,
     val warrantyExpiration: Long? = null,
-    val location: String? = null
+    val location: String? = null,
+    val linkedTransactionIds: List<Long> = emptyList()
 )

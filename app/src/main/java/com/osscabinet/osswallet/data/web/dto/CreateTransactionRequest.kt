@@ -18,5 +18,12 @@ data class CreateTransactionRequest(
     val status: String = "CLEARED",
     val gpsLocation: String? = null,
     val location: String? = null,
-    val warrantyExpiration: Long? = null
+    val warrantyExpiration: Long? = null,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: Double = 1.0,
+    val linkedTransactionIds: List<Long> = emptyList(),
+    val splits: List<TransactionSplitDto> = emptyList()
 )
+
+

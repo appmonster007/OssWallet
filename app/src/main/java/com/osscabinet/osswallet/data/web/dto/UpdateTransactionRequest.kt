@@ -18,5 +18,10 @@ data class UpdateTransactionRequest(
     val status: String? = null,
     val gpsLocation: String? = null,
     val location: String? = null,
-    val warrantyExpiration: Long? = null
+    val warrantyExpiration: Long? = null,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: Double? = null,
+    val linkedTransactionIds: List<Long>? = null,
+    val splits: List<TransactionSplitDto>? = null
 )

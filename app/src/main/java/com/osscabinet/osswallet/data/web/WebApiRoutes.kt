@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.data.web.dto.SettingsDto
 import com.osscabinet.ossWallet.data.web.dto.TagDto
 import com.osscabinet.ossWallet.data.web.dto.TemplateDto
 import com.osscabinet.ossWallet.data.web.dto.TransactionDto
+import com.osscabinet.ossWallet.data.web.dto.TransactionSplitDto
 import com.osscabinet.ossWallet.data.web.dto.UpdateAccountRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateBudgetRequest
 import com.osscabinet.ossWallet.data.web.dto.UpdateCategoryRequest
@@ -69,8 +70,10 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
@@ -92,6 +95,8 @@ import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -127,7 +132,9 @@ class WebApiRoutes(
     private val filterRepository: FilterRepository,
     private val cardRepository: CardRepository,
     private val cardComputerRegistry: CardComputerRegistry,
-    private val templateRepository: TemplateRepository
+    private val templateRepository: TemplateRepository,
+    private val transactionManager: TransactionManager,
+    private val transactionUseCases: TransactionUseCases
 ) {
     fun Application.installRoutes() {
         routing {
@@ -207,12 +214,12 @@ class WebApiRoutes(
                             )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -311,12 +318,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -327,60 +334,75 @@ class WebApiRoutes(
                     try {
                         val profileId = settingsRepository.currentProfileId.first()
                         val req = call.receive<CreateTransactionRequest>()
-                        val tx = Transaction(
+
+                        val txType = TransactionType.entries.find {
+                            it.name.equals(req.transactionType, ignoreCase = true)
+                        } ?: TransactionType.EXPENSE
+
+                        val domainRequest = TransactionRequest(
                             name = req.name,
                             amount = BigDecimal.valueOf(req.amount),
                             timestamp = req.timestamp,
                             currency = req.currency,
-                            transactionType = TransactionType.entries.find {
-                                it.name.equals(
-                                    req.transactionType,
-                                    ignoreCase = true
-                                )
-                            }
-                                ?: TransactionType.EXPENSE,
+                            transactionType = txType,
                             accountId = req.accountId,
                             categoryId = req.categoryId,
                             tags = req.tags.toSet(),
                             paymentMethod = PaymentMethod.entries.find {
-                                it.name.equals(
-                                    req.paymentMethod,
-                                    ignoreCase = true
-                                )
-                            }
-                                ?: PaymentMethod.CASH,
+                                it.name.equals(req.paymentMethod, ignoreCase = true)
+                            } ?: PaymentMethod.CASH,
                             payee = req.payee,
                             note = req.note,
                             status = TransactionStatus.entries.find {
-                                it.name.equals(
-                                    req.status,
-                                    ignoreCase = true
-                                )
-                            }
-                                ?: TransactionStatus.CLEARED,
+                                it.name.equals(req.status, ignoreCase = true)
+                            } ?: TransactionStatus.CLEARED,
                             gpsLocation = req.gpsLocation,
                             location = req.location,
-                            warrantyExpiration = req.warrantyExpiration
+                            warrantyExpiration = req.warrantyExpiration,
+                            isTransfer = txType == TransactionType.TRANSFER,
+                            targetAccountId = req.targetAccountId,
+                            targetCurrency = req.targetCurrency,
+                            transferRate = BigDecimal.valueOf(req.transferRate)
                         )
-                        val newId = transactionRepository.insertTransaction(tx, profileId)
-                        val categoryMap =
-                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap =
-                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        val created = tx.copy(id = newId)
-                        val dto = created.toDto(categoryMap, accountMap)
-                        call.respond(
-                            HttpStatusCode.Created,
-                            ApiResponse(success = true, data = dto)
-                        )
-                    } catch (e: Exception) {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ApiResponse<Unit>(
-                                success = false,
-                                error = e.message ?: "Internal error"
+
+                        val allCategories = categoryRepository.getAllCategoriesSync()
+
+                        val newId = if (req.splits.isNotEmpty()) {
+                            transactionManager.handleSaveSplitTransactions(
+                                existingTransactionId = null,
+                                splits = req.splits.map {
+                                    TransactionSplit(
+                                        categoryId = it.categoryId,
+                                        amount = it.amount.toString(),
+                                        note = it.note
+                                    )
+                                },
+                                baseRequest = domainRequest,
+                                profileId = profileId,
+                                categoryNameLookup = { catId ->
+                                    allCategories.find { it.id == catId }?.name ?: "Split"
+                                }
                             )
-                        )
+                        } else {
+                            transactionManager.handleSaveTransaction(
+                                existingTransaction = null,
+                                request = domainRequest,
+                                profileId = profileId,
+                                linkedTransactionIds = req.linkedTransactionIds
+                            )
+                        }
+
+                        val created = transactionUseCases.getTransactionById(newId)
+                        val categoryMap = allCategories.associateBy { it.id }
+                        val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
+
+                        if (created != null) {
+                            call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = created.toDto(categoryMap, accountMap)))
+                        } else {
+                            call.respond(HttpStatusCode.Created, ApiResponse(success = true, data = mapOf("id" to newId)))
+                        }
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))
                     }
                 }
 
@@ -394,12 +416,12 @@ class WebApiRoutes(
                             )
                         transactionRepository.deleteTransaction(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -454,12 +476,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -512,12 +534,12 @@ class WebApiRoutes(
                             )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -561,12 +583,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -582,12 +604,12 @@ class WebApiRoutes(
                             )
                         budgetRepository.delete(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -621,12 +643,12 @@ class WebApiRoutes(
                             )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -661,12 +683,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -682,12 +704,12 @@ class WebApiRoutes(
                             )
                         loanRepository.deleteLoan(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -709,12 +731,12 @@ class WebApiRoutes(
                             payment.toDto(now, categoryMap, accountMap)
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -738,12 +760,12 @@ class WebApiRoutes(
                             item.plannedPayment.toDto(now, categoryMap, accountMap)
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -765,12 +787,12 @@ class WebApiRoutes(
                             payment.toDto(now, categoryMap, accountMap)
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -813,6 +835,7 @@ class WebApiRoutes(
                                 ?: TransactionType.EXPENSE,
                             categoryId = req.categoryId,
                             accountId = req.accountId,
+                            targetAccountId = req.targetAccountId,
                             targetCurrency = req.targetCurrency,
                             transferRate = BigDecimal.valueOf(req.transferRate),
                             note = req.note,
@@ -840,12 +863,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -861,12 +884,12 @@ class WebApiRoutes(
                             )
                         plannedPaymentRepository.delete(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -915,12 +938,12 @@ class WebApiRoutes(
                         }
                         plannedPaymentRepository.update(updatedPayment)
                         call.respond(ApiResponse(success = true, data = mapOf("confirmed" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -948,12 +971,12 @@ class WebApiRoutes(
                         }
                         plannedPaymentRepository.update(updatedPayment)
                         call.respond(ApiResponse(success = true, data = mapOf("skipped" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -966,12 +989,12 @@ class WebApiRoutes(
                         val categories = categoryRepository.getAllCategoriesSync()
                         val dtos = categories.map { it.toDto() }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1002,12 +1025,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = category.toDto())
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1029,12 +1052,12 @@ class WebApiRoutes(
                                 )
                         categoryRepository.deleteCategory(category)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1058,12 +1081,12 @@ class WebApiRoutes(
                             )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1085,12 +1108,12 @@ class WebApiRoutes(
                             )
                         tagRepository.deleteTagAndRemoveFromTransactions(tag)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to name)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1141,12 +1164,12 @@ class WebApiRoutes(
                         }.sortedByDescending { it.amount }
 
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1228,12 +1251,12 @@ class WebApiRoutes(
                         }
 
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1300,9 +1323,7 @@ class WebApiRoutes(
                                 renderData.toPayloadDto(
                                     now,
                                     categoryMap,
-                                    accountMap,
-                                    precision,
-                                    baseCurrency
+                                    accountMap
                                 )
                             }.getOrElse { e ->
                                 CardPayloadDto.Error(e.message ?: "Computation failed")
@@ -1319,12 +1340,12 @@ class WebApiRoutes(
                         }
 
                         call.respond(ApiResponse(success = true, data = cardResults))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1355,7 +1376,7 @@ class WebApiRoutes(
                         if (req.initialBalance != null && req.initialBalance != 0.0) {
                             val initTx = Transaction(
                                 name = "Initial Balance",
-                                amount = BigDecimal.valueOf(Math.abs(req.initialBalance)),
+                                amount = BigDecimal.valueOf(kotlin.math.abs(req.initialBalance)),
                                 currency = account.currencyCode,
                                 transactionType = if (req.initialBalance >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
                                 accountId = account.id,
@@ -1385,12 +1406,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1479,12 +1500,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1500,12 +1521,12 @@ class WebApiRoutes(
                             )
                         accountRepository.deleteAccount(id)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1531,12 +1552,12 @@ class WebApiRoutes(
                         val accountMap =
                             accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
                         call.respond(ApiResponse(success = true, data = tx.toDto(categoryMap, accountMap)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1551,58 +1572,76 @@ class WebApiRoutes(
                                 HttpStatusCode.BadRequest,
                                 ApiResponse<Unit>(success = false, error = "Invalid id")
                             )
-                        val old = transactionRepository.getTransactionById(id)
+                        val old = transactionUseCases.getTransactionById(id)
                             ?: return@put call.respond(
                                 HttpStatusCode.NotFound,
                                 ApiResponse<Unit>(success = false, error = "Transaction not found")
                             )
                         val req = call.receive<UpdateTransactionRequest>()
-                        val updated = old.copy(
+
+                        val txType = req.transactionType?.let {
+                            TransactionType.entries.find { t -> t.name.equals(it, ignoreCase = true) }
+                        } ?: old.transactionType
+
+                        val domainRequest = TransactionRequest(
                             name = req.name ?: old.name,
                             amount = req.amount?.let { BigDecimal.valueOf(it) } ?: old.amount,
                             timestamp = req.timestamp ?: old.timestamp,
                             currency = req.currency ?: old.currency,
-                            transactionType = req.transactionType?.let { t ->
-                                TransactionType.entries.find {
-                                    it.name.equals(
-                                        t,
-                                        ignoreCase = true
-                                    )
-                                } ?: old.transactionType
-                            } ?: old.transactionType,
+                            transactionType = txType,
                             accountId = req.accountId ?: old.accountId,
                             categoryId = req.categoryId ?: old.categoryId,
                             tags = req.tags?.toSet() ?: old.tags,
-                            paymentMethod = req.paymentMethod?.let { m ->
-                                PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
-                                    ?: old.paymentMethod
+                            paymentMethod = req.paymentMethod?.let {
+                                PaymentMethod.entries.find { p -> p.name.equals(it, ignoreCase = true) }
                             } ?: old.paymentMethod,
                             payee = req.payee ?: old.payee,
                             note = req.note ?: old.note,
-                            status = req.status?.let { s ->
-                                TransactionStatus.entries.find {
-                                    it.name.equals(
-                                        s,
-                                        ignoreCase = true
-                                    )
-                                } ?: old.status
+                            status = req.status?.let {
+                                TransactionStatus.entries.find { s -> s.name.equals(it, ignoreCase = true) }
                             } ?: old.status,
                             gpsLocation = req.gpsLocation ?: old.gpsLocation,
                             location = req.location ?: old.location,
-                            warrantyExpiration = req.warrantyExpiration ?: old.warrantyExpiration
+                            warrantyExpiration = req.warrantyExpiration ?: old.warrantyExpiration,
+                            isTransfer = txType == TransactionType.TRANSFER,
+                            targetAccountId = req.targetAccountId ?: old.targetAccountId,
+                            targetCurrency = req.targetCurrency ?: old.targetCurrency,
+                            transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: old.transferRate
                         )
-                        transactionRepository.updateTransaction(old, updated, profileId)
-                        val categoryMap =
-                            categoryRepository.getAllCategoriesSync().associateBy { it.id }
-                        val accountMap =
-                            accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
-                        call.respond(ApiResponse(success = true, data = updated.toDto(categoryMap, accountMap)))
-                    } catch (e: Exception) {
+
+                        if (!req.splits.isNullOrEmpty()) {
+                            val allCategories = categoryRepository.getAllCategoriesSync()
+                            transactionManager.handleSaveSplitTransactions(
+                                existingTransactionId = id,
+                                splits = req.splits.map {
+                                    TransactionSplit(
+                                        categoryId = it.categoryId,
+                                        amount = it.amount.toString(),
+                                        note = it.note
+                                    )
+                                },
+                                baseRequest = domainRequest,
+                                profileId = profileId,
+                                categoryNameLookup = { catId ->
+                                    allCategories.find { it.id == catId }?.name ?: "Split"
+                                }
+                            )
+                        } else {
+                            transactionManager.handleSaveTransaction(
+                                existingTransaction = old,
+                                request = domainRequest,
+                                profileId = profileId,
+                                linkedTransactionIds = req.linkedTransactionIds ?: emptyList()
+                            )
+                        }
+
+                        call.respond(HttpStatusCode.OK, ApiResponse(success = true, data = "Updated"))
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1663,12 +1702,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1722,12 +1761,12 @@ class WebApiRoutes(
                         )
                         budgetRepository.update(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1769,12 +1808,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1814,12 +1853,12 @@ class WebApiRoutes(
                         )
                         loanRepository.updateLoan(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1841,12 +1880,12 @@ class WebApiRoutes(
                             )
                         }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1877,12 +1916,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1914,12 +1953,12 @@ class WebApiRoutes(
                                 data = payment.toDto(now, categoryMap, accountMap)
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -1978,6 +2017,7 @@ class WebApiRoutes(
                             } ?: existing.transactionType,
                             categoryId = req.categoryId ?: existing.categoryId,
                             accountId = req.accountId ?: existing.accountId,
+                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
                             transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
                                 ?: existing.transferRate,
@@ -2004,12 +2044,12 @@ class WebApiRoutes(
                         )
                         plannedPaymentRepository.update(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2043,12 +2083,12 @@ class WebApiRoutes(
                         )
                         categoryRepository.upsertCategory(updated)
                         call.respond(ApiResponse(success = true, data = updated.toDto()))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2080,12 +2120,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2121,12 +2161,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2139,12 +2179,12 @@ class WebApiRoutes(
                         val filters = filterRepository.getAllFilters().first()
                         val dtos = filters.map { it.toDto() }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2164,12 +2204,12 @@ class WebApiRoutes(
                                 ApiResponse<Unit>(success = false, error = "Filter not found")
                             )
                         call.respond(ApiResponse(success = true, data = filter.toDto()))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2186,12 +2226,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2215,12 +2255,12 @@ class WebApiRoutes(
                         val updated = Filter(id = id, name = req.name, filter = transactionFilter)
                         filterRepository.updateFilter(updated)
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2241,12 +2281,12 @@ class WebApiRoutes(
                             )
                         filterRepository.deleteFilter(filter)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2268,12 +2308,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2312,12 +2352,12 @@ class WebApiRoutes(
                                 )
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2330,12 +2370,12 @@ class WebApiRoutes(
                         val templates = templateRepository.getAllTemplatesSync()
                         val dtos = templates.map { it.toTemplateDto() }
                         call.respond(ApiResponse(success = true, data = dtos))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2359,6 +2399,7 @@ class WebApiRoutes(
                                 ?: TransactionType.EXPENSE,
                             currency = req.currency,
                             accountId = req.accountId,
+                            targetAccountId = req.targetAccountId,
                             targetCurrency = req.targetCurrency,
                             transferRate = BigDecimal.valueOf(req.transferRate),
                             note = req.note,
@@ -2388,12 +2429,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2413,12 +2454,12 @@ class WebApiRoutes(
                                 ApiResponse<Unit>(success = false, error = "Template not found")
                             )
                         call.respond(ApiResponse(success = true, data = template.toTemplateDto()))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2452,6 +2493,7 @@ class WebApiRoutes(
                             } ?: existing.transactionType,
                             currency = req.currency ?: existing.currency,
                             accountId = req.accountId ?: existing.accountId,
+                            targetAccountId = req.targetAccountId ?: existing.targetAccountId,
                             targetCurrency = req.targetCurrency ?: existing.targetCurrency,
                             transferRate = req.transferRate?.let { BigDecimal.valueOf(it) }
                                 ?: existing.transferRate,
@@ -2480,12 +2522,12 @@ class WebApiRoutes(
                         )
                         templateRepository.updateTemplate(updated)
                         call.respond(ApiResponse(success = true, data = updated.toTemplateDto()))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2506,12 +2548,12 @@ class WebApiRoutes(
                             )
                         templateRepository.deleteTemplate(template)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2536,19 +2578,18 @@ class WebApiRoutes(
                                 )
                             )
                         val currentConfig = cardRepository.dashboardCardsConfig.first()
-                        val existingCount = currentConfig.cards.size
-                        val newCard = cardType.toDefaultCardConfig(existingCount)
+                        val newCard = cardType.toDefaultCardConfig()
                         cardRepository.addDashboardCard(newCard)
                         call.respond(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("cardId" to newCard.cardId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2564,12 +2605,12 @@ class WebApiRoutes(
                             )
                         cardRepository.removeDashboardCard(cardId)
                         call.respond(ApiResponse(success = true, data = mapOf("deleted" to cardId)))
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2642,7 +2683,6 @@ class WebApiRoutes(
                                 is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> config.copy(filter = newFilter)
                                 is com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig -> config.copy(filter = newFilter)
                                 is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> config.copy(filter = newFilter)
-                                else -> config
                             }
                         }
                         call.respond(ApiResponse(success = true, data = mapOf("updated" to cardId)))
@@ -2661,7 +2701,7 @@ class WebApiRoutes(
                         val currentConfig = cardRepository.dashboardCardsConfig.first()
                         val cardMap = currentConfig.cards.associateBy { it.cardId }
                         val reordered = req.cardIds.mapIndexedNotNull { index, cardId ->
-                            cardMap[cardId]?.let { it.withOrder(index) }
+                            cardMap[cardId]?.withOrder(index)
                         }
                         cardRepository.reorderDashboardCards(reordered)
                         call.respond(
@@ -2670,12 +2710,12 @@ class WebApiRoutes(
                                 data = mapOf("reordered" to reordered.size)
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2702,12 +2742,12 @@ class WebApiRoutes(
                             HttpStatusCode.Created,
                             ApiResponse(success = true, data = mapOf("id" to newId))
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2729,12 +2769,12 @@ class WebApiRoutes(
                                 data = mapOf("reordered" to reordered.size)
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2756,12 +2796,12 @@ class WebApiRoutes(
                                 data = mapOf("deleted" to paymentId)
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2774,8 +2814,8 @@ class WebApiRoutes(
                         val req = call.receive<ReorderCategoriesRequest>()
                         val allCategories = categoryRepository.getAllCategoriesSync()
                         val categoryMap = allCategories.associateBy { it.id }
-                        req.categoryIds.forEachIndexed { index, catId ->
-                            val cat = categoryMap[catId] ?: return@forEachIndexed
+                        req.categoryIds.forEach { catId ->
+                            val cat = categoryMap[catId] ?: return@forEach
                             categoryRepository.upsertCategory(cat)
                         }
                         call.respond(
@@ -2784,12 +2824,12 @@ class WebApiRoutes(
                                 data = mapOf("reordered" to req.categoryIds.size)
                             )
                         )
-                    } catch (e: Exception) {
+                    } catch (Exception: Exception) {
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ApiResponse<Unit>(
                                 success = false,
-                                error = e.message ?: "Internal error"
+                                error = "Internal error"
                             )
                         )
                     }
@@ -2833,32 +2873,6 @@ class WebApiRoutes(
         iconName = iconName,
         isDefault = isDefault
     )
-
-    private fun buildMonthlyCashFlowPoints(transactions: List<Transaction>): List<CashFlowPointDto> {
-        val bucketMap = linkedMapOf<String, Triple<Long, Double, Double>>()
-        transactions.sortedBy { it.timestamp }.forEach { tx ->
-            val cal = Calendar.getInstance().also { it.timeInMillis = tx.timestamp }
-            val year = cal.get(Calendar.YEAR)
-            val month = cal.get(Calendar.MONTH) + 1
-            val label = "$year-${month.toString().padStart(2, '0')}"
-            val current = bucketMap.getOrDefault(label, Triple(tx.timestamp, 0.0, 0.0))
-            bucketMap[label] = when (tx.transactionType) {
-                TransactionType.INCOME -> current.copy(second = current.second + tx.amount.toDouble())
-                TransactionType.EXPENSE -> current.copy(third = current.third + tx.amount.toDouble())
-                else -> current
-            }
-        }
-        return bucketMap.map { (label, triple) ->
-            val (epoch, income, expense) = triple
-            CashFlowPointDto(
-                label = label,
-                epochMillis = epoch,
-                income = income,
-                expense = expense,
-                net = income - expense
-            )
-        }
-    }
 
     private suspend fun RoutingContext.authenticate(manager: AuthSessionManager): Boolean {
         val authHeader = call.request.headers["Authorization"] ?: run {
@@ -2907,9 +2921,7 @@ class WebApiRoutes(
     private fun CardRenderData.toPayloadDto(
         now: Long,
         categoryMap: Map<Long, Category>,
-        accountMap: Map<String, Account>,
-        precision: Int,
-        baseCurrency: String
+        accountMap: Map<String, Account>
     ): CardPayloadDto = when (this) {
         is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
             netWorth = currentMetrics.netWorth.toDouble(),
@@ -3008,25 +3020,7 @@ class WebApiRoutes(
             val txList = listState.groups.flatMap { it.transactions }
             CardPayloadDto.RecentActivities(
                 transactions = txList.take(20).map { uiModel ->
-                    val tx = uiModel.item.transaction
-                    TransactionDto(
-                        id = tx.id, title = tx.name,
-                        amount = tx.amount.toDouble(),
-                        currency = tx.currency,
-                        type = tx.transactionType.name,
-                        categoryId = tx.categoryId,
-                        categoryName = uiModel.categoryName.takeIf { it.isNotBlank() },
-                        accountId = tx.accountId,
-                        accountName = uiModel.accountName,
-                        date = tx.timestamp,
-                        note = tx.note.takeIf { it.isNotBlank() },
-                        payee = tx.payee.takeIf { it.isNotBlank() },
-                        tags = tx.tags.toList(),
-                        status = tx.status.name,
-                        paymentMethod = tx.paymentMethod?.name,
-                        warrantyExpiration = tx.warrantyExpiration,
-                        location = tx.location,
-                    )
+                    uiModel.item.transaction.toDto(categoryMap, accountMap)
                 },
                 total = listState.groups.sumOf { it.transactions.size }
             )
@@ -3254,7 +3248,7 @@ class WebApiRoutes(
         displayOrder = displayOrder
     )
 
-    private fun CardType.toDefaultCardConfig(order: Int): CardConfig {
+    private fun CardType.toDefaultCardConfig(): CardConfig {
         val cardId = "${serialName}_${System.currentTimeMillis()}"
         return CardConfig.createDefault(
             type = this,
@@ -3293,10 +3287,10 @@ class WebApiRoutes(
     }
 }
 
-private fun com.osscabinet.ossWallet.domain.model.Transaction.toDto(
-    categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
-    accountMap: Map<String, com.osscabinet.ossWallet.domain.model.Account>
-) = com.osscabinet.ossWallet.data.web.dto.TransactionDto(
+private fun Transaction.toDto(
+    categoryMap: Map<Long, Category>,
+    accountMap: Map<String, Account>
+) = TransactionDto(
     id = id,
     title = name,
     amount = amount.toDouble(),
@@ -3306,6 +3300,10 @@ private fun com.osscabinet.ossWallet.domain.model.Transaction.toDto(
     categoryName = categoryMap[categoryId]?.name,
     accountId = accountId,
     accountName = accountMap[accountId]?.name ?: "",
+    targetAccountId = targetAccountId,
+    targetAccountName = accountMap[targetAccountId]?.name,
+    targetCurrency = targetCurrency,
+    transferRate = transferRate.toDouble(),
     date = timestamp,
     note = note.takeIf { it.isNotBlank() },
     payee = payee.takeIf { it.isNotBlank() },
@@ -3313,5 +3311,6 @@ private fun com.osscabinet.ossWallet.domain.model.Transaction.toDto(
     status = status.name,
     paymentMethod = paymentMethod?.name,
     warrantyExpiration = warrantyExpiration,
-    location = location
+    location = location,
+    linkedTransactionIds = emptyList() // Links are typically fetched separately or hydrated if needed
 )

@@ -586,7 +586,8 @@ fun DynamicAccountDetailCards(
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
             displayCurrency = state.account.currencyCode,
-            filter = accountScopeFilter
+            filter = accountScopeFilter,
+            screenContext = ScreenContext.ACCOUNT_DETAIL
             // TODO: add budgets/loans/plannedPayments when AccountDetailViewModel fetches them
         )
     }
@@ -621,7 +622,8 @@ fun DynamicAccountDetailCards(
             ),
             callbacks = sharedCallbacks,
             baseFilter = accountScopeFilter,
-            screenRules = CardFilterRules.ACCOUNT_LOCKED
+            screenRules = CardFilterRules.ACCOUNT_LOCKED,
+            disableFilterSheet = true
         )
     }
 

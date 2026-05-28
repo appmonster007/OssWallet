@@ -9,7 +9,7 @@ import com.osscabinet.ossWallet.ui.navigation.OpenInWebRoute
 import com.osscabinet.ossWallet.ui.navigation.PopEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.PopExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.SettingsCurrencyRoute
-import com.osscabinet.ossWallet.ui.navigation.SettingsDataRoute
+import com.osscabinet.ossWallet.ui.navigation.SettingsDataManagementRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsDisplayRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsSecurityRoute
@@ -26,7 +26,7 @@ import com.osscabinet.ossWallet.ui.navigation.TemplateListRoute
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencySettingsScreen
-import com.osscabinet.ossWallet.ui.screens.settings.DataSettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.DataManagementScreen
 import com.osscabinet.ossWallet.ui.screens.settings.DisplaySettingsScreen
 import com.osscabinet.ossWallet.ui.screens.settings.SecuritySettingsScreen
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
@@ -48,8 +48,16 @@ fun NavGraphBuilder.settingsGraph(
             viewModel = vms.settingsViewModel,
             onDisplayClick = { navController.navigate(SettingsDisplayRoute) },
             onCurrencyClick = { navController.navigate(SettingsCurrencyRoute) },
-            onDataClick = { navController.navigate(SettingsDataRoute) },
+            onAccountsClick = { navController.navigate(AccountListRoute) },
+            onCategoriesClick = { navController.navigate(CategoryListRoute) },
+            onTagsClick = { navController.navigate(TagListRoute) },
+            onTemplatesClick = { navController.navigate(TemplateListRoute) },
+            onSmartSuggestionsClick = { navController.navigate(SmartSuggestionsRoute) },
+            onFiltersClick = { navController.navigate(FilterListRoute) },
             onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
+            onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
+            onAboutClick = { /* Maybe navigate to about or just toast */ },
+            onDeleteAllClick = { navController.navigate(SettingsDataManagementRoute) }, // Or directly to a specific action
             onBackClick = { navController.popBackStack() }
         )
     }
@@ -79,23 +87,6 @@ fun NavGraphBuilder.settingsGraph(
         )
     }
 
-    composable<SettingsDataRoute>(
-        enterTransition = { EnterTransitionSpec },
-        exitTransition = { ExitTransitionSpec },
-        popEnterTransition = { PopEnterTransitionSpec },
-        popExitTransition = { PopExitTransitionSpec }
-    ) {
-        DataSettingsScreen(
-            onManageAccountsClick = { navController.navigate(AccountListRoute) },
-            onManageTagsClick = { navController.navigate(TagListRoute) },
-            onManageCategoriesClick = { navController.navigate(CategoryListRoute) },
-            onTemplatesClick = { navController.navigate(TemplateListRoute) },
-            onManageFiltersClick = { navController.navigate(FilterListRoute) },
-            onSmartSuggestionsClick = { navController.navigate(SmartSuggestionsRoute) },
-            onBackClick = { navController.popBackStack() }
-        )
-    }
-
     composable<SettingsSecurityRoute>(
         enterTransition = { EnterTransitionSpec },
         exitTransition = { ExitTransitionSpec },
@@ -105,6 +96,18 @@ fun NavGraphBuilder.settingsGraph(
         SecuritySettingsScreen(
             viewModel = vms.settingsViewModel,
             onOpenInWebClick = { navController.navigate(OpenInWebRoute) },
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
+    composable<SettingsDataManagementRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        DataManagementScreen(
+            viewModel = vms.settingsViewModel,
             onBackClick = { navController.popBackStack() }
         )
     }

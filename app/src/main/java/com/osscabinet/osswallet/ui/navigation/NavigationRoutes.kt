@@ -120,10 +120,10 @@ data object SettingsDisplayRoute
 data object SettingsCurrencyRoute
 
 @Serializable
-data object SettingsDataRoute
+data object SettingsSecurityRoute
 
 @Serializable
-data object SettingsSecurityRoute
+data object SettingsDataManagementRoute
 
 @Serializable
 data object ShortlistedCurrenciesRoute

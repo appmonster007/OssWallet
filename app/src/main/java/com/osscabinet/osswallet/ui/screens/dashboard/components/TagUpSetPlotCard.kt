@@ -45,6 +45,8 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import androidx.compose.foundation.layout.Spacer
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
@@ -139,6 +141,13 @@ fun TagUpSetPlotCard(
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
+            MetricToggleRow(
+                selectedMetric = config.selectedMetric,
+                onMetricChange = { metric -> callbacks.onUpdate(config.copy(selectedMetric = metric)) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             if (uiSets.isNotEmpty()) {
                 AeonUpSetPlot(
                     data = AeonUpSetData(uiSets, uiIntersections),
@@ -219,7 +228,7 @@ fun TagUpSetPlotCard(
                                 expenseByCurrency = intersection.expenseByCurrency,
                                 incomeBase = intersection.income,
                                 expenseBase = intersection.expense,
-                                netBase = intersection.value,
+                                netBase = intersection.income.subtract(intersection.expense),
                                 baseCurrency = renderData.baseCurrency,
                                 labelColumnWidth = 32.dp,
                                 showCurrencyBreakdown = true
@@ -241,6 +250,29 @@ fun TagUpSetPlotCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MetricToggleRow(
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit
+) {
+    val options = ChartMetric.entries
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, metric ->
+            SegmentedButton(
+                selected = selectedMetric == metric,
+                onClick = { onMetricChange(metric) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = metric.name,
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                    )
+                }
+            )
         }
     }
 }

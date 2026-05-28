@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
@@ -106,21 +107,54 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.CategoryPieChart -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
+            val selectedMetric = renderData.config.selectedMetric
 
-            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData =
-                CategoryPieChartData(
+            val globalTotalAbs = when (selectedMetric) {
+                ChartMetric.INCOME -> renderData.incomeTotal.abs()
+                ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
+                ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
+            }
+
+            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData? {
+                val amount = when (selectedMetric) {
+                    ChartMetric.INCOME -> metric.income
+                    ChartMetric.EXPENSE -> metric.expense
+                    ChartMetric.NET -> metric.netBalance
+                }
+
+                val prevAmount = when (selectedMetric) {
+                    ChartMetric.INCOME -> metric.previousIncome
+                    ChartMetric.EXPENSE -> metric.previousExpense
+                    ChartMetric.NET -> metric.previousNetBalance
+                }
+
+                val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }
+                    .sortedByDescending { it.amount.abs() }
+
+                // Filter out zero-amount categories unless they have active subcategories
+                if ((amount.signum() == 0) && subData.isEmpty() && (prevAmount == null || prevAmount.signum() == 0)) {
+                    return null
+                }
+
+                val percentage = if (globalTotalAbs.signum() != 0) {
+                    amount.abs().divide(globalTotalAbs, 4, java.math.RoundingMode.HALF_UP).toFloat()
+                } else 0f
+
+                return CategoryPieChartData(
                     category = metric.category,
                     categoryId = metric.categoryId,
-                    amount = metric.netBalance,
+                    amount = amount,
                     colorHex = metric.colorHex,
-                    percentage = metric.percentage,
-                    hasSubcategories = metric.hasSubcategories,
-                    subcategoryCount = metric.subcategoryData.size,
-                    subcategoryData = metric.subcategoryData.map { mapMetrics(it) },
-                    previousAmount = metric.previousNetBalance
+                    percentage = percentage,
+                    hasSubcategories = subData.isNotEmpty(),
+                    subcategoryCount = subData.size,
+                    subcategoryData = subData,
+                    previousAmount = prevAmount,
                 )
+            }
 
-            val uiData = renderData.items.map { mapMetrics(it) }
+            val uiData = renderData.items.mapNotNull { mapMetrics(it) }
+                .sortedByDescending { it.amount.abs() }
 
             CategoryPieChartCard(
                 config = renderData.config,
@@ -141,20 +175,54 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.CategoryTreemap -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
+            val selectedMetric = renderData.config.selectedMetric
 
-            fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData = CategoryTreemapData(
-                category = metric.category,
-                categoryId = metric.categoryId,
-                amount = metric.netBalance,
-                colorHex = metric.colorHex,
-                percentage = metric.percentage,
-                hasSubcategories = metric.hasSubcategories,
-                subcategoryCount = metric.subcategoryData.size,
-                subcategoryData = metric.subcategoryData.map { mapMetrics(it) },
-                previousAmount = metric.previousNetBalance
-            )
+            val globalTotalAbs = when (selectedMetric) {
+                ChartMetric.INCOME -> renderData.incomeTotal.abs()
+                ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
+                ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
+            }
 
-            val uiData = renderData.items.map { mapMetrics(it) }
+            fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData? {
+                val amount = when (selectedMetric) {
+                    ChartMetric.INCOME -> metric.income
+                    ChartMetric.EXPENSE -> metric.expense
+                    ChartMetric.NET -> metric.netBalance
+                }
+
+                val prevAmount = when (selectedMetric) {
+                    ChartMetric.INCOME -> metric.previousIncome
+                    ChartMetric.EXPENSE -> metric.previousExpense
+                    ChartMetric.NET -> metric.previousNetBalance
+                }
+
+                val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }
+                    .sortedByDescending { it.amount.abs() }
+
+                // Filter out zero-amount categories unless they have active subcategories
+                if ((amount.signum() == 0) && subData.isEmpty() && (prevAmount == null || prevAmount.signum() == 0)) {
+                    return null
+                }
+
+                val percentage = if (globalTotalAbs.signum() != 0) {
+                    amount.abs().divide(globalTotalAbs, 4, java.math.RoundingMode.HALF_UP).toFloat()
+                } else 0f
+
+                return CategoryTreemapData(
+                    category = metric.category,
+                    categoryId = metric.categoryId,
+                    amount = amount,
+                    colorHex = metric.colorHex,
+                    percentage = percentage,
+                    hasSubcategories = subData.isNotEmpty(),
+                    subcategoryCount = subData.size,
+                    subcategoryData = subData,
+                    previousAmount = prevAmount,
+                )
+            }
+
+            val uiData = renderData.items.mapNotNull { mapMetrics(it) }
+                .sortedByDescending { it.amount.abs() }
 
             CategoryTreemapCard(
                 config = renderData.config,

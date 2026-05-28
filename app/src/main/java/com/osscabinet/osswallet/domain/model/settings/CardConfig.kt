@@ -188,6 +188,7 @@ data class CategoryPieChartCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 5,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -197,7 +198,7 @@ data class CategoryPieChartCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 /**
@@ -211,6 +212,7 @@ data class CategoryTreemapCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 7,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -220,7 +222,7 @@ data class CategoryTreemapCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 /**
@@ -353,10 +355,10 @@ data class RecentActivitiesCardConfig(
 }
 
 /**
- * Metric selector for the Cash Flow Comparison card.
+ * Shared metric selector for various chart cards.
  */
 @Serializable
-enum class CashFlowComparisonMetric { NET, INCOME, EXPENSE }
+enum class ChartMetric { NET, INCOME, EXPENSE }
 
 /**
  * Configuration for Cash Flow Comparison card instances.
@@ -369,7 +371,7 @@ data class CashFlowComparisonCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    val selectedMetric: CashFlowComparisonMetric = CashFlowComparisonMetric.NET,
+    val selectedMetric: ChartMetric = ChartMetric.NET,
     val showCurrentPeriod: Boolean = true,
     val showPreviousPeriod: Boolean = true,
     val showSamePeriodLastYear: Boolean = true,

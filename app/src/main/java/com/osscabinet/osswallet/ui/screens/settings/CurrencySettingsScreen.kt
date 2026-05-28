@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -96,33 +97,56 @@ fun CurrencySettingsScreen(
             title = { Text("Number Formatting System") },
             text = {
                 Column {
-                    listOf("WESTERN", "EUROPEAN", "INDIAN", "SWISS", "FRENCH", "ISO", "SOUTH_AMERICAN").forEach { system ->
-                        val label = when (system) {
-                            "WESTERN" -> "Western (1,234.56)"
-                            "EUROPEAN" -> "European (1.234,56)"
-                            "INDIAN" -> "Indian (1,23,456.78)"
-                            "SWISS" -> "Swiss (1'234.56)"
-                            "FRENCH" -> "French (1 234,56)"
-                            "ISO" -> "ISO/Standard (1 234.56)"
-                            "SOUTH_AMERICAN" -> "South American (1.234,56)"
-                            else -> system
+                    val previewAmount = java.math.BigDecimal("1234.5678")
+                    listOf(
+                        "WESTERN",
+                        "EUROPEAN",
+                        "INDIAN",
+                        "SWISS",
+                        "FRENCH",
+                        "ISO",
+                        "SOUTH_AMERICAN"
+                    ).forEach { systemKey ->
+                        val system = CurrencyFormatter.FormattingSystem.fromString(systemKey)
+                        val previewText = CurrencyFormatter.formatForSystem(
+                            amount = previewAmount,
+                            system = system,
+                            currencyCode = currencyCode,
+                            precision = decimalPrecision
+                        )
+
+                        val label = when (systemKey) {
+                            "WESTERN" -> "Western"
+                            "EUROPEAN" -> "European"
+                            "INDIAN" -> "Indian"
+                            "SWISS" -> "Swiss"
+                            "FRENCH" -> "French"
+                            "ISO" -> "ISO/Standard"
+                            "SOUTH_AMERICAN" -> "South American"
+                            else -> systemKey
                         }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.setNumberingSystem(system)
+                                    viewModel.setNumberingSystem(systemKey)
                                     showSystemDialog = false
                                 }
                                 .padding(AeonTheme.dimensions.cardPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                label,
-                                style = AppTextStyles.listItemTitle,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (system == numberingSystem) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    label,
+                                    style = AppTextStyles.listItemTitle
+                                )
+                                Text(
+                                    previewText,
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.primary
+                                )
+                            }
+                            if (systemKey == numberingSystem) {
                                 Icon(
                                     Icons.Rounded.Check,
                                     contentDescription = null,
@@ -459,16 +483,11 @@ fun CurrencySettingsScreen(
                 )
                 AeonSettingsItem(
                     title = "Formatting System",
-                    subtitle = when (numberingSystem) {
-                        "WESTERN" -> "Western (1,234.56)"
-                        "EUROPEAN" -> "European (1.234,56)"
-                        "INDIAN" -> "Indian (1,23,456.78)"
-                        "SWISS" -> "Swiss (1'234.56)"
-                        "FRENCH" -> "French (1 234,56)"
-                        "ISO" -> "ISO/Standard (1 234.56)"
-                        "SOUTH_AMERICAN" -> "South American (1.234,56)"
-                        else -> numberingSystem
-                    },
+                    subtitle = CurrencyFormatter.formatAuto(
+                        amount = java.math.BigDecimal("1234.5678"),
+                        currencyCode = currencyCode,
+                        precision = decimalPrecision
+                    ),
                     icon = Icons.Rounded.AutoFixHigh,
                     onClick = { showSystemDialog = true }
                 )

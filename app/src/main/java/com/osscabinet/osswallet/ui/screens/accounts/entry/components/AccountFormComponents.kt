@@ -142,7 +142,7 @@ fun CurrencyManagementSection(
                 Surface(
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
                     color = AppColors.primary,
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                    border = BorderStroke(1.dp, AppColors.onPrimary.copy(alpha = 0.1f))
                 ) {
                     Row(
                         modifier = Modifier.padding(
@@ -155,13 +155,13 @@ fun CurrencyManagementSection(
                         Icon(
                             Icons.Rounded.Dashboard,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = AppColors.onPrimary,
                             modifier = Modifier.size(AeonSize.D14.value)
                         )
                         Text(
                             allowedCurrencies.size.toString(),
                             style = AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
-                            color = Color.White
+                            color = AppColors.onPrimary
                         )
                     }
                 }
@@ -347,7 +347,7 @@ fun CurrencyTile(
                         .align(Alignment.TopEnd)
                         .padding(AeonTheme.dimensions.spacingSm),
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.2f)
+                    color = AppColors.onPrimary.copy(alpha = 0.2f)
                 ) {
                     Icon(
                         Icons.Rounded.Star,
@@ -355,7 +355,7 @@ fun CurrencyTile(
                         modifier = Modifier
                             .padding(AeonSize.D4.value)
                             .size(AeonSize.D10.value),
-                        tint = Color.White
+                        tint = AppColors.onPrimary
                     )
                 }
             }
@@ -367,12 +367,12 @@ fun CurrencyTile(
                 Text(
                     getCurrencySymbol(code),
                     style = AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Black),
-                    color = if (isPrimary) Color.White else AppColors.contentPrimary
+                    color = if (isPrimary) AppColors.onPrimary else AppColors.contentPrimary
                 )
                 Text(
                     code,
                     style = AppTextStyles.overlineLabel.copy(fontWeight = FontWeight.Black),
-                    color = if (isPrimary) Color.White.copy(alpha = 0.7f) else AppColors.contentSecondary
+                    color = if (isPrimary) AppColors.onPrimary.copy(alpha = 0.7f) else AppColors.contentSecondary
                 )
             }
         }

@@ -358,7 +358,7 @@ fun CurrencySettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Currency & Localization", style = AppTextStyles.calculatorKey) },
+                title = { Text("Currency & Localization", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

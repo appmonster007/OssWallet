@@ -44,7 +44,7 @@ fun SecuritySettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Security & Privacy", style = AppTextStyles.calculatorKey) },
+                title = { Text("Security & Privacy", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

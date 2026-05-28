@@ -55,7 +55,7 @@ fun FilterListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Saved Filters", style = AppTextStyles.calculatorKey) },
+                title = { Text("Saved Filters", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

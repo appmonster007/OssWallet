@@ -44,7 +44,7 @@ fun DataSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Data & Organization", style = AppTextStyles.calculatorKey) },
+                title = { Text("Data & Organization", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

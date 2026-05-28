@@ -38,8 +38,22 @@ fun ManagementScopeCard(
 ) {
     val primaryColor = AppColors.primary
     val secondaryColor = AppColors.secondary
+    val positiveColor = AppColors.positive
+    val negativeColor = AppColors.negative
+    val accentColor = AppColors.accent
+    val contentSecondaryColor = AppColors.contentSecondary
 
-    val sections = remember(filter, allAccounts, allCategories, primaryColor, secondaryColor) {
+    val sections = remember(
+        filter,
+        allAccounts,
+        allCategories,
+        primaryColor,
+        secondaryColor,
+        positiveColor,
+        negativeColor,
+        accentColor,
+        contentSecondaryColor
+    ) {
         buildList {
             // Timeline/Period
             if (filter.timelineRange != TimelineRange.AllTime) {
@@ -177,9 +191,9 @@ fun ManagementScopeCard(
                             ScopeItem(
                                 text = type.name,
                                 color = when (type) {
-                                    TransactionType.EXPENSE -> Color.Red
-                                    TransactionType.INCOME -> Color.Green
-                                    TransactionType.TRANSFER -> Color.Blue
+                                    TransactionType.EXPENSE -> negativeColor
+                                    TransactionType.INCOME -> positiveColor
+                                    TransactionType.TRANSFER -> accentColor
                                 }
                             )
                         }
@@ -231,9 +245,9 @@ fun ManagementScopeCard(
                             ScopeItem(
                                 text = status.name,
                                 color = when (status) {
-                                    TransactionStatus.CLEARED -> Color.Green
-                                    TransactionStatus.UNCLEARED -> Color.Gray
-                                    TransactionStatus.RECONCILE -> Color.Blue
+                                    TransactionStatus.CLEARED -> positiveColor
+                                    TransactionStatus.UNCLEARED -> contentSecondaryColor
+                                    TransactionStatus.RECONCILE -> accentColor
                                 }
                             )
                         }
@@ -252,7 +266,7 @@ fun ManagementScopeCard(
                         items = listOf(
                             ScopeItem(
                                 text = if (filter.hasWarranty) "Has Warranty" else "No Warranty",
-                                color = if (filter.hasWarranty) Color.Green else Color.Gray
+                                color = if (filter.hasWarranty) positiveColor else contentSecondaryColor
                             )
                         )
                     )

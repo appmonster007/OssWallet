@@ -115,7 +115,7 @@ fun AnalyticsScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Intelligence", style = AppTextStyles.calculatorKey) },
+                    title = { Text("Intelligence", style = AppTextStyles.screenTitle) },
                     navigationIcon = {
                         if (isTopLevel) {
                             IconButton(onClick = onMenuClick) {

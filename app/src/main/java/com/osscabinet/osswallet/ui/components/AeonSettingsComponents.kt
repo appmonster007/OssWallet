@@ -36,11 +36,8 @@ fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Un
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
         Text(
             text = title,
-            style = AppTextStyles.drawerItemLabel.copy(
-                fontWeight = FontWeight.Bold,
-                color = AppColors.primary,
-                letterSpacing = 1.2.sp
-            ),
+            style = AppTextStyles.sectionOverline,
+            color = AppColors.primary,
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
         )
         Surface(
@@ -89,13 +86,17 @@ fun AeonSettingsItem(
         Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = AppTextStyles.managementItemTitle, color = color)
-            Text(subtitle, style = AppTextStyles.caption, color = AppColors.border)
+            Text(subtitle, style = AppTextStyles.caption, color = AppColors.contentSecondary)
         }
 
         if (trailingContent != null) {
             trailingContent()
         } else if (showChevron) {
-            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = AppColors.border)
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+            )
         }
     }
 }

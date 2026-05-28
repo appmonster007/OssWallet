@@ -37,8 +37,7 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -122,7 +121,7 @@ fun AccountHeroCard(
                 )
 
                 val balanceParts =
-                    formatCurrencyRight(balance, account.currencyCode, shorten = true).split(
+                    formatAuto(balance, account.currencyCode, shorten = true).split(
                         " "
                     )
                 val amountText = balanceParts.dropLast(1).joinToString(" ")
@@ -153,7 +152,7 @@ fun AccountHeroCard(
                 if (account.currencyCode != baseCurrency) {
                     Text(
                         text = "≈ ${
-                            formatCurrencyRight(
+                            formatAuto(
                                 balanceInBase,
                                 baseCurrency,
                                 shorten = true
@@ -254,7 +253,7 @@ fun AccountHeroCard(
                                         )
                                     )
                                     Text(
-                                        formatAmount(bal),
+                                        formatAuto(bal),
                                         style = AppTextStyles.transactionTitle.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = (-0.2).sp
@@ -311,7 +310,7 @@ private fun FlowSummaryItem(
                 )
             }
             Text(
-                text = formatAmount(amount),
+                text = formatAuto(amount),
                 style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold
                 ),

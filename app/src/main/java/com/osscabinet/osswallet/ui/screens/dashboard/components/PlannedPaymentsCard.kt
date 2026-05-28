@@ -47,7 +47,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -287,7 +287,7 @@ private fun PlannedPaymentRow(
                 )
             }
             Text(
-                text = "${formatAmount(amount)} $currency",
+                text = "${formatAuto(amount)} $currency",
                 style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,

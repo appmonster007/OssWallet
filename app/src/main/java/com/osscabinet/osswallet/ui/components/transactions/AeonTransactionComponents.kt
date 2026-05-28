@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -113,18 +113,18 @@ fun AeonTransactionList(
                     AeonTransactionItem(
                         category = enriched.categoryName,
                         account = enriched.accountName,
-                        amount = formatCurrencyRight(
+                        amount = formatAuto(
                             tx.amount,
                             tx.currency
                         ),
                         convertedAmount = if ((tx.currency != baseCurrency) && (enriched.amountInBase != null)) {
-                            formatCurrencyRight(enriched.amountInBase, baseCurrency)
+                            formatAuto(enriched.amountInBase, baseCurrency)
                         } else null,
-                        balanceBefore = formatCurrencyRight(
+                        balanceBefore = formatAuto(
                             enriched.item.balanceBefore,
                             enriched.accountCurrency
                         ),
-                        balanceAfter = formatCurrencyRight(
+                        balanceAfter = formatAuto(
                             enriched.item.balanceAfter,
                             enriched.accountCurrency
                         ),

@@ -46,7 +46,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
@@ -226,7 +226,7 @@ private fun SuggestionListItem(
                     else -> AppColors.error
                 }
                 Text(
-                    text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
+                    text = formatAuto(pattern.averageAmount.abs(), pattern.currency, shorten = true),
                     style = AppTextStyles.screenTitle,
                     fontWeight = FontWeight.Black,
                     color = amountColor

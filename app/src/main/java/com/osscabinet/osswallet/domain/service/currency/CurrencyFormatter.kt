@@ -1,10 +1,13 @@
 package com.osscabinet.ossWallet.domain.service.currency
 
+import android.icu.text.CompactDecimalFormat
+import android.icu.text.DecimalFormat
+import android.icu.text.DecimalFormatSymbols
+import android.icu.text.NumberFormat
+import android.icu.util.Currency
+import android.icu.util.ULocale
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Currency
 import java.util.Locale
 
 /**
@@ -14,25 +17,151 @@ import java.util.Locale
 object CurrencyFormatter {
 
     /**
-     * Global decimal precision used for formatting when not specified.
+     * Global settings used for automatic formatting.
      */
     var precision: Int = 2
+    var activeSystem: FormattingSystem = FormattingSystem.WESTERN
+
+    enum class SymbolPosition { LEFT, RIGHT }
 
     /**
-     * Formats an amount with localized grouping and decimal separators.
+     * Formatting system defines the style of number and currency display.
      */
-    fun formatAmount(amount: BigDecimal?, precision: Int = this.precision): String {
-        val validAmount = amount ?: BigDecimal.ZERO
-        val symbols = DecimalFormatSymbols(Locale.getDefault())
-        val pattern = buildString {
-            append("#,##0")
-            if (precision > 0) {
-                append(".")
-                repeat(precision) { append("0") }
-            }
+    enum class FormattingSystem(
+        val decimalSeparator: Char,
+        val groupingSeparator: Char,
+        val symbolPosition: SymbolPosition,
+        val isIndianGrouping: Boolean = false
+    ) {
+        WESTERN(decimalSeparator = '.', groupingSeparator = ',', symbolPosition = SymbolPosition.LEFT),
+        EUROPEAN(decimalSeparator = ',', groupingSeparator = '.', symbolPosition = SymbolPosition.RIGHT),
+        INDIAN(decimalSeparator = '.', groupingSeparator = ',', symbolPosition = SymbolPosition.LEFT, isIndianGrouping = true),
+        SWISS(decimalSeparator = '.', groupingSeparator = '\'', symbolPosition = SymbolPosition.LEFT),
+        FRENCH(decimalSeparator = ',', groupingSeparator = ' ', symbolPosition = SymbolPosition.RIGHT),
+        ISO(decimalSeparator = '.', groupingSeparator = ' ', symbolPosition = SymbolPosition.LEFT),
+        SOUTH_AMERICAN(decimalSeparator = ',', groupingSeparator = '.', symbolPosition = SymbolPosition.LEFT);
+
+        companion object {
+            fun fromString(value: String?): FormattingSystem =
+                entries.find { it.name.equals(value, ignoreCase = true) } ?: WESTERN
         }
-        val format = DecimalFormat(pattern, symbols)
-        return format.format(validAmount)
+    }
+
+    /**
+     * Unified method for formatting values.
+     * Handles separator system, shortening system, and precision system.
+     *
+     * @param value The value to format.
+     * @param shorten Whether to use compact notation (K, M, B / Lakh, Crore).
+     * @param precision Decimal places.
+     * @param isIndianGrouping Use Indian (10,00,000) or Western (1,000,000) grouping.
+     * @param decimalSeparator Optional override for the decimal separator.
+     * @param groupingSeparator Optional override for the grouping separator.
+     */
+    private fun formatValue(
+        value: BigDecimal?,
+        shorten: Boolean = false,
+        precision: Int = this.precision,
+        isIndianGrouping: Boolean = false,
+        decimalSeparator: Char? = null,
+        groupingSeparator: Char? = null
+    ): String {
+        val validAmount = value ?: BigDecimal.ZERO
+        val locale = if (isIndianGrouping) ULocale("en_IN") else ULocale.getDefault()
+
+        val symbols = DecimalFormatSymbols(locale)
+        decimalSeparator?.let { symbols.decimalSeparator = it }
+        groupingSeparator?.let { symbols.groupingSeparator = it }
+
+        return if (shorten) {
+            val compactFormat = CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT)
+            compactFormat.minimumFractionDigits = precision
+            compactFormat.maximumFractionDigits = precision
+            compactFormat.roundingMode = RoundingMode.HALF_UP.ordinal
+            compactFormat.format(validAmount)
+        } else {
+            val nf = NumberFormat.getInstance(locale) as DecimalFormat
+            nf.decimalFormatSymbols = symbols
+            nf.minimumFractionDigits = precision
+            nf.maximumFractionDigits = precision
+            nf.roundingMode = RoundingMode.HALF_UP.ordinal
+            nf.format(validAmount)
+        }
+    }
+
+    /**
+     * Unified method for formatting currency.
+     * Uses [formatValue] and formats it with currency system (symbol and position).
+     *
+     * @param amount The value to format.
+     * @param currencyCode ISO 4217 currency code (e.g., "USD").
+     * @param shorten Whether to use compact notation.
+     * @param precision Decimal places.
+     * @param symbolPosition Position of the currency symbol.
+     * @param isIndianGrouping Western or Indian grouping.
+     * @param decimalSeparator Optional override for the decimal separator.
+     * @param groupingSeparator Optional override for the grouping separator.
+     */
+    private fun formatCurrency(
+        amount: BigDecimal?,
+        currencyCode: String?,
+        shorten: Boolean = false,
+        precision: Int = this.precision,
+        symbolPosition: SymbolPosition = SymbolPosition.LEFT,
+        isIndianGrouping: Boolean = false,
+        decimalSeparator: Char? = null,
+        groupingSeparator: Char? = null
+    ): String {
+        val formattedValue = formatValue(
+            value = amount,
+            shorten = shorten,
+            precision = precision,
+            isIndianGrouping = isIndianGrouping,
+            decimalSeparator = decimalSeparator,
+            groupingSeparator = groupingSeparator
+        )
+
+        val symbol = getCurrencySymbol(currencyCode)
+        if (symbol.isEmpty()) return formattedValue
+
+        return when (symbolPosition) {
+            SymbolPosition.LEFT -> "$symbol$formattedValue"
+            SymbolPosition.RIGHT -> "$formattedValue $symbol"
+        }
+    }
+
+    /**
+     * High-level formatting method that uses global settings.
+     * Automatically applies separators, symbol position, and grouping based on [activeSystem].
+     */
+    fun formatAuto(
+        amount: BigDecimal?,
+        currencyCode: String? = null,
+        shorten: Boolean = false,
+        precision: Int = this.precision
+    ): String {
+        val system = activeSystem
+        return if (currencyCode != null) {
+            formatCurrency(
+                amount = amount,
+                currencyCode = currencyCode,
+                shorten = shorten,
+                precision = precision,
+                symbolPosition = system.symbolPosition,
+                isIndianGrouping = system.isIndianGrouping,
+                decimalSeparator = system.decimalSeparator,
+                groupingSeparator = system.groupingSeparator
+            )
+        } else {
+            formatValue(
+                value = amount,
+                shorten = shorten,
+                precision = precision,
+                isIndianGrouping = system.isIndianGrouping,
+                decimalSeparator = system.decimalSeparator,
+                groupingSeparator = system.groupingSeparator
+            )
+        }
     }
 
     /**
@@ -43,7 +172,7 @@ object CurrencyFormatter {
         return try {
             val code = currencyCode.uppercase().trim()
             if (code.length == 3 && code.all { it.isLetter() }) {
-                Currency.getInstance(code).symbol
+                Currency.getInstance(code).getSymbol(ULocale.getDefault())
             } else {
                 currencyCode
             }
@@ -66,91 +195,6 @@ object CurrencyFormatter {
             }
         } catch (e: Exception) {
             currencyCode
-        }
-    }
-
-    /**
-     * Shortens large numbers for UI display (e.g., 3,964.00K, 10.50M).
-     * Adheres to precision while keeping at least 2 integer digits (2+2 or 2+3 min total).
-     */
-    fun formatShortNumber(value: BigDecimal?, precision: Int = this.precision): String {
-        val validValue = value ?: BigDecimal.ZERO
-        val absValue = validValue.abs()
-
-        // Use 10x thresholds to ensure at least 2 integer digits in shortened form
-        val (divisor, suffix) = when {
-            absValue >= BigDecimal("10000000000000") -> BigDecimal("1000000000000") to "T"
-            absValue >= BigDecimal("10000000000") -> BigDecimal("1000000000") to "B"
-            absValue >= BigDecimal("10000000") -> BigDecimal("1000000") to "M"
-            absValue >= BigDecimal("10000") -> BigDecimal("1000") to "K"
-            else -> return formatAmount(validValue, precision)
-        }
-
-        val shortened = validValue.divide(divisor, 8, RoundingMode.HALF_UP)
-        val integerPart = shortened.toBigInteger().abs().toString()
-        val integerDigits = if (integerPart == "0") 0 else integerPart.length
-        
-        // Adhere to precision while keeping at least 2+precision total digits
-        val targetTotal = 2 + precision
-        val adaptiveDecimals = (targetTotal - integerDigits).coerceAtLeast(1)
-        val finalScale = maxOf(adaptiveDecimals, precision)
-
-        val result = shortened.setScale(finalScale, RoundingMode.HALF_UP)
-        
-        val symbols = DecimalFormatSymbols(Locale.getDefault())
-        val pattern = buildString {
-            append("0")
-            if (finalScale > 0) {
-                append(".")
-                repeat(finalScale) { append("0") }
-            }
-        }
-        val format = DecimalFormat(pattern, symbols)
-        return "${format.format(result)}$suffix"
-    }
-
-    /**
-     * Formats a currency amount in a shortened form (e.g., "$1.234M", "10.50K €").
-     */
-    fun formatShortCurrency(amount: BigDecimal?, currency: String?, precision: Int = this.precision, symbolOnLeft: Boolean = true): String {
-        val shortNumber = formatShortNumber(amount, precision)
-        val symbol = getCurrencySymbol(currency)
-        return if (symbolOnLeft) "$symbol$shortNumber" else "$shortNumber $symbol"
-    }
-
-    /**
-     * Main UI entry point for formatting currency with symbol on the right.
-     */
-    fun formatCurrencyRight(
-        amount: BigDecimal?,
-        currencyCode: String?,
-        precision: Int = this.precision,
-        shorten: Boolean = false
-    ): String {
-        return if (shorten) {
-            formatShortCurrency(amount, currencyCode, precision, symbolOnLeft = false)
-        } else {
-            val formattedAmount = formatAmount(amount, precision)
-            val symbol = getCurrencySymbol(currencyCode)
-            "$formattedAmount $symbol"
-        }
-    }
-
-    /**
-     * Main UI entry point for formatting currency with symbol on the left.
-     */
-    fun formatCurrencyLeft(
-        amount: BigDecimal?,
-        currencyCode: String?,
-        precision: Int = this.precision,
-        shorten: Boolean = false
-    ): String {
-        return if (shorten) {
-            formatShortCurrency(amount, currencyCode, precision, symbolOnLeft = true)
-        } else {
-            val formattedAmount = formatAmount(amount, precision)
-            val symbol = getCurrencySymbol(currencyCode)
-            "$symbol$formattedAmount"
         }
     }
 }

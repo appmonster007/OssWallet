@@ -49,7 +49,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -460,7 +460,7 @@ fun CategoryLegend(
                 )
 
                 Text(
-                    text = formatAmount(item.amount),
+                    text = CurrencyFormatter.formatAuto(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -495,15 +495,6 @@ fun CategoryLegend(
                     .clickable { onToggleBreakdown(false) }
             )
         }
-    }
-}
-
-private fun formatCurrency(amount: BigDecimal): String {
-    val formatted = formatAmount(amount.abs())
-    return when {
-        amount.signum() > 0 -> "+$formatted"
-        amount.signum() < 0 -> "-$formatted"
-        else -> formatted
     }
 }
 

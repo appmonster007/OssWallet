@@ -33,8 +33,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -193,13 +192,13 @@ private fun BudgetProgressRow(
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            formatCurrencyRight(
+                            formatAuto(
                                 progress.spent.subtract(progress.limit),
                                 progress.budget.currency,
                                 shorten = true
                             )
                         } else {
-                            formatCurrencyRight(
+                            formatAuto(
                                 progress.remaining,
                                 progress.budget.currency,
                                 shorten = true
@@ -218,7 +217,7 @@ private fun BudgetProgressRow(
                     border = BorderStroke(1.dp, AppColors.border) // Mandatory for Level 3
                 ) {
                     Text(
-                        text = "${formatAmount(progress.spent)} / ${formatAmount(progress.limit)}",
+                        text = "${formatAuto(progress.spent)} / ${formatAuto(progress.limit)}",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",

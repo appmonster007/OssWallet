@@ -65,6 +65,9 @@ class SettingsViewModel @Inject constructor(
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    val numberingSystem: StateFlow<String> = settingsRepository.numberingSystem
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WESTERN")
+
     val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsRepository.dashboardSettings
         .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -183,6 +186,12 @@ class SettingsViewModel @Inject constructor(
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
             settingsRepository.saveDecimalPrecision(precision)
+        }
+    }
+
+    fun setNumberingSystem(system: String) {
+        viewModelScope.launch {
+            settingsRepository.saveNumberingSystem(system)
         }
     }
 

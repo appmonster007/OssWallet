@@ -31,6 +31,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val userName: Flow<String> = settingsDataStore.userName
     override val useSystemFont: Flow<Boolean> = settingsDataStore.useSystemFont
     override val selectedFont: Flow<String> = settingsDataStore.selectedFont
+    override val numberingSystem: Flow<String> = settingsDataStore.numberingSystem
     override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
     override val accountsViewSettings: Flow<AccountsViewSettings> =
         settingsDataStore.accountsViewSettings
@@ -85,6 +86,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveSelectedFont(fontName: String) =
         settingsDataStore.saveSelectedFont(fontName)
+
+    override suspend fun saveNumberingSystem(system: String) =
+        settingsDataStore.saveNumberingSystem(system)
 
     override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) =
         settingsDataStore.updateDashboardSettings(update)

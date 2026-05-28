@@ -28,7 +28,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -220,7 +220,7 @@ internal fun AeonFlowBreakdownItem(
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                formatCurrencyRight(amount, curr, shorten = true),
+                formatAuto(amount, curr, shorten = true),
                 style = AppTextStyles.transactionTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
@@ -228,7 +228,7 @@ internal fun AeonFlowBreakdownItem(
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
+                    "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Medium

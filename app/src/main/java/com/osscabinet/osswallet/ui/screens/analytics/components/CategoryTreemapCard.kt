@@ -47,11 +47,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -87,7 +86,7 @@ fun CategoryTreemapCard(
     showFilterButton: Boolean = true
 ) {
     val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
             config.filter.copy(timelineRange = inheritedFilter.timelineRange)
         else config.filter
 
@@ -308,7 +307,7 @@ fun CategoryTreemapCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrency(total, currency),
+                        text = CurrencyFormatter.formatAuto(total, currency),
                         style = AppTextStyles.managementItemTitle.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -501,7 +500,7 @@ fun TreemapLegend(
                 )
 
                 Text(
-                    text = formatAmount(item.amount),
+                    text = CurrencyFormatter.formatAuto(item.amount),
                     style = AppTextStyles.drawerItemLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -658,19 +657,6 @@ fun CategoryTreemapCardPreview() {
         }
 }
 
-private fun formatCurrency(amount: BigDecimal, currency: String): String {
-    val formatted = formatCurrencyRight(
-        amount.abs(),
-        currency,
-        com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
-        shorten = true
-    )
-    return when {
-        amount.signum() > 0 -> "+$formatted"
-        amount.signum() < 0 -> "-$formatted"
-        else -> formatted
-    }
-}
 @Serializable
 data class CategoryTreemapData(
     val category: String,

@@ -23,6 +23,7 @@ interface SettingsRepository {
     val userName: Flow<String>
     val useSystemFont: Flow<Boolean>
     val selectedFont: Flow<String>
+    val numberingSystem: Flow<String>
     val dashboardSettings: Flow<DashboardSettings>
     val accountsViewSettings: Flow<AccountsViewSettings>
     val accountDetailSettings: Flow<AccountDetailSettings>
@@ -49,6 +50,7 @@ interface SettingsRepository {
     suspend fun saveUserName(name: String)
     suspend fun saveUseSystemFont(enabled: Boolean)
     suspend fun saveSelectedFont(fontName: String)
+    suspend fun saveNumberingSystem(system: String)
     suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)
     suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings)
     suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings)

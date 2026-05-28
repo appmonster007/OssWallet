@@ -77,6 +77,7 @@ fun CurrencySettingsScreen(
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val numberingSystem by viewModel.numberingSystem.collectAsStateWithLifecycle()
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
@@ -87,6 +88,56 @@ fun CurrencySettingsScreen(
     val context = LocalContext.current
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showProviderDialog by remember { mutableStateOf(false) }
+    var showSystemDialog by remember { mutableStateOf(false) }
+
+    if (showSystemDialog) {
+        AlertDialog(
+            onDismissRequest = { showSystemDialog = false },
+            title = { Text("Number Formatting System") },
+            text = {
+                Column {
+                    listOf("WESTERN", "EUROPEAN", "INDIAN", "SWISS", "FRENCH", "ISO", "SOUTH_AMERICAN").forEach { system ->
+                        val label = when (system) {
+                            "WESTERN" -> "Western (1,234.56)"
+                            "EUROPEAN" -> "European (1.234,56)"
+                            "INDIAN" -> "Indian (1,23,456.78)"
+                            "SWISS" -> "Swiss (1'234.56)"
+                            "FRENCH" -> "French (1 234,56)"
+                            "ISO" -> "ISO/Standard (1 234.56)"
+                            "SOUTH_AMERICAN" -> "South American (1.234,56)"
+                            else -> system
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setNumberingSystem(system)
+                                    showSystemDialog = false
+                                }
+                                .padding(AeonTheme.dimensions.cardPadding),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                label,
+                                style = AppTextStyles.listItemTitle,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (system == numberingSystem) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = AppColors.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSystemDialog = false }) { Text("Close") }
+            }
+        )
+    }
 
     if (showCurrencyDialog) {
         var searchQuery by remember { mutableStateOf("") }
@@ -400,6 +451,26 @@ fun CurrencySettingsScreen(
                             }
                         }
                     }
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
+                AeonSettingsItem(
+                    title = "Formatting System",
+                    subtitle = when (numberingSystem) {
+                        "WESTERN" -> "Western (1,234.56)"
+                        "EUROPEAN" -> "European (1.234,56)"
+                        "INDIAN" -> "Indian (1,23,456.78)"
+                        "SWISS" -> "Swiss (1'234.56)"
+                        "FRENCH" -> "French (1 234,56)"
+                        "ISO" -> "ISO/Standard (1 234.56)"
+                        "SOUTH_AMERICAN" -> "South American (1.234,56)"
+                        else -> numberingSystem
+                    },
+                    icon = Icons.Rounded.AutoFixHigh,
+                    onClick = { showSystemDialog = true }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

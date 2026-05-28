@@ -7,7 +7,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import org.json.JSONArray
@@ -56,9 +56,9 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         result?.totalTransfersInBase ?: BigDecimal.ZERO
         val netInBase = result?.netInBase ?: BigDecimal.ZERO
 
-        val incomeFormatted = formatCurrencyRight(incomeInBase, common.baseCurrency, shorten = true)
-        val expenseFormatted = formatCurrencyRight(expenseInBase, common.baseCurrency, shorten = true)
-//        val transferFormatted = formatCurrencyRight(transferInBase, common.baseCurrency, shorten = true)
+        val incomeFormatted = formatAuto(incomeInBase, common.baseCurrency, shorten = true)
+        val expenseFormatted = formatAuto(expenseInBase, common.baseCurrency, shorten = true)
+//        val transferFormatted = formatAuto(transferInBase, common.baseCurrency, shorten = true)
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
             val currentFilter = TransactionFilter(
@@ -97,12 +97,12 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                 arr.put(
                     JSONObject().apply {
                         put("code", item.currency)
-                        put("income", formatCurrencyRight(item.income, item.currency, shorten = true))
-                        put("incomeBase", formatCurrencyRight(item.incomeInBase, common.baseCurrency, shorten = true))
-                        put("expense", formatCurrencyRight(item.expense, item.currency, shorten = true))
-                        put("expenseBase", formatCurrencyRight(item.expenseInBase, common.baseCurrency, shorten = true))
-//                        put("transfer", formatCurrencyRight(item.transfer, item.currency, shorten = true))
-//                        put("transferBase", formatCurrencyRight(item.transferInBase, common.baseCurrency, shorten = true))
+                        put("income", formatAuto(item.income, item.currency, shorten = true))
+                        put("incomeBase", formatAuto(item.incomeInBase, common.baseCurrency, shorten = true))
+                        put("expense", formatAuto(item.expense, item.currency, shorten = true))
+                        put("expenseBase", formatAuto(item.expenseInBase, common.baseCurrency, shorten = true))
+//                        put("transfer", formatAuto(item.transfer, item.currency, shorten = true))
+//                        put("transferBase", formatAuto(item.transferInBase, common.baseCurrency, shorten = true))
                     }
                 )
             }

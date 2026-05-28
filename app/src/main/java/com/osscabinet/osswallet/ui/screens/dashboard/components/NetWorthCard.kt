@@ -35,7 +35,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -106,7 +106,7 @@ fun NetWorthCard(
             ) {
                 Column {
                     Text(
-                        text = formatCurrencyRight(
+                        text = formatAuto(
                             currentMetrics.netWorth,
                             displayCurrency,
                             shorten = true
@@ -121,7 +121,7 @@ fun NetWorthCard(
 
                     currentMetrics.netWorthInBase?.let { inBase ->
                         Text(
-                            text = "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
+                            text = "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
                             style = AppTextStyles.metaLabel,
                             color = AppColors.contentPrimary.copy(alpha = 0.6f)
                         )
@@ -271,7 +271,7 @@ private fun FlowBadge(
                 }
             }
             Text(
-                text = formatCurrencyRight(amount, currency, shorten = true),
+                text = formatAuto(amount, currency, shorten = true),
                 style = AppTextStyles.managementItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp

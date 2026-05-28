@@ -18,7 +18,7 @@ import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -135,8 +135,8 @@ fun ManagementScopeCard(
 
             // Amount Range
             if (filter.minAmount != null || filter.maxAmount != null) {
-                val minText = filter.minAmount?.let { formatAmount(it) }
-                val maxText = filter.maxAmount?.let { formatAmount(it) }
+                val minText = filter.minAmount?.let { formatAuto(it) }
+                val maxText = filter.maxAmount?.let { formatAuto(it) }
                 val rangeText = when {
                     minText != null && maxText != null -> "$minText - $maxText"
                     minText != null -> "Min $minText"

@@ -23,8 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -76,7 +75,7 @@ fun LoanHeroCard(
                             color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
 
-                        val balanceParts = formatCurrencyRight(
+                        val balanceParts = formatAuto(
                             summary.remainingBalance,
                             loan.currency,
                             shorten = true
@@ -149,14 +148,14 @@ fun LoanHeroCard(
                                 .background(accentColor, CircleShape)
                         )
                         Text(
-                            text = "${formatAmount(summary.totalPaid)} settled",
+                            text = "${formatAuto(summary.totalPaid)} settled",
                             style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
                             color = AppColors.contentSecondary.copy(alpha = 0.8f)
                         )
                     }
                     Text(
                         text = "Goal: ${
-                            formatCurrencyRight(
+                            formatAuto(
                                 loan.principalAmount,
                                 loan.currency,
                                 shorten = true

@@ -278,10 +278,10 @@ private fun CategorySummaryRow(
 
 @Composable
 private fun formatCurrency(amount: BigDecimal, currency: String): String {
-    val formatted = CurrencyFormatter.formatCurrencyRight(
-        amount,
-        currency,
-        CurrencyService.precision
+    val formatted = CurrencyFormatter.formatAuto(
+        amount = amount,
+        currencyCode = currency,
+        precision = CurrencyService.precision
     )
     return if (amount.signum() > 0) "+$formatted" else formatted
 }

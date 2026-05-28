@@ -250,7 +250,7 @@ fun AeonEntryContextRowPreview() {
                     name = "Checking",
                     colorHex = "#2196F3",
                     currencyCode = "USD",
-                    structureType = AccountStructureType.CHECKING,
+                    structureType = AccountStructureType.BANK,
                     icon = "AccountBalance"
                 ),
                 onTargetAccountClick = {}

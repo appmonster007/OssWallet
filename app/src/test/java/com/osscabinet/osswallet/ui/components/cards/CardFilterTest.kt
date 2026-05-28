@@ -22,7 +22,7 @@ class CardFilterTest {
         id = "acc1",
         name = "Account 1",
         currencyCode = "USD",
-        structureType = AccountStructureType.CHECKING,
+        structureType = AccountStructureType.BANK,
         colorHex = "#FF0000",
         icon = "bank"
     )
@@ -40,7 +40,7 @@ class CardFilterTest {
         id = "acc3",
         name = "Account 3",
         currencyCode = "GBP",
-        structureType = AccountStructureType.CREDIT_CARD,
+        structureType = AccountStructureType.CREDIT,
         colorHex = "#0000FF",
         icon = "credit_card"
     )

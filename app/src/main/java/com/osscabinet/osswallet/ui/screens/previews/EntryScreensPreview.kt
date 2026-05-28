@@ -33,7 +33,7 @@ fun AccountEntryEditPreview() {
             AccountFormBody(
                 state = AccountEntryState(
                     accountName = "Primary Credit Card",
-                    structureType = AccountStructureType.CREDIT_CARD,
+                    structureType = AccountStructureType.CREDIT,
                     primaryCurrency = "EUR",
                     allowedCurrencies = setOf("EUR"),
                     selectedIconName = "CreditCard",

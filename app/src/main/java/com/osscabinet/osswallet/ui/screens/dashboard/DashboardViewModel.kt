@@ -83,8 +83,6 @@ class DashboardViewModel @Inject constructor(
         cardRepository.getCardsConfig(cardScreenContext)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
-    private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
-
     private val _initialViewContext =
         MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
     val initialViewContext: StateFlow<DashboardViewContext> = _initialViewContext.asStateFlow()
@@ -95,20 +93,6 @@ class DashboardViewModel @Inject constructor(
     )
 
     private val _viewFocus = MutableStateFlow<ViewFocus>(ViewFocus())
-
-    init {
-        viewModelScope.launch {
-            settingsRepository.dashboardSettings.collect { settings ->
-                _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull {
-                    try {
-                        DashboardSection.valueOf(it)
-                    } catch (_: Exception) {
-                        null
-                    }
-                } ?: DashboardSection.entries
-            }
-        }
-    }
 
     fun initializeDashboardView(viewContext: DashboardViewContext) {
         _initialViewContext.value = viewContext
@@ -332,15 +316,6 @@ class DashboardViewModel @Inject constructor(
             )
         }
     }
-
-    // All card-specific computation functions now use CardComputerRegistry as the single source of truth
-    // The standardized card computers handle all computation logic:
-    // - NetWorthCardComputer handles net worth computations
-    // - CashFlowCardComputer handles cash flow computations  
-    // - CurrencyBalancesCardComputer handles currency aggregation
-    // - AccountsCardComputer handles account statistics
-    // - CategoryPieChartCardComputer handles pie chart data
-    // - CategoryTreemapCardComputer handles treemap data
 }
 
 sealed class DashboardUiState {

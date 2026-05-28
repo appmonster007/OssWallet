@@ -14,13 +14,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
 // These types live in domain — typealiases preserve backward compatibility for data-layer references.
-typealias LayoutSettings = com.osscabinet.ossWallet.domain.model.settings.LayoutSettings
-typealias BudgetSettings = com.osscabinet.ossWallet.domain.model.settings.BudgetSettings
-typealias DashboardSettings = com.osscabinet.ossWallet.domain.model.settings.DashboardSettings
-typealias AccountsViewSettings = com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
 typealias TransactionGroupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 typealias TransactionSectionSettings = com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-typealias AccountDetailSettings = com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -46,9 +41,6 @@ class SettingsDataStore(private val context: Context) {
         val NUMBERING_SYSTEM_KEY = stringPreferencesKey("numbering_system")
         val SHORTLISTED_CURRENCIES_KEY = stringSetPreferencesKey("shortlisted_currencies")
 
-        val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
-        val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
-        val ACCOUNT_DETAIL_SETTINGS_KEY = stringPreferencesKey("account_detail_settings")
         val RECORDS_SETTINGS_KEY = stringPreferencesKey("records_settings")
         val DASHBOARD_CARDS_CONFIG_KEY = stringPreferencesKey("dashboard_cards_config")
         val ACCOUNT_DETAIL_CARDS_CONFIG_KEY = stringPreferencesKey("account_detail_cards_config")
@@ -127,38 +119,6 @@ class SettingsDataStore(private val context: Context) {
     val numberingSystem: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[NUMBERING_SYSTEM_KEY] ?: "WESTERN"
     }
-
-    val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
-        preferences[DASHBOARD_SETTINGS_KEY]?.let {
-            try {
-                Json.decodeFromString<DashboardSettings>(it)
-            } catch (e: Exception) {
-                DashboardSettings()
-            }
-        } ?: DashboardSettings()
-    }
-
-    val accountsViewSettings: Flow<AccountsViewSettings> =
-        context.dataStore.data.map { preferences ->
-            preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
-                try {
-                    Json.decodeFromString<AccountsViewSettings>(it)
-                } catch (e: Exception) {
-                    AccountsViewSettings()
-                }
-            } ?: AccountsViewSettings()
-        }
-
-    val accountDetailSettings: Flow<AccountDetailSettings> =
-        context.dataStore.data.map { preferences ->
-            preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
-                try {
-                    Json.decodeFromString<AccountDetailSettings>(it)
-                } catch (e: Exception) {
-                    AccountDetailSettings()
-                }
-            } ?: AccountDetailSettings()
-        }
 
     val recordsSettings: Flow<TransactionSectionSettings> =
         context.dataStore.data.map { preferences ->
@@ -290,45 +250,6 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveNumberingSystem(system: String) {
         context.dataStore.edit { preferences ->
             preferences[NUMBERING_SYSTEM_KEY] = system
-        }
-    }
-
-    suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) {
-        context.dataStore.edit { preferences ->
-            val current = preferences[DASHBOARD_SETTINGS_KEY]?.let {
-                try {
-                    Json.decodeFromString<DashboardSettings>(it)
-                } catch (e: Exception) {
-                    DashboardSettings()
-                }
-            } ?: DashboardSettings()
-            preferences[DASHBOARD_SETTINGS_KEY] = Json.encodeToString(update(current))
-        }
-    }
-
-    suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) {
-        context.dataStore.edit { preferences ->
-            val current = preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
-                try {
-                    Json.decodeFromString<AccountsViewSettings>(it)
-                } catch (e: Exception) {
-                    AccountsViewSettings()
-                }
-            } ?: AccountsViewSettings()
-            preferences[ACCOUNTS_VIEW_SETTINGS_KEY] = Json.encodeToString(update(current))
-        }
-    }
-
-    suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings) {
-        context.dataStore.edit { preferences ->
-            val current = preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
-                try {
-                    Json.decodeFromString<AccountDetailSettings>(it)
-                } catch (e: Exception) {
-                    AccountDetailSettings()
-                }
-            } ?: AccountDetailSettings()
-            preferences[ACCOUNT_DETAIL_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 

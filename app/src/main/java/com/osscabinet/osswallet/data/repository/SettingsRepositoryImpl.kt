@@ -1,8 +1,5 @@
 package com.osscabinet.ossWallet.data.repository
 
-import com.osscabinet.ossWallet.data.local.AccountDetailSettings
-import com.osscabinet.ossWallet.data.local.AccountsViewSettings
-import com.osscabinet.ossWallet.data.local.DashboardSettings
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -32,11 +29,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override val useSystemFont: Flow<Boolean> = settingsDataStore.useSystemFont
     override val selectedFont: Flow<String> = settingsDataStore.selectedFont
     override val numberingSystem: Flow<String> = settingsDataStore.numberingSystem
-    override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
-    override val accountsViewSettings: Flow<AccountsViewSettings> =
-        settingsDataStore.accountsViewSettings
-    override val accountDetailSettings: Flow<AccountDetailSettings> =
-        settingsDataStore.accountDetailSettings
     override val recordsSettings: Flow<TransactionSectionSettings> =
         settingsDataStore.recordsSettings
     override val dashboardCardsConfig: Flow<String> = settingsDataStore.dashboardCardsConfig
@@ -89,15 +81,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveNumberingSystem(system: String) =
         settingsDataStore.saveNumberingSystem(system)
-
-    override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) =
-        settingsDataStore.updateDashboardSettings(update)
-
-    override suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) =
-        settingsDataStore.updateAccountsViewSettings(update)
-
-    override suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings) =
-        settingsDataStore.updateAccountDetailSettings(update)
 
     override suspend fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) =
         settingsDataStore.updateRecordsSettings(update)

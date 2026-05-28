@@ -9,9 +9,9 @@ import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -82,24 +82,16 @@ class AccountDetailViewModel @Inject constructor(
 
     fun updateShowPlannedPayments(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings {
-                it.copy(
-                    transactionsSection = it.transactionsSection.copy(
-                        showPlannedPayments = show
-                    )
-                )
+            settingsRepository.updateRecordsSettings {
+                it.copy(showPlannedPayments = show)
             }
         }
     }
 
     fun updateUseNoteAsHeader(use: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings {
-                it.copy(
-                    transactionsSection = it.transactionsSection.copy(
-                        useNoteAsHeader = use
-                    )
-                )
+            settingsRepository.updateRecordsSettings {
+                it.copy(useNoteAsHeader = use)
             }
         }
     }
@@ -116,7 +108,7 @@ class AccountDetailViewModel @Inject constructor(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.accountDetailSettings,
+                settingsRepository.recordsSettings,
                 filter
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
@@ -135,7 +127,7 @@ class AccountDetailViewModel @Inject constructor(
                 val rates = args[4] as Map<String, BigDecimal>
                 val baseCurrency = args[5] as String
                 val hasLoadedExchangeRates = args[6] as Boolean
-                val settings = args[7] as AccountDetailSettings
+                val settings = args[7] as TransactionSectionSettings
                 val currentFilter = args[8] as TransactionFilter
 
                 if (!hasLoadedExchangeRates) {
@@ -154,14 +146,14 @@ class AccountDetailViewModel @Inject constructor(
                     accounts = listOf(account),
                     exchangeRates = rates,
                     limit = Int.MAX_VALUE,
-                    excludeFuture = !settings.transactionsSection.showPlannedPayments || currentFilter.excludeFuture
+                    excludeFuture = !settings.showPlannedPayments || currentFilter.excludeFuture
                 )
 
                 // Filtered transactions for the list tab
                 val filteredTransactionsWithBalance =
                     TransactionFilterService.filterTransactionsWithBalance(
                         absoluteTransactionsWithBalance,
-                        if (!settings.transactionsSection.showPlannedPayments) currentFilter.copy(
+                        if (!settings.showPlannedPayments) currentFilter.copy(
                             excludeFuture = true
                         ) else currentFilter
                     )
@@ -169,7 +161,7 @@ class AccountDetailViewModel @Inject constructor(
                 val listState = TimelineService.getGroupedData(
                     transactions = filteredTransactionsWithBalance,
                     absoluteHistory = absoluteTransactionsWithBalance,
-                    groupingType = settings.transactionsSection.groupBy,
+                    groupingType = settings.groupBy,
                     accounts = accounts,
                     categories = categories,
                     allTags = tags,
@@ -187,8 +179,8 @@ class AccountDetailViewModel @Inject constructor(
                     allTags = tags,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    showPlannedPayments = settings.transactionsSection.showPlannedPayments,
-                    useNoteAsHeader = settings.transactionsSection.useNoteAsHeader,
+                    showPlannedPayments = settings.showPlannedPayments,
+                    useNoteAsHeader = settings.useNoteAsHeader,
                     currentFilter = currentFilter
                 )
             }

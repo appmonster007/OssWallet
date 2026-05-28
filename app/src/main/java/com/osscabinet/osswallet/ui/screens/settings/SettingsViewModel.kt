@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.ProfileType
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
@@ -54,29 +52,11 @@ class SettingsViewModel @Inject constructor(
     val theme: StateFlow<String> = settingsRepository.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
 
-    val dashboardGridColumns: StateFlow<Int> = settingsRepository.dashboardSettings
-        .map { it.accountsSection.gridColumns }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
-
-    val accountsViewGridColumns: StateFlow<Int> = settingsRepository.accountsViewSettings
-        .map { it.accountsSection.gridColumns }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
-
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
     val numberingSystem: StateFlow<String> = settingsRepository.numberingSystem
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WESTERN")
-
-    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsRepository.dashboardSettings
-        .map { it.accountsSection.showAddAccountCard }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsRepository.accountsViewSettings
-        .map { it.accountsSection.showAddAccountCard }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    val accountsViewSettings: Flow<AccountsViewSettings> = settingsRepository.accountsViewSettings
 
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsRepository.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -159,30 +139,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setDashboardGridColumns(columns: Int) {
-        viewModelScope.launch {
-            settingsRepository.updateDashboardSettings {
-                it.copy(
-                    accountsSection = it.accountsSection.copy(
-                        gridColumns = columns
-                    )
-                )
-            }
-        }
-    }
-
-    fun setAccountsViewGridColumns(columns: Int) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    accountsSection = it.accountsSection.copy(
-                        gridColumns = columns
-                    )
-                )
-            }
-        }
-    }
-
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
             settingsRepository.saveDecimalPrecision(precision)
@@ -192,78 +148,6 @@ class SettingsViewModel @Inject constructor(
     fun setNumberingSystem(system: String) {
         viewModelScope.launch {
             settingsRepository.saveNumberingSystem(system)
-        }
-    }
-
-    fun setDashboardShowAddAccountCard(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateDashboardSettings {
-                it.copy(
-                    accountsSection = it.accountsSection.copy(
-                        showAddAccountCard = show
-                    )
-                )
-            }
-        }
-    }
-
-    fun setAccountsViewShowAddAccountCard(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    accountsSection = it.accountsSection.copy(
-                        showAddAccountCard = show
-                    )
-                )
-            }
-        }
-    }
-
-    fun updateAccountsViewCashFlowShowBaseConversion(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    cashFlowSection = it.cashFlowSection.copy(
-                        showBaseConversion = show
-                    )
-                )
-            }
-        }
-    }
-
-    fun updateAccountsViewCurrencyBalancesLayout(layout: String) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    currencyBalancesSection = it.currencyBalancesSection.copy(
-                        layout = layout
-                    )
-                )
-            }
-        }
-    }
-
-    fun updateAccountsViewCurrencyBalancesShowBaseConversion(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    currencyBalancesSection = it.currencyBalancesSection.copy(
-                        showBaseConversion = show
-                    )
-                )
-            }
-        }
-    }
-
-    fun updateAccountsViewCurrencyBalancesTimelineRange(range: TimelineRange) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountsViewSettings {
-                it.copy(
-                    currencyBalancesSection = it.currencyBalancesSection.copy(
-                        timelineRange = range
-                    )
-                )
-            }
         }
     }
 

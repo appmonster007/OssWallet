@@ -1,10 +1,16 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -17,6 +23,7 @@ import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.History
@@ -24,11 +31,11 @@ import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Portrait
 import androidx.compose.material.icons.rounded.VerticalAlignBottom
 import androidx.compose.material.icons.rounded.VerticalAlignTop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -39,10 +46,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
@@ -103,97 +114,142 @@ fun TransactionListTopAppBar(
     )
 
     if (showSettingsDialog) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showSettingsDialog = false },
-            title = { Text("Records Display Settings") },
-            text = {
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
                 Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                    modifier = Modifier.padding(24.dp)
                 ) {
-                    AeonSettingsSection("DATA & LIFECYCLE") {
-                        AeonSettingsItem(
-                            title = "Grouping",
-                            subtitle = if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) "By Day" else "By Week",
-                            icon = Icons.Rounded.DateRange,
-                            onClick = {
-                                val next =
-                                    if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) TransactionGroupingType.BY_WEEK else TransactionGroupingType.BY_DAY
-                                onUpdateRecordsSettings(recordsSettings.copy(groupBy = next))
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Exclude Future",
-                            subtitle = "Hide transactions after today",
-                            icon = Icons.Rounded.CalendarMonth,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.excludeFutureTransactions,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                excludeFutureTransactions = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Planned Payments",
-                            subtitle = "Show upcoming payments in list",
-                            icon = Icons.Rounded.NotificationsActive,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showPlannedPayments,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showPlannedPayments = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                    }
+                    Text(
+                        text = "Records Display Settings",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
 
-                    AeonSettingsSection("GROUP SUMMARIES") {
-                        AeonSettingsItem(
-                            title = "Currency Breakdown",
-                            subtitle = "Summary of currencies in group",
-                            icon = Icons.Rounded.CurrencyExchange,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showCurrencyBreakdown,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showCurrencyBreakdown = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        if (recordsSettings.showCurrencyBreakdown) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        AeonSettingsSection("DATA & LIFECYCLE") {
+                            AeonSettingsItem(
+                                title = "Grouping",
+                                subtitle = if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) "By Day" else "By Week",
+                                icon = Icons.Rounded.DateRange,
+                                trailingContent = {
+                                    Icon(
+                                        Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = AppColors.border,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                },
+                                onClick = {
+                                    val next =
+                                        if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) TransactionGroupingType.BY_WEEK else TransactionGroupingType.BY_DAY
+                                    onUpdateRecordsSettings(recordsSettings.copy(groupBy = next))
+                                }
+                            )
                             HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                modifier = Modifier.padding(horizontal = 16.dp),
                                 thickness = 0.5.dp,
-                                color = AppColors.divider.copy(alpha = 0.4f)
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Exclude Future",
+                                subtitle = "Hide transactions after today",
+                                icon = Icons.Rounded.CalendarMonth,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.excludeFutureTransactions,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    excludeFutureTransactions = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Planned Payments",
+                                subtitle = "Show upcoming payments in list",
+                                icon = Icons.Rounded.NotificationsActive,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showPlannedPayments,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showPlannedPayments = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                        }
+
+                        AeonSettingsSection("GROUP SUMMARIES") {
+                            AeonSettingsItem(
+                                title = "Currency Breakdown",
+                                subtitle = "Summary of currencies in group",
+                                icon = Icons.Rounded.CurrencyExchange,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showCurrencyBreakdown,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showCurrencyBreakdown = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
                             )
                             AeonSettingsItem(
                                 title = "Only Active Currencies",
@@ -201,6 +257,7 @@ fun TransactionListTopAppBar(
                                 icon = Icons.AutoMirrored.Rounded.Sort,
                                 trailingContent = {
                                     Switch(
+                                        enabled = recordsSettings.showCurrencyBreakdown,
                                         checked = recordsSettings.showOnlyActiveCurrencies,
                                         onCheckedChange = {
                                             onUpdateRecordsSettings(
@@ -209,129 +266,157 @@ fun TransactionListTopAppBar(
                                                 )
                                             )
                                         },
-                                        colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Opening Balance",
+                                subtitle = "Show balance at start of group",
+                                icon = Icons.Rounded.VerticalAlignTop,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showHeaderOpeningBalance,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showHeaderOpeningBalance = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Closing Balance",
+                                subtitle = "Show balance at end of group",
+                                icon = Icons.Rounded.VerticalAlignBottom,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showHeaderClosingBalance,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showHeaderClosingBalance = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
                                     )
                                 }
                             )
                         }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Opening Balance",
-                            subtitle = "Show balance at start of group",
-                            icon = Icons.Rounded.VerticalAlignTop,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showHeaderOpeningBalance,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showHeaderOpeningBalance = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Closing Balance",
-                            subtitle = "Show balance at end of group",
-                            icon = Icons.Rounded.VerticalAlignBottom,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showHeaderClosingBalance,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showHeaderClosingBalance = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                    }
 
-                    AeonSettingsSection("TRANSACTION DETAILS") {
-                        AeonSettingsItem(
-                            title = "Show Icon",
-                            subtitle = "Category icon visibility",
-                            icon = Icons.Rounded.Portrait,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showIcon,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showIcon = it
+                        AeonSettingsSection("TRANSACTION DETAILS") {
+                            AeonSettingsItem(
+                                title = "Show Icon",
+                                subtitle = "Category icon visibility",
+                                icon = Icons.Rounded.Portrait,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showIcon,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showIcon = it
+                                                )
                                             )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
                                         )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Show Category",
-                            subtitle = "Main classification",
-                            icon = Icons.Rounded.Category,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showCategory,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showCategory = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Show Note",
-                            subtitle = "Transaction description",
-                            icon = Icons.AutoMirrored.Rounded.Notes,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showNote,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showNote = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        if (recordsSettings.showNote) {
+                                    )
+                                }
+                            )
                             HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                modifier = Modifier.padding(horizontal = 16.dp),
                                 thickness = 0.5.dp,
-                                color = AppColors.divider.copy(alpha = 0.4f)
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Show Category",
+                                subtitle = "Main classification",
+                                icon = Icons.Rounded.Category,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showCategory,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showCategory = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Show Note",
+                                subtitle = "Transaction description",
+                                icon = Icons.AutoMirrored.Rounded.Notes,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showNote,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showNote = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
                             )
                             AeonSettingsItem(
                                 title = "Use Note as Header",
@@ -339,6 +424,7 @@ fun TransactionListTopAppBar(
                                 icon = Icons.AutoMirrored.Rounded.Sort,
                                 trailingContent = {
                                     Switch(
+                                        enabled = recordsSettings.showNote,
                                         checked = recordsSettings.useNoteAsHeader,
                                         onCheckedChange = {
                                             onUpdateRecordsSettings(
@@ -347,133 +433,177 @@ fun TransactionListTopAppBar(
                                                 )
                                             )
                                         },
-                                        colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Show Account",
+                                subtitle = "Source/Target wallet",
+                                icon = Icons.Rounded.AccountBalance,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showAccount,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showAccount = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Show Tags",
+                                subtitle = "Custom labels",
+                                icon = Icons.AutoMirrored.Rounded.Label,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showTags,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showTags = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Show Timestamp",
+                                subtitle = "Exact time of entry",
+                                icon = Icons.Rounded.AccessTime,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showTimestamp,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showTimestamp = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                        )
                                     )
                                 }
                             )
                         }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Show Account",
-                            subtitle = "Source/Target wallet",
-                            icon = Icons.Rounded.AccountBalance,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showAccount,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showAccount = it
+
+                        AeonSettingsSection("RUNNING BALANCES") {
+                            AeonSettingsItem(
+                                title = "Opening Balance",
+                                subtitle = "Balance before transaction",
+                                icon = Icons.Rounded.History,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showItemOpeningBalance,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showItemOpeningBalance = it
+                                                )
                                             )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
                                         )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Show Tags",
-                            subtitle = "Custom labels",
-                            icon = Icons.AutoMirrored.Rounded.Label,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showTags,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showTags = it
+                                    )
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Closing Balance",
+                                subtitle = "Balance after transaction",
+                                icon = Icons.Rounded.History,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showItemClosingBalance,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showItemClosingBalance = it
+                                                )
                                             )
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = AppColors.onPrimary,
+                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
+                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
+                                            uncheckedTrackColor = AppColors.surfaceVariant
                                         )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Show Timestamp",
-                            subtitle = "Exact time of entry",
-                            icon = Icons.Rounded.AccessTime,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showTimestamp,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showTimestamp = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
+                                    )
+                                }
+                            )
+                        }
                     }
 
-                    AeonSettingsSection("RUNNING BALANCES") {
-                        AeonSettingsItem(
-                            title = "Opening Balance",
-                            subtitle = "Balance before transaction",
-                            icon = Icons.Rounded.History,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showItemOpeningBalance,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showItemOpeningBalance = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(
+                            onClick = { showSettingsDialog = false }
+                        ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
                                 )
-                            }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.4f)
-                        )
-                        AeonSettingsItem(
-                            title = "Closing Balance",
-                            subtitle = "Balance after transaction",
-                            icon = Icons.Rounded.History,
-                            trailingContent = {
-                                Switch(
-                                    checked = recordsSettings.showItemClosingBalance,
-                                    onCheckedChange = {
-                                        onUpdateRecordsSettings(
-                                            recordsSettings.copy(
-                                                showItemClosingBalance = it
-                                            )
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
-                                )
-                            }
-                        )
+                            )
+                        }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Close")
-                }
             }
-        )
+        }
     }
 }
 

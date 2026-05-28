@@ -72,7 +72,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", style = AppTextStyles.calculatorKey) },
+                title = { Text("Settings", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -200,9 +200,9 @@ fun SettingsScreen(
                     availableProviders.find { it.id == currencyProviderId }?.attribution
                         ?: "Exchangerate.host",
                     style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.primary
-                    )
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = AppColors.primary
                 )
             }
         }

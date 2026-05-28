@@ -269,7 +269,7 @@ fun DisplaySettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Display & Style", style = AppTextStyles.calculatorKey) },
+                title = { Text("Display & Style", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

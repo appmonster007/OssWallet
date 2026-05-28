@@ -138,7 +138,7 @@ fun DataManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Data Management", style = AppTextStyles.calculatorKey) },
+                title = { Text("Data Management", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +61,7 @@ fun OpenInWebScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Open in Web") },
+                title = { Text("Open in Web", style = AppTextStyles.screenTitle) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -82,7 +84,7 @@ fun OpenInWebScreen(
             if (!uiState.isWifiConnected) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
+                        containerColor = AppColors.errorContainer
                     )
                 ) {
                     Row(
@@ -93,12 +95,12 @@ fun OpenInWebScreen(
                         Icon(
                             Icons.Default.WifiOff,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = AppColors.onErrorContainer
                         )
                         Text(
                             "Not connected to WiFi. Connect to a WiFi network to enable web access.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            style = AppTextStyles.transactionSubtitle,
+                            color = AppColors.onErrorContainer
                         )
                     }
                 }
@@ -113,7 +115,7 @@ fun OpenInWebScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Open in Web", style = MaterialTheme.typography.titleMedium)
+                        Text("Open in Web", style = AppTextStyles.cardSectionTitle)
                         Spacer(Modifier.height(2.dp))
                         val stateLabel = when (val s = uiState.serverState) {
                             is WebServerState.Stopped -> "Disabled"
@@ -123,11 +125,11 @@ fun OpenInWebScreen(
                         }
                         Text(
                             stateLabel,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = AppTextStyles.caption,
                             color = when (uiState.serverState) {
-                                is WebServerState.Running -> MaterialTheme.colorScheme.primary
-                                is WebServerState.Error -> MaterialTheme.colorScheme.error
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                is WebServerState.Running -> AppColors.primary
+                                is WebServerState.Error -> AppColors.error
+                                else -> AppColors.contentSecondary
                             }
                         )
                     }
@@ -150,8 +152,8 @@ fun OpenInWebScreen(
                     ) {
                         Text(
                             "Access Code",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = AppTextStyles.formSectionLabel,
+                            color = AppColors.contentSecondary
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
@@ -159,14 +161,14 @@ fun OpenInWebScreen(
                             fontFamily = FontFamily.Monospace,
                             fontSize = 32.sp,
                             letterSpacing = 6.sp,
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            style = AppTextStyles.heroAmountDisplay,
+                            color = AppColors.primary
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "Type this code in your browser after opening the URL below.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = AppTextStyles.caption,
+                            color = AppColors.contentSecondary,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -182,8 +184,8 @@ fun OpenInWebScreen(
                         ) {
                             Text(
                                 "Scan QR Code",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = AppTextStyles.formSectionLabel,
+                                color = AppColors.contentSecondary
                             )
                             Spacer(Modifier.height(16.dp))
                             Image(
@@ -193,7 +195,7 @@ fun OpenInWebScreen(
                                     .size(240.dp)
                                     .border(
                                         1.dp,
-                                        MaterialTheme.colorScheme.outlineVariant,
+                                        AppColors.divider,
                                         RoundedCornerShape(8.dp)
                                     )
                             )
@@ -207,8 +209,8 @@ fun OpenInWebScreen(
                         .padding(16.dp)) {
                         Text(
                             "Access URL",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = AppTextStyles.formSectionLabel,
+                            color = AppColors.contentSecondary
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(
@@ -217,10 +219,10 @@ fun OpenInWebScreen(
                         ) {
                             Text(
                                 text = runningState.accessUrl,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = AppTextStyles.transactionTitle,
                                 fontFamily = FontFamily.Monospace,
                                 modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.primary
+                                color = AppColors.primary
                             )
                             IconButton(
                                 onClick = {
@@ -242,7 +244,7 @@ fun OpenInWebScreen(
 
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        containerColor = AppColors.secondaryContainer
                     )
                 ) {
                     Column(
@@ -251,8 +253,8 @@ fun OpenInWebScreen(
                     ) {
                         Text(
                             "How to connect",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            style = AppTextStyles.formSectionLabel,
+                            color = AppColors.onSecondaryContainer
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -260,8 +262,8 @@ fun OpenInWebScreen(
                                     "2. Open the URL above in a browser, or scan the QR code.\n" +
                                     "3. Enter the access code shown above.\n" +
                                     "4. The web view is read-only. The server stops when you turn off the toggle.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            style = AppTextStyles.caption,
+                            color = AppColors.onSecondaryContainer
                         )
                     }
                 }
@@ -284,19 +286,19 @@ fun OpenInWebScreen(
             if (errorState != null) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
+                        containerColor = AppColors.errorContainer
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             "Failed to start server",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            style = AppTextStyles.cardSectionTitle,
+                            color = AppColors.onErrorContainer
                         )
                         Text(
                             errorState.message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            style = AppTextStyles.caption,
+                            color = AppColors.onErrorContainer
                         )
                     }
                 }

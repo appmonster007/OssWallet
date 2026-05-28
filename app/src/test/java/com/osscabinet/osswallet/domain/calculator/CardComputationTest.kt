@@ -57,7 +57,7 @@ class CardComputationTest {
     
     private val accounts = listOf(
         Account(id = "1", name = "Cash", currencyCode = "USD", structureType = AccountStructureType.CASH, colorHex = "#FFFFFF", icon = "wallet"),
-        Account(id = "2", name = "Bank", currencyCode = "EUR", structureType = AccountStructureType.CHECKING, colorHex = "#000000", icon = "bank")
+        Account(id = "2", name = "Bank", currencyCode = "EUR", structureType = AccountStructureType.BANK, colorHex = "#000000", icon = "bank")
     )
 
     private val transactions = listOf(

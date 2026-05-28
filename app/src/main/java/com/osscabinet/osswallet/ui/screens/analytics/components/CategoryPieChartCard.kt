@@ -76,7 +76,6 @@ fun CategoryPieChartCard(
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     currentTheme: String = "System",
-    previousTotal: BigDecimal? = null,
     showFilterButton: Boolean = true
 ) {
     val displayFilter =
@@ -245,12 +244,20 @@ fun CategoryPieChartCard(
                     )
                 }
 
+                val currentData = navigationStack.last()
+
+                val previousTotalValue = remember(currentData) {
+                    if (currentData.any { it.previousAmount != null }) {
+                        currentData.sumOf { it.previousAmount?.abs() ?: BigDecimal.ZERO }
+                    } else null
+                }
+
                 AeonPieChart(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
                     rounded = config.rounded,
                     currency = baseFilter.currencies.firstOrNull() ?: "USD",
-                    previousTotal = previousTotal,
+                    previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
                     onSliceClick = { slice ->
@@ -597,8 +604,13 @@ fun CategoryPieChartCardPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CategoryPieChartCard(
-                config = CategoryPieChartCardConfig(cardId = "rich", title = "Category Pie Chart"),
-                data = richData
+                config = CategoryPieChartCardConfig(
+                    cardId = "rich",
+                    title = "Category Pie Chart",
+                    showComparison = true,
+                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
+                ),
+                data = richData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.8"))) }
             )
         }
     }
@@ -617,7 +629,8 @@ data class CategoryPieChartData(
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryCount: Int = 0,
-    val subcategoryData: List<CategoryPieChartData>? = null
+    val subcategoryData: List<CategoryPieChartData>? = null,
+    @Contextual val previousAmount: BigDecimal? = null
 ) {
     fun allCategoryIds(): List<String> {
         val ids = mutableListOf<String>()

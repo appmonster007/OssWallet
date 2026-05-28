@@ -105,7 +105,8 @@ data class CategoryTreeMetrics(
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
-    val subcategoryData: List<CategoryTreeMetrics> = emptyList()
+    val subcategoryData: List<CategoryTreeMetrics> = emptyList(),
+    val previousNetBalance: BigDecimal? = null
 )
 
 /**

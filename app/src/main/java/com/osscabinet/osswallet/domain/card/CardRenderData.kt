@@ -87,7 +87,8 @@ sealed class CardRenderData {
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
         val items: List<CategoryTreeMetrics>,
-        val displayCurrency: String
+        val displayCurrency: String,
+        val previousTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class PlannedPayments(

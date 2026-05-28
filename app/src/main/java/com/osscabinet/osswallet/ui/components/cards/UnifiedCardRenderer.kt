@@ -116,7 +116,8 @@ fun UnifiedCardRenderer(
                     percentage = metric.percentage,
                     hasSubcategories = metric.hasSubcategories,
                     subcategoryCount = metric.subcategoryData.size,
-                    subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
+                    subcategoryData = metric.subcategoryData.map { mapMetrics(it) },
+                    previousAmount = metric.previousNetBalance
                 )
 
             val uiData = renderData.items.map { mapMetrics(it) }
@@ -133,7 +134,6 @@ fun UnifiedCardRenderer(
                 currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
-                previousTotal = renderData.previousTotal,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled
             )
         }
@@ -150,7 +150,8 @@ fun UnifiedCardRenderer(
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
                 subcategoryCount = metric.subcategoryData.size,
-                subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
+                subcategoryData = metric.subcategoryData.map { mapMetrics(it) },
+                previousAmount = metric.previousNetBalance
             )
 
             val uiData = renderData.items.map { mapMetrics(it) }

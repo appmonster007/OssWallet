@@ -9,17 +9,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,6 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -270,40 +280,84 @@ fun AnalyticsScreen(
     }
 
     if (showSettingsDialog) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showSettingsDialog = false },
-            title = { Text("Intelligence Settings") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "Intelligence Settings",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Common Filter",
-                                style = AppTextStyles.listItemTitle
-                            )
-                            Text(
-                                "Use a single filter for all cards on this screen",
-                                style = AppTextStyles.caption,
-                                color = AppColors.border
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Common Filter",
+                                    style = AppTextStyles.listItemTitle
+                                )
+                                Text(
+                                    "Use a single filter for all cards on this screen",
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.border
+                                )
+                            }
+                            Switch(
+                                checked = commonFilterEnabled,
+                                onCheckedChange = { viewModel.toggleCommonFilter(it) }
                             )
                         }
-                        Switch(
-                            checked = commonFilterEnabled,
-                            onCheckedChange = { viewModel.toggleCommonFilter(it) }
-                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(
+                            onClick = { showSettingsDialog = false }
+                        ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Close")
-                }
             }
-        )
+        }
     }
 
     if (showAddCardDialog) {

@@ -3,15 +3,18 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -27,12 +30,12 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SettingsSuggest
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -45,7 +48,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
@@ -71,99 +79,191 @@ fun DisplaySettingsScreen(
 
     if (showThemeDialog) {
         val themes = listOf("System", "Light", "Dark", "Amoled")
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("App Appearance") },
-            text = {
-                Column {
-                    themes.forEach { t ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setTheme(t)
-                                    showThemeDialog = false
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "App Appearance",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        themes.forEach { t ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setTheme(t)
+                                        showThemeDialog = false
+                                    }
+                                    .padding(AeonTheme.dimensions.cardPadding),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val icon = when (t) {
+                                    "Light" -> Icons.Rounded.LightMode
+                                    "Dark" -> Icons.Rounded.DarkMode
+                                    "Amoled" -> Icons.Rounded.Contrast
+                                    else -> Icons.Rounded.SettingsSuggest
                                 }
-                                .padding(AeonTheme.dimensions.cardPadding),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val icon = when (t) {
-                                "Light" -> Icons.Rounded.LightMode
-                                "Dark" -> Icons.Rounded.DarkMode
-                                "Amoled" -> Icons.Rounded.Contrast
-                                else -> Icons.Rounded.SettingsSuggest
-                            }
-                            Icon(
-                                icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
-                            )
-                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                            Text(
-                                t,
-                                modifier = Modifier.weight(1f),
-                                style = AppTextStyles.listItemTitle
-                            )
-                            if (t == theme) {
                                 Icon(
-                                    Icons.Rounded.Check,
+                                    icon,
                                     contentDescription = null,
-                                    tint = AppColors.primary
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                 )
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                                Text(
+                                    t,
+                                    modifier = Modifier.weight(1f),
+                                    style = AppTextStyles.listItemTitle
+                                )
+                                if (t == theme) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
+                                }
                             }
                         }
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(
+                            onClick = { showThemeDialog = false }
+                        ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) { Text("Close") }
             }
-        )
+        }
     }
 
     if (showFontDialog) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showFontDialog = false },
-            title = { Text("App Font") },
-            text = {
-                Column {
-                    AppFont.entries.forEach { font ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setSelectedFont(font.name)
-                                    showFontDialog = false
-                                }
-                                .padding(AeonTheme.dimensions.cardPadding),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Rounded.FontDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
-                            )
-                            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                            Text(
-                                font.displayName,
-                                modifier = Modifier.weight(1f),
-                                style = AppTextStyles.listItemTitle
-                            )
-                            if (font.name == selectedFont) {
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "App Font",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppFont.entries.forEach { font ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setSelectedFont(font.name)
+                                        showFontDialog = false
+                                    }
+                                    .padding(AeonTheme.dimensions.cardPadding),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(
-                                    Icons.Rounded.Check,
+                                    Icons.Rounded.FontDownload,
                                     contentDescription = null,
-                                    tint = AppColors.primary
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                 )
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                                Text(
+                                    font.displayName,
+                                    modifier = Modifier.weight(1f),
+                                    style = AppTextStyles.listItemTitle
+                                )
+                                if (font.name == selectedFont) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
+                                }
                             }
                         }
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(
+                            onClick = { showFontDialog = false }
+                        ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showFontDialog = false }) { Text("Close") }
             }
-        )
+        }
     }
 
     Scaffold(

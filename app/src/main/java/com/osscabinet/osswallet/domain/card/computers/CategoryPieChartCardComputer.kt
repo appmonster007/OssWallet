@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -48,32 +49,31 @@ class CategoryPieChartCardComputer :
         // Single-pass filter against all transactions
         val filteredTx = TransactionFilterService.filter(input.transactions, finalFilter)
 
-        // Step 3: Compute all values from filteredTx (already filtered by transaction type)
-        val tree = AggregationService.buildCategoryTree(
-            transactions = filteredTx,
-            allCategories = input.categories,
-            exchangeRates = input.exchangeRates,
-            baseCurrency = input.displayCurrency
-        )
-
-        // Step 4: Compute previous period total if comparison is enabled
-        val previousTotal: BigDecimal? =
+        // Step 4: Compute previous period transactions if comparison is enabled
+        val previousTx: List<Transaction>? =
             if (config.showComparison && finalFilter.timelineRange !is TimelineRange.AllTime) {
                 val (prevStart, prevEnd) = TimelineService.getPreviousRange(finalFilter.timelineRange)
                 if (prevStart != null && prevEnd != null) {
                     val prevFilter = finalFilter.copy(
                         timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                     )
-                    val prevTx = TransactionFilterService.filter(input.transactions, prevFilter)
-                    val prevTree = AggregationService.buildCategoryTree(
-                        transactions = prevTx,
-                        allCategories = input.categories,
-                        exchangeRates = input.exchangeRates,
-                        baseCurrency = input.displayCurrency
-                    )
-                    prevTree.sumOf { it.netBalance.abs() }
+                    TransactionFilterService.filter(input.transactions, prevFilter)
                 } else null
             } else null
+
+        // Step 3: Compute all values from filteredTx (already filtered by transaction type)
+        val tree = AggregationService.buildCategoryTree(
+            transactions = filteredTx,
+            allCategories = input.categories,
+            exchangeRates = input.exchangeRates,
+            baseCurrency = input.displayCurrency,
+            previousTransactions = previousTx
+        )
+
+        val previousTotal = previousTx?.let { txs ->
+            // Re-use aggregation service logic but we need the total from the tree to be consistent
+            tree.sumOf { it.previousNetBalance?.abs() ?: BigDecimal.ZERO }
+        }
 
         return CardRenderData.CategoryPieChart(config, tree, input.displayCurrency, previousTotal)
     }

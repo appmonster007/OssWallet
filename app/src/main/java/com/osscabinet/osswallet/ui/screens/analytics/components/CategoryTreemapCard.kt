@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Dashboard
@@ -43,7 +45,9 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -53,12 +57,15 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun CategoryTreemapCard(
@@ -267,15 +274,94 @@ fun CategoryTreemapCard(
         }
 
         // Consistent Legend for Treemap
-        if (config.showLegend && groupedData.isNotEmpty()) {
+        if (groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            TreemapLegend(
-                data = groupedData,
-                isDarkTheme = isDarkTheme,
-                isAmoled = isAmoled,
-                showFullBreakdown = config.showFullBreakdown,
-                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
-            )
+
+            // Summary Section with Total and Comparison
+            val total = remember(currentData) { currentData.sumOf { it.amount.abs() } }
+            val previousTotalValue = remember(currentData) {
+                if (currentData.any { it.previousAmount != null }) {
+                    currentData.sumOf { it.previousAmount?.abs() ?: BigDecimal.ZERO }
+                } else null
+            }
+            val currency = baseFilter.currencies.firstOrNull() ?: "USD"
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "TOTAL",
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = formatCurrencyRight(total, currency, shorten = true),
+                        style = AppTextStyles.managementItemTitle.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        ),
+                        color = AppColors.contentPrimary
+                    )
+                }
+
+                if (config.showComparison && config.filter.timelineRange !is TimelineRange.AllTime && previousTotalValue != null && previousTotalValue.signum() != 0) {
+                    val delta = total.subtract(previousTotalValue)
+                        .divide(previousTotalValue, 8, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal("100"))
+
+                    val isIncrease = delta.signum() > 0
+                    val isDecrease = delta.signum() < 0
+
+                    val color = when {
+                        isIncrease -> NegativeAmountColor
+                        isDecrease -> PositiveAmountColor
+                        else -> AppColors.contentSecondary
+                    }
+
+                    val icon = when {
+                        isIncrease -> Icons.Default.ArrowUpward
+                        isDecrease -> Icons.Default.ArrowDownward
+                        else -> null
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    ) {
+                        if (icon != null) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = color
+                            )
+                        }
+                        Text(
+                            text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
+                            style = AppTextStyles.caption.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            ),
+                            color = color
+                        )
+                    }
+                }
+            }
+
+            if (config.showLegend) {
+                Spacer(modifier = Modifier.height(16.dp))
+                TreemapLegend(
+                    data = groupedData,
+                    isDarkTheme = isDarkTheme,
+                    isAmoled = isAmoled,
+                    showFullBreakdown = config.showFullBreakdown,
+                    onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
+                )
+            }
         }
     }
 
@@ -522,17 +608,19 @@ fun CategoryTreemapCardPreview() {
         )
     )
 
-    OssWalletTheme {
-        CategoryTreemapCard(
-            config = CategoryTreemapCardConfig(
-                cardId = "preview",
-                title = "Category Treemap",
-                showLabels = true,
-                showLegend = true
-            ),
-            data = sampleData
-        )
-    }
+        OssWalletTheme {
+            CategoryTreemapCard(
+                config = CategoryTreemapCardConfig(
+                    cardId = "preview",
+                    title = "Category Treemap",
+                    showLabels = true,
+                    showLegend = true,
+                    showComparison = true,
+                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
+                ),
+                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) }
+            )
+        }
 }
 
 /**
@@ -548,7 +636,8 @@ data class CategoryTreemapData(
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryCount: Int = 0,
-    val subcategoryData: List<CategoryTreemapData>? = null
+    val subcategoryData: List<CategoryTreemapData>? = null,
+    @Contextual val previousAmount: BigDecimal? = null
 ) {
     fun allCategoryIds(): List<String> {
         val ids = mutableListOf<String>()

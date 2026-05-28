@@ -253,7 +253,8 @@ object AggregationService {
         allCategories: List<Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null,
-        precision: Int = CurrencyService.precision
+        precision: Int = CurrencyService.precision,
+        previousTransactions: List<Transaction>? = null
     ): List<CategoryTreeMetrics> {
         val categoryMap = allCategories.associateBy { it.id }
 
@@ -277,17 +278,41 @@ object AggregationService {
             baseCurrency = baseCurrency
         ).associateBy { it.key }
 
+        val previousBreakdowns = previousTransactions?.let {
+            createBreakdown(
+                transactions = it,
+                selector = { it.categoryId },
+                mapper = { categoryId, summaries ->
+                    FinancialMetrics(
+                        key = categoryId,
+                        financialSummary = FinancialSummary(
+                            totalAmount = summaries.values.sumOf { it.totalAmount },
+                            income = summaries.values.sumOf { it.income },
+                            expense = summaries.values.sumOf { it.expense },
+                            transfer = summaries.values.sumOf { it.transfer },
+                            transactionCount = summaries.values.sumOf { it.transactionCount }
+                        ),
+                        currencyBreakdown = summaries
+                    )
+                },
+                exchangeRates = exchangeRates,
+                baseCurrency = baseCurrency
+            ).associateBy { it.key }
+        }
+
         val globalTotal = categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
 
         fun buildSubTree(categoryId: Long): CategoryTreeMetrics? {
             val entity = categoryMap[categoryId] ?: return null
             val breakdown = categoryBreakdowns[categoryId] ?: FinancialMetrics(categoryId, FinancialSummary.EMPTY, emptyMap())
+            val previousBreakdown = previousBreakdowns?.get(categoryId)
+            
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
             val actualChildrenData = childrenEntities.mapNotNull { buildSubTree(it.id) }
             val combinedChildren = mutableListOf<CategoryTreeMetrics>()
 
             if (actualChildrenData.isNotEmpty()) {
-                if (breakdown.totalAmount.signum() != 0) {
+                if (breakdown.totalAmount.signum() != 0 || (previousBreakdown != null && previousBreakdown.totalAmount.signum() != 0)) {
                     combinedChildren.add(CategoryTreeMetrics(
                         category = entity.name,
                         categoryId = entity.id,
@@ -297,7 +322,8 @@ object AggregationService {
                         colorHex = entity.colorHex,
                         percentage = if (globalTotal.signum() != 0) (breakdown.totalAmount.abs().divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                         hasSubcategories = false,
-                        subcategoryData = emptyList()
+                        subcategoryData = emptyList(),
+                        previousNetBalance = previousBreakdown?.totalAmount?.setScale(precision, RoundingMode.HALF_UP)
                     ))
                 }
                 combinedChildren.addAll(actualChildrenData)
@@ -308,6 +334,10 @@ object AggregationService {
             val totalIncome = if (actualChildrenData.isEmpty()) breakdown.income else combinedChildren.sumOf { it.income }
             val totalExpense = if (actualChildrenData.isEmpty()) breakdown.expense else combinedChildren.sumOf { it.expense }
             val totalNet = totalIncome + totalExpense
+            
+            val totalPrevNet = if (previousTransactions != null) {
+                if (actualChildrenData.isEmpty()) previousBreakdown?.totalAmount ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousNetBalance ?: BigDecimal.ZERO }
+            } else null
 
             return CategoryTreeMetrics(
                 category = entity.name,
@@ -318,13 +348,14 @@ object AggregationService {
                 colorHex = entity.colorHex,
                 percentage = if (globalTotal.signum() != 0) (totalNet.abs().divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                 hasSubcategories = combinedChildren.isNotEmpty(),
-                subcategoryData = combinedChildren
+                subcategoryData = combinedChildren,
+                previousNetBalance = totalPrevNet?.setScale(precision, RoundingMode.HALF_UP)
             )
         }
 
         return allCategories.filter { it.parentId == null }
             .mapNotNull { buildSubTree(it.id) }
-            .filter { it.netBalance.signum() != 0 || it.subcategoryData.isNotEmpty() }
+            .filter { it.netBalance.signum() != 0 || it.subcategoryData.isNotEmpty() || (it.previousNetBalance != null && it.previousNetBalance.signum() != 0) }
             .sortedByDescending { it.netBalance.abs() }
     }
 }

@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -316,7 +316,12 @@ fun AeonPieChart(
                     verticalArrangement = Arrangement.Center
                 ) {
                     val formattedTotal =
-                        formatCurrencyRight(total, currency, precision, shorten = true)
+                        formatAuto(
+                            amount = total,
+                            currencyCode = currency,
+                            precision = precision,
+                            shorten = true
+                        )
 
                     Text(
                         text = "TOTAL",

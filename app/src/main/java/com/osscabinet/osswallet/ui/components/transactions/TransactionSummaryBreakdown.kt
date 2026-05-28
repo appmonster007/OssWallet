@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -159,7 +159,7 @@ fun TransactionSummaryBreakdown(
                 .padding(start = 8.dp)
 
             Text(
-                formatCurrencyRight(incomeBase, baseCurrency, shorten = true),
+                formatAuto(incomeBase, baseCurrency, shorten = true),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -169,7 +169,7 @@ fun TransactionSummaryBreakdown(
                 textAlign = TextAlign.End
             )
             Text(
-                formatCurrencyRight(expenseBase, baseCurrency, shorten = true),
+                formatAuto(expenseBase, baseCurrency, shorten = true),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -179,7 +179,7 @@ fun TransactionSummaryBreakdown(
                 textAlign = TextAlign.End
             )
             Text(
-                formatCurrencyRight(netBase, baseCurrency, shorten = true),
+                formatAuto(netBase, baseCurrency, shorten = true),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -191,9 +191,9 @@ fun TransactionSummaryBreakdown(
 
             if (balanceWeight > 0) {
                 val openingBaseText =
-                    formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, shorten = true)
+                    formatAuto(totalOpeningBalanceBase, baseCurrency, shorten = true)
                 val closingBaseText =
-                    formatCurrencyRight(totalClosingBalanceBase, baseCurrency, shorten = true)
+                    formatAuto(totalClosingBalanceBase, baseCurrency, shorten = true)
                 val balanceText = when {
                     showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
                     showOpeningBalance -> openingBaseText
@@ -247,21 +247,21 @@ fun TransactionSummaryBreakdown(
                             .padding(start = 8.dp)
 
                         Text(
-                            formatCurrencyRight(inc, curr, shorten = true),
+                            formatAuto(inc, curr, shorten = true),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
                             color = positiveColor.copy(alpha = 0.7f),
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
                         Text(
-                            formatCurrencyRight(exp, curr, shorten = true),
+                            formatAuto(exp, curr, shorten = true),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
                             color = negativeColor.copy(alpha = 0.7f),
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
                         Text(
-                            formatCurrencyRight(net, curr, shorten = true),
+                            formatAuto(net, curr, shorten = true),
                             style = AppTextStyles.metaLabel.copy(
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold
@@ -274,12 +274,12 @@ fun TransactionSummaryBreakdown(
                         )
 
                         if (balanceWeight > 0) {
-                            val balAfterText = if (balAfter != null) formatCurrencyRight(
+                            val balAfterText = if (balAfter != null) formatAuto(
                                 balAfter,
                                 curr,
                                 shorten = true
                             ) else "0.00 $curr"
-                            val balBeforeText = formatCurrencyRight(balBefore, curr, shorten = true)
+                            val balBeforeText = formatAuto(balBefore, curr, shorten = true)
 
                             val balanceText = when {
                                 showOpeningBalance && showClosingBalance -> "$balBeforeText → $balAfterText"

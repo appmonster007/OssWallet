@@ -114,10 +114,10 @@ fun CashFlowComparisonCard(
                 }
             }
             Text(
-                text = CurrencyFormatter.formatCurrencyRight(
-                    aggregateTotal,
-                    renderData.baseCurrency,
-                    CurrencyService.precision
+                text = CurrencyFormatter.formatAuto(
+                    amount = aggregateTotal,
+                    currencyCode = renderData.baseCurrency,
+                    precision = CurrencyService.precision
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
                 color = AppColors.contentPrimary,

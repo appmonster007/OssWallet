@@ -325,9 +325,10 @@ fun AeonUpSetPlot(
                         val isPositive = intersection.value >= BigDecimal.ZERO
 
                         UpSetVerticalBar(
-                            amount = CurrencyFormatter.formatShortCurrency(
+                            amount = CurrencyFormatter.formatAuto(
                                 intersection.value,
-                                currency
+                                currency,
+                                shorten = true
                             ),
                             magnitudeRatio = magnitudeRatio,
                             isPositive = isPositive,
@@ -362,7 +363,7 @@ fun AeonUpSetPlot(
 
                     UpSetHorizontalBar(
                         name = set.name,
-                        amount = CurrencyFormatter.formatShortCurrency(set.total, currency),
+                        amount = CurrencyFormatter.formatAuto(set.total, currency, shorten = true),
                         magnitudeRatio = magnitudeRatio,
                         isPositive = isPositive,
                         onClick = { onSetClick(originalIdx) },

@@ -56,7 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
@@ -138,7 +138,7 @@ fun AccountListScreen(
                             style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            formatCurrencyRight(BigDecimal.ZERO, account.currencyCode),
+                            formatAuto(BigDecimal.ZERO, account.currencyCode),
                             style = AppTextStyles.caption
                         )
                     }

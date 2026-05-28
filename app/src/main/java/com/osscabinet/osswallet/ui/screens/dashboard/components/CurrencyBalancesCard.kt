@@ -28,7 +28,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -215,7 +215,7 @@ fun CurrencyBalanceItem(
             )
 
             Text(
-                formatCurrencyRight(amount, curr, shorten = true),
+                formatAuto(amount, curr, shorten = true),
                 style = AppTextStyles.screenSubTitle.copy(
                     fontFeatureSettings = "tnum",
                     fontWeight = FontWeight.Bold,
@@ -226,7 +226,7 @@ fun CurrencyBalanceItem(
 
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, shorten = true)}",
+                    "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium

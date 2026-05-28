@@ -34,7 +34,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -161,18 +161,18 @@ fun RecentActivitiesScreen(
                             AeonTransactionItem(
                                 category = enriched.categoryName,
                                 account = enriched.accountName,
-                                amount = formatCurrencyRight(
+                                amount = formatAuto(
                                     transaction.amount,
                                     transaction.currency
                                 ),
                                 convertedAmount = if ((transaction.currency != baseCurrency) && (enriched.amountInBase != null)) {
-                                    formatCurrencyRight(enriched.amountInBase, baseCurrency)
+                                    formatAuto(enriched.amountInBase, baseCurrency)
                                 } else null,
-                                balanceBefore = formatCurrencyRight(
+                                balanceBefore = formatAuto(
                                     enriched.item.balanceBefore,
                                     enriched.accountCurrency
                                 ),
-                                balanceAfter = formatCurrencyRight(
+                                balanceAfter = formatAuto(
                                     enriched.item.balanceAfter,
                                     enriched.accountCurrency
                                 ),

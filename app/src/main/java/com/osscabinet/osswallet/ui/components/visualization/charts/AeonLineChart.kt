@@ -47,8 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -240,7 +239,7 @@ fun AeonLineChart(
                             strokeWidth = (dims.spacingXs / 8).toPx()
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatShortNumber(tick),
+                            formatAuto(tick, shorten = true),
                             leftPadding - dims.spacingMd.toPx(),
                             yPos + dims.spacingXs.toPx(),
                             labelPaint
@@ -602,10 +601,10 @@ fun AeonLineChart(
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = formatCurrencyRight(
-                                            p.y,
-                                            currency,
-                                            precision,
+                                        text = formatAuto(
+                                            amount = p.y,
+                                            currencyCode = currency,
+                                            precision = precision,
                                             shorten = true
                                         ),
                                         style = AppTextStyles.formSectionLabel,

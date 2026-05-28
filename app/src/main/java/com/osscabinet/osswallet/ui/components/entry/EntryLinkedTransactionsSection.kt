@@ -34,7 +34,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.toUiModels
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -133,7 +133,7 @@ private fun EntryLinkedTransactionItem(
             AeonTransactionItem(
                 category = categoryName,
                 account = accountName,
-                amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                amount = formatAuto(tx.amount, tx.currency, precision = 2),
                 balanceBefore = BigDecimal.ZERO.toPlainString(),
                 balanceAfter = tx.amount.toPlainString(),
                 type = when (tx.transactionType) {

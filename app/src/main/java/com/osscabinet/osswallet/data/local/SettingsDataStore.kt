@@ -43,6 +43,7 @@ class SettingsDataStore(private val context: Context) {
         val USER_NAME_KEY = stringPreferencesKey("user_name")
         val USE_SYSTEM_FONT_KEY = booleanPreferencesKey("use_system_font")
         val SELECTED_FONT_KEY = stringPreferencesKey("selected_font")
+        val NUMBERING_SYSTEM_KEY = stringPreferencesKey("numbering_system")
         val SHORTLISTED_CURRENCIES_KEY = stringSetPreferencesKey("shortlisted_currencies")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
@@ -121,6 +122,10 @@ class SettingsDataStore(private val context: Context) {
     val selectedFont: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[SELECTED_FONT_KEY]
             ?: if (preferences[USE_SYSTEM_FONT_KEY] == true) "SYSTEM" else "MANROPE"
+    }
+
+    val numberingSystem: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[NUMBERING_SYSTEM_KEY] ?: "WESTERN"
     }
 
     val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
@@ -279,6 +284,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveSelectedFont(fontName: String) {
         context.dataStore.edit { preferences ->
             preferences[SELECTED_FONT_KEY] = fontName
+        }
+    }
+
+    suspend fun saveNumberingSystem(system: String) {
+        context.dataStore.edit { preferences ->
+            preferences[NUMBERING_SYSTEM_KEY] = system
         }
     }
 

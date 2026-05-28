@@ -44,8 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
@@ -119,13 +118,13 @@ fun AeonAccountCardSmall(
                 )
                 Column {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, shorten = true),
+                        formatAuto(balance, account.currencyCode, shorten = true),
                         style = AppTextStyles.transactionSubtitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
+                        "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
                         style = AppTextStyles.metaLabel,
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
@@ -204,13 +203,13 @@ fun AeonAccountCardMedium(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    formatCurrencyRight(balance, account.currencyCode, shorten = true),
+                    formatAuto(balance, account.currencyCode, shorten = true),
                     style = AppTextStyles.cardSectionTitle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, shorten = true)}",
+                    "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
                     style = AppTextStyles.tagLabel,
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -320,14 +319,14 @@ fun AeonAccountCardLarge(
 
                 Column {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, shorten = true),
+                        formatAuto(balance, account.currencyCode, shorten = true),
                         style = AppTextStyles.calculatorDisplay,
                         color = contentColor
                     )
                     if (account.currencyCode != baseCurrency) {
                         Text(
                             text = "≈ ${
-                                formatCurrencyRight(
+                                formatAuto(
                                     balanceInBase,
                                     baseCurrency,
                                     shorten = true
@@ -385,7 +384,7 @@ fun AeonAccountCardLarge(
                                         color = contentColor.copy(alpha = 0.6f)
                                     )
                                     Text(
-                                        formatAmount(bal),
+                                        formatAuto(bal),
                                         style = AppTextStyles.transactionBadge,
                                         color = contentColor
                                     )

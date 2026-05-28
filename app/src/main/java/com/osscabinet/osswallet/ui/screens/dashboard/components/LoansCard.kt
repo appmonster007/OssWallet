@@ -29,8 +29,7 @@ import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -198,7 +197,7 @@ private fun LoanSummaryRow(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrencyRight(
+                        text = formatAuto(
                             summary.remainingBalance,
                             summary.loan.currency,
                             shorten = true
@@ -215,7 +214,7 @@ private fun LoanSummaryRow(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Principal: ${formatAmount(summary.loan.principalAmount)}",
+                        text = "Principal: ${formatAuto(summary.loan.principalAmount)}",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum"

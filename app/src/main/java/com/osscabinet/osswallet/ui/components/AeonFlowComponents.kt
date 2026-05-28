@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -313,7 +313,7 @@ fun AeonFlowBadge(
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
     ) {
         Text(
-            text = formatCurrencyRight(amount, currency, shorten = true).trim(),
+            text = formatAuto(amount, currency, shorten = true).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Black,

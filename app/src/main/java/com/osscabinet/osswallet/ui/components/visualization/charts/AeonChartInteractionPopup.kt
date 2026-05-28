@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -121,7 +121,12 @@ fun AeonChartInteractionPopup(
             // Content: Value + Global %
             Column {
                 Text(
-                    text = formatCurrencyRight(value, currency, precision, shorten = true),
+                    text = formatAuto(
+                        amount = value,
+                        currencyCode = currency,
+                        precision = precision,
+                        shorten = true
+                    ),
                     style = AppTextStyles.screenSubTitle.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp

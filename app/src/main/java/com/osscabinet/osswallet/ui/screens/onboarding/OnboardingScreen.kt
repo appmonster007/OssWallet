@@ -78,7 +78,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
@@ -826,7 +826,7 @@ private fun AppearanceStep(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Example: ${formatAmount(BigDecimal("1234.5678"), selectedPrecision)}",
+                    text = "Example: ${formatAuto(BigDecimal("1234.5678"), precision = selectedPrecision)}",
                     style = AppTextStyles.listItemTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp

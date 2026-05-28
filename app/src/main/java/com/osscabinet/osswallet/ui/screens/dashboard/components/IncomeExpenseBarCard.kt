@@ -122,10 +122,10 @@ fun IncomeExpenseBarCard(
             // Net total for the period (sum of all bucket net values)
             val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
             Text(
-                text = CurrencyFormatter.formatCurrencyRight(
-                    netTotal,
-                    renderData.baseCurrency,
-                    CurrencyService.precision
+                text = CurrencyFormatter.formatAuto(
+                    amount = netTotal,
+                    currencyCode = renderData.baseCurrency,
+                    precision = CurrencyService.precision
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
                 color = AppColors.contentPrimary,

@@ -53,10 +53,13 @@ class MainActivity : FragmentActivity() {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
             val selectedFont by settingsRepository.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
             val precision by settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
+            val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
 
-            LaunchedEffect(precision) {
+            LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
+                com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.activeSystem = 
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.FormattingSystem.fromString(numberingSystem)
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision = precision
                 com.osscabinet.ossWallet.domain.service.timeline.TimelineService.precision = precision
             }

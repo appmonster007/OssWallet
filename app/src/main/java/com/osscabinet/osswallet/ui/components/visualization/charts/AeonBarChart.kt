@@ -48,8 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortNumber
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -206,7 +205,7 @@ fun AeonBarChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatShortNumber(tick),
+                            formatAuto(tick, shorten = true),
                             leftPadding - 8.dp.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -367,10 +366,10 @@ fun AeonBarChart(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = formatCurrencyRight(
-                                    bar.value,
-                                    currency,
-                                    precision,
+                                text = formatAuto(
+                                    amount = bar.value,
+                                    currencyCode = currency,
+                                    precision = precision,
                                     shorten = true
                                 ),
                                 style = AppTextStyles.formSectionLabel,

@@ -23,8 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -74,7 +73,7 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount = formatCurrencyRight(displayAmount, budget.currency, shorten = true)
+                        val amount = formatAuto(displayAmount, budget.currency, shorten = true)
                         val amountParts = amount.split(" ")
                         val amountText = amountParts.dropLast(1).joinToString(" ")
                         val symbolText = amountParts.lastOrNull() ?: ""
@@ -144,14 +143,14 @@ fun BudgetHeroCard(
                                 .background(accentColor, CircleShape)
                         )
                         Text(
-                            text = "${formatAmount(progress.spent)} spent",
+                            text = "${formatAuto(progress.spent)} spent",
                             style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
                             color = AppColors.contentSecondary.copy(alpha = 0.8f)
                         )
                     }
                     Text(
                         text = "Limit: ${
-                            formatCurrencyRight(
+                            formatAuto(
                                 budget.limitAmount,
                                 budget.currency, shorten = true
                             )

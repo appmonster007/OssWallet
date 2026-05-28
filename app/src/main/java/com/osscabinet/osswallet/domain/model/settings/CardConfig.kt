@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.model.settings
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -383,12 +384,6 @@ data class CashFlowComparisonCardConfig(
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
-/**
- * Configuration for Income & Expense Bar chart card instances.
- */
-@Serializable
-enum class CategoryNatureFilter { ALL, MUST, NEED, WANT }
-
 @Serializable
 @SerialName("category_spending_trend")
 data class CategorySpendingTrendCardConfig(
@@ -398,7 +393,7 @@ data class CategorySpendingTrendCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
-    val selectedNature: CategoryNatureFilter = CategoryNatureFilter.ALL,
+    val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {

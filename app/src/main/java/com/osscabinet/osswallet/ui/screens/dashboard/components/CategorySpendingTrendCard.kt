@@ -115,7 +115,27 @@ fun CategorySpendingTrendCard(
                 onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
             )
 
-            // Nature filters (Must, Need, Want)
+            // Resolve nature colors in composable scope
+            val mustColor = AppColors.error
+            val needColor = InfoColor
+            val wantColor = WarningColor
+
+            // Stacked bar chart
+            val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor)
+            if (chartGroups.isNotEmpty()) {
+                AeonBarChart(
+                    groups = chartGroups,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
+                    currency = renderData.baseCurrency,
+                    showGrid = config.showGridLines,
+                    showXAxisLabels = true,
+                    cornerRadius = 0.dp
+                )
+            }
+
+            // Nature filters (Must, Need, Want) - Placed below graph, equally spaced
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -139,14 +159,20 @@ fun CategorySpendingTrendCard(
                             callbacks.onUpdate(config.copy(selectedNatures = newNatures))
                         },
                         label = {
-                            Text(
-                                text = nature.name.lowercase().replaceFirstChar { it.uppercase() },
-                                style = AppTextStyles.caption.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = nature.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = AppTextStyles.caption.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
                                 )
-                            )
+                            }
                         },
+                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = natureColor.copy(alpha = 0.12f),
                             selectedLabelColor = natureColor,
@@ -163,26 +189,6 @@ fun CategorySpendingTrendCard(
                         )
                     )
                 }
-            }
-
-            // Resolve nature colors in composable scope
-            val mustColor = AppColors.error
-            val needColor = InfoColor
-            val wantColor = WarningColor
-
-            // Stacked bar chart
-            val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor)
-            if (chartGroups.isNotEmpty()) {
-                AeonBarChart(
-                    groups = chartGroups,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    currency = renderData.baseCurrency,
-                    showGrid = config.showGridLines,
-                    showXAxisLabels = true,
-                    cornerRadius = 0.dp
-                )
             }
 
             // Expandable category list header

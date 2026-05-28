@@ -288,10 +288,10 @@ fun CategoryTreemapCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Summary Section with Total and Comparison
-            val total = remember(currentData) { currentData.sumOf { it.amount.abs() } }
+            val total = remember(currentData) { currentData.sumOf { it.amount } }
             val previousTotalValue = remember(currentData) {
                 if (currentData.any { it.previousAmount != null }) {
-                    currentData.sumOf { it.previousAmount?.abs() ?: BigDecimal.ZERO }
+                    currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
             }
             val currency = baseFilter.currencies.firstOrNull() ?: "USD"
@@ -308,7 +308,7 @@ fun CategoryTreemapCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrencyRight(total, currency, shorten = true),
+                        text = formatCurrency(total, currency),
                         style = AppTextStyles.managementItemTitle.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -658,10 +658,19 @@ fun CategoryTreemapCardPreview() {
         }
 }
 
-/**
- * Category data for treemap card.
- * Represents expense or income distribution across categories for visualization.
- */
+private fun formatCurrency(amount: BigDecimal, currency: String): String {
+    val formatted = formatCurrencyRight(
+        amount.abs(),
+        currency,
+        com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+        shorten = true
+    )
+    return when {
+        amount.signum() > 0 -> "+$formatted"
+        amount.signum() < 0 -> "-$formatted"
+        else -> formatted
+    }
+}
 @Serializable
 data class CategoryTreemapData(
     val category: String,

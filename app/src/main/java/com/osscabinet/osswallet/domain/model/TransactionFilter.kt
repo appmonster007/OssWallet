@@ -27,7 +27,7 @@ data class TransactionFilter(
     val tags: Set<String> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val excludeFuture: Boolean = true
+    val excludeFuture: Boolean = false
 )
 
 /**

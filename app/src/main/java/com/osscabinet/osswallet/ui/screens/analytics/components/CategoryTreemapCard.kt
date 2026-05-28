@@ -44,6 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -157,6 +161,12 @@ fun CategoryTreemapCard(
             )
         }
     ) {
+        MetricToggleRow(
+            selectedMetric = config.selectedMetric,
+            onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
         if (navigationStack.size > 1) {
             Row(
                 modifier = Modifier
@@ -265,7 +275,7 @@ fun CategoryTreemapCard(
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No expense data",
+                        "No category data",
                         style = AppTextStyles.caption,
                         color = AppColors.contentSecondary
                     )
@@ -308,16 +318,18 @@ fun CategoryTreemapCard(
                 }
 
                 if (config.showComparison && config.filter.timelineRange !is TimelineRange.AllTime && previousTotalValue != null && previousTotalValue.signum() != 0) {
-                    val delta = total.subtract(previousTotalValue)
-                        .divide(previousTotalValue, 8, RoundingMode.HALF_UP)
+                    val delta = total.abs().subtract(previousTotalValue.abs())
+                        .divide(previousTotalValue.abs(), 8, RoundingMode.HALF_UP)
                         .multiply(BigDecimal("100"))
 
                     val isIncrease = delta.signum() > 0
                     val isDecrease = delta.signum() < 0
 
+                    val positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+
                     val color = when {
-                        isIncrease -> NegativeAmountColor
-                        isDecrease -> PositiveAmountColor
+                        isIncrease -> if (positiveDeltaIsGood) PositiveAmountColor else NegativeAmountColor
+                        isDecrease -> if (positiveDeltaIsGood) NegativeAmountColor else PositiveAmountColor
                         else -> AppColors.contentSecondary
                     }
 
@@ -365,6 +377,29 @@ fun CategoryTreemapCard(
         }
     }
 
+}
+
+@Composable
+private fun MetricToggleRow(
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit
+) {
+    val options = ChartMetric.entries
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, metric ->
+            SegmentedButton(
+                selected = selectedMetric == metric,
+                onClick = { onMetricChange(metric) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = metric.name,
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                    )
+                }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

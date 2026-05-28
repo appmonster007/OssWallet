@@ -81,14 +81,22 @@ sealed class CardRenderData {
         val config: CategoryPieChartCardConfig,
         val items: List<CategoryTreeMetrics>,
         val displayCurrency: String,
-        val previousTotal: BigDecimal? = null
+        val previousTotal: BigDecimal? = null,
+        val incomeTotal: BigDecimal = BigDecimal.ZERO,
+        val expenseTotal: BigDecimal = BigDecimal.ZERO,
+        val previousIncomeTotal: BigDecimal? = null,
+        val previousExpenseTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
         val items: List<CategoryTreeMetrics>,
         val displayCurrency: String,
-        val previousTotal: BigDecimal? = null
+        val previousTotal: BigDecimal? = null,
+        val incomeTotal: BigDecimal = BigDecimal.ZERO,
+        val expenseTotal: BigDecimal = BigDecimal.ZERO,
+        val previousIncomeTotal: BigDecimal? = null,
+        val previousExpenseTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class PlannedPayments(

@@ -76,6 +76,7 @@ fun AeonPieChart(
     previousTotal: BigDecimal? = null,
     showComparison: Boolean = false,
     isAllTime: Boolean = true,
+    positiveDeltaIsGood: Boolean = false,
     onSliceClick: (AeonPieChartSlice) -> Unit = {},
     onDrillInClick: (AeonPieChartSlice) -> Unit = {},
     onNavigateToRecords: (AeonPieChartSlice) -> Unit = {}
@@ -332,18 +333,16 @@ fun AeonPieChart(
 
                     // Comparison Delta
                     if (showComparison && !isAllTime && previousTotal != null && previousTotal.signum() != 0) {
-                        val delta = total.subtract(previousTotal)
-                            .divide(previousTotal, 8, RoundingMode.HALF_UP)
+                        val delta = total.abs().subtract(previousTotal.abs())
+                            .divide(previousTotal.abs(), 8, RoundingMode.HALF_UP)
                             .multiply(BigDecimal("100"))
 
                         val isIncrease = delta.signum() > 0
                         val isDecrease = delta.signum() < 0
 
-                        // For expense breakdown, an increase in outflow (more negative) 
-                        // or increase in positive cost is usually "Negative" (Red)
                         val color = when {
-                            isIncrease -> NegativeAmountColor
-                            isDecrease -> PositiveAmountColor
+                            isIncrease -> if (positiveDeltaIsGood) PositiveAmountColor else NegativeAmountColor
+                            isDecrease -> if (positiveDeltaIsGood) NegativeAmountColor else PositiveAmountColor
                             else -> AppColors.contentSecondary
                         }
 

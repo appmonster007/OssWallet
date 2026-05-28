@@ -31,7 +31,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonMetric
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -108,9 +108,9 @@ fun CashFlowComparisonCard(
             // Aggregate sum for current period
             val aggregateTotal = renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
                 acc + when (selectedMetric) {
-                    CashFlowComparisonMetric.NET -> p.net
-                    CashFlowComparisonMetric.INCOME -> p.income
-                    CashFlowComparisonMetric.EXPENSE -> p.expense.negate()
+                    ChartMetric.NET -> p.net
+                    ChartMetric.INCOME -> p.income
+                    ChartMetric.EXPENSE -> p.expense.negate()
                 }
             }
             Text(
@@ -183,10 +183,10 @@ fun CashFlowComparisonCard(
 
 @Composable
 private fun MetricToggleRow(
-    selectedMetric: CashFlowComparisonMetric,
-    onMetricChange: (CashFlowComparisonMetric) -> Unit
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit
 ) {
-    val options = CashFlowComparisonMetric.entries
+    val options = ChartMetric.entries
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, metric ->
             SegmentedButton(
@@ -260,7 +260,7 @@ private fun LegendItem(
 
 private fun buildSeriesList(
     config: CashFlowComparisonCardConfig,
-    selectedMetric: CashFlowComparisonMetric,
+    selectedMetric: ChartMetric,
     isCumulative: Boolean,
     renderData: CardRenderData.CashFlowComparison
 ): List<AeonLineChartSeries> {
@@ -271,9 +271,9 @@ private fun buildSeriesList(
         var running = BigDecimal.ZERO
         val dataPoints = s.points.mapIndexed { index, point ->
             val value = when (selectedMetric) {
-                CashFlowComparisonMetric.NET -> point.net
-                CashFlowComparisonMetric.INCOME -> point.income
-                CashFlowComparisonMetric.EXPENSE -> point.expense.negate()
+                ChartMetric.NET -> point.net
+                ChartMetric.INCOME -> point.income
+                ChartMetric.EXPENSE -> point.expense.negate()
             }
             running += value
             AeonLineChartPoint(

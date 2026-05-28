@@ -43,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
@@ -129,6 +133,12 @@ fun CategoryPieChartCard(
             )
         }
     ) {
+        MetricToggleRow(
+            selectedMetric = config.selectedMetric,
+            onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
         if (navigationStack.size > 1) {
             Row(
                 modifier = Modifier
@@ -260,6 +270,7 @@ fun CategoryPieChartCard(
                     previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
+                    positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
                     onSliceClick = { slice ->
                         // Interaction feedback
                     },
@@ -306,6 +317,29 @@ fun CategoryPieChartCard(
         }
     }
 
+}
+
+@Composable
+private fun MetricToggleRow(
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit
+) {
+    val options = ChartMetric.entries
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, metric ->
+            SegmentedButton(
+                selected = selectedMetric == metric,
+                onClick = { onMetricChange(metric) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = metric.name,
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                    )
+                }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -465,11 +499,11 @@ fun CategoryLegend(
 }
 
 private fun formatCurrency(amount: BigDecimal): String {
-    val formatted = formatAmount(amount)
-    return if (amount >= BigDecimal.ZERO) {
-        "+$formatted"
-    } else {
-        formatted
+    val formatted = formatAmount(amount.abs())
+    return when {
+        amount.signum() > 0 -> "+$formatted"
+        amount.signum() < 0 -> "-$formatted"
+        else -> formatted
     }
 }
 

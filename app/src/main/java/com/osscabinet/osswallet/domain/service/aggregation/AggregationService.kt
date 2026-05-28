@@ -323,7 +323,9 @@ object AggregationService {
                         percentage = if (globalTotal.signum() != 0) (breakdown.totalAmount.abs().divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                         hasSubcategories = false,
                         subcategoryData = emptyList(),
-                        previousNetBalance = previousBreakdown?.totalAmount?.setScale(precision, RoundingMode.HALF_UP)
+                        previousNetBalance = previousBreakdown?.totalAmount?.setScale(precision, RoundingMode.HALF_UP),
+                        previousIncome = previousBreakdown?.income?.setScale(precision, RoundingMode.HALF_UP),
+                        previousExpense = previousBreakdown?.expense?.setScale(precision, RoundingMode.HALF_UP)
                     ))
                 }
                 combinedChildren.addAll(actualChildrenData)
@@ -339,6 +341,14 @@ object AggregationService {
                 if (actualChildrenData.isEmpty()) previousBreakdown?.totalAmount ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousNetBalance ?: BigDecimal.ZERO }
             } else null
 
+            val totalPrevIncome = if (previousTransactions != null) {
+                if (actualChildrenData.isEmpty()) previousBreakdown?.income ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousIncome ?: BigDecimal.ZERO }
+            } else null
+
+            val totalPrevExpense = if (previousTransactions != null) {
+                if (actualChildrenData.isEmpty()) previousBreakdown?.expense ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousExpense ?: BigDecimal.ZERO }
+            } else null
+
             return CategoryTreeMetrics(
                 category = entity.name,
                 categoryId = entity.id,
@@ -349,7 +359,9 @@ object AggregationService {
                 percentage = if (globalTotal.signum() != 0) (totalNet.abs().divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                 hasSubcategories = combinedChildren.isNotEmpty(),
                 subcategoryData = combinedChildren,
-                previousNetBalance = totalPrevNet?.setScale(precision, RoundingMode.HALF_UP)
+                previousNetBalance = totalPrevNet?.setScale(precision, RoundingMode.HALF_UP),
+                previousIncome = totalPrevIncome?.setScale(precision, RoundingMode.HALF_UP),
+                previousExpense = totalPrevExpense?.setScale(precision, RoundingMode.HALF_UP)
             )
         }
 

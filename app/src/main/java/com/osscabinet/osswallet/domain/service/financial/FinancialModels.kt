@@ -106,7 +106,9 @@ data class CategoryTreeMetrics(
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryTreeMetrics> = emptyList(),
-    val previousNetBalance: BigDecimal? = null
+    val previousNetBalance: BigDecimal? = null,
+    val previousIncome: BigDecimal? = null,
+    val previousExpense: BigDecimal? = null
 )
 
 /**

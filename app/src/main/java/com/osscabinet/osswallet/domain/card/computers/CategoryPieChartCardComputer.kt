@@ -33,13 +33,8 @@ class CategoryPieChartCardComputer :
         // Expand category IDs to include children using the pre-computed cache
         val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
 
-        // Resolve transaction type: use whatever is in mergedFilter.transactionTypes.
-        // If it's a single value, use it. If empty or multiple, default to EXPENSE.
-        val resolvedTypes = if (mergedFilter.transactionTypes.size == 1) {
-            mergedFilter.transactionTypes
-        } else {
-            setOf(TransactionType.EXPENSE)
-        }
+        // Resolve transaction types: we now always fetch both to support the in-card toggle.
+        val resolvedTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME)
 
         val finalFilter = mergedFilter.copy(
             categoryIds = expandedCategoryIds,
@@ -61,7 +56,7 @@ class CategoryPieChartCardComputer :
                 } else null
             } else null
 
-        // Step 3: Compute all values from filteredTx (already filtered by transaction type)
+        // Step 3: Compute all values from filteredTx
         val tree = AggregationService.buildCategoryTree(
             transactions = filteredTx,
             allCategories = input.categories,
@@ -70,11 +65,22 @@ class CategoryPieChartCardComputer :
             previousTransactions = previousTx
         )
 
-        val previousTotal = previousTx?.let { txs ->
-            // Re-use aggregation service logic but we need the total from the tree to be consistent
-            tree.sumOf { it.previousNetBalance?.abs() ?: BigDecimal.ZERO }
-        }
+        val incomeTotal = tree.sumOf { it.income.abs() }
+        val expenseTotal = tree.sumOf { it.expense.abs() }
 
-        return CardRenderData.CategoryPieChart(config, tree, input.displayCurrency, previousTotal)
+        val previousIncomeTotal = previousTx?.let { tree.sumOf { it.previousIncome?.abs() ?: BigDecimal.ZERO } }
+        val previousExpenseTotal = previousTx?.let { tree.sumOf { it.previousExpense?.abs() ?: BigDecimal.ZERO } }
+        val previousTotal = previousTx?.let { tree.sumOf { it.previousNetBalance?.abs() ?: BigDecimal.ZERO } }
+
+        return CardRenderData.CategoryPieChart(
+            config = config,
+            items = tree,
+            displayCurrency = input.displayCurrency,
+            previousTotal = previousTotal,
+            incomeTotal = incomeTotal,
+            expenseTotal = expenseTotal,
+            previousIncomeTotal = previousIncomeTotal,
+            previousExpenseTotal = previousExpenseTotal
+        )
     }
 }

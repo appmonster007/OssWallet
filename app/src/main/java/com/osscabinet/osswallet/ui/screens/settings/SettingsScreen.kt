@@ -12,8 +12,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,8 +51,16 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onDisplayClick: () -> Unit,
     onCurrencyClick: () -> Unit,
-    onDataClick: () -> Unit,
+    onAccountsClick: () -> Unit,
+    onCategoriesClick: () -> Unit,
+    onTagsClick: () -> Unit,
+    onTemplatesClick: () -> Unit,
+    onSmartSuggestionsClick: () -> Unit,
+    onFiltersClick: () -> Unit,
     onSecurityClick: () -> Unit,
+    onDataManagementClick: () -> Unit,
+    onAboutClick: () -> Unit,
+    onDeleteAllClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
@@ -74,19 +90,15 @@ fun SettingsScreen(
                 .padding(AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
         ) {
-            AeonSettingsSection("GENERAL") {
-                AeonSettingsItem(
+            AeonSettingsSection("PERSONALIZATION") {
+                SettingsNavigationItem(
                     title = "Display & Style",
                     subtitle = "Theme, fonts, and animations",
                     icon = Icons.Rounded.Palette,
                     onClick = onDisplayClick
                 )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                AeonSettingsItem(
+                SettingsDivider()
+                SettingsNavigationItem(
                     title = "Currency & Localization",
                     subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
                     icon = Icons.Rounded.CurrencyExchange,
@@ -94,23 +106,82 @@ fun SettingsScreen(
                 )
             }
 
-            AeonSettingsSection("ORGANIZATION") {
-                AeonSettingsItem(
-                    title = "Data & Organization",
-                    subtitle = "Accounts, categories, and tags",
+            AeonSettingsSection("FINANCIAL SETUP") {
+                SettingsNavigationItem(
+                    title = "Accounts",
+                    subtitle = "Manage balances and visibility",
+                    icon = Icons.Rounded.AccountBalance,
+                    onClick = onAccountsClick
+                )
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Categories",
+                    subtitle = "Income and expense classification",
                     icon = Icons.Rounded.Category,
-                    onClick = onDataClick
+                    onClick = onCategoriesClick
                 )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Tags",
+                    subtitle = "Custom labeling for transactions",
+                    icon = Icons.AutoMirrored.Rounded.Label,
+                    onClick = onTagsClick
                 )
-                AeonSettingsItem(
-                    title = "Privacy & Security",
-                    subtitle = "Location, web access, and backups",
+            }
+
+            AeonSettingsSection("AUTOMATION & TOOLS") {
+                SettingsNavigationItem(
+                    title = "Transaction Templates",
+                    subtitle = "Quick shortcuts for frequent entries",
+                    icon = Icons.Rounded.AutoAwesome,
+                    onClick = onTemplatesClick
+                )
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Smart Suggestions",
+                    subtitle = "Discover recurring transactions",
+                    icon = Icons.Rounded.AutoAwesome,
+                    onClick = onSmartSuggestionsClick
+                )
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Saved Filters",
+                    subtitle = "Custom search presets",
+                    icon = Icons.Rounded.FilterList,
+                    onClick = onFiltersClick
+                )
+            }
+
+            AeonSettingsSection("PRIVACY & SAFETY") {
+                SettingsNavigationItem(
+                    title = "Security & Privacy",
+                    subtitle = "App lock, location, and web access",
                     icon = Icons.Rounded.Lock,
                     onClick = onSecurityClick
+                )
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Data Management",
+                    subtitle = "Import, export, and backups",
+                    icon = Icons.Rounded.CloudSync,
+                    onClick = onDataManagementClick
+                )
+            }
+
+            AeonSettingsSection("APP INFO") {
+                SettingsNavigationItem(
+                    title = "About OssWallet",
+                    subtitle = "Version 1.1.0 • Built for Modern Accounts",
+                    icon = Icons.Rounded.Info,
+                    onClick = onAboutClick
+                )
+                SettingsDivider()
+                SettingsNavigationItem(
+                    title = "Danger Zone",
+                    subtitle = "Clear all data permanently",
+                    icon = Icons.Rounded.DeleteForever,
+                    color = AppColors.error,
+                    onClick = onDeleteAllClick
                 )
             }
 
@@ -120,17 +191,6 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "OssWallet v1.1.0",
-                    style = AppTextStyles.transactionSwipeAction,
-                    color = AppColors.border
-                )
-                Text(
-                    "Built for the Modern Account",
-                    style = AppTextStyles.transactionSwipeAction,
-                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 Text(
                     "Currency rates provided by",
                     style = AppTextStyles.transactionSwipeAction,
@@ -147,4 +207,30 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun SettingsNavigationItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    color: androidx.compose.ui.graphics.Color = AppColors.contentPrimary
+) {
+    AeonSettingsItem(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        onClick = onClick,
+        color = color
+    )
+}
+
+@Composable
+private fun SettingsDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+        thickness = 0.5.dp,
+        color = AppColors.divider.copy(alpha = 0.5f)
+    )
 }

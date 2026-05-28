@@ -1,31 +1,54 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.CurrencyExchange
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.Portrait
+import androidx.compose.material.icons.rounded.VerticalAlignBottom
+import androidx.compose.material.icons.rounded.VerticalAlignTop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
+import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -40,7 +63,7 @@ fun TransactionListTopAppBar(
     isTopLevel: Boolean = true,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
 ) {
-    var showMoreMenu by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = {
@@ -69,202 +92,389 @@ fun TransactionListTopAppBar(
             }
         },
         actions = {
-            Box {
-                IconButton(onClick = { showMoreMenu = true }) {
-                    Icon(Icons.Default.MoreHoriz, contentDescription = "More")
-                }
-                DropdownMenu(
-                    expanded = showMoreMenu,
-                    onDismissRequest = { showMoreMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Group by Day") },
-                        leadingIcon = {
-                            RadioButton(
-                                selected = recordsSettings.groupBy == TransactionGroupingType.BY_DAY,
-                                onClick = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(groupBy = TransactionGroupingType.BY_DAY))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Group by Week") },
-                        leadingIcon = {
-                            RadioButton(
-                                selected = recordsSettings.groupBy == TransactionGroupingType.BY_WEEK,
-                                onClick = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(groupBy = TransactionGroupingType.BY_WEEK))
-                            showMoreMenu = false
-                        }
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Use Note as Header") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.useNoteAsHeader,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(useNoteAsHeader = !recordsSettings.useNoteAsHeader))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Opening Balance") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showOpeningBalance,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showOpeningBalance = !recordsSettings.showOpeningBalance))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Closing Balance") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showClosingBalance,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showClosingBalance = !recordsSettings.showClosingBalance))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Only Active Currencies") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showOnlyActiveCurrencies,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showOnlyActiveCurrencies = !recordsSettings.showOnlyActiveCurrencies))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Exclude Future Transactions") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.excludeFutureTransactions,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(excludeFutureTransactions = !recordsSettings.excludeFutureTransactions))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Currency Breakdown") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showCurrencyBreakdown,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showCurrencyBreakdown = !recordsSettings.showCurrencyBreakdown))
-                            showMoreMenu = false
-                        }
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Show Account") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showAccount,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showAccount = !recordsSettings.showAccount))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Category") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showCategory,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showCategory = !recordsSettings.showCategory))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Note") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showNote,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showNote = !recordsSettings.showNote))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Tags") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showTags,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showTags = !recordsSettings.showTags))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Timestamp") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showTimestamp,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showTimestamp = !recordsSettings.showTimestamp))
-                            showMoreMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Show Icon") },
-                        leadingIcon = {
-                            Checkbox(
-                                checked = recordsSettings.showIcon,
-                                onCheckedChange = null
-                            )
-                        },
-                        onClick = {
-                            onUpdateRecordsSettings(recordsSettings.copy(showIcon = !recordsSettings.showIcon))
-                            showMoreMenu = false
-                        }
-                    )
-                }
+            IconButton(onClick = { showSettingsDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = AppColors.primary
+                )
             }
         }
     )
+
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            title = { Text("Records Display Settings") },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                ) {
+                    AeonSettingsSection("DATA & LIFECYCLE") {
+                        AeonSettingsItem(
+                            title = "Grouping",
+                            subtitle = if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) "By Day" else "By Week",
+                            icon = Icons.Rounded.DateRange,
+                            onClick = {
+                                val next =
+                                    if (recordsSettings.groupBy == TransactionGroupingType.BY_DAY) TransactionGroupingType.BY_WEEK else TransactionGroupingType.BY_DAY
+                                onUpdateRecordsSettings(recordsSettings.copy(groupBy = next))
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Exclude Future",
+                            subtitle = "Hide transactions after today",
+                            icon = Icons.Rounded.CalendarMonth,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.excludeFutureTransactions,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                excludeFutureTransactions = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Planned Payments",
+                            subtitle = "Show upcoming payments in list",
+                            icon = Icons.Rounded.NotificationsActive,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showPlannedPayments,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showPlannedPayments = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                    }
+
+                    AeonSettingsSection("GROUP SUMMARIES") {
+                        AeonSettingsItem(
+                            title = "Currency Breakdown",
+                            subtitle = "Summary of currencies in group",
+                            icon = Icons.Rounded.CurrencyExchange,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showCurrencyBreakdown,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showCurrencyBreakdown = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        if (recordsSettings.showCurrencyBreakdown) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.4f)
+                            )
+                            AeonSettingsItem(
+                                title = "Only Active Currencies",
+                                subtitle = "Hide zero balance currencies",
+                                icon = Icons.AutoMirrored.Rounded.Sort,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.showOnlyActiveCurrencies,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    showOnlyActiveCurrencies = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                    )
+                                }
+                            )
+                        }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Opening Balance",
+                            subtitle = "Show balance at start of group",
+                            icon = Icons.Rounded.VerticalAlignTop,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showHeaderOpeningBalance,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showHeaderOpeningBalance = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Closing Balance",
+                            subtitle = "Show balance at end of group",
+                            icon = Icons.Rounded.VerticalAlignBottom,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showHeaderClosingBalance,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showHeaderClosingBalance = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                    }
+
+                    AeonSettingsSection("TRANSACTION DETAILS") {
+                        AeonSettingsItem(
+                            title = "Show Icon",
+                            subtitle = "Category icon visibility",
+                            icon = Icons.Rounded.Portrait,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showIcon,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showIcon = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Show Category",
+                            subtitle = "Main classification",
+                            icon = Icons.Rounded.Category,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showCategory,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showCategory = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Show Note",
+                            subtitle = "Transaction description",
+                            icon = Icons.AutoMirrored.Rounded.Notes,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showNote,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showNote = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        if (recordsSettings.showNote) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.4f)
+                            )
+                            AeonSettingsItem(
+                                title = "Use Note as Header",
+                                subtitle = "Prioritize note over category",
+                                icon = Icons.AutoMirrored.Rounded.Sort,
+                                trailingContent = {
+                                    Switch(
+                                        checked = recordsSettings.useNoteAsHeader,
+                                        onCheckedChange = {
+                                            onUpdateRecordsSettings(
+                                                recordsSettings.copy(
+                                                    useNoteAsHeader = it
+                                                )
+                                            )
+                                        },
+                                        colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                    )
+                                }
+                            )
+                        }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Show Account",
+                            subtitle = "Source/Target wallet",
+                            icon = Icons.Rounded.AccountBalance,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showAccount,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showAccount = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Show Tags",
+                            subtitle = "Custom labels",
+                            icon = Icons.AutoMirrored.Rounded.Label,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showTags,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showTags = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Show Timestamp",
+                            subtitle = "Exact time of entry",
+                            icon = Icons.Rounded.AccessTime,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showTimestamp,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showTimestamp = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                    }
+
+                    AeonSettingsSection("RUNNING BALANCES") {
+                        AeonSettingsItem(
+                            title = "Opening Balance",
+                            subtitle = "Balance before transaction",
+                            icon = Icons.Rounded.History,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showItemOpeningBalance,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showItemOpeningBalance = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.4f)
+                        )
+                        AeonSettingsItem(
+                            title = "Closing Balance",
+                            subtitle = "Balance after transaction",
+                            icon = Icons.Rounded.History,
+                            trailingContent = {
+                                Switch(
+                                    checked = recordsSettings.showItemClosingBalance,
+                                    onCheckedChange = {
+                                        onUpdateRecordsSettings(
+                                            recordsSettings.copy(
+                                                showItemClosingBalance = it
+                                            )
+                                        )
+                                    },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = AppColors.primary)
+                                )
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettingsDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)

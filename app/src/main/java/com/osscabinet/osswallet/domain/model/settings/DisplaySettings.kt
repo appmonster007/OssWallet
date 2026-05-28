@@ -11,8 +11,10 @@ enum class TransactionGroupingType {
 data class TransactionSectionSettings(
     val showPlannedPayments: Boolean = false,
     val useNoteAsHeader: Boolean = false,
-    val showOpeningBalance: Boolean = false,
-    val showClosingBalance: Boolean = true,
+    val showHeaderOpeningBalance: Boolean = false,
+    val showHeaderClosingBalance: Boolean = true,
+    val showItemOpeningBalance: Boolean = false,
+    val showItemClosingBalance: Boolean = true,
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     val showOnlyActiveCurrencies: Boolean = false,
     val excludeFutureTransactions: Boolean = true,

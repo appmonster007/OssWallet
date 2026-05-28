@@ -114,7 +114,7 @@ data class NetWorthCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter(),
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true),
     val profileId: Int? = null
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.NET_WORTH
@@ -134,7 +134,7 @@ data class CurrencyBalancesCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CURRENCY_BALANCES
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -152,7 +152,7 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASH_FLOW
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -172,7 +172,7 @@ data class AccountsCardConfig(
     val layout: String = "grid",
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -196,7 +196,7 @@ data class CategoryPieChartCardConfig(
     val showFullBreakdown: Boolean = false,
     val showOnlyActiveCategories: Boolean = true,
     val showComparison: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -220,7 +220,7 @@ data class CategoryTreemapCardConfig(
     val showFullBreakdown: Boolean = false,
     val showOnlyActiveCategories: Boolean = true,
     val showComparison: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -283,7 +283,7 @@ data class PlannedPaymentsCardConfig(
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -302,7 +302,7 @@ data class BudgetsCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showArchived: Boolean = false,
     val maxItems: Int = 5,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.BUDGETS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -321,7 +321,7 @@ data class LoansCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showType: String = "ALL",
     val maxItems: Int = 5,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.LOANS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -349,7 +349,7 @@ data class RecentActivitiesCardConfig(
     val showTags: Boolean = true,
     val showTimestamp: Boolean = true,
     val showIcon: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.RECENT_ACTIVITIES
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -378,7 +378,7 @@ data class CashFlowComparisonCardConfig(
     val showSamePeriodLastYear: Boolean = true,
     val isCumulative: Boolean = true,
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -395,7 +395,7 @@ data class CategorySpendingTrendCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -411,7 +411,7 @@ data class IncomeExpenseBarCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -431,7 +431,7 @@ data class TagUpSetPlotCardConfig(
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
     val tagSortMode: UpSetTagSortMode = UpSetTagSortMode.DECREASING_ABS,
     val intersectionSortMode: UpSetIntersectionSortMode = UpSetIntersectionSortMode.DECREASING_ABS,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -452,21 +452,21 @@ data class AnalyticsCardsConfig(
  * Used when saving ACCOUNT_DETAIL configs so per-visit filter changes never persist.
  */
 fun CardConfig.withClearedFilter(): CardConfig = when (this) {
-    is NetWorthCardConfig -> copy(filter = TransactionFilter())
-    is CurrencyBalancesCardConfig -> copy(filter = TransactionFilter())
-    is CashFlowCardConfig -> copy(filter = TransactionFilter())
-    is AccountsCardConfig -> copy(filter = TransactionFilter())
-    is CategoryPieChartCardConfig -> copy(filter = TransactionFilter())
-    is CategoryTreemapCardConfig -> copy(filter = TransactionFilter())
+    is NetWorthCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CurrencyBalancesCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CashFlowCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is AccountsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CategoryPieChartCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CategoryTreemapCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
     is AccountHeroCardConfig -> copy(filter = TransactionFilter())
-    is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter())
-    is BudgetsCardConfig -> copy(filter = TransactionFilter())
-    is LoansCardConfig -> copy(filter = TransactionFilter())
-    is RecentActivitiesCardConfig -> copy(filter = TransactionFilter())
-    is CashFlowComparisonCardConfig -> copy(filter = TransactionFilter())
-    is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter())
-    is CategorySpendingTrendCardConfig -> copy(filter = TransactionFilter())
-    is TagUpSetPlotCardConfig -> copy(filter = TransactionFilter())
+    is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is BudgetsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is LoansCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is RecentActivitiesCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CashFlowComparisonCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is IncomeExpenseBarCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is CategorySpendingTrendCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
+    is TagUpSetPlotCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
 }
 
 /**

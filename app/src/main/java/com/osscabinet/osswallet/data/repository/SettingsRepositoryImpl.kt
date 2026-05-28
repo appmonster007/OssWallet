@@ -35,6 +35,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val accountDetailCardsConfig: Flow<String> = settingsDataStore.accountDetailCardsConfig
     override val accountsViewCardsConfig: Flow<String> = settingsDataStore.accountsViewCardsConfig
     override val analyticsCardsConfig: Flow<String> = settingsDataStore.analyticsCardsConfig
+    override val analyticsCommonFilterEnabled: Flow<Boolean> = settingsDataStore.analyticsCommonFilterEnabled
     override val shortlistedCurrencies: Flow<Set<String>?> = settingsDataStore.shortlistedCurrencies
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
@@ -96,6 +97,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveAnalyticsCardsConfig(config: String) =
         settingsDataStore.saveAnalyticsCardsConfig(config)
+
+    override suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean) =
+        settingsDataStore.saveAnalyticsCommonFilterEnabled(enabled)
 
     override suspend fun saveShortlistedCurrencies(currencies: Set<String>) =
         settingsDataStore.saveShortlistedCurrencies(currencies)

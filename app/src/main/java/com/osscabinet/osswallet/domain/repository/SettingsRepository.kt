@@ -26,6 +26,7 @@ interface SettingsRepository {
     val accountDetailCardsConfig: Flow<String>
     val accountsViewCardsConfig: Flow<String>
     val analyticsCardsConfig: Flow<String>
+    val analyticsCommonFilterEnabled: Flow<Boolean>
     val shortlistedCurrencies: Flow<Set<String>?>
 
     suspend fun saveCurrency(currency: String)
@@ -50,5 +51,6 @@ interface SettingsRepository {
     suspend fun saveAccountDetailCardsConfig(config: String)
     suspend fun saveAccountsViewCardsConfig(config: String)
     suspend fun saveAnalyticsCardsConfig(config: String)
+    suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean)
     suspend fun saveShortlistedCurrencies(currencies: Set<String>)
 }

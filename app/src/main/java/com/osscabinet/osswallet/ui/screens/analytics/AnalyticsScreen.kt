@@ -2,26 +2,34 @@ package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
@@ -78,6 +86,7 @@ fun AnalyticsScreen(
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
     val cardDataMap by viewModel.cardDataMap.collectAsStateWithLifecycle()
     val screenFilter by viewModel.screenFilter.collectAsStateWithLifecycle()
+    val commonFilterEnabled by viewModel.commonFilterEnabled.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -87,8 +96,10 @@ fun AnalyticsScreen(
     )
 
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -110,6 +121,13 @@ fun AnalyticsScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = { showSettingsDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = AppColors.primary
+                            )
+                        }
                         IconButton(onClick = { showAddCardDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -133,7 +151,7 @@ fun AnalyticsScreen(
                 is AnalyticsUiState.Error -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(state.message)
                     }
@@ -159,8 +177,8 @@ fun AnalyticsScreen(
                                 plannedPayments = state.plannedPayments,
                                 budgets = state.budgets,
                                 loans = state.loans,
-                                filter = screenFilter,
-                                screenOwnsTimeline = true
+                                filter = if (commonFilterEnabled) screenFilter else TransactionFilter(),
+                                screenOwnsTimeline = commonFilterEnabled
                             ),
                             cardComputerRegistry = cardComputerRegistry,
                             cardUpdateHandler = viewModel,
@@ -215,7 +233,7 @@ fun AnalyticsScreen(
                                     onAdd = transactionViewModel::addTag
                                 )
                             ),
-                            disableFilterSheet = true,
+                            disableFilterSheet = commonFilterEnabled,
                         )
                     }
                 }
@@ -223,29 +241,68 @@ fun AnalyticsScreen(
         }
 
         // Floating Filter Pill
-        (uiState as? AnalyticsUiState.Success)?.let { state ->
-            TransactionFilterPill(
-                filter = screenFilter,
-                accounts = nonArchivedAccounts,
-                categories = state.allCategories,
-                allTags = state.allTags,
-                onSearchTransactions = { transactionViewModel.searchTransactions(it) },
-                savedFilters = savedFilters,
-                onFilterEvent = { event ->
-                    when (event) {
-                        is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
-                        is FilterEvent.Reset -> viewModel.updateScreenFilter(TransactionFilter())
-                        is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
-                            screenFilter.copy(timelineRange = event.range)
-                        )
+        if (commonFilterEnabled) {
+            (uiState as? AnalyticsUiState.Success)?.let { state ->
+                TransactionFilterPill(
+                    filter = screenFilter,
+                    accounts = nonArchivedAccounts,
+                    categories = state.allCategories,
+                    allTags = state.allTags,
+                    onSearchTransactions = { transactionViewModel.searchTransactions(it) },
+                    savedFilters = savedFilters,
+                    onFilterEvent = { event ->
+                        when (event) {
+                            is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
+                            is FilterEvent.Reset -> viewModel.updateScreenFilter(TransactionFilter())
+                            is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
+                                screenFilter.copy(timelineRange = event.range)
+                            )
 
-                        else -> {}
-                    }
-                },
-                onSaveFilterClick = {},
-                modifier = Modifier.fillMaxSize()
-            )
+                            else -> {}
+                        }
+                    },
+                    onSaveFilterClick = {},
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
+    }
+
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            title = { Text("Intelligence Settings") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Common Filter",
+                                style = AppTextStyles.listItemTitle
+                            )
+                            Text(
+                                "Use a single filter for all cards on this screen",
+                                style = AppTextStyles.caption,
+                                color = AppColors.border
+                            )
+                        }
+                        Switch(
+                            checked = commonFilterEnabled,
+                            onCheckedChange = { viewModel.toggleCommonFilter(it) }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettingsDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
 
     if (showAddCardDialog) {

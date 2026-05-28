@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.settings.withClearedFilter
 import com.osscabinet.ossWallet.domain.model.settings.withOrder
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -114,6 +115,13 @@ class CardRepositoryImpl @Inject constructor(
 
     override suspend fun reorderCards(context: ScreenContext, cards: List<CardConfig>) {
         val updated = DashboardCardsConfig(cards = withUpdatedOrder(cards))
+        saveConfig(context, updated)
+    }
+
+    override suspend fun resetAllCardFilters(context: ScreenContext) {
+        val flow = getCardsConfig(context)
+        val current = flow.first()
+        val updated = current.copy(cards = current.cards.map { it.withClearedFilter() })
         saveConfig(context, updated)
     }
 

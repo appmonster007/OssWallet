@@ -46,6 +46,7 @@ class SettingsDataStore(private val context: Context) {
         val ACCOUNT_DETAIL_CARDS_CONFIG_KEY = stringPreferencesKey("account_detail_cards_config")
         val ACCOUNTS_VIEW_CARDS_CONFIG_KEY = stringPreferencesKey("accounts_view_cards_config")
         val ANALYTICS_CARDS_CONFIG_KEY = stringPreferencesKey("analytics_cards_config")
+        val ANALYTICS_COMMON_FILTER_ENABLED_KEY = booleanPreferencesKey("analytics_common_filter_enabled")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -145,6 +146,10 @@ class SettingsDataStore(private val context: Context) {
 
     val analyticsCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[ANALYTICS_CARDS_CONFIG_KEY] ?: ""
+    }
+
+    val analyticsCommonFilterEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ANALYTICS_COMMON_FILTER_ENABLED_KEY] ?: true
     }
 
     val shortlistedCurrencies: Flow<Set<String>?> = context.dataStore.data.map { preferences ->
@@ -287,6 +292,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveAnalyticsCardsConfig(config: String) {
         context.dataStore.edit { preferences ->
             preferences[ANALYTICS_CARDS_CONFIG_KEY] = config
+        }
+    }
+
+    suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ANALYTICS_COMMON_FILTER_ENABLED_KEY] = enabled
         }
     }
 

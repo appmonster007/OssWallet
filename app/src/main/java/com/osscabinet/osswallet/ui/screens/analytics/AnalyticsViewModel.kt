@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -36,7 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -48,13 +47,12 @@ class AnalyticsViewModel @Inject constructor(
     private val computationRepository: ComputationRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
-    private val registry: CardComputerRegistry,
     override val cardRepository: CardRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
     private val tagRepository: TagRepository,
-    private val computeCardUseCase: ComputeCardUseCase
+    private val computeCardUseCase: ComputeCardUseCase,
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -63,8 +61,24 @@ class AnalyticsViewModel @Inject constructor(
     private val _screenFilter = MutableStateFlow(TransactionFilter())
     val screenFilter: StateFlow<TransactionFilter> = _screenFilter.asStateFlow()
 
+    val commonFilterEnabled: StateFlow<Boolean> = settingsRepository.analyticsCommonFilterEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true,
+        )
+
     fun updateScreenFilter(filter: TransactionFilter) {
         _screenFilter.value = filter
+    }
+
+    fun toggleCommonFilter(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveAnalyticsCommonFilterEnabled(enabled)
+            if (enabled) {
+                cardRepository.resetAllCardFilters(cardScreenContext)
+            }
+        }
     }
 
     // Analytics cards config - now using cardRepository
@@ -137,11 +151,14 @@ class AnalyticsViewModel @Inject constructor(
         )
 
     val cardDataMap: StateFlow<Map<String, CardRenderData>> =
-        combine(cardsConfig, uiState, _screenFilter) { cards, state, sf ->
-            Triple(cards, state, sf)
-        }.transformLatest { (cards, state, screenFilter) ->
+        combine(
+            cardsConfig,
+            uiState,
+            _screenFilter,
+            commonFilterEnabled
+        ) { cards, state, sf, commonEnabled ->
             if (state !is AnalyticsUiState.Success) {
-                emit(emptyMap()); return@transformLatest
+                return@combine emptyMap()
             }
             val input = CardInput(
                 profileId = state.profileId,
@@ -153,10 +170,10 @@ class AnalyticsViewModel @Inject constructor(
                 plannedPayments = state.plannedPayments,
                 budgets = state.budgets,
                 loans = state.loans,
-                filter = screenFilter,
-                screenOwnsTimeline = true
+                filter = if (commonEnabled) sf else TransactionFilter(),
+                screenOwnsTimeline = commonEnabled
             )
-            emit(computeCardUseCase.computeAll(cards.cards, input))
+            computeCardUseCase.computeAll(cards.cards, input)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 }
 

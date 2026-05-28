@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
@@ -94,8 +95,17 @@ class CategorySpendingTrendCardComputer :
                     exchangeRates = input.exchangeRates,
                     precision = 10
                 )
-                amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO) + converted
-                categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO) + converted
+
+                val shouldInclude = when (config.selectedMetric) {
+                    ChartMetric.NET -> true
+                    ChartMetric.INCOME -> converted.signum() > 0
+                    ChartMetric.EXPENSE -> converted.signum() < 0
+                }
+
+                if (shouldInclude) {
+                    amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO) + converted
+                    categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO) + converted
+                }
             }
 
             val categoryAmounts = amountsByCategory.mapNotNull { (catId, amount) ->

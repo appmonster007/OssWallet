@@ -47,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -108,6 +109,11 @@ fun CategorySpendingTrendCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricToggleRow(
+                selectedMetric = config.selectedMetric,
+                onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
+            )
+
             // Nature segmented button: ALL / MUST / NEED / WANT
             val natureOptions = listOf(
                 CategoryNatureFilter.ALL to "All",
@@ -256,14 +262,43 @@ private fun CategorySummaryRow(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = CurrencyFormatter.formatCurrencyRight(
-                summary.totalAmount,
-                currency,
-                CurrencyService.precision
-            ),
+            text = formatCurrency(summary.totalAmount, currency),
             style = AppTextStyles.formSectionLabel,
             color = AppColors.contentPrimary
         )
+    }
+}
+
+@Composable
+private fun formatCurrency(amount: BigDecimal, currency: String): String {
+    val formatted = CurrencyFormatter.formatCurrencyRight(
+        amount,
+        currency,
+        CurrencyService.precision
+    )
+    return if (amount.signum() > 0) "+$formatted" else formatted
+}
+
+@Composable
+private fun MetricToggleRow(
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit
+) {
+    val options = ChartMetric.entries
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, metric ->
+            SegmentedButton(
+                selected = selectedMetric == metric,
+                onClick = { onMetricChange(metric) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = metric.name,
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                    )
+                }
+            )
+        }
     }
 }
 

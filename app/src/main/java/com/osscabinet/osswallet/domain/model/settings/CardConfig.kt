@@ -397,12 +397,13 @@ data class CategorySpendingTrendCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val selectedMetric: ChartMetric = ChartMetric.NET,
     val selectedNature: CategoryNatureFilter = CategoryNatureFilter.ALL,
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 @Serializable
@@ -429,6 +430,7 @@ data class TagUpSetPlotCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val selectedMetric: ChartMetric = ChartMetric.NET,
     val maxTags: Int = 7,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,
@@ -437,7 +439,7 @@ data class TagUpSetPlotCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
 }
 
 @Serializable

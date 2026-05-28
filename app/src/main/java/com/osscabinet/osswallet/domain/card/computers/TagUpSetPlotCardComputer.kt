@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
@@ -118,15 +119,20 @@ class TagUpSetPlotCardComputer(
                 .filter { it.key != "unspecified" }
                 .toList()
                 .let { list ->
-                    val net =
-                        { p: Pair<String, IndividualTagStats> -> p.second.income.subtract(p.second.expense) }
+                    val metricValue = { p: Pair<String, IndividualTagStats> ->
+                        when (config.selectedMetric) {
+                            ChartMetric.INCOME -> p.second.income
+                            ChartMetric.EXPENSE -> p.second.expense
+                            ChartMetric.NET -> p.second.income.subtract(p.second.expense)
+                        }
+                    }
                     when (config.tagSortMode) {
                         UpSetTagSortMode.NAME_ASC -> list.sortedBy { it.first }
                         UpSetTagSortMode.NAME_DESC -> list.sortedByDescending { it.first }
-                        UpSetTagSortMode.DECREASING_ABS -> list.sortedByDescending { net(it).abs() }
-                        UpSetTagSortMode.INCREASING_ABS -> list.sortedBy { net(it).abs() }
-                        UpSetTagSortMode.DECREASING -> list.sortedByDescending { net(it) }
-                        UpSetTagSortMode.INCREASING -> list.sortedBy { net(it) }
+                        UpSetTagSortMode.DECREASING_ABS -> list.sortedByDescending { metricValue(it).abs() }
+                        UpSetTagSortMode.INCREASING_ABS -> list.sortedBy { metricValue(it).abs() }
+                        UpSetTagSortMode.DECREASING -> list.sortedByDescending { metricValue(it) }
+                        UpSetTagSortMode.INCREASING -> list.sortedBy { metricValue(it) }
                     }
                 }
 
@@ -206,10 +212,15 @@ class TagUpSetPlotCardComputer(
                         }
                     }
 
+                    val amount = when (config.selectedMetric) {
+                        ChartMetric.INCOME -> inc
+                        ChartMetric.EXPENSE -> exp.negate()
+                        ChartMetric.NET -> inc.subtract(exp)
+                    }
+
                     TagUpSetIntersection(
                         tags = tags,
-                        amount = inc.subtract(exp)
-                            .setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                        amount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                         income = inc.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                         expense = exp.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                         incomeByCurrency = incByCurr,
@@ -227,10 +238,14 @@ class TagUpSetPlotCardComputer(
                 }
 
         val sets = tagTotals.map { (tag, stats) ->
+            val total = when (config.selectedMetric) {
+                ChartMetric.INCOME -> stats.income
+                ChartMetric.EXPENSE -> stats.expense.negate()
+                ChartMetric.NET -> stats.income.subtract(stats.expense)
+            }
             TagUpSetSet(
                 tagName = tag,
-                totalAmount = stats.income.subtract(stats.expense)
-                    .setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                totalAmount = total.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 income = stats.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expense = stats.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 incomeByCurrency = stats.incomeByCurrency,

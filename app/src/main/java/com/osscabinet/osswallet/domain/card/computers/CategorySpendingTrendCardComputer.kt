@@ -10,7 +10,6 @@ import com.osscabinet.ossWallet.domain.card.CategorySpendingBucket
 import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
-import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -52,18 +51,12 @@ class CategorySpendingTrendCardComputer :
         val pastFilteredTx = filteredTx.filter { it.timestamp <= now }
 
         // Further filter by selected nature
-        val natureTx = if (config.selectedNature == CategoryNatureFilter.ALL) {
+        val natureTx = if (config.selectedNatures.size == CategoryNature.entries.size) {
             pastFilteredTx
         } else {
-            val targetNature = when (config.selectedNature) {
-                CategoryNatureFilter.MUST -> CategoryNature.MUST
-                CategoryNatureFilter.NEED -> CategoryNature.NEED
-                CategoryNatureFilter.WANT -> CategoryNature.WANT
-                CategoryNatureFilter.ALL -> null
-            }
-            if (targetNature == null) pastFilteredTx
-            else pastFilteredTx.filter { tx ->
-                categoryNatureById[tx.categoryId] == targetNature
+            pastFilteredTx.filter { tx ->
+                val nature = categoryNatureById[tx.categoryId]
+                nature != null && nature in config.selectedNatures
             }
         }
 

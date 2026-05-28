@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -45,7 +47,6 @@ import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.forCategory
-import com.osscabinet.ossWallet.domain.model.settings.CategoryNatureFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
@@ -60,7 +61,8 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartB
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
+import com.osscabinet.ossWallet.ui.theme.InfoColor
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -78,7 +80,6 @@ fun CategorySpendingTrendCard(
     headerModifier: Modifier = Modifier,
 ) {
     val config = renderData.config
-    var selectedNature by rememberSaveable { mutableStateOf(config.selectedNature) }
     var categoriesExpanded by rememberSaveable { mutableStateOf(false) }
 
     val displayFilter =
@@ -114,60 +115,60 @@ fun CategorySpendingTrendCard(
                 onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
             )
 
-            // Nature segmented button: ALL / MUST / NEED / WANT
-            val natureOptions = listOf(
-                CategoryNatureFilter.ALL to "All",
-                CategoryNatureFilter.MUST to "Must",
-                CategoryNatureFilter.NEED to "Need",
-                CategoryNatureFilter.WANT to "Want"
-            )
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                natureOptions.forEachIndexed { index, (nature, label) ->
-                    val isSelected = selectedNature == nature
+            // Nature filters (Must, Need, Want)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CategoryNature.entries.forEach { nature ->
+                    val isSelected = nature in config.selectedNatures
                     val natureColor = when (nature) {
-                        CategoryNatureFilter.MUST -> AppColors.error
-                        CategoryNatureFilter.NEED -> ChartColorOrange
-                        CategoryNatureFilter.WANT -> AppColors.accent
-                        else -> AppColors.contentSecondary
+                        CategoryNature.MUST -> AppColors.error
+                        CategoryNature.NEED -> InfoColor
+                        CategoryNature.WANT -> WarningColor
                     }
 
-                    SegmentedButton(
+                    FilterChip(
                         selected = isSelected,
                         onClick = {
-                            selectedNature = nature
-                            callbacks.onUpdate(config.copy(selectedNature = nature))
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = natureOptions.size
-                        ),
-                        colors = if (nature != CategoryNatureFilter.ALL) {
-                            SegmentedButtonDefaults.colors(
-                                activeContainerColor = natureColor.copy(alpha = 0.12f),
-                                activeContentColor = natureColor,
-                                activeBorderColor = natureColor,
-                                inactiveContentColor = natureColor.copy(alpha = 0.6f)
-                            )
-                        } else {
-                            SegmentedButtonDefaults.colors()
+                            val newNatures = if (isSelected) {
+                                config.selectedNatures - nature
+                            } else {
+                                config.selectedNatures + nature
+                            }
+                            callbacks.onUpdate(config.copy(selectedNatures = newNatures))
                         },
                         label = {
                             Text(
-                                text = label,
+                                text = nature.name.lowercase().replaceFirstChar { it.uppercase() },
                                 style = AppTextStyles.caption.copy(
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             )
-                        }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = natureColor.copy(alpha = 0.12f),
+                            selectedLabelColor = natureColor,
+                            containerColor = Color.Transparent,
+                            labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = AppColors.contentSecondary.copy(alpha = 0.2f),
+                            selectedBorderColor = natureColor,
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 1.dp,
+                            enabled = true,
+                            selected = isSelected
+                        )
                     )
                 }
             }
 
             // Resolve nature colors in composable scope
             val mustColor = AppColors.error
-            val needColor = ChartColorOrange
-            val wantColor = AppColors.accent
+            val needColor = InfoColor
+            val wantColor = WarningColor
 
             // Stacked bar chart
             val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor)
@@ -306,8 +307,8 @@ private fun MetricToggleRow(
 private fun NatureChip(nature: CategoryNature) {
     val (label, color) = when (nature) {
         CategoryNature.MUST -> "Must" to AppColors.error
-        CategoryNature.NEED -> "Need" to ChartColorOrange
-        CategoryNature.WANT -> "Want" to AppColors.accent
+        CategoryNature.NEED -> "Need" to InfoColor
+        CategoryNature.WANT -> "Want" to WarningColor
     }
     Surface(
         shape = RoundedCornerShape(4.dp),
@@ -452,24 +453,26 @@ private fun buildChartGroups(
     wantColor: Color
 ): List<AeonBarChartGroup> {
     return renderData.buckets.map { bucket ->
-        val bars = bucket.categoryAmounts
-            .filter { it.amount.signum() != 0 } // Include both positive and negative non-zero values
-            .map { catAmount ->
-                val color = when (catAmount.nature) {
+        // Aggregate amounts by nature for a cleaner stacked view
+        val natureTotals = bucket.categoryAmounts
+            .filter { it.amount.signum() != 0 }
+            .groupBy { it.nature }
+            .map { (nature, amounts) ->
+                val total = amounts.map { it.amount }.fold(BigDecimal.ZERO, BigDecimal::add)
+                val color = when (nature) {
                     CategoryNature.MUST -> mustColor
                     CategoryNature.NEED -> needColor
                     CategoryNature.WANT -> wantColor
                 }
-                AeonBarChartBar(
-                    value = catAmount.amount,
-                    label = catAmount.categoryName,
-                    color = color
-                )
+                val label = nature.name.lowercase().replaceFirstChar { it.uppercase() }
+                AeonBarChartBar(value = total, label = label, color = color)
             }
+            .sortedBy { it.value } // Consistent stacking order
+
         // Empty buckets get a zero placeholder so the chart always renders axes and labels
         AeonBarChartGroup(
             label = bucket.label,
-            bars = bars.ifEmpty { listOf(AeonBarChartBar(BigDecimal.ZERO, "", Color.Transparent)) }
+            bars = natureTotals.ifEmpty { listOf(AeonBarChartBar(BigDecimal.ZERO, "", Color.Transparent)) }
         )
     }
 }

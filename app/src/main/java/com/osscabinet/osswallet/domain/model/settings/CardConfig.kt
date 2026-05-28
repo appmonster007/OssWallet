@@ -199,7 +199,7 @@ data class CategoryPieChartCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 /**
@@ -223,7 +223,7 @@ data class CategoryTreemapCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 /**
@@ -381,7 +381,7 @@ data class CashFlowComparisonCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 @Serializable
@@ -398,7 +398,7 @@ data class CategorySpendingTrendCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 @Serializable
@@ -414,7 +414,7 @@ data class IncomeExpenseBarCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 @Serializable
@@ -434,7 +434,7 @@ data class TagUpSetPlotCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
-    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_AND_EXPENSE
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
 @Serializable

@@ -308,7 +308,7 @@ fun FilterFields(
         AeonContextGrid {
             EntryActionRow {
                 // Type Card
-                val isTypeLocked = filterRules.forcedTransactionTypes != null
+                val isTypeLocked = filterRules.typeRule.isLocked
                 EntryActionCard(
                     icon = if (isTypeLocked) Icons.Default.Lock
                     else if (filter.transactionTypes.size == 1) {
@@ -320,7 +320,7 @@ fun FilterFields(
                     } else Icons.Default.FilterList,
                     label = "TYPES",
                     value = if (isTypeLocked) {
-                        filterRules.forcedTransactionTypes!!.joinToString(" & ") { it.replaceFirstChar { c -> c.uppercaseChar() } }
+                        filterRules.typeRule.lockedValues.joinToString(" & ") { it.displayName }
                     } else when {
                         filter.transactionTypes.isEmpty() -> "All"
                         filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName

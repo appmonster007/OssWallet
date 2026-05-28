@@ -181,7 +181,9 @@ class DashboardViewModel @Inject constructor(
                         budgets = budgets,
                         loans = loans,
                         loanPayments = loanPayments.groupBy { it.loanId },
-                        filter = TransactionFilter()
+                        filter = TransactionFilter(),
+                        screenContext = ScreenContext.DASHBOARD,
+                        commonFilterEnabled = false
                     )
 
                     flow<DashboardUiState> {

@@ -171,7 +171,8 @@ class AnalyticsViewModel @Inject constructor(
                 budgets = state.budgets,
                 loans = state.loans,
                 filter = if (commonEnabled) sf else TransactionFilter(),
-                screenOwnsTimeline = commonEnabled
+                screenContext = ScreenContext.ANALYTICS,
+                commonFilterEnabled = commonEnabled
             )
             computeCardUseCase.computeAll(cards.cards, input)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

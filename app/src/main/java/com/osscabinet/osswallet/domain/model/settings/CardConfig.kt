@@ -36,7 +36,20 @@ enum class ScreenContext {
     DASHBOARD,
     ACCOUNT_DETAIL,
     ACCOUNTS_VIEW,
-    ANALYTICS
+    ANALYTICS;
+
+    /**
+     * Determines if the screen should override card-level timelines.
+     * DASHBOARD: Always false (independent widgets)
+     * ACCOUNTS_VIEW: Always true (unified history)
+     * ANALYTICS / ACCOUNT_DETAIL: Depends on the "Common Filter" toggle
+     */
+    fun ownsTimeline(commonFilterEnabled: Boolean): Boolean = when (this) {
+        DASHBOARD -> false
+        ACCOUNTS_VIEW,
+        ACCOUNT_DETAIL -> true
+        ANALYTICS -> commonFilterEnabled
+    }
 }
 
 /**

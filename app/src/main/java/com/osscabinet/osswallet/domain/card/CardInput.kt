@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import java.math.BigDecimal
 
@@ -31,10 +32,8 @@ data class CardInput(
     val baseCurrency: String,
     val displayCurrency: String = baseCurrency,
     val filter: TransactionFilter = TransactionFilter(),
-    // When true the inherited filter's timeline is always authoritative — even AllTime.
-    // Set by screens that own the timeline (Analytics). Dashboard leaves this false so
-    // each card's configured timeline acts as a fallback when the screen has no scope.
-    val screenOwnsTimeline: Boolean = false,
+    val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val commonFilterEnabled: Boolean = false,
     val plannedPayments: List<PlannedPayment> = emptyList(),
     val budgets: List<Budget> = emptyList(),
     val loans: List<Loan> = emptyList(),
@@ -42,4 +41,10 @@ data class CardInput(
     // Pre-computed hierarchy — built once in ComputeCardUseCase before dispatching to all cards.
     // Default is Empty; ComputeCardUseCase always enriches it before compute.
     val categoryHierarchy: CategoryHierarchyCache = CategoryHierarchyCache.Empty
-)
+) {
+    /**
+     * Derived property that determines if the inherited filter's timeline 
+     * is authoritative based on the screen context and user settings.
+     */
+    val screenOwnsTimeline: Boolean get() = screenContext.ownsTimeline(commonFilterEnabled)
+}

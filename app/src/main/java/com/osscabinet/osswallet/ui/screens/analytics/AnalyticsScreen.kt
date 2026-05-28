@@ -178,7 +178,8 @@ fun AnalyticsScreen(
                                 budgets = state.budgets,
                                 loans = state.loans,
                                 filter = if (commonFilterEnabled) screenFilter else TransactionFilter(),
-                                screenOwnsTimeline = commonFilterEnabled
+                                screenContext = ScreenContext.ANALYTICS,
+                                commonFilterEnabled = commonFilterEnabled
                             ),
                             cardComputerRegistry = cardComputerRegistry,
                             cardUpdateHandler = viewModel,

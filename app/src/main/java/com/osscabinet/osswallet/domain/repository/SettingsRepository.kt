@@ -1,8 +1,5 @@
 package com.osscabinet.ossWallet.domain.repository
 
-import com.osscabinet.ossWallet.domain.model.settings.AccountDetailSettings
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewSettings
-import com.osscabinet.ossWallet.domain.model.settings.DashboardSettings
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import kotlinx.coroutines.flow.Flow
 
@@ -24,9 +21,6 @@ interface SettingsRepository {
     val useSystemFont: Flow<Boolean>
     val selectedFont: Flow<String>
     val numberingSystem: Flow<String>
-    val dashboardSettings: Flow<DashboardSettings>
-    val accountsViewSettings: Flow<AccountsViewSettings>
-    val accountDetailSettings: Flow<AccountDetailSettings>
     val recordsSettings: Flow<TransactionSectionSettings>
     val dashboardCardsConfig: Flow<String>
     val accountDetailCardsConfig: Flow<String>
@@ -51,9 +45,6 @@ interface SettingsRepository {
     suspend fun saveUseSystemFont(enabled: Boolean)
     suspend fun saveSelectedFont(fontName: String)
     suspend fun saveNumberingSystem(system: String)
-    suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)
-    suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings)
-    suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings)
     suspend fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings)
     suspend fun saveDashboardCardsConfig(config: String)
     suspend fun saveAccountDetailCardsConfig(config: String)

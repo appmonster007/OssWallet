@@ -3,35 +3,6 @@ package com.osscabinet.ossWallet.domain.model.settings
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LayoutSettings(
-    val sectionOrder: String? = null
-)
-
-@Serializable
-data class BudgetSettings(
-    val showProgressLabels: Boolean = true
-)
-
-@Serializable
-data class DashboardSettings(
-    val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
-    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
-    val netWorthSection: NetWorthSettings = NetWorthSettings(),
-    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
-    val budgetSection: BudgetSettings = BudgetSettings(),
-    val layout: LayoutSettings = LayoutSettings()
-)
-
-@Serializable
-data class AccountsViewSettings(
-    val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 1),
-    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
-    val netWorthSection: NetWorthSettings = NetWorthSettings(),
-    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
-    val layout: LayoutSettings = LayoutSettings()
-)
-
-@Serializable
 enum class TransactionGroupingType {
     BY_DAY, BY_WEEK
 }
@@ -52,11 +23,4 @@ data class TransactionSectionSettings(
     val showTags: Boolean = true,
     val showTimestamp: Boolean = true,
     val showIcon: Boolean = true
-)
-
-@Serializable
-data class AccountDetailSettings(
-    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
-    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
-    val transactionsSection: TransactionSectionSettings = TransactionSectionSettings()
 )

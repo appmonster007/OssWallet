@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
@@ -120,25 +121,31 @@ fun AccountHeroCard(
                     color = contentColor.copy(alpha = 0.6f)
                 )
 
-                val balanceParts =
-                    formatAuto(balance, account.currencyCode, shorten = true).split(
-                        " "
-                    )
-                val amountText = balanceParts.dropLast(1).joinToString(" ")
-                val symbolText = balanceParts.lastOrNull() ?: ""
+                val amountText = formatAuto(balance, shorten = true)
+                val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
+                val isSymbolLeft =
+                    CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+
+                val symbolStyle = SpanStyle(
+                    fontWeight = FontWeight.Light,
+                    color = contentColor.copy(alpha = 0.7f),
+                    fontSize = 24.sp
+                )
 
                 Text(
                     text = buildAnnotatedString {
-                        append(amountText)
-                        append(" ")
-                        withStyle(
-                            SpanStyle(
-                                fontWeight = FontWeight.Light,
-                                color = contentColor.copy(alpha = 0.5f),
-                                fontSize = 18.sp
-                            )
-                        ) {
-                            append(symbolText)
+                        if (isSymbolLeft) {
+                            withStyle(symbolStyle) {
+                                append(symbolText)
+                            }
+                            append(" ")
+                            append(amountText)
+                        } else {
+                            append(amountText)
+                            append(" ")
+                            withStyle(symbolStyle) {
+                                append(symbolText)
+                            }
                         }
                     },
                     style = AppTextStyles.heroAmount.copy(
@@ -310,7 +317,7 @@ private fun FlowSummaryItem(
                 )
             }
             Text(
-                text = formatAuto(amount),
+                text = formatAuto(amount, currency),
                 style = AppTextStyles.screenSubTitle.copy(
                     fontWeight = FontWeight.Bold
                 ),

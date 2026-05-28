@@ -6,6 +6,8 @@ import android.icu.text.DecimalFormatSymbols
 import android.icu.text.NumberFormat
 import android.icu.util.Currency
 import android.icu.util.ULocale
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.activeSystem
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatValue
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
@@ -33,13 +35,38 @@ object CurrencyFormatter {
         val symbolPosition: SymbolPosition,
         val isIndianGrouping: Boolean = false
     ) {
-        WESTERN(decimalSeparator = '.', groupingSeparator = ',', symbolPosition = SymbolPosition.LEFT),
-        EUROPEAN(decimalSeparator = ',', groupingSeparator = '.', symbolPosition = SymbolPosition.RIGHT),
-        INDIAN(decimalSeparator = '.', groupingSeparator = ',', symbolPosition = SymbolPosition.LEFT, isIndianGrouping = true),
-        SWISS(decimalSeparator = '.', groupingSeparator = '\'', symbolPosition = SymbolPosition.LEFT),
-        FRENCH(decimalSeparator = ',', groupingSeparator = ' ', symbolPosition = SymbolPosition.RIGHT),
+        WESTERN(
+            decimalSeparator = '.',
+            groupingSeparator = ',',
+            symbolPosition = SymbolPosition.LEFT
+        ),
+        EUROPEAN(
+            decimalSeparator = ',',
+            groupingSeparator = '.',
+            symbolPosition = SymbolPosition.RIGHT
+        ),
+        INDIAN(
+            decimalSeparator = '.',
+            groupingSeparator = ',',
+            symbolPosition = SymbolPosition.LEFT,
+            isIndianGrouping = true
+        ),
+        SWISS(
+            decimalSeparator = '.',
+            groupingSeparator = '\'',
+            symbolPosition = SymbolPosition.LEFT
+        ),
+        FRENCH(
+            decimalSeparator = ',',
+            groupingSeparator = ' ',
+            symbolPosition = SymbolPosition.RIGHT
+        ),
         ISO(decimalSeparator = '.', groupingSeparator = ' ', symbolPosition = SymbolPosition.LEFT),
-        SOUTH_AMERICAN(decimalSeparator = ',', groupingSeparator = '.', symbolPosition = SymbolPosition.LEFT);
+        SOUTH_AMERICAN(
+            decimalSeparator = ',',
+            groupingSeparator = '.',
+            symbolPosition = SymbolPosition.LEFT
+        );
 
         companion object {
             fun fromString(value: String?): FormattingSystem =
@@ -58,7 +85,7 @@ object CurrencyFormatter {
      * @param decimalSeparator Optional override for the decimal separator.
      * @param groupingSeparator Optional override for the grouping separator.
      */
-    private fun formatValue(
+    fun formatValue(
         value: BigDecimal?,
         shorten: Boolean = false,
         precision: Int = this.precision,
@@ -74,7 +101,8 @@ object CurrencyFormatter {
         groupingSeparator?.let { symbols.groupingSeparator = it }
 
         return if (shorten) {
-            val compactFormat = CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT)
+            val compactFormat =
+                CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT)
             compactFormat.minimumFractionDigits = precision
             compactFormat.maximumFractionDigits = precision
             compactFormat.roundingMode = RoundingMode.HALF_UP.ordinal
@@ -102,7 +130,7 @@ object CurrencyFormatter {
      * @param decimalSeparator Optional override for the decimal separator.
      * @param groupingSeparator Optional override for the grouping separator.
      */
-    private fun formatCurrency(
+    fun formatCurrency(
         amount: BigDecimal?,
         currencyCode: String?,
         shorten: Boolean = false,

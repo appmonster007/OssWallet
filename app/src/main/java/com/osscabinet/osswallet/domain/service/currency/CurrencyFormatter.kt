@@ -140,7 +140,25 @@ object CurrencyFormatter {
         shorten: Boolean = false,
         precision: Int = this.precision
     ): String {
-        val system = activeSystem
+        return formatForSystem(
+            amount = amount,
+            system = activeSystem,
+            currencyCode = currencyCode,
+            shorten = shorten,
+            precision = precision
+        )
+    }
+
+    /**
+     * Formatting with a specific system, useful for previews or overrides.
+     */
+    fun formatForSystem(
+        amount: BigDecimal?,
+        system: FormattingSystem,
+        currencyCode: String? = null,
+        shorten: Boolean = false,
+        precision: Int = this.precision
+    ): String {
         return if (currencyCode != null) {
             formatCurrency(
                 amount = amount,

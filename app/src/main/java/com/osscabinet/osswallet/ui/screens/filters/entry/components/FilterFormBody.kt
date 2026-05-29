@@ -174,8 +174,8 @@ fun FilterFormBody(
                         value = if (state.selectedStatuses.isEmpty() || state.selectedStatuses.size == TransactionStatus.entries.size) "All Statuses" else "${state.selectedStatuses.size} Selected",
                         onClick = { onEvent(FilterEntryEvent.ShowStatusSheet(show = true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = AppColors.secondary.copy(alpha = 0.1f),
-                        iconTint = AppColors.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
                     )
 
                     EntryActionCard(
@@ -268,8 +268,8 @@ fun FilterFormBody(
                         value = if (state.linkedTransactionIds.isEmpty()) "None Linked" else "${state.linkedTransactionIds.size} Linked",
                         onClick = { onEvent(FilterEntryEvent.ShowLinkSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                        iconTint = AppColors.tertiary
+                        iconContainerColor = AppColors.formIconContainerTertiary,
+                        iconTint = AppColors.onTertiaryContainer
                     )
                 }
             }

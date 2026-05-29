@@ -44,8 +44,8 @@ fun AeonCalculatorSheet(
             topStart = dims.dialogCornerRadius,
             topEnd = dims.dialogCornerRadius
         ),
-        containerColor = AppColors.cardSurface,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
+        containerColor = AppColors.surfaceContainerHigh,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.outlineVariant) }
     ) {
         Column(
             modifier = Modifier

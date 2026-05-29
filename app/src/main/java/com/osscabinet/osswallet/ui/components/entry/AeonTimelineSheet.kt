@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -40,11 +41,11 @@ fun AeonTimelineSheet(
     title: String = "Select Period"
 ) {
     var currentRange by remember(selectedRange) { mutableStateOf(selectedRange) }
-    val surfaceColor = AppColors.cardSurfaceProminent
+    val surfaceColor = AppColors.surfaceContainerHigh
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
             color = surfaceColor,
             tonalElevation = 6.dp
         ) {
@@ -53,7 +54,7 @@ fun AeonTimelineSheet(
                 .padding(bottom = 12.dp)) {
                 Text(
                     text = title,
-                    style = AppTextStyles.screenTitle,
+                    style = AppTextStyles.cardTitle,
                     modifier = Modifier.padding(
                         start = 24.dp,
                         end = 24.dp,

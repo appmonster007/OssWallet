@@ -38,26 +38,26 @@ val OnErrorLight = Color(0xFFFFFFFF)
 val ErrorContainerLight = Color(0xFFFFDAD6)
 val OnErrorContainerLight = Color(0xFF410002)
 
-// Refined Light Neutrals (Aligned with colors.md Layer 2 & 3)
-val BackgroundLight = Color(0xFFEDECF3)
-val OnBackgroundLight = Color(0xFF15151F)
-val SurfaceLight = Color(0xFFFFFFFF)
-val OnSurfaceLight = Color(0xFF15151F)
+// Refined Light Neutrals (Aligned with m3guide.md)
+val BackgroundLight = Color(0xFFF9F9FF) // N-98
+val OnBackgroundLight = Color(0xFF191C20) // N-10
+val SurfaceLight = Color(0xFFF9F9FF) // N-98
+val OnSurfaceLight = Color(0xFF191C20) // N-10
 
-val SurfaceVariantLight = Color(0xFFF1F0F6) // Layer 4: Inputs / Tertiary
-val OnSurfaceVariantLight = Color(0xFF5E5E72)
-val OutlineLight = Color(0x1A282850) // rgba(40,40,80,0.10)
-val OutlineVariantLight = Color(0x14282850) // rgba(40,40,80,0.08)
+val SurfaceVariantLight = Color(0xFFE1E2EC) // NV-90
+val OnSurfaceVariantLight = Color(0xFF44474F) // NV-30
+val OutlineLight = Color(0xFF74777F) // NV-50
+val OutlineVariantLight = Color(0xFFC4C6D0) // NV-80
 
-val InverseSurfaceLight = Color(0xFF20212C)
-val InverseOnSurfaceLight = Color(0xFFECEDF3)
+val InverseSurfaceLight = Color(0xFF2E3036) // N-20
+val InverseOnSurfaceLight = Color(0xFFF1F0F7) // N-95
 
-// Surface Container Family (M3 Expressive Mapping)
-val SurfaceContainerLowestLight = Color(0xFFEDECF3) // Layer 2
-val SurfaceContainerLowLight = Color(0xFFFFFFFF)    // Layer 3
-val SurfaceContainerLight = Color(0xFFFFFFFF)       // Layer 3
-val SurfaceContainerHighLight = Color(0xFFF1F0F6)    // Layer 4
-val SurfaceContainerHighestLight = Color(0xFFF1F0F6) // Layer 4
+// Surface Container Family (M3 Solid-Color Roles)
+val SurfaceContainerLowestLight = Color(0xFFFFFFFF) // N-100
+val SurfaceContainerLowLight = Color(0xFFF3F3FA)    // N-96
+val SurfaceContainerLight = Color(0xFFEDEDF4)       // N-94
+val SurfaceContainerHighLight = Color(0xFFE7E7EE)    // N-92
+val SurfaceContainerHighestLight = Color(0xFFE1E2E9) // N-90
 
 // --- DARK THEME (Midnight Slate) ---
 
@@ -81,26 +81,26 @@ val OnErrorDark = Color(0xFF690005)
 val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-// Refined Dark Neutrals (Aligned with colors.md Layer 2 & 3)
-val BackgroundDark = Color(0xFF11111B)
-val OnBackgroundDark = Color(0xFFECEDF3)
-val SurfaceDark = Color(0xFF20212C)
-val OnSurfaceDark = Color(0xFFECEDF3)
+// Refined Dark Neutrals (Aligned with m3guide.md)
+val BackgroundDark = Color(0xFF0E1015) // N-6
+val OnBackgroundDark = Color(0xFFE1E2E9) // N-90
+val SurfaceDark = Color(0xFF0E1015) // N-6
+val OnSurfaceDark = Color(0xFFE1E2E9) // N-90
 
-val SurfaceVariantDark = Color(0xFF2F3140) // Layer 4: Inputs / Tertiary
-val OnSurfaceVariantDark = Color(0xFF9092A0)
-val OutlineDark = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
-val OutlineVariantDark = Color(0x14FFFFFF) // rgba(255,255,255,0.08)
+val SurfaceVariantDark = Color(0xFF44474F) // NV-30
+val OnSurfaceVariantDark = Color(0xFFC4C6D0) // NV-80
+val OutlineDark = Color(0xFF8E9099) // NV-60
+val OutlineVariantDark = Color(0xFF44474F) // NV-30
 
-val InverseSurfaceDark = Color(0xFFFFFFFF)
-val InverseOnSurfaceDark = Color(0xFF11111B)
+val InverseSurfaceDark = Color(0xFFE1E2E9) // N-90
+val InverseOnSurfaceDark = Color(0xFF0E1015) // N-10
 
-// Surface Container Family (M3 Expressive Mapping)
-val SurfaceContainerLowestDark = Color(0xFF11111B) // Layer 2
-val SurfaceContainerLowDark = Color(0xFF20212C)    // Layer 3
-val SurfaceContainerDark = Color(0xFF20212C)       // Layer 3
-val SurfaceContainerHighDark = Color(0xFF2F3140)    // Layer 4
-val SurfaceContainerHighestDark = Color(0xFF2F3140) // Layer 4
+// Surface Container Family (M3 Solid-Color Roles)
+val SurfaceContainerLowestDark = Color(0xFF0A0C10) // N-4
+val SurfaceContainerLowDark = Color(0xFF191C20)    // N-10
+val SurfaceContainerDark = Color(0xFF1D2024)       // N-12
+val SurfaceContainerHighDark = Color(0xFF272A2E)    // N-17
+val SurfaceContainerHighestDark = Color(0xFF323539) // N-22
 
 // --- AMOLED THEME (Midnight Slate) ---
 
@@ -120,10 +120,10 @@ val OutlineAmoled = Color(0x24FFFFFF) // rgba(255,255,255,0.14)
 val OutlineVariantAmoled = Color(0x1AFFFFFF) // rgba(255,255,255,0.10)
 
 val SurfaceContainerLowestAmoled = Color(0xFF000000)
-val SurfaceContainerLowAmoled = Color(0xFF050509)
-val SurfaceContainerAmoled = Color(0xFF050509)
-val SurfaceContainerHighAmoled = Color(0xFF11111A)
-val SurfaceContainerHighestAmoled = Color(0xFF11111A)
+val SurfaceContainerLowAmoled = Color(0xFF0A0C10) // N-4
+val SurfaceContainerAmoled = Color(0xFF0E1015)    // N-6
+val SurfaceContainerHighAmoled = Color(0xFF191C20) // N-10
+val SurfaceContainerHighestAmoled = Color(0xFF1D2024) // N-12
 
 // --- GLASS THEME PREPARATION ---
 // Tokens for upcoming glass implementation as per colors.md
@@ -340,9 +340,9 @@ object AppColors {
 
     // ── Form Entry Components ───────────────────────────────────────────────
     // Icon container tints in entry / edit forms.
-    val formIconContainerPrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primary
-    val formIconContainerSecondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondary
-    val formIconContainerTertiary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiary
+    val formIconContainerPrimary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.primaryContainer
+    val formIconContainerSecondary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.secondaryContainer
+    val formIconContainerTertiary: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.tertiaryContainer
 
     // ── Absolute / Transparent ──────────────────────────────────────────────
     // Not theme tokens — safe to use where a hard "no fill" value is required.

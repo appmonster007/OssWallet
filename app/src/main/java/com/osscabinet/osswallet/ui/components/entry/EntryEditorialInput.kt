@@ -94,9 +94,9 @@ fun EntryEditorialInput(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            color = AppColors.recessedSurface,
-            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            color = AppColors.surfaceContainerLow,
+            border = BorderStroke(1.dp, AppColors.outlineVariant),
             onClick = { focusRequester.requestFocus() }
         ) {
             Row(
@@ -105,8 +105,8 @@ fun EntryEditorialInput(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = iconColor.copy(alpha = 0.08f),
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+                    color = iconColor.copy(alpha = 0.12f),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -123,32 +123,23 @@ fun EntryEditorialInput(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = label,
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            fontSize = 10.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary
                     )
 
                     Box(modifier = Modifier.padding(top = 2.dp)) {
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
-                                style = AppTextStyles.listItemTitle,
-                                color = AppColors.contentSecondary.copy(alpha = 0.3f)
+                                style = AppTextStyles.formFieldHint,
+                                color = AppColors.contentSecondary
                             )
                         }
                         BasicTextField(
                             value = value,
                             onValueChange = onValueChange,
                             enabled = enabled,
-                            textStyle = AppTextStyles.listItemTitle.copy(
-                                color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(
-                                    alpha = 0.8f
-                                ),
-                                fontWeight = FontWeight.Medium
-                            ),
+                            textStyle = AppTextStyles.formFieldValue,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
                                 imeAction = ImeAction.Next
@@ -169,7 +160,7 @@ fun EntryEditorialInput(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(AppColors.componentOnCard)
+            modifier = Modifier.background(AppColors.surfaceContainerHigh)
         ) {
             filteredSuggestions.forEach { suggestion ->
                 DropdownMenuItem(

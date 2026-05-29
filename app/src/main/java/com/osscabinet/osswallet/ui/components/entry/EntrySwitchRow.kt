@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -38,24 +39,24 @@ fun EntrySwitchRow(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
-    iconTint: Color = AppColors.secondary
+    iconContainerColor: Color = AppColors.primary.copy(alpha = 0.12f),
+    iconTint: Color = AppColors.primary
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         Surface(
             shape = CircleShape,
             color = iconContainerColor,
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                     tint = iconTint
                 )
             }
@@ -63,13 +64,14 @@ fun EntrySwitchRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = AppTextStyles.transactionAmount
+                style = AppTextStyles.formSwitchLabel,
+                color = AppColors.contentPrimary
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary
                 )
             }
         }
@@ -77,7 +79,8 @@ fun EntrySwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = AppColors.switchTrackOn
+                checkedTrackColor = AppColors.primary,
+                checkedThumbColor = AppColors.switchThumbOn
             )
         )
     }

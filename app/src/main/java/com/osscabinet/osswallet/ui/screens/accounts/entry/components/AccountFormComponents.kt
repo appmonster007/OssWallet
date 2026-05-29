@@ -135,14 +135,14 @@ fun CurrencyManagementSection(
                     Text(
                         "Select currencies for this portfolio",
                         style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                        color = AppColors.contentSecondary
                     )
                 }
 
                 Surface(
                     shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
                     color = AppColors.primary,
-                    border = BorderStroke(1.dp, AppColors.onPrimary.copy(alpha = 0.1f))
+                    border = BorderStroke(1.dp, AppColors.outline)
                 ) {
                     Row(
                         modifier = Modifier.padding(
@@ -170,8 +170,8 @@ fun CurrencyManagementSection(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
-                color = AppColors.recessedSurface.copy(alpha = 0.4f),
-                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+                color = AppColors.surfaceContainerLow,
+                border = BorderStroke(1.dp, AppColors.outlineVariant)
             ) {
                 Row(
                     modifier = Modifier.padding(
@@ -183,7 +183,7 @@ fun CurrencyManagementSection(
                     Icon(
                         Icons.Rounded.Search,
                         contentDescription = null,
-                        tint = AppColors.primary.copy(alpha = 0.5f),
+                        tint = AppColors.primary,
                         modifier = Modifier.size(AeonSize.D20.value)
                     )
                     Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
@@ -191,13 +191,13 @@ fun CurrencyManagementSection(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = AppTextStyles.listItemTitle.copy(color = AppColors.contentPrimary),
+                        textStyle = AppTextStyles.formFieldValue,
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) Text(
                                 "Search assets...",
-                                style = AppTextStyles.listItemTitle,
-                                color = AppColors.contentSecondary.copy(alpha = 0.3f)
+                                style = AppTextStyles.formFieldHint,
+                                color = AppColors.contentSecondary
                             )
                             innerTextField()
                         }
@@ -212,7 +212,7 @@ fun CurrencyManagementSection(
                 Text(
                     "SELECTED PORTFOLIO",
                     style = AppTextStyles.sectionOverline,
-                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                    color = AppColors.contentSecondary
                 )
 
                 FlowRow(
@@ -255,15 +255,13 @@ fun CurrencyManagementSection(
                 Text(
                     if (searchQuery.isBlank()) "POPULAR ASSETS" else "SEARCH RESULTS",
                     style = AppTextStyles.sectionOverline,
-                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                    color = AppColors.contentSecondary
                 )
                 if (searchQuery.isBlank()) {
                     Text(
                         "SEE ALL",
-                        style = AppTextStyles.tagLabel.copy(
-                            fontWeight = FontWeight.Black,
-                            color = AppColors.primary
-                        )
+                        style = AppTextStyles.chipLabelBold,
+                        color = AppColors.primary
                     )
                 }
             }
@@ -281,8 +279,8 @@ fun CurrencyManagementSection(
                             onAllowedCurrenciesChange(allowedCurrencies + code)
                         },
                         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                        color = AppColors.recessedSurface.copy(alpha = 0.4f),
-                        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+                        color = AppColors.surfaceContainerLow,
+                        border = BorderStroke(1.dp, AppColors.outlineVariant)
                     ) {
                         Row(
                             modifier = Modifier.padding(
@@ -294,7 +292,7 @@ fun CurrencyManagementSection(
                         ) {
                             Text(
                                 code,
-                                style = AppTextStyles.drawerItemLabel.copy(fontWeight = FontWeight.Black),
+                                style = AppTextStyles.managementItemTitle,
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -319,10 +317,10 @@ fun CurrencyTile(
             .width(100.dp)
             .height(70.dp),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-        color = if (isPrimary) accentColor else AppColors.recessedSurface.copy(alpha = 0.5f),
+        color = if (isPrimary) accentColor else AppColors.surfaceContainerLow,
         border = BorderStroke(
             width = if (isPrimary) 2.dp else 1.dp,
-            color = if (isPrimary) accentColor else AppColors.divider.copy(alpha = 0.1f)
+            color = if (isPrimary) accentColor else AppColors.outlineVariant
         )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -338,7 +336,7 @@ fun CurrencyTile(
                         Icons.Rounded.Close,
                         contentDescription = "Remove",
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                        tint = AppColors.contentSecondary
                     )
                 }
             } else {
@@ -366,15 +364,16 @@ fun CurrencyTile(
             ) {
                 Text(
                     getCurrencySymbol(code),
-                    style = AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Black),
+                    style = AppTextStyles.heroAmount,
                     color = if (isPrimary) AppColors.onPrimary else AppColors.contentPrimary
                 )
                 Text(
                     code,
-                    style = AppTextStyles.overlineLabel.copy(fontWeight = FontWeight.Black),
-                    color = if (isPrimary) AppColors.onPrimary.copy(alpha = 0.7f) else AppColors.contentSecondary
+                    style = AppTextStyles.overlineLabel,
+                    color = if (isPrimary) AppColors.onPrimary else AppColors.contentSecondary
                 )
             }
         }
     }
 }
+

@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -90,9 +91,9 @@ fun AeonTemplateSelection(
 
                     Surface(
                         onClick = { onTemplateSelected(null); onDismiss() },
-                        shape = RoundedCornerShape(16.dp),
-                        color = AppColors.primary.copy(alpha = 0.1f),
-                        border = BorderStroke(1.dp, AppColors.primary.copy(alpha = 0.2f)),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        color = AppColors.primaryContainer,
+                        border = BorderStroke(1.dp, AppColors.primary),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -100,12 +101,12 @@ fun AeonTemplateSelection(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
+                            Icon(Icons.Rounded.Add, null, tint = AppColors.onPrimaryContainer)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 "Create New Template",
-                                color = AppColors.primary,
-                                fontWeight = FontWeight.Bold
+                                color = AppColors.onPrimaryContainer,
+                                style = AppTextStyles.buttonLabel
                             )
                         }
                     }
@@ -122,12 +123,11 @@ fun AeonTemplateSelection(
                         val category = categoryMap[template.categoryId]
                         Card(
                             onClick = { onTemplateSelected(template); onDismiss() },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                             colors = CardDefaults.cardColors(
-                                containerColor = AppColors.insetSurface.copy(
-                                    alpha = 0.3f
-                                )
-                            )
+                                containerColor = AppColors.surfaceContainerLow
+                            ),
+                            border = BorderStroke(1.dp, AppColors.outlineVariant)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -135,9 +135,9 @@ fun AeonTemplateSelection(
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Surface(
-                                        modifier = Modifier.size(40.dp),
+                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                                         shape = CircleShape,
-                                        color = AppColors.primary.copy(alpha = 0.1f)
+                                        color = AppColors.primary.copy(alpha = 0.12f)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
@@ -153,13 +153,12 @@ fun AeonTemplateSelection(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         template.name,
-                                        style = AppTextStyles.screenSubTitle,
-                                        fontWeight = FontWeight.Bold
+                                        style = AppTextStyles.managementItemTitle
                                     )
                                     Text(
                                         category?.name ?: "Unknown",
                                         style = AppTextStyles.caption,
-                                        color = AppColors.border
+                                        color = AppColors.contentSecondary
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
@@ -171,8 +170,7 @@ fun AeonTemplateSelection(
                                     Text(
                                         "$prefix${template.amount} ${template.currency ?: ""}",
                                         style = AppTextStyles.managementItemTitle,
-                                        color = color,
-                                        fontWeight = FontWeight.Bold
+                                        color = color
                                     )
                                 }
                             }

@@ -21,9 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.isDark
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
@@ -34,13 +37,13 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Surface(
             modifier = Modifier.size(64.dp),
             shape = CircleShape,
-            color = if (isSelected) AppColors.primary else AppColors.insetSurface.copy(alpha = 0.5f)
+            color = if (isSelected) AppColors.primary else AppColors.surfaceContainerHigh
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
                     contentDescription = name,
-                    tint = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
+                    tint = if (isSelected) (if (AppColors.primary.isDark()) Color.White else Color.Black) else AppColors.contentSecondary,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -48,7 +51,7 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             name,
-            style = AppTextStyles.transactionSwipeAction,
+            style = if (isSelected) AppTextStyles.chipLabelBold else AppTextStyles.chipLabel,
             color = if (isSelected) AppColors.primary else AppColors.contentSecondary
         )
     }

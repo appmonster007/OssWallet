@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -52,7 +51,6 @@ fun EntryActionChip(
     isSelected: Boolean = false,
     iconTint: Color? = null,
     iconContainerColor: Color? = null,
-    selectedColor: Color = AppColors.primary
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -60,14 +58,14 @@ fun EntryActionChip(
     val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "chipScale")
 
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor.copy(alpha = 0.08f)
-        else AppColors.recessedSurface,
+        if (isSelected) AppColors.primaryContainer
+        else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor
-        else AppColors.divider.copy(alpha = 0.2f),
+        if (isSelected) AppColors.primary
+        else AppColors.outlineVariant,
         label = "borderColor"
     )
 
@@ -94,10 +92,7 @@ fun EntryActionChip(
         ) {
             Surface(
                 shape = CircleShape,
-                color = iconContainerColor
-                    ?: (if (isSelected) selectedColor.copy(alpha = 0.12f) else AppColors.primary.copy(
-                        alpha = 0.08f
-                    )),
+                color = iconContainerColor ?: AppColors.transparent,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -105,17 +100,14 @@ fun EntryActionChip(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconTint ?: (if (isSelected) selectedColor else AppColors.primary)
+                        tint = iconTint ?: (if (isSelected) AppColors.onPrimaryContainer else AppColors.primary)
                     )
                 }
             }
             Text(
                 text = label,
-                style = AppTextStyles.drawerItemLabel.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    letterSpacing = 0.2.sp
-                ),
-                color = if (isSelected) selectedColor else AppColors.contentPrimary,
+                style = AppTextStyles.chipLabel,
+                color = if (isSelected) AppColors.onPrimaryContainer else AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )

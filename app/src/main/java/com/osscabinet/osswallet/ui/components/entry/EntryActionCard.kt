@@ -76,12 +76,12 @@ fun EntryActionCard(
     }
 
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.cardSurface,
+        if (isSelected) selectedColor else AppColors.surfaceContainer,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.divider.copy(alpha = 0.15f),
+        if (isSelected) selectedColor else AppColors.outlineVariant,
         label = "borderColor"
     )
 
@@ -96,7 +96,7 @@ fun EntryActionCard(
         enabled = enabled,
         shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         color = backgroundColor,
-        border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),
+        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, borderColor),
         shadowElevation = 0.dp,
         modifier = modifier
             .height(72.dp)
@@ -111,14 +111,14 @@ fun EntryActionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected) contentColor.copy(alpha = 0.15f) else iconContainerColor,
+                color = if (isSelected) AppColors.transparent else iconContainerColor,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                         tint = if (isSelected) contentColor else iconTint
                     )
                 }
@@ -130,19 +130,13 @@ fun EntryActionCard(
             ) {
                 Text(
                     text = label,
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = if (isSelected) contentColor.copy(alpha = 0.75f)
-                    else AppColors.contentSecondary.copy(alpha = 0.6f)
+                    style = AppTextStyles.overlineLabel,
+                    color = if (isSelected) contentColor
+                    else AppColors.contentSecondary
                 )
                 Text(
                     text = value,
-                    style = AppTextStyles.listItemTitle.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
-                    ),
+                    style = AppTextStyles.managementItemTitle,
                     color = if (isSelected) contentColor else AppColors.contentPrimary,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -161,14 +155,15 @@ fun EntryActionCard(
                         trailingIcon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) contentColor.copy(alpha = 0.6f)
-                        else AppColors.contentSecondary.copy(alpha = 0.4f)
+                        tint = if (isSelected) contentColor
+                        else AppColors.contentSecondary
                     )
                 }
             }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

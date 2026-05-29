@@ -25,7 +25,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -50,8 +52,8 @@ fun AeonSearchField(
             value = query,
             onValueChange = onQueryChange,
             modifier = fieldModifier,
-            placeholder = { Text(placeholder) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+            placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary) },
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (query.isNotEmpty()) {
@@ -59,7 +61,8 @@ fun AeonSearchField(
                             Icon(
                                 Icons.Rounded.Close,
                                 contentDescription = "Clear search",
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(20.dp),
+                                tint = AppColors.contentSecondary
                             )
                         }
                     }
@@ -67,12 +70,15 @@ fun AeonSearchField(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(24.dp),
+            textStyle = AppTextStyles.formFieldValue,
+            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = AppColors.border.copy(alpha = 0.3f),
-                focusedContainerColor = AppColors.insetSurface.copy(alpha = 0.1f),
-                unfocusedContainerColor = AppColors.insetSurface.copy(alpha = 0.05f)
+                focusedBorderColor = AppColors.primary,
+                unfocusedBorderColor = AppColors.outline,
+                focusedContainerColor = AppColors.surfaceContainerLow,
+                unfocusedContainerColor = AppColors.surfaceContainerLow,
+                cursorColor = AppColors.primary
             )
         )
     } else {
@@ -80,8 +86,8 @@ fun AeonSearchField(
             value = query,
             onValueChange = onQueryChange,
             modifier = fieldModifier,
-            placeholder = { Text(placeholder) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+            placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary) },
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (query.isNotEmpty()) {
@@ -89,7 +95,8 @@ fun AeonSearchField(
                             Icon(
                                 Icons.Rounded.Close,
                                 contentDescription = "Clear search",
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(20.dp),
+                                tint = AppColors.contentSecondary
                             )
                         }
                     }
@@ -97,6 +104,7 @@ fun AeonSearchField(
                 }
             },
             singleLine = true,
+            textStyle = AppTextStyles.formFieldValue,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = AppColors.transparent,
@@ -104,6 +112,7 @@ fun AeonSearchField(
                 disabledContainerColor = AppColors.transparent,
                 focusedIndicatorColor = AppColors.transparent,
                 unfocusedIndicatorColor = AppColors.transparent,
+                cursorColor = AppColors.primary
             )
         )
     }

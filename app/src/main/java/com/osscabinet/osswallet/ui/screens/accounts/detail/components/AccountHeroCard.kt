@@ -94,7 +94,6 @@ fun AccountHeroCard(
         title = account.name,
         subtitle = account.structureType.displayName,
         icon = icon,
-        iconColor = contentColor,
         accentColor = contentColor,
         containerColor = containerColor,
         contentColor = contentColor,

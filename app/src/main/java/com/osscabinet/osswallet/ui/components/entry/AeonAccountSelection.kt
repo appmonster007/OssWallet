@@ -50,8 +50,8 @@ fun AeonAccountSelection(
             if (description != null) {
                 Text(
                     text = description,
-                    style = AppTextStyles.transactionTitle,
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                    style = AppTextStyles.formFieldNote,
+                    color = AppColors.contentSecondary,
                     modifier = Modifier.padding(bottom = dims.spacingSm)
                 )
             }
@@ -74,7 +74,7 @@ fun AeonAccountSelection(
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = dims.spacingSm),
                     thickness = (dims.spacingXs / 8),
-                    color = AppColors.divider.copy(alpha = 0.2f)
+                    color = AppColors.outlineVariant
                 )
             }
         }

@@ -431,16 +431,16 @@ private fun AeonLocationSelectionContent(
     }
 
     // Colors / dims
-    val accentColor = AppColors.accent
+    val accentColor = AppColors.primary
     val accentArgb = accentColor.toArgb()
-    val cardSurface = AppColors.cardSurface
-    val panelSurface = AppColors.panelSurface
+    val cardSurface = AppColors.surfaceContainerLow
+    val panelSurface = AppColors.surfaceContainerHigh
     val contentPrimary = AppColors.contentPrimary
     val contentSecondary = AppColors.contentSecondary
-    val accentContainer = AppColors.accentContainer
-    val onAccentContainer = AppColors.onAccentContainer
-    val dividerColor = AppColors.divider
-    val borderColor = AppColors.border
+    val accentContainer = AppColors.primaryContainer
+    val onAccentContainer = AppColors.onPrimaryContainer
+    val dividerColor = AppColors.outlineVariant
+    val borderColor = AppColors.outline
     val dims = AeonTheme.dimensions
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -520,13 +520,13 @@ private fun AeonLocationSelectionContent(
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp),
-                shape = RoundedCornerShape(24.dp), // Match AeonSearchField
-                color = if (isSearchFocused) panelSurface else cardSurface.copy(alpha = 0.9f),
+                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                color = if (isSearchFocused) panelSurface else cardSurface,
                 shadowElevation = searchElevation,
                 border = if (isSearchFocused) BorderStroke(
                     1.dp,
-                    accentColor.copy(alpha = 0.5f)
-                ) else BorderStroke(0.5.dp, borderColor.copy(alpha = 0.2f))
+                    accentColor
+                ) else BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))
             ) {
                 Row(
                     modifier = Modifier
@@ -555,9 +555,8 @@ private fun AeonLocationSelectionContent(
                                 if (searchQuery.isEmpty()) {
                                     Text(
                                         "Search for a place…",
-                                        style = AppTextStyles.formFieldHint.copy(
-                                            color = contentSecondary.copy(alpha = 0.6f)
-                                        )
+                                        style = AppTextStyles.formFieldHint,
+                                        color = contentSecondary
                                     )
                                 }
                                 inner()
@@ -832,10 +831,7 @@ private fun AeonLocationSelectionContent(
                     ) {
                         Text(
                             "Confirm Location",
-                            style = AppTextStyles.cardSectionTitle.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 0.5.sp
-                            )
+                            style = AppTextStyles.buttonLabel
                         )
                     }
 
@@ -905,7 +901,7 @@ private fun LocationPanelBody(
             Surface(
                 onClick = onCopy,
                 shape = CircleShape,
-                color = AppColors.insetSurface.copy(alpha = 0.4f)
+                color = AppColors.surfaceContainerHigh
             ) {
                 Box(
                     modifier = Modifier.size(36.dp),
@@ -990,7 +986,7 @@ private fun LocationRow(
             Surface(
                 modifier = Modifier.size(36.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = AppColors.insetSurface.copy(alpha = 0.5f)
+                color = AppColors.surfaceContainerHigh
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(

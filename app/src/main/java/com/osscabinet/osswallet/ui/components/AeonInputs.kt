@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +18,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -66,8 +67,9 @@ fun CurrencySelector(
                 query = ""
                 expanded = true
             },
-            shape = RoundedCornerShape(12.dp),
-            color = AppColors.insetSurface.copy(alpha = 0.4f)
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            color = AppColors.surfaceContainerLow,
+            border = BorderStroke(1.dp, AppColors.outlineVariant)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -76,15 +78,13 @@ fun CurrencySelector(
             ) {
                 Text(
                     selectedCurrency.ifEmpty { "USD" },
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.contentSecondary
-                    )
+                    style = AppTextStyles.chipLabel,
+                    color = AppColors.contentPrimary
                 )
                 Icon(
                     if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                     tint = AppColors.contentSecondary
                 )
             }
@@ -93,7 +93,7 @@ fun CurrencySelector(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            containerColor = AppColors.cardSurface,
+            containerColor = AppColors.surfaceContainerHigh,
             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             modifier = Modifier.widthIn(min = 120.dp, max = 200.dp)
         ) {
@@ -104,12 +104,12 @@ fun CurrencySelector(
                     placeholder = {
                         Text(
                             "Search...",
-                            style = AppTextStyles.drawerItemLabel,
-                            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AppColors.contentSecondary
                         )
                     },
                     singleLine = true,
-                    textStyle = AppTextStyles.drawerItemLabel.copy(color = AppColors.contentPrimary),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppColors.contentPrimary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -121,21 +121,18 @@ fun CurrencySelector(
                         cursorColor = AppColors.primary
                     )
                 )
-                HorizontalDivider(color = AppColors.divider.copy(alpha = 0.3f))
+                HorizontalDivider(color = AppColors.outlineVariant)
             }
             filteredList.forEach { currency ->
                 val isSelected = currency == selectedCurrency
                 DropdownMenuItem(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(if (isSelected) AppColors.primary.copy(alpha = 0.1f) else Color.Transparent),
+                        .fillMaxWidth(),
                     text = {
                         Text(
                             currency,
-                            style = AppTextStyles.drawerItemLabel.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) AppColors.primary else AppColors.contentPrimary
-                            )
+                            style = if (isSelected) AppTextStyles.chipLabelBold else AppTextStyles.chipLabel,
+                            color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         )
                     },
                     onClick = {
@@ -144,17 +141,18 @@ fun CurrencySelector(
                         query = ""
                     },
                     colors = MenuItemColors(
-                        textColor = AppColors.contentPrimary,
+                        textColor = if (isSelected) AppColors.primary else AppColors.contentPrimary,
                         leadingIconColor = AppColors.contentSecondary,
                         trailingIconColor = AppColors.primary,
-                        disabledTextColor = AppColors.contentSecondary.copy(alpha = 0.4f),
-                        disabledLeadingIconColor = AppColors.contentSecondary.copy(alpha = 0.4f),
-                        disabledTrailingIconColor = AppColors.contentSecondary.copy(alpha = 0.4f)
+                        disabledTextColor = AppColors.contentSecondary.copy(alpha = 0.38f),
+                        disabledLeadingIconColor = AppColors.contentSecondary.copy(alpha = 0.38f),
+                        disabledTrailingIconColor = AppColors.contentSecondary.copy(alpha = 0.38f)
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
         }
+
     }
 }
 

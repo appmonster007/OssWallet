@@ -125,8 +125,8 @@ fun LoanFormBody(
                                 value = formatter.format(java.util.Date(state.startDate)),
                                 onClick = { onEvent(LoanEntryEvent.ShowStartDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
-                                iconTint = AppColors.secondary
+                                iconContainerColor = AppColors.formIconContainerSecondary,
+                                iconTint = AppColors.onSecondaryContainer
                             )
 
                             EntryActionCard(
@@ -139,8 +139,8 @@ fun LoanFormBody(
                                 ) else "None Set",
                                 onClick = { onEvent(LoanEntryEvent.ShowSettlementDatePicker(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
-                                iconTint = AppColors.secondary
+                                iconContainerColor = AppColors.formIconContainerSecondary,
+                                iconTint = AppColors.onSecondaryContainer
                             )
                         }
 
@@ -152,8 +152,8 @@ fun LoanFormBody(
                                 value = accountObj?.name ?: "Select...",
                                 onClick = { onEvent(LoanEntryEvent.ShowAccountSheet(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                                iconTint = AppColors.primary
+                                iconContainerColor = AppColors.formIconContainerPrimary,
+                                iconTint = AppColors.onPrimaryContainer
                             )
 
                             EntryActionCard(
@@ -162,8 +162,8 @@ fun LoanFormBody(
                                 value = if (state.interestRate.isEmpty()) "0%" else "${state.interestRate}%",
                                 onClick = { onEvent(LoanEntryEvent.ShowInterestNumpad(show = true)) },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                                iconTint = AppColors.tertiary
+                                iconContainerColor = AppColors.formIconContainerTertiary,
+                                iconTint = AppColors.onTertiaryContainer
                             )
                         }
                     }

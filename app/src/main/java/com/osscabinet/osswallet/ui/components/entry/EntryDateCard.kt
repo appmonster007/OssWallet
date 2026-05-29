@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -45,20 +46,20 @@ fun EntryDateCard(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = AppColors.recessedSurface,
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = AppColors.secondary
+                tint = AppColors.primary
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -74,24 +75,20 @@ fun EntryDateCard(
                 }
                 Text(
                     text = label,
-                    style = AppTextStyles.chartAxisLabel,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
                 )
                 Text(
                     text = dateLabel,
-                    style = AppTextStyles.transactionTitle.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (dateMillis != null) AppColors.contentPrimary else AppColors.contentSecondary.copy(
-                            alpha = 0.5f
-                        )
-                    )
+                    style = if (dateMillis != null) AppTextStyles.managementItemTitle else AppTextStyles.formFieldHint,
+                    color = if (dateMillis != null) AppColors.contentPrimary else AppColors.contentSecondary
                 )
             }
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                tint = AppColors.contentSecondary
             )
         }
     }

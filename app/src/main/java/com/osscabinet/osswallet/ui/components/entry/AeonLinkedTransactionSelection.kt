@@ -53,8 +53,10 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.util.isDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 
@@ -118,8 +120,8 @@ fun AeonLinkedTransactionSelection(
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
                         text = stringResource(R.string.link_records_hint),
-                        style = AppTextStyles.transactionTitle,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                        style = AppTextStyles.formFieldNote,
+                        color = AppColors.contentSecondary,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
 
@@ -151,13 +153,13 @@ fun AeonLinkedTransactionSelection(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) AppColors.primary.copy(alpha = 0.08f)
-                                else AppColors.panelSurface,
+                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                color = if (isSelected) AppColors.primaryContainer
+                                else AppColors.surfaceContainerLow,
                                 border = if (isSelected) BorderStroke(
                                     1.dp,
-                                    AppColors.primary.copy(alpha = 0.3f)
-                                ) else null
+                                    AppColors.primary
+                                ) else BorderStroke(1.dp, AppColors.outlineVariant)
                             ) {
                                 Box {
                                     AeonTransactionItem(
@@ -205,13 +207,12 @@ fun AeonLinkedTransactionSelection(
                                                 .padding(end = 16.dp)
                                                 .size(24.dp),
                                             shape = CircleShape,
-                                            color = AppColors.primary,
-                                            shadowElevation = 2.dp
+                                            color = AppColors.primary
                                         ) {
                                             Icon(
                                                 Icons.Rounded.Check,
                                                 contentDescription = stringResource(R.string.selected_desc),
-                                                tint = AppColors.onPrimary,
+                                                tint = if (AppColors.primary.isDark()) Color.White else Color.Black,
                                                 modifier = Modifier.padding(4.dp)
                                             )
                                         }
@@ -228,7 +229,7 @@ fun AeonLinkedTransactionSelection(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth(),
-                    color = AppColors.panelSurface.copy(alpha = 0.95f)
+                    color = AppColors.background.copy(alpha = 0.95f)
                 ) {
                     Column(
                         modifier = Modifier
@@ -243,7 +244,7 @@ fun AeonLinkedTransactionSelection(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
-                            shape = RoundedCornerShape(20.dp)
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
                         ) {
                             Text(
                                 pluralStringResource(
@@ -251,7 +252,7 @@ fun AeonLinkedTransactionSelection(
                                     selectedIds.size,
                                     selectedIds.size
                                 ),
-                                style = AppTextStyles.listItemTitle
+                                style = AppTextStyles.buttonLabel
                             )
                         }
                     }

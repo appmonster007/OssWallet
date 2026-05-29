@@ -86,8 +86,8 @@ fun TransactionListTopAppBar(
                 )
                 Text(
                     if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
-                    style = AppTextStyles.transactionSwipeAction,
-                    color = AppColors.border
+                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                    color = AppColors.contentSecondary
                 )
             }
         },

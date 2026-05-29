@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -265,16 +266,21 @@ fun DashboardScreen(
                     title = {
                         Column(
                             modifier = Modifier.clickable { navigate(onSettingsClick) },
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 currentProfile?.name ?: "Intelligence",
-                                style = AppTextStyles.screenTitle
+                                style = AppTextStyles.screenTitle.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = (-0.5).sp
+                                )
                             )
                             Text(
                                 "Personal Account",
-                                style = AppTextStyles.transactionSwipeAction,
-                                color = AppColors.border
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = AppColors.contentSecondary
                             )
                         }
                     }
@@ -553,26 +559,30 @@ fun DashboardGlanceTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding,
-                    vertical = AeonTheme.dimensions.spacingMd
+                    start = AeonTheme.dimensions.screenPadding,
+                    end = AeonTheme.dimensions.screenPadding - 8.dp, // Compensate for button padding
+                    top = AeonTheme.dimensions.spacingMd,
+                    bottom = AeonTheme.dimensions.spacingSm
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Glance",
-                style = AppTextStyles.screenTitle,
-                fontWeight = FontWeight.Bold
+                style = AppTextStyles.screenTitle.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp
+                )
             )
             IconButton(
                 onClick = { onShowAddCardDialogChange(true) },
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add card",
                     tint = AppColors.primary,
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

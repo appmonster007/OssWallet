@@ -6,12 +6,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -48,21 +51,37 @@ fun AeonDetailSection(
                 label = noteLabel,
                 icon = Icons.AutoMirrored.Rounded.Notes,
                 suggestions = noteSuggestions,
-                placeholder = "Tap to enter..."
+                placeholder = "Tap to enter...",
+                isFlush = true
             )
         }
 
         if (showPayee) {
+            if (showNote) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(start = AeonTheme.dimensions.iconSizeXl + AeonTheme.dimensions.spacingLg)
+                )
+            }
             EntryEditorialInput(
                 value = payee,
                 onValueChange = onPayeeChange,
                 label = payeeLabel,
                 icon = Icons.Rounded.Person,
-                suggestions = payeeSuggestions
+                suggestions = payeeSuggestions,
+                isFlush = true
             )
         }
 
         if (showTags) {
+            if (showNote || showPayee) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(start = AeonTheme.dimensions.iconSizeXl + AeonTheme.dimensions.spacingLg)
+                )
+            }
             EntryTagSection(
                 selectedNames = selectedNames,
                 allAvailableTags = allAvailableTags,
@@ -71,7 +90,13 @@ fun AeonDetailSection(
             )
         }
 
-        additionalContent?.invoke(this)
+        if (additionalContent != null) {
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.5f)
+            )
+            additionalContent()
+        }
     }
 }
 

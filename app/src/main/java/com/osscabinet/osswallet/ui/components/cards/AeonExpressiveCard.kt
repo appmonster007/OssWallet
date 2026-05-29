@@ -180,14 +180,14 @@ fun AeonExpressiveCard(
                         Surface(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
                             shape = CircleShape,
-                            color = AppColors.primaryContainer,
+                            color = contentColor.copy(alpha = 0.15f),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                    tint = AppColors.onPrimaryContainer,
+                                    tint = contentColor,
                                 )
                             }
                         }

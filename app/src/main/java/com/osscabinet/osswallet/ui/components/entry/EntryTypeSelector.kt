@@ -55,13 +55,13 @@ fun <T> EntryTypeSelector(
     onTypeSelected: (T) -> Unit,
     types: List<Triple<ImageVector, String, T>>,
     selectedColor: Color = AppColors.primary,
-    itemWidth: androidx.compose.ui.unit.Dp = 80.dp
+    itemWidth: androidx.compose.ui.unit.Dp = 84.dp
 ) {
     val selectedIndex = types.indexOfFirst { it.third == selectedType }.coerceAtLeast(0)
     val haptic = LocalHapticFeedback.current
 
     val indicatorColor by animateColorAsState(
-        targetValue = selectedColor,
+        targetValue = AppColors.primaryContainer,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         label = "indicatorColor"
     )
@@ -77,10 +77,10 @@ fun <T> EntryTypeSelector(
 
     Box(
         modifier = Modifier
-            .height(44.dp)
+            .height(48.dp)
             .clip(RoundedCornerShape(32.dp))
-            .background(AppColors.recessedSurface)
-            .border(0.5.dp, AppColors.divider.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
+            .background(AppColors.surfaceContainerLow)
+            .border(1.dp, AppColors.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(32.dp))
             .padding(4.dp)
     ) {
         Box(
@@ -121,11 +121,11 @@ fun <T> EntryTypeSelector(
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (isSelected) ColorOnDark else AppColors.contentSecondary.copy(
+                        tint = if (isSelected) AppColors.onPrimaryContainer else AppColors.contentSecondary.copy(
                             alpha = 0.6f
                         ),
                         modifier = Modifier
-                            .size(26.dp)
+                            .size(24.dp)
                             .graphicsLayer(scaleX = scale, scaleY = scale)
                     )
                 }

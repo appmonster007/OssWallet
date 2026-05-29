@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -87,6 +88,7 @@ fun FilterSheetContent(
     onFilterEvent: (FilterEvent) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String? = null,
     allTags: List<Tag> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
@@ -141,6 +143,21 @@ fun FilterSheetContent(
             ),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
+        // 0. Title Header (from Image 5)
+        if (!title.isNullOrBlank()) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = title.uppercase(),
+                    style = AppTextStyles.screenTitle.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.25.sp
+                    ),
+                    color = AppColors.contentPrimary
+                )
+            }
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+        }
+
         // 1. Base Scope Indicator
         val hasBaseFilters = countActiveFilters(baseFilter) > 0
         if (hasBaseFilters) {

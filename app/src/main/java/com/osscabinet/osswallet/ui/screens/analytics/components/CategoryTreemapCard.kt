@@ -39,7 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -60,7 +63,6 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.generateShade
@@ -303,16 +305,39 @@ fun CategoryTreemapCard(
                 Column {
                     Text(
                         text = "TOTAL",
-                        style = AppTextStyles.overlineLabel,
+                        style = AppTextStyles.overlineLabel.copy(
+                            letterSpacing = 1.25.sp
+                        ),
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
+                    
+                    val amountText = CurrencyFormatter.formatAuto(total, shorten = true)
+                    val symbolText = CurrencyFormatter.getCurrencySymbol(currency)
+                    val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+                    val contentColor = AppColors.contentPrimary
+                    
                     Text(
-                        text = CurrencyFormatter.formatAuto(total, currency),
-                        style = AppTextStyles.managementItemTitle.copy(
+                        text = buildAnnotatedString {
+                            if (isSymbolLeft) {
+                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
+                                    append(symbolText)
+                                }
+                                append(" ")
+                                append(amountText)
+                            } else {
+                                append(amountText)
+                                append(" ")
+                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
+                                    append(symbolText)
+                                }
+                            }
+                        },
+                        style = AppTextStyles.heroAmount.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            fontSize = 24.sp,
+                            letterSpacing = (-0.5).sp
                         ),
-                        color = AppColors.contentPrimary
+                        color = contentColor
                     )
                 }
 
@@ -327,8 +352,8 @@ fun CategoryTreemapCard(
                     val positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
 
                     val color = when {
-                        isIncrease -> if (positiveDeltaIsGood) PositiveAmountColor else NegativeAmountColor
-                        isDecrease -> if (positiveDeltaIsGood) NegativeAmountColor else PositiveAmountColor
+                        isIncrease -> if (positiveDeltaIsGood) AppColors.positive else AppColors.negative
+                        isDecrease -> if (positiveDeltaIsGood) AppColors.negative else AppColors.positive
                         else -> AppColors.contentSecondary
                     }
 
@@ -338,27 +363,32 @@ fun CategoryTreemapCard(
                         else -> null
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    Surface(
+                        color = color.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.padding(bottom = 2.dp)
                     ) {
-                        if (icon != null) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = color
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            if (icon != null) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = color
+                                )
+                            }
+                            Text(
+                                text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
+                                style = AppTextStyles.transactionBadge.copy(
+                                    fontSize = 11.sp
+                                ),
+                                color = color
                             )
                         }
-                        Text(
-                            text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
-                            style = AppTextStyles.caption.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            color = color
-                        )
                     }
                 }
             }

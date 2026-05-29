@@ -113,9 +113,8 @@ fun AccountHeroCard(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = "TOTAL BALANCE",
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp
+                    style = AppTextStyles.overlineLabel.copy(
+                        letterSpacing = 1.5.sp
                     ),
                     color = contentColor.copy(alpha = 0.6f)
                 )
@@ -147,9 +146,8 @@ fun AccountHeroCard(
                             }
                         }
                     },
-                    style = AppTextStyles.heroAmount.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 32.sp,
+                    style = AppTextStyles.heroAmountLarge.copy(
+                        fontSize = 36.sp,
                         letterSpacing = (-1).sp
                     ),
                     color = contentColor
@@ -218,11 +216,10 @@ fun AccountHeroCard(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "DISTRIBUTION",
-                        style = AppTextStyles.drawerItemLabel.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp,
-                            color = contentColor.copy(alpha = 0.8f)
-                        )
+                        style = AppTextStyles.overlineLabel.copy(
+                            letterSpacing = 1.5.sp
+                        ),
+                        color = contentColor.copy(alpha = 0.8f)
                     )
 
                     Row(
@@ -231,7 +228,7 @@ fun AccountHeroCard(
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = contentColor.copy(alpha = 0.1f),
+                                color = contentColor.copy(alpha = 0.12f),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(
                                     1.dp,
@@ -253,10 +250,11 @@ fun AccountHeroCard(
                                 ) {
                                     Text(
                                         curr,
-                                        style = AppTextStyles.transactionSwipeAction.copy(
+                                        style = AppTextStyles.overlineLabel.copy(
                                             fontWeight = FontWeight.Black,
-                                            color = contentColor
-                                        )
+                                            fontSize = 10.sp
+                                        ),
+                                        color = contentColor
                                     )
                                     Text(
                                         formatAuto(bal),
@@ -287,30 +285,29 @@ private fun FlowSummaryItem(
     onClick: () -> Unit = {}
 ) {
     Surface(
-        color = color.copy(alpha = 0.05f),
+        color = color.copy(alpha = 0.12f),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(14.dp)
                 )
                 Text(
                     text = label.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                    style = AppTextStyles.overlineLabel.copy(
+                        letterSpacing = 1.sp
                     ),
                     color = color.copy(alpha = 0.8f)
                 )
@@ -318,7 +315,7 @@ private fun FlowSummaryItem(
             Text(
                 text = formatAuto(amount, currency),
                 style = AppTextStyles.screenSubTitle.copy(
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Black
                 ),
                 color = color
             )

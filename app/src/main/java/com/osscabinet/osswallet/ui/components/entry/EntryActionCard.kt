@@ -76,12 +76,12 @@ fun EntryActionCard(
     }
 
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.surfaceContainer,
+        if (isSelected) selectedColor else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.outlineVariant,
+        if (isSelected) selectedColor else AppColors.outlineVariant.copy(alpha = 0.5f),
         label = "borderColor"
     )
 

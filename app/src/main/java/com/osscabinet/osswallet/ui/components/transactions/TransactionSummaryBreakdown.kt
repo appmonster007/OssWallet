@@ -100,7 +100,8 @@ fun TransactionSummaryBreakdown(
                     style = AppTextStyles.metaLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.sp,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.5.sp,
+                        color = AppColors.contentSecondary
                     ),
                     modifier = Modifier
                         .weight(1f)
@@ -114,7 +115,8 @@ fun TransactionSummaryBreakdown(
                     style = AppTextStyles.metaLabel.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.sp,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.5.sp,
+                        color = AppColors.contentSecondary
                     ),
                     modifier = Modifier
                         .weight(balanceWeight)
@@ -239,7 +241,7 @@ fun TransactionSummaryBreakdown(
                                 fontWeight = FontWeight.Medium
                             ),
                             modifier = Modifier.width(labelColumnWidth),
-                            color = AppColors.border.copy(alpha = 0.8f)
+                            color = AppColors.contentSecondary
                         )
 
                         val breakdownColumnModifier = Modifier
@@ -249,14 +251,14 @@ fun TransactionSummaryBreakdown(
                         Text(
                             formatAuto(inc, curr, shorten = true),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
-                            color = positiveColor.copy(alpha = 0.7f),
+                            color = positiveColor,
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
                         Text(
                             formatAuto(exp, curr, shorten = true),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
-                            color = negativeColor.copy(alpha = 0.7f),
+                            color = negativeColor,
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
@@ -266,9 +268,7 @@ fun TransactionSummaryBreakdown(
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(
-                                alpha = 0.7f
-                            ),
+                            color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor),
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
@@ -297,7 +297,7 @@ fun TransactionSummaryBreakdown(
                                     .weight(balanceWeight)
                                     .padding(start = 8.dp),
                                 textAlign = TextAlign.End,
-                                color = AppColors.contentPrimary.copy(alpha = 0.6f),
+                                color = AppColors.contentPrimary,
                                 maxLines = 1,
                                 softWrap = false
                             )

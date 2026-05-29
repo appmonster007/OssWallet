@@ -67,6 +67,7 @@ fun EntryEditorialInput(
     placeholder: String = "Tap to enter...",
     iconColor: Color = AppColors.primary,
     enabled: Boolean = true,
+    isFlush: Boolean = false,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -94,13 +95,16 @@ fun EntryEditorialInput(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            color = AppColors.surfaceContainerLow,
-            border = BorderStroke(1.dp, AppColors.outlineVariant),
-            onClick = { focusRequester.requestFocus() }
+            shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            color = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
+            border = if (isFlush) null else BorderStroke(1.dp, AppColors.outlineVariant),
+            onClick = { if (enabled) focusRequester.requestFocus() }
         ) {
             Row(
-                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                modifier = Modifier.padding(
+                    horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding,
+                    vertical = if (isFlush) AeonTheme.dimensions.spacingMd else AeonTheme.dimensions.cardPadding
+                ),
                 verticalAlignment = Alignment.Top
             ) {
                 Surface(

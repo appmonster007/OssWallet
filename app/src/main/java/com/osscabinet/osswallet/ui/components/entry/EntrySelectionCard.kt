@@ -36,9 +36,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.isDark
 
 enum class EntrySelectionMode {
     SINGLE, MULTI, MANAGEMENT
@@ -63,16 +65,14 @@ fun EntrySelectionCard(
     val haptic = LocalHapticFeedback.current
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary.copy(
-            alpha = 0.08f
-        )
-        else AppColors.recessedSurface,
+        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primaryContainer
+        else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
         targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary
-        else AppColors.divider.copy(alpha = 0.2f),
+        else AppColors.outlineVariant,
         label = "borderColor"
     )
 
@@ -86,49 +86,45 @@ fun EntrySelectionCard(
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = backgroundColor,
         border = BorderStroke(borderWidth, borderColor),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
                 color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(
-                    alpha = 0.15f
-                ) else iconColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(36.dp)
+                    alpha = 0.2f
+                ) else iconColor.copy(alpha = 0.12f),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else iconColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = AppTextStyles.listItemTitle.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
-                    ),
+                    style = if (isSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
                     color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary
                 )
                 if (detail != null) {
                     Text(
                         text = detail,
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontSize = 11.sp,
-                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                        )
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
                     )
                 }
             }
@@ -166,7 +162,7 @@ fun EntrySelectionCard(
                         Icon(
                             imageVector = Icons.Rounded.Edit,
                             contentDescription = "Edit",
-                            tint = AppColors.border,
+                            tint = AppColors.contentSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }

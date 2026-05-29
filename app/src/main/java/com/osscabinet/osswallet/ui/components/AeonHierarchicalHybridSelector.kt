@@ -52,9 +52,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.isDark
 
 /**
  * Collects all descendant IDs of [rootId] by walking [allItems] with the given mappers.
@@ -115,13 +117,13 @@ fun <T, ID> AeonHierarchicalHybridSelector(
         if (mode == AeonSelectMode.PARENT && noneLabel != null) {
             val isNoneSelected = selectedIds.isEmpty()
             val backgroundColor by animateColorAsState(
-                if (isNoneSelected) AppColors.primary.copy(alpha = 0.08f)
-                else AppColors.recessedSurface,
+                if (isNoneSelected) AppColors.primaryContainer
+                else AppColors.surfaceContainerLow,
                 label = "noneBgColor"
             )
             val borderColor by animateColorAsState(
                 if (isNoneSelected) AppColors.primary
-                else AppColors.divider.copy(alpha = 0.2f),
+                else AppColors.outlineVariant,
                 label = "noneBorderColor"
             )
             val borderWidth by androidx.compose.animation.core.animateDpAsState(
@@ -131,34 +133,35 @@ fun <T, ID> AeonHierarchicalHybridSelector(
 
             Surface(
                 onClick = { onParentSelected(null) },
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                 color = backgroundColor,
                 border = BorderStroke(borderWidth, borderColor),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(modifier = Modifier.width(32.dp))
                     Surface(
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                         shape = CircleShape,
-                        color = AppColors.insetSurface.copy(alpha = 0.5f)
+                        color = AppColors.surfaceContainerHigh
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 noneIcon,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                tint = AppColors.contentSecondary
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
                     Text(
                         noneLabel,
-                        style = AppTextStyles.screenSubTitle,
-                        fontWeight = if (isNoneSelected) FontWeight.Bold else FontWeight.SemiBold,
+                        style = if (isNoneSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
+                        color = if (isNoneSelected) AppColors.primary else AppColors.contentPrimary,
                         modifier = Modifier.weight(1f)
                     )
                     if (isNoneSelected) {
@@ -226,17 +229,17 @@ private fun <T, ID> RecursiveHybridNode(
         )
     }
 
-    // Alternating contrast backgrounds for levels
+    // M3 tonal container logic
     val backgroundColor = if (depth % 2 == 0) {
-        AppColors.insetSurface.copy(alpha = 0.3f)
+        AppColors.surfaceContainerLow
     } else {
-        AppColors.panelSurface.copy(alpha = 0.8f)
+        AppColors.surfaceContainerHigh
     }
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = backgroundColor,
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
+        border = BorderStroke(0.5.dp, AppColors.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column {
@@ -337,14 +340,14 @@ private fun <T, ID> HybridSelectItem(
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     val backgroundColor by animateColorAsState(
-        if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary.copy(alpha = 0.08f)
-        else AppColors.recessedSurface,
+        if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primaryContainer
+        else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
         if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary
-        else AppColors.divider.copy(alpha = 0.2f),
+        else AppColors.outlineVariant,
         label = "borderColor"
     )
 
@@ -358,7 +361,7 @@ private fun <T, ID> HybridSelectItem(
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = backgroundColor,
         border = BorderStroke(borderWidth, borderColor),
         modifier = Modifier.fillMaxWidth()
@@ -366,7 +369,7 @@ private fun <T, ID> HybridSelectItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left side: Expansion Control
@@ -375,7 +378,7 @@ private fun <T, ID> HybridSelectItem(
                     Icon(
                         if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = AppColors.border
+                        tint = AppColors.contentSecondary
                     )
                 }
             } else {
@@ -388,30 +391,28 @@ private fun <T, ID> HybridSelectItem(
             val icon = iconMapper(item)
             val color = colorMapper(item) ?: AppColors.primary
             Surface(
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                 shape = CircleShape,
-                color = color.copy(alpha = 0.15f)
+                color = color.copy(alpha = 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (icon != null) {
                         Icon(
                             icon,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                             tint = color
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
 
             // Item Label
             Text(
                 labelMapper(item),
-                style = AppTextStyles.listItemTitle.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
-                ),
+                style = if (isSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
                 color = if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary,
                 modifier = Modifier.weight(1f)
             )
@@ -458,7 +459,7 @@ private fun <T, ID> HybridSelectItem(
                                 Icons.Rounded.Edit,
                                 contentDescription = "Edit",
                                 modifier = Modifier.size(18.dp),
-                                tint = AppColors.border
+                                tint = AppColors.contentSecondary
                             )
                         }
                     }

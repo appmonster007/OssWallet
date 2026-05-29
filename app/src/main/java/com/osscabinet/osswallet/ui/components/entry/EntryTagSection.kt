@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -60,9 +61,9 @@ fun EntryTagSection(
         // Add Tag Button
         Surface(
             onClick = onShowTagSheet,
-            shape = RoundedCornerShape(12.dp),
-            color = AppColors.recessedSurface,
-            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
+            shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
+            color = AppColors.surfaceContainerHigh,
+            border = BorderStroke(1.dp, AppColors.outlineVariant),
             modifier = Modifier.height(32.dp)
         ) {
             Row(
@@ -78,7 +79,8 @@ fun EntryTagSection(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = label,
-                    style = AppTextStyles.formSectionLabel
+                    style = AppTextStyles.tagLabel,
+                    color = AppColors.primary
                 )
             }
         }
@@ -88,9 +90,9 @@ fun EntryTagSection(
             val tagColor = if (tag.colorHex != -1) Color(tag.colorHex) else AppColors.primary
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
                 color = tagColor.copy(alpha = 0.12f),
-                border = BorderStroke(0.5.dp, tagColor.copy(alpha = 0.4f)),
+                border = BorderStroke(1.dp, tagColor.copy(alpha = 0.4f)),
                 modifier = Modifier.height(32.dp)
             ) {
                 Row(
@@ -100,7 +102,7 @@ fun EntryTagSection(
                     Text(
                         text = tag.name,
                         color = tagColor,
-                        style = AppTextStyles.cardDelta
+                        style = AppTextStyles.tagLabel
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(

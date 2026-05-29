@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.domain.model.toUiModels
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
@@ -52,42 +53,42 @@ fun EntryLinkedTransactionsSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = AppColors.primary.copy(alpha = 0.05f),
-            border = BorderStroke(0.5.dp, AppColors.primary.copy(alpha = 0.15f)),
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            color = AppColors.primaryContainer,
+            border = BorderStroke(1.dp, AppColors.primary),
             modifier = Modifier.fillMaxWidth(),
             onClick = onShowSheet
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
+                    color = AppColors.transparent,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Rounded.Link,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = AppColors.primary
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                            tint = AppColors.onPrimaryContainer
                         )
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Link Transaction",
-                    style = AppTextStyles.transactionAmount,
-                    color = AppColors.primary
+                    style = AppTextStyles.buttonLabel,
+                    color = AppColors.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = AppColors.primary
+                    tint = AppColors.onPrimaryContainer
                 )
             }
         }
@@ -125,9 +126,9 @@ private fun EntryLinkedTransactionItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = AppColors.insetSurface.copy(alpha = 0.2f),
-        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f))
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant)
     ) {
         Box {
             AeonTransactionItem(

@@ -42,8 +42,8 @@ fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Un
         )
         Surface(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            color = AppColors.insetSurface.copy(alpha = 0.2f),
-            border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.4f))
+            color = AppColors.surfaceContainerLow,
+            border = BorderStroke(1.dp, AppColors.outlineVariant)
         ) {
             Column {
                 content()
@@ -72,7 +72,7 @@ fun AeonSettingsItem(
         Surface(
             modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
             shape = CircleShape,
-            color = color.copy(alpha = 0.1f)
+            color = color.copy(alpha = 0.12f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -95,7 +95,7 @@ fun AeonSettingsItem(
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                tint = AppColors.contentSecondary
             )
         }
     }

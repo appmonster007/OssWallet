@@ -41,11 +41,13 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
 
 @Composable
@@ -58,24 +60,22 @@ fun AeonSettingsToggle(
     thumbContent: (@Composable () -> Unit)? = null
 ) {
     Surface(
-        color = AppColors.insetSurface.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier.fillMaxWidth()
+        color = AppColors.surfaceContainerLow,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        modifier = modifier.fillMaxWidth(),
+        border = BorderStroke(1.dp, AppColors.outlineVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(AeonTheme.dimensions.cardPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
+                    style = AppTextStyles.sectionOverline,
                     color = AppColors.primary
                 )
                 if (description != null) {
@@ -89,7 +89,11 @@ fun AeonSettingsToggle(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                thumbContent = thumbContent
+                thumbContent = thumbContent,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AppColors.switchThumbOn,
+                    checkedTrackColor = AppColors.primary
+                )
             )
         }
     }
@@ -150,20 +154,18 @@ fun AeonGridColumnsSettings(
     maxColumns: Int = 3
 ) {
     Surface(
-        color = AppColors.insetSurface.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier.fillMaxWidth()
+        color = AppColors.surfaceContainerLow,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        modifier = modifier.fillMaxWidth(),
+        border = BorderStroke(1.dp, AppColors.outlineVariant)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 "GRID COLUMNS",
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
+                style = AppTextStyles.sectionOverline,
                 color = AppColors.primary
             )
 
@@ -176,7 +178,13 @@ fun AeonGridColumnsSettings(
                             index = index,
                             count = maxColumns
                         ),
-                        label = { Text(count.toString()) }
+                        label = { Text(count.toString(), style = AppTextStyles.chipLabel) },
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = AppColors.primary,
+                            activeContentColor = if (AppColors.primary.isDark()) Color.White else Color.Black,
+                            inactiveContainerColor = AppColors.surfaceContainerHigh,
+                            inactiveContentColor = AppColors.contentSecondary
+                        )
                     )
                 }
             }
@@ -204,16 +212,12 @@ fun AeonFlowSectionHeader(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 Text(
                     title.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.1.sp,
-                        fontSize = 11.sp
-                    ),
-                    color = AppColors.primary.copy(alpha = 0.8f)
+                    style = AppTextStyles.sectionOverline,
+                    color = AppColors.primary
                 )
 
                 if (activeFilterCount > 0) {
@@ -249,14 +253,11 @@ fun AeonFlowSectionHeader(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = AppColors.contentSecondary.copy(alpha = 0.5f)
+                        tint = AppColors.outline
                     )
                     Text(
                         text = crumb.uppercase(),
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontSize = 11.sp,
-                            fontWeight = if (index == breadcrumbs.size - 1) FontWeight.Bold else FontWeight.Normal
-                        ),
+                        style = if (index == breadcrumbs.size - 1) AppTextStyles.chipLabelBold else AppTextStyles.chipLabel,
                         color = if (index == breadcrumbs.size - 1)
                             AppColors.primary
                         else
@@ -277,8 +278,8 @@ fun AeonFlowSectionHeader(
 @Composable
 fun FilterActiveIndicator(count: Int) {
     Surface(
-        color = AppColors.selectionContainer,
-        contentColor = AppColors.onSelectionContainer,
+        color = AppColors.primaryContainer,
+        contentColor = AppColors.onPrimaryContainer,
         shape = CircleShape,
         modifier = Modifier.size(24.dp)
     ) {
@@ -288,7 +289,7 @@ fun FilterActiveIndicator(count: Int) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(12.dp))
-                Text(count.toString(), style = AppTextStyles.chipLabel)
+                Text(count.toString(), style = AppTextStyles.caption)
             }
         }
     }

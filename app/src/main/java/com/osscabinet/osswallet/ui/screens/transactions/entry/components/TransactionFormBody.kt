@@ -107,8 +107,8 @@ fun TransactionFormBody(
                             value = state.selectedTemplateName ?: "None",
                             onClick = { onEvent(TransactionEntryEvent.ShowTemplateSheet(true)) },
                             modifier = Modifier.weight(1f),
-                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                            iconTint = AppColors.primary
+                            iconContainerColor = AppColors.formIconContainerPrimary,
+                            iconTint = AppColors.onPrimaryContainer
                         )
                     }
 
@@ -118,8 +118,8 @@ fun TransactionFormBody(
                         value = formatDate(state.selectedDateMillis),
                         onClick = { onEvent(TransactionEntryEvent.ShowDatePicker(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
-                        iconTint = AppColors.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
                     )
                 }
 

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -49,25 +50,25 @@ fun AeonDashedButton(
     enabled: Boolean = true
 ) {
     val contentColor = if (isError) {
-        if (enabled) AppColors.error else AppColors.error.copy(alpha = 0.3f)
+        if (enabled) AppColors.error else AppColors.error.copy(alpha = 0.38f)
     } else {
-        if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.3f)
+        if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.38f)
     }
 
     val borderColor = if (isError) {
-        if (enabled) AppColors.error.copy(alpha = 0.5f) else AppColors.error.copy(alpha = 0.1f)
+        if (enabled) AppColors.error else AppColors.outlineVariant
     } else {
-        if (enabled) AppColors.border.copy(alpha = 0.4f) else AppColors.border.copy(alpha = 0.1f)
+        if (enabled) AppColors.outline else AppColors.outlineVariant
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .clip(RoundedCornerShape(32.dp))
+            .height(56.dp)
+            .clip(RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius))
             .clickable(enabled = enabled, onClick = onClick)
             .drawBehind {
-                val strokeWidth = 1.5.dp.toPx()
+                val strokeWidth = 1.dp.toPx()
                 val dashLength = 12f
                 val dashGap = 8f
                 val stroke = Stroke(
@@ -91,16 +92,13 @@ fun AeonDashedButton(
             Icon(
                 icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                 tint = contentColor
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
             Text(
                 text,
-                style = AppTextStyles.listItemTitle.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                ),
+                style = AppTextStyles.buttonLabel,
                 color = contentColor
             )
         }
@@ -113,18 +111,18 @@ fun AeonFloatingActionButton(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Rounded.Add,
     contentDescription: String? = null,
-    containerColor: Color = AppColors.primary,
-    contentColor: Color = AppColors.onPrimary
+    containerColor: Color = AppColors.primaryContainer,
+    contentColor: Color = AppColors.onPrimaryContainer
 ) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(16.dp),
-        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd))
     }
 }
 
@@ -134,28 +132,26 @@ fun AeonExtendedFloatingActionButton(
     text: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    containerColor: Color = AppColors.primary,
-    contentColor: Color = AppColors.onPrimary
+    containerColor: Color = AppColors.primaryContainer,
+    contentColor: Color = AppColors.onPrimaryContainer
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(16.dp),
-        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
-        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)) },
         text = {
             Text(
                 text,
-                style = AppTextStyles.drawerItemLabel.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
+                style = AppTextStyles.buttonLabel
             )
         }
     )
 }
+
 
 @Preview(showBackground = true, name = "Aeon Buttons Preview")
 @Composable

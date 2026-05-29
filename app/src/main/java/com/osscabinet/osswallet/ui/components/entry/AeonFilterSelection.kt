@@ -31,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
@@ -87,10 +87,10 @@ fun AeonFilterSelection(
                     Surface(
                         onClick = { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
-                        color = AppColors.primary.copy(alpha = 0.1f),
+                        color = AppColors.primaryContainer,
                         border = BorderStroke(
-                            (dims.spacingXs / 4),
-                            AppColors.primary.copy(alpha = 0.2f)
+                            1.dp,
+                            AppColors.primary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -99,12 +99,12 @@ fun AeonFilterSelection(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Rounded.Add, null, tint = AppColors.primary)
+                            Icon(Icons.Rounded.Add, null, tint = AppColors.onPrimaryContainer)
                             Spacer(modifier = Modifier.width(dims.spacingSm))
                             Text(
                                 "Create New Filter",
-                                color = AppColors.primary,
-                                fontWeight = FontWeight.Bold
+                                color = AppColors.onPrimaryContainer,
+                                style = AppTextStyles.buttonLabel
                             )
                         }
                     }
@@ -123,9 +123,13 @@ fun AeonFilterSelection(
                             shape = RoundedCornerShape(dims.componentCornerRadius),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (filter.id == selectedFilterId)
-                                    AppColors.selectionContainer
+                                    AppColors.primaryContainer
                                 else
-                                    AppColors.insetSurface.copy(alpha = 0.3f)
+                                    AppColors.surfaceContainerLow
+                            ),
+                            border = BorderStroke(
+                                1.dp,
+                                if (filter.id == selectedFilterId) AppColors.primary else AppColors.outlineVariant
                             )
                         ) {
                             Row(
@@ -135,7 +139,7 @@ fun AeonFilterSelection(
                                 Surface(
                                     modifier = Modifier.size(dims.iconSizeXl),
                                     shape = CircleShape,
-                                    color = AppColors.primary.copy(alpha = 0.1f)
+                                    color = AppColors.primary.copy(alpha = 0.12f)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
@@ -150,8 +154,7 @@ fun AeonFilterSelection(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         filter.name,
-                                        style = AppTextStyles.screenSubTitle,
-                                        fontWeight = FontWeight.Bold
+                                        style = AppTextStyles.managementItemTitle
                                     )
                                     val detailText = buildString {
                                         if (filter.filter.categoryIds.isEmpty()) append("All Categories")
@@ -165,12 +168,12 @@ fun AeonFilterSelection(
                                     Text(
                                         detailText,
                                         style = AppTextStyles.caption,
-                                        color = AppColors.border
+                                        color = AppColors.contentSecondary
                                     )
                                 }
                                 if (filter.id == selectedFilterId) {
                                     Icon(
-                                        Icons.Rounded.FilterList, // Or Check
+                                        Icons.Rounded.FilterList,
                                         contentDescription = null,
                                         tint = AppColors.primary
                                     )

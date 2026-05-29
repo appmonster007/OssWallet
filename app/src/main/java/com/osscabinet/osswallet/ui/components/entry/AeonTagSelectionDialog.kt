@@ -59,11 +59,13 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonColorSelection
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import com.osscabinet.ossWallet.ui.util.isDark
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -121,8 +123,8 @@ fun AeonTagSelectionDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight(),
-            shape = RoundedCornerShape(28.dp),
-            color = AppColors.sheetSurfaceRaised,
+            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
+            color = AppColors.surfaceContainerHigh,
             tonalElevation = 6.dp
         ) {
             Column(
@@ -131,8 +133,7 @@ fun AeonTagSelectionDialog(
             ) {
                 Text(
                     text = stringResource(R.string.tag_selection_title),
-                    style = AppTextStyles.calculatorKey,
-                    fontWeight = FontWeight.Bold,
+                    style = AppTextStyles.cardTitle,
                     color = AppColors.contentPrimary
                 )
 
@@ -171,14 +172,13 @@ fun AeonTagSelectionDialog(
                             ) {
                                 Surface(
                                     modifier = Modifier
-                                        .fillMaxWidth(0.85f) // Narrower than dialog to look like a dropdown
+                                        .fillMaxWidth(0.85f)
                                         .heightIn(max = 250.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = AppColors.componentOnCard,
-                                    tonalElevation = 8.dp,
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                    color = AppColors.surfaceContainerHighest,
                                     border = BorderStroke(
-                                        0.5.dp,
-                                        AppColors.outlineVariant.copy(alpha = 0.5f)
+                                        1.dp,
+                                        AppColors.outlineVariant
                                     )
                                 ) {
                                     Column(
@@ -344,9 +344,9 @@ fun AeonTagSelectionDialog(
                             onTagsSelected(currentSelection)
                             onDismiss()
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
                     ) {
-                        Text(stringResource(R.string.action_done))
+                        Text(stringResource(R.string.action_done), style = AppTextStyles.buttonLabel)
                     }
                 }
             }
@@ -385,8 +385,8 @@ fun AeonTagCreateDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight(),
-            shape = RoundedCornerShape(28.dp),
-            color = AppColors.sheetSurfaceRaised,
+            shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
+            color = AppColors.surfaceContainerHigh,
             tonalElevation = 6.dp
         ) {
             Column(
@@ -395,19 +395,19 @@ fun AeonTagCreateDialog(
             ) {
                 Text(
                     text = stringResource(R.string.tag_create_dialog_title),
-                    style = AppTextStyles.calculatorKey,
-                    fontWeight = FontWeight.Bold,
+                    style = AppTextStyles.cardTitle,
                     color = AppColors.contentPrimary
                 )
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.tag_name_label)) },
-                    placeholder = { Text(stringResource(R.string.tag_name_placeholder)) },
+                    label = { Text(stringResource(R.string.tag_name_label), style = AppTextStyles.sectionOverline) },
+                    placeholder = { Text(stringResource(R.string.tag_name_placeholder), style = AppTextStyles.formFieldHint) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                    singleLine = true,
+                    textStyle = AppTextStyles.formFieldValue
                 )
 
                 AeonColorSelection(
@@ -436,9 +436,9 @@ fun AeonTagCreateDialog(
                             }
                         },
                         enabled = name.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
                     ) {
-                        Text(stringResource(R.string.action_create))
+                        Text(stringResource(R.string.action_create), style = AppTextStyles.buttonLabel)
                     }
                 }
             }

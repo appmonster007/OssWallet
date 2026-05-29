@@ -37,13 +37,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.isDark
 
 data class AeonTimelineOption(val label: String, val icon: ImageVector)
 
@@ -55,11 +59,11 @@ fun AeonSegmentedControl(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = AppColors.cardSurface,
-        shape = RoundedCornerShape(20.dp),
+        color = AppColors.surfaceContainerLow,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(56.dp)
     ) {
         Row(
             modifier = Modifier
@@ -74,7 +78,7 @@ fun AeonSegmentedControl(
                     label = "bgColor"
                 )
                 val contentColor by animateColorAsState(
-                    if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
+                    if (isSelected) (if (AppColors.primary.isDark()) Color.White else Color.Black) else AppColors.contentSecondary,
                     label = "contentColor"
                 )
 
@@ -82,7 +86,7 @@ fun AeonSegmentedControl(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(AeonTheme.dimensions.spacingLg))
                         .background(backgroundColor)
                         .clickable { onOptionSelected(index) },
                     contentAlignment = Alignment.Center
@@ -99,10 +103,7 @@ fun AeonSegmentedControl(
                         )
                         Text(
                             text = option.label,
-                            style = AppTextStyles.transactionSwipeAction.copy(
-                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
+                            style = if (isSelected) AppTextStyles.chipLabelBold else AppTextStyles.chipLabel,
                             color = contentColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -157,33 +158,29 @@ fun <T> AeonDropdown(
             label = {
                 Text(
                     label.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    )
+                    style = AppTextStyles.sectionOverline
                 )
             },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AppColors.primary,
-                unfocusedBorderColor = AppColors.divider,
+                unfocusedBorderColor = AppColors.outline,
                 focusedLabelColor = AppColors.primary,
-                unfocusedContainerColor = AppColors.insetSurface.copy(alpha = 0.2f),
-                focusedContainerColor = AppColors.insetSurface.copy(alpha = 0.1f)
+                unfocusedContainerColor = AppColors.surfaceContainerLow,
+                focusedContainerColor = AppColors.surfaceContainerLow
             ),
-            textStyle = AppTextStyles.listItemTitle
+            textStyle = AppTextStyles.formFieldValue
         )
 
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(AppColors.panelSurface)
-                .clip(RoundedCornerShape(16.dp))
+                .background(AppColors.surfaceContainerHigh)
         ) {
             options.forEach { option ->
                 val isSelected = option == selectedOption
@@ -191,9 +188,7 @@ fun <T> AeonDropdown(
                     text = {
                         Text(
                             labelProvider(option),
-                            style = AppTextStyles.listItemTitle.copy(
-                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
-                            ),
+                            style = if (isSelected) AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold) else AppTextStyles.listItemTitle,
                             color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         )
                     },

@@ -43,8 +43,8 @@ fun EntrySection(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.sheetSurface,
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant),
         shadowElevation = 0.dp
     ) {
         Column(
@@ -58,8 +58,8 @@ fun EntrySection(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+                    color = AppColors.primary.copy(alpha = 0.12f),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -72,12 +72,8 @@ fun EntrySection(
                 }
                 Text(
                     text = title.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    style = AppTextStyles.sectionOverline,
+                    color = AppColors.contentSecondary
                 )
             }
 

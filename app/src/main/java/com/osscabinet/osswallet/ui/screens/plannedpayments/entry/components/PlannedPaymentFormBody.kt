@@ -121,8 +121,8 @@ fun PlannedPaymentFormBody(
                         value = state.linkedTemplate?.name ?: "None",
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                        iconTint = AppColors.primary
+                        iconContainerColor = AppColors.formIconContainerPrimary,
+                        iconTint = AppColors.onPrimaryContainer
                     )
 
                     val scheduleSummary = PlannedPaymentService.buildScheduleSummary(
@@ -142,8 +142,8 @@ fun PlannedPaymentFormBody(
                         value = scheduleSummary,
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(true)) },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = AppColors.formIconContainerSecondary.copy(alpha = 0.1f),
-                        iconTint = AppColors.secondary
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
                     )
                 }
 
@@ -237,8 +237,9 @@ fun PlannedPaymentFormBody(
                                 onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 iconTint = ppStatusColor,
-                                iconContainerColor = ppStatusColor.copy(alpha = 0.1f)
+                                iconContainerColor = AppColors.surfaceContainerHigh
                             )
+
                         },
                         additionalBottomContent = {
                             // End Date and Auto Confirmation

@@ -326,7 +326,7 @@ fun AeonPieChart(
                     Text(
                         text = "TOTAL",
                         style = AppTextStyles.overlineLabel,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        color = AppColors.contentSecondary
                     )
                     Text(
                         text = formattedTotal,
@@ -372,10 +372,7 @@ fun AeonPieChart(
                             }
                             Text(
                                 text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
+                                style = AppTextStyles.cardDelta,
                                 color = color
                             )
                         }

@@ -66,7 +66,7 @@ fun AeonEntryContextRow(
             modifier = Modifier.weight(1f),
             isSelected = fromAccount != null || isTransfer,
             selectedColor = fromColor,
-            iconContainerColor = fromColor.copy(alpha = 0.1f),
+            iconContainerColor = fromColor.copy(alpha = 0.12f),
             iconTint = fromColor
         )
 
@@ -85,7 +85,7 @@ fun AeonEntryContextRow(
                 modifier = Modifier.weight(1f),
                 isSelected = toAccount != null,
                 selectedColor = toColor,
-                iconContainerColor = toColor.copy(alpha = 0.1f),
+                iconContainerColor = toColor.copy(alpha = 0.12f),
                 iconTint = toColor
             )
         } else {
@@ -110,7 +110,7 @@ fun AeonEntryContextRow(
                 modifier = Modifier.weight(1f),
                 isSelected = isSplitMode || selectedCategory != null,
                 selectedColor = categoryColor,
-                iconContainerColor = categoryColor.copy(alpha = 0.1f),
+                iconContainerColor = categoryColor.copy(alpha = 0.12f),
                 iconTint = categoryColor
             )
         }
@@ -176,13 +176,13 @@ fun AeonEntryMetadataSection(
             paymentMethodIcon = paymentIcon,
             statusIcon = statusIcon,
             statusIconTint = statusColor,
-            statusContainerColor = statusColor.copy(alpha = 0.1f)
+            statusContainerColor = statusColor.copy(alpha = 0.12f)
         )
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingXs),
             thickness = (AeonTheme.dimensions.spacingXs / 8),
-            color = AppColors.divider.copy(alpha = 0.2f)
+            color = AppColors.outlineVariant
         )
 
         additionalBottomContent?.invoke(this)

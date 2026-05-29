@@ -70,7 +70,7 @@ fun EntryAmountDisplay(
             Text(
                 text = label.uppercase(),
                 style = AppTextStyles.sectionOverline,
-                color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                color = AppColors.contentSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
@@ -97,7 +97,6 @@ fun EntryAmountDisplay(
             Text(
                 text = fullDisplay,
                 style = AppTextStyles.calculatorDisplay.copy(
-                    fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,
                     fontSize = (AppTextStyles.calculatorDisplay.fontSize.value * multiplier).sp
                 ),
@@ -109,7 +108,7 @@ fun EntryAmountDisplay(
                         multiplier *= 0.8f
                     }
                 },
-                color = if (amount.isEmpty()) amountColor.copy(alpha = 0.3f) else amountColor,
+                color = if (amount.isEmpty()) amountColor.copy(alpha = 0.38f) else amountColor,
                 modifier = Modifier.weight(1f, fill = false)
             )
         }

@@ -56,7 +56,6 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
-import com.osscabinet.ossWallet.ui.theme.ChartGridColor
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -154,6 +153,9 @@ fun AeonBarChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
+        val gridLineColor = AppColors.outlineVariant
+        val selectionLineColor = ChartZeroLineColor
+
         fun findIndex(offsetX: Float): Int {
             val total = groups.size
             if (total == 0) return -1
@@ -184,7 +186,6 @@ fun AeonBarChart(
         ) {
             // 1. Draw Grid + Y-Axis Labels
             if (showGrid) {
-                val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
@@ -198,7 +199,7 @@ fun AeonBarChart(
                     val yPos = valueToY(tick)
                     if (yPos >= topPadding - 1f && yPos <= heightPx - bottomPadding + 1f) {
                         drawLine(
-                            color = gridColor,
+                            color = gridLineColor,
                             start = Offset(leftPadding, yPos),
                             end = Offset(widthPx - rightPadding, yPos),
                             strokeWidth = 1f,
@@ -288,7 +289,7 @@ fun AeonBarChart(
                 if (index in groups.indices) {
                     val x = indexToX(index, groups.size)
                     drawLine(
-                        color = ChartZeroLineColor.copy(alpha = 0.5f),
+                        color = selectionLineColor,
                         start = Offset(x, topPadding),
                         end = Offset(x, heightPx - bottomPadding),
                         strokeWidth = 2.dp.toPx(),
@@ -318,12 +319,12 @@ fun AeonBarChart(
                     .width(tooltipWidth)
                     .heightIn(max = 240.dp)
                     .clip(RoundedCornerShape(dims.spacingMd)),
-                color = AppColors.insetSurface.copy(alpha = 0.95f),
+                color = AppColors.surfaceContainerHigh,
                 tonalElevation = dims.spacingSm,
                 shadowElevation = dims.spacingSm,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    AppColors.border.copy(alpha = 0.2f)
+                    AppColors.outlineVariant
                 )
             ) {
                 Column(

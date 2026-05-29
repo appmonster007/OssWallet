@@ -68,11 +68,8 @@ fun LoanHeroCard(
                     Column {
                         Text(
                             text = "REMAINING BALANCE",
-                            style = AppTextStyles.caption.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.5.sp
-                            ),
-                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            style = AppTextStyles.sectionOverline,
+                            color = AppColors.contentSecondary
                         )
 
                         val balanceParts = formatAuto(
@@ -89,33 +86,26 @@ fun LoanHeroCard(
                                 withStyle(
                                     SpanStyle(
                                         fontWeight = FontWeight.Normal,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.4f),
+                                        color = AppColors.contentSecondary,
                                         fontSize = 16.sp
                                     )
                                 ) {
                                     append(" $symbolText")
                                 }
                             },
-                            style = AppTextStyles.heroAmount.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 36.sp,
-                                letterSpacing = (-1.5).sp
-                            ),
+                            style = AppTextStyles.heroAmountDisplay,
                             color = AppColors.contentPrimary
                         )
                     }
 
                     Surface(
                         color = accentColor.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f))
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        border = BorderStroke(1.dp, accentColor)
                     ) {
                         Text(
                             text = "${(progress * 100).toInt()}%",
-                            style = AppTextStyles.screenSubTitle.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 18.sp
-                            ),
+                            style = AppTextStyles.cardDelta,
                             color = accentColor,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
@@ -149,8 +139,8 @@ fun LoanHeroCard(
                         )
                         Text(
                             text = "${formatAuto(summary.totalPaid)} settled",
-                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
-                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                            style = AppTextStyles.caption,
+                            color = AppColors.contentSecondary
                         )
                     }
                     Text(
@@ -161,8 +151,8 @@ fun LoanHeroCard(
                                 shorten = true
                             )
                         }",
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
                     )
                 }
             }
@@ -202,9 +192,9 @@ private fun LoanMetricItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
+        color = AppColors.surfaceContainerLow,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        border = BorderStroke(1.dp, AppColors.outlineVariant),
         modifier = modifier
     ) {
         Column(
@@ -223,20 +213,13 @@ private fun LoanMetricItem(
                 )
                 Text(
                     text = label,
-                    style = AppTextStyles.caption.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
                 )
             }
             Text(
                 text = value,
-                style = AppTextStyles.managementItemTitle.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                ),
+                style = AppTextStyles.managementItemTitle,
                 color = AppColors.contentPrimary,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -244,3 +227,4 @@ private fun LoanMetricItem(
         }
     }
 }
+

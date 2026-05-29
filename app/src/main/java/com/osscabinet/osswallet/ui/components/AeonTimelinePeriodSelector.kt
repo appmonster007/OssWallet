@@ -140,8 +140,8 @@ fun AeonTimelinePeriodSelector(
         color = containerColor,
         tonalElevation = 1.dp,
         border = if (containerColor == Color.Transparent) null else androidx.compose.foundation.BorderStroke(
-            (AeonTheme.dimensions.spacingXs / 8),
-            AppColors.divider.copy(alpha = 0.15f)
+            1.dp,
+            AppColors.outlineVariant
         )
     ) {
         if (swipeEntireComponent) {
@@ -222,7 +222,7 @@ private fun TimelineSelectorLayout(
     onDropdownShow: (Boolean) -> Unit,
     onDatePickerShow: (Boolean) -> Unit,
     contentColor: Color = AppColors.primary,
-    inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f),
+    inactiveContentColor: Color = AppColors.contentSecondary,
     centerContent: @Composable ColumnScope.() -> Unit = {
         DateDisplayArea(
             page = page,
@@ -290,7 +290,7 @@ private fun IconIndicators(
     activePage: Int,
     onIconClick: (Int) -> Unit,
     contentColor: Color = AppColors.primary,
-    inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
+    inactiveContentColor: Color = AppColors.contentSecondary
 ) {
     val icons = listOf(
         Icons.Default.History,
@@ -394,7 +394,7 @@ private fun DateDisplayArea(
                 offset = DpOffset(0.dp, 4.dp),
                 modifier = Modifier
                     .width(with(density) { width.toDp() })
-                    .background(AppColors.panelSurface)
+                    .background(AppColors.surfaceContainerHigh)
             ) {
                 if (page == 1) {
                     ThisPeriodType.entries.forEach { type ->

@@ -50,65 +50,65 @@ enum class AppFont(
 private val displayScale = object {
     val large = TextStyle(
         fontWeight = FontWeight.Bold,
+        fontSize = 57.sp,
+        lineHeight = 64.sp,
+        letterSpacing = (-0.25).sp,
+        fontFeatureSettings = "tnum"
+    )
+    val medium = TextStyle(
+        fontWeight = FontWeight.Bold,
         fontSize = 45.sp,
         lineHeight = 52.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     )
-    val medium = TextStyle(
+    val small = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     )
-    val small = TextStyle(
-        fontWeight = FontWeight.Bold,
+    val headlineLarge = TextStyle(
+        fontWeight = FontWeight.Normal,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     )
-    val headlineLarge = TextStyle(
+    val headlineMedium = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     )
-    val headlineMedium = TextStyle(
+    val headlineSmall = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     )
-    val headlineSmall = TextStyle(
-        fontWeight = FontWeight.Normal,
+    val titleLarge = TextStyle(
+        fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum"
-    )
-    val titleLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.15.sp,
         fontFeatureSettings = "tnum"
     )
     val titleMedium = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
+        letterSpacing = 0.15.sp,
         fontFeatureSettings = "tnum"
     )
     val titleSmall = TextStyle(
         fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.4.sp,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp,
         fontFeatureSettings = "tnum"
     )
 }
@@ -116,47 +116,48 @@ private val displayScale = object {
 private val bodyScale = object {
     val large = TextStyle(
         fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
+    )
+    val medium = TextStyle(
+        fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp,
         fontFeatureSettings = "tnum"
     )
-    val medium = TextStyle(
+    val small = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp,
         fontFeatureSettings = "tnum"
     )
-    val small = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
+    val labelLarge = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp,
         fontFeatureSettings = "tnum"
     )
-    val labelLarge = TextStyle(
+    val labelMedium = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
     )
-    val labelMedium = TextStyle(
+    val labelSmall = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
     )
-    val labelSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.5.sp,
-        fontFeatureSettings = "tnum"
-    )
 }
+
 
 // Only fontFamily is injected here. All other properties come from the scale objects above.
 fun createTypography(font: AppFont): Typography = Typography(
@@ -196,46 +197,46 @@ object AppTextStyles {
     // Section date / group title row above a list of transactions.
     val transactionGroupTitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(
+            MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
+                letterSpacing = 0.5.sp
             )
 
     // Amount displayed on the transaction row (positive / negative numeral).
     val transactionAmount: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
 
     // Secondary meta-data line under the amount (e.g. converted currency).
     val transactionAmountMeta: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp)
+            MaterialTheme.typography.labelSmall
 
     // ── Transaction List Items ───────────────────────────────────────────────
     // Primary label of a transaction row (payee / description).
     val transactionTitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium
+            MaterialTheme.typography.bodyLarge
 
     // Secondary detail on a transaction row (account, category).
     val transactionSubtitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodySmall
+            MaterialTheme.typography.bodyMedium
 
     // Tiny badge / status label on a transaction row.
     val transactionBadge: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
 
     // Overdue / upcoming marker micro-label.
     val transactionStatusMicro: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp)
+            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
 
     // Swipe-action label on a transaction row.
     val transactionSwipeAction: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.labelMedium
 
     // ── Card Titles & Hero Amounts ───────────────────────────────────────────
     // Dashboard / analytics card title.
@@ -261,12 +262,12 @@ object AppTextStyles {
     // Supporting label beneath a hero amount.
     val heroAmountLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.labelMedium
 
     // Secondary figure inside a card (e.g. expense sub-total).
     val cardSecondaryAmount: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
 
     // Inline delta / change indicator.
     val cardDelta: TextStyle
@@ -277,12 +278,12 @@ object AppTextStyles {
     // Section header label inside a form (e.g. "Amount", "Account").
     val formSectionLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
 
     // Hint / placeholder text inside an entry field.
     val formFieldHint: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.bodyLarge
 
     // Primary value text inside an entry field.
     val formFieldValue: TextStyle
@@ -297,25 +298,25 @@ object AppTextStyles {
     // Switch / toggle row label.
     val formSwitchLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium
+            MaterialTheme.typography.bodyLarge
 
     // ── Chips & Tags ─────────────────────────────────────────────────────────
     // Text inside a filter or action chip.
     val chipLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+            MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
 
     // Text inside a tag badge.
     val tagLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.labelMedium
 
     // Chip label with extra-bold weight (e.g. active filter chip).
     val chipLabelBold: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(
+            MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.sp
+                letterSpacing = 0.5.sp
             )
 
     // ── Navigation & Screen Headers ──────────────────────────────────────────
@@ -337,13 +338,13 @@ object AppTextStyles {
     // Bottom nav / pill navigation label.
     val navLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.labelMedium
 
     // ── Analytics & Charts ───────────────────────────────────────────────────
     // Chart axis label (small, along X or Y axis).
     val chartAxisLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+            MaterialTheme.typography.labelSmall
 
     // Chart tooltip primary value.
     val chartTooltipValue: TextStyle
@@ -353,39 +354,35 @@ object AppTextStyles {
     // Chart legend item label.
     val chartLegendLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Medium,
-                fontSize = 9.sp
-            )
+            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium)
 
     // Chart empty-state message.
     val chartEmptyMessage: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodySmall
+            MaterialTheme.typography.bodyMedium
 
     // Treemap tile primary label.
     val treemapTileLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
 
     // Treemap tile secondary / amount label.
     val treemapTileAmount: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp)
+            MaterialTheme.typography.labelSmall
 
     // Timeline period selector tab label.
     val timelineTabLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 0.5.sp,
-                fontSize = 8.sp
+                letterSpacing = 0.5.sp
             )
 
     // Timeline active period value (e.g. "Mar 2025").
     val timelinePeriodValue: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
 
     // ── List Items ───────────────────────────────────────────────────────────
     // Primary label of a generic list row.
@@ -396,7 +393,7 @@ object AppTextStyles {
     // Secondary / supporting text of a generic list row.
     val listItemSubtitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodySmall
+            MaterialTheme.typography.bodyMedium
 
     // Section header above a group of list items.
     val listSectionHeader: TextStyle
@@ -406,12 +403,12 @@ object AppTextStyles {
     // Management list item title (accounts, budgets, categories…).
     val managementItemTitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
 
     // Management list item secondary meta line.
     val managementItemSubtitle: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodySmall
+            MaterialTheme.typography.bodyMedium
 
     // ── Numerals & Calculator ────────────────────────────────────────────────
     // Primary amount displayed in the calculator / entry amount area.
@@ -433,7 +430,7 @@ object AppTextStyles {
     // Timestamp or date meta label (small, secondary).
     val metaLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelExtraSmall
+            MaterialTheme.typography.labelSmall
 
     // Caption / footnote text (below cards, under data).
     val caption: TextStyle
@@ -454,7 +451,7 @@ object AppTextStyles {
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,
-                letterSpacing = 1.5.sp
+                letterSpacing = 1.25.sp
             )
 
     // ALL-CAPS table column header with maximum tracking (e.g. "CURRENCY", "VALUE").
@@ -462,7 +459,7 @@ object AppTextStyles {
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp
+                letterSpacing = 1.5.sp
             )
 
     // ── Extended Hero Amounts ────────────────────────────────────────────────
@@ -476,9 +473,16 @@ object AppTextStyles {
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold)
 
+    // ── Buttons ─────────────────────────────────────────────────────────────
+    // Primary action button label.
+    val buttonLabel: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+
     // ── Keypad ───────────────────────────────────────────────────────────────
     // Large numpad / converter key button label (headlineMedium).
     val keyButtonLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
 }
+

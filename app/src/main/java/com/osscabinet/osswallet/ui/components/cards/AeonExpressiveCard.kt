@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,7 +83,6 @@ fun AeonExpressiveCard(
     headerModifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    iconColor: Color = AppColors.primary,
     accentColor: Color? = null,
     isWarning: Boolean = false,
     onClick: (() -> Unit)? = null,
@@ -145,9 +143,9 @@ fun AeonExpressiveCard(
         border = BorderStroke(
             width = if (accentColor != null) 1.dp else 0.5.dp,
             color = when {
-                isWarning -> AppColors.error.copy(alpha = 0.3f)
-                accentColor != null -> accentColor.copy(alpha = 0.4f)
-                else -> AppColors.divider.copy(alpha = 0.15f)
+                isWarning -> AppColors.error
+                accentColor != null -> accentColor
+                else -> AppColors.outlineVariant
             },
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -161,7 +159,7 @@ fun AeonExpressiveCard(
                         .align(Alignment.CenterEnd)
                         .offset(x = 24.dp, y = 24.dp)
                         .size(180.dp)
-                        .graphicsLayer { alpha = 0.12f },
+                        .graphicsLayer { alpha = 0.08f },
                     tint = contentColor,
                 )
             }
@@ -182,14 +180,14 @@ fun AeonExpressiveCard(
                         Surface(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
                             shape = CircleShape,
-                            color = iconColor.copy(alpha = 0.15f),
+                            color = AppColors.primaryContainer,
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                    tint = iconColor,
+                                    tint = AppColors.onPrimaryContainer,
                                 )
                             }
                         }
@@ -198,24 +196,18 @@ fun AeonExpressiveCard(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = title,
-                            style = AppTextStyles.screenSubTitle.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp,
-                                letterSpacing = 0.sp,
-                            ),
+                            style = AppTextStyles.cardSectionTitle,
                             color = contentColor,
                         )
                         if (effectiveSubtitle != null) {
                             Text(
                                 text = effectiveSubtitle,
-                                style = AppTextStyles.drawerItemLabel.copy(
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = 10.sp,
-                                ),
-                                color = contentColor.copy(alpha = 0.6f),
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary,
                             )
                         }
                     }
+
 
                     if (showFilterButton || showSettingsButton) {
                         Row(

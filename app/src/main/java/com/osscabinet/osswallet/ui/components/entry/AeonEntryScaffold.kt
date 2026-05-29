@@ -44,7 +44,7 @@ fun AeonEntryScaffold(
     isEditMode: Boolean = false,
     onDeleteClick: (() -> Unit)? = null,
     onResetClick: (() -> Unit)? = null,
-    containerColor: Color = AppColors.screenBackground,
+    containerColor: Color = AppColors.background,
     content: @Composable (PaddingValues) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -57,10 +57,7 @@ fun AeonEntryScaffold(
                 title = {
                     Text(
                         text = title,
-                        style = AppTextStyles.screenTitle.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        )
+                        style = AppTextStyles.screenTitle
                     )
                 },
                 navigationIcon = {

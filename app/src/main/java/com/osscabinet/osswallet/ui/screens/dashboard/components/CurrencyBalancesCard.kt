@@ -21,9 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
@@ -36,6 +34,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -193,9 +192,9 @@ fun CurrencyBalanceItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
@@ -206,32 +205,22 @@ fun CurrencyBalanceItem(
         ) {
             Text(
                 curr,
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AppColors.primary,
-                    letterSpacing = 0.5.sp
-                ),
+                style = AppTextStyles.overlineLabel,
+                color = AppColors.primary,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Text(
                 formatAuto(amount, curr, shorten = true),
-                style = AppTextStyles.screenSubTitle.copy(
-                    fontFeatureSettings = "tnum",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                ),
+                style = AppTextStyles.cardSecondaryAmount,
                 maxLines = 1
             )
 
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary,
                     maxLines = 1
                 )
             } else if (showBaseConversion) {
@@ -240,6 +229,7 @@ fun CurrencyBalanceItem(
         }
     }
 }
+
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable

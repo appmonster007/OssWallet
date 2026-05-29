@@ -47,7 +47,7 @@ fun AeonFullScreenDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = AppColors.panelSurface
+            color = AppColors.background
         ) {
             content()
         }
@@ -62,7 +62,7 @@ fun AeonFullScreenDialog(
 fun AeonSelectionScreen(
     title: String,
     onBack: () -> Unit,
-    containerColor: Color = AppColors.panelSurface,
+    containerColor: Color = AppColors.background,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
@@ -73,9 +73,7 @@ fun AeonSelectionScreen(
                 title = {
                     Text(
                         title,
-                        style = AppTextStyles.screenTitle.copy(
-                            fontWeight = FontWeight.Bold
-                        )
+                        style = AppTextStyles.screenTitle
                     )
                 },
                 navigationIcon = {

@@ -130,8 +130,8 @@ fun BudgetFormBody(
                         value = filterObj?.name ?: "No Preset Applied",
                         onClick = { onEvent(BudgetEntryEvent.ShowFilterSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                        iconTint = AppColors.primary
+                        iconContainerColor = AppColors.formIconContainerPrimary,
+                        iconTint = AppColors.onPrimaryContainer
                     )
 
                     AeonContextGrid {
@@ -265,8 +265,8 @@ fun BudgetFormBody(
                         value = if (state.linkedTransactionIds.isEmpty()) "None" else "${state.linkedTransactionIds.size} Linked",
                         onClick = { onEvent(BudgetEntryEvent.ShowLinkSheet(show = true)) },
                         modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = AppColors.formIconContainerTertiary.copy(alpha = 0.1f),
-                        iconTint = AppColors.tertiary
+                        iconContainerColor = AppColors.formIconContainerTertiary,
+                        iconTint = AppColors.onTertiaryContainer
                     )
 
                     // Constraints

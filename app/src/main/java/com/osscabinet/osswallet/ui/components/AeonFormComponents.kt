@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -109,7 +110,8 @@ fun AeonHeroHeader(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.insetSurface
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant)
     ) {
         if (isLeftAligned) {
             Row(
@@ -152,7 +154,7 @@ fun AeonHeroHeader(
                                     Text(
                                         "Account Name",
                                         style = AppTextStyles.heroAmount,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.3f)
+                                        color = AppColors.contentSecondary
                                     )
                                 }
                                 innerTextField()
@@ -170,10 +172,8 @@ fun AeonHeroHeader(
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            style = AppTextStyles.listItemTitle.copy(
-                                color = AppColors.primary,
-                                fontWeight = FontWeight.Medium
-                            )
+                            style = AppTextStyles.listItemSubtitle,
+                            color = AppColors.primary
                         )
                     }
                 }
@@ -220,7 +220,7 @@ fun AeonHeroHeader(
                                     Text(
                                         "Account Name",
                                         style = AppTextStyles.heroAmount,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.3f),
+                                        color = AppColors.contentSecondary,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -240,10 +240,8 @@ fun AeonHeroHeader(
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            style = AppTextStyles.listItemTitle.copy(
-                                color = AppColors.primary,
-                                fontWeight = FontWeight.Medium
-                            )
+                            style = AppTextStyles.listItemSubtitle,
+                            color = AppColors.primary
                         )
                     }
                 }
@@ -276,9 +274,10 @@ fun AeonFormHeader(
 
         Surface(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            color = if (saveButtonEnabled) currentAccentColor else AppColors.insetSurface,
+            color = if (saveButtonEnabled) currentAccentColor else AppColors.surfaceContainerLow,
             onClick = { if (saveButtonEnabled) onSaveClick() },
-            enabled = saveButtonEnabled
+            enabled = saveButtonEnabled,
+            border = if (!saveButtonEnabled) BorderStroke(1.dp, AppColors.outlineVariant) else null
         ) {
             Text(
                 saveButtonText,
@@ -286,10 +285,8 @@ fun AeonFormHeader(
                     horizontal = AeonTheme.dimensions.spacingXl,
                     vertical = AeonTheme.dimensions.spacingSm
                 ),
-                style = AppTextStyles.drawerItemLabel.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.border
-                )
+                style = AppTextStyles.buttonLabel,
+                color = if (saveButtonEnabled) (if (currentAccentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
             )
         }
     }
@@ -310,7 +307,8 @@ fun AeonTextField(
             .fillMaxWidth()
             .height(height),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-        color = AppColors.insetSurface.copy(alpha = 0.4f)
+        color = AppColors.surfaceContainerLow,
+        border = BorderStroke(1.dp, AppColors.outlineVariant)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg),
@@ -320,7 +318,7 @@ fun AeonTextField(
                 Icon(
                     leadingIcon,
                     contentDescription = null,
-                    tint = AppColors.border,
+                    tint = AppColors.contentSecondary,
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                 )
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
@@ -328,11 +326,8 @@ fun AeonTextField(
             if (prefix != null) {
                 Text(
                     prefix,
-                    style = AppTextStyles.listItemTitle.copy(
-                        color = AppColors.border,
-                        fontSize = 13.sp,
-                        fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Bold
-                    )
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
@@ -340,17 +335,14 @@ fun AeonTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
-                textStyle = AppTextStyles.listItemTitle.copy(
-                    color = AppColors.contentPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Normal
-                ),
+                textStyle = AppTextStyles.formFieldValue,
                 cursorBrush = SolidColor(AppColors.primary),
                 singleLine = true,
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) Text(
                         placeholder,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        style = AppTextStyles.formFieldHint,
+                        color = AppColors.contentSecondary
                     )
                     innerTextField()
                 }
@@ -467,16 +459,13 @@ fun HorizontalColorSlider(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+                tint = AppColors.contentSecondary
             )
         } else if (label != null) {
             Text(
                 label,
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                ),
-                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                style = AppTextStyles.overlineLabel,
+                color = AppColors.contentSecondary,
                 modifier = Modifier.width(32.dp)
             )
         }
@@ -492,10 +481,7 @@ fun HorizontalColorSlider(
 
         Text(
             if (range.endInclusive <= 1f) "${(value * 100).toInt()}%" else "${value.toInt()}°",
-            style = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            ),
+            style = AppTextStyles.caption,
             color = AppColors.contentSecondary,
             modifier = Modifier.width(44.dp)
         )
@@ -529,7 +515,7 @@ fun ColorWheel(
         hslOut
     }
 
-    val sheetBgColor = AppColors.sheetSurface
+    val sheetBgColor = AppColors.surfaceContainerLow
 
     Box(
         modifier = modifier.aspectRatio(1f),
@@ -746,11 +732,8 @@ fun AdvancedColorPickerContent(
                 .width(220.dp)
                 .height(40.dp),
             shape = CircleShape,
-            color = AppColors.insetSurface.copy(alpha = 0.4f),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                AppColors.divider.copy(alpha = 0.1f)
-            )
+            color = AppColors.surfaceContainerLow,
+            border = BorderStroke(1.dp, AppColors.outlineVariant)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 val selectedTabX = animateDpAsState(
@@ -771,7 +754,7 @@ fun AdvancedColorPickerContent(
                         .width(102.dp)
                         .fillMaxHeight()
                         .background(AppColors.primary, CircleShape)
-                        .border(1.dp, ColorOnLight.copy(alpha = 0.15f), CircleShape)
+                        .border(1.dp, ColorOnLight, CircleShape)
                 )
 
                 Row(
@@ -796,10 +779,7 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 title,
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 12.sp
-                                ),
+                                style = AppTextStyles.chipLabelBold,
                                 color = if (isSelected) (if (AppColors.primary.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                             )
                         }
@@ -831,18 +811,12 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "HUE",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
+                                style = AppTextStyles.overlineLabel,
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${hsl.first.toInt()}°",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
+                                style = AppTextStyles.caption,
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -884,18 +858,12 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "SATURATION",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
+                                style = AppTextStyles.overlineLabel,
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${(hsl.second * 100).toInt()}%",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
+                                style = AppTextStyles.caption,
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -925,18 +893,12 @@ fun AdvancedColorPickerContent(
                         ) {
                             Text(
                                 "LIGHTNESS",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
+                                style = AppTextStyles.overlineLabel,
                                 color = AppColors.contentSecondary
                             )
                             Text(
                                 "${(hsl.third * 100).toInt()}%",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
+                                style = AppTextStyles.caption,
                                 color = AppColors.contentPrimary
                             )
                         }
@@ -1008,7 +970,7 @@ fun AdvancedColorPickerContent(
                 modifier = Modifier
                     .size(56.dp, 40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, AppColors.divider.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                    .border(1.dp, AppColors.outlineVariant, RoundedCornerShape(10.dp))
                     .clickable(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null
@@ -1097,8 +1059,7 @@ fun AdvancedColorPickerDialog(
                 ) {
                     Text(
                         "Color",
-                        style = AppTextStyles.calculatorKey,
-                        fontWeight = FontWeight.Bold,
+                        style = AppTextStyles.cardTitle,
                         color = AppColors.contentPrimary
                     )
                     IconButton(
@@ -1169,7 +1130,7 @@ fun AeonColorSelection(
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isSelected) AppColors.insetSurface.copy(alpha = 0.4f)
+                            if (isSelected) AppColors.surfaceContainerHigh
                             else AppColors.transparent
                         )
                         .clickable(enabled = !isColorLocked) {
@@ -1226,7 +1187,7 @@ fun AeonColorSelection(
                 onClick = { if (!isColorLocked) showColorPicker = true },
                 modifier = Modifier
                     .size(44.dp)
-                    .background(AppColors.insetSurface.copy(alpha = 0.3f), CircleShape)
+                    .background(AppColors.surfaceContainerHigh, CircleShape)
             ) {
                 Icon(
                     Icons.Rounded.Colorize,
@@ -1283,7 +1244,7 @@ fun VisualIdentitySection(
                     onClick = { showAllIcons = true },
                     modifier = Modifier
                         .size(44.dp)
-                        .background(AppColors.insetSurface.copy(alpha = 0.4f), CircleShape)
+                        .background(AppColors.surfaceContainerHigh, CircleShape)
                 ) {
                     Icon(
                         Icons.Rounded.GridView,
@@ -1314,9 +1275,7 @@ fun VisualIdentitySection(
                                     onIconSelected(name)
                                 },
                             shape = CircleShape,
-                            color = if (isSelected) accentColor else AppColors.insetSurface.copy(
-                                alpha = 0.3f
-                            ),
+                            color = if (isSelected) accentColor else AppColors.surfaceContainerHigh,
                             contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -1357,10 +1316,8 @@ fun VisualIdentitySection(
                     }
                     Text(
                         selectedIconName,
-                        style = AppTextStyles.listItemTitle.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AppColors.contentSecondary
-                        )
+                        style = AppTextStyles.managementItemSubtitle,
+                        color = AppColors.contentSecondary
                     )
                 }
             }
@@ -1399,9 +1356,7 @@ fun VisualIdentitySection(
                                         showAllIcons = false
                                     },
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor else AppColors.insetSurface.copy(
-                                    alpha = 0.3f
-                                ),
+                                color = if (isSelected) accentColor else AppColors.surfaceContainerHigh,
                                 contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
                             ) {
                                 Box(contentAlignment = Alignment.Center) {

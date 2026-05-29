@@ -444,26 +444,24 @@ fun CategoryLegend(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(10.dp),
-                    shape = RoundedCornerShape(2.dp),
+                    modifier = Modifier.size(12.dp),
+                    shape = RoundedCornerShape(3.dp),
                     color = displayColor,
-                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, AppColors.contentPrimary.copy(alpha = 0.1f))
                 ) {}
 
                 Text(
                     text = item.category,
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
+                    style = AppTextStyles.listItemSubtitle.copy(
+                        fontWeight = FontWeight.Medium
                     ),
                     modifier = Modifier.weight(1f)
                 )
 
                 Text(
                     text = CurrencyFormatter.formatAuto(item.amount),
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                    style = AppTextStyles.listItemSubtitle.copy(
+                        fontWeight = FontWeight.Black
                     ),
                     color = AppColors.contentPrimary
                 )

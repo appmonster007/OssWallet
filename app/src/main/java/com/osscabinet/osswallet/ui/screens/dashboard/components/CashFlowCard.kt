@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -212,25 +213,24 @@ internal fun AeonFlowBreakdownItem(
     ) {
         Text(
             curr,
-            style = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+            style = AppTextStyles.overlineLabel.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black
             ),
             color = AppColors.contentSecondary
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 formatAuto(amount, curr, shorten = true),
-                style = AppTextStyles.transactionTitle.copy(
+                style = AppTextStyles.listItemTitle.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 13.sp
                 )
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontSize = 8.sp,
+                    style = AppTextStyles.metaLabel.copy(
                         fontWeight = FontWeight.Medium
                     ),
                     color = AppColors.contentSecondary
@@ -248,16 +248,17 @@ fun AeonFlowCard(
     type: CashFlowType,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
-    incomeColor: Color = PositiveAmountColor,
-    expenseColor: Color = NegativeAmountColor,
+    incomeColor: Color = AppColors.positive,
+    expenseColor: Color = AppColors.negative,
     onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
 
     Surface(
-        color = AppColors.insetSurface,
+        color = AppColors.surfaceContainerLow,
         shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
@@ -271,12 +272,12 @@ fun AeonFlowCard(
             ) {
                 Text(
                     label.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
+                    style = AppTextStyles.overlineLabel.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        fontSize = 9.sp
                     ),
-                    color = color
+                    color = color.copy(alpha = 0.8f)
                 )
                 AeonFlowBadge(
                     totalInBase,

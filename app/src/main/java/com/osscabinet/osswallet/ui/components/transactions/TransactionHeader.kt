@@ -25,7 +25,6 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
 
 /**
@@ -153,43 +152,43 @@ private data class TransactionHeaderStyles(
     companion object {
         @Composable
         fun default() = TransactionHeaderStyles(
-            positiveColor = PositiveAmountColor,
+            positiveColor = AppColors.positive,
             negativeColor = AppColors.error,
-            surfaceColor = AppColors.panelSurface,
+            surfaceColor = AppColors.surfaceContainerLow,
             outlineColor = AppColors.border,
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,
-            titleStyle = AppTextStyles.transactionSwipeAction.copy(
-                fontWeight = FontWeight.Bold,
-                color = AppColors.border,
-                fontSize = 8.sp,
-                letterSpacing = 1.sp,
+            titleStyle = AppTextStyles.overlineLabel.copy(
+                fontWeight = FontWeight.Black,
+                color = AppColors.contentSecondary,
+                fontSize = 10.sp,
+                letterSpacing = 1.2.sp,
             ),
-            subtitleStyle = AppTextStyles.metaLabel.copy(
-                fontWeight = FontWeight.Medium,
-                color = AppColors.border,
-                fontSize = 8.sp,
+            subtitleStyle = AppTextStyles.overlineLabel.copy(
+                fontWeight = FontWeight.Bold,
+                color = AppColors.contentSecondary,
+                fontSize = 10.sp,
                 letterSpacing = 0.5.sp,
             ),
             columnHeaderStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 8.sp,
+                fontSize = 9.sp,
                 letterSpacing = 0.5.sp
             ),
             totalLabelStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 8.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
             ),
             baseValueStyle = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
             ),
             breakdownLabelStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 8.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
             ),
             breakdownValueStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 8.sp,
+                fontSize = 9.sp,
             )
         )
     }

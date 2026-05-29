@@ -24,7 +24,7 @@ fun TransactionListEmptyState(
         Text(
             text = message,
             style = AppTextStyles.listItemTitle,
-            color = AppColors.border
+            color = AppColors.contentSecondary
         )
     }
 }

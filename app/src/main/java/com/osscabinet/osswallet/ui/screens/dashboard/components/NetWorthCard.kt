@@ -24,7 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -45,7 +49,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -93,10 +96,10 @@ fun NetWorthCard(
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             val baseFontSize = when (config.fontSize) {
-                "Small" -> 18.sp
-                "Large" -> 24.sp
-                "X-Large" -> 32.sp
-                else -> 20.sp
+                "Small" -> 24.sp
+                "Large" -> 32.sp
+                "X-Large" -> 42.sp
+                else -> 28.sp
             }
 
             Row(
@@ -105,24 +108,45 @@ fun NetWorthCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Column {
+                    val amountText = formatAuto(currentMetrics.netWorth, shorten = true)
+                    val symbolText = CurrencyFormatter.getCurrencySymbol(displayCurrency)
+                    val isSymbolLeft =
+                        CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+                    val contentColor = AppColors.contentPrimary
+
+                    val symbolStyle = SpanStyle(
+                        fontWeight = FontWeight.Light,
+                        color = contentColor.copy(alpha = 0.6f),
+                        fontSize = (baseFontSize.value * 0.7f).sp
+                    )
+
                     Text(
-                        text = formatAuto(
-                            currentMetrics.netWorth,
-                            displayCurrency,
-                            shorten = true
-                        ),
-                        style = AppTextStyles.screenTitle.copy(
-                            fontWeight = FontWeight.Bold,
+                        text = buildAnnotatedString {
+                            if (isSymbolLeft) {
+                                withStyle(symbolStyle) {
+                                    append(symbolText)
+                                }
+                                append(" ")
+                                append(amountText)
+                            } else {
+                                append(amountText)
+                                append(" ")
+                                withStyle(symbolStyle) {
+                                    append(symbolText)
+                                }
+                            }
+                        },
+                        style = AppTextStyles.heroAmountLarge.copy(
                             fontSize = baseFontSize,
-                            letterSpacing = (-0.5).sp
+                            letterSpacing = (-1).sp
                         ),
-                        color = AppColors.contentPrimary
+                        color = contentColor
                     )
 
                     currentMetrics.netWorthInBase?.let { inBase ->
                         Text(
                             text = "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
-                            style = AppTextStyles.metaLabel,
+                            style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
                             color = AppColors.contentPrimary.copy(alpha = 0.6f)
                         )
                     }
@@ -134,25 +158,32 @@ fun NetWorthCard(
                         val percentage = change.multiply(BigDecimal("100"))
                             .divide(previousMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        val trendColor = if (change.signum() > 0) AppColors.positive else AppColors.negative
+
+                        Surface(
+                            color = trendColor.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.padding(bottom = 4.dp)
                         ) {
-                            Icon(
-                                if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = AppColors.contentSecondary
-                            )
-                            Text(
-                                text = "${if (change.signum() > 0) "+" else ""}$percentage%",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 12.sp
-                                ),
-                                color = AppColors.contentSecondary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = trendColor
+                                )
+                                Text(
+                                    text = "${if (change.signum() > 0) "+" else ""}$percentage%",
+                                    style = AppTextStyles.transactionBadge.copy(
+                                        fontSize = 10.sp
+                                    ),
+                                    color = trendColor
+                                )
+                            }
                         }
                     }
                 }
@@ -166,7 +197,7 @@ fun NetWorthCard(
                     label = "INCOME",
                     amount = currentMetrics.cashFlow.totalIncomeInBase,
                     currency = displayCurrency,
-                    color = PositiveAmountColor,
+                    color = AppColors.positive,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         callbacks.onClickIncome?.invoke(
@@ -183,7 +214,7 @@ fun NetWorthCard(
                     label = "EXPENSE",
                     amount = currentMetrics.cashFlow.totalExpensesInBase,
                     currency = displayCurrency,
-                    color = AppColors.error,
+                    color = AppColors.negative,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         callbacks.onClickExpense?.invoke(

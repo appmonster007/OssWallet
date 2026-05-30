@@ -83,6 +83,7 @@ fun TransactionFormBody(
                 ),
                 categoryId = state.selectedCategoryId,
                 showName = false,
+                showAmount = state.selectedAccount != null || (state.isTransfer && state.targetAccount != null),
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },

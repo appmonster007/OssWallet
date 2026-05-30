@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
 
 /**
@@ -71,7 +72,9 @@ fun TransactionHeader(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         color = styles.surfaceColor,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        shadowElevation = 4.dp,
+        tonalElevation = 2.dp
     ) {
         Column {
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
@@ -152,43 +155,43 @@ private data class TransactionHeaderStyles(
     companion object {
         @Composable
         fun default() = TransactionHeaderStyles(
-            positiveColor = AppColors.positive,
+            positiveColor = PositiveAmountColor,
             negativeColor = AppColors.error,
-            surfaceColor = AppColors.surfaceContainerLow,
+            surfaceColor = AppColors.panelSurface,
             outlineColor = AppColors.border,
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
             labelColumnWidth = 40.dp,
-            titleStyle = AppTextStyles.overlineLabel.copy(
-                fontWeight = FontWeight.Black,
-                color = AppColors.contentSecondary,
-                fontSize = 10.sp,
-                letterSpacing = 1.2.sp,
-            ),
-            subtitleStyle = AppTextStyles.overlineLabel.copy(
+            titleStyle = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Bold,
-                color = AppColors.contentSecondary,
-                fontSize = 10.sp,
+                color = AppColors.border,
+                fontSize = 8.sp,
+                letterSpacing = 1.sp,
+            ),
+            subtitleStyle = AppTextStyles.metaLabel.copy(
+                fontWeight = FontWeight.Medium,
+                color = AppColors.border,
+                fontSize = 8.sp,
                 letterSpacing = 0.5.sp,
             ),
             columnHeaderStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 letterSpacing = 0.5.sp
             ),
             totalLabelStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Black,
             ),
             baseValueStyle = AppTextStyles.transactionSwipeAction.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
             ),
             breakdownLabelStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Medium,
             ),
             breakdownValueStyle = AppTextStyles.metaLabel.copy(
-                fontSize = 9.sp,
+                fontSize = 8.sp,
             )
         )
     }

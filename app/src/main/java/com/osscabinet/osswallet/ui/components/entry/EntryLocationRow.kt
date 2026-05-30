@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -51,47 +50,50 @@ fun EntryLocationRow(
 ) {
     Surface(
         onClick = onShowLocationSheet,
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = AppColors.surfaceContainerLow,
-        border = BorderStroke(1.dp, AppColors.outlineVariant),
+        shape = RoundedCornerShape(16.dp),
+        color = AppColors.recessedSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
-                color = AppColors.primary.copy(alpha = 0.12f),
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
+                color = AppColors.tertiary.copy(alpha = 0.1f),
+                modifier = Modifier.size(32.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.LocationOn,
                         contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = AppColors.primary
+                        modifier = Modifier.size(16.dp),
+                        tint = AppColors.tertiary
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label,
-                    style = AppTextStyles.overlineLabel,
-                    color = AppColors.contentSecondary
+                    style = AppTextStyles.transactionSwipeAction.copy(
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
                 )
                 if (gpsLocation == null) {
                     Text(
                         text = "Add Location",
-                        style = AppTextStyles.formFieldHint,
-                        color = AppColors.contentSecondary
+                        style = AppTextStyles.transactionAmount
                     )
                 } else {
                     if (!locationName.isNullOrBlank()) {
                         Text(
                             text = locationName,
-                            style = AppTextStyles.formFieldValue,
+                            style = AppTextStyles.transactionAmount.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            ),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -100,8 +102,11 @@ fun EntryLocationRow(
                     if (gpsFormatted != null) {
                         Text(
                             text = gpsFormatted,
-                            style = AppTextStyles.caption,
-                            color = AppColors.contentSecondary
+                            style = AppTextStyles.transactionSwipeAction.copy(
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal
+                            )
                         )
                     }
                 }
@@ -109,7 +114,7 @@ fun EntryLocationRow(
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = AppColors.contentSecondary
+                tint = AppColors.contentSecondary.copy(alpha = 0.4f)
             )
         }
     }

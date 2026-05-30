@@ -336,7 +336,9 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp
                                     ),
-                                    color = (if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error)
+                                    color = (if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error).copy(
+                                alpha = 0.8f
+                            )
                                 )
                             }
 
@@ -349,7 +351,7 @@ fun AeonTransactionItem(
                                 Text(
                                     balanceText,
                                     style = AppTextStyles.transactionAmountMeta,
-                                    color = AppColors.contentSecondary
+                                    color = AppColors.contentSecondary.copy(alpha = 0.8f)
                                 )
                             }
 
@@ -357,7 +359,7 @@ fun AeonTransactionItem(
                                 Text(
                                     timestamp,
                                     style = AppTextStyles.transactionAmountMeta,
-                                    color = AppColors.contentSecondary,
+                                    color = AppColors.contentSecondary.copy(alpha = 0.8f),
                                     modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
@@ -373,22 +375,21 @@ fun AeonTransactionItem(
                     ) {
                         tags.forEach { tag ->
                             val tagColor =
-                                if (tag.color != -1) Color(tag.color) else AppColors.primary
+                                if (tag.color != -1) Color(tag.color) else AppColors.secondaryContainer
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = tagColor.copy(alpha = 0.12f),
-                                border = BorderStroke(0.5.dp, tagColor.copy(alpha = 0.2f))
+                                shape = RoundedCornerShape(AeonTheme.dimensions.spacingXs),
+                                color = tagColor.copy(alpha = 0.2f),
                             ) {
                                 Text(
-                                    text = tag.name.uppercase(),
-                                    style = AppTextStyles.overlineLabel.copy(
+                                    text = tag.name,
+                                    style = AppTextStyles.transactionSwipeAction.copy(
                                         fontSize = 8.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = tagColor
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (tag.color != -1) tagColor else AppColors.onSecondaryContainer
                                     ),
                                     modifier = Modifier.padding(
-                                        horizontal = 8.dp,
-                                        vertical = 4.dp
+                                        horizontal = AeonTheme.dimensions.spacingXs,
+                                        vertical = 2.dp
                                     )
                                 )
                             }

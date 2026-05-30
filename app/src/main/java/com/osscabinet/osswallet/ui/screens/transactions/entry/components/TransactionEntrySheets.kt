@@ -60,15 +60,18 @@ fun TransactionEntrySheets(
 
     // Account Selection
     if (state.showAccountSheet) {
+        val sourceSelectedIds = state.selectedAccount?.id?.let { setOf(it) }
+            ?: if (state.isTransfer && state.source.accountId == null) setOf("") else emptySet()
         AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
+            selectedAccountIds = sourceSelectedIds,
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
                     onEvent(TransactionEntryEvent.SetAccount(state.accounts.find { it.id == id }))
                 }
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) }
+            onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) },
+            allowOutsideWallet = state.isTransfer && state.destination.accountId != null
         )
     }
 
@@ -84,7 +87,7 @@ fun TransactionEntrySheets(
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
             title = stringResource(R.string.target_account_selection_title),
-            allowOutsideWallet = true
+            allowOutsideWallet = state.source.accountId != null
         )
     }
 

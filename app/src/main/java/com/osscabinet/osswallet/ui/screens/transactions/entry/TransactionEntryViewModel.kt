@@ -529,15 +529,19 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetAccount -> {
-                update {
-                    it.copy(
-                        source = it.source.copy(
-                            accountId = event.account?.id,
-                            currency = event.account?.currencyCode ?: it.selectedCurrency
+                val s = _state.value
+                val blocked = event.account == null && s.isTransfer && s.destination.accountId == null
+                if (!blocked) {
+                    update {
+                        it.copy(
+                            source = it.source.copy(
+                                accountId = event.account?.id,
+                                currency = event.account?.currencyCode ?: it.selectedCurrency
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetCurrency -> {
@@ -546,15 +550,19 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTargetAccount -> {
-                update {
-                    it.copy(
-                        destination = it.destination.copy(
-                            accountId = event.account?.id,
-                            currency = event.account?.currencyCode ?: it.targetCurrency
+                val s = _state.value
+                val blocked = event.account == null && s.isTransfer && s.source.accountId == null
+                if (!blocked) {
+                    update {
+                        it.copy(
+                            destination = it.destination.copy(
+                                accountId = event.account?.id,
+                                currency = event.account?.currencyCode ?: it.targetCurrency
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetTargetCurrency -> {

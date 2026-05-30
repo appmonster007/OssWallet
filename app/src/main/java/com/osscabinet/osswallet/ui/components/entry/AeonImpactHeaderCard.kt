@@ -172,10 +172,10 @@ fun <T> AeonImpactHeaderCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.surfaceContainerLow,
+        color = AppColors.cardSurface,
         border = BorderStroke(
             (AeonTheme.dimensions.spacingXs / 8),
-            AppColors.outlineVariant
+            AppColors.divider.copy(alpha = 0.15f)
         ),
         shadowElevation = 0.dp
     ) {
@@ -195,7 +195,7 @@ fun <T> AeonImpactHeaderCard(
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
             }
 
-            if (showAmount) {
+            if (showAmount && (!isTransfer || accountId != null)) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                     EntryAmountDisplay(
                         amount = source.value,
@@ -209,12 +209,12 @@ fun <T> AeonImpactHeaderCard(
                         prefix = if (isTransfer && amountPrefix.isEmpty()) "-" else amountPrefix
                     )
 
-                    Row(
-                        modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                    ) {
-                        if (onSplitClick != null && !isTransfer) {
+                    if (onSplitClick != null && !isTransfer) {
+                        Row(
+                            modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                        ) {
                             IconButton(
                                 onClick = onSplitClick,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
@@ -224,7 +224,7 @@ fun <T> AeonImpactHeaderCard(
                                         .size(AeonTheme.dimensions.iconSizeLg)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isSplitMode) AppColors.primaryContainer
+                                            if (isSplitMode) AppColors.primary.copy(alpha = 0.12f)
                                             else AppColors.transparent
                                         ),
                                     contentAlignment = Alignment.Center
@@ -233,8 +233,8 @@ fun <T> AeonImpactHeaderCard(
                                         Icons.AutoMirrored.Rounded.CallSplit,
                                         contentDescription = "Split Transaction",
                                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                        tint = if (isSplitMode) AppColors.onPrimaryContainer
-                                        else AppColors.contentSecondary
+                                        tint = if (isSplitMode) AppColors.primary
+                                        else AppColors.contentSecondary.copy(alpha = 0.4f)
                                     )
                                 }
                             }
@@ -243,16 +243,16 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && targetAccountId != null && target != null) {
+            if (isTransfer && accountId != null && targetAccountId != null && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 Surface(
                     onClick = onExchangeRateClick,
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = AppColors.primaryContainer,
+                    color = AppColors.primary.copy(alpha = 0.08f),
                     border = BorderStroke(
                         (AeonTheme.dimensions.spacingXs / 8),
-                        AppColors.outline
+                        AppColors.primary.copy(alpha = 0.15f)
                     )
                 ) {
                     Row(
@@ -267,18 +267,20 @@ fun <T> AeonImpactHeaderCard(
                             Icons.Rounded.CurrencyExchange,
                             contentDescription = "Edit Exchange Rate",
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = AppColors.onPrimaryContainer
+                            tint = AppColors.primary
                         )
                         Text(
                             text = "1:${
                                 transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()
                             }",
                             style = AppTextStyles.chipLabel,
-                            color = AppColors.onPrimaryContainer
+                            color = AppColors.primary
                         )
                     }
                 }
+            }
 
+            if (isTransfer && targetAccountId != null && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 val displayTargetAmount = target.value.ifBlank {
@@ -291,7 +293,7 @@ fun <T> AeonImpactHeaderCard(
                     currency = target.currency,
                     onCurrencyClick = target.onCurrencyClick,
                     onAmountClick = target.onValueClick,
-                    amountColor = target.color ?: AppColors.contentPrimary,
+                    amountColor = target.color ?: AppColors.contentPrimary.copy(alpha = 0.8f),
                     supportedCurrencies = target.supportedCurrencies.ifEmpty { source.supportedCurrencies },
                     label = target.label,
                     prefix = if (isTransfer && amountPrefix.isEmpty()) "+" else if (isTransfer) (if (amountPrefix == "+") "-" else "+") else amountPrefix
@@ -302,7 +304,7 @@ fun <T> AeonImpactHeaderCard(
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingMd),
                     thickness = (AeonTheme.dimensions.spacingXs / 8),
-                    color = AppColors.outlineVariant
+                    color = AppColors.divider.copy(alpha = 0.15f)
                 )
 
                 EntryEditorialInput(

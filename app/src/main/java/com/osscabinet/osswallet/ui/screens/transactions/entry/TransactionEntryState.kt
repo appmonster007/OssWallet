@@ -123,6 +123,7 @@ data class TransactionEntryState(
                         selectedAccount != null &&
                         splits.all { it.categoryId != null }
             }
+            if (isTransfer) return amountValue >= BigDecimal.ZERO && (selectedAccount != null || targetAccount != null)
             return amountValue >= BigDecimal.ZERO && selectedAccount != null
         }
 }

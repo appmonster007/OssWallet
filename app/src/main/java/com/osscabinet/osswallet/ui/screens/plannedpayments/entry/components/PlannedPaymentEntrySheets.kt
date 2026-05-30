@@ -81,7 +81,7 @@ fun PlannedPaymentEntrySheets(
             selectedAccountIds = state.selectedAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
-            allowOutsideWallet = true
+            allowOutsideWallet = state.isTransfer && state.targetAccountId != null
         )
     }
 
@@ -92,7 +92,7 @@ fun PlannedPaymentEntrySheets(
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
             title = stringResource(R.string.target_account_selection_title),
-            allowOutsideWallet = true
+            allowOutsideWallet = state.selectedAccountId != null
         )
     }
 

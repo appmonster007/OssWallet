@@ -361,29 +361,37 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetAccountId -> {
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.id }
-                    state.copy(
-                        source = state.source.copy(
-                            accountId = event.id,
-                            currency = account?.currencyCode ?: state.currency
+                val s = _state.value
+                val blocked = event.id == null && s.isTransfer && s.destination.accountId == null
+                if (!blocked) {
+                    _state.update { state ->
+                        val account = state.accounts.find { it.id == event.id }
+                        state.copy(
+                            source = state.source.copy(
+                                accountId = event.id,
+                                currency = account?.currencyCode ?: state.currency
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.id }
-                    state.copy(
-                        destination = state.destination.copy(
-                            accountId = event.id,
-                            currency = account?.currencyCode ?: state.targetCurrency
+                val s = _state.value
+                val blocked = event.id == null && s.isTransfer && s.source.accountId == null
+                if (!blocked) {
+                    _state.update { state ->
+                        val account = state.accounts.find { it.id == event.id }
+                        state.copy(
+                            destination = state.destination.copy(
+                                accountId = event.id,
+                                currency = account?.currencyCode ?: state.targetCurrency
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetCurrency -> {

@@ -308,29 +308,37 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetAccount -> {
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.accountId }
-                    state.copy(
-                        source = state.source.copy(
-                            accountId = event.accountId,
-                            currency = account?.currencyCode ?: state.currency
+                val s = _state.value
+                val blocked = event.accountId == null && s.isTransfer && s.destination.accountId == null
+                if (!blocked) {
+                    _state.update { state ->
+                        val account = state.accounts.find { it.id == event.accountId }
+                        state.copy(
+                            source = state.source.copy(
+                                accountId = event.accountId,
+                                currency = account?.currencyCode ?: state.currency
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetAccount -> {
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.accountId }
-                    state.copy(
-                        destination = state.destination.copy(
-                            accountId = event.accountId,
-                            currency = account?.currencyCode ?: state.targetCurrency ?: ""
+                val s = _state.value
+                val blocked = event.accountId == null && s.isTransfer && s.source.accountId == null
+                if (!blocked) {
+                    _state.update { state ->
+                        val account = state.accounts.find { it.id == event.accountId }
+                        state.copy(
+                            destination = state.destination.copy(
+                                accountId = event.accountId,
+                                currency = account?.currencyCode ?: state.targetCurrency ?: ""
+                            )
                         )
-                    )
+                    }
+                    recalculateExchangeRate()
                 }
-                recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetCurrency -> {

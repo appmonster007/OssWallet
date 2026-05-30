@@ -45,7 +45,7 @@ fun TemplateEntrySheets(
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
             title = "Select Account",
-            allowOutsideWallet = true
+            allowOutsideWallet = state.isTransfer && state.targetAccountId != null
         )
     }
 
@@ -56,7 +56,7 @@ fun TemplateEntrySheets(
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetTargetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
             title = stringResource(R.string.target_account_selection_title),
-            allowOutsideWallet = true
+            allowOutsideWallet = state.accountId != null
         )
     }
 

@@ -24,7 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -314,27 +314,12 @@ fun AnalyticsScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "Common Filter",
-                                    style = AppTextStyles.listItemTitle
-                                )
-                                Text(
-                                    "Use a single filter for all cards on this screen",
-                                    style = AppTextStyles.caption,
-                                    color = AppColors.border
-                                )
-                            }
-                            Switch(
-                                checked = commonFilterEnabled,
-                                onCheckedChange = { viewModel.toggleCommonFilter(it) }
-                            )
-                        }
+                        EntrySwitchRow(
+                            label = "Common Filter",
+                            subtitle = "Use a single filter for all cards on this screen",
+                            checked = commonFilterEnabled,
+                            onCheckedChange = { viewModel.toggleCommonFilter(it) }
+                        )
                     }
 
                     Box(

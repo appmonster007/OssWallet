@@ -13,7 +13,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +27,7 @@ import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -208,37 +208,37 @@ private fun RecentActivitiesSettingsSheet(
         }
 
         CardSettingsSection("Components") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Use Note as Header",
                 checked = config.useNoteAsHeader,
                 onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Account",
                 checked = config.showAccount,
                 onCheckedChange = { onUpdate(config.copy(showAccount = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Category",
                 checked = config.showCategory,
                 onCheckedChange = { onUpdate(config.copy(showCategory = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Note",
                 checked = config.showNote,
                 onCheckedChange = { onUpdate(config.copy(showNote = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Tags",
                 checked = config.showTags,
                 onCheckedChange = { onUpdate(config.copy(showTags = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Timestamp",
                 checked = config.showTimestamp,
                 onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Icon",
                 checked = config.showIcon,
                 onCheckedChange = { onUpdate(config.copy(showIcon = it)) }
@@ -246,17 +246,17 @@ private fun RecentActivitiesSettingsSheet(
         }
 
         CardSettingsSection("Balances") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Opening Balance",
                 checked = config.showOpeningBalance,
                 onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Closing Balance",
                 checked = config.showClosingBalance,
                 onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) }
             )
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 label = "Show Currency Breakdown",
                 checked = config.showCurrencyBreakdown,
                 onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) }
@@ -265,31 +265,3 @@ private fun RecentActivitiesSettingsSheet(
     }
 }
 
-@Composable
-private fun SettingsSwitchRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    subtitle: String? = null
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, style = AppTextStyles.transactionTitle)
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary
-                )
-            }
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
-    }
-}

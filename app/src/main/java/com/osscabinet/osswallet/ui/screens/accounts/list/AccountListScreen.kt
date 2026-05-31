@@ -359,6 +359,14 @@ fun AccountManagementListItem(
                     checked = !account.isArchived,
                     onCheckedChange = { onToggleArchive() },
                     modifier = Modifier.scale(0.7f),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AppColors.primary,
+                        checkedTrackColor = AppColors.switchTrackOn,
+                        checkedBorderColor = AppColors.primary,
+                        uncheckedThumbColor = AppColors.switchThumbOff,
+                        uncheckedTrackColor = AppColors.switchTrackOff,
+                        uncheckedBorderColor = AppColors.outline
+                    ),
                     thumbContent = {
                         Icon(
                             if (account.isArchived) Icons.Rounded.Archive else Icons.Rounded.Check,

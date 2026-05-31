@@ -19,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +35,7 @@ import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -95,17 +95,11 @@ private fun BudgetsSettingsSheet(
 ) {
     CardSettingsSheet(title = "Budgets", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
         CardSettingsSection("Display") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Show archived budgets", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.showArchived,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show archived budgets",
+                checked = config.showArchived,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
+            )
         }
     }
 }

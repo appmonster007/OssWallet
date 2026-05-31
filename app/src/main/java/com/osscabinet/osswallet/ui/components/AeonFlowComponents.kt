@@ -91,8 +91,12 @@ fun AeonSettingsToggle(
                 onCheckedChange = onCheckedChange,
                 thumbContent = thumbContent,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = AppColors.switchThumbOn,
-                    checkedTrackColor = AppColors.primary
+                    checkedThumbColor = AppColors.primary,
+                    checkedTrackColor = AppColors.switchTrackOn,
+                    checkedBorderColor = AppColors.primary,
+                    uncheckedThumbColor = AppColors.switchThumbOff,
+                    uncheckedTrackColor = AppColors.switchTrackOff,
+                    uncheckedBorderColor = AppColors.outline
                 )
             )
         }

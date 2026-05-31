@@ -27,7 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -151,24 +151,12 @@ private fun NetWorthWidgetConfigScreen(
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Show Comparison", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "Compare with previous period",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Switch(
-                    checked = config.showComparison,
-                    onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Comparison",
+                subtitle = "Compare with previous period",
+                checked = config.showComparison,
+                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 

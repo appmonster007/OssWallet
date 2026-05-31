@@ -17,8 +17,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -28,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -63,20 +62,12 @@ fun SecuritySettingsScreen(
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
         ) {
             AeonSettingsSection("PRIVACY") {
-                AeonSettingsItem(
-                    title = "Location Auto-fill",
+                EntrySwitchRow(
+                    label = "Location Auto-fill",
                     subtitle = if (mapsAccessEnabled) "Auto-fill current location for new transactions" else "Disabled location auto-fill",
                     icon = if (mapsAccessEnabled) Icons.Rounded.LocationOn else Icons.Rounded.LocationOff,
-                    trailingContent = {
-                        Switch(
-                            checked = mapsAccessEnabled,
-                            onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = mapsAccessEnabled,
+                    onCheckedChange = { viewModel.setMapsAccessEnabled(it) }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

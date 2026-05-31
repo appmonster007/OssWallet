@@ -44,8 +44,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -65,6 +63,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCur
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -412,20 +411,12 @@ fun CurrencySettingsScreen(
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )
-                AeonSettingsItem(
-                    title = "Auto-save Exchange Rates",
+                EntrySwitchRow(
+                    label = "Auto-save Exchange Rates",
                     subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
                     icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
-                    trailingContent = {
-                        Switch(
-                            checked = autoSaveExchangeRates,
-                            onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = autoSaveExchangeRates,
+                    onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) }
                 )
             }
 
@@ -496,20 +487,12 @@ fun CurrencySettingsScreen(
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )
-                AeonSettingsItem(
-                    title = "24-Hour Time Format",
+                EntrySwitchRow(
+                    label = "24-Hour Time Format",
                     subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",
                     icon = Icons.Rounded.Schedule,
-                    trailingContent = {
-                        Switch(
-                            checked = use24HourFormat,
-                            onCheckedChange = { viewModel.setUse24HourFormat(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = use24HourFormat,
+                    onCheckedChange = { viewModel.setUse24HourFormat(it) }
                 )
             }
         }

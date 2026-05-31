@@ -1,17 +1,21 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,9 +33,9 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.DrawerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
@@ -42,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +58,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import dev.chrisbanes.haze.hazeEffect
 import android.graphics.Color as AndroidColor
 
 @Composable
@@ -75,19 +84,62 @@ fun AppDrawerContent(
     // navigate-while-animating race that caused inconsistent tap behaviour.
     onNavigate: (() -> Unit) -> Unit
 ) {
-    ModalDrawerSheet(
-        modifier = Modifier.width(280.dp),
-        drawerContainerColor = AppColors.drawerSurface,
-        drawerShape = RoundedCornerShape(
-            topEnd = AeonTheme.dimensions.cardCornerRadius,
-            bottomEnd = AeonTheme.dimensions.cardCornerRadius
-        )
-    ) {
-        val scrollState = rememberScrollState()
+    val hazeState = LocalHazeState.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val isDark = isSystemInDarkTheme()
+    val drawerShape = RoundedCornerShape(
+        topEnd = AeonTheme.dimensions.cardCornerRadius,
+        bottomEnd = AeonTheme.dimensions.cardCornerRadius
+    )
+    val glassStyle = GlassTokens.style()
+    val scrollState = rememberScrollState()
 
+    Box(
+        modifier = Modifier
+            .width(280.dp)
+            .fillMaxHeight()
+    ) {
+        // Shadow lives on its own RenderNode — hazeEffect's RenderEffect silently
+        // drops shadowElevation when both share the same graphicsLayer.
+        if (glassEnabled) {
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        shape = drawerShape
+                        clip = false
+                        shadowElevation = 16.dp.toPx()
+                        ambientShadowColor = Color.Black.copy(alpha = 0.08f)
+                        spotShadowColor = Color.Black.copy(alpha = 0.18f)
+                    }
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer { shape = drawerShape; clip = true }
+                .background(AppColors.drawerSurface, drawerShape)
+                .then(
+                    if (glassEnabled && hazeState != null)
+                        Modifier.hazeEffect(hazeState, glassStyle)
+                    else Modifier
+                )
+                .then(
+                    if (glassEnabled)
+                        Modifier.border(
+                            width = 0.5.dp,
+                            color = if (isDark) Color.White.copy(alpha = 0.08f)
+                                    else Color.White.copy(alpha = 0.50f),
+                            shape = drawerShape
+                        )
+                    else Modifier
+                )
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(DrawerDefaults.windowInsets)
         ) {
             Column(
                 modifier = Modifier
@@ -387,7 +439,8 @@ fun AppDrawerContent(
                 )
             }
         }
-    }
+        } // glass Box
+    } // outer Box
 }
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)

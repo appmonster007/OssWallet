@@ -22,6 +22,7 @@ import javax.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import android.content.Intent
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -55,6 +56,7 @@ class MainActivity : FragmentActivity() {
             val precision by settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
             val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
+            val glassmorphismEnabled by settingsRepository.glassmorphismEnabled.collectAsStateWithLifecycle(initialValue = true)
 
             LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -69,6 +71,7 @@ class MainActivity : FragmentActivity() {
             }
 
             OssWalletTheme(theme = theme, fontName = selectedFont) {
+                CompositionLocalProvider(LocalGlassmorphismEnabled provides glassmorphismEnabled) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = AppColors.screenBackground
@@ -96,6 +99,7 @@ class MainActivity : FragmentActivity() {
                         onSplashConditionChanged = { keepSplashOnScreen = it }
                     )
                 }
+                } // CompositionLocalProvider
             }
         }
     }

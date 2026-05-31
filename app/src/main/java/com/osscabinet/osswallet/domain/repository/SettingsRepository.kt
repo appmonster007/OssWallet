@@ -28,6 +28,7 @@ interface SettingsRepository {
     val analyticsCardsConfig: Flow<String>
     val analyticsCommonFilterEnabled: Flow<Boolean>
     val shortlistedCurrencies: Flow<Set<String>?>
+    val glassmorphismEnabled: Flow<Boolean>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -53,4 +54,5 @@ interface SettingsRepository {
     suspend fun saveAnalyticsCardsConfig(config: String)
     suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean)
     suspend fun saveShortlistedCurrencies(currencies: Set<String>)
+    suspend fun saveGlassmorphismEnabled(enabled: Boolean)
 }

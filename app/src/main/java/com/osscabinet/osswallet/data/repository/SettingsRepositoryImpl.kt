@@ -37,6 +37,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val analyticsCardsConfig: Flow<String> = settingsDataStore.analyticsCardsConfig
     override val analyticsCommonFilterEnabled: Flow<Boolean> = settingsDataStore.analyticsCommonFilterEnabled
     override val shortlistedCurrencies: Flow<Set<String>?> = settingsDataStore.shortlistedCurrencies
+    override val glassmorphismEnabled: Flow<Boolean> = settingsDataStore.glassmorphismEnabled
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
     override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
@@ -103,4 +104,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveShortlistedCurrencies(currencies: Set<String>) =
         settingsDataStore.saveShortlistedCurrencies(currencies)
+
+    override suspend fun saveGlassmorphismEnabled(enabled: Boolean) =
+        settingsDataStore.saveGlassmorphismEnabled(enabled)
 }

@@ -1,11 +1,13 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -13,6 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
@@ -87,6 +92,7 @@ fun OssWalletNavGraph(
     // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
     val resolvedDestination = startDestination ?: return
 
+    val drawerHazeState = remember { HazeState() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var isDrawerNavigating by remember { mutableStateOf(false) }
@@ -127,6 +133,7 @@ fun OssWalletNavGraph(
         }
     }
 
+    CompositionLocalProvider(LocalHazeState provides drawerHazeState) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
@@ -188,6 +195,7 @@ fun OssWalletNavGraph(
             )
         }
     ) {
+        Box(modifier = Modifier.fillMaxSize().hazeSource(drawerHazeState)) {
         NavHost(
             navController = navController,
             startDestination = resolvedDestination
@@ -215,6 +223,7 @@ fun OssWalletNavGraph(
             transactionsGraph(navController, vms)
             planningGraph(navController, vms)
         }
+        } // hazeSource Box
 
         // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
         // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
@@ -222,4 +231,5 @@ fun OssWalletNavGraph(
             scope.launch { drawerState.close() }
         }
     }
+    } // CompositionLocalProvider
 }

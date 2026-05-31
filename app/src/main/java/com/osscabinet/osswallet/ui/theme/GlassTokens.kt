@@ -33,3 +33,6 @@ object GlassTokens {
 }
 
 val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
+val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }

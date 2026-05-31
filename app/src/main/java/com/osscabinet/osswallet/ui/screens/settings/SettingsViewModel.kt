@@ -82,6 +82,9 @@ class SettingsViewModel @Inject constructor(
     val selectedFont: StateFlow<String> = settingsRepository.selectedFont
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "MANROPE")
 
+    val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
         .flatMapLatest { providerId ->
             flow {
@@ -204,6 +207,12 @@ class SettingsViewModel @Inject constructor(
     fun setSelectedFont(fontName: String) {
         viewModelScope.launch {
             settingsRepository.saveSelectedFont(fontName)
+        }
+    }
+
+    fun setGlassmorphismEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveGlassmorphismEnabled(enabled)
         }
     }
 

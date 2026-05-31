@@ -22,12 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
- * Standardized row with an icon, label, and switch for entry screens.
+ * Standardized row with an optional icon, label, and switch for entry screens and settings.
  * Following the "Architect Slate" design specification.
  */
 @Composable
@@ -35,36 +36,41 @@ fun EntrySwitchRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    icon: ImageVector,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     enabled: Boolean = true,
     subtitle: String? = null,
     iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.secondary
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(AeonTheme.dimensions.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = if (enabled) iconContainerColor else iconContainerColor.copy(alpha = 0.05f),
-            modifier = Modifier.size(32.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = if (enabled) iconTint else iconTint.copy(alpha = 0.4f)
-                )
+        if (icon != null) {
+            Surface(
+                shape = CircleShape,
+                color = if (enabled) iconContainerColor else iconContainerColor.copy(alpha = 0.05f),
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (enabled) iconTint else iconTint.copy(alpha = 0.4f)
+                    )
+                }
             }
         }
+        
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = AppTextStyles.transactionAmount,
+                style = AppTextStyles.transactionTitle,
                 color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.4f)
             )
             if (subtitle != null) {
@@ -75,12 +81,18 @@ fun EntrySwitchRow(
                 )
             }
         }
+
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = AppColors.switchTrackOn
+                checkedThumbColor = AppColors.primary,
+                checkedTrackColor = AppColors.switchTrackOn,
+                checkedBorderColor = AppColors.primary,
+                uncheckedThumbColor = AppColors.switchThumbOff,
+                uncheckedTrackColor = AppColors.switchTrackOff,
+                uncheckedBorderColor = AppColors.outline
             )
         )
     }
@@ -104,6 +116,12 @@ fun EntrySwitchRowPreview() {
                     checked = false,
                     onCheckedChange = {},
                     icon = Icons.Rounded.Repeat
+                )
+                EntrySwitchRow(
+                    label = "No Icon Toggle",
+                    checked = true,
+                    onCheckedChange = {},
+                    subtitle = "This toggle doesn't have an icon"
                 )
             }
         }

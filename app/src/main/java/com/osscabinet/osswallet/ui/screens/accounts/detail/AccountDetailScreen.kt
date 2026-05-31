@@ -43,7 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -264,48 +264,18 @@ fun AccountDetailScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    stringResource(R.string.setting_show_planned),
-                                    style = AppTextStyles.listItemTitle
-                                )
-                                Text(
-                                    stringResource(R.string.setting_show_planned_desc),
-                                    style = AppTextStyles.caption,
-                                    color = AppColors.border
-                                )
-                            }
-                            Switch(
-                                checked = state.showPlannedPayments,
-                                onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) }
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    stringResource(R.string.setting_use_note_as_header),
-                                    style = AppTextStyles.listItemTitle
-                                )
-                                Text(
-                                    stringResource(R.string.setting_use_note_as_header_desc),
-                                    style = AppTextStyles.caption,
-                                    color = AppColors.border
-                                )
-                            }
-                            Switch(
-                                checked = state.useNoteAsHeader,
-                                onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) }
-                            )
-                        }
+                        EntrySwitchRow(
+                            label = stringResource(R.string.setting_show_planned),
+                            subtitle = stringResource(R.string.setting_show_planned_desc),
+                            checked = state.showPlannedPayments,
+                            onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) }
+                        )
+                        EntrySwitchRow(
+                            label = stringResource(R.string.setting_use_note_as_header),
+                            subtitle = stringResource(R.string.setting_use_note_as_header_desc),
+                            checked = state.useNoteAsHeader,
+                            onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) }
+                        )
                     }
 
                     Box(

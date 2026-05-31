@@ -26,7 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -147,66 +147,30 @@ private fun CashFlowWidgetConfigScreen(
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Show Base Conversion", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "Show ≈ equivalent in base currency",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Switch(
-                    checked = config.showBaseConversion,
-                    onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Base Conversion",
+                subtitle = "Show ≈ equivalent in base currency",
+                checked = config.showBaseConversion,
+                onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) }
+            )
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Show Totals Row", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "Show TOTAL footer below currency list",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Switch(
-                    checked = config.showTotals,
-                    onCheckedChange = { onConfigChange(config.copy(showTotals = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Totals Row",
+                subtitle = "Show TOTAL footer below currency list",
+                checked = config.showTotals,
+                onCheckedChange = { onConfigChange(config.copy(showTotals = it)) }
+            )
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Show Comparison", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "Compare net flow with previous period",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Switch(
-                    checked = config.showComparison,
-                    onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Comparison",
+                subtitle = "Compare net flow with previous period",
+                checked = config.showComparison,
+                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 

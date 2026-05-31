@@ -27,7 +27,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,6 +52,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -342,17 +342,11 @@ private fun CategorySpendingSettingsSheet(
         onDelete = callbacks.onDelete
     ) {
         CardSettingsSection("Display") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Show Grid Lines", style = AppTextStyles.transactionSwipeAction)
-                Switch(
-                    checked = config.showGridLines,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Grid Lines",
+                checked = config.showGridLines,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+            )
         }
     }
 }

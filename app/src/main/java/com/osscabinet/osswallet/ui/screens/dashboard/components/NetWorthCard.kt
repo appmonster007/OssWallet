@@ -18,7 +18,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,6 +41,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -343,24 +343,12 @@ private fun NetWorthSettingsSheet(
             }
         }
         CardSettingsSection("Display") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Show Comparison", style = AppTextStyles.transactionTitle)
-                    Text(
-                        "Show change from previous period",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Switch(
-                    checked = config.showComparison,
-                    onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Show Comparison",
+                subtitle = "Show change from previous period",
+                checked = config.showComparison,
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
+            )
         }
     }
 }

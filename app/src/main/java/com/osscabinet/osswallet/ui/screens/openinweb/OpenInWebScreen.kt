@@ -30,7 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -107,38 +107,18 @@ fun OpenInWebScreen(
             }
 
             Card {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Open in Web", style = AppTextStyles.cardSectionTitle)
-                        Spacer(Modifier.height(2.dp))
-                        val stateLabel = when (val s = uiState.serverState) {
-                            is WebServerState.Stopped -> "Disabled"
-                            is WebServerState.Starting -> "Starting..."
-                            is WebServerState.Running -> "Running on port ${s.port}"
-                            is WebServerState.Error -> "Error: ${s.message}"
-                        }
-                        Text(
-                            stateLabel,
-                            style = AppTextStyles.caption,
-                            color = when (uiState.serverState) {
-                                is WebServerState.Running -> AppColors.primary
-                                is WebServerState.Error -> AppColors.error
-                                else -> AppColors.contentSecondary
-                            }
-                        )
-                    }
-                    Switch(
-                        checked = isEnabled,
-                        onCheckedChange = { viewModel.toggleServer(it) },
-                        enabled = true
-                    )
-                }
+                EntrySwitchRow(
+                    modifier = Modifier.padding(16.dp),
+                    label = "Open in Web",
+                    subtitle = when (val s = uiState.serverState) {
+                        is WebServerState.Stopped -> "Disabled"
+                        is WebServerState.Starting -> "Starting..."
+                        is WebServerState.Running -> "Running on port ${s.port}"
+                        is WebServerState.Error -> "Error: ${s.message}"
+                    },
+                    checked = isEnabled,
+                    onCheckedChange = { viewModel.toggleServer(it) }
+                )
             }
 
             val runningState = uiState.serverState as? WebServerState.Running

@@ -26,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +45,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -381,61 +381,46 @@ private fun CategoryPieChartSettingsSheet(
 ) {
     CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 "Show Labels",
-                config.showLabels
-            ) { onUpdate(config.copy(showLabels = it)) }
-            SettingsSwitchRow(
+                config.showLabels,
+                onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+            )
+            EntrySwitchRow(
                 "Show Legend",
-                config.showLegend
-            ) { onUpdate(config.copy(showLegend = it)) }
-            SettingsSwitchRow(
+                config.showLegend,
+                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+            )
+            EntrySwitchRow(
                 "Rounded Visuals",
                 config.rounded,
-                subtitle = "Apply spacing and modern segment styles"
-            ) { onUpdate(config.copy(rounded = it)) }
+                subtitle = "Apply spacing and modern segment styles",
+                onCheckedChange = { onUpdate(config.copy(rounded = it)) }
+            )
         }
         CardSettingsSection("Data") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 "Full Breakdown",
                 config.showFullBreakdown,
-                subtitle = "Show all categories instead of top 5"
-            ) { onUpdate(config.copy(showFullBreakdown = it)) }
-            SettingsSwitchRow(
+                subtitle = "Show all categories instead of top 5",
+                onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+            )
+            EntrySwitchRow(
                 "Active Only",
                 config.showOnlyActiveCategories,
-                subtitle = "Only show categories with non-zero values"
-            ) { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-            SettingsSwitchRow(
+                subtitle = "Only show categories with non-zero values",
+                onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            )
+            EntrySwitchRow(
                 "Show Comparison",
                 config.showComparison,
-                subtitle = "Compare to previous period in chart center"
-            ) { onUpdate(config.copy(showComparison = it)) }
+                subtitle = "Compare to previous period in chart center",
+                onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
+            )
         }
     }
 }
 
-@Composable
-private fun SettingsSwitchRow(
-    label: String,
-    checked: Boolean,
-    subtitle: String? = null,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, style = AppTextStyles.transactionTitle)
-            if (subtitle != null) {
-                Text(subtitle, style = AppTextStyles.caption, color = AppColors.contentSecondary)
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
 
 @Composable
 fun CategoryLegend(

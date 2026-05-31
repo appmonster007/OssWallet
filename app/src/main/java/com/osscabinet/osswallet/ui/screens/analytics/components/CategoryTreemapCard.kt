@@ -50,6 +50,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -471,58 +472,42 @@ private fun CategoryTreemapSettingsSheet(
 ) {
     CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 "Show Labels",
                 config.showLabels,
-                subtitle = "Display category names on segments"
-            ) { onUpdate(config.copy(showLabels = it)) }
-            SettingsSwitchRow(
+                subtitle = "Display category names on segments",
+                onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+            )
+            EntrySwitchRow(
                 "Show Legend",
                 config.showLegend,
-                subtitle = "Display list of categories beneath the map"
-            ) { onUpdate(config.copy(showLegend = it)) }
-            SettingsSwitchRow(
+                subtitle = "Display list of categories beneath the map",
+                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+            )
+            EntrySwitchRow(
                 "Rounded Visuals",
                 config.rounded,
-                subtitle = "Apply rounded corners and spacing to segments"
-            ) { onUpdate(config.copy(rounded = it)) }
+                subtitle = "Apply rounded corners and spacing to segments",
+                onCheckedChange = { onUpdate(config.copy(rounded = it)) }
+            )
         }
         CardSettingsSection("Data") {
-            SettingsSwitchRow(
+            EntrySwitchRow(
                 "Full Breakdown",
                 config.showFullBreakdown,
-                subtitle = "Show all categories instead of top 5"
-            ) { onUpdate(config.copy(showFullBreakdown = it)) }
-            SettingsSwitchRow(
+                subtitle = "Show all categories instead of top 5",
+                onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+            )
+            EntrySwitchRow(
                 "Active Only",
                 config.showOnlyActiveCategories,
-                subtitle = "Only show categories with non-zero values"
-            ) { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+                subtitle = "Only show categories with non-zero values",
+                onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            )
         }
     }
 }
 
-@Composable
-private fun SettingsSwitchRow(
-    label: String,
-    checked: Boolean,
-    subtitle: String? = null,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, style = AppTextStyles.transactionTitle)
-            if (subtitle != null) {
-                Text(subtitle, style = AppTextStyles.caption, color = AppColors.contentSecondary)
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
 
 @Composable
 fun TreemapLegend(

@@ -14,7 +14,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +35,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -600,63 +600,33 @@ private fun CashFlowComparisonSettingsSheet(
         onDelete = callbacks.onDelete
     ) {
         CardSettingsSection("Display") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Cumulative", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.isCumulative,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Show Grid Lines", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.showGridLines,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Cumulative",
+                checked = config.isCumulative,
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+            )
+            EntrySwitchRow(
+                label = "Show Grid Lines",
+                checked = config.showGridLines,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+            )
         }
         CardSettingsSection("Series") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Current Period", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.showCurrentPeriod,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Previous Period", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.showPreviousPeriod,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Same Period Last Year", style = AppTextStyles.transactionTitle)
-                Switch(
-                    checked = config.showSamePeriodLastYear,
-                    onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
-                )
-            }
+            EntrySwitchRow(
+                label = "Current Period",
+                checked = config.showCurrentPeriod,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
+            )
+            EntrySwitchRow(
+                label = "Previous Period",
+                checked = config.showPreviousPeriod,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
+            )
+            EntrySwitchRow(
+                label = "Same Period Last Year",
+                checked = config.showSamePeriodLastYear,
+                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
+            )
         }
     }
 }

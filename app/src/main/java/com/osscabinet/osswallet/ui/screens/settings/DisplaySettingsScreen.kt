@@ -38,8 +38,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -59,6 +57,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppFont
@@ -313,78 +312,46 @@ fun DisplaySettingsScreen(
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )
-                AeonSettingsItem(
-                    title = "Glass Effect",
+                EntrySwitchRow(
+                    label = "Glass Effect",
                     subtitle = if (glassmorphismEnabled) "Frosted blur on headers" else "Solid surface on headers",
                     icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
-                    trailingContent = {
-                        Switch(
-                            checked = glassmorphismEnabled,
-                            onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = glassmorphismEnabled,
+                    onCheckedChange = { viewModel.setGlassmorphismEnabled(it) }
                 )
             }
 
             AeonSettingsSection("ANIMATIONS & INTERFACE") {
-                AeonSettingsItem(
-                    title = "Card Animations",
+                EntrySwitchRow(
+                    label = "Card Animations",
                     subtitle = if (cardAnimationEnabled) "Animate cards on screen load" else "Disable card animations",
                     icon = if (cardAnimationEnabled) Icons.Rounded.Animation else Icons.Rounded.Block,
-                    trailingContent = {
-                        Switch(
-                            checked = cardAnimationEnabled,
-                            onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = cardAnimationEnabled,
+                    onCheckedChange = { viewModel.setCardAnimationEnabled(it) }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )
-                AeonSettingsItem(
-                    title = "Expandable Action Button",
+                EntrySwitchRow(
+                    label = "Expandable Action Button",
                     subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
                     icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
-                    trailingContent = {
-                        Switch(
-                            checked = expandableFabEnabled,
-                            onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = expandableFabEnabled,
+                    onCheckedChange = { viewModel.setExpandableFabEnabled(it) }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                     thickness = 0.5.dp,
                     color = AppColors.divider.copy(alpha = 0.5f)
                 )
-                AeonSettingsItem(
-                    title = "Recent Activities Breakdown",
+                EntrySwitchRow(
+                    label = "Recent Activities Breakdown",
                     subtitle = if (recentActivitiesBreakdown) "Currency breakdown shown in group headers" else "Currency breakdown hidden in group headers",
                     icon = Icons.Rounded.CurrencyExchange,
-                    trailingContent = {
-                        Switch(
-                            checked = recentActivitiesBreakdown,
-                            onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                            )
-                        )
-                    }
+                    checked = recentActivitiesBreakdown,
+                    onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) }
                 )
             }
         }

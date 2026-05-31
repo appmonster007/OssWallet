@@ -35,8 +35,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -59,6 +57,7 @@ import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -172,25 +171,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Exclude Future",
+                            EntrySwitchRow(
+                                label = "Exclude Future",
                                 subtitle = "Hide transactions after today",
                                 icon = Icons.Rounded.CalendarMonth,
-                                trailingContent = {
-                                    Switch(
-                                        checked = !filter.excludeFuture,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    excludeFutureTransactions = !it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = !filter.excludeFuture,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            excludeFutureTransactions = !it
                                         )
                                     )
                                 }
@@ -200,25 +189,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Planned Payments",
+                            EntrySwitchRow(
+                                label = "Planned Payments",
                                 subtitle = "Show upcoming payments in list",
                                 icon = Icons.Rounded.NotificationsActive,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showPlannedPayments,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showPlannedPayments = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showPlannedPayments,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showPlannedPayments = it
                                         )
                                     )
                                 }
@@ -226,25 +205,15 @@ fun TransactionListTopAppBar(
                         }
 
                         AeonSettingsSection("GROUP SUMMARIES") {
-                            AeonSettingsItem(
-                                title = "Currency Breakdown",
+                            EntrySwitchRow(
+                                label = "Currency Breakdown",
                                 subtitle = "Summary of currencies in group",
                                 icon = Icons.Rounded.CurrencyExchange,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showCurrencyBreakdown,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showCurrencyBreakdown = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showCurrencyBreakdown,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showCurrencyBreakdown = it
                                         )
                                     )
                                 }
@@ -254,26 +223,16 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Only Active Currencies",
+                            EntrySwitchRow(
+                                label = "Only Active Currencies",
                                 subtitle = "Hide zero balance currencies",
                                 icon = Icons.AutoMirrored.Rounded.Sort,
-                                trailingContent = {
-                                    Switch(
-                                        enabled = recordsSettings.showCurrencyBreakdown,
-                                        checked = recordsSettings.showOnlyActiveCurrencies,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showOnlyActiveCurrencies = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                enabled = recordsSettings.showCurrencyBreakdown,
+                                checked = recordsSettings.showOnlyActiveCurrencies,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showOnlyActiveCurrencies = it
                                         )
                                     )
                                 }
@@ -283,25 +242,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Opening Balance",
+                            EntrySwitchRow(
+                                label = "Opening Balance",
                                 subtitle = "Show balance at start of group",
                                 icon = Icons.Rounded.VerticalAlignTop,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showHeaderOpeningBalance,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showHeaderOpeningBalance = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showHeaderOpeningBalance,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showHeaderOpeningBalance = it
                                         )
                                     )
                                 }
@@ -311,25 +260,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Closing Balance",
+                            EntrySwitchRow(
+                                label = "Closing Balance",
                                 subtitle = "Show balance at end of group",
                                 icon = Icons.Rounded.VerticalAlignBottom,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showHeaderClosingBalance,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showHeaderClosingBalance = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showHeaderClosingBalance,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showHeaderClosingBalance = it
                                         )
                                     )
                                 }
@@ -337,25 +276,15 @@ fun TransactionListTopAppBar(
                         }
 
                         AeonSettingsSection("TRANSACTION DETAILS") {
-                            AeonSettingsItem(
-                                title = "Show Icon",
+                            EntrySwitchRow(
+                                label = "Show Icon",
                                 subtitle = "Category icon visibility",
                                 icon = Icons.Rounded.Portrait,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showIcon,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showIcon = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showIcon,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showIcon = it
                                         )
                                     )
                                 }
@@ -365,25 +294,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Show Category",
+                            EntrySwitchRow(
+                                label = "Show Category",
                                 subtitle = "Main classification",
                                 icon = Icons.Rounded.Category,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showCategory,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showCategory = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showCategory,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showCategory = it
                                         )
                                     )
                                 }
@@ -393,25 +312,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Show Note",
+                            EntrySwitchRow(
+                                label = "Show Note",
                                 subtitle = "Transaction description",
                                 icon = Icons.AutoMirrored.Rounded.Notes,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showNote,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showNote = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showNote,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showNote = it
                                         )
                                     )
                                 }
@@ -421,26 +330,16 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Use Note as Header",
+                            EntrySwitchRow(
+                                label = "Use Note as Header",
                                 subtitle = "Prioritize note over category",
                                 icon = Icons.AutoMirrored.Rounded.Sort,
-                                trailingContent = {
-                                    Switch(
-                                        enabled = recordsSettings.showNote,
-                                        checked = recordsSettings.useNoteAsHeader,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    useNoteAsHeader = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                enabled = recordsSettings.showNote,
+                                checked = recordsSettings.useNoteAsHeader,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            useNoteAsHeader = it
                                         )
                                     )
                                 }
@@ -450,25 +349,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Show Account",
+                            EntrySwitchRow(
+                                label = "Show Account",
                                 subtitle = "Source/Target wallet",
                                 icon = Icons.Rounded.AccountBalance,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showAccount,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showAccount = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showAccount,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showAccount = it
                                         )
                                     )
                                 }
@@ -478,25 +367,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Show Tags",
+                            EntrySwitchRow(
+                                label = "Show Tags",
                                 subtitle = "Custom labels",
                                 icon = Icons.AutoMirrored.Rounded.Label,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showTags,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showTags = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showTags,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showTags = it
                                         )
                                     )
                                 }
@@ -506,25 +385,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Show Timestamp",
+                            EntrySwitchRow(
+                                label = "Show Timestamp",
                                 subtitle = "Exact time of entry",
                                 icon = Icons.Rounded.AccessTime,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showTimestamp,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showTimestamp = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showTimestamp,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showTimestamp = it
                                         )
                                     )
                                 }
@@ -532,25 +401,15 @@ fun TransactionListTopAppBar(
                         }
 
                         AeonSettingsSection("RUNNING BALANCES") {
-                            AeonSettingsItem(
-                                title = "Opening Balance",
+                            EntrySwitchRow(
+                                label = "Opening Balance",
                                 subtitle = "Balance before transaction",
                                 icon = Icons.Rounded.History,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showItemOpeningBalance,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showItemOpeningBalance = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showItemOpeningBalance,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showItemOpeningBalance = it
                                         )
                                     )
                                 }
@@ -560,25 +419,15 @@ fun TransactionListTopAppBar(
                                 thickness = 0.5.dp,
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
-                            AeonSettingsItem(
-                                title = "Closing Balance",
+                            EntrySwitchRow(
+                                label = "Closing Balance",
                                 subtitle = "Balance after transaction",
                                 icon = Icons.Rounded.History,
-                                trailingContent = {
-                                    Switch(
-                                        checked = recordsSettings.showItemClosingBalance,
-                                        onCheckedChange = {
-                                            onUpdateRecordsSettings(
-                                                recordsSettings.copy(
-                                                    showItemClosingBalance = it
-                                                )
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = AppColors.onPrimary,
-                                            checkedTrackColor = AppColors.primary.copy(alpha = 0.8f),
-                                            uncheckedThumbColor = AppColors.onSurfaceVariant,
-                                            uncheckedTrackColor = AppColors.surfaceVariant
+                                checked = recordsSettings.showItemClosingBalance,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            showItemClosingBalance = it
                                         )
                                     )
                                 }

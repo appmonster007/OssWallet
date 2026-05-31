@@ -12,19 +12,20 @@ import dev.chrisbanes.haze.HazeTint
  * Design tokens for glassmorphism effects using the Haze library.
  */
 object GlassTokens {
-    val BlurRadius = 12.dp
-    val NoiseFactor = 0.1f
+    val BlurRadius = 8.dp
+    val NoiseFactor = 0f
 
     /**
-     * Theme-aware glass style. Derives tint from the current screen background so
-     * the frosted effect matches any background — light, dark, or custom-tinted.
+     * Theme-aware glass style. Uses AppColors.cardSurfaceProminent (surfaceContainerHigh)
+     * as tint base so the frosted effect looks elevated above the transaction list —
+     * matching the persistent background added to TransactionHeader before hazeEffect.
      */
     @Composable
     fun style(): HazeStyle {
         val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.screenBackground
+        val bgColor = AppColors.cardSurfaceProminent
         return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.55f else 0.75f)),
+            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.45f else 0.30f)),
             blurRadius = BlurRadius,
             noiseFactor = NoiseFactor,
         )

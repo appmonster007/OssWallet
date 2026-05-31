@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -38,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,6 +95,10 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
+import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -239,9 +246,27 @@ fun DashboardScreen(
         isTopLevelParam || initialViewContext == DashboardViewContext.None
     }
 
+    val pillHazeState = remember { HazeState() }
+    val cardHazeState = remember { HazeState() }
+
+    CompositionLocalProvider(
+        LocalPillHazeState provides pillHazeState,
+        LocalCardHazeState provides cardHazeState
+    ) {
     Box(modifier = Modifier.fillMaxSize()) {
+        Spacer(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.screenBackground)
+                .hazeSource(cardHazeState)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(pillHazeState)
+        ) {
         Scaffold(
-            containerColor = AppColors.screenBackground,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -344,6 +369,7 @@ fun DashboardScreen(
                 }
             }
         }
+        } // pillHazeState hazeSource Box
 
         UnifiedPillNavigation(
             selectedTab = pagerState.currentPage,
@@ -373,7 +399,8 @@ fun DashboardScreen(
                 }
             } else null
         )
-    }
+    } // outer Box
+    } // CompositionLocalProvider
 }
 
 

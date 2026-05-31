@@ -13,7 +13,9 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -71,7 +74,11 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
 import com.osscabinet.ossWallet.ui.theme.ColorScrimPill
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.hazeEffect
 
 /**
  * NavigationTab - Data class for navigation tab
@@ -241,13 +248,40 @@ fun PillNavigationBar(
     tabs: List<NavigationTab>,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.height(56.dp),
-        shape = CircleShape,
-        color = AppColors.componentOnCard,
-        tonalElevation = 8.dp,
-        shadowElevation = 8.dp
-    ) {
+    val hazeState = LocalPillHazeState.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val isDark = isSystemInDarkTheme()
+
+    Box(modifier = modifier.height(56.dp)) {
+        if (glassEnabled) {
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        shape = CircleShape
+                        clip = false
+                        shadowElevation = 8.dp.toPx()
+                        ambientShadowColor = Color.Black.copy(alpha = 0.06f)
+                        spotShadowColor = Color.Black.copy(alpha = 0.14f)
+                    }
+            )
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer { shape = CircleShape; clip = true }
+                .background(AppColors.componentOnCard, CircleShape)
+                .then(
+                    if (glassEnabled && hazeState != null)
+                        Modifier.hazeEffect(hazeState, GlassTokens.pillStyle())
+                    else Modifier
+                )
+                .border(
+                    0.5.dp,
+                    if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.55f),
+                    CircleShape
+                )
+        ) {
         BoxWithConstraints(
             modifier = Modifier
                 .padding(6.dp)
@@ -324,7 +358,8 @@ fun PillNavigationBar(
                 }
             }
         }
-    }
+        } // glass Box
+    } // outer Box
 }
 
 @Composable

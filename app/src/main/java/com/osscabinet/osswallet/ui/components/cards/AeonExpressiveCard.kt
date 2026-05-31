@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.ui.components.cards
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -61,7 +64,11 @@ import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.hazeEffect
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -108,10 +115,15 @@ fun AeonExpressiveCard(
 
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Interaction source only created when the card is actually clickable.
     val interactionSource = if (onClick != null) remember { MutableInteractionSource() } else null
     val isPressed = interactionSource?.collectIsPressedAsState()?.value ?: false
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
+
+    val cardHazeState = LocalCardHazeState.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val useGlass = glassEnabled && cardHazeState != null
+    val isDark = isSystemInDarkTheme()
+    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
 
     val showFilterButton = filterEnabled && filter != null && onFilterChange != null
     val showSettingsButton = displaySettings != null
@@ -128,9 +140,21 @@ fun AeonExpressiveCard(
         subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
     }
 
-    Card(
+    Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
+            .then(
+                if (useGlass)
+                    Modifier
+                        .graphicsLayer { shape = cardShape; clip = true }
+                        .background(containerColor, cardShape)
+                        .hazeEffect(cardHazeState!!, GlassTokens.cardStyle())
+                else Modifier
+            )
+    ) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
             .then(
                 if (onClick != null && interactionSource != null) Modifier.clickable(
                     interactionSource = interactionSource,
@@ -138,13 +162,14 @@ fun AeonExpressiveCard(
                     onClick = onClick,
                 ) else Modifier,
             ),
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = cardShape,
+        colors = CardDefaults.cardColors(containerColor = if (useGlass) Color.Transparent else containerColor),
         border = BorderStroke(
             width = if (accentColor != null) 1.dp else 0.5.dp,
             color = when {
                 isWarning -> AppColors.error
                 accentColor != null -> accentColor
+                useGlass -> if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.50f)
                 else -> AppColors.outlineVariant
             },
         ),
@@ -255,6 +280,7 @@ fun AeonExpressiveCard(
             }
         }
     }
+    } // glass wrapper Box
 
     // ── Filter pill overlay ────────────────────────────────────────────────────
     // Rendered outside the Card tree so it doesn't affect Card sizing.

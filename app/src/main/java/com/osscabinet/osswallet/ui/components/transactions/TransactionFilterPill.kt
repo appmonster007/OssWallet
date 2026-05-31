@@ -4,8 +4,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -56,6 +58,8 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -99,6 +103,8 @@ fun TransactionFilterPill(
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val isDark = isSystemInDarkTheme()
 
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalBottomPadding = bottomPadding + navBarPadding
@@ -171,6 +177,7 @@ fun TransactionFilterPill(
         }
 
         val f = morph.value.coerceIn(0f, 1f)
+        val borderAlpha = if (isDark) 0.06f + 0.08f * f else 0.30f + 0.20f * f
 
         val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
         val offsetYPx = collapsedTopPx + (expandedTopPx - collapsedTopPx) * f
@@ -213,6 +220,10 @@ fun TransactionFilterPill(
             shape = RoundedCornerShape(corner),
             color = surfaceColor,
             shadowElevation = elevation,
+            border = if (glassEnabled) BorderStroke(
+                0.5.dp,
+                Color.White.copy(alpha = borderAlpha)
+            ) else null,
             modifier = Modifier
                 .nestedScroll(nestedScrollConnection)
                 .padding(horizontal = horizMargin)

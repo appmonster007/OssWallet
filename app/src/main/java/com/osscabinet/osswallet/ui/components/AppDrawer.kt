@@ -91,7 +91,7 @@ fun AppDrawerContent(
         topEnd = AeonTheme.dimensions.cardCornerRadius,
         bottomEnd = AeonTheme.dimensions.cardCornerRadius
     )
-    val glassStyle = GlassTokens.style()
+    val glassStyle = GlassTokens.drawerStyle()
     val scrollState = rememberScrollState()
 
     Box(

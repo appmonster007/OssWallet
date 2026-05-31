@@ -22,18 +22,16 @@ Source and effect must share the same `HazeState` instance.
 ```kotlin
 object GlassTokens {
     val BlurRadius = 8.dp
+    val DrawerBlurRadius = 16.dp
     val NoiseFactor = 0f       // Keep at 0 for a clean modern look
 
+    // Narrow overlay surfaces (sticky headers over list rows).
     @Composable
-    fun style(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.cardSurfaceProminent  // surfaceContainerHigh
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.45f else 0.30f)),
-            blurRadius = BlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun style(): HazeStyle { … }
+
+    // Large overlay surfaces (drawer, full-screen sheets).
+    @Composable
+    fun drawerStyle(): HazeStyle { … }
 }
 ```
 
@@ -41,9 +39,14 @@ object GlassTokens {
 
 The tint derives from `AppColors.cardSurfaceProminent` (Material 3 `surfaceContainerHigh`) rather than the raw screen background. This makes the glass look _elevated_ rather than transparent, which is critical on both light and dark themes.
 
-Tint alpha values:
-- Dark mode: `0.45f` — higher opacity counters the darker ambient contrast.
-- Light mode: `0.30f` — lower opacity lets the background colour show through without washing out content.
+### Choosing between `style()` and `drawerStyle()`
+
+| Variant | Blur radius | Dark tint α | Light tint α | Use when |
+|---------|-------------|-------------|--------------|----------|
+| `style()` | 8 dp | 0.45 | 0.30 | Narrow strips over neutral-coloured list content (transaction headers) |
+| `drawerStyle()` | 16 dp | 0.82 | 0.55 | Large surfaces over the full app (drawer, full-screen modals) |
+
+**Why large surfaces need heavier values:** The drawer blurs the entire visible app — colourful dashboard cards, charts, account colours — producing a vivid backdrop. In dark mode, `onSurface` text is near-white; if the blurred background is too bright, contrast collapses. Raising the tint alpha to `0.82f` pushes the surface toward the dark `surfaceContainerHigh` tone so text stays readable. The wider `16 dp` blur radius averages out colour hotspots so the background is neutrally tinted rather than patchy.
 
 ---
 

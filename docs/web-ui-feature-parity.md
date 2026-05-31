@@ -36,8 +36,8 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Feature | Android | Web |
 |---|---|---|
 | Transaction list | ✅ | ✅ |
-| Grouping (by date / category / account) | ✅ | 🔲 |
-| Sorting controls | ✅ | 🔲 |
+| Grouping (by date / category / account) | ✅ | ✅ client-side group by date / type / category / account |
+| Sorting controls | ✅ | ✅ sort by date / amount / title |
 | Search | ✅ | ✅ via filter |
 | Transaction detail view | ✅ | ✅ modal with all fields, edit/delete actions |
 | Edit transaction | ✅ full form | ✅ full modal with all fields incl. payment method + warranty |
@@ -57,11 +57,11 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Net Worth | ✅ | ✅ | 🔲 no drill-down |
 | Cash Flow | ✅ | ✅ | 🔲 |
 | Currency Balances | ✅ | ✅ | 🔲 |
-| Accounts | ✅ | ✅ | 🔲 no account detail link |
-| Budgets | ✅ | ✅ | 🔲 no budget detail |
+| Accounts | ✅ | ✅ | ✅ click row → account detail |
+| Budgets | ✅ | ✅ | ✅ click row → budget detail |
 | Planned Payments | ✅ | ✅ | 🔲 no mark-as-paid action |
-| Loans | ✅ | ✅ | 🔲 no repayment action |
-| Recent Activities | ✅ | ✅ | ⚠️ no tap-to-detail from dashboard card (works in Records page) |
+| Loans | ✅ | ✅ | ✅ click row → loan detail |
+| Recent Activities | ✅ | ✅ | ✅ tap row → transaction detail modal |
 | Category Pie Chart | ✅ | ✅ | 🔲 |
 | Category Treemap | ✅ | ✅ | 🔲 |
 | Cash Flow Comparison | ✅ | ✅ | 🔲 |
@@ -99,7 +99,7 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Delete budget | ✅ | ✅ |
 | Progress bar / spending display | ✅ | ✅ |
 | Category breakdown in detail | ✅ | 🔲 |
-| Archive / restore budget | ✅ | 🔲 |
+| Archive / restore budget | ✅ | ✅ archive/restore buttons + archived toggle view |
 
 ---
 
@@ -147,7 +147,7 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Nature (Must / Need / Want) | ✅ | ✅ |
 | Color picker | ✅ | ✅ |
 | Icon picker | ✅ | 🔲 |
-| Drag-to-reorder | ✅ | 🔲 |
+| Drag-to-reorder | ✅ | ⚠️ ↑↓ buttons (no drag-and-drop) |
 
 ---
 
@@ -181,9 +181,9 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Feature | Android | Web |
 |---|---|---|
 | Per-card filter sheet (all dimensions) | ✅ | ✅ |
-| Saved filter sets | ✅ | 🔲 |
-| Create / edit / delete saved filter | ✅ | 🔲 |
-| Apply saved filter to records | ✅ | 🔲 |
+| Saved filter sets | ✅ | ✅ full filters page |
+| Create / edit / delete saved filter | ✅ | ✅ |
+| Apply saved filter to records | ✅ | ✅ ▶ Apply button navigates to Records with params |
 
 ---
 
@@ -191,9 +191,9 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 
 | Feature | Android | Web |
 |---|---|---|
-| Analytics screen (standalone page) | ✅ | 🔲 no dedicated page |
+| Analytics screen (standalone page) | ✅ | ✅ dedicated page with date/type/granularity filters |
 | All 14 chart card types | ✅ | ✅ via dashboard |
-| Savings rate | ✅ | 🔲 |
+| Savings rate | ✅ | ✅ shown as summary stat card + per-period in table |
 | Expense forecast | ✅ | 🔲 |
 
 ---
@@ -204,7 +204,7 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 |---|---|---|
 | Base currency | ✅ editable | ✅ editable |
 | Decimal precision | ✅ editable | ✅ editable |
-| Theme (light / dark / system) | ✅ | 🔲 |
+| Theme (light / dark / system) | ✅ | ✅ Auto / Light / Dark toggle, persisted to localStorage |
 | Display density | ✅ | 🔲 |
 | Shortlisted currencies | ✅ | 🔲 |
 | Exchange rates setup | ✅ | 🔲 |
@@ -229,9 +229,9 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Templates | ✅ | ✅ |
 | Categories | ✅ | ✅ |
 | Tags | ✅ | ✅ |
-| Filters (saved sets) | ✅ | 🔲 |
-| Analytics | ✅ | 🔲 |
-| Settings | ✅ | ✅ currency + precision editable |
+| Filters (saved sets) | ✅ | ✅ |
+| Analytics | ✅ | ✅ |
+| Settings | ✅ | ✅ currency + precision + theme + page size |
 | Exchange Rates | ✅ | 🔲 |
 | Shared Wallet | ✅ | 🔲 |
 | Smart Suggestions | ✅ | 🔲 |
@@ -240,41 +240,59 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 
 ## Priority Ranking
 
-### 🔴 Critical
-- ~~Transaction detail view~~ ✅ implemented
-- ~~Templates (list + create + apply to transaction)~~ ✅ implemented
-- ~~Payment method on transaction form~~ ✅ implemented
-- ~~Warranty fields on transaction form~~ ✅ implemented
-- ~~Planned payments full page (mark-as-paid, skip)~~ ✅ was already complete
-- Split transactions — needs new DB schema + API (deferred)
-
-### 🟠 High
-- ~~Account detail page~~ ✅ implemented
-- ~~Budget detail page~~ ✅ implemented
-- ~~Loan detail page~~ ✅ implemented
-- ~~Settings writability (currency, precision)~~ ✅ implemented
-- ~~Account initial balance on create~~ ✅ implemented
-- ~~Transaction clone~~ ✅ implemented
-- Linked transactions
-- GPS / location fields
-
-### 🟡 Medium
+### ✅ Completed
+- Transaction detail view
+- Templates (list + create + apply to transaction)
+- Payment method on transaction form
+- Warranty fields on transaction form
+- Planned payments full page (create / edit / delete / auto-confirm)
+- Account detail page
+- Budget detail page + archive/restore
+- Loan detail page
+- Settings writability (currency, precision, theme, page size)
+- Account initial balance on create + reorder
+- Transaction clone
 - Transaction list grouping + sorting
-- Filter saved sets
-- Tag merge
-- Exchange rates management
-- Category icon picker
-- Category drag-to-reorder
-- Note / payee autocomplete
-- Recurrence display on planned payments
-- Archive / restore budgets
+- Saved filter sets (CRUD + apply to Records)
+- Analytics standalone page + savings rate
+- Dashboard drill-downs (accounts → detail, budgets → detail, loans → detail, recent activities → tx detail)
+- Tags rename + delete
+- Categories reorder (↑↓ buttons)
 
-### 🟢 Low / Future
-- Analytics standalone page
-- Savings rate + expense forecast
-- Shared wallet
-- Smart suggestions
-- Notification settings
-- Onboarding flow
-- Data export / backup from web
-- Theme toggle in web
+---
+
+## Remaining Gaps
+
+### 🟠 High — implementable now (no backend changes needed)
+
+| Feature | Notes |
+|---|---|
+| GPS / location field on transaction form | `location` field exists on `TransactionDto` — missing input on add/edit form and display in list |
+| Planned payments standalone page | Nav link exists but page is a stub — needs full list with next-due dates, overdue highlighting |
+| Mark as paid on planned payments | API exists: `POST /api/planned-payments/{id}/confirm` |
+| Skip occurrence on planned payments | API exists: `POST /api/planned-payments/{id}/skip` |
+| Recurrence display (next due, history) | Data returned by API — not yet rendered on the planned payments page |
+| Budget category breakdown in detail | Check whether `GET /api/budgets/{id}/categories` (or similar) endpoint already exists |
+
+### 🟡 Medium — implementable now
+
+| Feature | Notes |
+|---|---|
+| Dashboard chart card drill-downs | Net Worth, Cash Flow, Currency Balances, Category Pie/Treemap, etc. — rendered but no click actions |
+| Category icon picker | Currently free-text emoji input — could add a small emoji grid |
+
+### 🔴 Blocked — need backend changes
+
+| Feature | Blocker |
+|---|---|
+| Split transactions | Needs new DB schema + API endpoint |
+| Linked transactions (create/manage) | Needs a linking endpoint; display-only already done in detail view |
+| Tag merge | Needs `POST /api/tags/merge` endpoint |
+| Note / payee autocomplete | Needs `GET /api/transactions/autocomplete?field=note&q=...` endpoint |
+| Account number field | Not in domain `Account` model — needs Room migration + DTO changes |
+| Exchange rates page | No management API exposed |
+| Shared Wallet | No web API exposed |
+| Smart Suggestions | No web API exposed |
+| Data export / backup | No web endpoint |
+| Profile management | No multi-profile switching API |
+| Expense forecast | No forecast API |

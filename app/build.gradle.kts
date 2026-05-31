@@ -118,6 +118,7 @@ dependencies {
     debugImplementation(libs.ktor.server.call.logging)
     // QR code generation
     implementation(libs.qrcode.kotlin.android)
+    implementation(libs.haze)
 
     // Hilt
     implementation(libs.hilt.android)

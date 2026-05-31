@@ -172,24 +172,6 @@ fun TransactionListTopAppBar(
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
                             EntrySwitchRow(
-                                label = "Exclude Future",
-                                subtitle = "Hide transactions after today",
-                                icon = Icons.Rounded.CalendarMonth,
-                                checked = !filter.excludeFuture,
-                                onCheckedChange = {
-                                    onUpdateRecordsSettings(
-                                        recordsSettings.copy(
-                                            excludeFutureTransactions = !it
-                                        )
-                                    )
-                                }
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                thickness = 0.5.dp,
-                                color = AppColors.divider.copy(alpha = 0.3f)
-                            )
-                            EntrySwitchRow(
                                 label = "Planned Payments",
                                 subtitle = "Show upcoming payments in list",
                                 icon = Icons.Rounded.NotificationsActive,

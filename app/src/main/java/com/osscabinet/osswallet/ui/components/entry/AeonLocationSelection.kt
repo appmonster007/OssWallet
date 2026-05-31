@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -22,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -99,11 +101,16 @@ import androidx.compose.ui.unit.sp
 import com.google.android.gms.location.LocationServices
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -420,6 +427,9 @@ private fun AeonLocationSelectionContent(
     onCopyCoords: () -> Unit
 ) {
     var visibleResultCount by remember { mutableIntStateOf(0) }
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val isDark = isSystemInDarkTheme()
+    val locationHazeState = remember { HazeState() }
 
     // ── Staggered search result entrance ─────────────────────────────────────
     LaunchedEffect(searchResults) {
@@ -476,7 +486,8 @@ private fun AeonLocationSelectionContent(
 
         // ── 1. Map ────────────────────────────────────────────────────────
         AeonOSMMap(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize()
+                .then(if (glassEnabled) Modifier.hazeSource(locationHazeState) else Modifier),
             center = mapCenter,
             zoom = mapZoom,
             selectedPoint = selectedPoint,
@@ -498,12 +509,16 @@ private fun AeonLocationSelectionContent(
             horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
         ) {
             // Back
-            Surface(
-                modifier = Modifier.size(44.dp),
+            GlassSurface(
+                modifier = Modifier.size(44.dp).clickable(onClick = onDismiss),
                 shape = CircleShape,
-                color = cardSurface,
+                hazeState = locationHazeState,
+                hazeStyle = GlassTokens.popupStyle(),
+                fallbackColor = cardSurface,
                 shadowElevation = 6.dp,
-                onClick = onDismiss
+                ambientShadowAlpha = 0.06f,
+                spotShadowAlpha = 0.14f,
+                borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.40f),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -516,17 +531,26 @@ private fun AeonLocationSelectionContent(
             }
 
             // Search pill — elevation and background animate on focus
-            Surface(
+            val searchPillShape = RoundedCornerShape(dims.buttonCornerRadius)
+            GlassSurface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                color = if (isSearchFocused) panelSurface else cardSurface,
+                    .height(52.dp)
+                    .then(
+                        if (!glassEnabled) Modifier.border(
+                            1.dp,
+                            if (isSearchFocused) accentColor else borderColor.copy(alpha = 0.5f),
+                            searchPillShape
+                        ) else Modifier
+                    ),
+                shape = searchPillShape,
+                hazeState = locationHazeState,
+                hazeStyle = GlassTokens.pillStyle(),
+                fallbackColor = if (isSearchFocused) panelSurface else cardSurface,
                 shadowElevation = searchElevation,
-                border = if (isSearchFocused) BorderStroke(
-                    1.dp,
-                    accentColor
-                ) else BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))
+                ambientShadowAlpha = 0.05f,
+                spotShadowAlpha = 0.12f,
+                borderColor = if (isSearchFocused) accentColor else Color.White.copy(alpha = 0.30f),
             ) {
                 Row(
                     modifier = Modifier
@@ -598,12 +622,16 @@ private fun AeonLocationSelectionContent(
             enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            Surface(
+            GlassSurface(
+                modifier = Modifier.heightIn(max = 320.dp),
                 shape = RoundedCornerShape(dims.containerCornerRadius),
-                color = cardSurface,
+                hazeState = locationHazeState,
+                hazeStyle = GlassTokens.popupStyle(),
+                fallbackColor = cardSurface,
                 shadowElevation = 12.dp,
-                border = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.1f)),
-                modifier = Modifier.heightIn(max = 320.dp)
+                ambientShadowAlpha = 0.06f,
+                spotShadowAlpha = 0.16f,
+                borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f),
             ) {
                 LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingSm)) {
                     if (searchQuery.isBlank() && recentLocations.isNotEmpty()) {
@@ -701,16 +729,16 @@ private fun AeonLocationSelectionContent(
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
-            Surface(
+            GlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(
                     topStart = dims.dialogCornerRadius,
                     topEnd = dims.dialogCornerRadius
                 ),
-                color = cardSurface.copy(alpha = 0.98f),
-                shadowElevation = 24.dp,
-                tonalElevation = 4.dp,
-                border = BorderStroke(1.dp, borderColor.copy(alpha = 0.05f))
+                hazeState = locationHazeState,
+                hazeStyle = GlassTokens.sheetStyle(),
+                fallbackColor = cardSurface,
+                borderColor = if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.35f),
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
 

@@ -21,10 +21,14 @@ fun resolveEffectiveFilter(
 ): TransactionFilter {
     val candidate = if (screenOwnsTimeline) {
         // Screen timeline is authoritative (central filter behavior)
-        inheritedFilter.merge(cardFilter).copy(timelineRange = inheritedFilter.timelineRange)
+        inheritedFilter.merge(cardFilter).copy(
+            timelineRange = inheritedFilter.timelineRange,
+            excludeFuture = inheritedFilter.excludeFuture
+        )
     } else {
         // Card timeline is authoritative if specified, otherwise inherits from screen.
         // TransactionFilter.merge(other) uses other.timelineRange, which is what we want.
+        // We also want it to use other.excludeFuture if it's explicitly merged.
         inheritedFilter.merge(cardFilter)
     }
     return filterRules.normalize(candidate)

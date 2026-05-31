@@ -312,7 +312,19 @@ fun CategoryPieChartCard(
                 isDarkTheme = isDarkTheme,
                 isAmoled = isAmoled,
                 showFullBreakdown = config.showFullBreakdown,
-                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) }
+                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
+                onItemClick = { item ->
+                    if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
+                        navigationStack = navigationStack + listOf(item.subcategoryData)
+                    } else {
+                        val categoryIds = item.allCategoryIds()
+                        callbacks.onRecordsClick(
+                            config.filter.copy(
+                                categoryIds = categoryIds.map { it.toLong() }.toSet()
+                            )
+                        )
+                    }
+                }
             )
         }
     }
@@ -415,7 +427,8 @@ fun CategoryLegend(
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
-    onToggleBreakdown: (Boolean) -> Unit
+    onToggleBreakdown: (Boolean) -> Unit,
+    onItemClick: (CategoryPieChartData) -> Unit
 ) {
     val displayData = if (showFullBreakdown) data else data.take(5)
 
@@ -441,7 +454,10 @@ fun CategoryLegend(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onItemClick(item) }
             ) {
                 Surface(
                     modifier = Modifier.size(12.dp),

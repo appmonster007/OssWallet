@@ -51,7 +51,7 @@ class CashFlowComparisonCardComputer(
         val zone = TimelineService.systemZoneId
         val today = System.currentTimeMillis()
         // Use full-period buckets so the current line spans the same visual width as prev/last-year.
-        // Future buckets return zeros; past/current buckets are capped at today.
+        // Future buckets return zeros; past/current buckets are capped at today if excludeFuture is true.
         val fullBuckets = generateBuckets(currentStart, currentEnd, granularity)
         val currentSeries = computeSeriesFromBucketsWithFutureCap(
             buckets = fullBuckets,
@@ -59,7 +59,8 @@ class CashFlowComparisonCardComputer(
             profileId = input.profileId,
             baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
-            today = today
+            today = today,
+            excludeFuture = mergedFilter.excludeFuture
         )
 
         // Previous period — cap at today so we don't show future zero-lines
@@ -74,7 +75,8 @@ class CashFlowComparisonCardComputer(
                 profileId = input.profileId,
                 baseCurrency = input.displayCurrency,
                 exchangeRates = input.exchangeRates,
-                today = today
+                today = today,
+                excludeFuture = mergedFilter.excludeFuture
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -90,7 +92,8 @@ class CashFlowComparisonCardComputer(
             profileId = input.profileId,
             baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
-            today = today
+            today = today,
+            excludeFuture = mergedFilter.excludeFuture
         )
 
         return CardRenderData.CashFlowComparison(
@@ -155,20 +158,21 @@ class CashFlowComparisonCardComputer(
         return buckets
     }
 
-    // Current / Previous / Last Year series: drop future buckets entirely so the line terminates naturally at today.
-    // The bucket straddling today is capped at today; all fully-future buckets are skipped.
+    // Current / Previous / Last Year series: drop future buckets entirely if excludeFuture is true.
+    // If excludeFuture is false, we show all buckets in the requested range.
     private suspend fun computeSeriesFromBucketsWithFutureCap(
         buckets: List<Triple<Long, Long, String>>,
         baseFilter: TransactionFilter,
         profileId: Int,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
-        today: Long
+        today: Long,
+        excludeFuture: Boolean
     ): CashFlowComparisonSeries {
         val points = mutableListOf<CashFlowTimePoint>()
         for ((bucketStart, bucketEnd, label) in buckets) {
-            if (bucketStart > today) break
-            val effectiveEnd = minOf(bucketEnd, today)
+            if (excludeFuture && bucketStart > today) break
+            val effectiveEnd = if (excludeFuture) minOf(bucketEnd, today) else bucketEnd
             points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates))
         }
         return CashFlowComparisonSeries(points)

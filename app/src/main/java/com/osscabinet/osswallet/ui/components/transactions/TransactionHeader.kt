@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,69 +82,80 @@ fun TransactionHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .graphicsLayer {
-                shape = glassShape
-                clip = true
-                shadowElevation = 12.dp.toPx()
-                ambientShadowColor = Color.Black.copy(alpha = 0.06f)
-                spotShadowColor = Color.Black.copy(alpha = 0.12f)
-            }
-            .then(
-                if (hazeState != null)
-                    Modifier.hazeEffect(hazeState, glassStyle)
-                else
-                    Modifier
-            )
-            .border(
-                width = 0.5.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f),
-                shape = glassShape
-            )
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = title.uppercase(),
-                    style = styles.titleStyle,
-                    modifier = Modifier.align(Alignment.CenterStart)
+        // hazeEffect applies a RenderEffect internally, which silently drops shadowElevation when
+        // both are on the same RenderNode. Shadow gets its own sibling RenderNode with no blur.
+        Spacer(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    shape = glassShape
+                    clip = false
+                    shadowElevation = 12.dp.toPx()
+                    ambientShadowColor = Color.Black.copy(alpha = 0.06f)
+                    spotShadowColor = Color.Black.copy(alpha = 0.12f)
+                }
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer { shape = glassShape; clip = true }
+                .background(AppColors.cardSurfaceProminent, glassShape)
+                .then(
+                    if (hazeState != null) Modifier.hazeEffect(hazeState, glassStyle)
+                    else Modifier
                 )
-                if (!showCurrencyBreakdown) {
+                .border(
+                    width = 0.5.dp,
+                    color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f),
+                    shape = glassShape
+                )
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
-                        style = styles.baseValueStyle,
-                        color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
+                        text = title.uppercase(),
+                        style = styles.titleStyle,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    )
+                    if (!showCurrencyBreakdown) {
+                        Text(
+                            text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
+                            style = styles.baseValueStyle,
+                            color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    Text(
+                        text = subtitle.uppercase(),
+                        style = styles.subtitleStyle,
+                        modifier = Modifier.align(Alignment.CenterEnd)
                     )
                 }
-                Text(
-                    text = subtitle.uppercase(),
-                    style = styles.subtitleStyle,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                )
-            }
 
-            if (showCurrencyBreakdown) {
-                Spacer(modifier = Modifier.height(4.dp))
+                if (showCurrencyBreakdown) {
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                TransactionSummaryBreakdown(
-                    incomeByCurrency = incomeByCurrency,
-                    expenseByCurrency = expenseByCurrency,
-                    incomeBase = incomeBase,
-                    expenseBase = expenseBase,
-                    netBase = netBase,
-                    baseCurrency = baseCurrency,
-                    openingBalancesByCurrency = openingBalancesByCurrency,
-                    closingBalancesByCurrency = closingBalancesByCurrency,
-                    totalOpeningBalanceBase = totalOpeningBalanceBase,
-                    totalClosingBalanceBase = totalClosingBalanceBase,
-                    showOpeningBalance = showOpeningBalance,
-                    showClosingBalance = showClosingBalance,
-                    currenciesToDisplay = currenciesToDisplay,
-                    labelColumnWidth = styles.labelColumnWidth,
-                    showCurrencyBreakdown = true,
-                    initiallyExpanded = isExpanded
-                )
+                    TransactionSummaryBreakdown(
+                        incomeByCurrency = incomeByCurrency,
+                        expenseByCurrency = expenseByCurrency,
+                        incomeBase = incomeBase,
+                        expenseBase = expenseBase,
+                        netBase = netBase,
+                        baseCurrency = baseCurrency,
+                        openingBalancesByCurrency = openingBalancesByCurrency,
+                        closingBalancesByCurrency = closingBalancesByCurrency,
+                        totalOpeningBalanceBase = totalOpeningBalanceBase,
+                        totalClosingBalanceBase = totalClosingBalanceBase,
+                        showOpeningBalance = showOpeningBalance,
+                        showClosingBalance = showClosingBalance,
+                        currenciesToDisplay = currenciesToDisplay,
+                        labelColumnWidth = styles.labelColumnWidth,
+                        showCurrencyBreakdown = true,
+                        initiallyExpanded = isExpanded
+                    )
+                }
             }
         }
     }
@@ -233,5 +245,35 @@ fun TransactionHeaderPreview() {
             showClosingBalance = true,
             initiallyExpanded = true
         )
+    }
+}
+
+@Preview(showBackground = true, name = "Floating Transaction Header")
+@Composable
+fun FloatingTransactionHeaderPreview() {
+    OssWalletTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF5F5F5)) // Lighter background to help see the shadow
+                .padding(24.dp)
+        ) {
+            TransactionHeader(
+                title = "Jan 22, 2024",
+                subtitle = "3 Transactions",
+                incomeByCurrency = mapOf("USD" to BigDecimal("200.00")),
+                expenseByCurrency = mapOf("USD" to BigDecimal("50.00")),
+                openingBalancesByCurrency = emptyMap(),
+                closingBalancesByCurrency = emptyMap(),
+                allCurrencies = listOf("USD"),
+                incomeBase = BigDecimal("200.00"),
+                expenseBase = BigDecimal("50.00"),
+                netBase = BigDecimal("150.00"),
+                totalOpeningBalanceBase = BigDecimal.ZERO,
+                totalClosingBalanceBase = BigDecimal("150.00"),
+                baseCurrency = "USD",
+                showCurrencyBreakdown = false
+            )
+        }
     }
 }

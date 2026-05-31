@@ -71,6 +71,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
+import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
@@ -80,6 +82,7 @@ import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -248,10 +251,12 @@ fun DashboardScreen(
 
     val pillHazeState = remember { HazeState() }
     val cardHazeState = remember { HazeState() }
+    val filterPillController = remember { FilterPillController() }
 
     CompositionLocalProvider(
         LocalPillHazeState provides pillHazeState,
-        LocalCardHazeState provides cardHazeState
+        LocalCardHazeState provides cardHazeState,
+        LocalFilterPillController provides filterPillController,
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Spacer(
@@ -399,6 +404,29 @@ fun DashboardScreen(
                 }
             } else null
         )
+
+        // TransactionFilterPill rendered here — above the nav pill, inside the main window
+        // so LocalPillHazeState is accessible and real glass blur applies.
+        val pillRequest = filterPillController.activeRequest
+        if (pillRequest != null) {
+            TransactionFilterPill(
+                filter = pillRequest.filter,
+                accounts = pillRequest.accounts,
+                categories = pillRequest.categories,
+                allTags = pillRequest.allTags,
+                savedFilters = pillRequest.savedFilters,
+                onSearchTransactions = pillRequest.onSearchTransactions,
+                onFilterEvent = pillRequest.onFilterEvent,
+                onSaveFilterClick = pillRequest.onSaveFilterClick,
+                onDismiss = {
+                    pillRequest.onDismiss()
+                    filterPillController.dismiss()
+                },
+                modifier = Modifier.fillMaxSize(),
+                filterRules = pillRequest.filterRules,
+                baseFilter = pillRequest.baseFilter,
+            )
+        }
     } // outer Box
     } // CompositionLocalProvider
 }

@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -276,56 +277,77 @@ fun AeonExpressiveCard(
     }
 
     // ── Filter pill overlay ────────────────────────────────────────────────────
-    // Rendered outside the Card tree so it doesn't affect Card sizing.
-    // Dialog creates a full-screen modal window, blocking the nav pill underneath.
-    if (showFilterSheet && filter != null && onFilterChange != null) {
-        // Stabilise the event handler: a single stable lambda is created once and reads
-        // the latest filter/onFilterChange values via rememberUpdatedState at call time.
-        val currentFilter = rememberUpdatedState(filter)
-        val currentOnFilterChange = rememberUpdatedState(onFilterChange)
-        val onFilterEvent = remember<(FilterEvent) -> Unit> {
-            { event ->
-                when (event) {
-                    is FilterEvent.Apply -> currentOnFilterChange.value(event.filter)
-                    is FilterEvent.UpdateTimeline -> currentOnFilterChange.value(
-                        currentFilter.value.copy(
-                            timelineRange = event.range
-                        )
-                    )
-
-                    is FilterEvent.Reset -> currentOnFilterChange.value(TransactionFilter())
-                    else -> Unit
-                }
+    // rememberUpdatedState / remember must be called unconditionally (Compose rule).
+    val currentFilter = rememberUpdatedState(filter)
+    val currentOnFilterChange = rememberUpdatedState(onFilterChange)
+    val onFilterEvent = remember<(FilterEvent) -> Unit> {
+        { event ->
+            when (event) {
+                is FilterEvent.Apply -> currentOnFilterChange.value?.invoke(event.filter)
+                is FilterEvent.UpdateTimeline -> currentOnFilterChange.value?.invoke(
+                    currentFilter.value?.copy(timelineRange = event.range) ?: return@remember
+                )
+                is FilterEvent.Reset -> currentOnFilterChange.value?.invoke(TransactionFilter())
+                else -> Unit
             }
         }
+    }
 
-        Dialog(
-            onDismissRequest = { showFilterSheet = false },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false, // pill handles outside-tap itself
-            ),
-        ) {
-            // Disable the Dialog's built-in window dim so our morph-driven scrim
-            // inside TransactionFilterPill is the sole overlay.
-            val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-            SideEffect { dialogWindow?.setDimAmount(0f) }
+    val filterPillController = LocalFilterPillController.current
 
-            TransactionFilterPill(
-                filter = filter,
-                accounts = filterContext.accounts,
-                categories = filterContext.allCategories,
-                allTags = filterContext.allTags,
-                onSearchTransactions = filterContext.onSearchTransactions,
-                savedFilters = filterContext.savedFilters,
-                onFilterEvent = onFilterEvent,
-                onSaveFilterClick = onSaveFilterClick,
-                onDismiss = { showFilterSheet = false },
-                modifier = Modifier.fillMaxSize(),
-                filterRules = filterRules ?: CardFilterRules.DEFAULT,
-                baseFilter = baseFilter
-            )
+    if (showFilterSheet && filter != null && onFilterChange != null) {
+        if (filterPillController != null) {
+            // Controller path: pill renders at screen level in the main window so
+            // LocalPillHazeState is accessible and real glass blur works.
+            SideEffect {
+                filterPillController.show(
+                    FilterPillRequest(
+                        filter = filter,
+                        accounts = filterContext.accounts,
+                        categories = filterContext.allCategories,
+                        allTags = filterContext.allTags,
+                        savedFilters = filterContext.savedFilters,
+                        onSearchTransactions = filterContext.onSearchTransactions,
+                        onFilterEvent = onFilterEvent,
+                        onSaveFilterClick = onSaveFilterClick,
+                        onDismiss = { showFilterSheet = false },
+                        filterRules = filterRules ?: CardFilterRules.DEFAULT,
+                        baseFilter = baseFilter,
+                    )
+                )
+            }
+            DisposableEffect(Unit) {
+                onDispose { filterPillController.dismiss() }
+            }
+        } else {
+            // Dialog fallback: screens that don't provide LocalFilterPillController
+            // (Analytics, etc.) keep the existing behaviour unchanged.
+            Dialog(
+                onDismissRequest = { showFilterSheet = false },
+                properties = DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = false,
+                ),
+            ) {
+                val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+                SideEffect { dialogWindow?.setDimAmount(0f) }
+
+                TransactionFilterPill(
+                    filter = filter,
+                    accounts = filterContext.accounts,
+                    categories = filterContext.allCategories,
+                    allTags = filterContext.allTags,
+                    onSearchTransactions = filterContext.onSearchTransactions,
+                    savedFilters = filterContext.savedFilters,
+                    onFilterEvent = onFilterEvent,
+                    onSaveFilterClick = onSaveFilterClick,
+                    onDismiss = { showFilterSheet = false },
+                    modifier = Modifier.fillMaxSize(),
+                    filterRules = filterRules ?: CardFilterRules.DEFAULT,
+                    baseFilter = baseFilter,
+                )
+            }
         }
     }
 

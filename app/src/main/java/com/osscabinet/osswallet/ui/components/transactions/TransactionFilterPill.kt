@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -57,9 +55,11 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -105,6 +105,7 @@ fun TransactionFilterPill(
     val density = LocalDensity.current
     val glassEnabled = LocalGlassmorphismEnabled.current
     val isDark = isSystemInDarkTheme()
+    val pillHazeState = LocalPillHazeState.current
 
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalBottomPadding = bottomPadding + navBarPadding
@@ -216,20 +217,24 @@ fun TransactionFilterPill(
         )
 
         // ── Pill surface ───────────────────────────────────────────────────────
-        Surface(
-            shape = RoundedCornerShape(corner),
-            color = surfaceColor,
-            shadowElevation = elevation,
-            border = if (glassEnabled) BorderStroke(
-                0.5.dp,
-                Color.White.copy(alpha = borderAlpha)
-            ) else null,
+        // pillHazeState is non-null when the pill renders in the main window
+        // (DashboardScreen provides LocalPillHazeState). Null in the Dialog fallback
+        // path (other screens) — GlassSurface degrades to solid fallbackColor.
+        GlassSurface(
             modifier = Modifier
                 .nestedScroll(nestedScrollConnection)
                 .padding(horizontal = horizMargin)
                 .fillMaxWidth()
                 .height(surfaceH)
                 .offset { IntOffset(0, offsetYPx.roundToInt()) },
+            shape = RoundedCornerShape(corner),
+            hazeState = pillHazeState,
+            hazeStyle = GlassTokens.pillStyle(),
+            fallbackColor = surfaceColor,
+            shadowElevation = elevation,
+            ambientShadowAlpha = 0.08f,
+            spotShadowAlpha = 0.18f,
+            borderColor = if (glassEnabled) Color.White.copy(alpha = borderAlpha) else null,
         ) {
             Column(Modifier.fillMaxSize()) {
 

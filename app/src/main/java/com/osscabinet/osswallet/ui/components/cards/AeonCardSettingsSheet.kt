@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,10 +12,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
@@ -42,16 +47,26 @@ fun AeonCardSettingsSheet(
     baseFilter: TransactionFilter = TransactionFilter()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val glassActive = glassEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = AppColors.sheetSurface,
+        containerColor = if (glassActive) AppColors.sheetSurface.copy(alpha = 0.82f)
+                         else AppColors.sheetSurface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         contentWindowInsets = { WindowInsets.navigationBars },
         modifier = Modifier.statusBarsPadding()
     ) {
+        val view = LocalView.current
+        SideEffect {
+            if (glassActive) {
+                (view.parent as? DialogWindowProvider)?.window?.setBackgroundBlurRadius(80)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()

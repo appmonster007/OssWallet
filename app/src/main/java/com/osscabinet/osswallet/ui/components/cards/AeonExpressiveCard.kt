@@ -3,8 +3,6 @@ package com.osscabinet.ossWallet.ui.components.cards
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -58,6 +56,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
@@ -68,7 +67,6 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeEffect
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -140,17 +138,15 @@ fun AeonExpressiveCard(
         subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
     }
 
-    Box(
-        modifier = modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .then(
-                if (useGlass)
-                    Modifier
-                        .graphicsLayer { shape = cardShape; clip = true }
-                        .background(containerColor, cardShape)
-                        .hazeEffect(cardHazeState!!, GlassTokens.cardStyle())
-                else Modifier
-            )
+    GlassSurface(
+        modifier = modifier.graphicsLayer { scaleX = scale; scaleY = scale },
+        shape = cardShape,
+        hazeState = cardHazeState,
+        hazeStyle = GlassTokens.cardStyle(),
+        fallbackColor = containerColor,
+        borderColor = if (useGlass && !isWarning && accentColor == null)
+            if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.50f)
+        else null
     ) {
     Card(
         modifier = Modifier
@@ -163,16 +159,13 @@ fun AeonExpressiveCard(
                 ) else Modifier,
             ),
         shape = cardShape,
-        colors = CardDefaults.cardColors(containerColor = if (useGlass) Color.Transparent else containerColor),
-        border = BorderStroke(
-            width = if (accentColor != null) 1.dp else 0.5.dp,
-            color = when {
-                isWarning -> AppColors.error
-                accentColor != null -> accentColor
-                useGlass -> if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.50f)
-                else -> AppColors.outlineVariant
-            },
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = when {
+            isWarning -> BorderStroke(0.5.dp, AppColors.error)
+            accentColor != null -> BorderStroke(1.dp, accentColor)
+            !useGlass -> BorderStroke(0.5.dp, AppColors.outlineVariant)
+            else -> null
+        },
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -280,7 +273,7 @@ fun AeonExpressiveCard(
             }
         }
     }
-    } // glass wrapper Box
+    }
 
     // ── Filter pill overlay ────────────────────────────────────────────────────
     // Rendered outside the Card tree so it doesn't affect Card sizing.

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,8 +50,11 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.LocalHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -74,6 +79,8 @@ fun AeonTransactionList(
     baseCurrency: String,
     revealedCardIds: List<Long> = emptyList()
 ) {
+    val hazeState = remember { HazeState() }
+    CompositionLocalProvider(LocalHazeState provides hazeState) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
@@ -109,6 +116,9 @@ fun AeonTransactionList(
                 val icon = getIconByName(enriched.categoryIcon)
                 val iconBg = Color(enriched.categoryColor)
 
+                Box(
+                    modifier = Modifier.fillMaxWidth().hazeSource(hazeState)
+                ) {
                 SwipeableTransactionItem(
                     transaction = tx,
                     isRevealed = revealedCardIds.contains(tx.id),
@@ -151,6 +161,7 @@ fun AeonTransactionList(
                         showDividers = index < group.transactions.size - 1
                     ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
                 }
+                } // hazeSource Box
             }
         }
         item {
@@ -160,6 +171,7 @@ fun AeonTransactionList(
             )
         }
     }
+    } // CompositionLocalProvider
 }
 
 @OptIn(ExperimentalLayoutApi::class)

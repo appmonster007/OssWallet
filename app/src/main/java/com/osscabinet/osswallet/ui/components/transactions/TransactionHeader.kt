@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,12 +26,11 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import dev.chrisbanes.haze.hazeEffect
 import java.math.BigDecimal
 
 /**
@@ -65,7 +62,6 @@ fun TransactionHeader(
 
     val styles = TransactionHeaderStyles.default()
     val hazeState = LocalHazeState.current
-    val glassEnabled = LocalGlassmorphismEnabled.current
     val isDark = isSystemInDarkTheme()
     val glassShape = RoundedCornerShape(12.dp)
     val glassStyle = GlassTokens.style()
@@ -80,41 +76,19 @@ fun TransactionHeader(
 
     val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
 
-    Box(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = glassShape,
+        hazeState = hazeState,
+        hazeStyle = glassStyle,
+        fallbackColor = AppColors.cardSurfaceProminent,
+        shadowElevation = 12.dp,
+        ambientShadowAlpha = 0.06f,
+        spotShadowAlpha = 0.12f,
+        borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f)
     ) {
-        if (glassEnabled) {
-            // hazeEffect applies a RenderEffect internally, which silently drops shadowElevation when
-            // both are on the same RenderNode. Shadow gets its own sibling RenderNode with no blur.
-            Spacer(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer {
-                        shape = glassShape
-                        clip = false
-                        shadowElevation = 12.dp.toPx()
-                        ambientShadowColor = Color.Black.copy(alpha = 0.06f)
-                        spotShadowColor = Color.Black.copy(alpha = 0.12f)
-                    }
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer { shape = glassShape; clip = true }
-                .background(AppColors.cardSurfaceProminent, glassShape)
-                .then(
-                    if (glassEnabled && hazeState != null) Modifier.hazeEffect(hazeState, glassStyle)
-                    else Modifier
-                )
-                .border(
-                    width = 0.5.dp,
-                    color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f),
-                    shape = glassShape
-                )
-        ) {
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -162,7 +136,6 @@ fun TransactionHeader(
                 }
             }
         }
-    }
 }
 
 

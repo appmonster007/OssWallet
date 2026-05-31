@@ -1,6 +1,6 @@
 # Glassmorphism Implementation Guide
 
-This document captures every detail needed to apply the frosted-glass effect to new components in OssWallet, derived from the implementation in `TransactionHeader`.
+This document captures every detail needed to apply the frosted-glass effect to new components in OssWallet.
 
 ---
 
@@ -77,6 +77,43 @@ OssWalletTheme(...) {
 
 ---
 
+## `GlassSurface` — The Canonical Shell (`ui/components/GlassSurface.kt`)
+
+All glass surfaces in OssWallet are built on this single composable. **Never write the raw two-sibling pattern inline.** Call `GlassSurface` instead.
+
+```kotlin
+@Composable
+fun GlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape,
+    hazeState: HazeState?,             // pass the relevant CompositionLocal
+    hazeStyle: HazeStyle = GlassTokens.style(),
+    fallbackColor: Color = AppColors.cardSurfaceProminent,
+    shadowElevation: Dp = 0.dp,
+    ambientShadowAlpha: Float = 0.06f,
+    spotShadowAlpha: Float = 0.12f,
+    borderColor: Color? = null,        // null = no border
+    content: @Composable BoxScope.() -> Unit
+)
+```
+
+Key behaviours:
+
+- **Always renders `fallbackColor`** as the surface background, so the component degrades gracefully in Previews and on screens that haven't wired up a hazeSource.
+- **Shadow on its own `RenderNode`** — `hazeEffect` installs a `RenderEffect` that silently drops `shadowElevation` when both share the same `graphicsLayer`. The shadow `Spacer` is added automatically only when `glassEnabled && shadowElevation > 0.dp`.
+- **Border gated on `glassEnabled && hazeState != null`** — avoids rendering glass chrome (white border) when the blur effect is absent.
+
+### Component-to-`GlassSurface` mapping
+
+| Component | `hazeState` source | `hazeStyle` | `shadowElevation` |
+|-----------|-------------------|-------------|-------------------|
+| `AppDrawerContent` | `LocalHazeState.current` | `GlassTokens.drawerStyle()` | 16 dp |
+| `PillNavigationBar` | `LocalPillHazeState.current` | `GlassTokens.pillStyle()` | 8 dp |
+| `TransactionHeader` | `LocalHazeState.current` | `GlassTokens.style()` | 12 dp |
+| `AeonExpressiveCard` | `LocalCardHazeState.current` | `GlassTokens.cardStyle()` | 0 dp |
+
+---
+
 ## Pattern: Scrollable List with Sticky Glass Header
 
 This is the pattern used in `AeonTransactionList` + `TransactionHeader`.
@@ -92,75 +129,46 @@ CompositionLocalProvider(LocalHazeState provides hazeState) {
         }
         itemsIndexed(items) { _, item ->
             Box(modifier = Modifier.hazeSource(hazeState)) {
-                ItemRow(item)        // content that gets blurred behind the header
+                ItemRow(item)
             }
         }
     }
 }
 ```
 
-**Critical:** `hazeSource` must wrap the _scrolling content_, not the entire `LazyColumn`. The sticky header composable should NOT be marked as the source — it is the effect recipient.
+**Critical:** `hazeSource` must wrap the _scrolling content_, not the entire `LazyColumn`. The sticky header should NOT be the source — it is the effect recipient.
 
-### 2. Sticky header — apply `hazeEffect`
+### 2. Sticky header — use `GlassSurface`
 
 ```kotlin
 @Composable
 fun GlassHeader(…) {
     val hazeState = LocalHazeState.current
-    val glassEnabled = LocalGlassmorphismEnabled.current
-    val glassShape = RoundedCornerShape(12.dp)
-    val glassStyle = GlassTokens.style()
+    val isDark = isSystemInDarkTheme()
 
-    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-
-        // Shadow lives on a separate sibling RenderNode because hazeEffect's internal
-        // RenderEffect silently drops shadowElevation on the same graphicsLayer.
-        if (glassEnabled) {
-            Spacer(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer {
-                        shape = glassShape
-                        clip = false
-                        shadowElevation = 12.dp.toPx()
-                        ambientShadowColor = Color.Black.copy(alpha = 0.06f)
-                        spotShadowColor = Color.Black.copy(alpha = 0.12f)
-                    }
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer { shape = glassShape; clip = true }
-                .background(AppColors.cardSurfaceProminent, glassShape)
-                .then(
-                    if (glassEnabled && hazeState != null)
-                        Modifier.hazeEffect(hazeState, glassStyle)
-                    else Modifier
-                )
-                .border(
-                    width = 0.5.dp,
-                    color = if (isDark) Color.White.copy(alpha = 0.12f)
-                            else Color.White.copy(alpha = 0.6f),
-                    shape = glassShape
-                )
-        ) {
-            // header content
-        }
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        hazeState = hazeState,
+        hazeStyle = GlassTokens.style(),
+        fallbackColor = AppColors.cardSurfaceProminent,
+        shadowElevation = 12.dp,
+        borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f)
+    ) {
+        // header content
     }
 }
 ```
 
-#### Why two nested `Box` composables?
+#### Why the shadow needs a sibling RenderNode (historical context)
 
-`hazeEffect` installs a `RenderEffect` on the inner `graphicsLayer`. A `RenderEffect` processes only pixels within that node — it cannot composite with a shadow on the same node. The outer `Spacer` places the shadow on a completely independent `RenderNode` that draws behind the glass surface, so both are visible simultaneously.
+`hazeEffect` installs a `RenderEffect` on its `graphicsLayer`. A `RenderEffect` processes only pixels within that node and silently drops `shadowElevation` set on the same node. `GlassSurface` encodes the fix: shadow goes on a sibling `Spacer` with its own `graphicsLayer { clip = false }` behind the blur node.
 
 ---
 
 ## Pattern: Overlay Drawer (ModalNavigationDrawer)
 
-The drawer slides over the main app content, so the entire `NavHost` is the source and the drawer sheet is the effect recipient. Unlike the sticky header pattern, the `HazeState` must be provided at the **navigation graph level** so the drawer's composable subtree can access it.
+The drawer slides over the main app content, so the entire `NavHost` is the source and the drawer sheet is the effect recipient. The `HazeState` is provided at the **navigation graph level**.
 
 ### 1. NavGraph host — create `HazeState`, wrap NavHost with `hazeSource`
 
@@ -170,107 +178,70 @@ val drawerHazeState = remember { HazeState() }
 
 CompositionLocalProvider(LocalHazeState provides drawerHazeState) {
     ModalNavigationDrawer(
-        drawerContent = { AppDrawerContent(…) }  // reads LocalHazeState internally
+        drawerContent = { AppDrawerContent(…) }
     ) {
         Box(modifier = Modifier.fillMaxSize().hazeSource(drawerHazeState)) {
             NavHost(…)
         }
-        BackHandler(…)
     }
 }
 ```
 
-**Important:** Name this state something specific (`drawerHazeState`) to avoid confusion — screens inside the `NavHost` create their own `HazeState` for list headers. Compose's `CompositionLocalProvider` scoping handles the override correctly: screens provide their own `LocalHazeState` locally, which takes precedence over the nav-graph-level one within their subtree.
+**Important:** Name this state something specific (`drawerHazeState`) to avoid confusion — screens inside the `NavHost` create their own `HazeState` for list headers. `CompositionLocalProvider` scoping handles the override correctly.
 
-### 2. Drawer content — replace `ModalDrawerSheet` with custom glass container
+### 2. Drawer content — use `GlassSurface`
 
-`ModalDrawerSheet` does not support `hazeEffect` directly — its `Surface` owns the clip shape. Replacing it with `Box(width=280.dp, fillMaxHeight)` gives full control. Window insets are handled via `DrawerDefaults.windowInsets`:
+`ModalDrawerSheet` does not support `hazeEffect` directly — its `Surface` owns the clip shape. `AppDrawerContent` replaces it with `GlassSurface`:
 
 ```kotlin
 @Composable
 fun AppDrawerContent(…) {
     val hazeState = LocalHazeState.current
-    val glassEnabled = LocalGlassmorphismEnabled.current
     val isDark = isSystemInDarkTheme()
     val drawerShape = RoundedCornerShape(topEnd = …, bottomEnd = …)
 
-    Box(modifier = Modifier.width(280.dp).fillMaxHeight()) {
-
-        // Shadow on its own RenderNode (same rule as the sticky header)
-        if (glassEnabled) {
-            Spacer(
-                modifier = Modifier.matchParentSize().graphicsLayer {
-                    shape = drawerShape; clip = false
-                    shadowElevation = 16.dp.toPx()
-                    ambientShadowColor = Color.Black.copy(alpha = 0.08f)
-                    spotShadowColor = Color.Black.copy(alpha = 0.18f)
-                }
-            )
-        }
-
-        Box(
+    GlassSurface(
+        modifier = Modifier.width(280.dp).fillMaxHeight(),
+        shape = drawerShape,
+        hazeState = hazeState,
+        hazeStyle = GlassTokens.drawerStyle(),
+        fallbackColor = AppColors.drawerSurface,
+        shadowElevation = 16.dp,
+        ambientShadowAlpha = 0.08f,
+        spotShadowAlpha = 0.18f,
+        borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.50f)
+    ) {
+        Column(
             modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer { shape = drawerShape; clip = true }
-                .background(AppColors.drawerSurface, drawerShape)
-                .then(
-                    if (glassEnabled && hazeState != null)
-                        Modifier.hazeEffect(hazeState, GlassTokens.style())
-                    else Modifier
-                )
-                .border(0.5.dp, borderColor, drawerShape)
+                .fillMaxSize()
+                .windowInsetsPadding(DrawerDefaults.windowInsets)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(DrawerDefaults.windowInsets)
-            ) {
-                // … drawer content unchanged
-            }
+            // … drawer content
         }
     }
 }
 ```
 
-**Why `DrawerDefaults.windowInsets`?** `ModalDrawerSheet` applied window insets internally via its `Surface`. After replacing it, the Column must call `.windowInsetsPadding(DrawerDefaults.windowInsets)` explicitly — otherwise the profile header overlaps the status bar on edge-to-edge displays.
+**Why `DrawerDefaults.windowInsets`?** `ModalDrawerSheet` applied window insets internally via its `Surface`. After replacing it, the Column must call `.windowInsetsPadding(DrawerDefaults.windowInsets)` explicitly.
 
 ---
 
 ## Pattern: Floating Card with Glass Background
 
-For non-scrolling glass cards (e.g., a modal card floating over a background):
+For non-scrolling glass cards (e.g., dashboard cards over a background):
 
-1. The _parent_ composable that owns the blurred background marks itself (or its children) with `hazeSource(hazeState)`.
-2. The floating card reads `LocalHazeState.current` and applies `hazeEffect`.
-3. If there is no ambient `LocalHazeState` (i.e. the card is used in a screen that hasn't set one up), the effect silently degrades to the solid `cardSurfaceProminent` background because of the `.background(…)` call before `.hazeEffect(…)`.
-
-This graceful degradation is **intentional** — always apply the base background colour before `hazeEffect` so the component looks correct with or without Haze.
+1. The _parent_ composable marks its background with `hazeSource(hazeState)`.
+2. The card passes `LocalCardHazeState.current` to `GlassSurface`.
+3. `GlassSurface` always renders `fallbackColor` first, so the card looks correct on screens that haven't wired up a hazeSource.
 
 ---
 
 ## Applying Glass to a New Component — Checklist
 
 1. **Decide the blur source.** What content should bleed through the glass? That content gets `.hazeSource(hazeState)`.
-2. **Create `HazeState` in the nearest common ancestor** that owns both source and effect. Provide it via `CompositionLocalProvider(LocalHazeState provides hazeState)`.
-3. **In the glass composable**, read both locals:
-   ```kotlin
-   val hazeState = LocalHazeState.current
-   val glassEnabled = LocalGlassmorphismEnabled.current
-   ```
-4. **Apply the modifier stack in order:**
-   ```kotlin
-   Modifier
-       .graphicsLayer { shape = yourShape; clip = true }
-       .background(AppColors.cardSurfaceProminent, yourShape)   // fallback always present
-       .then(
-           if (glassEnabled && hazeState != null)
-               Modifier.hazeEffect(hazeState, GlassTokens.style())
-           else Modifier
-       )
-       .border(0.5.dp, borderColor, yourShape)
-   ```
-5. **If you need an elevation shadow**, add a sibling `Spacer` with its own `graphicsLayer { shadowElevation = … }` — do NOT put it on the same `graphicsLayer` as the `hazeEffect`.
-6. **Gate on `glassEnabled`** everywhere (shadow spacer, hazeEffect, and hazeSource are all unnecessary when disabled).
+2. **Create `HazeState` in the nearest common ancestor.** Provide via `CompositionLocalProvider` using the appropriate `Local*HazeState`.
+3. **Call `GlassSurface`** in the glass composable — pass the relevant `Local*HazeState.current`, choose a `GlassTokens.*Style()`, and set `borderColor` for a white-alpha rim.
+4. **Do not write the two-sibling pattern inline.** `GlassSurface` encodes it correctly and prevents future drift.
 
 ---
 

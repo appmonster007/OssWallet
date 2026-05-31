@@ -106,6 +106,9 @@ abstract class TransactionDao {
     @Query("DELETE FROM transactions")
     abstract suspend fun clearAll()
 
+    @Query("DELETE FROM transaction_tag_cross_ref")
+    abstract suspend fun clearAllCrossRefs()
+
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
     abstract suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
 

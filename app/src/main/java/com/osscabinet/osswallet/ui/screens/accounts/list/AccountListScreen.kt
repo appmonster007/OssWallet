@@ -80,6 +80,7 @@ fun AccountListScreen(
     viewModel: AccountViewModel
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val balances by viewModel.accountBalances.collectAsStateWithLifecycle()
     var editList by remember { mutableStateOf(emptyList<Account>()) }
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -137,9 +138,11 @@ fun AccountListScreen(
                             account.name,
                             style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold)
                         )
+                        val balance = balances[account.id] ?: BigDecimal.ZERO
                         Text(
-                            formatAuto(BigDecimal.ZERO, account.currencyCode),
-                            style = AppTextStyles.caption
+                            formatAuto(balance, account.currencyCode),
+                            style = AppTextStyles.caption,
+                            color = if (balance < BigDecimal.ZERO) AppColors.error else AppColors.contentPrimary
                         )
                     }
                 }

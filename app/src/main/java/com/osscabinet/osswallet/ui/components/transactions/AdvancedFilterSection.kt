@@ -128,7 +128,7 @@ fun AdvancedFilterSection(
         }
 
         // Timeline Section
-        if (filterRules.allowTimelineSelection) {
+        if (filterRules.timelineRule.isVisible) {
             Text(
                 "TIMELINE",
                 style = AppTextStyles.transactionSwipeAction.copy(

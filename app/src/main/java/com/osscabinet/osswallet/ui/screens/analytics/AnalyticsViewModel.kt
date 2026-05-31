@@ -170,7 +170,7 @@ class AnalyticsViewModel @Inject constructor(
                 plannedPayments = state.plannedPayments,
                 budgets = state.budgets,
                 loans = state.loans,
-                filter = if (commonEnabled) sf else TransactionFilter(),
+                filter = if (commonEnabled) sf else TransactionFilter(excludeFuture = true),
                 screenContext = ScreenContext.ANALYTICS,
                 commonFilterEnabled = commonEnabled
             )

@@ -40,21 +40,26 @@ data class CardFilterRules(
     /** Rules for tag selection. */
     val tagRule: CategoricalRule<String> = CategoricalRule.Open(),
 
-    // --- UI Permissions (Controls whether specific filter UI elements are visible/enabled) ---
-    val allowAccountSelection: Boolean = true,
-    val allowCategorySelection: Boolean = true,
-    val allowStatusSelection: Boolean = true,
-    val allowSearch: Boolean = true,
-    val allowAmountRange: Boolean = true,
-    val allowCurrencySelection: Boolean = true,
-    val allowPaymentMethodSelection: Boolean = true,
-    val allowTimelineSelection: Boolean = true,
-    val allowTimelineCustomRange: Boolean = true,
-    val allowTagSelection: Boolean = true,
+    /** Rules for payment method selection. */
+    val paymentMethodRule: CategoricalRule<com.osscabinet.ossWallet.domain.model.PaymentMethod> = CategoricalRule.Open(),
+
+    /** Rules for warranty selection. */
+    val warrantyRule: ToggleRule = ToggleRule.UserControlled,
+
+    /** Rules for linked records. */
+    val linkedRecordsRule: ToggleRule = ToggleRule.UserControlled,
+
+    /** Rules for searching (Query). Unified rule for note/payee fields. */
+    val searchRule: ToggleRule = ToggleRule.UserControlled,
+
+    /** Rules for timeline/date selection. */
+    val timelineRule: ScalarRule<com.osscabinet.ossWallet.domain.model.timeline.TimelineRange> = ScalarRule.Open(),
+
+    /** Flag for allowing tag creation. Relies on [tagRule] being editable. */
     val allowTagCreation: Boolean = true,
-    val allowFutureTransactionsToggle: Boolean = true,
-    val allowWarrantySelection: Boolean = true,
-    val allowLinkedRecords: Boolean = true
+
+    /** Flag for allowing custom date ranges. Relies on [timelineRule] being editable. */
+    val allowTimelineCustomRange: Boolean = true
 ) {
     /**
      * Normalizes a candidate filter against these rules.
@@ -70,7 +75,13 @@ data class CardFilterRules(
             minAmount = amountRule.applyMin(candidate.minAmount),
             maxAmount = amountRule.applyMax(candidate.maxAmount),
             currencies = currencyRule.apply(candidate.currencies),
-            tags = tagRule.apply(candidate.tags)
+            tags = tagRule.apply(candidate.tags),
+            paymentMethods = paymentMethodRule.apply(candidate.paymentMethods),
+            timelineRange = timelineRule.apply(candidate.timelineRange),
+            queryNote = if (searchRule.isVisible) candidate.queryNote else null,
+            queryPayee = if (searchRule.isVisible) candidate.queryPayee else null,
+            hasWarranty = if (warrantyRule.isVisible) candidate.hasWarranty else null,
+            linkedTransactionIds = if (linkedRecordsRule.isVisible) candidate.linkedTransactionIds else emptySet()
         )
     }
 
@@ -89,22 +100,14 @@ data class CardFilterRules(
             amountRule = amountRule.merge(constraints.amountRule),
             currencyRule = currencyRule.merge(constraints.currencyRule),
             tagRule = tagRule.merge(constraints.tagRule),
+            paymentMethodRule = paymentMethodRule.merge(constraints.paymentMethodRule),
+            warrantyRule = warrantyRule.merge(constraints.warrantyRule),
+            linkedRecordsRule = linkedRecordsRule.merge(constraints.linkedRecordsRule),
+            searchRule = searchRule.merge(constraints.searchRule),
+            timelineRule = timelineRule.merge(constraints.timelineRule),
 
-            // UI Permissions merge via logical AND
-            allowAccountSelection = allowAccountSelection && constraints.allowAccountSelection,
-            allowCategorySelection = allowCategorySelection && constraints.allowCategorySelection,
-            allowStatusSelection = allowStatusSelection && constraints.allowStatusSelection,
-            allowSearch = allowSearch && constraints.allowSearch,
-            allowAmountRange = allowAmountRange && constraints.allowAmountRange,
-            allowCurrencySelection = allowCurrencySelection && constraints.allowCurrencySelection,
-            allowPaymentMethodSelection = allowPaymentMethodSelection && constraints.allowPaymentMethodSelection,
-            allowTimelineSelection = allowTimelineSelection && constraints.allowTimelineSelection,
-            allowTimelineCustomRange = allowTimelineCustomRange && constraints.allowTimelineCustomRange,
-            allowTagSelection = allowTagSelection && constraints.allowTagSelection,
             allowTagCreation = allowTagCreation && constraints.allowTagCreation,
-            allowFutureTransactionsToggle = allowFutureTransactionsToggle && constraints.allowFutureTransactionsToggle,
-            allowWarrantySelection = allowWarrantySelection && constraints.allowWarrantySelection,
-            allowLinkedRecords = allowLinkedRecords && constraints.allowLinkedRecords
+            allowTimelineCustomRange = allowTimelineCustomRange && constraints.allowTimelineCustomRange
         )
     }
 
@@ -130,12 +133,12 @@ data class CardFilterRules(
         /** Rules for cards where category selection is locked to Income/Expense types. */
         val SPENDING_LOCKED_CATEGORIES = CardFilterRules(
             typeRule = CategoricalRule.Limited(setOf(TransactionType.INCOME, TransactionType.EXPENSE)),
-            allowCategorySelection = false
+            categoryRule = CategoricalRule.Disabled()
         )
 
         /** Constraint profile for Account-scoped screens. */
         val ACCOUNT_LOCKED = CardFilterRules(
-            allowAccountSelection = false
+            accountRule = CategoricalRule.Disabled()
         )
     }
 }
@@ -148,6 +151,12 @@ data class CardFilterRules(
 sealed class CategoricalRule<T> {
     abstract fun apply(current: Set<T>): Set<T>
     abstract fun merge(other: CategoricalRule<T>): CategoricalRule<T>
+
+    abstract val isLocked: Boolean
+    abstract val lockedValues: Set<T>
+
+    open val isUserEditable: Boolean get() = !isLocked
+    open val isVisible: Boolean get() = true
 
     /** No restrictions. */
     class Open<T> : CategoricalRule<T>() {
@@ -205,10 +214,9 @@ sealed class CategoricalRule<T> {
         override fun merge(other: CategoricalRule<T>) = this
         override val isLocked: Boolean = true
         override val lockedValues: Set<T> = emptySet()
+        override val isUserEditable: Boolean = false
+        override val isVisible: Boolean = false
     }
-
-    abstract val isLocked: Boolean
-    abstract val lockedValues: Set<T>
 }
 
 /**
@@ -219,10 +227,15 @@ sealed class RangeRule<T : Comparable<T>> {
     abstract fun applyMax(current: T?): T?
     abstract fun merge(other: RangeRule<T>): RangeRule<T>
 
+    abstract val isLocked: Boolean
+    open val isUserEditable: Boolean get() = !isLocked
+    open val isVisible: Boolean get() = true
+
     class Open<T : Comparable<T>> : RangeRule<T>() {
         override fun applyMin(current: T?) = current
         override fun applyMax(current: T?) = current
         override fun merge(other: RangeRule<T>) = other
+        override val isLocked: Boolean = false
     }
 
     /** Ensures the range stays within [minBoundary] and [maxBoundary]. */
@@ -250,6 +263,7 @@ sealed class RangeRule<T : Comparable<T>> {
                 maxBoundary = mergeMax(maxBoundary, other.maxBoundary)
             )
             is Fixed -> other.merge(this)
+            is Disabled -> other
         }
 
         private fun mergeMin(a: T?, b: T?): T? = when {
@@ -263,13 +277,29 @@ sealed class RangeRule<T : Comparable<T>> {
             b == null -> a
             else -> if (a < b) a else b
         }
+
+        override val isLocked: Boolean = false
     }
 
     /** Hard override. The range is always exactly [min] to [max]. */
     data class Fixed<T : Comparable<T>>(val min: T?, val max: T?) : RangeRule<T>() {
         override fun applyMin(current: T?) = min
         override fun applyMax(current: T?) = max
+        override fun merge(other: RangeRule<T>) = when(other) {
+            is Disabled -> other
+            else -> this
+        }
+        override val isLocked: Boolean = true
+    }
+
+    /** Effectively acts as "Hide All" or "Ignore Filter" for this field. */
+    class Disabled<T : Comparable<T>> : RangeRule<T>() {
+        override fun applyMin(current: T?) = null
+        override fun applyMax(current: T?) = null
         override fun merge(other: RangeRule<T>) = this
+        override val isLocked: Boolean = true
+        override val isUserEditable: Boolean = false
+        override val isVisible: Boolean = false
     }
 }
 
@@ -280,13 +310,65 @@ sealed class ToggleRule {
     abstract fun apply(current: Boolean): Boolean
     abstract fun merge(other: ToggleRule): ToggleRule
 
+    abstract val isLocked: Boolean
+    open val isUserEditable: Boolean get() = !isLocked
+    open val isVisible: Boolean get() = true
+
     object UserControlled : ToggleRule() {
         override fun apply(current: Boolean) = current
         override fun merge(other: ToggleRule) = other
+        override val isLocked: Boolean = false
     }
 
     data class Forced(val value: Boolean) : ToggleRule() {
         override fun apply(current: Boolean) = value
+        override fun merge(other: ToggleRule) = when(other) {
+            is Disabled -> other
+            else -> this
+        }
+        override val isLocked: Boolean = true
+    }
+
+    object Disabled : ToggleRule() {
+        override fun apply(current: Boolean) = false
         override fun merge(other: ToggleRule) = this
+        override val isLocked: Boolean = true
+        override val isUserEditable: Boolean = false
+        override val isVisible: Boolean = false
+    }
+}
+
+/**
+ * Logic for scalar values (e.g. Search Query, Timeline Range).
+ */
+sealed class ScalarRule<T> {
+    abstract fun apply(current: T): T
+    abstract fun merge(other: ScalarRule<T>): ScalarRule<T>
+
+    abstract val isLocked: Boolean
+    open val isUserEditable: Boolean get() = !isLocked
+    open val isVisible: Boolean get() = true
+
+    class Open<T> : ScalarRule<T>() {
+        override fun apply(current: T) = current
+        override fun merge(other: ScalarRule<T>) = other
+        override val isLocked: Boolean = false
+    }
+
+    data class Locked<T>(val forced: T) : ScalarRule<T>() {
+        override fun apply(current: T) = forced
+        override fun merge(other: ScalarRule<T>) = when(other) {
+            is Disabled -> other
+            else -> this
+        }
+        override val isLocked: Boolean = true
+    }
+
+    class Disabled<T>(val defaultValue: T) : ScalarRule<T>() {
+        override fun apply(current: T) = defaultValue
+        override fun merge(other: ScalarRule<T>) = this
+        override val isLocked: Boolean = true
+        override val isUserEditable: Boolean = false
+        override val isVisible: Boolean = false
     }
 }

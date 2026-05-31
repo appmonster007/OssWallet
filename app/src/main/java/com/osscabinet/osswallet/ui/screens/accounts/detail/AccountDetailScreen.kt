@@ -165,6 +165,14 @@ fun AccountDetailScreen(
     )
 
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
+
+    // EVACUATION: Pop back if the account is deleted (e.g. from an edit screen)
+    LaunchedEffect(uiState) {
+        if (uiState is AccountDetailUiState.Error) {
+            onBackClick()
+        }
+    }
+
     val scope = rememberCoroutineScope()
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
@@ -628,8 +636,10 @@ fun DynamicAccountDetailCards(
         )
     }
 
-    val accountScopeFilter = state.currentFilter
-    val sharedCardInput = remember(state, accountScopeFilter) {
+    val accountLockFilter = remember(state.account.id) {
+        TransactionFilter(accountIds = setOf(state.account.id))
+    }
+    val sharedCardInput = remember(state, state.currentFilter) {
         CardInput(
             profileId = state.profileId,
             transactions = state.allAccountTransactions,
@@ -640,7 +650,7 @@ fun DynamicAccountDetailCards(
             exchangeRates = state.exchangeRates,
             baseCurrency = state.baseCurrency,
             displayCurrency = state.account.currencyCode,
-            filter = accountScopeFilter,
+            filter = state.currentFilter,
             screenContext = ScreenContext.ACCOUNT_DETAIL
             // TODO: add budgets/loans/plannedPayments when AccountDetailViewModel fetches them
         )
@@ -675,9 +685,8 @@ fun DynamicAccountDetailCards(
                 onSearchTransactions = transactionViewModel::searchTransactions
             ),
             callbacks = sharedCallbacks,
-            baseFilter = accountScopeFilter,
-            screenRules = CardFilterRules.ACCOUNT_LOCKED,
-            disableFilterSheet = true
+            baseFilter = accountLockFilter,
+            screenRules = CardFilterRules.ACCOUNT_LOCKED
         )
     }
 

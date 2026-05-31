@@ -56,8 +56,6 @@ fun NavGraphBuilder.settingsGraph(
             onFiltersClick = { navController.navigate(FilterListRoute) },
             onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
             onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
-            onAboutClick = { /* Maybe navigate to about or just toast */ },
-            onDeleteAllClick = { navController.navigate(SettingsDataManagementRoute) }, // Or directly to a specific action
             onBackClick = { navController.popBackStack() }
         )
     }

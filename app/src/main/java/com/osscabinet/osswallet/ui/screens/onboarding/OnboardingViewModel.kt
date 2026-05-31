@@ -2,6 +2,10 @@ package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.BuildConfig
+import com.osscabinet.ossWallet.data.local.AppDatabase
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -9,6 +13,8 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadat
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -32,7 +38,9 @@ data class OnboardingState(
     val availableCurrencies: List<CurrencyMetadata> = emptyList(),
     val currenciesPerProvider: Map<String, List<CurrencyMetadata>> = emptyMap(),
     val shortlistedCurrencies: Set<String> = emptySet(),
-    val isCompleting: Boolean = false
+    val isCompleting: Boolean = false,
+    val showDebugSeedStep: Boolean = false,
+    val isSeeding: Boolean = false
 )
 
 sealed class OnboardingEvent {
@@ -43,18 +51,23 @@ sealed class OnboardingEvent {
     data class PrecisionSelected(val precision: Int) : OnboardingEvent()
     data class ShortlistedCurrenciesChanged(val currencies: Set<String>) : OnboardingEvent()
     object CompleteOnboarding : OnboardingEvent()
+    object SeedDataRequested : OnboardingEvent()
 }
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
-    private val providerRegistry: ExchangeRateProviderRegistry
+    private val providerRegistry: ExchangeRateProviderRegistry,
+    private val database: AppDatabase,
+    private val settingsDataStore: SettingsDataStore,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         OnboardingState(
-            availableProviders = providerRegistry.getAllProviders()
+            availableProviders = providerRegistry.getAllProviders(),
+            showDebugSeedStep = BuildConfig.ENABLE_SEEDING
         )
     )
     val uiState: StateFlow<OnboardingState> = _uiState.asStateFlow()
@@ -126,6 +139,24 @@ class OnboardingViewModel @Inject constructor(
 
             OnboardingEvent.CompleteOnboarding -> {
                 completeOnboarding()
+            }
+
+            OnboardingEvent.SeedDataRequested -> {
+                seedData()
+            }
+        }
+    }
+
+    private fun seedData() {
+        if (_uiState.value.isSeeding) return
+        _uiState.update { it.copy(isSeeding = true) }
+        viewModelScope.launch {
+            try {
+                SeedingConfig.triggerManualSeeding(database, settingsDataStore, context)
+                settingsRepository.saveOnboardingCompleted(true)
+                _onboardingCompleted.emit(Unit)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSeeding = false) }
             }
         }
     }

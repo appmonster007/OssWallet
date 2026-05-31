@@ -256,6 +256,12 @@ fun UnifiedCardRenderer(
                 callbacks = cb,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
+                onFilterChange = { cb.onFilterChange.invoke(renderData.config.cardId, it) },
+                onSaveFilterClick = cb.onSaveFilterClick,
+                filterContext = filterContext,
+                inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
             )

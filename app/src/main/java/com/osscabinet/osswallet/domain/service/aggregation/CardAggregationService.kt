@@ -240,19 +240,25 @@ object CardAggregationService {
         val account = input.accounts.find { it.id == targetAccountId }
             ?: error("Account not found: $targetAccountId")
 
-        // Lifetime balance (base scope)
-        val baseFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).copy(excludeFuture = true, timelineRange = TimelineRange.AllTime)
+        // Period summary
+        val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        
+        // Lifetime balance (base scope) - Always show the true account balance.
+        // We ignore inherited category/tag filters here because this is the "Identity" card of the account.
+        // We honor excludeFuture toggle if it's part of the card/screen filter.
+        val baseFilter = TransactionFilter(
+            accountIds = setOf(targetAccountId),
+            timelineRange = TimelineRange.AllTime,
+            excludeFuture = periodFilter.excludeFuture
+        )
         val lifetimeSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
             .getOrDefault(emptyMap())
-        
+
         val lifetimeSummary = CurrencyService.calculateTotalFinancialSummary(
             lifetimeSummariesByCurrency,
             account.currencyCode,
             input.exchangeRates
         )
-
-        // Period summary
-        val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).copy(excludeFuture = true)
         val periodSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, periodFilter)
             .getOrDefault(emptyMap())
 

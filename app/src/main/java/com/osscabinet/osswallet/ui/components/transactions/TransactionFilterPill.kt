@@ -48,6 +48,10 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.ToggleRule
+import com.osscabinet.ossWallet.domain.card.CategoricalRule
+import com.osscabinet.ossWallet.domain.card.RangeRule
+import com.osscabinet.ossWallet.domain.card.ScalarRule
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -329,7 +333,7 @@ fun TransactionFilterPill(
                             { it.id },
                             { it.name })
                     },
-                    filterRules = filterRules.copy(allowTimelineSelection = false),
+                    filterRules = filterRules.copy(timelineRule = ScalarRule.Disabled(filter.timelineRange)),
                     baseFilter = baseFilter
                 )
             }

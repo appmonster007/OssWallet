@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.net.toUri
 import androidx.room.withTransaction
 import com.osscabinet.ossWallet.data.local.AppDatabase
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
@@ -43,6 +44,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.model.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -74,6 +76,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val filterDao: FilterDao,
     private val currencyDao: CurrencyDao,
     private val database: AppDatabase,
+    private val settingsDataStore: SettingsDataStore,
     @ApplicationContext private val context: Context
 ) : BackupRepository {
 
@@ -480,6 +483,77 @@ class BackupRepositoryImpl @Inject constructor(
                 Result.failure(e)
             }
         }
+
+    override suspend fun deleteAllData(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            database.withTransaction {
+                // 1. Clear linked/junction tables first (no dependencies)
+                transactionLinkDao.clearAll()
+                transactionDao.clearAllCrossRefs()
+
+                // 2. Clear dependent data (references accounts/categories/loans)
+                loanPaymentDao.clearAll()
+                plannedPaymentOccurrenceDao.clearAll()
+
+                // 3. Clear data that references categories (due to RESTRICT)
+                transactionDao.clearAll()
+                templateDao.clearAll()
+                budgetDao.clearAll()
+
+                // 4. Clear base entities (reference profile)
+                loanDao.clearAll()
+                plannedPaymentDao.clearAll()
+                accountDao.clearAll()
+                filterDao.clearAll()
+
+                // 5. Clear infrastructure
+                tagDao.clearAll()
+                // 5. Clear infrastructure
+                tagDao.clearAll()
+                categoryDao.clearAll()
+                currencyDao.deleteAllRates()
+
+                // 6. Clear profiles last
+                profileDao.clearAll()
+
+                // 7. Re-seed essential system categories (Reserved IDs)
+                SystemCategory.entries.forEach { sc ->
+                    categoryDao.insertCategory(
+                        CategoryEntity(
+                            id = sc.id,
+                            name = sc.displayName,
+                            iconName = sc.iconName,
+                            colorHex = sc.colorHex,
+                            isDefault = true,
+                            parentId = sc.parentId,
+                            nature = sc.nature
+                        )
+                    )
+                }
+
+                // 8. Re-seed system tags
+                SystemTag.entries.forEach { st ->
+                    tagDao.insertTag(
+                        TagEntity(
+                            id = st.id,
+                            name = st.tagName,
+                            colorHex = st.colorHex
+                        )
+                    )
+                }
+            }
+
+            // 9. Clear user preferences
+            settingsDataStore.clearAll()
+
+            // 10. Force process kill to ensure fresh state on next launch
+            android.os.Process.killProcess(android.os.Process.myPid())
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     private fun restoreSqliteBackup(inputStream: InputStream) {
         val dbFile = context.getDatabasePath("osswallet_manager_db")

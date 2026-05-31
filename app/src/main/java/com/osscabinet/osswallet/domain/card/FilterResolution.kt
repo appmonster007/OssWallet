@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
  * Resolves the effective filter for a card computation.
@@ -20,12 +19,13 @@ fun resolveEffectiveFilter(
     filterRules: CardFilterRules,
     screenOwnsTimeline: Boolean = false
 ): TransactionFilter {
-    val candidate = inheritedFilter.merge(cardFilter).let { merged ->
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime) {
-            merged.copy(timelineRange = inheritedFilter.timelineRange)
-        } else {
-            merged
-        }
+    val candidate = if (screenOwnsTimeline) {
+        // Screen timeline is authoritative (central filter behavior)
+        inheritedFilter.merge(cardFilter).copy(timelineRange = inheritedFilter.timelineRange)
+    } else {
+        // Card timeline is authoritative if specified, otherwise inherits from screen.
+        // TransactionFilter.merge(other) uses other.timelineRange, which is what we want.
+        inheritedFilter.merge(cardFilter)
     }
     return filterRules.normalize(candidate)
 }

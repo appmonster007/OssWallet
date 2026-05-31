@@ -61,7 +61,7 @@ object UseCaseModule {
                 CurrencyBalancesCardComputer(databaseQueryService),
                 AccountsCardComputer(databaseQueryService),
                 AccountHeroCardComputer(databaseQueryService),
-                RecentActivitiesCardComputer(databaseQueryService),
+                RecentActivitiesCardComputer(),
                 BudgetsCardComputer(),
                 LoansCardComputer(),
                 PlannedPaymentsCardComputer(),

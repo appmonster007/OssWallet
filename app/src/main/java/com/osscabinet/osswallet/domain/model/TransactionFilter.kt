@@ -59,7 +59,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         hasWarranty = other.hasWarranty ?: this.hasWarranty,
         warrantyExpirationStart = other.warrantyExpirationStart ?: this.warrantyExpirationStart,
         warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd,
-        excludeFuture = this.excludeFuture && other.excludeFuture
+        excludeFuture = other.excludeFuture
     )
 }
 

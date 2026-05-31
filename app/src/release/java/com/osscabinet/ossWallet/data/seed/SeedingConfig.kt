@@ -13,4 +13,12 @@ object SeedingConfig {
     ) {
         // no-op in release builds
     }
+
+    suspend fun triggerManualSeeding(
+        database: AppDatabase,
+        settingsDataStore: SettingsDataStore,
+        context: Context
+    ) {
+        // no-op in release builds
+    }
 }

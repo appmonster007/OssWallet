@@ -7,4 +7,5 @@ enum class BackupType {
 interface BackupRepository {
     suspend fun exportData(uriString: String, type: BackupType): Result<Unit>
     suspend fun importData(uriString: String, type: BackupType): Result<Unit>
+    suspend fun deleteAllData(): Result<Unit>
 }

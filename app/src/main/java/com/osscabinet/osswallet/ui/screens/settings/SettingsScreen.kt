@@ -18,9 +18,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CurrencyExchange
-import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,8 +57,6 @@ fun SettingsScreen(
     onFiltersClick: () -> Unit,
     onSecurityClick: () -> Unit,
     onDataManagementClick: () -> Unit,
-    onAboutClick: () -> Unit,
-    onDeleteAllClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
@@ -168,29 +164,28 @@ fun SettingsScreen(
                 )
             }
 
-            AeonSettingsSection("APP INFO") {
-                SettingsNavigationItem(
-                    title = "About OssWallet",
-                    subtitle = "Version 1.1.0 • Built for Modern Accounts",
-                    icon = Icons.Rounded.Info,
-                    onClick = onAboutClick
-                )
-                SettingsDivider()
-                SettingsNavigationItem(
-                    title = "Danger Zone",
-                    subtitle = "Clear all data permanently",
-                    icon = Icons.Rounded.DeleteForever,
-                    color = AppColors.error,
-                    onClick = onDeleteAllClick
-                )
-            }
-
-            Spacer(modifier = Modifier.height(scrollBottomPadding()))
+//            Spacer(modifier = Modifier.height(scrollBottomPadding()))
 
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = AeonTheme.dimensions.spacingLg),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
             ) {
+                Text(
+                    text = "OssWallet v1.1.0",
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                    color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = "Built for Modern Accounts",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                )
+
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+
                 Text(
                     "Currency rates provided by",
                     style = AppTextStyles.transactionSwipeAction,

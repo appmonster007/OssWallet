@@ -205,7 +205,7 @@ fun FilterSheetContent(
         }
 
         // 2. Timeline Selector
-        if (filterRules.allowTimelineSelection) {
+        if (filterRules.timelineRule.isVisible) {
             AeonTimelinePeriodSelector(
                 currentRange = localFilter.timelineRange,
                 onRangeSelected = { range ->
@@ -220,11 +220,12 @@ fun FilterSheetContent(
         }
 
         // 3. Future Transactions Toggle
-        if (filterRules.allowFutureTransactionsToggle) {
+        if (filterRules.futureToggleRule.isVisible) {
             EntrySwitchRow(
                 icon = Icons.Default.Update,
                 label = "Show Future Transactions",
                 checked = !localFilter.excludeFuture,
+                enabled = filterRules.futureToggleRule.isUserEditable,
                 onCheckedChange = {
                     localFilter = localFilter.copy(excludeFuture = !it)
                     applyFilterWithDebounce(localFilter, debounceMs = 0)

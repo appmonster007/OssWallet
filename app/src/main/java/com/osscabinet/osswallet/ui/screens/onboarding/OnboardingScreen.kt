@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.Badge
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
@@ -116,7 +117,7 @@ fun OnboardingContent(
     uiState: OnboardingState,
     onEvent: (OnboardingEvent) -> Unit,
 ) {
-    val totalSteps = 5
+    val totalSteps = if (uiState.showDebugSeedStep) 6 else 5
     val pagerState = rememberPagerState { totalSteps }
     val scope = rememberCoroutineScope()
 
@@ -174,42 +175,87 @@ fun OnboardingContent(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(
-                            onClick = {
-                                if (pagerState.currentPage < totalSteps - 1) {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        // In Seed step, we don't use the standard NEXT button if they choose to seed
+                        val isSeedStep = uiState.showDebugSeedStep && pagerState.currentPage == 0
+
+                        if (!isSeedStep) {
+                            Button(
+                                onClick = {
+                                    if (pagerState.currentPage < totalSteps - 1) {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                        }
+                                    } else {
+                                        onEvent(OnboardingEvent.CompleteOnboarding)
                                     }
+                                },
+                                enabled = !uiState.isCompleting && !uiState.isSeeding,
+                                modifier = Modifier.height(56.dp),
+                                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AppColors.primary,
+                                    contentColor = AppColors.onPrimary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 24.dp)
+                            ) {
+                                if (uiState.isCompleting) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = AppColors.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
                                 } else {
-                                    onEvent(OnboardingEvent.CompleteOnboarding)
+                                    Text(
+                                        if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
+                                        style = AppTextStyles.listSectionHeader
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
-                            },
-                            enabled = !uiState.isCompleting,
-                            modifier = Modifier.height(56.dp),
-                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.primary,
-                                contentColor = AppColors.onPrimary
-                            ),
-                            contentPadding = PaddingValues(horizontal = 24.dp)
-                        ) {
-                            if (uiState.isCompleting) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = AppColors.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text(
-                                    if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
-                                    style = AppTextStyles.listSectionHeader
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                            }
+                        } else {
+                            // On Step 0 (Seed Step), we show skip or seed
+                            Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(1)
+                                        }
+                                    },
+                                    modifier = Modifier.height(56.dp),
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = AppColors.cardSurface,
+                                        contentColor = AppColors.contentPrimary
+                                    )
+                                ) {
+                                    Text("SKIP SEEDING", style = AppTextStyles.listSectionHeader)
+                                }
+
+                                Button(
+                                    onClick = { onEvent(OnboardingEvent.SeedDataRequested) },
+                                    enabled = !uiState.isSeeding,
+                                    modifier = Modifier.height(56.dp),
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = AppColors.primary,
+                                        contentColor = AppColors.onPrimary
+                                    )
+                                ) {
+                                    if (uiState.isSeeding) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = AppColors.onPrimary,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Text("SEED DEBUG DATA", style = AppTextStyles.listSectionHeader)
+                                    }
+                                }
                             }
                         }
                     }
@@ -222,46 +268,53 @@ fun OnboardingContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            beyondViewportPageCount = 1
+            beyondViewportPageCount = 1,
+            userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting
         ) { page ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = AeonTheme.dimensions.spacingXl)
             ) {
-                when (page) {
-                    0 -> WelcomeStep()
-                    1 -> ProfileStep(
-                        userName = uiState.userName,
-                        onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
-                    )
+                val actualPage = if (uiState.showDebugSeedStep) page - 1 else page
 
-                    2 -> ProviderStep(
-                        selectedProviderId = uiState.selectedProviderId,
-                        availableProviders = uiState.availableProviders,
-                        onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
-                    )
+                if (uiState.showDebugSeedStep && page == 0) {
+                    SeedStep()
+                } else {
+                    when (actualPage) {
+                        0 -> WelcomeStep()
+                        1 -> ProfileStep(
+                            userName = uiState.userName,
+                            onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
+                        )
 
-                    3 -> CurrenciesStep(
-                        selectedCurrency = uiState.selectedCurrency,
-                        shortlistedCurrencies = uiState.shortlistedCurrencies,
-                        availableCurrencies = uiState.availableCurrencies,
-                        onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
-                        onShortlistChanged = {
-                            onEvent(
-                                OnboardingEvent.ShortlistedCurrenciesChanged(
-                                    it
+                        2 -> ProviderStep(
+                            selectedProviderId = uiState.selectedProviderId,
+                            availableProviders = uiState.availableProviders,
+                            onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
+                        )
+
+                        3 -> CurrenciesStep(
+                            selectedCurrency = uiState.selectedCurrency,
+                            shortlistedCurrencies = uiState.shortlistedCurrencies,
+                            availableCurrencies = uiState.availableCurrencies,
+                            onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
+                            onShortlistChanged = {
+                                onEvent(
+                                    OnboardingEvent.ShortlistedCurrenciesChanged(
+                                        it
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
 
-                    4 -> AppearanceStep(
-                        selectedTheme = uiState.selectedTheme,
-                        onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
-                        selectedPrecision = uiState.decimalPrecision,
-                        onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
-                    )
+                        4 -> AppearanceStep(
+                            selectedTheme = uiState.selectedTheme,
+                            onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
+                            selectedPrecision = uiState.decimalPrecision,
+                            onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
+                        )
+                    }
                 }
             }
         }
@@ -302,6 +355,49 @@ private fun StepHeader(icon: ImageVector, title: String, description: String) {
             color = AppColors.contentSecondary.copy(alpha = 0.7f),
             lineHeight = 24.sp
         )
+    }
+}
+
+@Composable
+private fun SeedStep() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(32.dp))
+        Surface(
+            modifier = Modifier.size(120.dp),
+            shape = CircleShape,
+            color = AppColors.primary.copy(alpha = 0.1f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Rounded.BugReport,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = AppColors.primary
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(48.dp))
+        Text(
+            text = "Debug Mode Detected",
+            style = AppTextStyles.heroAmountDisplay,
+            color = AppColors.contentPrimary,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Would you like to seed the database with sample transactions, accounts, and budgets? This will skip the manual setup.",
+            style = AppTextStyles.listItemTitle,
+            color = AppColors.contentSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
 }
 

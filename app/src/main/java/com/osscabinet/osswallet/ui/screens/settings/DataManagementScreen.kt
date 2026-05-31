@@ -120,7 +120,7 @@ fun DataManagementScreen(
                 TextButton(
                     onClick = {
                         showDeleteConfirmDialog = false
-                        // viewModel.deleteAllData() // Assuming this exists or will be added
+                        viewModel.deleteAllData()
                     },
                     colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = AppColors.error)
                 ) {

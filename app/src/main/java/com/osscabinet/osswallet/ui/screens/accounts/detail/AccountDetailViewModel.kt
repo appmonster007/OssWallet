@@ -146,16 +146,14 @@ class AccountDetailViewModel @Inject constructor(
                     accounts = listOf(account),
                     exchangeRates = rates,
                     limit = Int.MAX_VALUE,
-                    excludeFuture = !settings.showPlannedPayments || currentFilter.excludeFuture
+                    excludeFuture = currentFilter.excludeFuture
                 )
 
                 // Filtered transactions for the list tab
                 val filteredTransactionsWithBalance =
                     TransactionFilterService.filterTransactionsWithBalance(
                         absoluteTransactionsWithBalance,
-                        if (!settings.showPlannedPayments) currentFilter.copy(
-                            excludeFuture = true
-                        ) else currentFilter
+                        currentFilter
                     )
 
                 val listState = TimelineService.getGroupedData(

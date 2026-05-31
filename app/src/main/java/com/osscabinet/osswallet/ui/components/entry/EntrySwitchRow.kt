@@ -37,6 +37,7 @@ fun EntrySwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     icon: ImageVector,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     subtitle: String? = null,
     iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.secondary
@@ -48,7 +49,7 @@ fun EntrySwitchRow(
     ) {
         Surface(
             shape = CircleShape,
-            color = iconContainerColor,
+            color = if (enabled) iconContainerColor else iconContainerColor.copy(alpha = 0.05f),
             modifier = Modifier.size(32.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -56,26 +57,28 @@ fun EntrySwitchRow(
                     icon,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = iconTint
+                    tint = if (enabled) iconTint else iconTint.copy(alpha = 0.4f)
                 )
             }
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = AppTextStyles.transactionAmount
+                style = AppTextStyles.transactionAmount,
+                color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.4f)
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    color = AppColors.contentSecondary.copy(alpha = if (enabled) 0.6f else 0.4f)
                 )
             }
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = AppColors.switchTrackOn
             )

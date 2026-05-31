@@ -181,7 +181,7 @@ class DashboardViewModel @Inject constructor(
                         budgets = budgets,
                         loans = loans,
                         loanPayments = loanPayments.groupBy { it.loanId },
-                        filter = TransactionFilter(),
+                        filter = TransactionFilter(excludeFuture = true),
                         screenContext = ScreenContext.DASHBOARD,
                         commonFilterEnabled = false
                     )
@@ -195,10 +195,8 @@ class DashboardViewModel @Inject constructor(
                         // Compute transactionsWithBalance
                         val activeAccountIds =
                             accounts.asSequence().filter { !it.isArchived }.map { it.id }.toSet()
-                        val now = System.currentTimeMillis()
                         val transactionsWithBalance = allTransactions
                             .asSequence()
-                            .filter { it.timestamp <= now }
                             .sortedBy { it.timestamp }
                             .groupBy { it.accountId }
                             .flatMap { (accId, accountTransactions) ->
@@ -230,11 +228,17 @@ class DashboardViewModel @Inject constructor(
                                 }
                             }
                             .filter { it.transaction.accountId in activeAccountIds }
+                            .toList()
+
+                        val now = System.currentTimeMillis()
+                        val visibleTransactions = transactionsWithBalance
+                            .filter { it.transaction.timestamp <= now } // Dashboard default: hide future
                             .sortedByDescending { it.transaction.timestamp }
+                            .take(20)
                             .toList()
 
                         val groups = TimelineService.getGroupedData(
-                            transactions = transactionsWithBalance.take(20),
+                            transactions = visibleTransactions,
                             absoluteHistory = transactionsWithBalance,
                             groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
                             accounts = accounts,

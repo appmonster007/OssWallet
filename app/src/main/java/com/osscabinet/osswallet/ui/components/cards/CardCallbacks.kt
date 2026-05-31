@@ -75,6 +75,7 @@ sealed class CardCallbacks {
      * Callbacks for account hero card
      */
     data class AccountHero(
+        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
         val onClickExpense: ((TransactionFilter) -> Unit)? = null,
         val onClickCurrency: ((String) -> Unit)? = null,

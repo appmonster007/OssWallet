@@ -43,6 +43,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.BackgroundAmoled
@@ -65,6 +66,12 @@ fun AccountHeroCard(
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
     filterRules: CardFilterRules? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
+    onFilterChange: (TransactionFilter) -> Unit = {},
+    onSaveFilterClick: (TransactionFilter) -> Unit = {},
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
+    showFilterButton: Boolean = true,
     callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero()
 ) {
     val accountColor = try {
@@ -100,10 +107,13 @@ fun AccountHeroCard(
         backgroundIcon = icon,
         modifier = modifier.clickable { callbacks.onClick?.invoke() },
         headerModifier = headerModifier,
-        filterEnabled = false,
+        filterEnabled = showFilterButton,
         filter = config.filter,
         baseFilter = baseFilter,
         filterRules = filterRules ?: config.filterRules,
+        onFilterChange = { onFilterChange(it) },
+        onSaveFilterClick = onSaveFilterClick,
+        filterContext = filterContext,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

@@ -58,8 +58,6 @@ class OssWalletApp : Application() {
         // a widget refresh via WidgetRefreshTrigger.
         widgetInvalidationObserver = WidgetInvalidationObserver(db, queryCache, widgetRefreshTrigger).also { it.start() }
 
-        SeedingConfig.launchSeedingIfEnabled(db, settingsDataStore, this)
-
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
 

@@ -107,6 +107,15 @@ class TransactionViewModel @Inject constructor(
                 com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings()
             )
 
+    init {
+        // Sync global excludeFuture setting to the records filter as the initial state
+        viewModelScope.launch {
+            val settings = settingsRepository.recordsSettings.first()
+            _initialFilter.value = _initialFilter.value.copy(excludeFuture = settings.excludeFutureTransactions)
+            recordsFilterManager.setFilter("initial", _initialFilter.value)
+        }
+    }
+
     val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> =
         settingsRepository.currentProfileId
             .flatMapLatest { accountRepository.getAllAccounts(it) }
@@ -131,9 +140,8 @@ class TransactionViewModel @Inject constructor(
                     transactionUseCases.getTransactions(profileId),
                     accounts,
                     exchangeRates,
-                    computationRepository.hasLoadedExchangeRates,
-                    recordsSettings.map { it.excludeFutureTransactions }.distinctUntilChanged()
-                ) { allTransactions, accounts, rates, hasLoadedExchangeRates, excludeFuture ->
+                    computationRepository.hasLoadedExchangeRates
+                ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
                     transactionUseCases.getRecentTransactions(
@@ -141,7 +149,7 @@ class TransactionViewModel @Inject constructor(
                         accounts = accounts,
                         exchangeRates = rates,
                         limit = Int.MAX_VALUE,
-                        excludeFuture = excludeFuture
+                        excludeFuture = false
                     )
                 }
             }.stateIn(
@@ -153,14 +161,9 @@ class TransactionViewModel @Inject constructor(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter,
-            recordsSettings.map { it.excludeFutureTransactions }.distinctUntilChanged()
-        ) { absoluteTxs, currentFilter, globalExcludeFuture ->
-            // Respect both current filter and global setting
-            val effectiveFilter = currentFilter.copy(
-                excludeFuture = currentFilter.excludeFuture && globalExcludeFuture
-            )
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
+            recordsFilter
+        ) { absoluteTxs, currentFilter ->
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, currentFilter)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -360,6 +363,14 @@ class TransactionViewModel @Inject constructor(
 
     fun updateRecordsSettings(update: (com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) -> com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) {
         viewModelScope.launch {
+            val oldSettings = recordsSettings.value
+            val newSettings = update(oldSettings)
+            
+            // If the excludeFuture toggle changed in the Top Bar, propagate it to the active filter
+            if (newSettings.excludeFutureTransactions != oldSettings.excludeFutureTransactions) {
+                updateRecordsFilter(recordsFilter.value.copy(excludeFuture = newSettings.excludeFutureTransactions))
+            }
+
             settingsRepository.updateRecordsSettings(update)
         }
     }

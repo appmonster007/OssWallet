@@ -240,6 +240,9 @@ class AccountEntryViewModel @Inject constructor(
             }
 
             is AccountEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
+            is AccountEntryEvent.DeleteAccount -> {
+                // Handled via separate callback to allow navigation control
+            }
         }
     }
 

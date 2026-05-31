@@ -8,27 +8,73 @@ import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
-import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
-import kotlinx.coroutines.flow.first
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
+import java.math.RoundingMode
 
-class RecentActivitiesCardComputer(
-    private val queryService: DatabaseQueryService
-) : CardDataComputer<RecentActivitiesCardConfig, CardRenderData.RecentActivities> {
+class RecentActivitiesCardComputer : CardDataComputer<RecentActivitiesCardConfig, CardRenderData.RecentActivities> {
     override val supportedType = CardType.RECENT_ACTIVITIES
 
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-            .copy(excludeFuture = true)
 
-        val recentTransactions = queryService
-            .observeFilteredTransactions(input.profileId, mergedFilter, limit = 20)
-            .first()
-            .map { TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO) }
+        // Compute running balances for the specific account(s) involved in the filter
+        // If no accounts are filtered, we show all active accounts.
+        val targetAccountIds = mergedFilter.accountIds.ifEmpty {
+            input.accounts.filter { !it.isArchived }.map { it.id }.toSet()
+        }
 
-        val groups = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getGroupedData(
-            transactions = recentTransactions,
-            absoluteHistory = recentTransactions,
+        val allTransactions = input.transactions
+            .asSequence()
+            .sortedBy { it.timestamp }
+            .groupBy { it.accountId }
+            .flatMap { (accId, accountTransactions) ->
+                val account = input.accounts.find { it.id == accId }
+                val accountCurrency = account?.currencyCode ?: "USD"
+
+                var runningBalance = BigDecimal.ZERO
+                accountTransactions.map { transaction ->
+                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
+                        amount = transaction.amount,
+                        fromCurrency = transaction.currency,
+                        toCurrency = accountCurrency,
+                        exchangeRates = input.exchangeRates
+                    )
+
+                    val balanceBefore = runningBalance
+                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                    TransactionWithBalance(
+                        transaction = transaction,
+                        balanceBefore = balanceBefore.setScale(
+                            CurrencyService.precision,
+                            RoundingMode.HALF_UP
+                        ),
+                        balanceAfter = runningBalance.setScale(
+                            CurrencyService.precision,
+                            RoundingMode.HALF_UP
+                        )
+                    )
+                }
+            }
+            .filter { it.transaction.accountId in targetAccountIds }
+            .toList()
+
+        // Filter the pre-computed list for display
+        val filteredTransactions = allTransactions
+            .filter { txWithBalance ->
+                com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService.matches(
+                    txWithBalance.transaction,
+                    mergedFilter
+                )
+            }
+            .sortedByDescending { it.transaction.timestamp }
+            .take(20)
+            .toList()
+
+        val groups = TimelineService.getGroupedData(
+            transactions = filteredTransactions,
+            absoluteHistory = allTransactions,
             groupingType = config.groupBy,
             accounts = input.accounts,
             categories = input.categories,

@@ -32,8 +32,32 @@ object SeedingConfig {
                 plannedPaymentDao = database.plannedPaymentDao(),
                 tagDao = database.tagDao(),
                 context = context,
-                settingsDataStore = settingsDataStore
+                settingsDataStore = settingsDataStore,
+                database = database
             ).seed()
         }
+    }
+
+    suspend fun triggerManualSeeding(
+        database: AppDatabase,
+        settingsDataStore: SettingsDataStore,
+        context: Context
+    ) {
+        DatabaseSeeder(
+            accountDao = database.accountDao(),
+            categoryDao = database.categoryDao(),
+            transactionDao = database.transactionDao(),
+            transactionLinkDao = database.transactionLinkDao(),
+            filterDao = database.filterDao(),
+            profileDao = database.profileDao(),
+            budgetDao = database.budgetDao(),
+            loanDao = database.loanDao(),
+            templateDao = database.templateDao(),
+            plannedPaymentDao = database.plannedPaymentDao(),
+            tagDao = database.tagDao(),
+            context = context,
+            settingsDataStore = settingsDataStore,
+            database = database
+        ).seed()
     }
 }

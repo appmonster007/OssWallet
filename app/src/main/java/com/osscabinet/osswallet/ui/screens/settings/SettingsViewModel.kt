@@ -255,4 +255,12 @@ class SettingsViewModel @Inject constructor(
                 .onFailure { _backupMessage.send("Import failed: ${it.message}") }
         }
     }
+
+    fun deleteAllData() {
+        viewModelScope.launch {
+            backupRepository.deleteAllData()
+                .onSuccess { _backupMessage.send("All data cleared") }
+                .onFailure { _backupMessage.send("Failed to clear data: ${it.message}") }
+        }
+    }
 }

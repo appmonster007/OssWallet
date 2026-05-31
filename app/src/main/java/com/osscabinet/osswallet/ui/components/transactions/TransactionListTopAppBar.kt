@@ -178,11 +178,11 @@ fun TransactionListTopAppBar(
                                 icon = Icons.Rounded.CalendarMonth,
                                 trailingContent = {
                                     Switch(
-                                        checked = recordsSettings.excludeFutureTransactions,
+                                        checked = !filter.excludeFuture,
                                         onCheckedChange = {
                                             onUpdateRecordsSettings(
                                                 recordsSettings.copy(
-                                                    excludeFutureTransactions = it
+                                                    excludeFutureTransactions = !it
                                                 )
                                             )
                                         },

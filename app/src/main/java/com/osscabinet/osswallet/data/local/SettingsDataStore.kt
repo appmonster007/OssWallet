@@ -317,4 +317,8 @@ class SettingsDataStore(private val context: Context) {
             preferences[GLASSMORPHISM_ENABLED_KEY] = enabled
         }
     }
+
+    suspend fun clearAll() {
+        context.dataStore.edit { it.clear() }
+    }
 }

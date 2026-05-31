@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.CategoricalRule
 
 /**
  * Card scope determines the context in which a card operates.
@@ -46,8 +47,8 @@ enum class ScreenContext {
      */
     fun ownsTimeline(commonFilterEnabled: Boolean): Boolean = when (this) {
         DASHBOARD -> false
-        ACCOUNTS_VIEW,
-        ACCOUNT_DETAIL -> true
+        ACCOUNTS_VIEW -> true
+        ACCOUNT_DETAIL,
         ANALYTICS -> commonFilterEnabled
     }
 }
@@ -251,19 +252,10 @@ data class AccountHeroCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true,
-    override val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter(excludeFuture = true)
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
     override val filterRules: CardFilterRules get() = CardFilterRules(
-        allowAccountSelection = false,
-        allowCategorySelection = false,
-        allowStatusSelection = false,
-        allowSearch = false,
-        allowAmountRange = false,
-        allowCurrencySelection = false,
-        allowPaymentMethodSelection = false,
-        allowTimelineSelection = false,
-        allowFutureTransactionsToggle = false
     )
 }
 
@@ -471,7 +463,7 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is AccountsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
     is CategoryPieChartCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
     is CategoryTreemapCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
-    is AccountHeroCardConfig -> copy(filter = TransactionFilter())
+    is AccountHeroCardConfig -> copy(filter = TransactionFilter(excludeFuture = true))
     is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
     is BudgetsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))
     is LoansCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR), excludeFuture = true))

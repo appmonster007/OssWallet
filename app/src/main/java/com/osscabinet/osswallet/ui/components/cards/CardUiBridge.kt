@@ -316,6 +316,12 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.AccountHero(
                     renderData = renderData,
                     callbacks = CardCallbacks.AccountHero(
+                        onFilterChange = { id, filter ->
+                            updateHandler.updateCardHeroFilter(
+                                id,
+                                filter
+                            )
+                        },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)

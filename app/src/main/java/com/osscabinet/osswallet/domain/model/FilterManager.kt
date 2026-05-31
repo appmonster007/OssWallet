@@ -120,7 +120,7 @@ class FilterManager {
             currencies = filters.flatMap { it.currencies }.toSet(),
             statuses = filters.flatMap { it.statuses }.toSet(),
             tags = filters.flatMap { it.tags }.toSet(),
-            excludeFuture = filters.all { it.excludeFuture }
+            excludeFuture = filters.map { it.excludeFuture }.lastOrNull() ?: false
         )
     }
 }

@@ -51,19 +51,19 @@ fun AccountEntryScreen(
             }
         },
         canSave = state.canSave && !state.navTriggered,
-        isEditMode = state.isEditMode,
-        onDeleteClick = if (state.isEditMode) {
-            {
-                viewModel.deleteAccount {
-                    onBackClick()
-                }
-            }
-        } else null
+        isEditMode = state.isEditMode
     ) { innerPadding ->
         AccountFormBody(
             state = state,
             onEvent = viewModel::onEvent,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            onDeleteClick = if (state.isEditMode) {
+                {
+                    viewModel.deleteAccount {
+                        onBackClick()
+                    }
+                }
+            } else null
         )
     }
 }

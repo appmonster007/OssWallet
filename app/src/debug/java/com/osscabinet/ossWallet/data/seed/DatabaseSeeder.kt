@@ -50,7 +50,8 @@ class DatabaseSeeder @Inject constructor(
     private val plannedPaymentDao: PlannedPaymentDao,
     private val tagDao: TagDao,
     private val context: Context,
-    private val settingsDataStore: SettingsDataStore
+    private val settingsDataStore: SettingsDataStore,
+    private val database: com.osscabinet.ossWallet.data.local.AppDatabase
 ) {
     suspend fun seed() {
         if (settingsDataStore.isDatabaseSeeded.first()) {
@@ -60,7 +61,11 @@ class DatabaseSeeder @Inject constructor(
 
         android.util.Log.d("DatabaseSeeder", "Starting database seeding...")
 
-        // Clear existing data
+        // 0. Ensure Base Infrastructure (Categories/Tags) exists before seeding
+        // This fixes FOREIGN KEY constraint errors after a "Delete Everything" wipe
+        ensureInfrastructureExists()
+
+        // Clear existing user data (but keep the categories we just ensured)
         accountDao.clearAll()
         transactionDao.clearAll()
         transactionLinkDao.clearAll()
@@ -178,6 +183,52 @@ class DatabaseSeeder @Inject constructor(
         val missingTags = allTxTags - existingTagNames
         for (tagName in missingTags) {
             tagDao.insertTag(TagEntity(name = tagName, colorHex = -7829368))
+        }
+    }
+
+    private suspend fun ensureInfrastructureExists() {
+        val categoryCount = categoryDao.getAllCategoriesSync().size
+        if (categoryCount > 20) {
+            android.util.Log.d("DatabaseSeeder", "Infrastructure exists ($categoryCount categories)")
+            return
+        }
+
+        android.util.Log.d("DatabaseSeeder", "Infrastructure missing. Restoring from default_data.sql...")
+        try {
+            val sdb = database.openHelper.writableDatabase
+            sdb.beginTransaction()
+            try {
+                // 1. Load default categories from SQL asset
+                context.assets.open("default_data.sql")
+                    .bufferedReader()
+                    .useLines { lines ->
+                        lines.map { it.trim() }
+                            .filter { it.isNotBlank() && !it.startsWith("--") }
+                            .forEach { sdb.execSQL(it) }
+                    }
+
+                // 2. Ensure System Categories (Reserved IDs)
+                com.osscabinet.ossWallet.domain.model.SystemCategory.entries.forEach { sc ->
+                    sdb.execSQL(
+                        "INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (?, ?, ?, ?, 1, ?, ?)",
+                        arrayOf(sc.id, sc.displayName, sc.iconName, sc.colorHex, sc.parentId, sc.nature.value)
+                    )
+                }
+
+                // 3. Ensure System Tags
+                com.osscabinet.ossWallet.domain.model.SystemTag.entries.forEach { st ->
+                    sdb.execSQL(
+                        "INSERT OR IGNORE INTO tags (id, name, colorHex) VALUES (?, ?, ?)",
+                        arrayOf(st.id, st.tagName, st.colorHex)
+                    )
+                }
+                sdb.setTransactionSuccessful()
+            } finally {
+                sdb.endTransaction()
+            }
+            android.util.Log.d("DatabaseSeeder", "Infrastructure restoration complete")
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseSeeder", "Failed to restore infrastructure", e)
         }
     }
 

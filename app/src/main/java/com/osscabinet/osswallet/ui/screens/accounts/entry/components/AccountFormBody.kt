@@ -23,10 +23,13 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.CallMade
 import androidx.compose.material.icons.rounded.CallReceived
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -63,7 +67,8 @@ import com.osscabinet.ossWallet.ui.util.icon
 fun AccountFormBody(
     state: AccountEntryState,
     onEvent: (AccountEntryEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val accentColor = try {
         Color(android.graphics.Color.parseColor(state.accentColorHex))
@@ -71,9 +76,23 @@ fun AccountFormBody(
         AppColors.primary
     }
     var showTypeSelector by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val types = AccountStructureType.entries.toTypedArray()
     val scrollState = rememberScrollState()
+
+    if (showDeleteConfirm) {
+        AeonConfirmDeleteDialog(
+            show = true,
+            title = "Delete Account?",
+            message = "This will permanently delete this account and all its transactions. This action cannot be undone.",
+            onConfirm = {
+                showDeleteConfirm = false
+                onDeleteClick?.invoke()
+            },
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -237,6 +256,35 @@ fun AccountFormBody(
                             if (state.showCalculator && state.activeBalanceCurrency == currencyCode) {
                                 requester.bringIntoView()
                             }
+                        }
+                    }
+                }
+            }
+
+            // DANGER ZONE: Destruction Management
+            if (state.isEditMode) {
+                EntrySection(title = "DANGER ZONE", icon = Icons.Rounded.DeleteForever) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                        Text(
+                            text = "Deleting this account will permanently remove all associated transactions and data. This cannot be undone.",
+                            style = AppTextStyles.caption,
+                            color = AppColors.border
+                        )
+
+                        OutlinedButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.error),
+                            border = BorderStroke(1.dp, AppColors.error.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteForever,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Delete Account", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }

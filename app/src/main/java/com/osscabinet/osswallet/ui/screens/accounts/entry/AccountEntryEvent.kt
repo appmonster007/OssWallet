@@ -23,4 +23,5 @@ sealed class AccountEntryEvent {
     data class ConfirmAsNewTransaction(val currency: String, val originalValue: String, val newValue: String) : AccountEntryEvent()
     data class ConfirmAsInitialBalanceUpdate(val currency: String, val newValue: String) : AccountEntryEvent()
     data object TriggerNavigation : AccountEntryEvent()
+    data object DeleteAccount : AccountEntryEvent()
 }

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.DatePicker
@@ -183,7 +184,7 @@ fun FilterFields(
             AeonSelectionSheet(
                 title = "Transaction Types",
                 onDismiss = { activeSheet = null },
-                items = TransactionType.entries.filter { it != TransactionType.TRANSFER },
+                items = TransactionType.entries,
                 selectedIds = filter.transactionTypes.toSet(),
                 onSelectionChange = { ids ->
                     onFilterChange(filter.copy(transactionTypes = ids.toSet()))
@@ -309,37 +310,38 @@ fun FilterFields(
             EntryActionRow {
                 // Type Card
                 val isTypeLocked = filterRules.typeRule.isLocked
-                EntryActionCard(
-                    icon = if (isTypeLocked) Icons.Default.Lock
-                    else if (filter.transactionTypes.size == 1) {
-                        when (filter.transactionTypes.first()) {
-                            TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
-                            TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                            else -> Icons.Default.FilterList
-                        }
-                    } else Icons.Default.FilterList,
-                    label = "TYPES",
-                    value = if (isTypeLocked) {
-                        filterRules.typeRule.lockedValues.joinToString(" & ") { it.displayName }
-                    } else when {
-                        filter.transactionTypes.isEmpty() -> "All"
-                        filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
-                        else -> "${filter.transactionTypes.size} Selected"
-                    },
-                    isSelected = filter.transactionTypes.isNotEmpty() || isTypeLocked,
-                    modifier = Modifier.weight(1f),
-                    onClick = { if (!isTypeLocked) activeSheet = "Types" },
-                    iconContainerColor = if (isTypeLocked) AppColors.formIconContainerPrimary.copy(
-                        alpha = 0.05f
+                if (filterRules.typeRule.isVisible) {
+                    EntryActionCard(
+                        icon = if (isTypeLocked) Icons.Default.Lock
+                        else if (filter.transactionTypes.size == 1) {
+                            when (filter.transactionTypes.first()) {
+                                TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                                TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
+                                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                            }
+                        } else Icons.Default.FilterList,
+                        label = "TYPES",
+                        value = if (isTypeLocked) {
+                            filterRules.typeRule.lockedValues.joinToString(" & ") { it.displayName }
+                        } else when {
+                            filter.transactionTypes.isEmpty() -> "All"
+                            filter.transactionTypes.size == 1 -> filter.transactionTypes.first().displayName
+                            else -> "${filter.transactionTypes.size} Selected"
+                        },
+                        isSelected = filter.transactionTypes.isNotEmpty() || isTypeLocked,
+                        modifier = Modifier.weight(1f),
+                        onClick = { if (!isTypeLocked) activeSheet = "Types" },
+                        iconContainerColor = if (isTypeLocked) AppColors.formIconContainerPrimary.copy(
+                            alpha = 0.05f
+                        )
+                        else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
+                        iconTint = if (isTypeLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
                     )
-                    else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                    iconTint = if (isTypeLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
-                )
+                }
 
                 // Accounts Card
-                val isAccountLocked =
-                    !filterRules.allowAccountSelection && filter.accountIds.isNotEmpty()
-                if (filterRules.allowAccountSelection || isAccountLocked) {
+                val isAccountLocked = !filterRules.accountRule.isUserEditable
+                if (filterRules.accountRule.isVisible) {
                     EntryActionCard(
                         icon = if (isAccountLocked) Icons.Default.Lock else Icons.Default.AccountBalance,
                         label = "ACCOUNTS",
@@ -361,9 +363,8 @@ fun FilterFields(
 
             EntryActionRow {
                 // Categories Card
-                val isCategoryLocked =
-                    !filterRules.allowCategorySelection && filter.categoryIds.isNotEmpty()
-                if (filterRules.allowCategorySelection || isCategoryLocked) {
+                val isCategoryLocked = !filterRules.categoryRule.isUserEditable
+                if (filterRules.categoryRule.isVisible) {
                     EntryActionCard(
                         icon = if (isCategoryLocked) Icons.Default.Lock else Icons.Default.Category,
                         label = "CATEGORIES",
@@ -387,9 +388,8 @@ fun FilterFields(
                 }
 
                 // Currency Card
-                val isCurrencyLocked =
-                    !filterRules.allowCurrencySelection && filter.currencies.isNotEmpty()
-                if (filterRules.allowCurrencySelection || isCurrencyLocked) {
+                val isCurrencyLocked = !filterRules.currencyRule.isUserEditable
+                if (filterRules.currencyRule.isVisible) {
                     EntryActionCard(
                         icon = if (isCurrencyLocked) Icons.Default.Lock else Icons.Default.MonetizationOn,
                         label = "CURRENCIES",
@@ -410,13 +410,12 @@ fun FilterFields(
             }
 
             // Status & Methods
-            val isStatusLocked = !filterRules.allowStatusSelection && filter.statuses.isNotEmpty()
-            val isMethodLocked =
-                !filterRules.allowPaymentMethodSelection && filter.paymentMethods.isNotEmpty()
+            val isStatusLocked = !filterRules.statusRule.isUserEditable
+            val isMethodLocked = !filterRules.paymentMethodRule.isUserEditable
 
-            if (filterRules.allowStatusSelection || isStatusLocked || filterRules.allowPaymentMethodSelection || isMethodLocked) {
+            if (filterRules.statusRule.isVisible || filterRules.paymentMethodRule.isVisible) {
                 EntryActionRow {
-                    if (filterRules.allowStatusSelection || isStatusLocked) {
+                    if (filterRules.statusRule.isVisible) {
                         EntryActionCard(
                             icon = if (isStatusLocked) Icons.Default.Lock else Icons.AutoMirrored.Rounded.FactCheck,
                             label = "STATUS",
@@ -433,7 +432,7 @@ fun FilterFields(
                         )
                     }
 
-                    if (filterRules.allowPaymentMethodSelection || isMethodLocked) {
+                    if (filterRules.paymentMethodRule.isVisible) {
                         EntryActionCard(
                             icon = if (isMethodLocked) Icons.Default.Lock else Icons.Default.Payments,
                             label = "METHODS",
@@ -454,16 +453,15 @@ fun FilterFields(
         }
 
         // Search & Tags
-        val isSearchLocked =
-            !filterRules.allowSearch && (filter.queryNote != null || filter.queryPayee != null)
-        val isTagLocked = !filterRules.allowTagSelection && filter.tags.isNotEmpty()
+        val isSearchLocked = !filterRules.searchRule.isUserEditable
+        val isTagLocked = !filterRules.tagRule.isUserEditable
 
-        if (filterRules.allowSearch || isSearchLocked || filterRules.allowTagSelection || isTagLocked) {
+        if (filterRules.searchRule.isVisible || filterRules.tagRule.isVisible) {
             EntrySection(
                 title = "SEARCH & TAGS",
                 icon = Icons.Rounded.Search
             ) {
-                if (filterRules.allowSearch || isSearchLocked) {
+                if (filterRules.searchRule.isVisible) {
                     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                         CompactTextField(
                             value = filter.queryNote ?: "",
@@ -482,7 +480,7 @@ fun FilterFields(
                     }
                 }
 
-                if (filterRules.allowTagSelection || isTagLocked) {
+                if (filterRules.tagRule.isVisible) {
                     EntryActionCard(
                         icon = if (isTagLocked) Icons.Default.Lock else Icons.Default.LocalOffer,
                         label = "TAGS",
@@ -503,17 +501,15 @@ fun FilterFields(
         }
 
         // Amount & Records
-        val isAmountLocked =
-            !filterRules.allowAmountRange && (filter.minAmount != null || filter.maxAmount != null)
-        val isLinkedLocked =
-            !filterRules.allowLinkedRecords && filter.linkedTransactionIds.isNotEmpty()
+        val isAmountLocked = !filterRules.amountRule.isUserEditable
+        val isLinkedLocked = !filterRules.linkedRecordsRule.isUserEditable
 
-        if (filterRules.allowAmountRange || isAmountLocked || filterRules.allowLinkedRecords || isLinkedLocked) {
+        if (filterRules.amountRule.isVisible || filterRules.linkedRecordsRule.isVisible) {
             EntrySection(
                 title = "AMOUNT & RECORDS",
                 icon = Icons.Rounded.AttachMoney
             ) {
-                if (filterRules.allowAmountRange || isAmountLocked) {
+                if (filterRules.amountRule.isVisible) {
                     AeonContextGrid {
                         EntryActionRow {
                             EntryActionCard(
@@ -538,7 +534,7 @@ fun FilterFields(
                     }
                 }
 
-                if (filterRules.allowLinkedRecords || isLinkedLocked) {
+                if (filterRules.linkedRecordsRule.isVisible) {
                     EntryActionCard(
                         icon = if (isLinkedLocked) Icons.Default.Lock else Icons.Rounded.Link,
                         label = "LINKED RECORDS",
@@ -557,9 +553,9 @@ fun FilterFields(
         }
 
         // Warranty Section
-        val isWarrantyLocked = !filterRules.allowWarrantySelection && filter.hasWarranty != null
+        val isWarrantyLocked = !filterRules.warrantyRule.isUserEditable
 
-        if (filterRules.allowWarrantySelection || isWarrantyLocked) {
+        if (filterRules.warrantyRule.isVisible) {
             EntrySection(
                 title = "WARRANTY",
                 icon = Icons.Rounded.VerifiedUser
@@ -591,8 +587,7 @@ fun FilterFields(
                     )
 
                     if (filter.hasWarranty == true) {
-                        val isWarrantyDatesLocked =
-                            !filterRules.allowWarrantySelection && (filter.warrantyExpirationStart != null || filter.warrantyExpirationEnd != null)
+                        val isWarrantyDatesLocked = !filterRules.warrantyRule.isUserEditable
                         EntryActionRow {
                             EntryActionCard(
                                 icon = if (isWarrantyDatesLocked) Icons.Default.Lock else Icons.Rounded.CalendarToday,

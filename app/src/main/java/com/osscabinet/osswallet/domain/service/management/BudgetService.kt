@@ -28,10 +28,11 @@ object BudgetService {
         baseCurrency: String,
         now: Long,
         allCategories: List<Category> = emptyList(),
-        precision: Int = CurrencyService.precision
+        precision: Int = CurrencyService.precision,
+        excludeFuture: Boolean = false
     ): BigDecimal {
         val filteredTransactions =
-            filterTransactionsForBudget(budget, transactions, now, allCategories)
+            filterTransactionsForBudget(budget, transactions, now, allCategories, excludeFuture)
 
         // Aggregation logic using currency conversion
         val netAmount = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
@@ -57,7 +58,8 @@ object BudgetService {
     fun buildTransactionFilter(
         budget: Budget,
         now: Long,
-        allCategories: List<Category> = emptyList()
+        allCategories: List<Category> = emptyList(),
+        excludeFuture: Boolean = false
     ): TransactionFilter {
         // AllTime has no defined start/end — keep it as AllTime so the filter engine
         // skips the date-range check entirely. Resolving it via getCurrentPeriodRange
@@ -83,7 +85,7 @@ object BudgetService {
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
             timelineRange = resolvedRange,
-            excludeFuture = false
+            excludeFuture = excludeFuture
         )
     }
 
@@ -91,11 +93,12 @@ object BudgetService {
         budget: Budget,
         transactions: List<Transaction>,
         now: Long,
-        allCategories: List<Category> = emptyList()
+        allCategories: List<Category> = emptyList(),
+        excludeFuture: Boolean = false
     ): List<Transaction> {
         return TransactionFilterService.filterTransactions(
             transactions,
-            buildTransactionFilter(budget, now, allCategories)
+            buildTransactionFilter(budget, now, allCategories, excludeFuture)
         )
     }
 
@@ -134,7 +137,8 @@ object BudgetService {
         now: Long,
         allCategories: List<Category> = emptyList(),
         depth: Int = 0,
-        precision: Int = CurrencyService.precision
+        precision: Int = CurrencyService.precision,
+        excludeFuture: Boolean = false
     ): BigDecimal {
         if (!budget.rollover || depth >= 12) return BigDecimal.ZERO
         
@@ -146,10 +150,10 @@ object BudgetService {
         
         // Temporarily override budget's timelineRange to previous for spent calculation
         val previousBudget = budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
-        val previousSpent = calculateSpent(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, precision)
+        val previousSpent = calculateSpent(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, precision, excludeFuture)
         
         // Cumulative: Previous period's rollover affects its effective limit
-        val previousRollover = calculateRollover(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, depth + 1, precision)
+        val previousRollover = calculateRollover(previousBudget, transactions, exchangeRates, baseCurrency, previousNow, allCategories, depth + 1, precision, excludeFuture)
         val previousEffectiveLimit = budget.limitAmount.add(previousRollover)
         
         return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)

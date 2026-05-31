@@ -42,7 +42,8 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.displayCurrency,
                 now = now,
-                allCategories = input.categories
+                allCategories = input.categories,
+                excludeFuture = mergedFilter.excludeFuture
             )
             val spent = BudgetService.calculateSpent(
                 budget = budget,
@@ -50,7 +51,8 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.displayCurrency,
                 now = now,
-                allCategories = input.categories
+                allCategories = input.categories,
+                excludeFuture = mergedFilter.excludeFuture
             )
             BudgetService.buildProgress(budget, spent, rollover)
         }

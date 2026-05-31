@@ -31,7 +31,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
 import java.math.BigDecimal
 
 /**
@@ -90,7 +90,7 @@ fun TransactionHeader(
             }
             .then(
                 if (hazeState != null)
-                    Modifier.hazeChild(hazeState, glassStyle)
+                    Modifier.hazeEffect(hazeState, glassStyle)
                 else
                     Modifier
             )
@@ -100,59 +100,50 @@ fun TransactionHeader(
                 shape = glassShape
             )
     ) {
-        Column {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-                // Row 1: Title Info
-                Box(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = title.uppercase(),
+                    style = styles.titleStyle,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+                if (!showCurrencyBreakdown) {
                     Text(
-                        text = title.uppercase(),
-                        style = styles.titleStyle,
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    )
-                    if (!showCurrencyBreakdown) {
-                        Text(
-                            text = "∑ ${
-                                formatAuto(
-                                    netBase,
-                                    baseCurrency,
-                                    shorten = true
-                                )
-                            }",
-                            style = styles.baseValueStyle,
-                            color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    Text(
-                        text = subtitle.uppercase(),
-                        style = styles.subtitleStyle,
-                        modifier = Modifier.align(Alignment.CenterEnd)
+                        text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
+                        style = styles.baseValueStyle,
+                        color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
+                Text(
+                    text = subtitle.uppercase(),
+                    style = styles.subtitleStyle,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
+            }
 
-                if (showCurrencyBreakdown) {
-                    Spacer(modifier = Modifier.height(4.dp))
+            if (showCurrencyBreakdown) {
+                Spacer(modifier = Modifier.height(4.dp))
 
-                    TransactionSummaryBreakdown(
-                        incomeByCurrency = incomeByCurrency,
-                        expenseByCurrency = expenseByCurrency,
-                        incomeBase = incomeBase,
-                        expenseBase = expenseBase,
-                        netBase = netBase,
-                        baseCurrency = baseCurrency,
-                        openingBalancesByCurrency = openingBalancesByCurrency,
-                        closingBalancesByCurrency = closingBalancesByCurrency,
-                        totalOpeningBalanceBase = totalOpeningBalanceBase,
-                        totalClosingBalanceBase = totalClosingBalanceBase,
-                        showOpeningBalance = showOpeningBalance,
-                        showClosingBalance = showClosingBalance,
-                        currenciesToDisplay = currenciesToDisplay,
-                        labelColumnWidth = styles.labelColumnWidth,
-                        showCurrencyBreakdown = true,
-                        initiallyExpanded = isExpanded
-                    )
-                }
+                TransactionSummaryBreakdown(
+                    incomeByCurrency = incomeByCurrency,
+                    expenseByCurrency = expenseByCurrency,
+                    incomeBase = incomeBase,
+                    expenseBase = expenseBase,
+                    netBase = netBase,
+                    baseCurrency = baseCurrency,
+                    openingBalancesByCurrency = openingBalancesByCurrency,
+                    closingBalancesByCurrency = closingBalancesByCurrency,
+                    totalOpeningBalanceBase = totalOpeningBalanceBase,
+                    totalClosingBalanceBase = totalClosingBalanceBase,
+                    showOpeningBalance = showOpeningBalance,
+                    showClosingBalance = showClosingBalance,
+                    currenciesToDisplay = currenciesToDisplay,
+                    labelColumnWidth = styles.labelColumnWidth,
+                    showCurrencyBreakdown = true,
+                    initiallyExpanded = isExpanded
+                )
             }
         }
     }

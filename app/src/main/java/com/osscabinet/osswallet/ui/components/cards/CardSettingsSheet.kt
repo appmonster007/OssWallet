@@ -71,7 +71,7 @@ fun CardSettingsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (glassActive) AppColors.cardSurfaceProminent.copy(alpha = 0.82f)
+        containerColor = if (glassActive) AppColors.cardSurfaceProminent.copy(alpha = 0.5f)
                          else AppColors.cardSurfaceProminent,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -81,7 +81,7 @@ fun CardSettingsSheet(
         val view = LocalView.current
         SideEffect {
             if (glassActive) {
-                (view.parent as? DialogWindowProvider)?.window?.setBackgroundBlurRadius(80)
+                (view.parent as? DialogWindowProvider)?.window?.setBackgroundBlurRadius(12)
             }
         }
 

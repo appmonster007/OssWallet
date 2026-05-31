@@ -53,7 +53,7 @@ fun AeonCardSettingsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (glassActive) AppColors.sheetSurface.copy(alpha = 0.82f)
+        containerColor = if (glassActive) AppColors.sheetSurface.copy(alpha = 0.5f)
                          else AppColors.sheetSurface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -63,7 +63,7 @@ fun AeonCardSettingsSheet(
         val view = LocalView.current
         SideEffect {
             if (glassActive) {
-                (view.parent as? DialogWindowProvider)?.window?.setBackgroundBlurRadius(80)
+                (view.parent as? DialogWindowProvider)?.window?.setBackgroundBlurRadius(120)
             }
         }
 

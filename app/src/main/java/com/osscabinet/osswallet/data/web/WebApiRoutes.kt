@@ -102,6 +102,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.delete
@@ -140,6 +141,26 @@ class WebApiRoutes(
         routing {
             get("/") {
                 call.respondText(loadIndexHtml(), ContentType.Text.Html)
+            }
+
+            get("/web/{path...}") {
+                val filePath = call.parameters.getAll("path")?.joinToString("/") ?: return@get
+                if (filePath.contains("..")) {
+                    call.respond(HttpStatusCode.Forbidden)
+                    return@get
+                }
+                val bytes = runCatching {
+                    context.assets.open("web/$filePath").readBytes()
+                }.getOrElse {
+                    call.respond(HttpStatusCode.NotFound)
+                    return@get
+                }
+                val contentType = when {
+                    filePath.endsWith(".css") -> ContentType.Text.CSS
+                    filePath.endsWith(".js")  -> ContentType.Text.JavaScript
+                    else -> ContentType.Application.OctetStream
+                }
+                call.respondBytes(bytes, contentType)
             }
 
             get("/api/health") {
@@ -497,7 +518,12 @@ class WebApiRoutes(
                         val now = System.currentTimeMillis()
                         val allTransactions =
                             transactionRepository.getAllTransactionsSync(profileId)
-                        val budgets = budgetRepository.getActiveBudgetsSync(profileId)
+                        val includeArchived = call.request.queryParameters["includeArchived"]?.toBoolean() ?: false
+                        val budgets = if (includeArchived) {
+                            budgetRepository.getAllBudgets(profileId).first()
+                        } else {
+                            budgetRepository.getActiveBudgetsSync(profileId)
+                        }
                         val categories = categoryRepository.getAllCategoriesSync()
                         val exchangeRates = runCatching {
                             currencyRepository.getExchangeRates(baseCurrency)

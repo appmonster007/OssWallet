@@ -13,12 +13,13 @@ import dev.chrisbanes.haze.HazeTint
  */
 object GlassTokens {
     val BlurRadius = 8.dp
+    val DrawerBlurRadius = 16.dp
     val NoiseFactor = 0f
 
     /**
-     * Theme-aware glass style. Uses AppColors.cardSurfaceProminent (surfaceContainerHigh)
-     * as tint base so the frosted effect looks elevated above the transaction list —
-     * matching the persistent background added to TransactionHeader before hazeEffect.
+     * Standard glass style for narrow overlay surfaces (e.g. sticky list headers).
+     * The blur source is a constrained band of relatively neutral list rows, so a
+     * light tint alpha is sufficient to keep content legible.
      */
     @Composable
     fun style(): HazeStyle {
@@ -27,6 +28,23 @@ object GlassTokens {
         return HazeStyle(
             tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.45f else 0.30f)),
             blurRadius = BlurRadius,
+            noiseFactor = NoiseFactor,
+        )
+    }
+
+    /**
+     * Heavy glass style for large overlay surfaces (drawer, full-screen sheets).
+     * The blur source spans the entire app — colourful cards, charts, images — so
+     * a higher tint alpha and wider blur are needed to prevent the bright/vivid
+     * background from washing out text, especially in dark mode.
+     */
+    @Composable
+    fun drawerStyle(): HazeStyle {
+        val isDark = isSystemInDarkTheme()
+        val bgColor = AppColors.cardSurfaceProminent
+        return HazeStyle(
+            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.82f else 0.55f)),
+            blurRadius = DrawerBlurRadius,
             noiseFactor = NoiseFactor,
         )
     }

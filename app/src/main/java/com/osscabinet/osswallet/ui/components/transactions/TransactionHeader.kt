@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -64,6 +65,7 @@ fun TransactionHeader(
 
     val styles = TransactionHeaderStyles.default()
     val hazeState = LocalHazeState.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
     val isDark = isSystemInDarkTheme()
     val glassShape = RoundedCornerShape(12.dp)
     val glassStyle = GlassTokens.style()
@@ -83,26 +85,28 @@ fun TransactionHeader(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // hazeEffect applies a RenderEffect internally, which silently drops shadowElevation when
-        // both are on the same RenderNode. Shadow gets its own sibling RenderNode with no blur.
-        Spacer(
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer {
-                    shape = glassShape
-                    clip = false
-                    shadowElevation = 12.dp.toPx()
-                    ambientShadowColor = Color.Black.copy(alpha = 0.06f)
-                    spotShadowColor = Color.Black.copy(alpha = 0.12f)
-                }
-        )
+        if (glassEnabled) {
+            // hazeEffect applies a RenderEffect internally, which silently drops shadowElevation when
+            // both are on the same RenderNode. Shadow gets its own sibling RenderNode with no blur.
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        shape = glassShape
+                        clip = false
+                        shadowElevation = 12.dp.toPx()
+                        ambientShadowColor = Color.Black.copy(alpha = 0.06f)
+                        spotShadowColor = Color.Black.copy(alpha = 0.12f)
+                    }
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer { shape = glassShape; clip = true }
                 .background(AppColors.cardSurfaceProminent, glassShape)
                 .then(
-                    if (hazeState != null) Modifier.hazeEffect(hazeState, glassStyle)
+                    if (glassEnabled && hazeState != null) Modifier.hazeEffect(hazeState, glassStyle)
                     else Modifier
                 )
                 .border(

@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.BlurOn
+import androidx.compose.material.icons.rounded.BlurOff
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.CurrencyExchange
@@ -73,6 +75,7 @@ fun DisplaySettingsScreen(
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
+    val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
 
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
@@ -304,6 +307,26 @@ fun DisplaySettingsScreen(
                     subtitle = AppFont.fromName(selectedFont).displayName,
                     icon = Icons.Rounded.FontDownload,
                     onClick = { showFontDialog = true }
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
+                AeonSettingsItem(
+                    title = "Glass Effect",
+                    subtitle = if (glassmorphismEnabled) "Frosted blur on headers" else "Solid surface on headers",
+                    icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
+                    trailingContent = {
+                        Switch(
+                            checked = glassmorphismEnabled,
+                            onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AppColors.primary,
+                                checkedTrackColor = AppColors.switchTrackOn,
+                            )
+                        )
+                    }
                 )
             }
 

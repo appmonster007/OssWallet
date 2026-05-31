@@ -47,6 +47,7 @@ class SettingsDataStore(private val context: Context) {
         val ACCOUNTS_VIEW_CARDS_CONFIG_KEY = stringPreferencesKey("accounts_view_cards_config")
         val ANALYTICS_CARDS_CONFIG_KEY = stringPreferencesKey("analytics_cards_config")
         val ANALYTICS_COMMON_FILTER_ENABLED_KEY = booleanPreferencesKey("analytics_common_filter_enabled")
+        val GLASSMORPHISM_ENABLED_KEY = booleanPreferencesKey("glassmorphism_enabled")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -154,6 +155,10 @@ class SettingsDataStore(private val context: Context) {
 
     val shortlistedCurrencies: Flow<Set<String>?> = context.dataStore.data.map { preferences ->
         preferences[SHORTLISTED_CURRENCIES_KEY]
+    }
+
+    val glassmorphismEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[GLASSMORPHISM_ENABLED_KEY] ?: true
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -304,6 +309,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveShortlistedCurrencies(currencies: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[SHORTLISTED_CURRENCIES_KEY] = currencies
+        }
+    }
+
+    suspend fun saveGlassmorphismEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[GLASSMORPHISM_ENABLED_KEY] = enabled
         }
     }
 }

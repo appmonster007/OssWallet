@@ -103,33 +103,47 @@ fun CategoryTreemapCard(
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }
     val currentData = navigationStack.last()
 
-    // Grouping logic for "Other" category
-    val groupedData = remember(currentData, config.showOnlyActiveCategories) {
+    // Grouping logic for "More Categories" grouping based on 2% threshold
+    val groupedData = remember(currentData, config.showOnlyActiveCategories, navigationStack.size) {
         val filtered = if (config.showOnlyActiveCategories) {
             currentData.filter { it.amount.signum() != 0 }
         } else {
             currentData
         }
         val sorted = filtered.sortedByDescending { it.amount.abs() }
-        if (sorted.size > 12) {
-            val top = sorted.take(10)
-            val others = sorted.drop(10).filter { it.amount.abs() > BigDecimal.ZERO }
-            if (others.isEmpty()) {
-                sorted
-            } else {
+
+        // Detect if we are in a synthesized "More Categories" view
+        val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
+            val prevLevelRawData = navigationStack[navigationStack.size - 2]
+            // If the current list isn't a subcategory of anything in the previous level, 
+            // it's our synthesized "More Categories" list.
+            prevLevelRawData.none { it.subcategoryData === currentData }
+        } else false
+
+        if (!isMoreCategoriesDrillDown) {
+            val mainItems = sorted.filter { it.percentage >= 0.02f }
+            val others = sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
+
+            if (others.size > 1) {
                 val otherSum = others.sumOf { it.amount }
                 val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                val otherPrevSum = if (others.any { it.previousAmount != null }) {
+                    others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+                } else null
 
-                top + CategoryTreemapData(
-                    category = "Other",
+                mainItems + CategoryTreemapData(
+                    category = "More Categories",
                     categoryId = -1L,
                     amount = otherSum,
                     colorHex = 0xFF9E9E9E.toInt(), // Grey
                     percentage = otherPercentage,
                     hasSubcategories = true,
                     subcategoryCount = others.size,
-                    subcategoryData = others
+                    subcategoryData = others,
+                    previousAmount = otherPrevSum
                 )
+            } else {
+                sorted
             }
         } else {
             sorted
@@ -196,7 +210,11 @@ fun CategoryTreemapCard(
                     )
 
                     val prevStack = navigationStack[index]
-                    val name = prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
+                    val name = if (prevStack.any { it.subcategoryData === stack }) {
+                        prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
+                    } else {
+                        "More Categories"
+                    }
 
                     TextButton(
                         onClick = { navigationStack = navigationStack.take(index + 2) },
@@ -545,14 +563,27 @@ fun TreemapLegend(
                     modifier = Modifier.weight(1f)
                 )
 
-                Text(
-                    text = CurrencyFormatter.formatAuto(item.amount),
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    ),
-                    color = AppColors.contentPrimary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = CurrencyFormatter.formatAuto(item.amount),
+                        style = AppTextStyles.drawerItemLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        ),
+                        color = AppColors.contentPrimary
+                    )
+                    Text(
+                        text = "(%.2f%%)".format(item.percentage * 100),
+                        style = AppTextStyles.caption.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Normal
+                        ),
+                        color = AppColors.contentSecondary
+                    )
+                }
             }
         }
 

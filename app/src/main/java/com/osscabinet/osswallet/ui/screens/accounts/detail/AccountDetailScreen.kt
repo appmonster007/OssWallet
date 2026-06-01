@@ -437,9 +437,11 @@ fun AccountDetailScreen(
                                         onTransactionEvent = { event ->
                                             when (event) {
                                                 is TransactionItemEvent.Click -> navigate {
-                                                    onEditTransactionClick(
-                                                        event.id
-                                                    )
+                                                    if (event.id.startsWith("tx_")) {
+                                                        onEditTransactionClick(
+                                                            event.id.removePrefix("tx_").toLong()
+                                                        )
+                                                    }
                                                 }
 
                                                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
@@ -470,6 +472,8 @@ fun AccountDetailScreen(
                                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                                                     event.id
                                                 )
+                                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
+                                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
                                             }
                                         },
                                         filter = state.currentFilter

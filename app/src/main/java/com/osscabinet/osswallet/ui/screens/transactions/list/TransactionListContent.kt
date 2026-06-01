@@ -47,7 +47,7 @@ fun TransactionListContent(
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    revealedCardIds: List<Long> = emptyList()
+    revealedCardIds: List<String> = emptyList()
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

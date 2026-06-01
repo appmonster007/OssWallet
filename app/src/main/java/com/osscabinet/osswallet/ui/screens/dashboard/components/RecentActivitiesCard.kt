@@ -98,10 +98,14 @@ fun RecentActivitiesCard(
             showTags = config.showTags,
             showTimestamp = config.showTimestamp,
             showIcon = config.showIcon,
-            revealedCardIds = emptyList(),
+            revealedCardIds = emptyList<String>(),
             onTransactionEvent = { event ->
                 when (event) {
-                    is TransactionItemEvent.Click -> callbacks.onTransactionClick(event.id)
+                    is TransactionItemEvent.Click -> {
+                        if (event.id.startsWith("tx_")) {
+                            callbacks.onTransactionClick(event.id.removePrefix("tx_").toLong())
+                        }
+                    }
                     is TransactionItemEvent.Expand -> callbacks.onItemExpanded(event.id)
                     is TransactionItemEvent.Collapse -> callbacks.onItemCollapsed(event.id)
                     is TransactionItemEvent.StatusChange -> callbacks.onStatusChange(
@@ -113,6 +117,8 @@ fun RecentActivitiesCard(
                     is TransactionItemEvent.Delete -> callbacks.onDeleteTransaction(event.id)
                     is TransactionItemEvent.Split -> callbacks.onSplit(event.id)
                     is TransactionItemEvent.FullSwipeRight -> callbacks.onFullSwipeRight(event.id)
+                    is TransactionItemEvent.ConfirmPlanned -> callbacks.onConfirmPlanned(event.paymentId, event.scheduledDate)
+                    is TransactionItemEvent.CancelPlanned -> callbacks.onCancelPlanned(event.paymentId, event.scheduledDate)
                 }
             }
         )
@@ -132,7 +138,7 @@ fun RecentActivitiesCardPreview() {
         accountId = "acc1",
         categoryId = Category.SYSTEM_UNKNOWN
     )
-    val mockUiModel = com.osscabinet.ossWallet.domain.model.TransactionUiModel(
+    val mockUiModel = com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
         accountName = "Cash",
         accountCurrency = "USD",

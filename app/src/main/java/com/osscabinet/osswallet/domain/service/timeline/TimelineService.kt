@@ -3,9 +3,12 @@ package com.osscabinet.ossWallet.domain.service.timeline
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
+import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionGroup
-import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -414,61 +417,128 @@ object TimelineService {
         allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
+        plannedPayments: List<UpcomingPaymentItem> = emptyList(),
         precision: Int = this.precision
     ): List<TransactionGroup> {
-        val groups = groupTransactions(transactions, groupingType)
-        val sortedKeys = groups.keys.sortedDescending()
-
         val accountMap = accounts.associateBy { it.id }
         val categoryMap = categories.associateBy { it.id }
         val tagMap = allTags.associateBy { it.name }
         val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
 
-        return sortedKeys.map { key ->
-            val groupItems = groups[key] ?: emptyList()
-            
-            val enrichedTransactions = groupItems.map { txWithBalance ->
-                val tx = txWithBalance.transaction
-                val account = accountMap[tx.accountId]
-                val category = categoryMap[tx.categoryId]
-                
-                val amountInBase = if (tx.currency != baseCurrency) {
-                    CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-                } else tx.amount
+        // 1. Enrich Transactions
+        val enrichedTransactions = transactions.map { txWithBalance ->
+            val tx = txWithBalance.transaction
+            val account = accountMap[tx.accountId]
+            val category = categoryMap[tx.categoryId]
 
-                val tagUiModels = tx.tags.map { tagName ->
-                    tagUiModelCache.getOrPut(tagName) {
-                        com.osscabinet.ossWallet.domain.model.TagUiModel(
-                            name = tagName,
-                            color = tagMap[tagName]?.colorHex ?: -1
-                        )
-                    }
+            val amountInBase = if (tx.currency != baseCurrency) {
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+            } else tx.amount
+
+            val tagUiModels = tx.tags.map { tagName ->
+                tagUiModelCache.getOrPut(tagName) {
+                    com.osscabinet.ossWallet.domain.model.TagUiModel(
+                        name = tagName,
+                        color = tagMap[tagName]?.colorHex ?: -1
+                    )
                 }
-
-                TransactionUiModel(
-                    item = txWithBalance,
-                    accountName = account?.name ?: "Unknown",
-                    accountCurrency = account?.currencyCode ?: tx.currency,
-                    categoryName = category?.name ?: "Uncategorized",
-                    categoryIcon = category?.iconName,
-                    categoryColor = category?.colorHex ?: 0,
-                    tags = tagUiModels,
-                    amountInBase = amountInBase
-                )
             }
+
+            ConfirmedTransactionUiModel(
+                item = txWithBalance,
+                accountName = account?.name ?: "Unknown",
+                accountCurrency = account?.currencyCode ?: tx.currency,
+                categoryName = category?.name ?: "Uncategorized",
+                categoryIcon = category?.iconName,
+                categoryColor = category?.colorHex ?: 0,
+                tags = tagUiModels,
+                amountInBase = amountInBase
+            )
+        }
+
+        // 2. Enrich Planned Payments
+        val enrichedPlanned = plannedPayments.map { item ->
+            val pp = item.plannedPayment
+            val account = accountMap[pp.accountId]
+            val category = categoryMap[pp.categoryId]
+
+            val amountInBase = if (pp.currency != baseCurrency) {
+                CurrencyService.convertAmount(pp.amount, pp.currency, baseCurrency, exchangeRates, precision)
+            } else pp.amount
+
+            val tagUiModels = pp.tags.map { tagName ->
+                tagUiModelCache.getOrPut(tagName) {
+                    com.osscabinet.ossWallet.domain.model.TagUiModel(
+                        name = tagName,
+                        color = tagMap[tagName]?.colorHex ?: -1
+                    )
+                }
+            }
+
+            PlannedPaymentUiModel(
+                paymentId = pp.id,
+                occurrenceId = item.occurrenceId,
+                timestamp = item.scheduledDate,
+                amount = pp.amount,
+                currency = pp.currency,
+                categoryName = category?.name ?: "Uncategorized",
+                categoryIcon = category?.iconName,
+                categoryColor = category?.colorHex ?: 0,
+                accountName = account?.name ?: "Unknown",
+                accountCurrency = account?.currencyCode ?: pp.currency,
+                note = pp.note,
+                tags = tagUiModels,
+                amountInBase = amountInBase,
+                isOverdue = item.isOverdue
+            )
+        }
+
+        // 3. Combine and Group
+        val allItems: List<RecordUiModel> = (enrichedTransactions + enrichedPlanned).sortedByDescending { it.timestamp }
+        val groupsMap = when (groupingType) {
+            TransactionGroupingType.BY_DAY -> {
+                allItems.groupBy {
+                    val date = Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).toLocalDate()
+                    date.toString()
+                }
+            }
+            TransactionGroupingType.BY_WEEK -> {
+                allItems.groupBy {
+                    val date = Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).toLocalDate()
+                    val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
+                    "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
+                }
+            }
+        }
+
+        val sortedKeys = groupsMap.keys.sortedDescending()
+
+        return sortedKeys.map { key ->
+            val groupItems = groupsMap[key] ?: emptyList()
 
             TransactionGroup(
                 key = key,
                 headerData = getHeaderData(
                     groupKey = key,
-                    groupTransactions = groupItems,
+                    groupTransactions = transactions.filter { txWithBalance ->
+                        // Only confirmed transactions affect headers
+                        val dateString = when (groupingType) {
+                            TransactionGroupingType.BY_DAY -> Instant.ofEpochMilli(txWithBalance.transaction.timestamp).atZone(systemZoneId).toLocalDate().toString()
+                            TransactionGroupingType.BY_WEEK -> {
+                                val date = Instant.ofEpochMilli(txWithBalance.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+                                val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
+                                "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
+                            }
+                        }
+                        dateString == key
+                    },
                     absoluteHistory = absoluteHistory,
                     groupingType = groupingType,
                     baseCurrency = baseCurrency,
                     exchangeRates = exchangeRates,
                     precision = precision
                 ),
-                transactions = enrichedTransactions
+                transactions = groupItems
             )
         }
     }

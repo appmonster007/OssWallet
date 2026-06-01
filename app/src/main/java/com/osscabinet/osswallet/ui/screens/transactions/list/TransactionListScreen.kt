@@ -89,7 +89,13 @@ fun TransactionListScreen(
         savedFilters = savedFilters,
         onTransactionEvent = { event ->
             when (event) {
-                is TransactionItemEvent.Click -> navigate { onEditTransactionClick(event.id) }
+                is TransactionItemEvent.Click -> navigate { 
+                    if (event.id.startsWith("tx_")) {
+                        onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                    } else {
+                        // Handle planned payment click if needed, maybe open detail?
+                    }
+                }
                 is TransactionItemEvent.Expand -> viewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> viewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> viewModel.quickUpdateStatus(
@@ -103,6 +109,8 @@ fun TransactionListScreen(
                 is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(
                     event.id
                 )
+                is TransactionItemEvent.ConfirmPlanned -> viewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
+                is TransactionItemEvent.CancelPlanned -> viewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
             }
         },
         onBackClick = {

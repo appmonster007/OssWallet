@@ -47,10 +47,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.rounded.Close
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
+import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -73,7 +78,7 @@ enum class SwipeDirection {
 
 @Composable
 fun SwipeableTransactionItem(
-    transaction: Transaction,
+    record: RecordUiModel,
     isRevealed: Boolean,
     onEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
@@ -132,13 +137,13 @@ fun SwipeableTransactionItem(
             contentAlignment = Alignment.Center
         ) {
             // Right Swipe Content (Reveals Status Actions on the Left)
-            if (animatedOffset > 0) {
+            if (animatedOffset > 0 && record is ConfirmedTransactionUiModel) {
                 StatusActionsRow(
-                    currentStatus = transaction.status,
+                    currentStatus = record.status,
                     onStatusChange = { status ->
                         onEvent(
                             TransactionItemEvent.StatusChange(
-                                transaction.id,
+                                record.item.transaction.id,
                                 status
                             )
                         )
@@ -150,14 +155,24 @@ fun SwipeableTransactionItem(
 
             // Left Swipe Content (Reveals Item Actions on the Right)
             if (animatedOffset < 0) {
-                TransactionActionsRow(
-                    onSplit = { onEvent(TransactionItemEvent.Split(transaction.id)) },
-                    onClone = { onEvent(TransactionItemEvent.Clone(transaction.id)) },
-                    onDelete = { onEvent(TransactionItemEvent.Delete(transaction.id)) },
-                    progress = progress,
-                    onCollapse = { onEvent(TransactionItemEvent.Collapse(transaction.id)) },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                )
+                if (record is ConfirmedTransactionUiModel) {
+                    TransactionActionsRow(
+                        onSplit = { onEvent(TransactionItemEvent.Split(record.item.transaction.id)) },
+                        onClone = { onEvent(TransactionItemEvent.Clone(record.item.transaction.id)) },
+                        onDelete = { onEvent(TransactionItemEvent.Delete(record.item.transaction.id)) },
+                        progress = progress,
+                        onCollapse = { onEvent(TransactionItemEvent.Collapse(record.id)) },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                } else if (record is PlannedPaymentUiModel) {
+                    PlannedActionsRow(
+                        onConfirm = { onEvent(TransactionItemEvent.ConfirmPlanned(record.paymentId, record.timestamp)) },
+                        onCancel = { onEvent(TransactionItemEvent.CancelPlanned(record.paymentId, record.timestamp)) },
+                        progress = progress,
+                        onCollapse = { onEvent(TransactionItemEvent.Collapse(record.id)) },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                }
             }
         }
 
@@ -197,42 +212,42 @@ fun SwipeableTransactionItem(
                         onDragEnd = {
                             when (swipeDirection) {
                                 SwipeDirection.RIGHT -> {
-                                    if (offsetX >= fullSwipeThresholdPx) {
+                                    if (record is ConfirmedTransactionUiModel && offsetX >= fullSwipeThresholdPx) {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onEvent(TransactionItemEvent.FullSwipeRight(transaction.id))
+                                        onEvent(TransactionItemEvent.FullSwipeRight(record.item.transaction.id))
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
                                     } else if (offsetX > rightSwipeThresholdPx / 2) {
                                         offsetX = rightSwipeThresholdPx
-                                        onEvent(TransactionItemEvent.Expand(transaction.id))
+                                        onEvent(TransactionItemEvent.Expand(record.id))
                                     } else {
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
-                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
+                                        onEvent(TransactionItemEvent.Collapse(record.id))
                                     }
                                 }
 
                                 SwipeDirection.LEFT -> {
                                     if (abs(offsetX) > leftSwipeThresholdPx / 2) {
                                         offsetX = -leftSwipeThresholdPx
-                                        onEvent(TransactionItemEvent.Expand(transaction.id))
+                                        onEvent(TransactionItemEvent.Expand(record.id))
                                     } else {
                                         offsetX = 0f
                                         swipeDirection = SwipeDirection.NONE
-                                        onEvent(TransactionItemEvent.Collapse(transaction.id))
+                                        onEvent(TransactionItemEvent.Collapse(record.id))
                                     }
                                 }
 
                                 else -> {
                                     offsetX = 0f
-                                    onEvent(TransactionItemEvent.Collapse(transaction.id))
+                                    onEvent(TransactionItemEvent.Collapse(record.id))
                                 }
                             }
                         },
                         onDragCancel = {
                             offsetX = 0f
                             swipeDirection = SwipeDirection.NONE
-                            onEvent(TransactionItemEvent.Collapse(transaction.id))
+                            onEvent(TransactionItemEvent.Collapse(record.id))
                         }
                     )
                 },
@@ -323,6 +338,45 @@ fun TransactionActionsRow(
 }
 
 @Composable
+fun PlannedActionsRow(
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    progress: Float,
+    onCollapse: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val actions = listOf(
+            Triple(Icons.Rounded.CheckCircle, "Confirm", PositiveAmountColor),
+            Triple(Icons.Rounded.Close, "Cancel", AppColors.error)
+        )
+
+        actions.forEachIndexed { index, (icon, label, color) ->
+            val itemProgress = (progress * 1.5f - (index * 0.15f)).coerceIn(0f, 1f)
+
+            ExpressiveActionButton(
+                icon = icon,
+                label = label,
+                containerColor = color.copy(alpha = 0.12f),
+                contentColor = color,
+                scale = itemProgress,
+                onClick = {
+                    when (label) {
+                        "Confirm" -> onConfirm()
+                        "Cancel" -> onCancel()
+                    }
+                    onCollapse()
+                }
+            )
+        }
+    }
+}
+
+@Composable
 fun ExpressiveActionButton(
     icon: ImageVector,
     label: String,
@@ -373,7 +427,16 @@ fun SwipeableTransactionItemPreview() {
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = Category.SYSTEM_UNKNOWN
+        categoryId = 1L
+    )
+
+    val mockRecord = ConfirmedTransactionUiModel(
+        item = TransactionWithBalance(mockTransaction, BigDecimal("100"), BigDecimal("55")),
+        accountName = "Main Wallet",
+        accountCurrency = "USD",
+        categoryName = "Food",
+        categoryIcon = "Category",
+        categoryColor = 0xFF4CAF50.toInt()
     )
 
     OssWalletTheme {
@@ -382,7 +445,7 @@ fun SwipeableTransactionItemPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SwipeableTransactionItem(
-                transaction = mockTransaction,
+                record = mockRecord,
                 isRevealed = false,
                 onEvent = {}
             ) {

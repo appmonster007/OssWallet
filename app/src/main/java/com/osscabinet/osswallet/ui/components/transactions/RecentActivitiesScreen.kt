@@ -30,12 +30,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
+import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.TransactionUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -57,7 +59,7 @@ fun RecentActivitiesScreen(
     onTransactionEvent: (TransactionItemEvent) -> Unit = {},
     baseCurrency: String = "USD",
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
-    revealedCardIds: List<Long> = emptyList(),
+    revealedCardIds: List<String> = emptyList(),
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
@@ -160,47 +162,47 @@ fun RecentActivitiesScreen(
 
                     itemsIndexed(
                         group.transactions,
-                        key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
-                        val transaction = enriched.item.transaction
+                        key = { _, record -> record.id }) { index, record ->
+                        val icon = getIconByName(record.categoryIcon)
+                        val iconBg = Color(record.categoryColor)
 
                         Box(
                             modifier = Modifier.fillMaxWidth().hazeSource(hazeState)
                         ) {
                         SwipeableTransactionItem(
-                            transaction = transaction,
-                            isRevealed = revealedCardIds.contains(transaction.id),
+                            record = record,
+                            isRevealed = revealedCardIds.contains(record.id),
                             onEvent = onTransactionEvent
                         ) {
                             AeonTransactionItem(
-                                category = enriched.categoryName,
-                                account = enriched.accountName,
+                                category = record.categoryName,
+                                account = record.accountName,
                                 amount = formatAuto(
-                                    transaction.amount,
-                                    transaction.currency
+                                    record.amount,
+                                    record.currency
                                 ),
-                                convertedAmount = if ((transaction.currency != baseCurrency) && (enriched.amountInBase != null)) {
-                                    formatAuto(enriched.amountInBase, baseCurrency)
+                                convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
+                                    formatAuto(record.amountInBase, baseCurrency)
                                 } else null,
-                                balanceBefore = formatAuto(
-                                    enriched.item.balanceBefore,
-                                    enriched.accountCurrency
-                                ),
-                                balanceAfter = formatAuto(
-                                    enriched.item.balanceAfter,
-                                    enriched.accountCurrency
-                                ),
-                                type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
-                                    transaction.timestamp
-                                ),
-                                note = transaction.note,
-                                tags = enriched.tags,
-                                icon = getIconByName(enriched.categoryIcon),
-                                iconBg = Color(enriched.categoryColor),
+                                balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                    record.item.balanceBefore,
+                                    record.accountCurrency
+                                ) else "",
+                                balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                    record.item.balanceAfter,
+                                    record.accountCurrency
+                                ) else "",
+                                type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                timestamp = if (record is ConfirmedTransactionUiModel) com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(record.timestamp)
+                                            else com.osscabinet.ossWallet.ui.util.TimeUtils.formatDate(record.timestamp),
+                                note = record.note,
+                                tags = record.tags,
+                                icon = icon,
+                                iconBg = iconBg,
                                 useNoteAsHeader = useNoteAsHeader,
-                                showOpeningBalance = showItemOpeningBalance,
-                                showClosingBalance = showItemClosingBalance,
-                                status = transaction.status,
+                                showOpeningBalance = showItemOpeningBalance && record is ConfirmedTransactionUiModel,
+                                showClosingBalance = showItemClosingBalance && record is ConfirmedTransactionUiModel,
+                                status = (record as? ConfirmedTransactionUiModel)?.status ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
                                 showAccount = showAccount,
                                 showCategory = showCategory,
                                 showNote = showNote,
@@ -208,7 +210,8 @@ fun RecentActivitiesScreen(
                                 showTimestamp = showTimestamp,
                                 showIcon = showIcon,
                                 showDividers = index < group.transactions.size - 1,
-                            ) { onTransactionEvent(TransactionItemEvent.Click(transaction.id)) }
+                                isPlanned = record is PlannedPaymentUiModel
+                            ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
                         }
                         } // hazeSource Box
                     }
@@ -230,9 +233,9 @@ fun RecentActivitiesScreenPreview() {
         currency = "USD",
         transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
-        categoryId = Category.SYSTEM_UNKNOWN
+        categoryId = 1L
     )
-    val mockUiModel = TransactionUiModel(
+    val mockUiModel = ConfirmedTransactionUiModel(
         item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
         accountName = "Primary Account",
         accountCurrency = "USD",

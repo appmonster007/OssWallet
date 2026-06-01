@@ -26,6 +26,7 @@ data class DiscoveredPattern(
     val confidence: Float,
     val occurrences: Int,
     val lastDate: Long,
+    val representativeTransactionId: Long,
     val existsAsTemplate: Boolean = false,
     val existsAsPlannedPayment: Boolean = false
 )
@@ -103,7 +104,8 @@ object PatternDiscoveryService {
             recurrenceRule = recurrenceResult.rule,
             confidence = totalConfidence,
             occurrences = txs.size,
-            lastDate = lastTx.timestamp
+            lastDate = lastTx.timestamp,
+            representativeTransactionId = lastTx.id
         )
     }
 

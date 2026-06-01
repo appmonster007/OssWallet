@@ -33,8 +33,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,6 +45,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
+import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -77,7 +83,7 @@ fun AeonTransactionList(
     showTimestamp: Boolean = true,
     showIcon: Boolean = true,
     baseCurrency: String,
-    revealedCardIds: List<Long> = emptyList()
+    revealedCardIds: List<String> = emptyList()
 ) {
     val hazeState = remember { HazeState() }
     CompositionLocalProvider(LocalHazeState provides hazeState) {
@@ -111,55 +117,56 @@ fun AeonTransactionList(
 
             itemsIndexed(
                 group.transactions,
-                key = { _, enriched -> enriched.item.transaction.id }) { index, enriched ->
-                val tx = enriched.item.transaction
-                val icon = getIconByName(enriched.categoryIcon)
-                val iconBg = Color(enriched.categoryColor)
+                key = { _, record -> record.id }) { index, record ->
+                val icon = getIconByName(record.categoryIcon)
+                val iconBg = Color(record.categoryColor)
 
                 Box(
                     modifier = Modifier.fillMaxWidth().hazeSource(hazeState)
                 ) {
                 SwipeableTransactionItem(
-                    transaction = tx,
-                    isRevealed = revealedCardIds.contains(tx.id),
+                    record = record,
+                    isRevealed = revealedCardIds.contains(record.id),
                     onEvent = onTransactionEvent
                 ) {
                     AeonTransactionItem(
-                        category = enriched.categoryName,
-                        account = enriched.accountName,
+                        category = record.categoryName,
+                        account = record.accountName,
                         amount = formatAuto(
-                            tx.amount,
-                            tx.currency
+                            record.amount,
+                            record.currency
                         ),
-                        convertedAmount = if ((tx.currency != baseCurrency) && (enriched.amountInBase != null)) {
-                            formatAuto(enriched.amountInBase, baseCurrency)
+                        convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
+                            formatAuto(record.amountInBase, baseCurrency)
                         } else null,
-                        balanceBefore = formatAuto(
-                            enriched.item.balanceBefore,
-                            enriched.accountCurrency
-                        ),
-                        balanceAfter = formatAuto(
-                            enriched.item.balanceAfter,
-                            enriched.accountCurrency
-                        ),
-                        type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                        timestamp = com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(tx.timestamp),
-                        note = tx.note,
-                        tags = enriched.tags,
+                        balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
+                            record.item.balanceBefore,
+                            record.accountCurrency
+                        ) else "",
+                        balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
+                            record.item.balanceAfter,
+                            record.accountCurrency
+                        ) else "",
+                        type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        timestamp = if (record is ConfirmedTransactionUiModel) com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(record.timestamp)
+                                    else com.osscabinet.ossWallet.ui.util.TimeUtils.formatDate(record.timestamp),
+                        note = record.note,
+                        tags = record.tags,
                         icon = icon,
                         iconBg = iconBg,
                         useNoteAsHeader = useNoteAsHeader,
-                        showOpeningBalance = showItemOpeningBalance,
-                        showClosingBalance = showItemClosingBalance,
-                        status = tx.status,
+                        showOpeningBalance = showItemOpeningBalance && record is ConfirmedTransactionUiModel,
+                        showClosingBalance = showItemClosingBalance && record is ConfirmedTransactionUiModel,
+                        status = (record as? ConfirmedTransactionUiModel)?.status ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
                         showAccount = showAccount,
                         showCategory = showCategory,
                         showNote = showNote,
                         showTags = showTags,
                         showTimestamp = showTimestamp,
                         showIcon = showIcon,
-                        showDividers = index < group.transactions.size - 1
-                    ) { onTransactionEvent(TransactionItemEvent.Click(tx.id)) }
+                        showDividers = index < group.transactions.size - 1,
+                        isPlanned = record is PlannedPaymentUiModel
+                    ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
                 }
                 } // hazeSource Box
             }
@@ -202,6 +209,7 @@ fun AeonTransactionItem(
     showTimestamp: Boolean = true,
     showIcon: Boolean = true,
     containerColor: Color = AppColors.screenBackground,
+    isPlanned: Boolean = false,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -210,9 +218,26 @@ fun AeonTransactionItem(
     val bottomText = if (isNoteHeader) (if (showCategory) category else "")
     else (if (showNote) note else "")
 
+    val dashedBorder = if (isPlanned) {
+        Modifier.padding(4.dp).drawBehind {
+            val strokeWidth = 1.dp.toPx()
+            val dashWidth = 4.dp.toPx()
+            val dashGap = 4.dp.toPx()
+            drawRoundRect(
+                color = AppColors.border,
+                style = Stroke(
+                    width = strokeWidth,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashWidth, dashGap), 0f)
+                ),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(AeonTheme.dimensions.componentCornerRadius.toPx())
+            )
+        }
+    } else Modifier
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .then(dashedBorder)
             .clickable(onClick = onClick),
         color = containerColor,
         shape = RectangleShape

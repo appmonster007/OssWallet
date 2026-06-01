@@ -193,6 +193,12 @@ fun PlannedPaymentDetailContent(
     onSkipOccurrence: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val scheduleSummary = remember(payment) {
+        PlannedPaymentService.buildScheduleSummary(
+            payment.schedule.startDate,
+            payment.schedule.recurrenceRule
+        )
+    }
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
     val tabs = listOf(
         NavigationTab(
@@ -292,52 +298,31 @@ fun PlannedPaymentDetailContent(
 
                             // CONTEXT: Grid Layout (Compact Read-only)
                             item {
-                                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                    CompactDetailCell(
+                                        icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
+                                        label = "ACCOUNT",
+                                        value = account?.name ?: "Unknown",
+                                        modifier = Modifier.weight(1f),
+                                        iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                    )
+
+                                    if (payment.transactionType == TransactionType.TRANSFER) {
                                         CompactDetailCell(
-                                            icon = Icons.Rounded.Bookmark,
-                                            label = "TEMPLATE",
-                                            value = "None",
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        val scheduleSummary =
-                                            PlannedPaymentService.buildScheduleSummary(
-                                                payment.schedule.startDate,
-                                                payment.schedule.recurrenceRule
-                                            )
-                                        CompactDetailCell(
-                                            icon = Icons.Rounded.CalendarToday,
-                                            label = "SCHEDULE",
-                                            value = scheduleSummary,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                                        CompactDetailCell(
-                                            icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
-                                            label = "ACCOUNT",
-                                            value = account?.name ?: "Unknown",
+                                            icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
+                                            label = "TARGET ACCOUNT",
+                                            value = targetAccount?.name ?: "Unknown",
                                             modifier = Modifier.weight(1f),
-                                            iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                            iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
                                         )
-                                        
-                                        if (payment.transactionType == TransactionType.TRANSFER) {
-                                            CompactDetailCell(
-                                                icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
-                                                label = "TARGET ACCOUNT",
-                                                value = targetAccount?.name ?: "Unknown",
-                                                modifier = Modifier.weight(1f),
-                                                iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
-                                            )
-                                        } else {
-                                            CompactDetailCell(
-                                                icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
-                                                label = "CATEGORY",
-                                                value = category?.name ?: "Unknown",
-                                                modifier = Modifier.weight(1f),
-                                                iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
-                                            )
-                                        }
+                                    } else {
+                                        CompactDetailCell(
+                                            icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
+                                            label = "CATEGORY",
+                                            value = category?.name ?: "Unknown",
+                                            modifier = Modifier.weight(1f),
+                                            iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
+                                        )
                                     }
                                 }
                             }
@@ -354,7 +339,22 @@ fun PlannedPaymentDetailContent(
                                         modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
                                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                                     ) {
-                                        // 1. Note
+                                        // 1. Schedule
+                                        DetailMetaRow(
+                                            icon = Icons.Rounded.CalendarToday,
+                                            label = "Schedule",
+                                            value = scheduleSummary,
+                                            singleLine = false
+                                        )
+
+                                        // 2. Template
+                                        DetailMetaRow(
+                                            icon = Icons.Rounded.Bookmark,
+                                            label = "Linked Template",
+                                            value = if (payment.templateId != null) "Linked Template" else "None"
+                                        )
+
+                                        // 3. Note
                                         DetailMetaRow(
                                             icon = Icons.AutoMirrored.Rounded.Notes,
                                             label = "Note",
@@ -362,7 +362,7 @@ fun PlannedPaymentDetailContent(
                                             singleLine = false
                                         )
 
-                                        // 2. Payee
+                                        // 4. Payee
                                         DetailMetaRow(
                                             icon = Icons.Rounded.Person,
                                             label = "Payee",

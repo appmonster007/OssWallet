@@ -70,6 +70,39 @@ object PlannedPaymentService {
     }
 
     /**
+     * Core projection engine that generates future dates for a payment.
+     */
+    private fun projectDates(
+        payment: PlannedPayment,
+        limitDate: Long? = null,
+        limitCount: Int? = null,
+        minDate: Long? = null
+    ): List<Long> {
+        if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
+        val result = mutableListOf<Long>()
+        var due: Long? = payment.schedule.nextDueDate
+
+        while (due != null) {
+            if (limitDate != null && due > limitDate) break
+            if (payment.schedule.endDate != null && due > payment.schedule.endDate) break
+
+            if (minDate == null || due >= minDate) {
+                result.add(due)
+            }
+
+            if (limitCount != null && result.size >= limitCount) break
+            if (payment.schedule.recurrenceRule.type == RecurrenceType.ONE_TIME) break
+
+            val currentSchedule = payment.schedule.copy(nextDueDate = due)
+            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due)
+            
+            if (next == null || next <= due) break
+            due = next
+        }
+        return result
+    }
+
+    /**
      * Generates upcoming payment occurrences in the window [fromDate, fromDate + daysAhead].
      * Sorted by scheduledDate ascending.
      */
@@ -79,28 +112,15 @@ object PlannedPaymentService {
         daysAhead: Int
     ): List<UpcomingPaymentItem> {
         val windowEnd = fromDate + daysAhead.toLong() * 24 * 60 * 60 * 1000
-        val result = mutableListOf<UpcomingPaymentItem>()
-
-        for (payment in payments) {
-            if (payment.status != PlannedPaymentStatus.ACTIVE) continue
-
-            var due = payment.schedule.nextDueDate
-            while (due <= windowEnd) {
-                if (due >= payment.schedule.startDate) {
-                    result += UpcomingPaymentItem(
-                        plannedPayment = payment,
-                        scheduledDate = due,
-                        isOverdue = due < fromDate
-                    )
-                }
-                val currentSchedule = payment.schedule.copy(nextDueDate = due)
-                val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
-                if (next == due) break  // guard against infinite loop
-                due = next
+        return payments.flatMap { payment ->
+            projectDates(payment, limitDate = windowEnd, minDate = payment.schedule.startDate).map { date ->
+                UpcomingPaymentItem(
+                    plannedPayment = payment,
+                    scheduledDate = date,
+                    isOverdue = date < fromDate
+                )
             }
-        }
-
-        return result.sortedBy { it.scheduledDate }
+        }.sortedBy { it.scheduledDate }
     }
 
     /**
@@ -108,21 +128,13 @@ object PlannedPaymentService {
      * Respects endDate; stops early for ONE_TIME payments.
      */
     fun generateUntil(payment: PlannedPayment, now: Long, windowEnd: Long): List<UpcomingPaymentItem> {
-        if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
-        val result = mutableListOf<UpcomingPaymentItem>()
-        var due = payment.schedule.nextDueDate
-        while (due <= windowEnd) {
-            result += UpcomingPaymentItem(
+        return projectDates(payment, limitDate = windowEnd).map { date ->
+            UpcomingPaymentItem(
                 plannedPayment = payment,
-                scheduledDate = due,
-                isOverdue = due < now
+                scheduledDate = date,
+                isOverdue = date < now
             )
-            val currentSchedule = payment.schedule.copy(nextDueDate = due)
-            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
-            if (next == due) break
-            due = next
         }
-        return result
     }
 
     /**
@@ -130,21 +142,13 @@ object PlannedPaymentService {
      * Respects endDate; stops early for ONE_TIME payments.
      */
     fun generateNextN(payment: PlannedPayment, now: Long, n: Int): List<UpcomingPaymentItem> {
-        if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
-        val result = mutableListOf<UpcomingPaymentItem>()
-        var due = payment.schedule.nextDueDate
-        while (result.size < n) {
-            result += UpcomingPaymentItem(
+        return projectDates(payment, limitCount = n).map { date ->
+            UpcomingPaymentItem(
                 plannedPayment = payment,
-                scheduledDate = due,
-                isOverdue = due < now
+                scheduledDate = date,
+                isOverdue = date < now
             )
-            val currentSchedule = payment.schedule.copy(nextDueDate = due)
-            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
-            if (next == due) break
-            due = next
         }
-        return result
     }
 
     /**
@@ -157,30 +161,17 @@ object PlannedPaymentService {
         n: Int,
         endDate: Long? = null
     ): List<Long> {
-        val result = mutableListOf<Long>()
-        var current: Long? = startDate
-        
-        while (current != null && result.size < n) {
-            result.add(current)
-            if (rule.type == RecurrenceType.ONE_TIME) break
-            
-            // Temporary object to leverage existing calculation logic
-            val tempPayment = PlannedPayment(
-                name = "",
-                categoryId = 0,
-                amount = BigDecimal.ZERO,
-                transactionType = TransactionType.EXPENSE,
-                accountId = null,
-                currency = "USD",
-                schedule = PaymentSchedule(rule, startDate, endDate, current)
-            )
-            current = calculateNextDueDate(tempPayment, current)
-            
-            if (current != null && endDate != null && current > endDate) {
-                current = null
-            }
-        }
-        return result
+        // Temporary object to leverage existing calculation logic
+        val tempPayment = PlannedPayment(
+            name = "",
+            categoryId = 0,
+            amount = BigDecimal.ZERO,
+            transactionType = TransactionType.EXPENSE,
+            accountId = null,
+            currency = "USD",
+            schedule = PaymentSchedule(rule, startDate, endDate, startDate)
+        )
+        return projectDates(tempPayment, limitCount = n)
     }
 
     /**

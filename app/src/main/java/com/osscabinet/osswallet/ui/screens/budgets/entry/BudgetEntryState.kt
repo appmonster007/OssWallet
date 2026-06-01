@@ -32,7 +32,6 @@ data class BudgetEntryState(
     val hasWarranty: Boolean? = null,
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
-    val excludeFuture: Boolean = true,
     val selectedCategoryIds: Set<Long> = emptySet(),
     val selectedAccountIds: Set<String> = emptySet(),
     val selectedCurrencies: Set<String> = emptySet(),

@@ -34,7 +34,6 @@ sealed class LoanEntryEvent {
     data class SetHasWarranty(val hasWarranty: Boolean?) : LoanEntryEvent()
     data class SetWarrantyExpirationStart(val date: Long?) : LoanEntryEvent()
     data class SetWarrantyExpirationEnd(val date: Long?) : LoanEntryEvent()
-    data class SetExcludeFuture(val exclude: Boolean) : LoanEntryEvent()
     data class SetStartDate(val date: Long) : LoanEntryEvent()
     data class SetHasSettlementDate(val has: Boolean) : LoanEntryEvent()
     data class SetSettlementDate(val date: Long) : LoanEntryEvent()

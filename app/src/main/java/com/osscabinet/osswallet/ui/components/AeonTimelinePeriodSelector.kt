@@ -190,7 +190,7 @@ fun AeonTimelinePeriodSelector(
                             state = pagerState,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(26.dp)
+                                .height(22.dp)
                         ) { page ->
                             DateDisplayArea(
                                 page = page,

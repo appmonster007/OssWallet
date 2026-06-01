@@ -33,7 +33,6 @@ data class FilterEntryState(
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
     val timelineRange: TimelineRange = TimelineRange.AllTime(excludeFuture = true),
-    val excludeFuture: Boolean = true,
 
     // UI State
     val isEditMode: Boolean = false,

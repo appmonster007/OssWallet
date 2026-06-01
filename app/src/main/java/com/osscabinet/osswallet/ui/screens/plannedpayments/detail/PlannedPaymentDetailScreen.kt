@@ -50,15 +50,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
@@ -74,7 +81,9 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.NeutralStatusColor
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
@@ -87,7 +96,7 @@ import java.time.temporal.ChronoUnit
 fun PlannedPaymentDetailScreen(
     plannedPaymentId: Long,
     viewModel: PlannedPaymentViewModel,
-    transactionManager: TransactionManager,
+    transactionManager: TransactionManager, // Keep for signature consistency with NavGraph
     templateViewModel: TemplateViewModel? = null,
     accounts: List<Account> = emptyList(),
     categories: List<Category> = emptyList(),
@@ -99,8 +108,8 @@ fun PlannedPaymentDetailScreen(
     val payment =
         remember(plannedPaymentId, payments) { payments.find { it.id == plannedPaymentId } }
 
-    LaunchedEffect(payment) {
-        if (payment == null) {
+    LaunchedEffect(payments) {
+        if (payments.isNotEmpty() && payment == null) {
             onBackClick()
         }
     }
@@ -117,6 +126,50 @@ fun PlannedPaymentDetailScreen(
         return
     }
 
+    PlannedPaymentDetailContent(
+        payment = payment,
+        occurrences = occurrences,
+        accounts = accounts,
+        categories = categories,
+        onBackClick = onBackClick,
+        onEditClick = { onEditClick(payment.id) },
+        onSaveAsTemplateClick = {
+            templateViewModel?.addTemplate(
+                name = payment.name,
+                categoryId = payment.categoryId,
+                amount = payment.amount,
+                transactionType = payment.transactionType,
+                accountId = payment.accountId,
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                transferRate = payment.transferRate,
+                note = payment.note,
+                payee = payment.payee,
+                location = payment.location,
+                paymentMethod = payment.paymentMethod,
+                currency = payment.currency,
+                tags = payment.tags,
+                profileId = payment.profileId
+            )
+        },
+        onConfirmOccurrence = { date -> onConfirmClick(payment.id, date) },
+        onSkipOccurrence = { viewModel.quickSkip(payment) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlannedPaymentDetailContent(
+    payment: PlannedPayment,
+    occurrences: List<PlannedPaymentOccurrence>,
+    accounts: List<Account>,
+    categories: List<Category>,
+    onBackClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onSaveAsTemplateClick: () -> Unit,
+    onConfirmOccurrence: (Long?) -> Unit,
+    onSkipOccurrence: () -> Unit
+) {
     val now = remember { System.currentTimeMillis() }
     val dateFormatter =
         remember { DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()) }
@@ -154,30 +207,10 @@ fun PlannedPaymentDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            templateViewModel?.addTemplate(
-                                name = payment.name,
-                                categoryId = payment.categoryId,
-                                amount = payment.amount,
-                                transactionType = payment.transactionType,
-                                accountId = payment.accountId,
-                                targetAccountId = payment.targetAccountId,
-                                targetCurrency = payment.targetCurrency,
-                                transferRate = payment.transferRate,
-                                note = payment.note,
-                                payee = payment.payee,
-                                location = payment.location,
-                                paymentMethod = payment.paymentMethod,
-                                currency = payment.currency,
-                                tags = payment.tags,
-                                profileId = payment.profileId
-                            )
-                        }
-                    ) {
+                    IconButton(onClick = onSaveAsTemplateClick) {
                         Icon(Icons.Rounded.Schedule, contentDescription = "Save as Template")
                     }
-                    IconButton(onClick = { onEditClick(payment.id) }) {
+                    IconButton(onClick = onEditClick) {
                         Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                     }
                 },
@@ -345,7 +378,7 @@ fun PlannedPaymentDetailScreen(
                                 DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
                             }
                             if (!payment.payee.isNullOrBlank()) {
-                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.payee!!)
+                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.payee)
                             }
                             if (categoryName != "Unknown") {
                                 DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
@@ -354,7 +387,7 @@ fun PlannedPaymentDetailScreen(
                                 DetailMetaRow(
                                     Icons.Rounded.Payments,
                                     "Payment method",
-                                    payment.paymentMethod!!.displayName
+                                    payment.paymentMethod.displayName
                                 )
                             }
                             if (payment.tags.isNotEmpty()) {
@@ -368,7 +401,7 @@ fun PlannedPaymentDetailScreen(
                                 DetailMetaRow(
                                     Icons.AutoMirrored.Rounded.Notes,
                                     "Note",
-                                    payment.note!!,
+                                    payment.note,
                                     singleLine = false
                                 )
                             }
@@ -396,12 +429,8 @@ fun PlannedPaymentDetailScreen(
                         item = item,
                         status = status,
                         dateFormatter = dateFormatter,
-                        onConfirm = {
-                            onConfirmClick(payment.id, item.scheduledDate)
-                        },
-                        onSkip = {
-                            viewModel.quickSkip(payment)
-                        }
+                        onConfirm = { onConfirmOccurrence(item.scheduledDate) },
+                        onSkip = onSkipOccurrence
                     )
                 }
             }
@@ -731,5 +760,74 @@ private fun PastOccurrenceItem(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PlannedPaymentDetailPreview() {
+    val samplePayment = PlannedPayment(
+        id = 1L,
+        name = "Netflix Subscription",
+        amount = BigDecimal("15.99"),
+        currency = "USD",
+        transactionType = TransactionType.EXPENSE,
+        categoryId = 1L,
+        accountId = "acc_1",
+        payee = "Netflix",
+        note = "Monthly entertainment plan",
+        schedule = PaymentSchedule(
+            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
+            startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
+            nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
+        ),
+        paymentMethod = PaymentMethod.CREDIT_CARD,
+        profileId = 1,
+        transactionStatus = TransactionStatus.CLEARED
+    )
+
+    val sampleOccurrences = listOf(
+        PlannedPaymentOccurrence(
+            id = 101,
+            plannedPaymentId = 1L,
+            scheduledDate = System.currentTimeMillis() - 28 * 24 * 60 * 60 * 1000L,
+            status = OccurrenceStatus.CONFIRMED
+        )
+    )
+
+    val sampleAccounts = listOf(
+        Account(
+            id = "acc_1",
+            name = "Chase Bank",
+            currencyCode = "USD",
+            structureType = AccountStructureType.SAVINGS,
+            colorHex = "#004D5F",
+            icon = "AccountBalance"
+        )
+    )
+
+    val sampleCategories = listOf(
+        Category(
+            id = 1L,
+            name = "Entertainment",
+            iconName = "Movie",
+            colorHex = android.graphics.Color.BLUE,
+            isDefault = true,
+            parentId = null
+        )
+    )
+
+    OssWalletTheme {
+        PlannedPaymentDetailContent(
+            payment = samplePayment,
+            occurrences = sampleOccurrences,
+            accounts = sampleAccounts,
+            categories = sampleCategories,
+            onBackClick = {},
+            onEditClick = {},
+            onSaveAsTemplateClick = {},
+            onConfirmOccurrence = {},
+            onSkipOccurrence = {}
+        )
     }
 }

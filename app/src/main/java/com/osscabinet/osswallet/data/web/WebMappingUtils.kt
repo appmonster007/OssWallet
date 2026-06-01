@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
@@ -500,4 +501,63 @@ internal fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
     )
 
     is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> copy(order = newOrder)
+}
+
+internal fun CardConfig.withFilter(newFilter: TransactionFilter): CardConfig = when (this) {
+    is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig -> copy(
+        filter = newFilter
+    )
+    is com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig -> copy(filter = newFilter)
+}
+
+internal fun CardFilterUpdateDto.toDomain(): TransactionFilter {
+    val timelineRange = when (timelineType?.uppercase()) {
+        "ALL_TIME" -> TimelineRange.AllTime
+        "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo)
+        "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+        "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
+        "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
+        "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
+        "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
+        "HALF_YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR)
+        "LAST_7_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_7_DAYS)
+        "LAST_30_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+        "LAST_6_MONTHS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_6_MONTHS)
+        "LAST_1_YEAR" -> TimelineRange.LastPeriod(LastPeriodType.LAST_1_YEAR)
+        else -> TimelineRange.AllTime
+    }
+    return TransactionFilter(
+        timelineRange = timelineRange,
+        queryNote = queryNote,
+        queryPayee = queryPayee,
+        categoryIds = categoryIds.toSet(),
+        accountIds = accountIds.toSet(),
+        transactionTypes = transactionTypes.mapNotNull { t ->
+            TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+        }.toSet(),
+        currencies = currencies.toSet(),
+        tags = tags.toSet(),
+        statuses = statuses.mapNotNull { s ->
+            TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) }
+        }.toSet(),
+        paymentMethods = paymentMethods.mapNotNull { m ->
+            PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+        }.toSet(),
+        minAmount = minAmount?.let { BigDecimal.valueOf(it) },
+        maxAmount = maxAmount?.let { BigDecimal.valueOf(it) },
+        excludeFuture = excludeFuture
+    )
 }

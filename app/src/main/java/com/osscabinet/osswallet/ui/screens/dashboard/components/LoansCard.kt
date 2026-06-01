@@ -28,12 +28,14 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.WarningColor
@@ -45,21 +47,33 @@ fun LoansCard(
     items: List<LoanSummary>,
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     filterRules: CardFilterRules? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = false,
-        filter = config.filter,
+        filterEnabled = showFilterButton,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = filterRules ?: config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             LoansSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
         }

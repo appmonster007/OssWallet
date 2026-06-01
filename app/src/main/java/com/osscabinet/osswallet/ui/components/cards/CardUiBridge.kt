@@ -360,6 +360,12 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
+                        onFilterChange = { id, filter ->
+                            updateHandler.updateCardPlannedPaymentsFilter(
+                                id,
+                                filter
+                            )
+                        },
                         onItemClick = callbacks.paymentActions.onClick,
                         onConfirm = callbacks.paymentActions.onConfirm,
                         onSkip = callbacks.paymentActions.onSkip,
@@ -383,6 +389,12 @@ fun rememberCardWithCallbacks(
                                 newConfig
                             )
                         },
+                        onFilterChange = { id, filter ->
+                            updateHandler.updateCardBudgetsFilter(
+                                id,
+                                filter
+                            )
+                        },
                         onBudgetClick = callbacks.budgetActions.onClick,
                         onSeeAll = callbacks.budgetActions.onSeeAll,
                         onDelete = { onDelete(config.cardId) },
@@ -402,6 +414,12 @@ fun rememberCardWithCallbacks(
                             updateHandler.updateCardLoansConfig(
                                 config.cardId,
                                 newConfig
+                            )
+                        },
+                        onFilterChange = { id, filter ->
+                            updateHandler.updateCardLoansFilter(
+                                id,
+                                filter
                             )
                         },
                         onLoanClick = callbacks.loanActions.onClick,

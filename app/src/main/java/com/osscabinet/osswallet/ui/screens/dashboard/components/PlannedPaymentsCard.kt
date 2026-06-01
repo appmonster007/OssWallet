@@ -50,8 +50,10 @@ import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
@@ -67,21 +69,33 @@ fun PlannedPaymentsCard(
     overdue: List<PlannedPayment>,
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
+    filterContext: FilterSelectionContext = FilterSelectionContext(),
     filterRules: CardFilterRules? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
+    inheritedFilter: TransactionFilter = TransactionFilter(),
+    screenOwnsTimeline: Boolean = false,
+    showFilterButton: Boolean = true,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
+    val displayFilter =
+        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
+            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
+        else config.filter
+
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.EventRepeat,
         modifier = modifier,
         headerModifier = headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = false,
-        filter = config.filter,
+        filterEnabled = showFilterButton,
+        filter = displayFilter,
         baseFilter = baseFilter,
         filterRules = filterRules ?: config.filterRules,
+        filterContext = filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
             PlannedPaymentsSettingsSheet(
                 config = config,

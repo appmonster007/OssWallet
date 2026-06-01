@@ -7,6 +7,8 @@ import com.osscabinet.ossWallet.data.web.toDefaultCardConfig
 import com.osscabinet.ossWallet.data.web.toFilterSummaryDto
 import com.osscabinet.ossWallet.data.web.toPayloadDto
 import com.osscabinet.ossWallet.data.web.withOrder
+import com.osscabinet.ossWallet.data.web.toDomain
+import com.osscabinet.ossWallet.data.web.withFilter
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardType
@@ -35,7 +37,7 @@ fun Route.dashboardRoutes(
     currencyRepository: CurrencyRepository
 ) {
     route("/dashboard") {
-        get("/cards") {
+        get {
             if (!authenticate(authSessionManager)) return@get
             try {
                 val profileId = settingsRepository.currentProfileId.first()
@@ -184,6 +186,31 @@ fun Route.dashboardRoutes(
                         data = mapOf("reordered" to updated.size)
                     )
                 )
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse<Unit>(
+                        success = false,
+                        error = "Internal error"
+                    )
+                )
+            }
+        }
+
+        put("/cards/{id}") {
+            if (!authenticate(authSessionManager)) return@put
+            try {
+                val id = call.parameters["id"]
+                    ?: return@put call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, error = "Invalid id")
+                    )
+                val update = call.receive<CardFilterUpdateDto>()
+                cardRepository.updateDashboardCard(id) { config ->
+                    config.withFilter(update.toDomain())
+                }
+
+                call.respond(ApiResponse(success = true, data = mapOf("updated" to id)))
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.InternalServerError,

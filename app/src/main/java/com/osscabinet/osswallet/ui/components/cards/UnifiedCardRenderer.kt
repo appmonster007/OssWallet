@@ -298,8 +298,12 @@ fun UnifiedCardRenderer(
                 overdue = renderData.overdue,
                 config = renderData.config,
                 callbacks = cb,
+                filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -313,8 +317,12 @@ fun UnifiedCardRenderer(
                 items = renderData.items,
                 config = renderData.config,
                 callbacks = cb,
+                filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -328,8 +336,12 @@ fun UnifiedCardRenderer(
                 items = renderData.items,
                 config = renderData.config,
                 callbacks = cb,
+                filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
+                inheritedFilter = inheritedFilter,
+                screenOwnsTimeline = screenOwnsTimeline,
+                showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )

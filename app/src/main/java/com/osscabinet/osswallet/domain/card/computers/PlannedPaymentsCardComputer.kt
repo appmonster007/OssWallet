@@ -26,13 +26,21 @@ class PlannedPaymentsCardComputer :
         )
         val now = System.currentTimeMillis()
 
+        // Filter planned payments based on the merged filter (categories, accounts, etc.)
+        val filteredPayments = input.plannedPayments.filter { pp ->
+            (mergedFilter.accountIds.isEmpty() || pp.accountId in mergedFilter.accountIds) &&
+                    (mergedFilter.categoryIds.isEmpty() || pp.categoryId in mergedFilter.categoryIds) &&
+                    (mergedFilter.currencies.isEmpty() || pp.currency in mergedFilter.currencies) &&
+                    (mergedFilter.tags.isEmpty() || pp.tags.any { it in mergedFilter.tags })
+        }
+
         // Honor excludeFuture toggle if it's part of the card/screen filter.
         // If excludeFuture is true, we only show overdue payments (which are technically in the past).
-        val overdue = PlannedPaymentService.getOverdue(input.plannedPayments, now)
+        val overdue = PlannedPaymentService.getOverdue(filteredPayments, now)
         val overdueIds = overdue.map { it.id }.toSet()
 
         val allUpcoming = if (mergedFilter.excludeFuture) emptyList() else PlannedPaymentService.generateUpcoming(
-            payments = input.plannedPayments,
+            payments = filteredPayments,
             fromDate = now,
             daysAhead = config.daysAhead
         )

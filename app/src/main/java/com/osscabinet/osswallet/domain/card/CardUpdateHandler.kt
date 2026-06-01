@@ -155,15 +155,39 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardPlannedPaymentsFilter(cardId: String, filter: TransactionFilter) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is PlannedPaymentsCardConfig) config.copy(filter = filter) else config
+            }
+        }
+    }
+
     fun updateCardBudgetsConfig(cardId: String, config: BudgetsCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }
         }
     }
 
+    fun updateCardBudgetsFilter(cardId: String, filter: TransactionFilter) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is BudgetsCardConfig) config.copy(filter = filter) else config
+            }
+        }
+    }
+
     fun updateCardLoansConfig(cardId: String, config: LoansCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
+    fun updateCardLoansFilter(cardId: String, filter: TransactionFilter) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is LoansCardConfig) config.copy(filter = filter) else config
+            }
         }
     }
 

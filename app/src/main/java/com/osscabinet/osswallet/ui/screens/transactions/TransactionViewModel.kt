@@ -71,11 +71,25 @@ class TransactionViewModel @Inject constructor(
     private val tagRepository: TagRepository,
 ) : BaseViewModel(settingsRepository) {
 
-    // Replace multiple filter states with single FilterManager
-    private val recordsFilterManager = FilterManager()
+    enum class RecordNavigationMode {
+        PERSISTENT, // "Home Base" - remembers everything
+        TRANSIENT   // "Link View" - isolated, one-off filter
+    }
 
-    // Expose merged filter as StateFlow directly from FilterManager
-    val recordsFilter: StateFlow<TransactionFilter> = recordsFilterManager.mergedFilter
+    // Two independent filter managers for dual-mode persistence
+    private val persistentFilterManager = FilterManager()
+    private val transientFilterManager = FilterManager()
+    
+    private val _navigationMode = MutableStateFlow(RecordNavigationMode.PERSISTENT)
+    val navigationMode = _navigationMode.asStateFlow()
+
+    // Expose merged filter based on active mode
+    val recordsFilter: StateFlow<TransactionFilter> = _navigationMode
+        .flatMapLatest { mode ->
+            if (mode == RecordNavigationMode.TRANSIENT) transientFilterManager.mergedFilter
+            else persistentFilterManager.mergedFilter
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionFilter())
 
     // Track the initial filter from navigation (for resetting)
     private val _initialFilter = MutableStateFlow(TransactionFilter())
@@ -116,11 +130,11 @@ class TransactionViewModel @Inject constructor(
             )
 
     init {
-        // Sync global excludeFuture setting to the records filter as the initial state
+        // Sync initial state to the persistent records filter
         viewModelScope.launch {
-            val settings = settingsRepository.recordsSettings.first()
-            _initialFilter.value = _initialFilter.value.copy(excludeFuture = settings.excludeFutureTransactions)
-            recordsFilterManager.setFilter("initial", _initialFilter.value)
+            val baseFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+            _initialFilter.value = baseFilter
+            persistentFilterManager.setFilter("initial", baseFilter)
         }
     }
 
@@ -216,7 +230,7 @@ class TransactionViewModel @Inject constructor(
                 daysAhead = ((effectiveEndTime - (startTime ?: now)) / (24 * 60 * 60 * 1000)).toInt().coerceAtLeast(0)
             )
 
-            if (filter.excludeFuture) {
+            if (filter.timelineRange.excludeFuture) {
                 occurrences.filter { it.scheduledDate <= now }
             } else {
                 occurrences
@@ -297,7 +311,7 @@ class TransactionViewModel @Inject constructor(
             combine(
                 transactionUseCases.getFilteredTransactions(
                     profileId,
-                    TransactionFilter(timelineRange = TimelineRange.AllTime)
+                    TransactionFilter(timelineRange = TimelineRange.AllTime())
                 ),
                 templateRepository.getAllTemplates(),
                 plannedPaymentRepository.getAllPlannedPayments(profileId)
@@ -326,68 +340,91 @@ class TransactionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private fun getActiveManager() = if (_navigationMode.value == RecordNavigationMode.TRANSIENT) {
+        transientFilterManager
+    } else {
+        persistentFilterManager
+    }
+
     fun updateRecordsFilter(newFilter: TransactionFilter) {
-        recordsFilterManager.setFilter("manual", newFilter)
+        getActiveManager().setFilter("manual", newFilter)
     }
 
     fun setRecordsAccountFilter(accountId: String?) {
+        val manager = getActiveManager()
         if (accountId != null) {
-            recordsFilterManager.setFilter("account", TransactionFilter().forAccount(accountId))
+            manager.setFilter("account", TransactionFilter().forAccount(accountId))
         } else {
-            recordsFilterManager.removeFilter("account")
+            manager.removeFilter("account")
         }
     }
 
     fun setRecordsCategoryFilter(categoryId: Long?) {
+        val manager = getActiveManager()
         if (categoryId != null) {
-            recordsFilterManager.setFilter("category", TransactionFilter().forCategory(categoryId))
+            manager.setFilter("category", TransactionFilter().forCategory(categoryId))
         } else {
-            recordsFilterManager.removeFilter("category")
+            manager.removeFilter("category")
         }
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        recordsFilterManager.setFilter(
+        getActiveManager().setFilter(
             "date",
             TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end))
         )
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
-        recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = range))
+        getActiveManager().setFilter("date", TransactionFilter(timelineRange = range))
     }
 
     fun setIncomeTypeFilter(type: TransactionType?) {
+        val manager = getActiveManager()
         if (type != null) {
-            recordsFilterManager.setFilter(
+            manager.setFilter(
                 "type",
                 TransactionFilter(transactionTypes = setOf(type))
             )
         } else {
-            recordsFilterManager.removeFilter("type")
+            manager.removeFilter("type")
         }
     }
 
     fun clearRecordsFilters() {
-        recordsFilterManager.clear()
+        getActiveManager().clear()
     }
 
     /**
-     * Initialize the filter from a navigation context
-     * This should be called when the screen opens with a filter parameter
-     * Sets the initial filter in FilterManager
+     * Set the navigation mode and initialize filters accordingly.
+     * Requirement: Persistent mode remembers state, Transient mode is isolated.
      */
-    fun initializeRecordsFilter(filter: TransactionFilter) {
-        _initialFilter.value = filter
-        recordsFilterManager.clear()
-        recordsFilterManager.setFilter("initial", filter)
+    fun setRecordsMode(topLevel: Boolean, filter: TransactionFilter? = null) {
+        if (topLevel) {
+            _navigationMode.value = RecordNavigationMode.PERSISTENT
+            // persistentFilterManager already has its state preserved
+        } else {
+            _navigationMode.value = RecordNavigationMode.TRANSIENT
+            transientFilterManager.clear()
+            if (filter != null) {
+                transientFilterManager.setFilter("transient_base", filter)
+            }
+        }
     }
 
     /**
-     * Reset the filter to the initial state
+     * Reset the filter to the initial state for the CURRENT mode
      */
     fun resetToInitialFilter() {
-        initializeRecordsFilter(_initialFilter.value)
+        if (_navigationMode.value == RecordNavigationMode.TRANSIENT) {
+            // Re-apply the transient base if it exists
+            val base = transientFilterManager.getFilter("transient_base")
+            transientFilterManager.clear()
+            if (base != null) transientFilterManager.setFilter("transient_base", base)
+        } else {
+            persistentFilterManager.clear()
+            persistentFilterManager.setFilter("initial", _initialFilter.value)
+        }
     }
 
     fun addTag(name: String, color: Int) {
@@ -410,14 +447,6 @@ class TransactionViewModel @Inject constructor(
 
     fun updateRecordsSettings(update: (com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) -> com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) {
         viewModelScope.launch {
-            val oldSettings = recordsSettings.value
-            val newSettings = update(oldSettings)
-            
-            // If the excludeFuture toggle changed in the Top Bar, propagate it to the active filter
-            if (newSettings.excludeFutureTransactions != oldSettings.excludeFutureTransactions) {
-                updateRecordsFilter(recordsFilter.value.copy(excludeFuture = newSettings.excludeFutureTransactions))
-            }
-
             settingsRepository.updateRecordsSettings(update)
         }
     }

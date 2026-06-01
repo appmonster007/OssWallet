@@ -22,8 +22,7 @@ fun resolveEffectiveFilter(
     val candidate = if (screenOwnsTimeline) {
         // Screen timeline is authoritative (central filter behavior)
         inheritedFilter.merge(cardFilter).copy(
-            timelineRange = inheritedFilter.timelineRange,
-            excludeFuture = inheritedFilter.excludeFuture
+            timelineRange = inheritedFilter.timelineRange
         )
     } else {
         // Card timeline is authoritative if specified, otherwise inherits from screen.

@@ -314,7 +314,7 @@ fun ManagementScopeCard(
             }
 
             // Future Transactions
-            if (!filter.excludeFuture) {
+            if (!filter.timelineRange.excludeFuture) {
                 add(
                     ScopeGroup(
                         label = "FUTURE",
@@ -370,7 +370,7 @@ fun ManagementScopeCardPreview() {
         Column(modifier = Modifier.padding(16.dp)) {
             ManagementScopeCard(
                 filter = TransactionFilter(
-                    timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+                    timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false),
                     accountIds = setOf("1"),
                     categoryIds = setOf(101L, 102L),
                     tags = setOf("Vacation", "Work"),
@@ -379,8 +379,7 @@ fun ManagementScopeCardPreview() {
                     minAmount = BigDecimal("50"),
                     paymentMethods = setOf(PaymentMethod.CREDIT_CARD),
                     hasWarranty = true,
-                    linkedTransactionIds = setOf(1L, 2L, 3L),
-                    excludeFuture = false
+                    linkedTransactionIds = setOf(1L, 2L, 3L)
                 ),
                 allAccounts = listOf(
                     Account(id = "1", name = "Main Account", colorHex = "#FF0000", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, icon = "AccountBalance"),

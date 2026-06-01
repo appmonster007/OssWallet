@@ -74,7 +74,7 @@ class TimelineServiceTest {
 
         assertNotNull(headerData)
         assertEquals("Today", headerData.title)
-        assertEquals(BigDecimal.ZERO, headerData.incomeBase)
-        assertEquals(BigDecimal.ZERO, headerData.expenseBase)
+        assertEquals(BigDecimal.ZERO.setScale(2), headerData.incomeBase)
+        assertEquals(BigDecimal.ZERO.setScale(2), headerData.expenseBase)
     }
 }

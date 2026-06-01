@@ -144,8 +144,7 @@ object LoanService {
             currencies = loan.currencies,
             transactionTypes = loan.trackTypes,
             linkedTransactionIds = loan.linkedTransactionIds,
-            timelineRange = loan.timelineRange,
-            excludeFuture = false
+            timelineRange = loan.timelineRange
         )
     }
 

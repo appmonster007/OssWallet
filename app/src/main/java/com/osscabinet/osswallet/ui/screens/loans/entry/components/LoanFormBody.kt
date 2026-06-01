@@ -378,14 +378,6 @@ fun LoanFormBody(
                             }
                         }
                     }
-
-                    EntrySwitchRow(
-                        label = "Exclude Future",
-                        checked = state.excludeFuture,
-                        onCheckedChange = { onEvent(LoanEntryEvent.SetExcludeFuture(it)) },
-                        icon = Icons.Rounded.Schedule,
-                        subtitle = "Ignore future transactions"
-                    )
                 }
             }
 

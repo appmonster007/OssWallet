@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -181,7 +182,7 @@ class DashboardViewModel @Inject constructor(
                         budgets = budgets,
                         loans = loans,
                         loanPayments = loanPayments.groupBy { it.loanId },
-                        filter = TransactionFilter(excludeFuture = true),
+                        filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true)),
                         screenContext = ScreenContext.DASHBOARD,
                         commonFilterEnabled = false
                     )

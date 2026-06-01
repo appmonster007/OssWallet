@@ -12,7 +12,7 @@ import java.math.BigDecimal
 data class FilterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val timelineRange: TimelineRange = TimelineRange.AllTime(),
     val queryNote: String? = null,
     val isNoteRegex: Boolean = false,
     val queryPayee: String? = null,
@@ -31,6 +31,5 @@ data class FilterEntity(
     val currencies: Set<String> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val tags: Set<String> = emptySet(),
-    val excludeFuture: Boolean = true
+    val tags: Set<String> = emptySet()
 )

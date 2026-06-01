@@ -65,10 +65,10 @@ object BudgetService {
         // skips the date-range check entirely. Resolving it via getCurrentPeriodRange
         // collapses AllTime to (now, now), which matches nothing.
         val resolvedRange: TimelineRange = if (budget.timelineRange is TimelineRange.AllTime) {
-            TimelineRange.AllTime
+            budget.timelineRange.withExcludeFuture(excludeFuture)
         } else {
             val (start, end) = getCurrentPeriodRange(budget, now)
-            TimelineRange.CustomRange(start, end)
+            TimelineRange.CustomRange(start, end, excludeFuture = excludeFuture)
         }
 
         val expandedCategoryIds = if (allCategories.isNotEmpty() && budget.categoryIds.isNotEmpty()) {
@@ -84,8 +84,7 @@ object BudgetService {
             currencies = budget.currencies,
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
-            timelineRange = resolvedRange,
-            excludeFuture = excludeFuture
+            timelineRange = resolvedRange
         )
     }
 

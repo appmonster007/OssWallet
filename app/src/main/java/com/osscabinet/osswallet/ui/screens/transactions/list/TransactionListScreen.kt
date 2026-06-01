@@ -58,18 +58,17 @@ fun TransactionListScreen(
         }
     }
 
-    // Initialize filter from navigation parameter when screen opens
-    LaunchedEffect(filterJson) {
-        if (filterJson != null) {
+    // Initialize mode and filter from navigation parameters
+    LaunchedEffect(isTopLevelParam, filterJson) {
+        val filter = if (!filterJson.isNullOrEmpty()) {
             try {
-                val filter = Json.decodeFromString<TransactionFilter>(
+                Json.decodeFromString<TransactionFilter>(
                     java.net.URLDecoder.decode(filterJson, "UTF-8")
                 )
-                viewModel.initializeRecordsFilter(filter)
-            } catch (e: Exception) {
-                // Handle error silently
-            }
-        }
+            } catch (e: Exception) { null }
+        } else null
+        
+        viewModel.setRecordsMode(topLevel = isTopLevelParam, filter = filter)
     }
 
     // Only clear filters when explicitly navigating back (not when navigating within records context)
@@ -115,7 +114,6 @@ fun TransactionListScreen(
         },
         onBackClick = {
             navigate {
-                viewModel.clearRecordsFilters()
                 onBackClick()
             }
         },

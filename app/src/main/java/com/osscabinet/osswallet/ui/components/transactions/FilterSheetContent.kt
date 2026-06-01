@@ -224,10 +224,10 @@ fun FilterSheetContent(
             EntrySwitchRow(
                 icon = Icons.Default.Update,
                 label = "Show Future Transactions",
-                checked = !localFilter.excludeFuture,
+                checked = !localFilter.timelineRange.excludeFuture,
                 enabled = filterRules.futureToggleRule.isUserEditable,
                 onCheckedChange = {
-                    localFilter = localFilter.copy(excludeFuture = !it)
+                    localFilter = localFilter.copy(timelineRange = localFilter.timelineRange.withExcludeFuture(!it))
                     applyFilterWithDebounce(localFilter, debounceMs = 0)
                 }
             )

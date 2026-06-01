@@ -66,18 +66,20 @@ data class CardFilterRules(
      * This is the "Gatekeeper" that ensures data flowing into a card respects its constraints.
      */
     fun normalize(candidate: TransactionFilter): TransactionFilter {
+        val normalizedTimeline = timelineRule.apply(candidate.timelineRange)
+        val finalTimeline = normalizedTimeline.withExcludeFuture(futureToggleRule.apply(candidate.timelineRange.excludeFuture))
+
         return candidate.copy(
             transactionTypes = typeRule.apply(candidate.transactionTypes),
             accountIds = accountRule.apply(candidate.accountIds),
             categoryIds = categoryRule.apply(candidate.categoryIds),
             statuses = statusRule.apply(candidate.statuses),
-            excludeFuture = futureToggleRule.apply(candidate.excludeFuture),
             minAmount = amountRule.applyMin(candidate.minAmount),
             maxAmount = amountRule.applyMax(candidate.maxAmount),
             currencies = currencyRule.apply(candidate.currencies),
             tags = tagRule.apply(candidate.tags),
             paymentMethods = paymentMethodRule.apply(candidate.paymentMethods),
-            timelineRange = timelineRule.apply(candidate.timelineRange),
+            timelineRange = finalTimeline,
             queryNote = if (searchRule.isVisible) candidate.queryNote else null,
             queryPayee = if (searchRule.isVisible) candidate.queryPayee else null,
             hasWarranty = if (warrantyRule.isVisible) candidate.hasWarranty else null,

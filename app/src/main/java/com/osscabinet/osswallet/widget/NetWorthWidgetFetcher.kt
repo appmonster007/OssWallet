@@ -30,8 +30,7 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                     baseCurrency = common.baseCurrency,
                     exchangeRates = common.exchangeRates,
                     filter = TransactionFilter(
-                        timelineRange = config.timelineRange,
-                        excludeFuture = true
+                        timelineRange = config.timelineRange.withExcludeFuture(true)
                     ),
                     accounts = emptyList(),
                     categories = emptyList()

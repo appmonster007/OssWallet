@@ -361,7 +361,7 @@ fun BudgetDetailPreview() {
         name = "Monthly Groceries",
         limitAmount = BigDecimal("500"),
         currency = "USD",
-        timelineRange = TimelineRange.AllTime,
+        timelineRange = TimelineRange.AllTime(),
         categoryIds = setOf(1L, 2L),
         accountIds = emptySet(),
         tags = emptySet(),

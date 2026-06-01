@@ -22,7 +22,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
         // but should respect global Account/Category filters if explicitly merged.
         // We use a clean filter for budgets that ignores the timeline of input.filter.
         val baseBudgetFilter =
-            input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
+            input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime())
         val mergedFilter = resolveEffectiveFilter(
             baseBudgetFilter,
             config.filter,
@@ -50,7 +50,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 baseCurrency = input.displayCurrency,
                 now = now,
                 allCategories = input.categories,
-                excludeFuture = mergedFilter.excludeFuture
+                excludeFuture = mergedFilter.timelineRange.excludeFuture
             )
             val spent = BudgetService.calculateSpent(
                 budget = budget,
@@ -59,7 +59,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
                 baseCurrency = input.displayCurrency,
                 now = now,
                 allCategories = input.categories,
-                excludeFuture = mergedFilter.excludeFuture
+                excludeFuture = mergedFilter.timelineRange.excludeFuture
             )
             BudgetService.buildProgress(budget, spent, rollover)
         }

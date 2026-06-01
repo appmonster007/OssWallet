@@ -17,7 +17,6 @@ data class TransactionSectionSettings(
     val showItemClosingBalance: Boolean = true,
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     val showOnlyActiveCurrencies: Boolean = false,
-    val excludeFutureTransactions: Boolean = true,
     val showCurrencyBreakdown: Boolean = true,
     val showAccount: Boolean = true,
     val showCategory: Boolean = true,

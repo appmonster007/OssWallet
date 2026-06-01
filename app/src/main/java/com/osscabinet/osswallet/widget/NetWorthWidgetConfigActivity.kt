@@ -187,7 +187,7 @@ private fun TimelineOptions(
     onSelect: (TimelineRange) -> Unit
 ) {
     val options: List<Pair<String, TimelineRange>> = listOf(
-        "All Time" to TimelineRange.AllTime,
+        "All Time" to TimelineRange.AllTime(),
         "Today" to TimelineRange.ThisPeriod(ThisPeriodType.TODAY),
         "This Week" to TimelineRange.ThisPeriod(ThisPeriodType.WEEK),
         "This Month" to TimelineRange.ThisPeriod(ThisPeriodType.MONTH),

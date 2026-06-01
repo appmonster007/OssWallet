@@ -45,7 +45,7 @@ object TransactionFilterService {
         now: Long = System.currentTimeMillis()
     ): Boolean {
         // 0. Future exclusion
-        if (filter.excludeFuture && tx.timestamp > now) return false
+        if (filter.timelineRange.excludeFuture && tx.timestamp > now) return false
 
         // 1. Timeline check
         val effectiveStartTime: Long?

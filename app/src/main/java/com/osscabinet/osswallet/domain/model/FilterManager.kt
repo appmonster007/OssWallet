@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.math.BigDecimal
@@ -99,11 +100,11 @@ class FilterManager {
      * @return Merged TransactionFilter
      */
     private fun mergeFilters(filters: List<TransactionFilter>): TransactionFilter {
-        if (filters.isEmpty()) return TransactionFilter()
+        if (filters.isEmpty()) return TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
         
         return TransactionFilter(
             timelineRange = filters.map { it.timelineRange }.lastOrNull() 
-                ?: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
+                ?: TimelineRange.AllTime(excludeFuture = true),
             queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
             isNoteRegex = filters.any { it.isNoteRegex },
             queryPayee = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
@@ -119,8 +120,7 @@ class FilterManager {
             transactionTypes = filters.flatMap { it.transactionTypes }.toSet(),
             currencies = filters.flatMap { it.currencies }.toSet(),
             statuses = filters.flatMap { it.statuses }.toSet(),
-            tags = filters.flatMap { it.tags }.toSet(),
-            excludeFuture = filters.map { it.excludeFuture }.lastOrNull() ?: false
+            tags = filters.flatMap { it.tags }.toSet()
         )
     }
 }

@@ -17,6 +17,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/app/src/debug/assets/loans.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/debug/assets/planned_payments.csv">
           <value>
             <Attribute>

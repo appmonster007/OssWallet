@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
@@ -722,7 +723,7 @@ fun DashboardGlanceTab(
             budgets = state.budgets,
             loans = state.loans,
             loanPayments = state.loanPayments,
-            filter = TransactionFilter(excludeFuture = false)
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
         )
     }
 

@@ -7,7 +7,7 @@ import java.math.BigDecimal
 
 @Serializable
 data class TransactionFilter(
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val timelineRange: TimelineRange = TimelineRange.AllTime(),
     val queryNote: String? = null,
     val isNoteRegex: Boolean = false,
     val queryPayee: String? = null,
@@ -26,8 +26,7 @@ data class TransactionFilter(
     val currencies: Set<String> = emptySet(),
     val tags: Set<String> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
-    val linkedTransactionIds: Set<Long> = emptySet(),
-    val excludeFuture: Boolean = false
+    val linkedTransactionIds: Set<Long> = emptySet()
 )
 
 /**
@@ -58,8 +57,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         maxAmount = other.maxAmount ?: this.maxAmount,
         hasWarranty = other.hasWarranty ?: this.hasWarranty,
         warrantyExpirationStart = other.warrantyExpirationStart ?: this.warrantyExpirationStart,
-        warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd,
-        excludeFuture = other.excludeFuture
+        warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd
     )
 }
 

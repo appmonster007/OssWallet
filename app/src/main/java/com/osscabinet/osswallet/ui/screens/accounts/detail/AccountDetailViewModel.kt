@@ -146,7 +146,7 @@ class AccountDetailViewModel @Inject constructor(
                     accounts = listOf(account),
                     exchangeRates = rates,
                     limit = Int.MAX_VALUE,
-                    excludeFuture = currentFilter.excludeFuture
+                    excludeFuture = currentFilter.timelineRange.excludeFuture
                 )
 
                 // Filtered transactions for the list tab

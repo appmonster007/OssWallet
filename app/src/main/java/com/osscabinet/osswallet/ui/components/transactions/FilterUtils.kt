@@ -32,23 +32,20 @@ fun countActiveFilters(
     // 5. Currencies
     if (filter.currencies != baseFilter.currencies) count++
 
-    // 6. Dates
-    if (filter.timelineRange != TimelineRange.AllTime) count++
-
-    // 7. Payment Methods
+    // 6. Payment Methods
     if (filter.paymentMethods != baseFilter.paymentMethods) count++
 
-    // 8. Queries
+    // 7. Queries
     if (filter.queryNote != baseFilter.queryNote) count++
     if (filter.queryPayee != baseFilter.queryPayee) count++
 
-    // 9. Amount
+    // 8. Amount
     if (filter.minAmount != baseFilter.minAmount || filter.maxAmount != baseFilter.maxAmount) count++
 
-    // 10. Statuses
+    // 9. Statuses
     if (filter.statuses != baseFilter.statuses) count++
 
-    // 11. Tags
+    // 10. Tags
     if (filter.tags != baseFilter.tags) count++
 
     return count
@@ -63,7 +60,7 @@ fun removeFilter(
     val updatedFilter = when (field) {
         "accountIds" -> filter.copy(accountIds = filter.accountIds - (value as String))
         "transactionTypes" -> filter.copy(transactionTypes = filter.transactionTypes - (value as TransactionType))
-        "dateRange" -> filter.copy(timelineRange = TimelineRange.AllTime)
+        "dateRange" -> filter.copy(timelineRange = TimelineRange.AllTime())
         "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as Long))
         "currencies" -> filter.copy(currencies = filter.currencies - (value as String))
         "paymentMethods" -> filter.copy(paymentMethods = filter.paymentMethods - (value as PaymentMethod))

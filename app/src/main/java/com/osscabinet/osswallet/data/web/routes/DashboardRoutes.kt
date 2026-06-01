@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.*
 import io.ktor.http.*
@@ -70,7 +71,7 @@ fun Route.dashboardRoutes(
                     exchangeRates = exchangeRates,
                     baseCurrency = baseCurrency,
                     displayCurrency = baseCurrency,
-                    filter = TransactionFilter(excludeFuture = false),
+                    filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = false)),
                     plannedPayments = allPayments,
                     budgets = budgets,
                     loans = loans,

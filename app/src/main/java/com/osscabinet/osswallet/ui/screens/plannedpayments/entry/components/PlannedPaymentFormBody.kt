@@ -34,10 +34,13 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionChip
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
@@ -91,7 +94,8 @@ fun PlannedPaymentFormBody(
                     onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
                     onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) },
                     label = "SOURCE AMOUNT",
-                    supportedCurrencies = sourceCurrencies
+                    supportedCurrencies = sourceCurrencies,
+                    isError = state.hasError(EntryField.AMOUNT)
                 ),
                 target = AeonAmountData(
                     value = state.targetAmount ?: "",
@@ -99,16 +103,22 @@ fun PlannedPaymentFormBody(
                     onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
                     onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) },
                     label = "DESTINATION AMOUNT",
-                    supportedCurrencies = targetCurrencies
+                    supportedCurrencies = targetCurrencies,
+                    isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
                 ),
                 categoryId = state.selectedCategoryId,
-                name = state.name,
-                onNameChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
-                nameLabel = "PAYMENT NAME",
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(PlannedPaymentEntryEvent.SetName(it)) },
+                    label = "PAYMENT NAME",
+                    isError = state.hasError(EntryField.NAME)
+                ),
+                showAmount = state.selectedAccountId != null || (state.isTransfer && state.targetAccountId != null),
                 targetAccountId = state.targetAccountId,
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
-                accountId = state.selectedAccountId
+                accountId = state.selectedAccountId,
+                errors = state.errors
             )
 
             // CONTEXT: Action cards row: Template, Schedule, Account, Category
@@ -150,18 +160,25 @@ fun PlannedPaymentFormBody(
                 // Row 2: Account and Category/Target
                 AeonEntryContextRow(
                     isTransfer = state.transactionType == TransactionType.TRANSFER,
-                    selectedAccount = state.accounts.find { it.id == state.selectedAccountId },
-                    onAccountClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
-                    selectedCategory = state.categories.find { it.id == state.selectedCategoryId },
-                    onCategoryClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
-                    targetAccount = state.accounts.find { it.id == state.targetAccountId },
-                    onTargetAccountClick = {
-                        onEvent(
-                            PlannedPaymentEntryEvent.ShowTargetAccountSheet(
-                                true
-                            )
+                    accountSelector = AeonSelectorState(
+                        selection = state.accounts.find { it.id == state.selectedAccountId },
+                        onClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
+                        isError = state.hasError(EntryField.ACCOUNT)
+                    ),
+                    categorySelector = if (state.transactionType != TransactionType.TRANSFER) {
+                        AeonSelectorState(
+                            selection = state.categories.find { it.id == state.selectedCategoryId },
+                            onClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
+                            isError = state.hasError(EntryField.CATEGORY)
                         )
-                    }
+                    } else null,
+                    targetAccountSelector = if (state.transactionType == TransactionType.TRANSFER) {
+                        AeonSelectorState(
+                            selection = state.accounts.find { it.id == state.targetAccountId },
+                            onClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },
+                            isError = state.hasError(EntryField.TARGET_ACCOUNT)
+                        )
+                    } else null
                 )
             }
 

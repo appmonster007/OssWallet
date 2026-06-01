@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -54,7 +55,8 @@ data class AeonAmountData(
     val onCurrencyClick: (String) -> Unit = {},
     val label: String? = null,
     val color: Color? = null,
-    val supportedCurrencies: List<String> = emptyList()
+    val supportedCurrencies: List<String> = emptyList(),
+    val isError: Boolean = false
 )
 
 /**
@@ -67,11 +69,8 @@ fun AeonImpactHeaderCard(
     source: AeonAmountData,
     target: AeonAmountData? = null,
     categoryId: Long? = null,
-    name: String = "",
-    onNameChange: (String) -> Unit = {},
-    nameLabel: String = "",
+    nameState: AeonTextFieldState? = null,
     nameIcon: ImageVector = Icons.Rounded.Title,
-    showName: Boolean = true,
     showAmount: Boolean = true,
     showTypeSelector: Boolean = true,
     targetAccountId: String? = null,
@@ -79,7 +78,8 @@ fun AeonImpactHeaderCard(
     onExchangeRateClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
-    accountId: String? = null
+    accountId: String? = null,
+    errors: Set<EntryField> = emptySet()
 ) {
     val isTransfer = transactionType == TransactionType.TRANSFER
     val isAmountPositive = Category.isAnyTransferInflow(categoryId ?: 0) || transactionType == TransactionType.INCOME
@@ -121,11 +121,8 @@ fun AeonImpactHeaderCard(
             // Labels are only used for transfers
             label = if (isTransfer) target.label else null
         ),
-        name = name,
-        onNameChange = onNameChange,
-        nameLabel = nameLabel,
+        nameState = nameState,
         nameIcon = nameIcon,
-        showName = showName,
         showAmount = showAmount,
         showTypeSelector = showTypeSelector,
         isTransfer = isTransfer,
@@ -136,7 +133,8 @@ fun AeonImpactHeaderCard(
         onSplitClick = onSplitClick,
         accountId = accountId,
         isAmountPositive = isAmountPositive,
-        amountPrefix = amountPrefix
+        amountPrefix = amountPrefix,
+        errors = errors
     )
 }
 
@@ -150,11 +148,8 @@ fun <T> AeonImpactHeaderCard(
     types: List<Triple<ImageVector, String, T>>,
     source: AeonAmountData,
     target: AeonAmountData? = null,
-    name: String = "",
-    onNameChange: (String) -> Unit = {},
-    nameLabel: String = "",
+    nameState: AeonTextFieldState? = null,
     nameIcon: ImageVector = Icons.Rounded.Title,
-    showName: Boolean = true,
     showAmount: Boolean = true,
     showTypeSelector: Boolean = true,
     isTransfer: Boolean = false,
@@ -165,7 +160,8 @@ fun <T> AeonImpactHeaderCard(
     onSplitClick: (() -> Unit)? = null,
     accountId: String? = null,
     isAmountPositive: Boolean = false,
-    amountPrefix: String = ""
+    amountPrefix: String = "",
+    errors: Set<EntryField> = emptySet()
 ) {
     val activeAmountColor = source.color ?: AppColors.primary
 
@@ -206,7 +202,8 @@ fun <T> AeonImpactHeaderCard(
                         supportedCurrencies = source.supportedCurrencies,
                         showCurrency = true,
                         label = source.label,
-                        prefix = if (isTransfer && amountPrefix.isEmpty()) "-" else amountPrefix
+                        prefix = if (isTransfer && amountPrefix.isEmpty()) "-" else amountPrefix,
+                        isError = source.isError || errors.contains(EntryField.AMOUNT)
                     )
 
                     if (onSplitClick != null && !isTransfer) {
@@ -296,11 +293,12 @@ fun <T> AeonImpactHeaderCard(
                     amountColor = target.color ?: AppColors.contentPrimary.copy(alpha = 0.8f),
                     supportedCurrencies = target.supportedCurrencies.ifEmpty { source.supportedCurrencies },
                     label = target.label,
-                    prefix = if (isTransfer && amountPrefix.isEmpty()) "+" else if (isTransfer) (if (amountPrefix == "+") "-" else "+") else amountPrefix
+                    prefix = if (isTransfer && amountPrefix.isEmpty()) "+" else if (isTransfer) (if (amountPrefix == "+") "-" else "+") else amountPrefix,
+                    isError = target.isError || (isTransfer && errors.contains(EntryField.AMOUNT))
                 )
             }
 
-            if (showName) {
+            if (nameState != null) {
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingMd),
                     thickness = (AeonTheme.dimensions.spacingXs / 8),
@@ -308,10 +306,11 @@ fun <T> AeonImpactHeaderCard(
                 )
 
                 EntryEditorialInput(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = nameLabel,
-                    icon = nameIcon
+                    value = nameState.value,
+                    onValueChange = nameState.onValueChange,
+                    label = nameState.label ?: "",
+                    icon = nameIcon,
+                    isError = nameState.isError
                 )
             }
         }
@@ -331,9 +330,11 @@ fun AeonImpactHeaderCardPreview() {
                     value = "1,250.00",
                     currency = "USD"
                 ),
-                name = "Monthly Rent",
-                onNameChange = {},
-                nameLabel = "BUDGET NAME"
+                nameState = AeonTextFieldState(
+                    value = "Monthly Rent",
+                    onValueChange = {},
+                    label = "BUDGET NAME"
+                )
             )
         }
     }

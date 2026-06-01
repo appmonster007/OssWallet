@@ -1,5 +1,9 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -8,8 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,9 +55,11 @@ fun EntryAmountDisplay(
     supportedCurrencies: List<String> = listOf("USD"),
     showCurrency: Boolean = true,
     label: String? = null,
-    prefix: String = ""
+    prefix: String = "",
+    isError: Boolean = false
 ) {
     val haptic = LocalHapticFeedback.current
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -67,12 +75,25 @@ fun EntryAmountDisplay(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (label != null) {
-            Text(
-                text = label.uppercase(),
-                style = AppTextStyles.sectionOverline,
-                color = AppColors.contentSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label.uppercase(),
+                    style = AppTextStyles.sectionOverline,
+                    color = if (isError) AppColors.error else AppColors.contentSecondary
+                )
+                if (isError) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.Error,
+                        contentDescription = null,
+                        tint = AppColors.error,
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
+            }
         }
 
         Row(

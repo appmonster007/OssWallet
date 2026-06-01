@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 
 data class BudgetEntryState(
     val name: String = "",
@@ -81,8 +82,13 @@ data class BudgetEntryState(
     val availableFilters: List<Filter> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    val errors: Set<EntryField> get() = buildSet {
+        if (name.isBlank()) add(EntryField.NAME)
+        if (limitAmount.toBigDecimalOrNull() == null) add(EntryField.AMOUNT)
+    }
+
+    val hasError: Boolean get() = errors.isNotEmpty()
+
     val canSave: Boolean
-        get() = name.isNotBlank() &&
-                limitAmount.toBigDecimalOrNull() != null &&
-                !navTriggered
+        get() = !hasError && !navTriggered
 }

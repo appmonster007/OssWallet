@@ -84,6 +84,7 @@ fun SwipeableTransactionItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val isPlanned = record is PlannedPaymentUiModel
     var offsetX by remember { mutableFloatStateOf(0f) }
     var swipeDirection by remember { mutableStateOf(SwipeDirection.NONE) }
 
@@ -92,7 +93,7 @@ fun SwipeableTransactionItem(
 
     // Expressive motion configuration
     val leftSwipeThresholdPx =
-        with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() } // Revealing right actions
+        with(density) { (ACTION_ITEM_SIZE.dp * (if (isPlanned) 2 else 3)).toPx() } // Revealing right actions
     val rightSwipeThresholdPx =
         with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
     val fullSwipeThresholdPx = with(density) { 220.dp.toPx() }
@@ -188,9 +189,15 @@ fun SwipeableTransactionItem(
 
                             // Initialize direction
                             if (swipeDirection == SwipeDirection.NONE && abs(dragAmount) > 0.5f) {
-                                swipeDirection =
-                                    if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                                val direction = if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                                
+                                // Disable right swipe (revealing left actions) for planned payments
+                                if (isPlanned && direction == SwipeDirection.RIGHT) return@detectHorizontalDragGestures
+                                
+                                swipeDirection = direction
                             }
+                            
+                            if (swipeDirection == SwipeDirection.NONE) return@detectHorizontalDragGestures
 
                             // Constrain and apply offset with resistance
                             offsetX = when (swipeDirection) {
@@ -206,7 +213,7 @@ fun SwipeableTransactionItem(
                                     } else newOffset.coerceAtMost(0f)
                                 }
 
-                                else -> newOffset
+                                else -> offsetX
                             }
                         },
                         onDragEnd = {

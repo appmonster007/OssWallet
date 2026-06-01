@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
@@ -98,6 +99,25 @@ data class PlannedPaymentEntryState(
     val amountValue: BigDecimal
         get() = source.amountValue
 
+    val hasError: Boolean get() = errors.isNotEmpty()
+
     val canSave: Boolean
-        get() = name.isNotBlank()
+        get() = !hasError && !navTriggered
+
+    // Grouped validation state
+    val errors: Set<EntryField>
+        get() = buildSet {
+            if (name.isBlank()) add(EntryField.NAME)
+            if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
+            if (isTransfer) {
+                if (selectedAccountId == null && targetAccountId == null) {
+                    add(EntryField.ACCOUNT)
+                    add(EntryField.TARGET_ACCOUNT)
+                }
+            } else {
+                if (selectedAccountId == null) add(EntryField.ACCOUNT)
+            }
+        }
+
+    fun hasError(field: EntryField) = errors.contains(field)
 }

@@ -296,10 +296,17 @@ object TimelineService {
         data class RangeInfo(val title: String, val subtitle: String, val start: Long, val end: Long)
         val info = when (groupingType) {
             TransactionGroupingType.BY_DAY -> {
-                val firstTx = groupTransactions.first()
-                val date =
-                    Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId)
-                        .toLocalDate()
+                val date = try {
+                    LocalDate.parse(groupKey)
+                } catch (e: Exception) {
+                    val firstTx = groupTransactions.firstOrNull()
+                    if (firstTx != null) {
+                        Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId)
+                            .toLocalDate()
+                    } else {
+                        LocalDate.now(systemZoneId)
+                    }
+                }
                 val today = LocalDate.now(systemZoneId)
                 val formattedDate = date.format(dateFormatter)
                 val dayLabel = when {

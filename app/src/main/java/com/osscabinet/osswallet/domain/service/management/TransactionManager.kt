@@ -259,9 +259,12 @@ class TransactionManager(
     ) {
         val payment = plannedPaymentRepository.getById(paymentId) ?: return
 
+        // Try to find existing occurrence first to update it instead of creating duplicate
+        val existing = plannedPaymentRepository.getOccurrenceForDate(paymentId, scheduledDate)
+
         // Mark occurrence as confirmed
         val occurrence = PlannedPaymentOccurrence(
-            id = 0,
+            id = existing?.id ?: 0,
             plannedPaymentId = paymentId,
             scheduledDate = scheduledDate,
             status = OccurrenceStatus.CONFIRMED,
@@ -291,8 +294,11 @@ class TransactionManager(
     ) {
         val payment = plannedPaymentRepository.getById(paymentId) ?: return
 
+        // Try to find existing occurrence first to update it instead of creating duplicate
+        val existing = plannedPaymentRepository.getOccurrenceForDate(paymentId, scheduledDate)
+
         val occurrence = PlannedPaymentOccurrence(
-            id = 0,
+            id = existing?.id ?: 0,
             plannedPaymentId = paymentId,
             scheduledDate = scheduledDate,
             status = OccurrenceStatus.SKIPPED

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
@@ -388,7 +389,7 @@ fun PlannedPaymentsCardPreview() {
         name = "Internet Bill",
         categoryId = 1,
         amount = BigDecimal("50.00"),
-        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        transactionType = TransactionType.EXPENSE,
         currency = "USD",
         schedule = mockSchedule
     )
@@ -398,7 +399,7 @@ fun PlannedPaymentsCardPreview() {
         name = "Netflix",
         categoryId = 2,
         amount = BigDecimal("15.99"),
-        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        transactionType = TransactionType.EXPENSE,
         currency = "USD",
         schedule = mockSchedule
     )

@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 
 data class FilterEntryState(
     val name: String = "",
@@ -61,8 +62,14 @@ data class FilterEntryState(
     val existingFilter: Filter? = null,
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    val errors: Set<EntryField> get() = buildSet {
+        if (name.isBlank()) add(EntryField.NAME)
+    }
+
+    val hasError: Boolean get() = errors.isNotEmpty()
+
     val canSave: Boolean
-        get() = name.isNotBlank() && !navTriggered
+        get() = !hasError && !navTriggered
 
     fun toTransactionFilter(): TransactionFilter = TransactionFilter(
         transactionTypes = selectedTransactionTypes,

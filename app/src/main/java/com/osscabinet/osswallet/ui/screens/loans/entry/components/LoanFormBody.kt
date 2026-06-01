@@ -41,7 +41,9 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntryPaymentMethodStatusRow
@@ -83,7 +85,6 @@ fun LoanFormBody(
                 .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
             verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
-            // IMPACT: Primary Identity (Loan Type & Principal)
             AeonImpactHeaderCard(
                 selectedType = state.loanType,
                 onTypeSelected = { onEvent(LoanEntryEvent.SetLoanType(it)) },
@@ -98,10 +99,13 @@ fun LoanFormBody(
                     onCurrencyClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
                     color = amountColor
                 ),
-                name = state.name,
-                onNameChange = { onEvent(LoanEntryEvent.SetName(it)) },
-                nameLabel = "LOAN NAME",
-                showName = true
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(LoanEntryEvent.SetName(it)) },
+                    label = "LOAN NAME",
+                    isError = state.errors.contains(EntryField.NAME)
+                ),
+                errors = state.errors
             )
 
             // LOAN CONTEXT: Core parameters of the loan agreement

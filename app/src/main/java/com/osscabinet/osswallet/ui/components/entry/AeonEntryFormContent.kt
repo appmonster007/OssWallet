@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -41,19 +42,16 @@ private fun parseCategoryColor(colorHex: Int?): Color? =
 @Composable
 fun AeonEntryContextRow(
     isTransfer: Boolean,
-    selectedAccount: Account?,
-    onAccountClick: () -> Unit,
-    selectedCategory: Category? = null,
-    onCategoryClick: () -> Unit = {},
-    targetAccount: Account? = null,
-    onTargetAccountClick: () -> Unit = {},
+    accountSelector: AeonSelectorState<Account>,
+    categorySelector: AeonSelectorState<Category>? = null,
+    targetAccountSelector: AeonSelectorState<Account>? = null,
     isSplitMode: Boolean = false,
     splitCount: Int = 0,
     onSplitClick: () -> Unit = {}
 ) {
     EntryActionRow {
         // Source selection (FROM)
-        val fromAccount = selectedAccount
+        val fromAccount = accountSelector.selection
         val fromIcon = if (fromAccount == null && isTransfer) Icons.Rounded.Public else getAccountIconByName(fromAccount?.icon)
         val fromColor = parseAccountColor(fromAccount?.colorHex) ?: if (isTransfer && fromAccount == null) AppColors.tertiary else AppColors.primary
         val fromValue = fromAccount?.name ?: if (isTransfer) "Outside of Wallet" else "Select"
@@ -62,17 +60,18 @@ fun AeonEntryContextRow(
             icon = fromIcon,
             label = if (isTransfer) "FROM" else "ACCOUNT",
             value = fromValue,
-            onClick = onAccountClick,
+            onClick = accountSelector.onClick,
             modifier = Modifier.weight(1f),
             isSelected = fromAccount != null || isTransfer,
             selectedColor = fromColor,
             iconContainerColor = fromColor.copy(alpha = 0.12f),
-            iconTint = fromColor
+            iconTint = fromColor,
+            isError = accountSelector.isError
         )
 
         if (isTransfer) {
             // Target selection (TO)
-            val toAccount = targetAccount
+            val toAccount = targetAccountSelector?.selection
             val toIcon = if (toAccount == null) Icons.Rounded.Public else getAccountIconByName(toAccount.icon)
             val toColor = parseAccountColor(toAccount?.colorHex) ?: AppColors.tertiary
             val toValue = toAccount?.name ?: "Outside of Wallet"
@@ -81,14 +80,16 @@ fun AeonEntryContextRow(
                 icon = toIcon,
                 label = "TO",
                 value = toValue,
-                onClick = onTargetAccountClick,
+                onClick = targetAccountSelector?.onClick ?: {},
                 modifier = Modifier.weight(1f),
                 isSelected = toAccount != null,
                 selectedColor = toColor,
                 iconContainerColor = toColor.copy(alpha = 0.12f),
-                iconTint = toColor
+                iconTint = toColor,
+                isError = targetAccountSelector?.isError ?: false
             )
         } else {
+            val selectedCategory = categorySelector?.selection
             val displayCategoryName = if (isSplitMode) {
                 "Split Transaction ($splitCount)"
             } else {
@@ -106,12 +107,13 @@ fun AeonEntryContextRow(
                 icon = categoryIcon,
                 label = if (isSplitMode) "TRANSACTION" else "CATEGORY",
                 value = displayCategoryName,
-                onClick = if (isSplitMode) onSplitClick else onCategoryClick,
+                onClick = if (isSplitMode) onSplitClick else (categorySelector?.onClick ?: {}),
                 modifier = Modifier.weight(1f),
                 isSelected = isSplitMode || selectedCategory != null,
                 selectedColor = categoryColor,
                 iconContainerColor = categoryColor.copy(alpha = 0.12f),
-                iconTint = categoryColor
+                iconTint = categoryColor,
+                isError = categorySelector?.isError ?: false
             )
         }
     }
@@ -215,45 +217,53 @@ fun AeonEntryContextRowPreview() {
         ) {
             AeonEntryContextRow(
                 isTransfer = false,
-                selectedAccount = Account(
-                    id = "1",
-                    name = "Savings",
-                    colorHex = "#4CAF50",
-                    currencyCode = "USD",
-                    structureType = AccountStructureType.SAVINGS,
-                    icon = "AccountBalance"
+                accountSelector = AeonSelectorState(
+                    selection = Account(
+                        id = "1",
+                        name = "Savings",
+                        colorHex = "#4CAF50",
+                        currencyCode = "USD",
+                        structureType = AccountStructureType.SAVINGS,
+                        icon = "AccountBalance"
+                    ),
+                    onClick = {}
                 ),
-                onAccountClick = {},
-                selectedCategory = Category(
-                    id = 1,
-                    name = "Food",
-                    iconName = "Restaurant",
-                    colorHex = -1,
-                    isDefault = false,
-                    parentId = null
-                ),
-                onCategoryClick = {}
+                categorySelector = AeonSelectorState(
+                    selection = Category(
+                        id = 1,
+                        name = "Food",
+                        iconName = "Restaurant",
+                        colorHex = -1,
+                        isDefault = false,
+                        parentId = null
+                    ),
+                    onClick = {}
+                )
             )
             AeonEntryContextRow(
                 isTransfer = true,
-                selectedAccount = Account(
-                    id = "1",
-                    name = "Savings",
-                    colorHex = "#4CAF50",
-                    currencyCode = "USD",
-                    structureType = AccountStructureType.SAVINGS,
-                    icon = "AccountBalance"
+                accountSelector = AeonSelectorState(
+                    selection = Account(
+                        id = "1",
+                        name = "Savings",
+                        colorHex = "#4CAF50",
+                        currencyCode = "USD",
+                        structureType = AccountStructureType.SAVINGS,
+                        icon = "AccountBalance"
+                    ),
+                    onClick = {}
                 ),
-                onAccountClick = {},
-                targetAccount = Account(
-                    id = "2",
-                    name = "Checking",
-                    colorHex = "#2196F3",
-                    currencyCode = "USD",
-                    structureType = AccountStructureType.BANK,
-                    icon = "AccountBalance"
-                ),
-                onTargetAccountClick = {}
+                targetAccountSelector = AeonSelectorState(
+                    selection = Account(
+                        id = "2",
+                        name = "Checking",
+                        colorHex = "#2196F3",
+                        currencyCode = "USD",
+                        structureType = AccountStructureType.BANK,
+                        icon = "AccountBalance"
+                    ),
+                    onClick = {}
+                )
             )
         }
     }

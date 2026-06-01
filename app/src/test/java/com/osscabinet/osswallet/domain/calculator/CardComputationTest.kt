@@ -75,7 +75,7 @@ class CardComputationTest {
 
     @Test
     fun `NetWorthCalculator computes correctly`() {
-        val config = NetWorthCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
+        val config = NetWorthCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime()))
         val result = runBlocking { registry.compute(CardType.NET_WORTH, input, config) as CardRenderData.NetWorth }
         
         // 1000 USD + (-50 EUR converted to USD)
@@ -86,7 +86,7 @@ class CardComputationTest {
 
     @Test
     fun `CashFlowCalculator computes correctly`() {
-        val config = CashFlowCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
+        val config = CashFlowCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime()))
         val result = runBlocking { registry.compute(CardType.CASH_FLOW, input, config) as CardRenderData.CashFlow }
         
         assertEquals(BigDecimal("1000.00"), result.result.totalIncomeInBase)
@@ -96,7 +96,7 @@ class CardComputationTest {
 
     @Test
     fun `CurrencyBalancesCalculator computes correctly`() {
-        val config = CurrencyBalancesCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
+        val config = CurrencyBalancesCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime()))
         val result = runBlocking { registry.compute(CardType.CURRENCY_BALANCES, input, config) as CardRenderData.CurrencyBalances }
         
         assertEquals(2, result.items.size)

@@ -26,12 +26,12 @@ enum class AppFont(
     MANROPE(
         displayName = "Manrope",
         displayFamily = FontFamily(Font(R.font.manrope)),
-        bodyFamily = FontFamily(Font(R.font.inter))
+        bodyFamily = FontFamily.Default
     ),
     INTER(
         displayName = "Inter",
-        displayFamily = FontFamily(Font(R.font.inter)),
-        bodyFamily = FontFamily(Font(R.font.inter))
+        displayFamily = FontFamily.Default,
+        bodyFamily = FontFamily.Default
     ),
     SYSTEM(
         displayName = "System Default",

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import org.junit.Assert.*
 import org.junit.Test
 import java.math.BigDecimal
@@ -95,7 +96,7 @@ class CardFilterRulesTest {
             transactionTypes = setOf(TransactionType.INCOME, TransactionType.EXPENSE),
             minAmount = BigDecimal("-50"),
             maxAmount = BigDecimal("5000"),
-            excludeFuture = false
+            timelineRange = TimelineRange.AllTime(excludeFuture = false)
         )
         
         val normalized = rules.normalize(inputFilter)
@@ -103,7 +104,7 @@ class CardFilterRulesTest {
         assertEquals(setOf(TransactionType.EXPENSE), normalized.transactionTypes)
         assertEquals(BigDecimal.ZERO, normalized.minAmount)
         assertEquals(BigDecimal("1000"), normalized.maxAmount)
-        assertTrue(normalized.excludeFuture)
+        assertTrue(normalized.timelineRange.excludeFuture)
     }
 
     @Test

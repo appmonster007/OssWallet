@@ -42,17 +42,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
@@ -65,7 +73,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
-import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,6 +186,43 @@ fun PlannedPaymentListScreen(
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
+
+    PlannedPaymentListContent(
+        payments = payments,
+        profileId = profileId,
+        onBackClick = onBackClick,
+        onAddClick = onAddClick,
+        onEditClick = onEditClick,
+        onDetailClick = onDetailClick,
+        onDelete = { id -> viewModel.delete(id, false) },
+        onPause = { viewModel.pause(it) },
+        onResume = { viewModel.resume(it) },
+        onConfirm = { payment, date ->
+            if (onConfirmClick != null) {
+                onConfirmClick(payment.id, date)
+            } else {
+                viewModel.quickConfirm(payment, profileId)
+            }
+        },
+        onSkip = { viewModel.quickSkip(it) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlannedPaymentListContent(
+    payments: List<PlannedPayment>,
+    profileId: Int,
+    onBackClick: () -> Unit,
+    onAddClick: () -> Unit,
+    onEditClick: (Long) -> Unit,
+    onDetailClick: (Long) -> Unit,
+    onDelete: (Long) -> Unit,
+    onPause: (PlannedPayment) -> Unit,
+    onResume: (PlannedPayment) -> Unit,
+    onConfirm: (PlannedPayment, Long?) -> Unit,
+    onSkip: (PlannedPayment) -> Unit
+) {
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val now = remember { System.currentTimeMillis() }
 
@@ -286,20 +330,11 @@ fun PlannedPaymentListScreen(
                                 isOverdue = true,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id, false) },
-                                onPause = { viewModel.pause(payment) },
-                                onResume = { viewModel.resume(payment) },
-                                onConfirm = {
-                                    if (onConfirmClick != null) {
-                                        onConfirmClick(payment.id, payment.schedule.nextDueDate)
-                                    } else {
-                                        viewModel.quickConfirm(
-                                            payment,
-                                            profileId
-                                        )
-                                    }
-                                },
-                                onSkip = { viewModel.quickSkip(payment) }
+                                onDelete = { onDelete(payment.id) },
+                                onPause = { onPause(payment) },
+                                onResume = { onResume(payment) },
+                                onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
+                                onSkip = { onSkip(payment) }
                             )
                         }
                     }
@@ -326,23 +361,11 @@ fun PlannedPaymentListScreen(
                                     scheduledDate = item.scheduledDate,
                                     onTap = { onDetailClick(item.plannedPayment.id) },
                                     onEdit = { onEditClick(item.plannedPayment.id) },
-                                    onDelete = { viewModel.delete(item.plannedPayment.id, false) },
-                                    onPause = { viewModel.pause(item.plannedPayment) },
-                                    onResume = { viewModel.resume(item.plannedPayment) },
-                                    onConfirm = {
-                                        if (onConfirmClick != null) {
-                                            onConfirmClick(
-                                                item.plannedPayment.id,
-                                                item.scheduledDate
-                                            )
-                                        } else {
-                                            viewModel.quickConfirm(
-                                                item.plannedPayment,
-                                                profileId
-                                            )
-                                        }
-                                    },
-                                    onSkip = { viewModel.quickSkip(item.plannedPayment) }
+                                    onDelete = { onDelete(item.plannedPayment.id) },
+                                    onPause = { onPause(item.plannedPayment) },
+                                    onResume = { onResume(item.plannedPayment) },
+                                    onConfirm = { onConfirm(item.plannedPayment, item.scheduledDate) },
+                                    onSkip = { onSkip(item.plannedPayment) }
                                 )
                             }
                         }
@@ -364,20 +387,11 @@ fun PlannedPaymentListScreen(
                                 scheduledDate = payment.schedule.nextDueDate,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id, false) },
-                                onPause = { viewModel.pause(payment) },
-                                onResume = { viewModel.resume(payment) },
-                                onConfirm = {
-                                    if (onConfirmClick != null) {
-                                        onConfirmClick(payment.id, payment.schedule.nextDueDate)
-                                    } else {
-                                        viewModel.quickConfirm(
-                                            payment,
-                                            profileId
-                                        )
-                                    }
-                                },
-                                onSkip = { viewModel.quickSkip(payment) }
+                                onDelete = { onDelete(payment.id) },
+                                onPause = { onPause(payment) },
+                                onResume = { onResume(payment) },
+                                onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
+                                onSkip = { onSkip(payment) }
                             )
                         }
                     }
@@ -397,9 +411,9 @@ fun PlannedPaymentListScreen(
                                 isOverdue = false,
                                 onTap = { onDetailClick(payment.id) },
                                 onEdit = { onEditClick(payment.id) },
-                                onDelete = { viewModel.delete(payment.id, false) },
-                                onPause = { viewModel.pause(payment) },
-                                onResume = { viewModel.resume(payment) }
+                                onDelete = { onDelete(payment.id) },
+                                onPause = { onPause(payment) },
+                                onResume = { onResume(payment) }
                             )
                         }
                     }
@@ -435,25 +449,28 @@ private fun PlannedPaymentListItem(
 ) {
     val dateToShow = scheduledDate ?: payment.schedule.nextDueDate
     val relativeDateLabel = remember(dateToShow, now) { formatRelativeDate(dateToShow, now) }
+    val isPaused = payment.status == PlannedPaymentStatus.PAUSED
 
     val typeColor = when {
+        isPaused -> AppColors.contentSecondary.copy(alpha = 0.5f)
         isOverdue -> AppColors.error
         payment.transactionType == TransactionType.INCOME -> AppColors.primary
         payment.transactionType == TransactionType.TRANSFER -> AccentBlue
         else -> AppColors.error
     }
-    val dateColor =
-        if (isOverdue) AppColors.error else AppColors.contentSecondary.copy(alpha = 0.6f)
 
     val recurrenceLabel =
         PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
-    val formattedAmount = remember(payment.amount) {
-        payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = remember(payment.amount, payment.currency) {
+        com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto(payment.amount, payment.currency)
     }
 
     val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat
-    val statusColor =
-        if (isOverdue) AppColors.error else Color(android.graphics.Color.parseColor(payment.status.colorHex))
+    val statusColor = when {
+        isPaused -> AppColors.contentSecondary.copy(alpha = 0.4f)
+        isOverdue -> AppColors.error
+        else -> Color(android.graphics.Color.parseColor(payment.status.colorHex))
+    }
 
     ManagementListItem(
         onClick = onTap,
@@ -462,17 +479,25 @@ private fun PlannedPaymentListItem(
         title = payment.name,
         subtitle = recurrenceLabel,
         isWarning = isOverdue,
+        modifier = Modifier.graphicsLayer { alpha = if (isPaused) 0.6f else 1f },
         trailingContent = {
-            Column(horizontalAlignment = Alignment.End) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     formattedAmount,
-                    style = AppTextStyles.listItemTitle,
+                    style = AppTextStyles.listItemTitle.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp
+                    ),
                     color = typeColor
                 )
                 Text(
-                    payment.currency,
-                    style = AppTextStyles.transactionSwipeAction,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    relativeDateLabel.uppercase(),
+                    style = AppTextStyles.transactionStatusMicro,
+                    color = when {
+                        isPaused -> AppColors.contentSecondary.copy(alpha = 0.5f)
+                        isOverdue -> AppColors.error
+                        else -> AppColors.primary
+                    }
                 )
             }
         },
@@ -496,17 +521,87 @@ private fun PlannedPaymentListItem(
                 text = { Text("Delete", color = AppColors.error) },
                 onClick = { onDismiss(); onDelete() }
             )
-        },
-        additionalContent = {
-            Text(
-                relativeDateLabel,
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = dateColor
-            )
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PlannedPaymentListPreview() {
+    val now = System.currentTimeMillis()
+    val mockPayments = listOf(
+        PlannedPayment(
+            id = 1,
+            name = "Rent",
+            amount = BigDecimal("1500.00"),
+            currency = "USD",
+            transactionType = TransactionType.EXPENSE,
+            categoryId = 1,
+            status = PlannedPaymentStatus.ACTIVE,
+            schedule = PaymentSchedule(
+                startDate = now - 30L * 24 * 60 * 60 * 1000,
+                nextDueDate = now - 2L * 24 * 60 * 60 * 1000, // Overdue
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1)
+            )
+        ),
+        PlannedPayment(
+            id = 2,
+            name = "Internet",
+            amount = BigDecimal("60.00"),
+            currency = "USD",
+            transactionType = TransactionType.EXPENSE,
+            categoryId = 2,
+            status = PlannedPaymentStatus.ACTIVE,
+            schedule = PaymentSchedule(
+                startDate = now,
+                nextDueDate = now + 2L * 24 * 60 * 60 * 1000, // Upcoming
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1)
+            )
+        ),
+        PlannedPayment(
+            id = 3,
+            name = "Salary",
+            amount = BigDecimal("5000.00"),
+            currency = "USD",
+            transactionType = TransactionType.INCOME,
+            categoryId = 3,
+            status = PlannedPaymentStatus.ACTIVE,
+            schedule = PaymentSchedule(
+                startDate = now,
+                nextDueDate = now + 15L * 24 * 60 * 60 * 1000, // Scheduled
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1)
+            )
+        ),
+        PlannedPayment(
+            id = 4,
+            name = "Netflix",
+            amount = BigDecimal("15.99"),
+            currency = "USD",
+            transactionType = TransactionType.EXPENSE,
+            categoryId = 4,
+            status = PlannedPaymentStatus.PAUSED,
+            schedule = PaymentSchedule(
+                startDate = now,
+                nextDueDate = now + 5L * 24 * 60 * 60 * 1000,
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1)
+            )
+        )
+    )
+
+    OssWalletTheme {
+        PlannedPaymentListContent(
+            payments = mockPayments,
+            profileId = 1,
+            onBackClick = {},
+            onAddClick = {},
+            onEditClick = {},
+            onDetailClick = {},
+            onDelete = {},
+            onPause = {},
+            onResume = {},
+            onConfirm = { _, _ -> },
+            onSkip = {}
+        )
+    }
 }
 

@@ -159,8 +159,7 @@ class LoanEntryViewModel @Inject constructor(
                         maxAmount = tf.maxAmount?.toPlainString() ?: "",
                         hasWarranty = tf.hasWarranty,
                         warrantyExpirationStart = tf.warrantyExpirationStart,
-                        warrantyExpirationEnd = tf.warrantyExpirationEnd,
-                        excludeFuture = tf.timelineRange.excludeFuture
+                        warrantyExpirationEnd = tf.warrantyExpirationEnd
                     )
                 }
             }
@@ -199,11 +198,7 @@ class LoanEntryViewModel @Inject constructor(
                 )
             }
 
-            is LoanEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range, excludeFuture = event.range.excludeFuture) }
-            is LoanEntryEvent.SetExcludeFuture -> _state.update { 
-                val newRange = it.timelineRange.withExcludeFuture(event.exclude)
-                it.copy(excludeFuture = event.exclude, timelineRange = newRange) 
-            }
+            is LoanEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
             is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
             is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
@@ -234,7 +229,6 @@ class LoanEntryViewModel @Inject constructor(
                             warrantyExpirationStart = filter.filter.warrantyExpirationStart,
                             warrantyExpirationEnd = filter.filter.warrantyExpirationEnd,
                             timelineRange = filter.filter.timelineRange,
-                            excludeFuture = filter.filter.timelineRange.excludeFuture,
                             selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
                                 filter.filter.transactionTypes.toSet()
                             } else {

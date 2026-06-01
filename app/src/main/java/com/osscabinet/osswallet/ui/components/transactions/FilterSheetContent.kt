@@ -21,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +55,6 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -219,21 +217,6 @@ fun FilterSheetContent(
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
         }
 
-        // 3. Future Transactions Toggle
-        if (filterRules.futureToggleRule.isVisible) {
-            EntrySwitchRow(
-                icon = Icons.Default.Update,
-                label = "Show Future Transactions",
-                checked = !localFilter.timelineRange.excludeFuture,
-                enabled = filterRules.futureToggleRule.isUserEditable,
-                onCheckedChange = {
-                    localFilter = localFilter.copy(timelineRange = localFilter.timelineRange.withExcludeFuture(!it))
-                    applyFilterWithDebounce(localFilter, debounceMs = 0)
-                }
-            )
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
-            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
-        }
 
         // 4. Title row + Reset
         Row(

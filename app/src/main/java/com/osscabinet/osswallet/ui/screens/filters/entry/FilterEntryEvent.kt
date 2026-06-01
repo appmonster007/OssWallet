@@ -28,8 +28,6 @@ sealed class FilterEntryEvent {
     data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) :
         FilterEntryEvent()
 
-    data class SetExcludeFuture(val exclude: Boolean) : FilterEntryEvent()
-
     // Visibility
     data class ShowAccountSheet(val show: Boolean) : FilterEntryEvent()
     data class ShowCategorySheet(val show: Boolean) : FilterEntryEvent()

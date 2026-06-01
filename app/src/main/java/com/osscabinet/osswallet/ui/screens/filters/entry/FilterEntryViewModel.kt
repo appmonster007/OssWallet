@@ -96,8 +96,7 @@ class FilterEntryViewModel @Inject constructor(
                     hasWarranty = initialFilter.hasWarranty,
                     warrantyExpirationStart = initialFilter.warrantyExpirationStart,
                     warrantyExpirationEnd = initialFilter.warrantyExpirationEnd,
-                    timelineRange = initialFilter.timelineRange,
-                    excludeFuture = initialFilter.timelineRange.excludeFuture
+                    timelineRange = initialFilter.timelineRange
                 )
             }
             return
@@ -147,8 +146,7 @@ class FilterEntryViewModel @Inject constructor(
                         hasWarranty = tf.hasWarranty,
                         warrantyExpirationStart = tf.warrantyExpirationStart,
                         warrantyExpirationEnd = tf.warrantyExpirationEnd,
-                        timelineRange = tf.timelineRange,
-                        excludeFuture = tf.timelineRange.excludeFuture
+                        timelineRange = tf.timelineRange
                     )
                 }
             }
@@ -187,7 +185,7 @@ class FilterEntryViewModel @Inject constructor(
             is FilterEntryEvent.SetPayeeRegex -> _state.update { it.copy(isPayeeRegex = event.isRegex) }
             is FilterEntryEvent.SetMinAmount -> _state.update { it.copy(minAmount = event.amount) }
             is FilterEntryEvent.SetMaxAmount -> _state.update { it.copy(maxAmount = event.amount) }
-            is FilterEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range, excludeFuture = event.range.excludeFuture) }
+            is FilterEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
             is FilterEntryEvent.SetHasWarranty -> _state.update { it.copy(hasWarranty = event.hasWarranty) }
             is FilterEntryEvent.SetWarrantyExpirationStart -> _state.update {
                 it.copy(
@@ -201,10 +199,6 @@ class FilterEntryViewModel @Inject constructor(
                 )
             }
 
-            is FilterEntryEvent.SetExcludeFuture -> _state.update {
-                val newRange = it.timelineRange.withExcludeFuture(event.exclude)
-                it.copy(excludeFuture = event.exclude, timelineRange = newRange)
-            }
             is FilterEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is FilterEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is FilterEntryEvent.ShowPaymentMethodSheet -> _state.update {
@@ -253,8 +247,7 @@ class FilterEntryViewModel @Inject constructor(
                     hasWarranty = null,
                     warrantyExpirationStart = null,
                     warrantyExpirationEnd = null,
-                    timelineRange = TimelineRange.AllTime(excludeFuture = true),
-                    excludeFuture = true
+                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
                 )
             }
         }

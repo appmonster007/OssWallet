@@ -29,7 +29,6 @@ data class LoanEntryState(
     val hasWarranty: Boolean? = null,
     val warrantyExpirationStart: Long? = null,
     val warrantyExpirationEnd: Long? = null,
-    val excludeFuture: Boolean = true,
     val selectedTrackTypes: Set<TransactionType> = setOf(
         TransactionType.EXPENSE,
         TransactionType.INCOME

@@ -8,9 +8,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -109,21 +114,29 @@ fun PlannedPaymentsCard(
             )
         }
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
             if (overdue.isEmpty() && upcoming.isEmpty()) {
-                Text(
-                    text = when (config.viewMode) {
-                        PlannedPaymentsViewMode.OVERDUE_ONLY -> "No overdue payments"
-                        PlannedPaymentsViewMode.FUTURE_ONLY -> "No upcoming payments"
-                        PlannedPaymentsViewMode.BOTH -> "No upcoming payments"
-                    },
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                item {
+                    Text(
+                        text = when (config.viewMode) {
+                            PlannedPaymentsViewMode.OVERDUE_ONLY -> "No overdue payments"
+                            PlannedPaymentsViewMode.FUTURE_ONLY -> "No upcoming payments"
+                            PlannedPaymentsViewMode.BOTH -> "No upcoming payments"
+                        },
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
 
-            overdue.forEach { payment ->
+            items(overdue) { payment ->
                 PlannedPaymentRow(
                     title = payment.name,
                     amount = payment.amount,
@@ -137,7 +150,7 @@ fun PlannedPaymentsCard(
                 )
             }
 
-            upcoming.forEach { item ->
+            items(upcoming) { item ->
                 PlannedPaymentRow(
                     title = item.plannedPayment.name,
                     amount = item.plannedPayment.amount,
@@ -259,7 +272,7 @@ private fun PlannedPaymentRow(
 
     val typeColor = when {
         isOverdue -> AppColors.error
-        transactionType == TransactionType.INCOME -> AppColors.primary
+        transactionType == TransactionType.INCOME -> AppColors.positive
         transactionType == TransactionType.TRANSFER -> AccentBlue
         else -> AppColors.error
     }
@@ -281,14 +294,13 @@ private fun PlannedPaymentRow(
                     }
                 )
             },
-        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        color = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.2f)
-        else AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
-        border = BorderStroke(
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.15f)
+        else AppColors.onPanelSurface,
+        border = if (isOverdue) BorderStroke(
             0.5.dp,
-            if (isOverdue) AppColors.error.copy(alpha = 0.2f)
-            else AppColors.divider.copy(alpha = 0.1f)
-        )
+            AppColors.error.copy(alpha = 0.2f)
+        ) else null
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -309,7 +321,7 @@ private fun PlannedPaymentRow(
                     text = dateLabel.uppercase(),
                     style = AppTextStyles.transactionStatusMicro,
                     color = if (isOverdue) AppColors.error
-                    else AppColors.primary
+                    else AppColors.contentSecondary
                 )
             }
             Text(

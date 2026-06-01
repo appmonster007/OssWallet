@@ -295,6 +295,7 @@ object AppColors {
     val componentOnCardSubtle: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val componentOnCard: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
     val panelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
+    val onPanelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
     val drawerSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
     val popupSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
     val insetSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant

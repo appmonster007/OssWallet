@@ -114,7 +114,7 @@ class CardFilterTest {
             cardId = "networth1",
             order = 1,
             fontSize = "medium",
-            filter = TransactionFilter(accountIds = setOf("acc1", "acc2"), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf("acc1", "acc2"), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -131,7 +131,7 @@ class CardFilterTest {
             cardId = "networth1",
             order = 1,
             fontSize = "medium",
-            filter = TransactionFilter(accountIds = emptySet(), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = emptySet(), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -146,7 +146,7 @@ class CardFilterTest {
             order = 1,
             layout = "grid",
             showBaseConversion = true,
-            filter = TransactionFilter(accountIds = setOf("acc1"), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf("acc1"), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -161,7 +161,7 @@ class CardFilterTest {
             cardId = "networth1",
             order = 1,
             fontSize = "medium",
-            filter = TransactionFilter(accountIds = setOf("acc1", "acc2"), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf("acc1", "acc2"), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterTransactions(allTransactions)
@@ -179,7 +179,7 @@ class CardFilterTest {
             order = 1,
             layout = "grid",
             showBaseConversion = true,
-            filter = TransactionFilter(accountIds = setOf("acc1"), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf("acc1"), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterTransactions(allTransactions)
@@ -194,7 +194,7 @@ class CardFilterTest {
             cardId = "cashflow1",
             order = 1,
             showBaseConversion = true,
-            filter = TransactionFilter(accountIds = setOf("acc2"), timelineRange = TimelineRange.AllTime)
+            filter = TransactionFilter(accountIds = setOf("acc2"), timelineRange = TimelineRange.AllTime())
         )
 
         val filtered = config.filterTransactions(allTransactions)

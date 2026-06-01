@@ -39,6 +39,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -55,10 +56,12 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import java.math.BigDecimal
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -125,6 +128,7 @@ fun PlannedPaymentsCard(
                     title = payment.name,
                     amount = payment.amount,
                     currency = payment.currency,
+                    transactionType = payment.transactionType,
                     dateLabel = "OVERDUE",
                     isOverdue = true,
                     onClick = { callbacks.onItemClick(payment.id) },
@@ -138,7 +142,8 @@ fun PlannedPaymentsCard(
                     title = item.plannedPayment.name,
                     amount = item.plannedPayment.amount,
                     currency = item.plannedPayment.currency,
-                    dateLabel = formatDate(item.scheduledDate),
+                    transactionType = item.plannedPayment.transactionType,
+                    dateLabel = formatRelativeDate(item.scheduledDate, System.currentTimeMillis()),
                     isOverdue = false,
                     onClick = { callbacks.onItemClick(item.plannedPayment.id) },
                     onConfirm = callbacks.onConfirm?.let { { it(item.plannedPayment.id) } },
@@ -236,6 +241,7 @@ private fun PlannedPaymentRow(
     title: String,
     amount: BigDecimal,
     currency: String,
+    transactionType: TransactionType,
     dateLabel: String,
     isOverdue: Boolean,
     onClick: () -> Unit,
@@ -245,11 +251,18 @@ private fun PlannedPaymentRow(
     val haptic = LocalHapticFeedback.current
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+        targetValue = if (isPressed) 0.98f else 1f,
         animationSpec = spring(stiffness = 600f),
         label = "rowScale"
     )
     var showActions by remember { mutableStateOf(false) }
+
+    val typeColor = when {
+        isOverdue -> AppColors.error
+        transactionType == TransactionType.INCOME -> AppColors.primary
+        transactionType == TransactionType.TRANSFER -> AccentBlue
+        else -> AppColors.error
+    }
 
     Surface(
         modifier = Modifier
@@ -268,9 +281,9 @@ private fun PlannedPaymentRow(
                     }
                 )
             },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         color = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.2f)
-        else AppColors.cardSurfaceProminent.copy(alpha = 0.3f),
+        else AppColors.cardSurfaceProminent.copy(alpha = 0.4f),
         border = BorderStroke(
             0.5.dp,
             if (isOverdue) AppColors.error.copy(alpha = 0.2f)
@@ -278,7 +291,7 @@ private fun PlannedPaymentRow(
         )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -286,28 +299,25 @@ private fun PlannedPaymentRow(
                 Text(
                     text = title,
                     style = AppTextStyles.managementItemTitle.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    )
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = dateLabel.uppercase(),
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp,
-                        letterSpacing = 0.5.sp,
-                        color = if (isOverdue) AppColors.error
-                        else AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
+                    style = AppTextStyles.transactionStatusMicro,
+                    color = if (isOverdue) AppColors.error
+                    else AppColors.primary
                 )
             }
             Text(
-                text = "${formatAuto(amount)} $currency",
-                style = AppTextStyles.screenSubTitle.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = if (isOverdue) AppColors.error
-                    else AppColors.contentPrimary
+                text = formatAuto(amount, currency),
+                style = AppTextStyles.listItemTitle.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 14.sp,
+                    color = typeColor
                 )
             )
             if (onConfirm != null || onSkip != null) {
@@ -315,14 +325,14 @@ private fun PlannedPaymentRow(
                     IconButton(
                         onClick = { showActions = true },
                         modifier = Modifier
-                            .padding(start = 4.dp)
-                            .size(28.dp)
+                            .padding(start = 6.dp)
+                            .size(24.dp)
                     ) {
                         Icon(
                             Icons.Default.MoreVert,
                             contentDescription = "Actions",
-                            modifier = Modifier.size(16.dp),
-                            tint = AppColors.contentSecondary.copy(alpha = 0.5f)
+                            modifier = Modifier.size(14.dp),
+                            tint = AppColors.contentSecondary.copy(alpha = 0.4f)
                         )
                     }
                     DropdownMenu(
@@ -337,7 +347,7 @@ private fun PlannedPaymentRow(
                                         Icons.Rounded.CheckCircle,
                                         contentDescription = null,
                                         tint = AppColors.primary,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 },
                                 onClick = {
@@ -355,7 +365,7 @@ private fun PlannedPaymentRow(
                                         Icons.Rounded.SkipNext,
                                         contentDescription = null,
                                         tint = AppColors.contentSecondary,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 },
                                 onClick = {
@@ -422,16 +432,6 @@ fun PlannedPaymentsCardPreview() {
                     onItemClick = {})
             )
         }
-    }
-}
-
-private fun formatDate(epochMilli: Long): String {
-    val date = Instant.ofEpochMilli(epochMilli).atOffset(ZoneOffset.UTC).toLocalDate()
-    val today = LocalDate.now(ZoneOffset.UTC)
-    return when (date) {
-        today -> "Today"
-        today.plusDays(1) -> "Tomorrow"
-        else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
     }
 }
 //

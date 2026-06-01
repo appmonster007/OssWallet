@@ -123,8 +123,15 @@ fun PlannedPaymentDetailScreen(
     val payment =
         remember(plannedPaymentId, payments) { payments.find { it.id == plannedPaymentId } }
 
+    var hasLoadedInitially by remember { mutableStateOf(false) }
+
     LaunchedEffect(payments) {
-        if (payments.isNotEmpty() && payment == null) {
+        if (payments.isNotEmpty()) {
+            hasLoadedInitially = true
+        }
+        
+        // If we previously had the payment (or at least loaded the list) and now it's gone, navigate back.
+        if (hasLoadedInitially && payment == null) {
             onBackClick()
         }
     }

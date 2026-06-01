@@ -734,14 +734,28 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         val templateId = _state.value.existingPayment?.templateId
         val deleteTemplate = _state.value.deleteTemplateWithPayment
 
+        // Close dialog immediately to prevent double clicks, but wait for deletion to navigate
+        _state.update { it.copy(showDeleteDialog = false) }
+
         viewModelScope.launch {
-            plannedPaymentRepository.delete(id)
-            if (deleteTemplate && templateId != null) {
-                templateRepository.getTemplateById(templateId)?.let { template ->
-                    templateRepository.deleteTemplate(template)
+            try {
+                // Perform deletion in a way that handles cascade correctly
+                if (deleteTemplate && templateId != null) {
+                    // Deleting the template will CASCADE delete all linked planned payments (including this one)
+                    templateRepository.getTemplateById(templateId)?.let { template ->
+                        templateRepository.deleteTemplate(template)
+                    }
+                } else {
+                    // Only delete this specific planned payment
+                    plannedPaymentRepository.delete(id)
                 }
+                
+                // Now that it's deleted from DB, trigger navigation
+                _state.update { it.copy(navTriggered = true) }
+            } catch (e: Exception) {
+                // Optional: Show error message to user
+                _state.update { it.copy(navTriggered = false) }
             }
-            _state.update { it.copy(navTriggered = true) }
         }
     }
 

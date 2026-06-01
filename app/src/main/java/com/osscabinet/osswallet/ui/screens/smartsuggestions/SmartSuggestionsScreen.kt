@@ -360,7 +360,8 @@ private fun SmartSuggestionsScreenPreview() {
             recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
             confidence = 0.95f,
             occurrences = 5,
-            lastDate = System.currentTimeMillis()
+            lastDate = System.currentTimeMillis(),
+            representativeTransactionId = 101L
         ),
         DiscoveredPattern(
             name = "Weekly Groceries",
@@ -377,7 +378,8 @@ private fun SmartSuggestionsScreenPreview() {
             recurrenceRule = RecurrenceRule(RecurrenceType.WEEKLY),
             confidence = 0.8f,
             occurrences = 12,
-            lastDate = System.currentTimeMillis()
+            lastDate = System.currentTimeMillis(),
+            representativeTransactionId = 102L
         )
     )
 

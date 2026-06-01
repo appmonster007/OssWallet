@@ -219,17 +219,19 @@ fun AeonTransactionItem(
     else (if (showNote) note else "")
 
     val dashedBorder = if (isPlanned) {
+        val borderColor = AppColors.border
+        val cornerRadius = AeonTheme.dimensions.componentCornerRadius
         Modifier.padding(4.dp).drawBehind {
             val strokeWidth = 1.dp.toPx()
             val dashWidth = 4.dp.toPx()
             val dashGap = 4.dp.toPx()
             drawRoundRect(
-                color = AppColors.border,
+                color = borderColor,
                 style = Stroke(
                     width = strokeWidth,
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashWidth, dashGap), 0f)
                 ),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(AeonTheme.dimensions.componentCornerRadius.toPx())
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius.toPx())
             )
         }
     } else Modifier

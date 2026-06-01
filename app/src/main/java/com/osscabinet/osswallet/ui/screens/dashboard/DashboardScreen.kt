@@ -524,7 +524,11 @@ fun DashboardContent(
                         onRecordsClick = onRecordsClick,
                         onTransactionEvent = { event ->
                             when (event) {
-                                is TransactionItemEvent.Click -> onEditTransactionClick(event.id)
+                                is TransactionItemEvent.Click -> {
+                                    if (event.id.startsWith("tx_")) {
+                                        onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                                    }
+                                }
                                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
                                     event.id
                                 )
@@ -547,6 +551,8 @@ fun DashboardContent(
                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                                     event.id
                                 )
+                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
+                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
                             }
                         }
                     )
@@ -593,8 +599,8 @@ fun DashboardGlanceTab(
     onCloneTransactionClick: (Long) -> Unit,
     onSplitTransactionClick: (Long) -> Unit,
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
-    onItemExpanded: (Long) -> Unit,
-    onItemCollapsed: (Long) -> Unit,
+    onItemExpanded: (String) -> Unit,
+    onItemCollapsed: (String) -> Unit,
     onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
     onDeleteTransaction: (Long) -> Unit,
     onFullSwipeRight: (Long) -> Unit,
@@ -754,7 +760,7 @@ fun DashboardGlanceTab(
 @Composable
 fun DashboardRecentActivitiesTab(
     recentActivitiesState: TransactionListState,
-    revealedCardIds: List<Long>,
+    revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
     baseCurrency: String,
     onRecordsClick: (TransactionFilter) -> Unit,

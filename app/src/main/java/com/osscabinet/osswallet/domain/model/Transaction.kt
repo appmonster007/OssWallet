@@ -61,26 +61,12 @@ fun Set<String>.toUiModels(
 }
 
 /**
- * Enriched UI model for a transaction, containing all metadata needed for display.
- */
-data class TransactionUiModel(
-    val item: TransactionWithBalance,
-    val accountName: String,
-    val accountCurrency: String,
-    val categoryName: String,
-    val categoryIcon: String?,
-    val categoryColor: Int,
-    val tags: List<TagUiModel> = emptyList(),
-    val amountInBase: BigDecimal? = null
-)
-
-/**
  * Pre-computed group of transactions with its period-specific header data.
  */
 data class TransactionGroup(
     val key: String,
     val headerData: com.osscabinet.ossWallet.domain.service.timeline.TimelineService.GroupHeaderData,
-    val transactions: List<TransactionUiModel>
+    val transactions: List<RecordUiModel>
 )
 
 /**

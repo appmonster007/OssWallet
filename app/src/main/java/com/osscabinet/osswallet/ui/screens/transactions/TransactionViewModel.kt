@@ -7,9 +7,13 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.RecordUiModel
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -24,9 +28,11 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -74,8 +80,8 @@ class TransactionViewModel @Inject constructor(
     val initialFilter = _initialFilter.asStateFlow()
 
     // Track revealed card IDs for swipe actions
-    private val _revealedCardIdsList = MutableStateFlow<List<Long>>(emptyList())
-    val revealedCardIdsList: StateFlow<List<Long>> = _revealedCardIdsList.asStateFlow()
+    private val _revealedCardIdsList = MutableStateFlow<List<String>>(emptyList())
+    val revealedCardIdsList: StateFlow<List<String>> = _revealedCardIdsList.asStateFlow()
 
     // Prefill DTO for clone functionality
     private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
@@ -185,6 +191,40 @@ class TransactionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val upcomingPayments: StateFlow<List<UpcomingPaymentItem>> =
+        combine(
+            settingsRepository.currentProfileId.flatMapLatest { plannedPaymentRepository.getActivePlannedPayments(it) },
+            recordsFilter,
+            recordsSettings
+        ) { payments, filter, settings ->
+            if (!settings.showPlannedPayments) return@combine emptyList()
+
+            val now = System.currentTimeMillis()
+            val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
+            
+            val limitDate = now + 365L * 24 * 60 * 60 * 1000
+            val effectiveEndTime = when {
+                endTime != null -> minOf(endTime, limitDate)
+                else -> limitDate
+            }
+
+            val occurrences = PlannedPaymentService.generateUpcoming(
+                payments = payments,
+                fromDate = startTime ?: minOf(now, payments.minOfOrNull { it.schedule.nextDueDate } ?: now),
+                daysAhead = ((effectiveEndTime - (startTime ?: now)) / (24 * 60 * 60 * 1000)).toInt().coerceAtLeast(0)
+            )
+
+            if (filter.excludeFuture) {
+                occurrences.filter { it.scheduledDate <= now }
+            } else {
+                occurrences
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val listState: StateFlow<TransactionListState> =
         combine(
             transactionsWithBalance,
@@ -194,7 +234,8 @@ class TransactionViewModel @Inject constructor(
             allTags,
             baseCurrency,
             exchangeRates,
-            recordsSettings
+            recordsSettings,
+            upcomingPayments
         ) { args: Array<*> ->
             @Suppress("UNCHECKED_CAST")
             val filtered = args[0] as List<TransactionWithBalance>
@@ -217,7 +258,10 @@ class TransactionViewModel @Inject constructor(
             val settings =
                 args[7] as com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 
-            if (filtered.isEmpty()) return@combine TransactionListState()
+            @Suppress("UNCHECKED_CAST")
+            val planned = args[8] as List<UpcomingPaymentItem>
+
+            if (filtered.isEmpty() && planned.isEmpty()) return@combine TransactionListState()
 
             val groups = TimelineService.getGroupedData(
                 transactions = filtered,
@@ -227,7 +271,8 @@ class TransactionViewModel @Inject constructor(
                 categories = categories,
                 allTags = tags,
                 baseCurrency = base,
-                exchangeRates = rates
+                exchangeRates = rates,
+                plannedPayments = planned
             )
             TransactionListState(groups = groups, isEmpty = false)
         }.stateIn(
@@ -376,17 +421,55 @@ class TransactionViewModel @Inject constructor(
     }
 
     // Swipe action methods
-    fun onItemExpanded(cardId: Long) {
+    fun onItemExpanded(cardId: String) {
         if (_revealedCardIdsList.value.contains(cardId)) return
         _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
             list.add(cardId)
         }
     }
 
-    fun onItemCollapsed(cardId: Long) {
+    fun onItemCollapsed(cardId: String) {
         if (!_revealedCardIdsList.value.contains(cardId)) return
         _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
             list.remove(cardId)
+        }
+    }
+
+    fun confirmPlannedPayment(paymentId: Long, scheduledDate: Long) {
+        viewModelScope.launch {
+            val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
+            val profileId = settingsRepository.currentProfileId.first()
+            
+            val request = TransactionRequest(
+                name = payment.name,
+                amount = payment.amount,
+                transactionType = payment.transactionType,
+                accountId = payment.accountId,
+                categoryId = payment.categoryId,
+                currency = payment.currency,
+                timestamp = scheduledDate,
+                tags = payment.tags,
+                payee = payment.payee ?: "",
+                note = payment.note ?: "",
+                status = payment.transactionStatus,
+                sourcePlannedPaymentId = paymentId
+            )
+
+            transactionManager.handleSaveTransaction(
+                existingTransaction = null,
+                request = request,
+                profileId = profileId,
+                sourcePlannedPaymentId = paymentId,
+                scheduledDate = scheduledDate
+            )
+            onItemCollapsed("planned_${paymentId}_$scheduledDate")
+        }
+    }
+
+    fun cancelPlannedPayment(paymentId: Long, scheduledDate: Long) {
+        viewModelScope.launch {
+            transactionManager.skipPlannedPayment(paymentId, scheduledDate)
+            onItemCollapsed("planned_${paymentId}_$scheduledDate")
         }
     }
 
@@ -397,7 +480,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             withProfile { profileId ->
                 if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
-                    onItemCollapsed(transactionId)
+                    onItemCollapsed("tx_$transactionId")
                 }
             }
         }
@@ -407,7 +490,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             withProfile { profileId ->
                 if (transactionManager.cloneTransaction(transactionId, profileId) != null) {
-                    onItemCollapsed(transactionId)
+                    onItemCollapsed("tx_$transactionId")
                 }
             }
         }
@@ -499,7 +582,7 @@ class TransactionViewModel @Inject constructor(
     fun quickDeleteTransaction(transactionId: Long) {
         viewModelScope.launch {
             deleteTransaction(transactionId)
-            onItemCollapsed(transactionId)
+            onItemCollapsed("tx_$transactionId")
         }
     }
 
@@ -526,7 +609,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             withProfile { profileId ->
                 if (transactionManager.toggleStatus(transactionId, profileId) != null) {
-                    onItemCollapsed(transactionId)
+                    onItemCollapsed("tx_$transactionId")
                 }
             }
         }
@@ -597,6 +680,7 @@ class TransactionViewModel @Inject constructor(
                 template = PatternDiscoveryService.toTemplate(pattern),
                 schedule = payment.schedule
             )
+            onItemCollapsed("tx_${pattern.representativeTransactionId}")
         }
     }
 

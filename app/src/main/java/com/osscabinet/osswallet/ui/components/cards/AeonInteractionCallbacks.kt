@@ -19,8 +19,8 @@ data class AeonInteractionCallbacks(
 
 data class TransactionActions(
     val onClick: (Long) -> Unit = {},
-    val onItemExpanded: (Long) -> Unit = {},
-    val onItemCollapsed: (Long) -> Unit = {},
+    val onItemExpanded: (String) -> Unit = {},
+    val onItemCollapsed: (String) -> Unit = {},
     val onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
     val onClone: (Long) -> Unit = {},
     val onDelete: (Long) -> Unit = {},

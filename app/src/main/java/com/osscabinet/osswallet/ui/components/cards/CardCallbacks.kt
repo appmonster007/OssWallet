@@ -144,14 +144,16 @@ sealed class CardCallbacks {
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
-        val onItemExpanded: (Long) -> Unit = {},
-        val onItemCollapsed: (Long) -> Unit = {},
+        val onItemExpanded: (String) -> Unit = {},
+        val onItemCollapsed: (String) -> Unit = {},
         val onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
         val onClone: (Long) -> Unit = {},
         val onDeleteTransaction: (Long) -> Unit = {},
         val onSplit: (Long) -> Unit = {},
         val onFullSwipeRight: (Long) -> Unit = {},
-        val onSaveFilterClick: (TransactionFilter) -> Unit = {}
+        val onSaveFilterClick: (TransactionFilter) -> Unit = {},
+        val onConfirmPlanned: (Long, Long) -> Unit = { _, _ -> },
+        val onCancelPlanned: (Long, Long) -> Unit = { _, _ -> }
     ) : CardCallbacks()
 
     /**

@@ -32,8 +32,15 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
         val allTransactions = input.allProfileTransactions.ifEmpty { input.transactions }
         val filteredTx = TransactionFilterService.filter(allTransactions, mergedFilter)
 
-        val budgets = if (config.showArchived) input.budgets
+        val baseBudgets = if (config.showArchived) input.budgets
         else input.budgets.filter { !it.isArchived }
+
+        val budgets = baseBudgets.filter { budget ->
+            (mergedFilter.accountIds.isEmpty() || budget.accountIds.isEmpty() || budget.accountIds.any { it in mergedFilter.accountIds }) &&
+                    (mergedFilter.categoryIds.isEmpty() || budget.categoryIds.isEmpty() || budget.categoryIds.any { it in mergedFilter.categoryIds }) &&
+                    (mergedFilter.currencies.isEmpty() || budget.currency in mergedFilter.currencies) &&
+                    (mergedFilter.tags.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in mergedFilter.tags })
+        }
 
         val items = budgets.take(config.maxItems).map { budget ->
             val rollover = BudgetService.calculateRollover(

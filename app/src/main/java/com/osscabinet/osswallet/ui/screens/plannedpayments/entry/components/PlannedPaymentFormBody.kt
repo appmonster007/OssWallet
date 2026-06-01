@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EventBusy
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import com.osscabinet.ossWallet.ui.components.entry.EntryActionChip
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
+import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
@@ -239,71 +241,56 @@ fun PlannedPaymentFormBody(
                             )
                         },
                         onLocationClick = { onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(true)) },
-                        locationLabel = "Payment Location",
-                        additionalTopContent = {
-                            // Planned Payment Status Row
-                            val ppStatusColor =
-                                Color(android.graphics.Color.parseColor(state.status.colorHex))
-                            val ppStatusIcon =
-                                com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName]
-                                    ?: Icons.Rounded.CheckCircle
-
-                            EntryActionChip(
-                                icon = ppStatusIcon,
-                                label = "Payment: ${state.status.displayName}",
-                                onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                iconTint = ppStatusColor,
-                                iconContainerColor = AppColors.surfaceContainerHigh
-                            )
-
-                        },
-                        additionalBottomContent = {
-                            // End Date and Auto Confirmation
-                            EntrySwitchRow(
-                                label = "Has End Date",
-                                checked = state.hasEndDate,
-                                onCheckedChange = {
-                                    onEvent(
-                                        PlannedPaymentEntryEvent.SetHasEndDate(
-                                            it
-                                        )
-                                    )
-                                },
-                                icon = Icons.Rounded.EventBusy
-                            )
-
-                            if (state.hasEndDate) {
-                                EntryDateCard(
-                                    icon = Icons.Rounded.CalendarToday,
-                                    label = "END DATE",
-                                    dateMillis = state.endDateMillis,
-                                    onClick = {
-                                        onEvent(
-                                            PlannedPaymentEntryEvent.ShowEndDatePicker(
-                                                true
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-
-                            EntrySwitchRow(
-                                label = "Auto-confirm Transaction",
-                                checked = state.autoConfirm,
-                                onCheckedChange = {
-                                    onEvent(
-                                        PlannedPaymentEntryEvent.SetAutoConfirm(
-                                            it
-                                        )
-                                    )
-                                },
-                                icon = Icons.Rounded.AutoFixHigh
-                            )
-                        }
+                        locationLabel = "Payment Location"
                     )
                 }
             )
+
+            // MANAGEMENT: Plan specific settings
+            EntrySection(
+                title = "PLAN MANAGEMENT",
+                icon = Icons.Rounded.Settings
+            ) {
+                // 1. Planned Payment Status Row
+                val ppStatusColor =
+                    Color(android.graphics.Color.parseColor(state.status.colorHex))
+                val ppStatusIcon =
+                    com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName]
+                        ?: Icons.Rounded.CheckCircle
+
+                EntryActionChip(
+                    icon = ppStatusIcon,
+                    label = "Payment Status: ${state.status.displayName}",
+                    onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    iconTint = ppStatusColor,
+                    iconContainerColor = AppColors.surfaceContainerHigh
+                )
+
+                // 2. End Date and Auto Confirmation
+                EntrySwitchRow(
+                    label = "Has End Date",
+                    checked = state.hasEndDate,
+                    onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
+                    icon = Icons.Rounded.EventBusy
+                )
+
+                if (state.hasEndDate) {
+                    EntryDateCard(
+                        icon = Icons.Rounded.CalendarToday,
+                        label = "END DATE",
+                        dateMillis = state.endDateMillis,
+                        onClick = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(true)) }
+                    )
+                }
+
+                EntrySwitchRow(
+                    label = "Auto-confirm Transaction",
+                    checked = state.autoConfirm,
+                    onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
+                    icon = Icons.Rounded.AutoFixHigh
+                )
+            }
         }
 
         // Dedicated sheets for selecting multi-value parameters

@@ -45,8 +45,8 @@ fun EntrySwitchRow(
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(AeonTheme.dimensions.cardPadding),
+            .fillMaxWidth(),
+//            .padding(AeonTheme.dimensions.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {

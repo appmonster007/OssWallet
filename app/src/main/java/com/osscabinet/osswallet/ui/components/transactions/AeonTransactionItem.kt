@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -28,7 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
@@ -87,12 +88,15 @@ fun AeonTransactionItem(
     val bottomText = if (isNoteHeader) (if (showCategory) category else "")
     else (if (showNote) note else "")
 
+    val itemContainerColor = containerColor
+
     val dashedBorder = if (isPlanned) {
-        val borderColor = AppColors.border
+        val borderColor = AppColors.primary
         val cornerRadius = AeonTheme.dimensions.componentCornerRadius
-        Modifier.padding(4.dp).drawBehind {
+        Modifier.drawWithContent {
+            drawContent()
             val strokeWidth = 1.dp.toPx()
-            val dashWidth = 4.dp.toPx()
+            val dashWidth = 6.dp.toPx()
             val dashGap = 4.dp.toPx()
             drawRoundRect(
                 color = borderColor,
@@ -105,32 +109,34 @@ fun AeonTransactionItem(
         }
     } else Modifier
 
+    val outerPadding = 6.dp
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .then(dashedBorder)
             .clickable(onClick = onClick),
         color = containerColor,
         shape = RectangleShape
     ) {
-        Column {
-//            if (showDividers) {
-//                HorizontalDivider(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    thickness = 0.5.dp,
-//                    color = AppColors.divider.copy(alpha = 0.5f)
-//                )
-//            }
-
-            Column(
-                modifier = Modifier.padding(
+        Column(
+            modifier = if (isPlanned) {
+                Modifier
+                    .padding(horizontal = outerPadding, vertical = 4.dp)
+                    .then(dashedBorder)
+                    .padding(
+                        horizontal = AeonTheme.dimensions.listPadding - outerPadding,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    )
+            } else {
+                Modifier.padding(
                     horizontal = AeonTheme.dimensions.listPadding,
                     vertical = AeonTheme.dimensions.spacingSm
                 )
+            }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
                     if (showIcon) {
                         Box(modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)) {
                             Surface(
@@ -151,26 +157,26 @@ fun AeonTransactionItem(
                             }
 
                             // Status indicator
-                            if (status != TransactionStatus.UNCLEARED) {
+                            if (status != TransactionStatus.UNCLEARED || isPlanned) {
                                 Surface(
                                     modifier = Modifier
                                         .size(AeonTheme.dimensions.iconSizeSm)
                                         .align(Alignment.BottomStart)
                                         .offset(x = (-4).dp, y = 4.dp),
                                     shape = CircleShape,
-                                    color = when (status) {
-                                        TransactionStatus.CLEARED -> PositiveAmountColor
-
-                                        TransactionStatus.RECONCILE -> AccentBlue
-
-                                        TransactionStatus.UNCLEARED -> AppColors.transparent
+                                    color = when {
+                                        isPlanned -> AppColors.tertiary
+                                        status == TransactionStatus.CLEARED -> PositiveAmountColor
+                                        status == TransactionStatus.RECONCILE -> AccentBlue
+                                        else -> AppColors.transparent
                                     },
-                                    border = BorderStroke(1.5.dp, AppColors.screenBackground)
+                                    border = BorderStroke(1.5.dp, itemContainerColor)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = when (status) {
-                                                TransactionStatus.CLEARED -> Icons.Rounded.Check
+                                            imageVector = when {
+                                                isPlanned -> Icons.Rounded.Schedule
+                                                status == TransactionStatus.CLEARED -> Icons.Rounded.Check
                                                 else -> Icons.Rounded.Sync
                                             },
                                             contentDescription = null,
@@ -304,15 +310,14 @@ fun AeonTransactionItem(
                         }
                     }
                 }
-            }
+        }
 
-            if (showDividers) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-            }
+        if (showDividers) {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.5f)
+            )
         }
     }
 }
@@ -345,19 +350,24 @@ fun AeonTransactionItemRegularPreview() {
 @Composable
 fun AeonTransactionItemPlannedPreview() {
     OssWalletTheme {
-        AeonTransactionItem(
-            category = "Subscriptions",
-            account = "Credit Card",
-            amount = "-$12.99",
-            balanceBefore = "$500.00",
-            balanceAfter = "$487.01",
-            type = CashFlowType.EXPENSE,
-            timestamp = "Tomorrow",
-            note = "Netflix Subscription",
-            isPlanned = true,
-            icon = Icons.Rounded.Category,
-            iconBg = Color(0xFFE91E63),
-            onClick = {}
-        )
+        Surface(
+            color = AppColors.surfaceContainer, // Contrast background
+            modifier = Modifier.padding(16.dp)
+        ) {
+            AeonTransactionItem(
+                category = "Subscriptions",
+                account = "Credit Card",
+                amount = "-$12.99",
+                balanceBefore = "$500.00",
+                balanceAfter = "$487.01",
+                type = CashFlowType.EXPENSE,
+                timestamp = "Tomorrow",
+                note = "Netflix Subscription",
+                isPlanned = true,
+                icon = Icons.Rounded.Category,
+                iconBg = Color(0xFFE91E63),
+                onClick = {}
+            )
+        }
     }
 }

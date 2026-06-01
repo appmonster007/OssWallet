@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +58,7 @@ fun EntryActionCard(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     enabled: Boolean = true,
+    isError: Boolean = false,
     iconContainerColor: Color = AppColors.primary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.primary,
     selectedColor: Color = AppColors.primary,
@@ -128,12 +130,26 @@ fun EntryActionCard(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = label,
-                    style = AppTextStyles.overlineLabel,
-                    color = if (isSelected) contentColor
-                    else AppColors.contentSecondary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = label,
+                        style = AppTextStyles.overlineLabel,
+                        color = when {
+                            isSelected -> contentColor
+                            isError -> AppColors.error
+                            else -> AppColors.contentSecondary
+                        }
+                    )
+                    if (isError) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Rounded.Error,
+                            contentDescription = null,
+                            tint = AppColors.error,
+                            modifier = Modifier.size(10.dp)
+                        )
+                    }
+                }
                 Text(
                     text = value,
                     style = AppTextStyles.managementItemTitle,

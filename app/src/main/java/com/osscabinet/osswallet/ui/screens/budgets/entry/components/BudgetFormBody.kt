@@ -42,7 +42,9 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntryPaymentMethodStatusRow
@@ -92,10 +94,14 @@ fun BudgetFormBody(
                     onCurrencyClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
                     color = AppColors.primary
                 ),
-                name = state.name,
-                onNameChange = { onEvent(BudgetEntryEvent.SetName(it)) },
-                nameLabel = "BUDGET NAME",
-                showTypeSelector = false
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(BudgetEntryEvent.SetName(it)) },
+                    label = "BUDGET NAME",
+                    isError = state.errors.contains(EntryField.NAME)
+                ),
+                showTypeSelector = false,
+                errors = state.errors
             )
 
             // BUDGET CONTEXT: The core parameters of the budget itself

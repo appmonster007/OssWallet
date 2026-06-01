@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -128,13 +130,13 @@ fun RecentActivitiesCard(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun RecentActivitiesCardPreview() {
-    val mockTransaction = com.osscabinet.ossWallet.domain.model.Transaction(
+    val mockTransaction = Transaction(
         id = 1L,
         name = "Starbucks",
         amount = BigDecimal("5.50"),
         timestamp = System.currentTimeMillis(),
         currency = "USD",
-        transactionType = com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+        transactionType = TransactionType.EXPENSE,
         accountId = "acc1",
         categoryId = Category.SYSTEM_UNKNOWN
     )

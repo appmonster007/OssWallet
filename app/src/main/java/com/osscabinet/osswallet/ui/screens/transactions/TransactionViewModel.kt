@@ -8,6 +8,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
@@ -355,7 +357,7 @@ class TransactionViewModel @Inject constructor(
         recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = range))
     }
 
-    fun setIncomeTypeFilter(type: com.osscabinet.ossWallet.domain.model.TransactionType?) {
+    fun setIncomeTypeFilter(type: TransactionType?) {
         if (type != null) {
             recordsFilterManager.setFilter(
                 "type",
@@ -452,7 +454,11 @@ class TransactionViewModel @Inject constructor(
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",
                 status = payment.transactionStatus,
-                sourcePlannedPaymentId = paymentId
+                sourcePlannedPaymentId = paymentId,
+                isTransfer = payment.transactionType == TransactionType.TRANSFER,
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                transferRate = payment.transferRate
             )
 
             transactionManager.handleSaveTransaction(
@@ -516,7 +522,7 @@ class TransactionViewModel @Inject constructor(
                     val targetTx = linkedTxs.find {
                         Category.isTransfer(it.categoryId) &&
                                 it.accountId != transaction.accountId &&
-                                it.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
+                                it.transactionType == TransactionType.INCOME
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {

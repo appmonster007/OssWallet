@@ -41,7 +41,9 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
@@ -86,11 +88,15 @@ fun FilterFormBody(
                     currency = "",
                     color = AppColors.primary
                 ),
-                name = state.name,
-                onNameChange = { onEvent(FilterEntryEvent.SetName(it)) },
-                nameLabel = "FILTER NAME",
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(FilterEntryEvent.SetName(it)) },
+                    label = "FILTER NAME",
+                    isError = state.errors.contains(EntryField.NAME)
+                ),
                 showTypeSelector = false,
-                showAmount = false
+                showAmount = false,
+                errors = state.errors
             )
 
             // CORE CRITERIA: Primary structural filter logic

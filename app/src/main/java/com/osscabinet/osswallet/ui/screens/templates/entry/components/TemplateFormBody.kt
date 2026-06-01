@@ -24,6 +24,9 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -84,25 +87,42 @@ fun TemplateFormBody(
                     supportedCurrencies = targetCurrencies
                 ),
                 categoryId = state.categoryId,
-                name = state.name,
-                onNameChange = { onEvent(TemplateEntryEvent.SetName(it)) },
-                nameLabel = "TEMPLATE NAME",
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(TemplateEntryEvent.SetName(it)) },
+                    label = "TEMPLATE NAME",
+                    isError = state.errors.contains(EntryField.NAME)
+                ),
                 targetAccountId = state.targetAccountId,
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
-                accountId = state.accountId
+                accountId = state.accountId,
+                errors = state.errors
             )
 
             // CONTEXT: Action cards row: Account, Category
             AeonContextGrid {
                 AeonEntryContextRow(
                     isTransfer = state.transactionType == TransactionType.TRANSFER,
-                    selectedAccount = state.selectedAccount,
-                    onAccountClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
-                    selectedCategory = state.selectedCategory,
-                    onCategoryClick = { onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
-                    targetAccount = state.selectedTargetAccount,
-                    onTargetAccountClick = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) }
+                    accountSelector = AeonSelectorState(
+                        selection = state.selectedAccount,
+                        onClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
+                        isError = state.errors.contains(EntryField.ACCOUNT)
+                    ),
+                    categorySelector = if (state.transactionType != TransactionType.TRANSFER) {
+                        AeonSelectorState(
+                            selection = state.selectedCategory,
+                            onClick = { onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
+                            isError = state.errors.contains(EntryField.CATEGORY)
+                        )
+                    } else null,
+                    targetAccountSelector = if (state.transactionType == TransactionType.TRANSFER) {
+                        AeonSelectorState(
+                            selection = state.selectedTargetAccount,
+                            onClick = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) },
+                            isError = state.errors.contains(EntryField.TARGET_ACCOUNT)
+                        )
+                    } else null
                 )
             }
 

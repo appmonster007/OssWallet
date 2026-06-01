@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
 
 /**
@@ -113,19 +114,37 @@ data class TransactionEntryState(
     val amountValue: BigDecimal
         get() = source.amountValue
 
-    val canSave: Boolean
-        get() {
+    val errors: Set<EntryField>
+        get() = buildSet {
+            // Amount validation (Allowing 0.00 is fine, but negative or unparseable is not)
+            if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
+
+            // Account validation
+            if (isTransfer) {
+                // For transfers, at least one side must be a wallet account
+                if (selectedAccount == null && targetAccount == null) {
+                    add(EntryField.ACCOUNT)
+                    add(EntryField.TARGET_ACCOUNT)
+                }
+            } else {
+                if (selectedAccount == null) add(EntryField.ACCOUNT)
+            }
+
+            // Split validation
             if (isSplitMode) {
                 val totalSplitAmount =
                     splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
-                return amountValue >= BigDecimal.ZERO &&
-                        totalSplitAmount == amountValue &&
-                        selectedAccount != null &&
-                        splits.all { it.categoryId != null }
+                if (totalSplitAmount != amountValue) add(EntryField.AMOUNT)
+                if (splits.any { it.categoryId == null }) add(EntryField.CATEGORY)
             }
-            if (isTransfer) return amountValue >= BigDecimal.ZERO && (selectedAccount != null || targetAccount != null)
-            return amountValue >= BigDecimal.ZERO && selectedAccount != null
         }
+
+    val hasError: Boolean get() = errors.isNotEmpty()
+
+    val canSave: Boolean
+        get() = !hasError && !navTriggered
+
+    fun hasError(field: EntryField) = errors.contains(field)
 }
 
 /**

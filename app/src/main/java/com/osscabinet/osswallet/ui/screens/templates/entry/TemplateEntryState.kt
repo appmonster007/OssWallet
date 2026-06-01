@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
 
 /**
@@ -87,6 +88,13 @@ data class TemplateEntryState(
     val amountValue: BigDecimal
         get() = source.amountValue
 
+    val errors: Set<EntryField> get() = buildSet {
+        if (name.isBlank()) add(EntryField.NAME)
+        // Templates can have empty amounts or categories as they are partially filled
+    }
+
+    val hasError: Boolean get() = errors.isNotEmpty()
+
     val canSave: Boolean
-        get() = name.isNotBlank()
+        get() = !hasError && !navTriggered
 }

@@ -25,8 +25,11 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -71,7 +74,8 @@ fun TransactionFormBody(
                     onValueClick = { onEvent(TransactionEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
                     onCurrencyClick = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
                     label = "SOURCE AMOUNT",
-                    supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD")
+                    supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD"),
+                    isError = state.hasError(EntryField.AMOUNT)
                 ),
                 target = AeonAmountData(
                     value = state.targetAmount ?: "",
@@ -79,10 +83,10 @@ fun TransactionFormBody(
                     onValueClick = { onEvent(TransactionEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
                     onCurrencyClick = { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) },
                     label = "DESTINATION AMOUNT",
-                    supportedCurrencies = targetCurrencies
+                    supportedCurrencies = targetCurrencies,
+                    isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
                 ),
                 categoryId = state.selectedCategoryId,
-                showName = false,
                 showAmount = state.selectedAccount != null || (state.isTransfer && state.targetAccount != null),
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,
@@ -94,7 +98,8 @@ fun TransactionFormBody(
                     }
                     onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                 },
-                accountId = state.selectedAccount?.id
+                accountId = state.selectedAccount?.id,
+                errors = state.errors
             )
 
             // CONTEXT: Action cards row: Template, Date, Account, Category
@@ -127,18 +132,25 @@ fun TransactionFormBody(
                 // Row 2: Account and Category/Target
                 AeonEntryContextRow(
                     isTransfer = state.isTransfer,
-                    selectedAccount = state.selectedAccount,
-                    onAccountClick = { onEvent(TransactionEntryEvent.ShowAccountSheet(true)) },
-                    selectedCategory = state.categories.find { it.id == state.selectedCategoryId },
-                    onCategoryClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
-                    targetAccount = state.targetAccount,
-                    onTargetAccountClick = {
-                        onEvent(
-                            TransactionEntryEvent.ShowTargetAccountSheet(
-                                true
-                            )
+                    accountSelector = AeonSelectorState(
+                        selection = state.selectedAccount,
+                        onClick = { onEvent(TransactionEntryEvent.ShowAccountSheet(true)) },
+                        isError = state.hasError(EntryField.ACCOUNT)
+                    ),
+                    categorySelector = if (!state.isTransfer) {
+                        AeonSelectorState(
+                            selection = state.categories.find { it.id == state.selectedCategoryId },
+                            onClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
+                            isError = state.hasError(EntryField.CATEGORY)
                         )
-                    },
+                    } else null,
+                    targetAccountSelector = if (state.isTransfer) {
+                        AeonSelectorState(
+                            selection = state.targetAccount,
+                            onClick = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(true)) },
+                            isError = state.hasError(EntryField.TARGET_ACCOUNT)
+                        )
+                    } else null,
                     isSplitMode = state.isSplitMode,
                     splitCount = state.splits.size,
                     onSplitClick = { onEvent(TransactionEntryEvent.ShowSplitSheet(true)) }
